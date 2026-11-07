@@ -276,6 +276,7 @@ body {
   justify-content: center;
   overflow: hidden;
   --tt-keyline: #f1e8d3;
+  --tt-logo-edge: #33473b;
   background: #101815;
 }
 .favicon {
@@ -285,6 +286,7 @@ body {
   --text-hi: #eef0e4;
   --text: #c3cdc1;
   --tt-keyline: #f1e8d3;
+  --tt-logo-edge: #33473b;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -342,6 +344,7 @@ body {
   justify-content: center;
   --text-hi: #eef0e4;
   --tt-keyline: #f1e8d3;
+  --tt-logo-edge: #33473b;
   background: #101815;
 }
 .lockup.light {

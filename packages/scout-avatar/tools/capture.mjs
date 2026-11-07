@@ -58,6 +58,8 @@ for (const [file, , w, h, view, extra] of KIT) {
   await page.goto(`${base}?view=${view}${extra}${view === 'banner' || view === 'lockup' ? wm : ''}`);
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(200);
+  if (view === 'favicon')
+    await page.addStyleTag({ content: 'html, body, #root { background: transparent !important; }' });
   await page
     .locator(`[data-capture="${view}"]`)
     .screenshot({ path: join(BRAND, file), omitBackground: view === 'favicon' });
