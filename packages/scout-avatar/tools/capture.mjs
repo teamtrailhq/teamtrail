@@ -181,6 +181,12 @@ for (const [file, , w, h, view, extra] of KIT) {
     '0',
     gif,
   ]);
+  // GitHub's social preview takes a GIF under 1 MB; 640×320 is the smallest size it recommends.
+  execFileSync('ffmpeg', [
+    ...['-y', '-loglevel', 'error', '-i', gif, '-filter_complex'],
+    'scale=640:320:flags=lanczos,split[a][b];[a]palettegen=max_colors=64:stats_mode=full[p];[b][p]paletteuse=dither=none:diff_mode=rectangle',
+    ...['-fps_mode', 'vfr', '-loop', '0', join(BRAND, 'github-social-preview.gif')],
+  ]);
   execFileSync('ffmpeg', [
     '-y',
     '-loglevel',

@@ -1,4 +1,4 @@
-<img src="brand/teamtrail-banner.gif" alt="Scout, the voice of Teamtrail, next to the Teamtrail logo and a trail through the mountains." width="100%" />
+<img src="brand/teamtrail-banner.gif" alt="Scout, the voice of Teamtrail, next to the name Teamtrail and a trail through the mountains." width="100%" />
 
 # Teamtrail
 

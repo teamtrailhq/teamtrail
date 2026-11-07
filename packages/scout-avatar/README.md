@@ -119,8 +119,8 @@ npm run capture              # needs Chrome (CHROME=...) and ffmpeg
 `capture` also renders `brand/` at exact sizes:
 
 - `github-org-avatar.png` (1000²)
-- `github-social-preview.png` (1280×640)
-- `teamtrail-banner.gif` (1280×640): the README banner, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
+- `github-social-preview.png` (1280×640) and `github-social-preview.gif` (640×320, animated, under GitHub's 1 MB limit)
+- `teamtrail-banner.gif` (960×480): the README banner, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
 - `og-image-1200x630.png`
 - `x-header-1500x500.png`
 - `wordmark-lockup.png`: the logo lockup, mini Scout beside the wordmark
