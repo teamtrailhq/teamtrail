@@ -1,36 +1,48 @@
 /**
- * Scout's badge in a 200×200 box: a CRT head in a ranger hat and neckerchief, in a circle with layered hills, drawn like
- * the Teamtrail logo. One function returns the SVG markup, so
+ * Scout: the original CRT head drawn smooth on its 32-unit grid, so every part keeps its size: wide shell and chin, big
+ * screen, flat eyes, ear cups and the status light on top, with a cap. One function returns the SVG markup, so
  * <ScoutAvatar> and mountScout draw exactly the same thing.
  */
 import type { Eye, Light, Mouth } from './types';
 
 export interface BadgeColors {
   ink: string;
+  shellLight: string;
   shell: string;
-  edge: string;
+  shellShade: string;
+  frame: string;
   glass: string;
+  scan: string;
   glow: string;
-  hat: string;
+  glowLight: string;
+  cup: string;
+  cupLight: string;
+  cupDark: string;
   band: string;
-  kerchief: string;
-  sky: string;
-  mid: string;
-  low: string;
+  hat: string;
+  visor: string;
+  panel: string;
+  button: string;
 }
 
-const SCOUT: BadgeColors = {
+export const SCOUT_COLORS: BadgeColors = {
   ink: '#16302a',
+  shellLight: '#f6f1e2',
   shell: '#eae3cf',
-  edge: '#c8bea2',
-  glass: '#16302a',
-  glow: '#b4e8c0',
+  shellShade: '#c8bea2',
+  frame: '#b4aa8f',
+  glass: '#14241f',
+  scan: '#18302a',
+  glow: '#6fbf8f',
+  glowLight: '#b4e8c0',
+  cup: '#b9562a',
+  cupLight: '#d67a45',
+  cupDark: '#8a3d1d',
+  band: '#8f9690',
   hat: '#8a5a38',
-  band: '#e6dcc0',
-  kerchief: '#c8581e',
-  sky: '#d9e4d2',
-  mid: '#7fa888',
-  low: '#3f6b45',
+  visor: '#6b4630',
+  panel: '#e6dcc0',
+  button: '#c8581e',
 };
 
 export interface BadgeLamp {
@@ -40,7 +52,7 @@ export interface BadgeLamp {
 }
 
 export const LAMP_DAY: BadgeLamp = { on: '#e2711d', dim: '#a8501c', alert: '#ff5a48' };
-/** At night the same Scout's hat lamp burns bright. */
+/** At night the same Scout's lamp burns bright. */
 export const LAMP_NIGHT: BadgeLamp = { on: '#ffd166', dim: '#a8501c', alert: '#ff5a48' };
 
 export interface BadgeFace {
@@ -49,63 +61,80 @@ export interface BadgeFace {
   light?: Light;
 }
 
-const line = (d: string, color: string, width: number) =>
-  `<path d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round"/>`;
+/** A rounded bar: `[x, y, width, height]` on the grid. */
+const bar = ([x, y, w, h]: [number, number, number, number], fill: string, r = 0.35) =>
+  `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill}"/>`;
 
-function eyesMarkup(eyes: Eye, c: string) {
-  if (eyes === 'closed') return line('M80 124h12M108 124h12', c, 5.5);
-  if (eyes === 'aside') return line('M86 124q6-8 12 0M114 124q6-8 12 0', c, 5.5);
-  if (eyes === 'wide')
-    return `<circle cx="86" cy="122" r="6.5" fill="${c}"/><circle cx="114" cy="122" r="6.5" fill="${c}"/>`;
-  return line('M80 124q6-8 12 0M108 124q6-8 12 0', c, 5.5);
+/** One flat eye: three units wide, two tall, brighter on its lower half. */
+function eye(x: number, kind: Eye, c: BadgeColors) {
+  if (kind === 'closed') return bar([x, 17, 3, 1], c.glow);
+  if (kind === 'wide') return bar([x, 15, 3, 3], c.glowLight) + bar([x + 1, 16, 1, 1], c.glass, 0.2);
+  const left = kind === 'aside' ? x + 1 : x;
+  return bar([left, 16, 3, 1.1], c.glow) + bar([left, 17, 3, 1], c.glowLight);
 }
 
-function mouthMarkup(mouth: Mouth, c: string) {
-  if (mouth === 'open') return `<ellipse cx="100" cy="138" rx="7" ry="5" fill="${c}"/>`;
-  if (mouth === 'mid') return line('M92 138h16', c, 5);
-  if (mouth === 'aside') return line('M104 138q7 2 13-2', c, 5);
-  return line('M92 136q8 6 16 0', c, 5);
+function mouthMarkup(mouth: Mouth, c: BadgeColors) {
+  if (mouth === 'open') return bar([13, 20, 6, 1.1], c.glowLight) + bar([15, 21, 2, 1], c.glow);
+  if (mouth === 'mid') return bar([14, 20, 4, 1], c.glowLight);
+  if (mouth === 'aside') return bar([17, 20, 2, 1], c.glow);
+  return bar([15, 20, 2, 1], c.glow);
 }
 
-function headMarkup({ eyes, mouth, light = 'on' }: BadgeFace, lamp: BadgeLamp) {
-  const c = SCOUT;
-  const outline = `stroke="${c.ink}" stroke-width="6.5" stroke-linejoin="round"`;
+const SCANLINES = [13, 15, 17, 19, 21, 23];
+
+/** The small parts: scanlines and a reflection on the glass, buttons and ticks on the chin. */
+function detailMarkup(c: BadgeColors) {
   return [
-    `<path d="M54 94V146A16 16 0 0 0 70 162H130A16 16 0 0 0 146 146V94Z" fill="${c.shell}" stroke="${c.ink}" stroke-width="8" stroke-linejoin="round"/>`,
-    `<path d="M58 142H142V146A12 12 0 0 1 130 158H70A12 12 0 0 1 58 146Z" fill="${c.edge}"/>`,
-    `<rect x="66" y="104" width="68" height="46" rx="8" fill="${c.glass}"/>`,
-    `<path d="M100 170L82 162H118Z" fill="${c.kerchief}" stroke="${c.ink}" stroke-width="5" stroke-linejoin="round"/>`,
-    eyesMarkup(eyes, c.glow),
-    mouthMarkup(mouth, c.glow),
-    `<path d="M70 94L76 56Q90 50 100 44Q110 50 124 56L130 94Z" fill="${c.hat}" ${outline}/>`,
-    `<path d="M71 82H129V94H71Z" fill="${c.band}" stroke="${c.ink}" stroke-width="4"/>`,
-    `<path d="M34 98Q100 82 166 98Q100 114 34 98Z" fill="${c.hat}" ${outline}/>`,
-    `<path d="M100 52l6 9h-3l5 8H92l5-8h-3z" fill="${c.band}"/>`,
-    `<rect x="113" y="83" width="10" height="10" rx="2" fill="${lamp[light]}" stroke="${c.ink}" stroke-width="3"/>`,
+    SCANLINES.map((y) => bar([9.2, y, 13.6, 1], c.scan, 0)).join(''),
+    bar([10, 13, 2, 1], c.frame, 0.2),
+    bar([10, 14, 1, 1], c.frame, 0.2),
+    bar([10, 25.2, 1, 1], c.button, 0.2),
+    bar([11.2, 25.2, 1, 1], c.cupDark, 0.2),
+    [17, 19, 21].map((x) => bar([x, 25.2, 1, 1.6], c.shellLight, 0.2) + bar([x, 25.2, 1, 0.8], c.frame, 0.2)).join(''),
   ].join('');
 }
 
-let clipIds = 0;
+function cup(x: number, c: BadgeColors, line: string) {
+  return [
+    `<rect x="${x}" y="15" width="5.4" height="11" rx="1.7" fill="${c.cup}" ${line}/>`,
+    bar([x + 1, 16, 1.2, 9], c.cupLight, 0.5),
+    bar([x + 3.6, 16, 0.9, 9], c.cupDark, 0.4),
+  ].join('');
+}
 
-/** The full badge. `simple` drops the hills and fine detail for sizes under about 28px. */
+/** Scout in a 200×200 box. `simple` drops the small parts for sizes under about 28px. */
 export function badgeMarkup(
   face: BadgeFace,
-  { lamp = LAMP_DAY, simple = false }: { lamp?: BadgeLamp; simple?: boolean } = {},
+  {
+    lamp = LAMP_DAY,
+    simple = false,
+    colors = SCOUT_COLORS,
+  }: { lamp?: BadgeLamp; simple?: boolean; colors?: BadgeColors } = {},
 ) {
-  const c = SCOUT;
-  const id = `scout-badge-${++clipIds}`;
-  const hills = simple
-    ? ''
-    : `<path d="M0 108Q50 84 100 112T200 100V200H0z" fill="${c.mid}"/><path d="M0 150Q60 128 110 150T200 146V200H0z" fill="${c.low}"/>` +
-      `<path d="M0 108Q50 84 100 112T200 100M0 150Q60 128 110 150T200 146" fill="none" stroke="${c.ink}" stroke-width="8"/>`;
-  const place = simple
-    ? 'translate(100 94) scale(1.28) translate(-100 -108)'
-    : 'translate(100 100) scale(1.12) translate(-100 -108)';
+  const c = colors;
+  const eyes = simple ? 'open' : face.eyes;
+  const mouth = simple ? 'rest' : face.mouth;
+  const line = `stroke="${c.ink}" stroke-width=".9" stroke-linejoin="round"`;
   return [
-    '<circle cx="100" cy="100" r="99" fill="var(--tt-keyline, transparent)"/>',
-    `<clipPath id="${id}"><circle cx="100" cy="100" r="88"/></clipPath>`,
-    `<g clip-path="url(#${id})"><rect width="200" height="200" fill="${simple ? c.mid : c.sky}"/>${hills}</g>`,
-    `<g transform="${place}">${headMarkup(simple ? { eyes: 'wide', mouth: 'rest', light: face.light } : face, lamp)}</g>`,
-    `<circle cx="100" cy="100" r="88" fill="none" stroke="${c.ink}" stroke-width="${simple ? 16 : 12}"/>`,
+    '<g transform="scale(6.25)">',
+    `<path d="M3 16.5Q3 6 16 5.5Q29 6 29 16.5" fill="none" stroke="${c.ink}" stroke-width="3"/>`,
+    `<path d="M3 16.5Q3 6 16 5.5Q29 6 29 16.5" fill="none" stroke="${c.band}" stroke-width="1.5"/>`,
+    cup(0.6, c, line),
+    cup(26, c, line),
+    `<path d="M8 9H24Q26 9 26 11V25L23.5 28.5H8.5L6 25V11Q6 9 8 9Z" fill="${c.shell}" ${line}/>`,
+    `<path d="M6.5 25H25.5L23.3 28H8.7Z" fill="${c.shellShade}"/>`,
+    bar([6.6, 10, 1.6, 15], c.shellLight, 0.6),
+    bar([8.4, 11, 15.2, 13.6], c.frame, 1.3),
+    bar([9, 11.6, 14, 12.4], c.glass, 1),
+    simple ? '' : detailMarkup(c),
+    eye(11, eyes, c),
+    eye(18, eyes, c),
+    mouthMarkup(mouth, c),
+    `<path d="M6.5 10.5Q5.8 3.5 16 3.100Q26.2 3.5 25.5 10.5Z" fill="${c.hat}" ${line}/>`,
+    `<path d="M10.5 9.5Q10.3 4.9 16 4.5Q21.7 4.9 21.5 9.5Z" fill="${c.panel}" stroke="${c.ink}" stroke-width=".5"/>`,
+    simple ? '' : `<path d="M16 5.400l1.2 1.7h-.6l1 1.5h-3.2l1-1.5h-.6z" fill="${c.hat}"/>`,
+    `<path d="M6.3 9.8Q16 7.9 25.7 9.8Q27.2 12 25 12.600Q16 10.9 7 12.600Q4.8 12 6.3 9.8Z" fill="${c.visor}" ${line}/>`,
+    `<circle cx="16" cy="2.600" r="1.3" fill="${lamp[face.light ?? 'on']}" stroke="${c.ink}" stroke-width=".7"/>`,
+    '</g>',
   ].join('');
 }

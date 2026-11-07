@@ -2,18 +2,18 @@
 
 Two marks, one drawing style:
 
-- **The Teamtrail logo** (`src/logo/`): a CRT screen with a sapling growing from it, in a circle with layered hills. Nav, favicon, npm, GitHub and social images use it.
-- **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. A CRT head in a ranger hat and neckerchief, in a circle with layered hills. Guides are symbol badges in the same circle (`guideArt.ts`): magnifier, check, shield, book, compass, and a grey plus for Community.
+- **The Teamtrail logo** (`src/logo/`): a lowercase t whose stem curves into a path that runs to a connection node, on a dark tile. Favicons use it without the tile. Nav, favicon, npm, GitHub and social images use it.
+- **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. A CRT head with ear cups and a baseball cap, drawn smooth to the proportions of the original sprite, with no frame around it. Guides are symbol badges in a circle (`guideArt.ts`): magnifier, check, shield, book, compass, and a grey plus for Community.
 
 `ScoutAvatar` and `mountScout` draw the same badge from `badgeArt.ts`.
 
-- **Renderings:** `crt` (day) and `night` (the hat lamp burns bright).
-- **Small sizes:** `xs` and anything under about 28px use the simple drawing, without the hills and fine detail.
+- **Renderings:** `crt` (day) and `night` (the cap lamp burns bright).
+- **Small sizes:** `xs` and anything under about 28px use the simple drawing, without the fine detail.
 - **States:**
-  - `idle`: smiling eyes and mouth, with the hat lamp on. Blinks every ~5.6s.
+  - `idle`: flat bar eyes and a small mouth, with the cap lamp on. Blinks every ~5.6s.
   - `speaking`: the mouth follows the text, and a waveform shows only while Scout talks.
-  - `thinking`: the eyes and mouth shift aside, and the hat lamp pulses.
-  - `alert`: wide eyes and a red hat lamp.
+  - `thinking`: the eyes and mouth shift aside, and the cap lamp pulses.
+  - `alert`: wide eyes and a red cap lamp.
 
 ## Files
 
@@ -119,8 +119,8 @@ npm run capture              # needs Chrome (CHROME=...) and ffmpeg
 `capture` also renders `brand/` at exact sizes:
 
 - `github-org-avatar.png` (1000²)
-- `github-social-preview.png` (1280×640)
-- `teamtrail-banner.gif` (1280×640): the README banner, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
+- `github-social-preview.png` (1280×640) and `github-social-preview.gif` (640×320, animated, under GitHub's 1 MB limit)
+- `teamtrail-banner.gif` (960×480): the README banner, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
 - `og-image-1200x630.png`
 - `x-header-1500x500.png`
 - `wordmark-lockup.png`: the logo lockup, mini Scout beside the wordmark

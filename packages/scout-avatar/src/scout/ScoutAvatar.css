@@ -34,7 +34,6 @@
 .scout-bare.scout-alert .scout-sprite {
   outline: 1px solid var(--scout-warn);
   outline-offset: 1px;
-  border-radius: 50%;
 }
 
 /* ---------- Panel ---------- */

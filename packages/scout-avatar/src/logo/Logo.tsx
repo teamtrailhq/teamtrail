@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { logoMarkup } from './logoMark';
+import { logoBareMarkup, logoMarkup } from './logoMark';
 
-/** The Teamtrail logo mark. Sizes at 32px and below use the simple drawing. */
-export function Logo({ size = 40, className }: { size?: number; className?: string }) {
-  const html = useMemo(() => logoMarkup({ simple: size <= 32 }), [size]);
+/** The Teamtrail logo mark; `bare` drops the tile, for favicons. */
+export function Logo({ size = 40, bare, className }: { size?: number; bare?: boolean; className?: string }) {
+  const html = useMemo(() => (bare ? logoBareMarkup() : logoMarkup()), [bare]);
   return (
     <svg
       className={className}

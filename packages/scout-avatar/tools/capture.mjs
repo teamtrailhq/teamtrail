@@ -58,6 +58,8 @@ for (const [file, , w, h, view, extra] of KIT) {
   await page.goto(`${base}?view=${view}${extra}${view === 'banner' || view === 'lockup' ? wm : ''}`);
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(200);
+  if (view === 'favicon')
+    await page.addStyleTag({ content: 'html, body, #root { background: transparent !important; }' });
   await page
     .locator(`[data-capture="${view}"]`)
     .screenshot({ path: join(BRAND, file), omitBackground: view === 'favicon' });
@@ -178,6 +180,12 @@ for (const [file, , w, h, view, extra] of KIT) {
     '-loop',
     '0',
     gif,
+  ]);
+  // GitHub's social preview takes a GIF under 1 MB; 640×320 is the smallest size it recommends.
+  execFileSync('ffmpeg', [
+    ...['-y', '-loglevel', 'error', '-i', gif, '-filter_complex'],
+    'scale=640:320:flags=lanczos,split[a][b];[a]palettegen=max_colors=64:stats_mode=full[p];[b][p]paletteuse=dither=none:diff_mode=rectangle',
+    ...['-fps_mode', 'vfr', '-loop', '0', join(BRAND, 'github-social-preview.gif')],
   ]);
   execFileSync('ffmpeg', [
     '-y',

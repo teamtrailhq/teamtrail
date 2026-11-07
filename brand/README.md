@@ -5,7 +5,8 @@ The Teamtrail logo, wordmark and Scout's badge, rendered at exact sizes. Source 
 | File                              | Size      | Use it for                                                                                                                                      |
 | --------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `github-org-avatar.png`           | 1000×1000 | GitHub organization avatar                                                                                                                      |
-| `github-social-preview.png`       | 1280×640  | GitHub repository social preview (Settings → Social preview)                                                                                    |
+| `github-social-preview.gif` | 640×320 | Animated GitHub repository social preview, under GitHub's 1 MB limit (Settings → Social preview). Sites that don't play GIFs show its first frame |
+| `github-social-preview.png`       | 1280×640  | Still version of the GitHub social preview                                                                                    |
 | `teamtrail-banner.gif`            | 960×480   | Animated README banner: Scout loops watching → thinking → talking → needs you, beside the wordmark and the trail (still platforms use the PNGs) |
 | `og-image-1200x630.png`           | 1200×630  | Open Graph / Twitter card image for teamtrail.app and link previews                                                                              |
 | `x-avatar-400.png`                | 400×400   | X (Twitter) profile picture                                                                                                                     |

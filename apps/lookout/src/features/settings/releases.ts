@@ -22,7 +22,7 @@ export const NEXT: { area: string; items: string[] }[] = [
       'A new day and night look, starting in night, with an Appearance setting to switch to day or follow your system',
       'The map is now a landscape: tickets are trail signs, the trail shows what is walked and what is ahead, and an X marks the destination',
       'A new greeting when you start `teamtrail` in a terminal',
-      'A new logo, a screen with a sapling growing from it, and a new look for Scout: a CRT head in a ranger hat, in a circle with hills, with a lamp on the hat at night. No more pixel art, and new fonts too',
+      'A new logo, a t whose stem runs along a trail to a node, and a new look for Scout: the original CRT head with ear cups and a baseball cap, with a lamp on the cap at night. No more pixel art, and new fonts too',
     ],
   },
   { area: 'Every repo', items: ['All your projects in one view, with one list of what needs you across them'] },
