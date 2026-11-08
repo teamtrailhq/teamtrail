@@ -58,7 +58,7 @@ export function installRole(input: {
     requiresChecks: role.requiresChecks,
   };
   lock.roles[role.id] = entry;
-  writeRoleLock(input.root, lock);
+  writeRoleLock(input.root, lock, role.id);
   return { role, entry, pendingChecks: pendingChecks(role, entry), updated: !!prev };
 }
 

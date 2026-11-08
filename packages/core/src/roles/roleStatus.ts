@@ -2,6 +2,9 @@ import type { InstalledRole, RoleDoc, RoleLockEntry } from '../model/role';
 import { checkSha, roleSha } from './roleHash';
 import { lintRole } from './roleLint';
 
+export const LOCK_CHANGED =
+  'roles.lock.json changed outside Teamtrail (by an agent, or pulled with git); waiting for your approval';
+
 /** Proposed checks of `role` the lock has no approval for at their current argv. */
 export const pendingChecks = (role: RoleDoc, lock?: RoleLockEntry) =>
   Object.entries(role.proposedChecks)
@@ -19,6 +22,8 @@ export function roleStatus(file: {
   text: string;
   lock?: RoleLockEntry;
   overridesBuiltin?: boolean;
+  /** Its roles.lock.json entry differs from what the trail lead approved here; `lock` is then the approved one. */
+  lockChanged?: boolean;
 }): InstalledRole {
   const lint = lintRole(file.text);
   const sha256 = roleSha(file.text);
@@ -41,6 +46,7 @@ export function roleStatus(file: {
       reason: `its id "${lint.role?.id}" doesn't match the file name ${file.id}.md`,
     };
   if (file.origin === 'builtin') return { ...base, status: 'active' };
+  if (file.lockChanged) return { ...base, status: 'tampered', reason: LOCK_CHANGED };
   if (!file.lock) return { ...base, status: 'unapproved', reason: 'not approved by the trail lead yet' };
   if (file.lock.sha256 !== sha256)
     return { ...base, status: 'tampered', reason: `changed since version ${file.lock.version} was approved` };

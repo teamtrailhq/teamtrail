@@ -5,6 +5,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
+import { buildAttention } from '../src/attention/buildAttention';
 import { journalFile } from '../src/history/journalFile';
 import { ROLES_JOURNAL } from '../src/model/lifecycle';
 import { setTicketRole } from '../src/planning/lifecycle/setTicketRole';
@@ -18,6 +19,7 @@ import { removeRole } from '../src/roles/removeRole';
 import { effectiveChecks, resolveRole } from '../src/roles/resolveRole';
 import { parseRole } from '../src/roles/roleFile';
 import { lintRole } from '../src/roles/roleLint';
+import { roleSha } from '../src/roles/roleHash';
 import { readRoleLock } from '../src/roles/roleLock';
 import { listRoles, roleFilePath } from '../src/roles/roleStore';
 import { readVerificationConfig } from '../src/verification/configFile';
@@ -42,6 +44,16 @@ const A11Y = roleText({
     '    timeoutSec: 300',
   ].join('\n'),
 });
+const EMPTY_INPUT = {
+  snaps: [],
+  questions: [],
+  sessions: [],
+  approvals: [],
+  syncs: [],
+  leases: [],
+  knowledge: [],
+  briefs: [],
+};
 const findingAt = (text: string, rule: string) => lintRole(text).findings.find((f) => f.rule === rule);
 
 test('the built-in roles parse, pass the lint and are active without a lockfile', () => {
@@ -274,4 +286,39 @@ test('role changes go to the journal; older readers still see only transitions a
     j.readRoles(ROLES_JOURNAL).map((e) => e.role),
     ['a11y'],
   );
+});
+
+test('an agent that edits a role and re-pins it in roles.lock.json is caught until the trail lead approves again', () => {
+  const root = tmpRoot();
+  installRole({ root, text: A11Y, source: 'local', by: 'trail lead' });
+  const relaxed = A11Y.replace('requiresChecks: [a11y]', 'requiresChecks: []').replace('1.0.0', '1.0.1');
+  writeFileSync(roleFilePath(root, 'a11y'), relaxed);
+  const lockFile = path.join(root, 'roles.lock.json');
+  const lock = JSON.parse(readFileSync(lockFile, 'utf8'));
+  lock.roles.a11y = { ...lock.roles.a11y, version: '1.0.1', sha256: roleSha(relaxed), requiresChecks: [] };
+  writeFileSync(lockFile, JSON.stringify(lock, null, 2));
+
+  const caught = listRoles(root).find((r) => r.id === 'a11y')!;
+  assert.equal(caught.status, 'tampered');
+  assert.match(caught.reason!, /roles\.lock\.json changed outside Teamtrail/);
+  const resolved = resolveRole(listRoles(root), { role: 'a11y' });
+  assert.equal(resolved.kind, 'disabled');
+  assert.deepEqual(effectiveChecks([], resolved), ['a11y'], 'the approved required check still applies');
+  const queue = buildAttention({ ...EMPTY_INPUT, roles: listRoles(root).filter((r) => r.origin === 'local'), now: 1 });
+  assert.deepEqual(
+    queue.items.map((i) => [i.kind, i.ref]),
+    [['role', 'a11y']],
+  );
+
+  // a new entry for a hand-dropped file is caught the same way
+  writeFileSync(roleFilePath(root, 'perf'), roleText({ id: 'perf' }));
+  lock.roles.perf = { ...lock.roles.a11y, version: '1.0.0', sha256: roleSha(roleText({ id: 'perf' })) };
+  writeFileSync(lockFile, JSON.stringify(lock, null, 2));
+  assert.equal(listRoles(root).find((r) => r.id === 'perf')!.status, 'tampered');
+
+  approveRole({ root, id: 'a11y', by: 'trail lead' });
+  const back = listRoles(root).find((r) => r.id === 'a11y')!;
+  assert.equal(back.status, 'active', 're-approval clears it');
+  assert.deepEqual(back.role?.requiresChecks, []);
+  assert.equal(listRoles(root).find((r) => r.id === 'perf')!.status, 'tampered', 'other roles stay caught');
 });

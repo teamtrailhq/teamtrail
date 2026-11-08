@@ -24,6 +24,6 @@ export function removeRole(input: { root: string; id: string }) {
     throw new OperationError(`role ${input.id} ${why}`);
   }
   delete lock.roles[input.id];
-  writeRoleLock(input.root, lock);
+  writeRoleLock(input.root, lock, input.id);
   return { removed: input.id, builtinBack: input.id in BUILTIN_ROLES };
 }

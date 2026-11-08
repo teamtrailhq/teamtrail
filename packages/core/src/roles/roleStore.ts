@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROLES_DIR, type InstalledRole } from '../model/role';
 import { BUILTIN_ROLES } from './builtin/builtinRoles';
+import { lockChangedFor, readApprovedLock } from './approvedLock';
 import { readRoleLock } from './roleLock';
 import { missingRole, roleStatus } from './roleStatus';
 
@@ -23,17 +24,21 @@ export function readRoleFiles(root: string): { id: string; text: string }[] {
  */
 export function listRoles(root: string): InstalledRole[] {
   const lock = readRoleLock(root);
+  const approved = readApprovedLock(root);
   const files = readRoleFiles(root);
   const local = new Set(files.map((f) => f.id));
   const builtins = Object.entries(BUILTIN_ROLES)
     .filter(([id]) => !local.has(id))
     .map(([id, text]) => roleStatus({ id, origin: 'builtin', text }));
-  const installed = files.map((f) =>
-    roleStatus({ ...f, origin: 'local', lock: lock.roles[f.id], overridesBuiltin: f.id in BUILTIN_ROLES }),
-  );
-  const gone = Object.entries(lock.roles)
+  const installed = files.map((f) => {
+    const lockChanged = lockChangedFor(lock, approved, f.id);
+    // a changed entry can't be trusted: the approved one's required checks keep applying
+    const entry = lockChanged ? approved.roles[f.id] : lock.roles[f.id];
+    return roleStatus({ ...f, origin: 'local', lock: entry, lockChanged, overridesBuiltin: f.id in BUILTIN_ROLES });
+  });
+  const gone = Object.entries({ ...approved.roles, ...lock.roles })
     .filter(([id]) => !local.has(id) && !(id in BUILTIN_ROLES))
-    .map(([id, e]) => missingRole(id, e));
+    .map(([id]) => missingRole(id, approved.roles[id] ?? lock.roles[id]));
   return [...builtins, ...installed, ...gone].sort((a, b) => a.id.localeCompare(b.id));
 }
 

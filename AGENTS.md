@@ -54,7 +54,7 @@ The landing site lives in its own repo, `teamtrailhq/teamtrail-landing`.
 - `.agents/workspaces/<map>--<ticket>.json` and `.agents/integration.json`: the worktree prepared for each claim (checks and git evidence for that ticket run in it), and the latest check of active claim branches that changed the same files. The files an agent said it would change (`touches`) live on its lease. Local only.
 - `.reroutes/<mapId>/R-<n>.json`: reroute proposals (typed changes, status, what was applied). A pending one freezes the tickets it touches; only the trail lead approves or rejects. Local only, git-ignored.
 - `.evidence/`: verification attempts, check output and git evidence per ticket, and the latest checklist answers (`checklist.json`).
-- `.agents/`: cross-process coordination between MCP processes and the Lookout, including sessions, answers, leases, trail names and the server lock.
+- `.agents/`: cross-process coordination between MCP processes and the Lookout, including sessions, answers, leases, trail names and the server lock, and `roles-approved.json`: the role lock entries the trail lead approved on this machine; an entry of `roles.lock.json` that differs (an agent edited it, or a teammate's change came with git) disables that role until approved again.
 
 GitHub Issues and Linear store the map and tickets in the tracker instead (`packages/core/src/adapters/remote/`), with the same body format. The local folders above are still used for the journal, evidence and agents.
 

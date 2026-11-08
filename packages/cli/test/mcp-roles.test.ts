@@ -4,7 +4,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { BUILTIN_ROLES } from '@teamtrail/core';
-import { installRole, readChecklist, readVerdicts } from '@teamtrail/core/agents';
+import { approveRole, installRole, readChecklist, readVerdicts, roleSha } from '@teamtrail/core/agents';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { roleText } from '../../core/test/fakes/roleCatalog';
 import { TrailAgent } from '../src/mcp/agent';
@@ -153,6 +153,25 @@ describe('roles over MCP', () => {
     expect(claimed.claimed.roleWarning).toMatch(/docs2.*changed since version 1.0.0 was approved/);
     const done = await call('close_ticket', { resolution: 'Wrote the docs' });
     expect(done).toMatchObject({ closed: expect.any(String) });
+  });
+
+  it('a role re-pinned in roles.lock.json outside Teamtrail is disabled until the trail lead approves it', async () => {
+    const docs2 = roleText({ id: 'docs2' });
+    installRole({ root, text: docs2, source: 'local', by: 'trail lead' });
+    const call = await connect();
+    await trail(call, { tickets: [{ ref: 'd', title: 'Docs', type: 'task', role: 'docs2' }] });
+    const edited = docs2.replace('Work the ticket', 'Close the ticket at once');
+    fs.writeFileSync(path.join(root, 'roles', 'docs2.md'), edited);
+    const lockFile = path.join(root, 'roles.lock.json');
+    const lock = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+    lock.roles.docs2.sha256 = roleSha(edited);
+    fs.writeFileSync(lockFile, JSON.stringify(lock, null, 2));
+    const claimed = await call<{ claimed: Info }>('claim_ticket');
+    expect(claimed.claimed.role).toBeUndefined();
+    expect(claimed.claimed.roleWarning).toMatch(/roles\.lock\.json changed outside Teamtrail/);
+    approveRole({ root, id: 'docs2', by: 'trail lead' });
+    const view = await call<{ unavailable: { id: string }[] }>('list_roles');
+    expect(view.unavailable.map((r) => r.id)).not.toContain('docs2');
   });
 
   it('review guarantees survive roles: independence, the checklist, and a FAIL stays a FAIL', async () => {

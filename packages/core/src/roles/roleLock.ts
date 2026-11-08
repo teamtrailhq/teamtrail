@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
 import { ROLES_LOCK_FILE, type RoleLock, type RoleLockEntry } from '../model/role';
+import { readApprovedLock, writeApprovedLock } from './approvedLock';
 
 export const roleLockPath = (root: string) => path.join(root, ROLES_LOCK_FILE);
 
@@ -17,8 +18,17 @@ export function readRoleLock(root: string): RoleLock {
   return { v: 1, roles };
 }
 
-/** Writes the lock with roles in id order, so diffs stay small. */
-export function writeRoleLock(root: string, lock: RoleLock) {
+/**
+ * Writes the lock with roles in id order, so diffs stay small. Only the trail lead's actions call this, for the role
+ * `approvedId` they act on: that entry is recorded as approved on this machine (approvedLock.ts). Other entries keep
+ * whatever approval they had, so approving one role never vouches for another's changed entry.
+ */
+export function writeRoleLock(root: string, lock: RoleLock, approvedId: string) {
   const roles = Object.fromEntries(Object.entries(lock.roles).sort(([a], [b]) => a.localeCompare(b)));
   writeJsonAtomic(roleLockPath(root), { v: 1, roles });
+  const approved = readApprovedLock(root);
+  const entry = readRoleLock(root).roles[approvedId];
+  if (entry) approved.roles[approvedId] = entry;
+  else delete approved.roles[approvedId];
+  writeApprovedLock(root, approved);
 }

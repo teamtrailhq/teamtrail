@@ -63,6 +63,6 @@ export function approveCheck(input: { root: string; id: string; name: string }) 
   if (errors.length) throw new OperationError(`${VERIFICATION_FILE} would be invalid: ${errors.join('; ')}`);
   writeFileSync(file, text);
   lock.roles[input.id].approvedChecks[input.name] = checkSha(proposed);
-  writeRoleLock(input.root, lock);
+  writeRoleLock(input.root, lock, input.id);
   return { check: input.name, run: proposed.run, version: r.role.version };
 }
