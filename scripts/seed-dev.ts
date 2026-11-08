@@ -16,6 +16,7 @@ import {
 import { writeBrief, writeKnowledge, writeTicketCriteria } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { seedHistory } from './seedHistory';
+import { seedModels } from './seedModels';
 import { seedParallel } from './seedParallel';
 import { seedSupervision } from './seedSupervision';
 
@@ -234,7 +235,10 @@ await seedSupervision({ root, adapter, main, second, mainBrief, now });
 // 7. Safe parallel work: the worktree setting and two claims whose declared files overlap.
 await seedParallel({ root, adapter, main, now });
 
-// 8. A finished trail with two vendors' work on it, for Trail stats.
+// 8. Model matching: on for the main trail, a project model table, and two agents on different models.
+await seedModels({ root, adapter, main, now });
+
+// 9. A finished trail with two vendors' work on it, for Trail stats.
 const history = await seedHistory({ root, adapter, now });
 
 console.log(`seeded ${root}`);
@@ -246,6 +250,9 @@ console.log(
 );
 console.log(
   '  workspaces.json (worktrees off), two claims whose declared files overlap (#5 and the sync status ticket)',
+);
+console.log(
+  '  model matching on #1, models.json, codex-01 (fast) and claude-05 (balanced) connected; a junction waits for a strongest model',
 );
 console.log(`  ${history.key} ${history.title} · finished, with results from two vendors for Trail stats`);
 console.log('Live agents: npm run dev:agent (needs npm run build -w teamtrail once).');

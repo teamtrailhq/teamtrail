@@ -3,6 +3,7 @@ import {
   claim,
   type MapMode,
   type MapSnapshot,
+  type ModelMatching,
   promoteToTicket,
   recordDecision,
   release,
@@ -10,6 +11,7 @@ import {
   ruleOutOfScope,
   type ScopeTarget,
   setMapMode,
+  setModelMatching,
   supersedeDecision,
   type TicketType,
 } from '@teamtrail/core';
@@ -97,5 +99,10 @@ export function createActions({ rt, guard, setMapId, mapIdRef, snapRef, setChatS
         setSelection(null);
       }),
     setMode: (mode: MapMode) => guard(`Trail mode · ${mode}`, () => setMapMode(rt.adapter, mapIdRef.current!, mode)),
+    /** Model matching on this trail; applies from the next claim. */
+    setModelMatching: (value: ModelMatching) =>
+      guard(`Model matching · ${value.enabled ? 'on' : 'off'}`, () =>
+        setModelMatching(rt.adapter, mapIdRef.current!, value, 'trail lead'),
+      ),
   };
 }

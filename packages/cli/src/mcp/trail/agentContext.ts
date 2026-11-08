@@ -135,6 +135,7 @@ export class AgentContext {
     const agent = await this.agentId();
     const s = this.sessions.start(agent, mode, mapId, ticketId);
     this.sessionIds.push(s.id);
+    stampModel(this);
     return s;
   }
 

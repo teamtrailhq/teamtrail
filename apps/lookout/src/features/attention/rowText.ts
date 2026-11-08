@@ -3,7 +3,7 @@ import type { EdgeTone, MetaPart } from '../../components/ui';
 import { KIND_LABEL } from './attentionLabels';
 
 /** Kinds where work is held up or at risk: an amber edge unless the item needs you now (red). */
-const AT_RISK: AttentionKind[] = ['blocked', 'flag', 'stalled', 'policy', 'reroute', 'overlap', 'integration'];
+const AT_RISK: AttentionKind[] = ['blocked', 'flag', 'stalled', 'policy', 'reroute', 'overlap', 'integration', 'model'];
 
 /** Red when it needs you now (interrupting or blocking), amber when work is held up or at risk, neutral otherwise. */
 export function edgeFor(item: AttentionItem, interrupting: boolean): EdgeTone {

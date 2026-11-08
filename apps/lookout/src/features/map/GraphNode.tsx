@@ -1,6 +1,15 @@
-import { attention, type DiffMark, type LaidOutNode, NODE_H, NODE_W, type SessionInfo } from '@teamtrail/core';
+import {
+  attention,
+  type DiffMark,
+  type LaidOutNode,
+  type ModelTier,
+  NODE_H,
+  NODE_W,
+  type SessionInfo,
+} from '@teamtrail/core';
 import { type Selection, STATE_LABEL } from '../../lib';
 import { SIGN_TIP } from './edgePath';
+import { ModelWaitTag } from './ModelWaitTag';
 import { RerouteMarks } from './RerouteMarks';
 import { wrap } from './wrap';
 
@@ -20,6 +29,7 @@ export function GraphNode({
   onSelect,
   mark,
   frozen,
+  needs,
 }: {
   n: LaidOutNode;
   session?: SessionInfo;
@@ -33,6 +43,8 @@ export function GraphNode({
   mark?: DiffMark;
   /** Frozen by a pending reroute: it can't be claimed until the trail lead decides. */
   frozen?: boolean;
+  /** Model matching: ready, but waiting for a stronger model than any connected agent runs. */
+  needs?: ModelTier;
 }) {
   const t = n.ticket;
   const lines = wrap(t.title, 29);
@@ -80,6 +92,7 @@ export function GraphNode({
           {s.agent} · step {s.step}/{s.total} · {s.stepLabel.toLowerCase()}
         </text>
       )}
+      <ModelWaitTag n={n} needs={needs} live={!!s} />
     </g>
   );
 }

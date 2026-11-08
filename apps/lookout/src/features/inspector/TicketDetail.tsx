@@ -5,6 +5,7 @@ import { type LookoutApi } from '../../hooks';
 import { TRAIL_LEAD, heldLeases, isRunning } from '../../lib';
 import { CriteriaSection } from '../criteria';
 import { KnowledgePreview, PromoteButton } from '../knowledge';
+import { ModelWaitNote } from '../models';
 import { PrFlagBadges } from '../pr-sync';
 import { VerificationPanel } from '../verification';
 import { TicketWorkspace } from '../workspaces';
@@ -44,6 +45,7 @@ export function TicketDetail(props: {
   return (
     <div className="detail">
       <TicketFacts t={t} state={state} tickets={snap.tickets} />
+      <ModelWaitNote mapId={snap.map.id} ticketId={t.id} />
 
       <PrFlagBadges mapId={snap.map.id} ticketId={t.id} />
       <CriteriaSection snap={snap} t={t} />
