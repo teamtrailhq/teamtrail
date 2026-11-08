@@ -1,8 +1,9 @@
-import { BRAND, type TicketCriteria } from '@teamtrail/core';
+import { type TicketCriteria } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
+import { apiBase } from '../../lib/apiBase';
 import { onTrackerChange } from '../../lib/trackerChanges';
 
-const api = `${BRAND.apiPrefix}/criteria`;
+const api = `${apiBase()}/criteria`;
 
 /** A trail's acceptance criteria (`/criteria`), live: refetched when a `criteria/` file changes. */
 export function useCriteria(mapId?: string) {

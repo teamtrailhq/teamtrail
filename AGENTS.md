@@ -26,11 +26,11 @@ npm workspaces monorepo. Node 20+, TypeScript, ESM.
 | Path | What it is |
 | --- | --- |
 | `packages/core` | The engine, UI-free: the trail model, tracker adapters, planning and lifecycle, verification, evidence, agent coordination and the HTTP bridge. Zero runtime dependencies. Entry points in `packages/core/package.json` `exports`: `.` (`src/index.ts`), `./node`, `./bridge`, `./agents`. |
-| `packages/cli` | The `teamtrail` command, published as `teamtrail` (bin `teamtrail`). It serves the Lookout and the bridge (`src/serve/`), runs the MCP server (`src/mcp/`), connects agents (`src/connect.ts`), greets people in the terminal (`src/greeting.ts`) and meters usage (`src/usage/`). Built into one bundle by `packages/cli/build.mjs`. |
+| `packages/cli` | The `teamtrail` command, published as `teamtrail` (bin `teamtrail`). It serves the Lookout and the bridge (`src/serve/`), runs the MCP server (`src/mcp/`), connects agents (`src/connect.ts`), manages the projects registry (`src/projects.ts`), greets people in the terminal (`src/greeting.ts`) and meters usage (`src/usage/`). Built into one bundle by `packages/cli/build.mjs`. |
 | `apps/lookout` | The React + Vite web UI, bundled into the CLI. |
 | `packages/connector-slack` | The optional Slack connector: questions, approvals and briefings in Slack. |
 | `packages/scout-avatar` | The Teamtrail logo (`src/logo/`) and Scout's badge (`src/scout/badgeArt.ts`): a React component and a framework-free renderer (`mountScout`). |
-| `scripts` | Dev tooling: the seed (`scripts/seed-dev.ts`, with M4's policy, assumptions and proposals in `scripts/seedSupervision.ts` M3's worktree setting and overlapping claims in `scripts/seedParallel.ts`, and a finished trail for Trail stats in `scripts/seedHistory.ts`), scripted MCP dev agents (`scripts/dev-agent.mjs`), the end-to-end check (`scripts/verify-mcp.mjs`, M4 steps in `scripts/verifySupervision.mjs`, M3 steps on a scratch git repo in `scripts/verifyParallel.mjs`) and the local npm registry (`scripts/registry-local.mjs`). |
+| `scripts` | Dev tooling: the seed (`scripts/seed-dev.ts`, with M4's policy, assumptions and proposals in `scripts/seedSupervision.ts` M3's worktree setting and overlapping claims in `scripts/seedParallel.ts`, a finished trail for Trail stats in `scripts/seedHistory.ts`, and a second project in a dev-only registry in `scripts/seedProjects.ts`), scripted MCP dev agents (`scripts/dev-agent.mjs`), the end-to-end check (`scripts/verify-mcp.mjs`, M4 steps in `scripts/verifySupervision.mjs`, M3 steps on a scratch git repo in `scripts/verifyParallel.mjs`, M5's two repos in All projects in `scripts/verifyProjects.mjs`) and the local npm registry (`scripts/registry-local.mjs`). |
 | `.github/workflows` | CI (`ci.yml`, runs `npm run check`) and the manual Release workflow (`release.yml`). |
 
 The landing site lives in its own repo, `teamtrailhq/teamtrail-landing`.
@@ -53,6 +53,10 @@ The landing site lives in its own repo, `teamtrailhq/teamtrail-landing`.
 - `.evidence/`: verification attempts, check output and git evidence per ticket.
 - `.agents/`: cross-process coordination between MCP processes and the Lookout, including sessions, answers, leases, trail names and the server lock.
 
+### Projects registry (the user config dir, never a repo)
+
+- `<config dir>/projects.json` (`$TEAMTRAIL_CONFIG_DIR`, else XDG, else `~/.config/teamtrail`): the repos one Lookout supervises, each with a short id hashed from its tracker folder's real path (`packages/core/src/projects/`, types in `packages/core/src/model/project.ts`). `teamtrail projects add|list|remove` edits it; `teamtrail mcp` and `connect` add their repo on start unless `--no-register`, `$TEAMTRAIL_NO_REGISTER` or the registry's `autoRegister: false`. Nothing new is written inside a repo; a project another live `teamtrail` serves (its `.agents/server.json`) is only read here.
+
 GitHub Issues and Linear store the map and tickets in the tracker instead (`packages/core/src/adapters/remote/`), with the same body format. The local folders above are still used for the journal, evidence and agents.
 
 ### Core modules (`packages/core/src`)
@@ -68,14 +72,15 @@ GitHub Issues and Linear store the map and tickets in the tracker instead (`pack
 - `policy/`: the risk policy: defaults, file parser, store, `riskLevelFor` (the level of a call from its category and paths), `policyViolations` and `decisionsByRisk`.
 - `workspaces/`: safe parallel work: the setting and its parser, `prepareWorktree`, touch-set overlaps (`globsOverlap`, `touchOverlaps`), the integration check (`scanIntegrations`, `findIntegrations`) and the trail lead's integration ticket (`addIntegrationTicket`).
 - `planning/assumptions/` and `planning/reroute/`: trail assumptions (add, seed from the brief, challenge, confirm, settle) and reroute proposals: `validateReroute`, `rerouteDiff` (the dry run), `frozenTickets`, `applyReroute` (idempotent, resumable), the store and `rerouteTriggers` (signs a reroute may be needed).
+- `projects/`: several repos in one Lookout: the registry file and `registerProject`, `projectSummary` (one repo at a glance, from its files only), `mergeAttention` (one queue across repos), `projectBriefing` (the away briefing per repo, via `buildBriefing`), `ProjectBridges` (full bridges started lazily, capped, closed when idle) and `insideRoot` (realpath confinement of file routes).
 - `attention/`: the attention queue. `buildAttention` ranks everything that needs the human (pure, explainable `reasons`), one source per kind in `attention/sources/` registered in `sources/registry.ts`, scoring, batching, the policy and prefs parsers, and `isInterrupting` (focus hours).
 - `activity/`: the activity stream, presence and usage.
-- `server/`: the HTTP bridge (`trackerBridge.ts`), its route handlers (`*Routes.ts`), the `/events` SSE stream and the background loops (`watchLeases.ts`, `watchVerification.ts`, `watchTrackerFolder.ts`, `watchAttention.ts`, `watchIntegration.ts`).
+- `server/`: the HTTP bridge (`trackerBridge.ts`), its route handlers (`*Routes.ts`), the projects hub in front of it (`projectsHub.ts`: `/projects` routes in `projectRoutes.ts`, `/p/<id>/…` forwarded to that project's bridge, the `projects` event from `watchProjects.ts`), the `/events` SSE stream and the background loops (`watchLeases.ts`, `watchVerification.ts`, `watchTrackerFolder.ts`, `watchAttention.ts`, `watchIntegration.ts`).
 
 ### MCP server (`packages/cli/src/mcp`)
 
 - `server.ts` creates the server; `toolKit.ts` defines how tools are declared (zod schemas, results and errors).
-- Tools are grouped in `tools/` (`trailTools.ts`, `ticketTools.ts`, `workTools.ts`, `hitlTools.ts`, `knowledgeTools.ts`, `rerouteTools.ts`). Their behaviour lives in `trail/` (trail ops, ticket ops, HITL, completion, reviews, leases, sessions, the risk check, the attention summary, assumptions and reroutes, and parallel work in `parallel.ts`).
+- Tools are grouped in `tools/` (`trailTools.ts`, `ticketTools.ts`, `workTools.ts`, `hitlTools.ts`, `knowledgeTools.ts`, `rerouteTools.ts`, `projectTools.ts` with the read-only `projects_status`). Their behaviour lives in `trail/` (trail ops, ticket ops, HITL, completion, reviews, leases, sessions, the risk check, the attention summary, assumptions and reroutes, and parallel work in `parallel.ts`).
 - `instructions.ts` holds the server instructions every agent gets. `packages/cli/commands/scout.md` is the `/scout` command for Claude Code (and the Codex prompt).
 
 ### Lookout (`apps/lookout/src`)
@@ -84,6 +89,7 @@ GitHub Issues and Linear store the map and tickets in the tracker instead (`pack
 - `features/<feature>/` holds one folder per zone or dialog (inbox, map, inspector, activity, plan, decisions, briefing, settings, verification, …).
 - Live updates: hooks that refetch when a tracker file changes subscribe through `lib/trackerChanges.ts` (one shared `/events` stream). Don't open a new `EventSource` per hook: browsers allow six connections per host, and requests queue behind open streams.
 - `components/ui/` holds the design-system primitives, `hooks/` app-wide hooks (`useLookout.ts` loads data and subscribes to SSE), `lib/` helpers, and `styles/` the CSS per area (tokens in `styles/design-system.css`).
+- Projects: `lib/apiBase.ts` gives the page's API base (`?project=<id>` → `/__teamtrail/p/<id>`, home keeps the un-prefixed API; switching projects reloads the page). `features/projects/` holds All projects, the header's project switcher, the phone home tab's list and the hooks; Settings → Projects is `features/settings/ProjectsSection.tsx`. With one project nothing of it shows.
 - The in-app changelog is `features/settings/releases.ts`.
 
 ## Conventions

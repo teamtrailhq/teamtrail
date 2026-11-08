@@ -1,4 +1,5 @@
-import { BRAND, type PrSyncStatus, type TicketSync, type VerificationSyncEvent } from '@teamtrail/core';
+import { type PrSyncStatus, type TicketSync, type VerificationSyncEvent } from '@teamtrail/core';
+import { apiBase } from './apiBase';
 
 export interface PrSyncSnapshot {
   /** The server answered at least once; false in a static build, where nothing is shown. */
@@ -22,7 +23,7 @@ function set(next: PrSyncSnapshot) {
 }
 
 function load() {
-  void fetch(`${BRAND.apiPrefix}/verification/sync`)
+  void fetch(`${apiBase()}/verification/sync`)
     .then((r) => (r.ok ? (r.json() as Promise<{ status: PrSyncStatus; tickets: TicketSync[] }>) : Promise.reject()))
     .then(
       (b) =>
@@ -39,7 +40,7 @@ function load() {
 function start() {
   started = true;
   load();
-  const es = new EventSource(`${BRAND.apiPrefix}/events`);
+  const es = new EventSource(`${apiBase()}/events`);
   es.addEventListener('verification', (m) => {
     const e = JSON.parse((m as MessageEvent<string>).data) as VerificationSyncEvent | { kind?: string };
     if (e.kind === 'evidence') for (const l of evidenceListeners) l();

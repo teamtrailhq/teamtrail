@@ -15,6 +15,7 @@ import { ModeChoice } from '../trail';
 import { AttentionSection } from './AttentionSection';
 import { BriefingChoice } from './BriefingChoice';
 import { Changelog } from './Changelog';
+import { ProjectsSection } from './ProjectsSection';
 import { RiskPolicySection } from './RiskPolicySection';
 import { SettingsSection } from './SettingsSection';
 import { SlackSection } from './SlackSection';
@@ -81,6 +82,8 @@ export function SettingsPanel(props: {
             <AttentionSection />
 
             <WorkspacesSection />
+
+            <ProjectsSection />
 
             <SettingsSection title="Labels">
               <div className="label-codes">

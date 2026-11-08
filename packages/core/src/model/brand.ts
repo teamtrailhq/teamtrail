@@ -27,6 +27,8 @@ export const BRAND = {
   apiPrefix: `/__${slug}`,
   /** Env var overriding the markdown data folder. */
   dataDirEnv: `${slug.toUpperCase()}_DIR`,
+  /** Env var that keeps `mcp` and `connect` from adding their repo to the projects registry. */
+  noRegisterEnv: `${slug.toUpperCase()}_NO_REGISTER`,
 } as const;
 
 /** UI preference storage key. */

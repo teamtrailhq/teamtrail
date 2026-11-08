@@ -10,6 +10,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { chromium } from 'playwright-core';
 import { verifyParallel } from './verifyParallel.mjs';
+import { verifyProjects } from './verifyProjects.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -19,6 +20,10 @@ if (!fs.existsSync(cli)) throw new Error('build the CLI first: npm run build -w 
 if (shots) fs.mkdirSync(shots, { recursive: true });
 
 const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-'));
+// Never the user's config dir, and no projects registry for the single-repo steps: they must look exactly as with
+// one repo. verifyProjects.mjs uses its own config dir with auto-registration on.
+process.env.TEAMTRAIL_CONFIG_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-config-'));
+process.env.TEAMTRAIL_NO_REGISTER = '1';
 const log = (...a) => console.log('·', ...a);
 
 // The repo's own check, which passes once fixed.txt exists. With verification.json present, new trails
@@ -454,6 +459,9 @@ const supervisionOk = await verifySupervision({ call, page, shot, log, repo, map
 // Safe parallel work: worktrees, overlapping claims and an integration ticket, on a scratch git repo.
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 
+// Several repos: All projects, the merged queue and answering another repo's agent from it.
+const projectsOk = await verifyProjects({ browser, cli, log, shots });
+
 await client.close();
 await page.waitForTimeout(1500);
 const after = await page.locator('.sessions-list li:not(.claim)').count();
@@ -473,6 +481,7 @@ await browser.close();
 server.kill('SIGTERM');
 if (!process.env.KEEP) fs.rmSync(repo, { recursive: true, force: true });
 else log('kept', repo);
+fs.rmSync(process.env.TEAMTRAIL_CONFIG_DIR, { recursive: true, force: true });
 if (
   errors.length ||
   !spendOk ||
@@ -489,7 +498,8 @@ if (
   !reviewOk ||
   !discoveryOk ||
   !supervisionOk ||
-  !parallelOk
+  !parallelOk ||
+  !projectsOk
 )
   process.exit(1);
 console.log('\nOK');

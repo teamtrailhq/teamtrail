@@ -2,6 +2,8 @@ import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { BRAND } from '@teamtrail/core';
+import { configDir } from '@teamtrail/core/bridge';
+import { autoRegister } from '@teamtrail/core/node';
 import SCOUT_COMMAND from '../commands/scout.md';
 import { writeIfChanged } from './files';
 import { installClaudeHook } from './usage/hook';
@@ -17,8 +19,17 @@ export function serverArgs(dir?: string) {
 }
 
 /** `teamtrail connect claude|codex`: register the MCP server with the agent and install the `/scout` command. */
-export function runConnect(target: ConnectTarget, opts: { cwd: string; dir?: string; print?: (s: string) => void }) {
+export function runConnect(
+  target: ConnectTarget,
+  opts: { cwd: string; dir?: string; noRegister?: boolean; print?: (s: string) => void },
+) {
   const print = opts.print ?? ((s: string) => process.stdout.write(`${s}\n`));
+  const project = autoRegister({
+    configDir: configDir(),
+    root: path.resolve(opts.cwd, opts.dir ?? BRAND.dataDir),
+    optOut: opts.noRegister,
+  });
+  if (project) print(`  Project         ${project.name} · listed in the Lookout's All projects (${project.id})`);
   const args = serverArgs(opts.dir);
   const quoted = ['npx', ...args].join(' ');
   if (target === 'claude') {

@@ -24,6 +24,8 @@ export interface TrackerBridge {
    * Decision routes use the project's active tracker (local markdown, GitHub or Linear).
    */
   handle(req: IncomingMessage, res: ServerResponse): Promise<void>;
+  /** The project's active tracker (local markdown, GitHub or Linear). */
+  active(): Promise<TrackerAdapter>;
   close(): void;
 }
 

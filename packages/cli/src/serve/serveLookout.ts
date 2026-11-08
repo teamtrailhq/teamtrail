@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { slackPlugin } from '@teamtrail/connector-slack/node';
 import { BRAND } from '@teamtrail/core';
 import { writeLookoutLock } from '@teamtrail/core/agents';
-import { createTrackerBridge, type TrackerBridge } from '@teamtrail/core/bridge';
+import { createProjectsHub, createTrackerBridge, type ProjectsHub } from '@teamtrail/core/bridge';
 import { fail } from '../args/help';
 import type { ServeOptions } from '../args/parseArgs';
 import { printGreeting } from '../printGreeting';
@@ -18,12 +18,12 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
   const appDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'app');
   if (!existsSync(path.join(appDir, 'index.html'))) fail(`Lookout bundle missing at ${appDir}; reinstall the package`);
 
-  let bridge: TrackerBridge | undefined;
+  let hub: ProjectsHub | undefined;
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
-    if (bridge && (url.pathname === BRAND.apiPrefix || url.pathname.startsWith(`${BRAND.apiPrefix}/`))) {
+    if (hub && (url.pathname === BRAND.apiPrefix || url.pathname.startsWith(`${BRAND.apiPrefix}/`))) {
       req.url = req.url!.slice(BRAND.apiPrefix.length) || '/';
-      void bridge.handle(req, res);
+      void hub.handle(req, res);
       return;
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -46,7 +46,16 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
   }
   const shownHost = opts.host === '127.0.0.1' || opts.host === '0.0.0.0' ? 'localhost' : opts.host;
   const url = `http://${shownHost}:${port}/`;
-  bridge = createTrackerBridge(path.resolve(process.cwd(), opts.dir), { plugins: [slackPlugin()], url: () => url });
+  const bridge = createTrackerBridge(path.resolve(process.cwd(), opts.dir), {
+    plugins: [slackPlugin()],
+    url: () => url,
+  });
+  // Other registered projects open on first use, at /p/<id>/…; Slack stays with the home project.
+  hub = createProjectsHub({
+    home: bridge,
+    openBridge: (p) => createTrackerBridge(p.root, { url: () => url }),
+    url: () => url,
+  });
   printGreeting();
   process.stdout.write(
     `\n  ${BRAND.name} ${__VERSION__} · ${BRAND.assistant.name} online\n\n` +
@@ -60,7 +69,8 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
 
   const stop = () => {
     unlock();
-    bridge?.close();
+    hub?.close();
+    bridge.close();
     server.close(() => process.exit(0));
     server.closeAllConnections();
   };

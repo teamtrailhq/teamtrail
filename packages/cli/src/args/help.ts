@@ -3,8 +3,9 @@ import { BRAND, DEFAULT_LEASE_MINUTES, LEASE_MINUTES_ENV } from '@teamtrail/core
 export const HELP = `${BRAND.name}: ${BRAND.category}
 
 Usage: ${BRAND.slug} [options]
-       ${BRAND.slug} mcp [--dir <path>] [--agent <trailName>] [--lease-minutes <n>]
-       ${BRAND.slug} connect claude|codex [--dir <path>]
+       ${BRAND.slug} mcp [--dir <path>] [--agent <trailName>] [--lease-minutes <n>] [--no-register]
+       ${BRAND.slug} connect claude|codex [--dir <path>] [--no-register]
+       ${BRAND.slug} projects add [path] | list | remove <id|path>
        ${BRAND.slug} connect slack [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
 
@@ -17,6 +18,10 @@ Commands:
                  tool call from its agent (default: ${DEFAULT_LEASE_MINUTES}, or $${LEASE_MINUTES_ENV})
   connect <agent>  Register the MCP server with Claude Code or Codex and add the /scout command
                  (for Claude Code also a SessionStart hook, so usage comes from the transcript)
+  projects       The repos one Lookout supervises in All projects: add [path] registers a repo
+                 (default: this one), list shows them, remove <id|path> forgets one. The list is
+                 kept in your config dir, never in a repo. mcp and connect add their repo on start
+                 unless --no-register or $${BRAND.noRegisterEnv} is set
   knowledge import <file.md>  Seed project knowledge from a markdown document: one suggestion per
                  ## heading, for you to review in the Lookout
   connect slack  Start the Lookout on the Slack setup (Socket Mode from this machine;

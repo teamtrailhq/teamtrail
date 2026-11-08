@@ -120,6 +120,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   return {
     root: abs,
     handle,
+    active: () => routes.active(),
     close() {
       for (const p of plugins) p.close();
       routes.close();

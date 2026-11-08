@@ -1,11 +1,11 @@
-import { BRAND } from '@teamtrail/core';
 import { useState, useEffect } from 'react';
+import { apiBase } from '../lib/apiBase';
 
 /** Repo name shown in the header: the folder that contains the tracker data. */
 export function useRepoName(kind: string) {
   const [name, setName] = useState('…');
   useEffect(() => {
-    fetch(`${BRAND.apiPrefix}/list`)
+    fetch(`${apiBase()}/list`)
       .then((r) => r.json())
       .then((j: { root: string }) => {
         const parts = j.root.split('/').filter(Boolean);

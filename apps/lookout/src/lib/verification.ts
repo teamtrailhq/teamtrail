@@ -1,5 +1,4 @@
 import {
-  BRAND,
   type ApprovalItem,
   type AttemptResult,
   type CheckResult,
@@ -9,6 +8,7 @@ import {
   type VerificationLevel,
   type VerificationVerdict,
 } from '@teamtrail/core';
+import { apiBase } from './apiBase';
 
 /** A ticket's verification record from `GET /verification/ticket`. */
 export interface TicketVerification {
@@ -62,7 +62,7 @@ async function json<T>(r: Response): Promise<T> {
   return body;
 }
 
-const api = `${BRAND.apiPrefix}/verification`;
+const api = `${apiBase()}/verification`;
 
 export const verificationApi = {
   /** Undefined without a local server (a static build). */

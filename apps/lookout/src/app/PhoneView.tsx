@@ -7,13 +7,22 @@ export function PhoneView(props: {
   tab: PhoneTab;
   decisions: ReactNode;
   inbox: ReactNode;
+  /** Other projects, above the inbox on the home tab (renders nothing with one project). */
+  projects?: ReactNode;
   map: ReactNode;
   ticket: ReactNode;
   activity: ReactNode;
   plan: ReactNode;
 }) {
   const layers: Record<PhoneTab, ReactNode> = {
-    home: props.inbox,
+    home: props.projects ? (
+      <div className="phone-home">
+        {props.projects}
+        {props.inbox}
+      </div>
+    ) : (
+      props.inbox
+    ),
     map: props.map,
     ticket: <Panel className="zone">{props.ticket}</Panel>,
     activity: <Panel className="zone">{props.activity}</Panel>,
