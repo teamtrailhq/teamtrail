@@ -21,7 +21,8 @@ export function useTypeHints(snaps: MapSnapshot[], answered: AnsweredQuestion[])
       if (!row.done) continue;
       const speed = report.recommendations.find((r) => r.id === `speed-${row.key}`)?.text;
       const parts = [
-        `Trail stats: ${row.done} done, median ${durationLabel(row.medianLeadMs)}`,
+        `Trail stats: ${row.done} done`,
+        row.medianLeadMs !== undefined && `median ${durationLabel(row.medianLeadMs)}`,
         row.reworkCycles > 0 && `${row.reworkCycles} back to rework`,
         speed,
       ];
