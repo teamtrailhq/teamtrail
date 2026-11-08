@@ -1,9 +1,9 @@
 // M5 roles in the dev seed: a team on the main trail, roles on a few tickets, a catalog role pinned with a check
 // still waiting for approval, a hand-written role waiting for approval, and checklist answers on a ticket.
-import { setTicketRole, setTrailTeam, type MapDoc, type TrackerAdapter } from '@teamtrail/core';
-import { installRole, rolesDir, writeChecklist } from '@teamtrail/core/agents';
 import fs from 'node:fs';
 import path from 'node:path';
+import { setTicketRole, setTrailTeam, type MapDoc, type TrackerAdapter } from '@teamtrail/core';
+import { installRole, rolesDir, writeChecklist } from '@teamtrail/core/agents';
 
 interface SeedInput {
   root: string;

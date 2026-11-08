@@ -2,8 +2,8 @@
 // from a fake catalog in the Lookout and approves the one check it proposes; an agent claims a ticket with that role,
 // gets its instructions and checklist, is refused completion without the checklist, then completes it and the
 // role's check runs. Waits on what the user sees, never on sleeps.
-import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
