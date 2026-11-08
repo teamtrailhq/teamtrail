@@ -113,5 +113,5 @@ export { approveCheck } from './guides/approveCheck';
 export { removeGuide } from './guides/removeGuide';
 export { DEFAULT_REGISTRY, isRegistryUrl, readGuidesConfig } from './guides/guidesConfig';
 export { fetchCatalog, fetchCatalogGuide, type CatalogFetch, type Registry } from './guides/catalogClient';
-export { addFromCatalog, previewCatalogGuide } from './guides/addFromCatalog';
+export { addFromCatalog, assertNotBuiltin, previewCatalogGuide } from './guides/addFromCatalog';
 export { readChecklist, writeChecklist } from './guides/checklistStore';

@@ -34,7 +34,7 @@ export function CatalogEntry(props: {
           { text: e.id, code: true },
           e.version,
           `by ${e.author}`,
-          e.verified ? { text: 'Verified', strong: true } : 'Not reviewed',
+          reviewPart(e),
           e.reviewedBy.length > 0 && `reviewed by ${e.reviewedBy.join(', ')}`,
         ]}
       />
@@ -55,4 +55,10 @@ export function CatalogEntry(props: {
       {p && <AddGuideFlow preview={p} installed={props.installed} add={props.add} />}
     </div>
   );
+}
+
+/** Built in, Verified or Not reviewed: what the catalog says about this guide. */
+function reviewPart(e: Entry) {
+  if (e.builtin) return { text: 'Built in', strong: true };
+  return e.verified ? { text: 'Verified', strong: true } : 'Not reviewed';
 }

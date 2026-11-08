@@ -10,7 +10,7 @@ import { MemoryAdapter } from '../src/adapters/memoryAdapter';
 import { GitHubAdapter } from '../src/adapters/remote/github';
 import { LinearAdapter } from '../src/adapters/remote/linear';
 import { buildAttention } from '../src/attention/buildAttention';
-import { addFromCatalog, previewCatalogGuide } from '../src/guides/addFromCatalog';
+import { addFromCatalog, assertNotBuiltin, previewCatalogGuide } from '../src/guides/addFromCatalog';
 import { parseCatalogIndex, searchCatalog } from '../src/guides/catalogIndex';
 import { readGuideLock } from '../src/guides/guideLock';
 import { listGuides } from '../src/guides/guideStore';
@@ -160,6 +160,16 @@ test('catalog indexes drop unsafe entries; search filters by words and verified'
     ['a'],
   );
   assert.equal(parseCatalogIndex({ v: 2, guides: [] }), undefined);
+  const withBuiltin = parseCatalogIndex({
+    v: 1,
+    guides: [{ ...entry, id: 'qa', path: 'guides/qa.md', builtin: true }],
+  })!;
+  assert.deepEqual(
+    searchCatalog(withBuiltin, { verifiedOnly: true }).map((r) => r.id),
+    ['qa'],
+    'built-in copies count as reviewed',
+  );
+  assert.throws(() => assertNotBuiltin(withBuiltin.guides[0]), /built into Teamtrail/);
 });
 
 test('tampered guides and pending check approvals reach the attention queue', async () => {

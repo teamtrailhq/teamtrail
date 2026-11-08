@@ -22,6 +22,7 @@ function entryOf(e: Record<string, unknown>): CatalogEntry | undefined {
     reviewedBy: Array.isArray(e.reviewedBy) ? e.reviewedBy.filter(isStr) : [],
     history,
     ...(e.reported === true ? { reported: true } : {}),
+    ...(e.builtin === true ? { builtin: true } : {}),
     ...(types.length ? { types: types as TicketType[] } : {}),
   };
 }
@@ -35,11 +36,12 @@ export function parseCatalogIndex(raw: unknown): CatalogIndex | undefined {
   return { v: 1, ...repo, guides };
 }
 
-/** Entries matching every word of `query` (id, name, summary, author), optionally verified only. */
+/** Entries matching every word of `query` (id, name, summary, author), optionally verified (or built-in) only. */
 export function searchCatalog(index: CatalogIndex, opts: { query?: string; verifiedOnly?: boolean } = {}) {
   const words = (opts.query ?? '').toLowerCase().split(/\s+/).filter(Boolean);
   return index.guides.filter((e) => {
-    if (opts.verifiedOnly && !e.verified) return false;
+    // built-in copies ship with Teamtrail, so they count as reviewed
+    if (opts.verifiedOnly && !e.verified && !e.builtin) return false;
     const hay = [e.id, e.name ?? '', e.summary, e.author].join(' ').toLowerCase();
     return words.every((w) => hay.includes(w));
   });

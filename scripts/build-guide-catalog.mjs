@@ -6,6 +6,8 @@
 //   guides/<id>.md          one guide file per guide (the format `teamtrail guides lint` checks)
 //   examples/<id>/…        at least one test example per guide: a ticket, a diff, a transcript to try it on
 //   reported.json          optional: ids of guides with an open report, shown with a "reported" mark
+//   builtin.json           optional: ids of guides that are copies of Teamtrail's built-in ones ("Built in" badge)
+//   README.md              optional: the guides table is written between <!-- guides:start --> and <!-- guides:end -->
 //
 // Reviews: maintainers merge a guide change with a `Reviewed-by: <name>` trailer in the commit message. Every commit
 // that touched a guide file becomes a history entry (version read from the file at that commit, reviewer from the
@@ -13,7 +15,9 @@
 //
 // Output (default <checkout>/dist): index.json (what `teamtrail guides search|add` and the Lookout read), index.html (a
 // dependency-free page with report links to `<repo>/issues/new?template=report-guide.yml`), and guides/<id>.md copies.
-// Lint errors (schema, safety lint, missing example) stop the build. Needs a built CLI (`npm run build -w teamtrail`).
+// Lint errors (schema, safety lint, missing example) stop the build. Needs a built CLI (`npm run build -w teamtrail`,
+// or `--cli "$(npm root -g)/teamtrail/dist/cli.js"` after `npm i -g teamtrail`). `--check` writes nothing and exits 1
+// when <out>/index.json differs from what it would write.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -28,6 +32,8 @@ const flag = (name) => {
   args.splice(i, 2);
   return v;
 };
+const check = args.includes('--check');
+if (check) args.splice(args.indexOf('--check'), 1);
 const out0 = flag('--out');
 const repo = flag('--repo');
 const cli = path.resolve(flag('--cli') ?? path.join(here, '../packages/cli/dist/cli.js'));
@@ -58,7 +64,8 @@ function lint() {
   return JSON.parse(text);
 }
 
-const git = (...a) => execFileSync('git', ['-C', checkout, ...a], { encoding: 'utf8' });
+const git = (...a) =>
+  execFileSync('git', ['-C', checkout, ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
 /** Every commit that touched a guide file, oldest first, with its version and reviewer. */
 function historyOf(rel) {
@@ -86,9 +93,10 @@ function historyOf(rel) {
     .reverse();
 }
 
-const readReported = () => {
+/** An optional JSON list of ids in the checkout. */
+const idSet = (file) => {
   try {
-    return new Set(JSON.parse(fs.readFileSync(path.join(checkout, 'reported.json'), 'utf8')));
+    return new Set(JSON.parse(fs.readFileSync(path.join(checkout, file), 'utf8')));
   } catch {
     return new Set();
   }
@@ -101,7 +109,11 @@ function page(index) {
     const report = repo
       ? ` · <a href="${esc(`${repo}/issues/new?template=report-guide.yml&title=${encodeURIComponent(`Report: ${r.id} ${r.version}`)}`)}">Report</a>`
       : '';
-    const badge = r.verified ? '<span class="v">Verified</span>' : '<span class="u">Unreviewed</span>';
+    const badge = r.builtin
+      ? '<span class="v">Built in</span>'
+      : r.verified
+        ? '<span class="v">Verified</span>'
+        : '<span class="u">Unreviewed</span>';
     const reported = r.reported ? ' <span class="r">Reported</span>' : '';
     return `<li><h2>${esc(r.name ?? r.id)} <code>${esc(r.id)}</code> ${esc(r.version)} ${badge}${reported}</h2>
 <p>${esc(r.summary)}</p><p class="m">by ${esc(r.author)} · for ${esc((r.types ?? []).join(', '))} · reviewed by ${esc(r.reviewedBy.join(', ') || 'nobody yet')} · <a href="${esc(r.path)}">${esc(r.path)}</a>${report}</p>
@@ -119,7 +131,8 @@ ul{list-style:none;padding:0}li{border-top:1px solid #ddd;padding:1rem 0}h2{font
 <ul>${rows.join('\n')}</ul></body></html>\n`;
 }
 
-const reported = readReported();
+const reported = idSet('reported.json');
+const builtin = idSet('builtin.json');
 const guides = lint().map((r) => {
   const rel = path.relative(checkout, r.path).split(path.sep).join('/');
   const history = historyOf(rel);
@@ -137,11 +150,50 @@ const guides = lint().map((r) => {
     reviewedBy: reviewers,
     history,
     ...(reported.has(r.id) ? { reported: true } : {}),
+    ...(builtin.has(r.id) ? { builtin: true } : {}),
   };
 });
 const index = { v: 1, ...(repo ? { repo } : {}), guides };
+const json = `${JSON.stringify(index, null, 2)}\n`;
+if (check) {
+  const current = fs.existsSync(path.join(out, 'index.json'))
+    ? fs.readFileSync(path.join(out, 'index.json'), 'utf8')
+    : '';
+  if (current === json) {
+    console.log('index.json is up to date');
+    process.exit(0);
+  }
+  console.error('index.json is out of date: run build-guide-catalog.mjs and commit the result');
+  process.exit(1);
+}
 fs.mkdirSync(path.join(out, 'guides'), { recursive: true });
-for (const r of guides) fs.copyFileSync(path.join(checkout, r.path), path.join(out, r.path));
-fs.writeFileSync(path.join(out, 'index.json'), `${JSON.stringify(index, null, 2)}\n`);
+for (const r of guides) {
+  const from = path.join(checkout, r.path);
+  const to = path.join(out, r.path);
+  if (path.resolve(from) !== path.resolve(to)) fs.copyFileSync(from, to);
+}
+fs.writeFileSync(path.join(out, 'index.json'), json);
 fs.writeFileSync(path.join(out, 'index.html'), page(index));
+writeReadmeTable(index);
 console.log(`catalog: ${guides.length} guides → ${path.relative(process.cwd(), out) || out}`);
+
+/** The guides table in the checkout's README, between its markers, when it has them. */
+function writeReadmeTable(idx) {
+  const file = path.join(checkout, 'README.md');
+  if (!fs.existsSync(file)) return;
+  const text = fs.readFileSync(file, 'utf8');
+  const re = /(<!-- guides:start -->)[\s\S]*?(<!-- guides:end -->)/;
+  if (!re.test(text)) return;
+  const cell = (s) => String(s ?? '').replace(/\|/g, '\\|');
+  const status = (g) => (g.builtin ? 'Built in' : g.verified ? 'Verified' : 'Not reviewed yet');
+  const rows = idx.guides.map(
+    (g) =>
+      `| [${cell(g.name ?? g.id)}](${g.path}) | \`${g.id}\` | ${g.version} | ${status(g)} | ${cell(g.summary)} | ${cell(g.author)} |`,
+  );
+  const table = [
+    '| Guide | Id | Version | Status | What it does | Author |',
+    '| --- | --- | --- | --- | --- | --- |',
+    ...rows,
+  ];
+  fs.writeFileSync(file, text.replace(re, `$1\n${table.join('\n')}\n$2`));
+}

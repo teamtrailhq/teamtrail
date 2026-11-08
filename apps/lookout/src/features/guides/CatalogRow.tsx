@@ -10,13 +10,7 @@ export function CatalogRow(props: { entry: CatalogEntry; installed?: string; onO
         title={e.name ?? e.id}
         context={
           <MetaLine
-            parts={[
-              { text: e.id, code: true },
-              e.version,
-              e.author,
-              e.verified ? { text: 'Verified', strong: true } : 'Not reviewed',
-              e.reported && 'Reported',
-            ]}
+            parts={[{ text: e.id, code: true }, e.version, e.author, reviewPart(e), e.reported && 'Reported']}
           />
         }
         detail={e.summary}
@@ -25,4 +19,10 @@ export function CatalogRow(props: { entry: CatalogEntry; installed?: string; onO
       />
     </li>
   );
+}
+
+/** Built in, Verified or Not reviewed: what the catalog says about this guide. */
+function reviewPart(e: CatalogEntry) {
+  if (e.builtin) return { text: 'Built in', strong: true };
+  return e.verified ? { text: 'Verified', strong: true } : 'Not reviewed';
 }

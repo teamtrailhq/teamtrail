@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { previewCatalogGuide } from '@teamtrail/core/agents';
+import { assertNotBuiltin, previewCatalogGuide } from '@teamtrail/core/agents';
 import { installText } from './installText';
 import { pickRegistries } from './pickRegistry';
 import type { GuidesArgs, GuidesIo } from './types';
@@ -22,6 +22,7 @@ export async function guidesAdd(a: GuidesArgs, io: GuidesIo): Promise<number> {
   }
   const registry = pickRegistries(root, a.registry)[0];
   const p = await previewCatalogGuide({ registry, id: ref, fetch: io.fetch });
+  assertNotBuiltin(p.entry);
   const commit = p.entry.history.at(-1)?.commit;
   const source = { registry: registry.url, path: p.entry.path, ...(commit ? { commit } : {}) };
   const where = `${registry.name}:${p.entry.path}`;

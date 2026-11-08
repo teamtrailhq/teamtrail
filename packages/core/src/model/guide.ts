@@ -151,6 +151,8 @@ export interface CatalogEntry {
   reviewedBy: string[];
   history: { version: string; commit: string; at: string; reviewer?: string }[];
   reported?: boolean;
+  /** A copy of a guide that ships with Teamtrail: listed for reference, already available without adding it. */
+  builtin?: boolean;
   types?: TicketType[];
 }
 

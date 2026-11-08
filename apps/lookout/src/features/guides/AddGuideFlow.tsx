@@ -1,3 +1,4 @@
+import { BRAND } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button } from '../../components/ui';
 import { argvText } from './guideLabels';
@@ -31,6 +32,8 @@ export function AddGuideFlow(props: {
       setStep({ kind: 'ready' });
     }
   };
+  if (p.entry.builtin)
+    return <span className="t-meta">Built into {BRAND.name}: already available to every trail, nothing to add.</span>;
   if (step.kind !== 'added') {
     const same = props.installed === p.entry.version;
     const label = props.installed ? 'Update guide' : 'Add guide';
