@@ -1,4 +1,5 @@
-import { BRAND, Emitter, returnedLine, type ActivityStream, type TicketLease } from '@teamtrail/core';
+import { Emitter, returnedLine, type ActivityStream, type TicketLease } from '@teamtrail/core';
+import { apiBase } from './apiBase';
 
 /** Returns in the last quarter hour are logged when the Lookout opens, older ones are history. */
 const BACKLOG_MS = 15 * 60_000;
@@ -33,7 +34,7 @@ export class LeaseBoard {
 
   /** Back to the queue now, with the handoff comment (the server does the tracker writes). */
   async release(mapId: string, ticketId: string, by: string) {
-    const r = await fetch(`${BRAND.apiPrefix}/agents/leases/release`, {
+    const r = await fetch(`${apiBase()}/agents/leases/release`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mapId, ticketId, by }),

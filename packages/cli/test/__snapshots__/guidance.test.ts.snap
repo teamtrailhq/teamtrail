@@ -57,7 +57,7 @@ If \`ask_human\` returns \`answered: false\`, call \`wait_for_answer\` with its 
 
 ## status
 
-Call \`status\` and summarize it in a few lines: progress, running sessions, what is waiting on the human (\`attention\`: how many items, how many interrupt, the top ones), what is blocked, what is verifying or back for rework, and spend.
+Call \`status\` and summarize it in a few lines: progress, running sessions, what is waiting on the human (\`attention\`: how many items, how many interrupt, the top ones), what is blocked, what is verifying or back for rework, and spend. Then call \`projects_status\`: if another project has questions waiting or items that need the human, add one line naming it (you can't act there).
 
 ## inbox
 
@@ -81,5 +81,6 @@ Trails are for work that spans several layers or needs investigation. For a bug 
 Ask the human only when the call changes product behaviour, data, security, billing, a public API or the schema, or when you're genuinely blocked; keep each question to one decision with 2–3 suggestions. Otherwise decide yourself, following the project's conventions, and keep it with record_decision (rationale and alternatives): the human sees it in the briefing as decided by an agent and can reverse it. Never decide HITL tickets (junction, prototype, HITL tasks) alone: ask.
 The project's risk policy says which calls are yours: pass category (schema, breaking-api, auth-permissions, billing, data-deletion, product-behaviour, dependencies) and paths to record_decision and close_ticket. High-risk calls are the human's: ask_human with the category instead; recording one yourself is rejected.
 When you ask, set urgency honestly: blocking only when you can do no useful work until it's answered; soon (the default) or fyi when you can keep going, and then work on other tickets while it waits (ask with a short waitSeconds). Ask related questions together, not one by one, and pass blocks with the tickets that can't move until it's answered: everything that needs the human is ranked in one queue, and fewer, batched questions rank better.
+The human may supervise other repos too: projects_status lists them read-only (questions waiting, what needs them), so you can say where else they're needed. You only ever work in this repo.
 If ask_human returns answered=false, call wait_for_answer with the questionId, or tell the user the question is waiting in the Lookout."
 `;

@@ -15,6 +15,7 @@ import {
   httpJournal,
   type Journal,
 } from '@teamtrail/core';
+import { apiBase } from './apiBase';
 import { LeaseBoard } from './leaseBoard';
 import { type TrackerChoice, loadPrefs } from './prefs';
 import { onTrackerChange } from './trackerChanges';
@@ -22,16 +23,16 @@ import { onTrackerChange } from './trackerChanges';
 /** File API served by the Vite dev server (see plugins/trackerFs.ts). */
 export const httpFs: MarkdownFs = {
   async list() {
-    const r = await fetch(`${BRAND.apiPrefix}/list`);
+    const r = await fetch(`${apiBase()}/list`);
     return (await r.json()).files as string[];
   },
   async read(path) {
-    const r = await fetch(`${BRAND.apiPrefix}/file?path=${encodeURIComponent(path)}`);
+    const r = await fetch(`${apiBase()}/file?path=${encodeURIComponent(path)}`);
     if (!r.ok) throw new Error(`read ${path}: ${r.status}`);
     return r.text();
   },
   async write(path, text) {
-    const r = await fetch(`${BRAND.apiPrefix}/file?path=${encodeURIComponent(path)}`, { method: 'PUT', body: text });
+    const r = await fetch(`${apiBase()}/file?path=${encodeURIComponent(path)}`, { method: 'PUT', body: text });
     if (!r.ok) throw new Error(`write ${path}: ${r.status}`);
   },
   watch(cb) {
@@ -42,7 +43,7 @@ export const httpFs: MarkdownFs = {
 /** Mirror agent sessions reported over MCP (see core agentLink.ts) and send trail lead answers back to them. */
 export function linkAgents(activity: ActivityStream, leases: LeaseBoard) {
   activity.remoteAnswer = (q, text, author) => {
-    void fetch(`${BRAND.apiPrefix}/agents/answer`, {
+    void fetch(`${apiBase()}/agents/answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId: q.sessionId, questionId: q.id, text, author }),
@@ -60,16 +61,16 @@ export function linkAgents(activity: ActivityStream, leases: LeaseBoard) {
         }),
       );
   };
-  const es = new EventSource(`${BRAND.apiPrefix}/events`);
+  const es = new EventSource(`${apiBase()}/events`);
   es.addEventListener('agent', (m) =>
     activity.syncRemote(JSON.parse((m as MessageEvent<string>).data) as AgentSessionDoc),
   );
   es.addEventListener('leases', (m) => leases.set(JSON.parse((m as MessageEvent<string>).data).leases));
-  void fetch(`${BRAND.apiPrefix}/agents/leases`)
+  void fetch(`${apiBase()}/agents/leases`)
     .then((r) => (r.ok ? (r.json() as Promise<{ leases: TicketLease[] }>) : { leases: [] }))
     .then(({ leases: l }) => leases.set(l))
     .catch(() => {});
-  void fetch(`${BRAND.apiPrefix}/agents`)
+  void fetch(`${apiBase()}/agents`)
     .then((r) => (r.ok ? (r.json() as Promise<{ sessions: AgentSessionDoc[] }>) : { sessions: [] }))
     .then(({ sessions }) => [...sessions].reverse().forEach((d) => activity.syncRemote(d)))
     .catch(() => {});
@@ -107,11 +108,11 @@ export function createRuntime(kind: TrackerKind) {
   const leases = new LeaseBoard(activity);
   const store: { presence?: Presence } = {};
   /** Every tracker appends history to `.events/` through the local server. */
-  const journal: Journal = httpJournal(BRAND.apiPrefix);
+  const journal: Journal = httpJournal(apiBase());
   if (kind === 'github' || kind === 'linear') {
-    const remote = new BridgeAdapter(kind, BRAND.apiPrefix);
+    const remote = new BridgeAdapter(kind, apiBase());
     raw = remote;
-    ready = fetch(`${BRAND.apiPrefix}/trackers`)
+    ready = fetch(`${apiBase()}/trackers`)
       .then(
         (r) => r.json() as Promise<{ github: { repo?: string }; linear: { teamKey?: string; projectName?: string } }>,
       )
@@ -128,7 +129,7 @@ export function createRuntime(kind: TrackerKind) {
       });
   } else {
     raw = new MarkdownAdapter(httpFs, `./${BRAND.dataDir}`);
-    ready = fetch(`${BRAND.apiPrefix}/list`)
+    ready = fetch(`${apiBase()}/list`)
       .then((r) => r.json() as Promise<{ root: string }>)
       .catch(() => ({ root: 'default' }))
       .then(({ root }) => {

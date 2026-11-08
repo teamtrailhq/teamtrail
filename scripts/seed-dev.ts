@@ -18,6 +18,7 @@ import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { seedHistory } from './seedHistory';
 import { seedModels } from './seedModels';
 import { seedParallel } from './seedParallel';
+import { seedProjects } from './seedProjects';
 import { seedSupervision } from './seedSupervision';
 
 const DEV_MARKER = '.dev-seed';
@@ -241,6 +242,9 @@ await seedModels({ root, adapter, main, now });
 // 9. A finished trail with two vendors' work on it, for Trail stats.
 const history = await seedHistory({ root, adapter, now });
 
+// 9. More than one project: a second repo and a missing one in a dev-only registry, for All projects.
+const projects = await seedProjects({ repoRoot, homeRoot: root, now });
+
 console.log(`seeded ${root}`);
 console.log(`  ${main.key} ${main.title} · mid-flight`);
 console.log(`  ${second.key} ${second.title} · plan only, brief waiting for review`);
@@ -255,5 +259,6 @@ console.log(
   '  model matching on #1, models.json, codex-01 (fast) and claude-05 (balanced) connected; a junction waits for a strongest model',
 );
 console.log(`  ${history.key} ${history.title} · finished, with results from two vendors for Trail stats`);
+console.log(`  projects: this repo, billing-service and a missing one (registry ${projects.config})`);
 console.log('Live agents: npm run dev:agent (needs npm run build -w teamtrail once).');
 process.exit(0);

@@ -31,7 +31,12 @@ export const NEXT: { area: string; items: string[] }[] = [
       'A new logo, a t whose stem runs along a trail to a node, and a new look for Scout: the original CRT head with ear cups and a baseball cap, with a lamp on the cap at night. No more pixel art, and new fonts too',
     ],
   },
-  { area: 'Every repo', items: ['All your projects in one view, with one list of what needs you across them'] },
+  {
+    area: 'Every repo',
+    items: [
+      "All projects: every repo you supervise in one view, with one list of what needs you across them and what changed while you were away. Answer an agent's question in any repo from there, and switch projects from the header. Agents add their repo when they connect (`--no-register` opts out), or add one with `teamtrail projects add`",
+    ],
+  },
   {
     area: 'Agents',
     items: [

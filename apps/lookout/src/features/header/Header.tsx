@@ -19,7 +19,8 @@ import { TrackerChip } from './TrackerChip';
 import { TrailSwitcher } from './TrailSwitcher';
 
 export function Header(props: {
-  repo: string;
+  /** The repo name, or the project switcher when there are several projects. */
+  repo: ReactNode;
   snaps: Record<string, MapSnapshot>;
   map?: MapDoc;
   activity: ActivityState;
@@ -57,7 +58,7 @@ export function Header(props: {
     <Panel as="header" className="header">
       <div className="h-title">
         <div className="h-line1">
-          <span className="repo">{props.repo}</span>
+          {props.repo}
           <span className="sep">/</span>
           <TrailSwitcher {...props} />
         </div>

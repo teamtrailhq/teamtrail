@@ -54,7 +54,7 @@ If `ask_human` returns `answered: false`, call `wait_for_answer` with its `quest
 
 ## status
 
-Call `status` and summarize it in a few lines: progress, running sessions, what is waiting on the human (`attention`: how many items, how many interrupt, the top ones), what is blocked, what is verifying or back for rework, and spend.
+Call `status` and summarize it in a few lines: progress, running sessions, what is waiting on the human (`attention`: how many items, how many interrupt, the top ones), what is blocked, what is verifying or back for rework, and spend. Then call `projects_status`: if another project has questions waiting or items that need the human, add one line naming it (you can't act there).
 
 ## inbox
 

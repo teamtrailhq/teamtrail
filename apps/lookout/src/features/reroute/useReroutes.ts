@@ -1,9 +1,10 @@
-import { BRAND, type MapSnapshot } from '@teamtrail/core';
+import { type MapSnapshot } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
+import { apiBase } from '../../lib/apiBase';
 import { onTrackerEvent } from '../../lib/trackerChanges';
 import type { RerouteView } from './types';
 
-const api = `${BRAND.apiPrefix}/reroutes`;
+const api = `${apiBase()}/reroutes`;
 
 /**
  * The trail's reroute proposals (`/reroutes`), live: refetched on the `reroute` event for this trail and when the

@@ -1,9 +1,10 @@
-import { BRAND, type KnowledgeCall, type KnowledgeEntry } from '@teamtrail/core';
+import { type KnowledgeCall, type KnowledgeEntry } from '@teamtrail/core';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { apiBase } from '../../lib/apiBase';
 import { onTrackerChange } from '../../lib/trackerChanges';
 import type { KnowledgeDraft, KnowledgeStore } from './knowledgeContext';
 
-const api = `${BRAND.apiPrefix}/knowledge`;
+const api = `${apiBase()}/knowledge`;
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const r = await fetch(`${api}${path}`, {

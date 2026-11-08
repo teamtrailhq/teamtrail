@@ -57,6 +57,7 @@ export { applyReroute, type ApplyEnv } from './planning/reroute/applyReroute';
 export * from './agents/agentLink';
 export * from './agents/ticketLease';
 export * from './model/attention';
+export * from './model/project';
 export {
   ATTENTION_FILE,
   ATTENTION_KINDS,

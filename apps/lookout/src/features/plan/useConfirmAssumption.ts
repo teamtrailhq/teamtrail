@@ -1,5 +1,5 @@
-import { BRAND } from '@teamtrail/core';
 import { useState } from 'react';
+import { apiBase } from '../../lib/apiBase';
 
 /** The trail lead's "this assumption holds" (`POST /assumptions/confirm`); the map refreshes through the tracker. */
 export function useConfirmAssumption(mapId: string) {
@@ -7,7 +7,7 @@ export function useConfirmAssumption(mapId: string) {
   const [busy, setBusy] = useState<string>();
   const confirm = async (id: string) => {
     setBusy(id);
-    const r = await fetch(`${BRAND.apiPrefix}/assumptions/confirm`, {
+    const r = await fetch(`${apiBase()}/assumptions/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mapId, id }),

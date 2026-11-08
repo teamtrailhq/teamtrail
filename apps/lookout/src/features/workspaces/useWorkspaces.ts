@@ -1,5 +1,6 @@
-import { BRAND, type IntegrationScan, type WorkspaceRecord, type WorkspaceSettings } from '@teamtrail/core';
+import { type IntegrationScan, type WorkspaceRecord, type WorkspaceSettings } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
+import { apiBase } from '../../lib/apiBase';
 import { onTrackerChange } from '../../lib/trackerChanges';
 
 /** A prepared worktree; `active` while an agent still holds its ticket. */
@@ -18,7 +19,7 @@ export interface RemoveOutcome {
   dirty?: boolean;
 }
 
-const url = `${BRAND.apiPrefix}/workspaces`;
+const url = `${apiBase()}/workspaces`;
 
 async function fetchView(): Promise<WorkspacesView | null> {
   const r = await fetch(url);

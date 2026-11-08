@@ -17,3 +17,4 @@ export { readAttentionPolicy } from './attention/attentionStore';
 export { readLookoutLock } from './agents/lookoutLock';
 export { writeJsonAtomic } from './lib/jsonFile';
 export { outboxFile, outboxKey } from './adapters/remote/outboxFile';
+export { createProjectsHub, type ProjectsHub, type ProjectsHubOptions } from './server/projectsHub';

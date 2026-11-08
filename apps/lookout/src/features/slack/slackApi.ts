@@ -1,4 +1,4 @@
 import { slackSettingsApi } from '@teamtrail/connector-slack';
-import { BRAND } from '@teamtrail/core';
+import { apiBase } from '../../lib/apiBase';
 
-export const slackApi = slackSettingsApi(BRAND.apiPrefix);
+export const slackApi = slackSettingsApi(apiBase());
