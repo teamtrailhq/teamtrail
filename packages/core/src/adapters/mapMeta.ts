@@ -6,6 +6,8 @@ export function withMapMeta(m: MapDoc, patch: MapMetaPatch): MapDoc {
   const next: MapDoc = { ...m };
   if (patch.verification === null) delete next.verification;
   else if (patch.verification) next.verification = patch.verification;
+  if (patch.guides === null || patch.guides?.length === 0) delete next.guides;
+  else if (patch.guides) next.guides = patch.guides;
   if (patch.modelMatching === null) delete next.modelMatching;
   else if (patch.modelMatching) next.modelMatching = patch.modelMatching;
   return next;

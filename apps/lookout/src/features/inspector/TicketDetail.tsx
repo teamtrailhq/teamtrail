@@ -4,6 +4,7 @@ import { Empty, Button, Card, Field } from '../../components/ui';
 import { type LookoutApi } from '../../hooks';
 import { TRAIL_LEAD, heldLeases, isRunning } from '../../lib';
 import { CriteriaSection } from '../criteria';
+import { TicketGuide } from '../guides';
 import { KnowledgePreview, PromoteButton } from '../knowledge';
 import { ModelWaitNote } from '../models';
 import { PrFlagBadges } from '../pr-sync';
@@ -48,6 +49,7 @@ export function TicketDetail(props: {
       <ModelWaitNote mapId={snap.map.id} ticketId={t.id} />
 
       <PrFlagBadges mapId={snap.map.id} ticketId={t.id} />
+      <TicketGuide mapId={snap.map.id} ticket={t} />
       <CriteriaSection snap={snap} t={t} />
       <KnowledgePreview snap={snap} t={t} />
       {t.closeReason === 'not_planned' && (

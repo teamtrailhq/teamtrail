@@ -15,6 +15,8 @@ export const KIND_LABEL: Record<AttentionKind, string> = {
   'reroute-suggested': 'Reroute?',
   overlap: 'Overlap',
   integration: 'Integrate',
+  guide: 'Guide',
+  'guide-checks': 'Approve',
   model: 'Model',
 };
 
@@ -33,6 +35,8 @@ export const KIND_PLURAL: Record<AttentionKind, string> = {
   'reroute-suggested': 'suggested reroutes',
   overlap: 'overlapping claims',
   integration: 'clashing branches',
+  guide: 'guides to approve',
+  'guide-checks': 'guide checks to approve',
   model: 'tickets waiting for a model',
 };
 

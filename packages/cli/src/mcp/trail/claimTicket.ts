@@ -13,6 +13,7 @@ import { baselineForClaim, levelFor, repoRootOf } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaView } from './criteria';
 import { assertClaimable, briefView, claimable } from './discovery';
+import { assertInGuides, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
 import { pickNext, stampModel, tierFields } from './models';
 import { claimParallel } from './parallel';
@@ -30,13 +31,13 @@ import { baselineView } from './verificationView';
  */
 export async function claimTicket(
   ctx: AgentContext,
-  input: { ticket?: string; trail?: string; touches?: string[]; workspace?: boolean } = {},
+  input: { ticket?: string; trail?: string; touches?: string[]; workspace?: boolean; guides?: string[] } = {},
 ) {
   const recovered = await recoverStalled(ctx);
   const snap = await ctx.resolveTrail(input.trail);
   ctx.trail = snap.map.id;
   const agent = await ctx.agentId();
-  const target = await pickTarget(ctx, { snap, agent, ref: input.ticket });
+  const target = await pickTarget(ctx, { snap, agent, ref: input.ticket, guides: input.guides });
   const alreadyMine =
     target.assignee === agent && deriveStates(snap.tickets, snap.map.mode).get(target.id) === 'claimed';
   const t = alreadyMine
@@ -86,21 +87,25 @@ export async function claimTicket(
 }
 
 /** The named ticket, or the best ready one; checked against review and discovery rules. */
-async function pickTarget(ctx: AgentContext, at: { snap: MapSnapshot; agent: string; ref?: string }): Promise<Ticket> {
+async function pickTarget(
+  ctx: AgentContext,
+  at: { snap: MapSnapshot; agent: string; ref?: string; guides?: string[] },
+): Promise<Ticket> {
   const { snap, agent } = at;
   const frozen = frozenOn(ctx, snap.map.id);
-  const exclude = [...(await ownReviews(ctx, snap, agent)), ...frozen.keys()];
+  const exclude = [...(await ownReviews(ctx, snap, agent)), ...frozen.keys(), ...outsideGuides(snap, at.guides)];
   const target = at.ref
     ? ctx.findTicket(snap, at.ref)
     : pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude }).ticket;
   if (!target) {
-    const r = await nextTicket(ctx, { trail: snap.map.id });
+    const r = await nextTicket(ctx, { trail: snap.map.id, guides: at.guides });
     throw new OperationError(('reason' in r ? r.reason : undefined) ?? 'No ready ticket');
   }
   const proposal = frozen.get(target.id);
   if (proposal && target.assignee !== agent)
     throw new OperationError(`${target.key} is frozen by reroute proposal ${proposal}, waiting on the human`);
   assertMayReview(ctx, snap, target, agent);
+  if (target.assignee !== agent) assertInGuides(target, at.guides);
   if (target.assignee !== agent) assertClaimable(ctx.root, snap.map.id, target);
   return target;
 }

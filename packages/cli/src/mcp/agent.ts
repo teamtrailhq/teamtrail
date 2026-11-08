@@ -1,7 +1,7 @@
 import { OperationError, type DecisionRecord, type MapSnapshot, type Ticket } from '@teamtrail/core';
 import { AgentContext } from './trail/agentContext';
 import { claimTicket } from './trail/claimTicket';
-import { closeTicket, type CloseInput } from './trail/closeTicket';
+import { closeTicket } from './trail/closeTicket';
 import { verificationStatus } from './trail/completion';
 import { setCriteria } from './trail/criteria';
 import { getBrief, submitBrief } from './trail/discovery';
@@ -12,7 +12,7 @@ import { submitReviewTool } from './trail/reviews';
 import { startTrail } from './trail/startTrail';
 import { addTicket, nextTicket, releaseTicket } from './trail/ticketOps';
 import { resumeTrail, status, updateTrail } from './trail/trailOps';
-import type { AgentOptions, WaitControl } from './trail/types';
+import type { AgentOptions, CloseInput, WaitControl } from './trail/types';
 import { ticketView } from './trail/views';
 
 export { OperationError };

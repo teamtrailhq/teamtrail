@@ -9,6 +9,7 @@ import type { BridgeOptions, TrackerBridge } from './bridgeTypes';
 import { handleBriefs } from './briefRoutes';
 import { handleCriteria } from './criteriaRoutes';
 import { handleDecisions } from './decisionRoutes';
+import { handleGuides } from './guideRoutes';
 import { BadRequest, openEventStream, readText, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
 import { handleKnowledge } from './knowledgeRoutes';
@@ -80,6 +81,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handlePolicy(ctx, req, res, url),
     (req, res, url) => handleAttention({ ...ctx, configDir: trackers.configDir }, req, res, url),
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
+    (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
   ];
 

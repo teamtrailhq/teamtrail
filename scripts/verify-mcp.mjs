@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { chromium } from 'playwright-core';
+import { verifyGuides } from './verifyGuides.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
@@ -464,6 +465,8 @@ const parallelOk = await verifyParallel({ browser, cli, log, shots });
 const modelsOk = await verifyModels({ browser, cli, log, shots });
 // Several repos: All projects, the merged queue and answering another repo's agent from it.
 const projectsOk = await verifyProjects({ browser, cli, log, shots });
+// Guides: a guide added from a catalog and its check approved in the Lookout; an agent works a ticket in that guide.
+const guidesOk = await verifyGuides({ browser, cli, log, shots });
 
 await client.close();
 await page.waitForTimeout(1500);
@@ -503,7 +506,8 @@ if (
   !supervisionOk ||
   !parallelOk ||
   !modelsOk ||
-  !projectsOk
+  !projectsOk ||
+  !guidesOk
 )
   process.exit(1);
 console.log('\nOK');

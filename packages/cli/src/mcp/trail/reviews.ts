@@ -1,6 +1,14 @@
-import { OperationError, type MapSnapshot, type Ticket, type VerificationVerdict, vendorOf } from '@teamtrail/core';
+import {
+  OperationError,
+  type ChecklistAnswer,
+  type MapSnapshot,
+  type Ticket,
+  type VerificationVerdict,
+  vendorOf,
+} from '@teamtrail/core';
 import { readAgentDocs, readAttempts, reviewConflict, submitReview } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
+import { checkedAnswers, keepAnswers } from './guides';
 
 /** Why this agent may not take review ticket `r`, or undefined. */
 function conflictOf(ctx: AgentContext, snap: MapSnapshot, r: Ticket, agent: string) {
@@ -54,6 +62,7 @@ export async function submitReviewTool(
     verdict: VerificationVerdict['verdict'];
     summary: string;
     findings?: VerificationVerdict['findings'];
+    checklist?: ChecklistAnswer[];
   },
 ) {
   const s = ctx.sessions.running();
@@ -62,6 +71,7 @@ export async function submitReviewTool(
   if (!ref) throw new OperationError('Which review? Pass `ticket`, or claim a review ticket first.');
   const review = ctx.findTicket(snap, ref);
   const agent = await ctx.agentId();
+  const checked = checkedAnswers(ctx, { snap, ticket: review, given: input.checklist });
   const r = await submitReview(ctx.verifyEnv(), {
     mapId: snap.map.id,
     reviewId: review.id,
@@ -71,7 +81,9 @@ export async function submitReviewTool(
     verdict: input.verdict,
     summary: input.summary,
     findings: input.findings,
+    ...(checked ? { guide: checked.guide, checklist: checked.answers } : {}),
   });
+  await keepAnswers(ctx, { snap, ticket: review, checked });
   ctx.leases.drop(snap.map.id, review.id);
   if (s?.info.ticketId === review.id) ctx.sessions.end(true, `Reviewed ${review.key}: ${input.verdict}`);
   const reviewed = snap.tickets.find((x) => x.id === review.reviewOf)!;

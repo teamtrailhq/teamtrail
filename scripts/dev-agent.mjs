@@ -68,6 +68,9 @@ async function agent(n) {
   await call('resume_trail', { trail });
   let askedFyi = false;
   for (;;) {
+    /** A ticket with a guide needs an answer per checklist item; the scripted agent answers each one. */
+    const checklistOf = (t) =>
+      t.guide?.checklist.length ? { checklist: t.guide.checklist.map((item) => ({ item, done: true })) } : {};
     let claimed;
     try {
       claimed = (await call('claim_ticket', { trail })).claimed;
@@ -117,6 +120,7 @@ async function agent(n) {
         resolution: `Decided with the trail lead: ${a.answer}.`,
         rationale: 'The trail lead made the call in the Lookout.',
         alternatives: q.suggestions.filter((x) => x !== a.answer),
+        ...checklistOf(claimed),
       });
     } else {
       await report({
@@ -136,6 +140,7 @@ async function agent(n) {
         trail,
         resolution: `Findings for "${claimed.title}" recorded on the ticket.`,
         noCodeReason: 'Investigation only; no code change.',
+        ...checklistOf(claimed),
       });
     }
     log(`closed ${claimed.key}`);

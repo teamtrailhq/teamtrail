@@ -1,5 +1,6 @@
 import type { CriteriaResult } from '../criteria/criteria';
 import type { GitEvidence } from './evidence';
+import type { ChecklistAnswer } from './guide';
 import type { VerificationLevel } from './lifecycle';
 import type { TicketType } from './types';
 
@@ -97,4 +98,8 @@ export interface VerificationVerdict {
   summary: string;
   findings: { path?: string; line?: number; severity: 'info' | 'warn' | 'error'; text: string }[];
   at: number;
+  /** The guide the reviewer acted in, when the review ticket had one. */
+  guide?: { id: string; version: string };
+  /** The reviewer's answers to that guide's checklist. */
+  checklist?: ChecklistAnswer[];
 }

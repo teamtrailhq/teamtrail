@@ -15,6 +15,12 @@ export const NEXT: { area: string; items: string[] }[] = [
     ],
   },
   {
+    area: 'Guides',
+    items: [
+      'Guides: a ticket can ask for a reviewer, QA, security, docs or architect, and the agent that claims it gets that guide’s instructions and a checklist it must answer before the work counts as done. Pick a trail’s team and each ticket’s guide in the Lookout, and add more guides from a moderated catalog in Settings → Guides. A guide can add checks but never remove one, its commands only run after you approve them, and a guide file edited after you approved it is switched off until you look at it again',
+    ],
+  },
+  {
     area: 'Trail stats',
     items: [
       "Records has a new Trail stats view: delivery across every trail, by vendor, agent and ticket type, with plain observations from your own numbers. Teamtrail doesn't route work from them",
@@ -35,13 +41,6 @@ export const NEXT: { area: string; items: string[] }[] = [
     area: 'Every repo',
     items: [
       "All projects: every repo you supervise in one view, with one list of what needs you across them and what changed while you were away. Answer an agent's question in any repo from there, and switch projects from the header. Agents add their repo when they connect (`--no-register` opts out), or add one with `teamtrail projects add`",
-    ],
-  },
-  {
-    area: 'Agents',
-    items: [
-      'Smarter model choice: hard calls to stronger models, routine work to cheaper ones, based on past results',
-      'Agent roles (reviewer, researcher, builder) and guides you can add to a trail',
     ],
   },
   { area: 'Teamtrail Cloud', items: ['Agents that run in the cloud, steered from the same Lookout'] },

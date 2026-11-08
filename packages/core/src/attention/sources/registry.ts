@@ -3,6 +3,8 @@ import { approvalSource } from './approvalSource';
 import { blockedSource } from './blockedSource';
 import { briefSource } from './briefSource';
 import { flagSource } from './flagSource';
+import { guideChecksSource } from './guideChecksSource';
+import { guideSource } from './guideSource';
 import { hitlReadySource } from './hitlReadySource';
 import { integrationSource } from './integrationSource';
 import { knowledgeSource } from './knowledgeSource';
@@ -32,5 +34,7 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   policySource,
   overlapSource,
   integrationSource,
+  guideSource,
+  guideChecksSource,
   modelSource,
 ];

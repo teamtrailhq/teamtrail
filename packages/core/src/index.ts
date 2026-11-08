@@ -101,3 +101,17 @@ export { TrackerError, isTransient, type RateInfo, type TrackerErrorCode } from 
 export { BridgeAdapter, trackerSettingsApi } from './adapters/remote/bridgeClient';
 export type * from './adapters/remote/types';
 export * from './model/integrations';
+export * from './model/guide';
+export { parseGuide, splitGuideFile } from './guides/guideFile';
+export { argvProblems, lintGuide, type GuideLint } from './guides/guideLint';
+export { BUILTIN_GUIDES } from './guides/builtin/builtinGuides';
+export {
+  effectiveChecks,
+  requiredChecksOf,
+  resolveGuide,
+  guidePayload,
+  type ResolvedGuide,
+} from './guides/resolveGuide';
+export { checkChecklist, checklistProblem, type ChecklistCheck } from './guides/checklist';
+export { parseCatalogIndex, searchCatalog } from './guides/catalogIndex';
+export { guideProblem } from './guides/guideProblem';

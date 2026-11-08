@@ -21,6 +21,7 @@ export function useAttentionUi(input: {
   knowledge: Pick<KnowledgeStore, 'setOpen'>;
   reviewBrief: () => void;
   openReroute?: (item: AttentionItem) => void;
+  openGuides: () => void;
 }) {
   const { api, nav } = input;
   const attention = useAttention(api.allSnaps);
@@ -34,6 +35,7 @@ export function useAttentionUi(input: {
       input.openReroute ??
       ((item) => (item.ticketId ? nav.openTicket(item.mapId, item.ticketId) : selectTrail(item.mapId))),
     selectTrail,
+    openGuides: input.openGuides,
   };
   const view = attention.view;
   const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers, showChat: nav.showChat });

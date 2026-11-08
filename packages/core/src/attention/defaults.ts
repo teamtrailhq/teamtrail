@@ -19,6 +19,8 @@ export const DEFAULT_WEIGHTS: Record<AttentionKind, number> = {
   'reroute-suggested': 30,
   model: 30,
   knowledge: 15,
+  guide: 45,
+  'guide-checks': 30,
 };
 
 export const ATTENTION_KINDS = Object.keys(DEFAULT_WEIGHTS) as AttentionKind[];

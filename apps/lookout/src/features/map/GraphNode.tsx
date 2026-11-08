@@ -8,6 +8,7 @@ import {
   type SessionInfo,
 } from '@teamtrail/core';
 import { type Selection, STATE_LABEL } from '../../lib';
+import { GuideNodeTag } from '../guides';
 import { SIGN_TIP } from './edgePath';
 import { modelWait } from './modelWait';
 import { ModelWaitTitle } from './ModelWaitTitle';
@@ -90,6 +91,7 @@ export function GraphNode({
       </text>
       {flag && <circle className={`pr-flag-dot ${flag}`} cx={NODE_W - 2} cy={2} r={4} />}
       <RerouteMarks mark={mark} frozen={frozen} />
+      {t.guide && <GuideNodeTag id={t.guide} />}
       {s && !waiting && (
         <text className="live-tag" x={NODE_W} y={NODE_H + 13} textAnchor="end">
           {s.agent} · step {s.step}/{s.total} · {s.stepLabel.toLowerCase()}

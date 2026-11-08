@@ -248,9 +248,7 @@
         "body": {
           "title": "Charted by an agent",
           "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-          "labels": [
-            "teamtrail:map"
-          ]
+          "labels": ["teamtrail:map"]
         }
       },
       "res": {
@@ -289,9 +287,7 @@
         "body": {
           "title": "Survey CRDT libraries",
           "body": "Compare.\n\nPart of trail #1.",
-          "labels": [
-            "teamtrail:research"
-          ]
+          "labels": ["teamtrail:research"]
         }
       },
       "res": {
@@ -510,9 +506,7 @@
         "body": {
           "title": "Charted after the first poll",
           "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-          "labels": [
-            "teamtrail:map"
-          ]
+          "labels": ["teamtrail:map"]
         }
       },
       "res": {

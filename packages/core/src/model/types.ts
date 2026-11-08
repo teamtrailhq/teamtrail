@@ -48,6 +48,8 @@ export interface Ticket {
   checks?: string[];
   /** `review` tickets: id of the ticket under review. */
   reviewOf?: string;
+  /** The guide (model/guide.ts) an agent takes on when it claims this ticket, e.g. `qa`. */
+  guide?: string;
   /** Ids of tickets that block this one (native blocking edges). */
   blockedBy: string[];
   comments: Comment[];
@@ -88,6 +90,8 @@ export interface MapDoc {
   mode: MapMode;
   /** Unset means off: trails that predate verification complete as they always have. */
   verification?: VerificationLevel;
+  /** The trail's team: the guide ids its tickets may declare. Unset means no team. */
+  guides?: string[];
   /** Match work to the model each agent session runs on. Unset means off: claiming works as it always has. */
   modelMatching?: ModelMatching;
   sections: MapSections;

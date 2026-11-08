@@ -19,6 +19,7 @@ export interface TrailIssueParts {
 export function mapFromIssue(p: TrailIssueParts): MapDoc {
   const { text, meta } = splitBody(p.body);
   const verification = levelOf(meta.verification);
+  const guides = Array.isArray(meta.guides) ? meta.guides.filter((r) => typeof r === 'string' && r) : [];
   const modelMatching = modelMatchingOf(meta.modelMatching);
   return {
     id: p.id,
@@ -26,6 +27,7 @@ export function mapFromIssue(p: TrailIssueParts): MapDoc {
     title: p.title,
     mode: p.labels.includes(PLAN_ONLY_LABEL) ? 'plan-only' : DEFAULT_MAP_MODE,
     ...(verification ? { verification } : {}),
+    ...(guides.length ? { guides } : {}),
     ...(modelMatching ? { modelMatching } : {}),
     sections: parseMapBody(text),
     createdAt: Date.parse(p.createdAt) || 0,

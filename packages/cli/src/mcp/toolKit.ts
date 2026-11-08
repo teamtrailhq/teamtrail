@@ -12,6 +12,25 @@ export const ticket = z.string().describe('Ticket key (#12) or id (12).');
 export const riskCategory = z
   .enum(RISK_CATEGORIES)
   .describe("What the call touches, for the project's risk policy: high-risk categories are the human's to decide.");
+export const guidesFilter = z
+  .array(z.string())
+  .max(20)
+  .optional()
+  .describe('Only take tickets whose guide is one of these (e.g. ["qa"]). Tickets without a guide are left out.');
+export const guideId = z
+  .string()
+  .describe('The guide an agent takes on when it claims the ticket (list_guides). Must be an installed guide.');
+export const checklistAnswers = z
+  .array(
+    z.object({
+      item: z.string().describe('The item text, or its number'),
+      done: z.boolean(),
+      note: z.string().optional(),
+    }),
+  )
+  .max(20)
+  .optional()
+  .describe("Answers to the ticket guide's checklist: one per item. Required when the guide has a checklist.");
 export const riskPaths = z
   .array(z.string())
   .max(200)

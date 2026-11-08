@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
-import { type DefineTool, trail, riskCategory, riskPaths, ticket, waitControl } from '../toolKit';
+import { checklistAnswers, type DefineTool, trail, riskCategory, riskPaths, ticket, waitControl } from '../toolKit';
 
 const CHECKS_WAIT = 'Waiting for the verification checks';
 const completion = {
@@ -27,6 +27,7 @@ const completion = {
     )
     .optional()
     .describe('Evidence for each acceptance criterion of the ticket. Every criterion needs one.'),
+  checklist: checklistAnswers,
   noCodeReason: z
     .string()
     .optional()
@@ -134,6 +135,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
         .max(50)
         .optional()
         .describe('Specific problems; with FAIL, what the author must fix.'),
+      checklist: checklistAnswers,
     },
     (a) => agent.submitReview(a),
   );

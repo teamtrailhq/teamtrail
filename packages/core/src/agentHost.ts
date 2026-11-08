@@ -105,4 +105,14 @@ export { isClaimed, removeWorkspace, type RemoveWorkspaceResult } from './worksp
 export { readIntegrationScan, writeIntegrationScan } from './workspaces/integrationStore';
 export { scanIntegrations } from './workspaces/scanIntegrations';
 export { attentionView } from './attention/attentionView';
+export { activeGuideIds, listGuides, readGuideFiles, guideFilePath, guidesDir } from './guides/guideStore';
+export { readGuideLock, guideLockPath, writeGuideLock } from './guides/guideLock';
+export { checkSha, guideSha } from './guides/guideHash';
+export { approveGuide, installGuide, lintRefusal, type Installed } from './guides/installGuide';
+export { approveCheck } from './guides/approveCheck';
+export { removeGuide } from './guides/removeGuide';
+export { DEFAULT_REGISTRY, isRegistryUrl, readGuidesConfig } from './guides/guidesConfig';
+export { fetchCatalog, fetchCatalogGuide, type CatalogFetch, type Registry } from './guides/catalogClient';
+export { addFromCatalog, assertNotBuiltin, previewCatalogGuide } from './guides/addFromCatalog';
+export { readChecklist, writeChecklist } from './guides/checklistStore';
 export { readModelsConfig, type ModelsRead } from './planning/matching/modelsStore';

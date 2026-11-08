@@ -2,6 +2,7 @@ import type { TicketLease } from '../agents/ticketLease';
 import type { DiscoveryBrief } from '../discovery/brief';
 import type { KnowledgeEntry } from '../knowledge/knowledge';
 import type { AttentionItem, AttentionKind, AttentionPolicy, AttentionState } from '../model/attention';
+import type { InstalledGuide } from '../model/guide';
 import type { TicketSync } from '../model/prEvidence';
 import type { RerouteProposal } from '../model/reroute';
 import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
@@ -32,6 +33,8 @@ export interface AttentionInput {
   violations?: PolicyViolation[];
   /** Active claim branches that changed the same files (workspaces/scanIntegrations.ts). Missing: none. */
   integrations?: IntegrationOverlap[];
+  /** Installed guides, checked against the lock (guides/guideStore.ts). Missing: none. */
+  guides?: InstalledGuide[];
   /** Agents connected now, with their model tier (model matching). Missing: none. */
   agents?: ConnectedAgent[];
   /** Missing: the defaults. */

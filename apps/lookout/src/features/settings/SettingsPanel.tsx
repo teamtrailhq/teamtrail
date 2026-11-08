@@ -13,6 +13,7 @@ import {
 import { useState, useEffect } from 'react';
 import { Panel, Tabs, Choice } from '../../components/ui';
 import type { Prefs, TrackerChoice } from '../../lib';
+import { GuidesSection, TeamSection } from '../guides';
 import { TrackerConnectors } from '../trackers';
 import { ModeChoice } from '../trail';
 import { AttentionSection } from './AttentionSection';
@@ -41,7 +42,7 @@ export function SettingsPanel(props: {
   onModelMatching: (value: ModelMatching) => void;
   onClose: () => void;
   initialTab?: 'settings' | 'changelog';
-  focus?: 'slack';
+  focus?: 'slack' | 'guides';
 }) {
   const { prefs, update } = props;
   const [tab, setTab] = useState(props.initialTab ?? 'settings');
@@ -99,6 +100,10 @@ export function SettingsPanel(props: {
             <WorkspacesSection />
 
             <ProjectsSection />
+
+            <GuidesSection focus={props.focus === 'guides'} />
+
+            {props.map && <TeamSection map={props.map} />}
 
             <SettingsSection title="Labels">
               <div className="label-codes">

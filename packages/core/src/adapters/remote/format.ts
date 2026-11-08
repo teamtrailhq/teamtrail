@@ -36,25 +36,33 @@ export interface BodyMeta {
   verification?: string;
   checks?: string[];
   reviewOf?: string;
+  guide?: string;
+  /** Trail issue: the team's guide ids. */
+  guides?: string[];
   /** Trail issue only: its model matching. */
   modelMatching?: unknown;
 }
 
-/** The trail issue body: its sections, plus a meta marker only when the trail has a verification level or model matching. */
-export const mapBody = (m: Pick<MapDoc, 'sections' | 'verification' | 'modelMatching'>) =>
-  m.verification || m.modelMatching
-    ? joinBody(serializeMapBody(m.sections), { verification: m.verification, modelMatching: m.modelMatching })
+/** The trail issue body: its sections, plus a meta marker only when the trail has a verification level, model matching or a team. */
+export const mapBody = (m: Pick<MapDoc, 'sections' | 'verification' | 'modelMatching' | 'guides'>) =>
+  m.verification || m.modelMatching || m.guides?.length
+    ? joinBody(serializeMapBody(m.sections), {
+        verification: m.verification,
+        modelMatching: m.modelMatching,
+        guides: m.guides?.length ? m.guides : undefined,
+      })
     : serializeMapBody(m.sections);
 
 /** Everything Teamtrail keeps in a ticket's meta marker, so one write never drops another's field. */
 export const ticketMeta = (
-  t: Pick<Ticket, 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf'>,
+  t: Pick<Ticket, 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | 'guide'>,
 ): BodyMeta => ({
   assignee: t.assignee,
   status: t.status,
   verification: t.verification,
   checks: t.checks,
   reviewOf: t.reviewOf,
+  guide: t.guide,
 });
 
 export function splitBody(raw: string | null | undefined): { text: string; meta: BodyMeta } {
@@ -196,6 +204,7 @@ export function ticketFromIssue(p: IssueParts): Ticket {
     ...(verification ? { verification } : {}),
     ...(checks ? { checks } : {}),
     ...(typeof meta.reviewOf === 'string' && meta.reviewOf ? { reviewOf: meta.reviewOf } : {}),
+    ...(typeof meta.guide === 'string' && meta.guide ? { guide: meta.guide } : {}),
     blockedBy: p.blockedBy,
     comments: p.comments,
     createdAt: Date.parse(p.createdAt) || 0,

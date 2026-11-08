@@ -3,15 +3,18 @@ import {
   chartMap,
   DISCOVERY_TICKET,
   OperationError,
+  setTicketGuide,
+  setTrailTeam,
   type MapDoc,
   type MapMode,
   type Ticket,
 } from '@teamtrail/core';
-import { readVerificationConfig, writeBrief } from '@teamtrail/core/agents';
+import { listGuides, readVerificationConfig, writeBrief } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
 import { saveCriteria } from './criteria';
 import { briefView, claimable } from './discovery';
+import { assertGuide } from './guides';
 import { knowledgeFor } from './knowledge';
 import { ticketInfo } from './ticketInfo';
 import type { TicketPlanInput } from './types';
@@ -29,6 +32,8 @@ interface StartInput {
   discovery?: boolean;
   /** What the trail relies on; `tickets` are plan refs. */
   assumptions?: AssumptionPlanInput[];
+  /** The trail's team of installed guide ids. */
+  team?: string[];
 }
 
 const EMPTY_BRIEF = {
@@ -52,6 +57,7 @@ export async function startTrail(ctx: AgentContext, input: StartInput) {
   s.step(2, `${planned.length} tickets proposed`);
   for (const t of planned) s.log(`proposed ${t.type} · ${t.title}`);
   assertKnownRefs(planned, input.assumptions ?? []);
+  assertGuides(ctx, input);
   s.step(3, input.title);
   const { map, tickets } = await chartMap(ctx.adapter, chartInput(ctx, input), {
     onMapCreated: (m) => {
@@ -62,6 +68,7 @@ export async function startTrail(ctx: AgentContext, input: StartInput) {
   });
   ctx.trail = map.id;
   saveAllCriteria(ctx, { map, tickets, planned });
+  await saveGuides(ctx, { map, tickets, planned, team: input.team });
   await saveAssumptions(ctx, { map, tickets, planned, items: input.assumptions ?? [] });
   const discoveryTicket = withDiscovery ? tickets.find((t) => t.title === DISCOVERY_TICKET.title) : undefined;
   if (discoveryTicket)
@@ -78,6 +85,7 @@ export async function startTrail(ctx: AgentContext, input: StartInput) {
       title: map.title,
       mode: map.mode,
       ...(map.verification ? { verification: map.verification } : {}),
+      ...(input.team?.length ? { team: input.team } : {}),
     },
     tickets: tickets.map((t) => ({
       ref: planned.find((p) => p.title === t.title)?.ref,
@@ -146,5 +154,24 @@ function saveAllCriteria(ctx: AgentContext, made: { map: MapDoc; tickets: Ticket
     if (!pt.criteria?.length) continue;
     const ticket = made.tickets.find((x) => x.title === pt.title);
     if (ticket) saveCriteria(ctx.root, made.map, ticket, pt.criteria);
+  }
+}
+
+/** Every guide named (team and tickets) must be installed and active, and made for its ticket's type. */
+function assertGuides(ctx: AgentContext, input: StartInput) {
+  const guides = listGuides(ctx.root);
+  for (const id of input.team ?? []) assertGuide(guides, id);
+  for (const t of input.tickets ?? []) if (t.guide) assertGuide(guides, t.guide, t.type);
+}
+
+/** The team on the trail and each planned ticket's guide, as the agent that charted it. */
+async function saveGuides(
+  ctx: AgentContext,
+  made: { map: MapDoc; tickets: Ticket[]; planned: TicketPlanInput[]; team?: string[] },
+) {
+  if (made.team?.length) await setTrailTeam(ctx.adapter, made.map.id, made.team, 'agent');
+  for (const pt of made.planned) {
+    const t = pt.guide ? made.tickets.find((x) => x.title === pt.title) : undefined;
+    if (t) await setTicketGuide(ctx.adapter, { mapId: made.map.id, ticketId: t.id }, pt.guide!, 'agent');
   }
 }

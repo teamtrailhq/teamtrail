@@ -12,6 +12,7 @@ export function fingerprint(e: CacheEntry) {
     map.title,
     map.mode,
     map.verification ?? '',
+    map.guides ?? [],
     map.modelMatching ?? null,
     roundtrip(map.sections),
     [...tickets]
@@ -27,6 +28,7 @@ export function fingerprint(e: CacheEntry) {
         t.status ?? '',
         t.verification ?? '',
         t.checks ?? null,
+        t.guide ?? '',
         [...t.blockedBy].sort(),
         t.body.trim(),
         t.comments.map((c) => [c.author, c.body.trim()]),

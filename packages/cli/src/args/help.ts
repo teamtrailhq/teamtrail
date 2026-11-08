@@ -8,6 +8,7 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} projects add [path] | list | remove <id|path>
        ${BRAND.slug} connect slack [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
+       ${BRAND.slug} guides list|search|add|update|remove|lint … [--dir <path>]
 
 Starts the Lookout for the current folder and opens it in your browser.
 
@@ -24,6 +25,18 @@ Commands:
                  unless --no-register or $${BRAND.noRegisterEnv} is set
   knowledge import <file.md>  Seed project knowledge from a markdown document: one suggestion per
                  ## heading, for you to review in the Lookout
+  guides list     Guides agents take on (built in, local and from a catalog), with their status
+  guides search [query] [--verified] [--registry <name>]
+                 Search the guide catalogs listed in guides.json (the official one by default)
+  guides add <id>|<file.md> [--registry <name>] [--approve-checks]
+                 Copy a guide into the tracker folder and pin it in guides.lock.json, after
+                 the safety lint. Each check command it proposes is shown and asked about;
+                 without a terminal, none is approved unless --approve-checks is given
+  guides update [id...]  Install newer catalog versions; changed check commands are asked about again
+  guides remove <id>     Remove an installed guide (its approved checks stay in verification.json)
+  guides lint <dir|file...> [--json]
+                 Catalog tooling: schema, safety lint and a test example per guide
+                 (examples/<id>/); exits 1 on any error
   connect slack  Start the Lookout on the Slack setup (Socket Mode from this machine;
                  tokens stay in your local credential store)
   hook claude    The SessionStart hook itself (reads the hook payload on stdin)

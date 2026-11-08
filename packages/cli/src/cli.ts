@@ -3,12 +3,16 @@ import { BRAND } from '@teamtrail/core';
 import { fail } from './args/help';
 import { parseArgs, parseSubArgs } from './args/parseArgs';
 import { runConnect } from './connect';
+import { guidesCli } from './guides/guidesCli';
 import { importKnowledge } from './knowledgeImport';
 import { runMcpServer } from './mcp/server';
 import { printGreeting } from './printGreeting';
 import { runProjects } from './projects';
 import { serveLookout } from './serve/serveLookout';
 import { readStdin, recordClaudeSession } from './usage/hook';
+
+/** `roles` is a hidden alias of `guides`, the name they had while they were built. */
+const GUIDE_COMMANDS = new Set(['guides', 'roles']);
 
 async function main() {
   const argv = process.argv.slice(2);
@@ -49,6 +53,7 @@ async function main() {
     );
     return;
   }
+  if (GUIDE_COMMANDS.has(argv[0])) return guidesCli(argv.slice(1));
   const slackSetup = argv[0] === 'connect' && argv[1] === 'slack';
   if (argv[0] === 'connect' && !slackSetup) {
     const o = parseSubArgs(argv.slice(1), ['--dir', '--no-register']);
