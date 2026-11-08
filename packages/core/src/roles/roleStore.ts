@@ -1,8 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROLES_DIR, type InstalledRole } from '../model/role';
-import { BUILTIN_ROLES } from './builtin/builtinRoles';
 import { lockChangedFor, readApprovedLock } from './approvedLock';
+import { BUILTIN_ROLES } from './builtin/builtinRoles';
 import { readRoleLock } from './roleLock';
 import { missingRole, roleStatus } from './roleStatus';
 
