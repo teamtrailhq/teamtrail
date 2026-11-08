@@ -34,9 +34,13 @@ const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], 
 const NODE_OK = [process.execPath, '-e', 'process.exit(0)'];
 const A11Y = roleText({
   id: 'a11y',
-  extra: ['requiresChecks: [a11y]', 'proposedChecks:', '  a11y:', '    run: [npx, pa11y-ci]', '    timeoutSec: 300'].join(
-    '\n',
-  ),
+  extra: [
+    'requiresChecks: [a11y]',
+    'proposedChecks:',
+    '  a11y:',
+    '    run: [npx, pa11y-ci]',
+    '    timeoutSec: 300',
+  ].join('\n'),
 });
 const findingAt = (text: string, rule: string) => lintRole(text).findings.find((f) => f.rule === rule);
 
@@ -174,7 +178,11 @@ test('a role only adds checks: it never lowers the level or removes one, and its
   const changed = A11Y.replace('[npx, pa11y-ci]', '[npx, pa11y-ci, --all]').replace('1.0.0', '1.1.0');
   installRole({ root, text: changed, source: 'local', by: 'trail lead' });
   assert.deepEqual(listRoles(root).find((r) => r.id === 'a11y')!.pendingChecks, ['a11y'], 'a new argv is pending');
-  assert.deepEqual(readVerificationConfig(root).config!.checks.a11y.run, ['npx', 'pa11y-ci'], 'old argv until approved');
+  assert.deepEqual(
+    readVerificationConfig(root).config!.checks.a11y.run,
+    ['npx', 'pa11y-ci'],
+    'old argv until approved',
+  );
   approveCheck({ root, id: 'a11y', name: 'a11y' });
   assert.deepEqual(readVerificationConfig(root).config!.checks.a11y.run, ['npx', 'pa11y-ci', '--all']);
 });

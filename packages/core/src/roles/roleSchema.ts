@@ -36,7 +36,10 @@ export function roleFields(yaml: YamlParse): { fields?: Fields; findings: RoleFi
   for (const k of Object.keys(v)) {
     if (KEYS.includes(k)) continue;
     if (FORBIDDEN.test(k))
-      fail(k, `a role can't set "${k}": verification, HITL, lifecycle and tools stay with Teamtrail and the trail lead`);
+      fail(
+        k,
+        `a role can't set "${k}": verification, HITL, lifecycle and tools stay with Teamtrail and the trail lead`,
+      );
     else fail(k, `unknown key "${k}"`);
   }
   const text = (key: string, max: number, required = true) => {
@@ -77,7 +80,8 @@ const isList = (n: YamlNode | undefined): n is string[] => Array.isArray(n);
 const isMap = (n: YamlNode | undefined): n is YamlMap => !!n && typeof n === 'object' && !Array.isArray(n);
 
 function handles(n: YamlNode | undefined, fail: Fail): RoleDoc['handles'] {
-  if (!isMap(n)) return (fail('handles', '"handles" must list the ticket types the role is for'), { types: [], labels: [] });
+  if (!isMap(n))
+    return (fail('handles', '"handles" must list the ticket types the role is for'), { types: [], labels: [] });
   const unknown = Object.keys(n).filter((k) => k !== 'types' && k !== 'labels');
   if (unknown.length) fail('handles', `"handles" has unknown ${unknown.join(', ')}`);
   const types = isList(n.types) ? n.types : [];

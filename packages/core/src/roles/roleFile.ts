@@ -18,7 +18,9 @@ const byteLength = (s: string) => new TextEncoder().encode(s).length;
 export function parseRole(text: string): { role?: RoleDoc; findings: RoleFinding[] } {
   const parts = splitRoleFile(text);
   if (!parts)
-    return { findings: [{ line: 1, rule: 'schema', level: 'error', message: 'a role file starts with --- frontmatter' }] };
+    return {
+      findings: [{ line: 1, rule: 'schema', level: 'error', message: 'a role file starts with --- frontmatter' }],
+    };
   const yaml = parseYamlSubset(parts.front, 2);
   const yamlFindings: RoleFinding[] = yaml.errors.map((e) => ({ ...e, rule: 'schema', level: 'error' }));
   const { fields, findings } = roleFields(yaml);

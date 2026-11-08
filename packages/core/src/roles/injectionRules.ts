@@ -9,7 +9,8 @@ export interface TextRule {
   level: 'error' | 'warn';
 }
 
-const PROTECTED = 'verification\\.json|roles\\.lock\\.json|roles\\.json|policy\\.json|attention\\.json|workspaces\\.json';
+const PROTECTED =
+  'verification\\.json|roles\\.lock\\.json|roles\\.json|policy\\.json|attention\\.json|workspaces\\.json';
 
 export const TEXT_RULES: TextRule[] = [
   {
@@ -68,7 +69,7 @@ export const TEXT_RULES: TextRule[] = [
   },
   {
     rule: 'hidden-text',
-    re: /[­​-‏‪-‮⁠-⁤⁦-⁩﻿]|[\u{E0000}-\u{E007F}]/u,
+    re: /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]|[\u{E0000}-\u{E007F}]/u,
     message: 'has hidden or direction-changing unicode characters',
     level: 'error',
   },

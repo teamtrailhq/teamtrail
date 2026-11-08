@@ -11,8 +11,7 @@ const TITLES: Record<string, (id: string) => string> = {
 function ticketsByRole(input: Parameters<AttentionSource['collect']>[0]) {
   const out = new Map<string, string[]>();
   for (const s of input.snaps)
-    for (const t of s.tickets)
-      if (t.role && t.state === 'open') out.set(t.role, [...(out.get(t.role) ?? []), t.id]);
+    for (const t of s.tickets) if (t.role && t.state === 'open') out.set(t.role, [...(out.get(t.role) ?? []), t.id]);
   return out;
 }
 

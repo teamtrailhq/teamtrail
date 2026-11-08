@@ -415,9 +415,7 @@
             "teamId": "team-eng",
             "title": "Charted by an agent",
             "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-            "labelIds": [
-              "lbl-0001-fake"
-            ]
+            "labelIds": ["lbl-0001-fake"]
           }
         }
       },
@@ -473,9 +471,7 @@
             "title": "Survey CRDT libraries",
             "description": "Compare.\n\nPart of trail ENG-1.",
             "parentId": "iss-0010-fake",
-            "labelIds": [
-              "lbl-0004-fake"
-            ]
+            "labelIds": ["lbl-0004-fake"]
           }
         }
       },
@@ -705,9 +701,7 @@
             "teamId": "team-eng",
             "title": "Charted after the first poll",
             "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-            "labelIds": [
-              "lbl-0001-fake"
-            ]
+            "labelIds": ["lbl-0001-fake"]
           }
         }
       },

@@ -105,3 +105,4 @@ export { BUILTIN_ROLES } from './roles/builtin/builtinRoles';
 export { effectiveChecks, requiredChecksOf, resolveRole, rolePayload, type ResolvedRole } from './roles/resolveRole';
 export { checkChecklist, checklistProblem, type ChecklistCheck } from './roles/checklist';
 export { parseCatalogIndex, searchCatalog } from './roles/catalogIndex';
+export { roleProblem } from './roles/roleProblem';

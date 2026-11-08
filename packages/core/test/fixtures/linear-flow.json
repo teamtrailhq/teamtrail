@@ -415,9 +415,7 @@
             "teamId": "team-eng",
             "title": "Ship offline sync",
             "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-            "labelIds": [
-              "lbl-0001-fake"
-            ]
+            "labelIds": ["lbl-0001-fake"]
           }
         }
       },
@@ -473,9 +471,7 @@
             "title": "Survey CRDT libraries",
             "description": "Compare Automerge and Yjs.\n\nPart of trail ENG-1.",
             "parentId": "iss-0010-fake",
-            "labelIds": [
-              "lbl-0004-fake"
-            ]
+            "labelIds": ["lbl-0004-fake"]
           }
         }
       },
@@ -531,9 +527,7 @@
             "title": "Pick a conflict policy",
             "description": "Last-writer-wins or merge?\n\nPart of trail ENG-1.",
             "parentId": "iss-0010-fake",
-            "labelIds": [
-              "lbl-0006-fake"
-            ]
+            "labelIds": ["lbl-0006-fake"]
           }
         }
       },
@@ -885,9 +879,7 @@
         "variables": {
           "id": "iss-0010-fake",
           "input": {
-            "addedLabelIds": [
-              "lbl-0002-fake"
-            ]
+            "addedLabelIds": ["lbl-0002-fake"]
           }
         }
       },

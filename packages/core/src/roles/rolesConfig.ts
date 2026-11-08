@@ -12,7 +12,8 @@ export const DEFAULT_REGISTRY = {
 };
 
 /** HTTPS only, except a catalog on this machine (tests, a local checkout served for review). */
-export const isRegistryUrl = (u: string) => /^https:\/\/\S+$/.test(u) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/\S*)?$/.test(u);
+export const isRegistryUrl = (u: string) =>
+  /^https:\/\/\S+$/.test(u) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/\S*)?$/.test(u);
 
 /** `roles.json`: the catalogs to search, in order. Missing, or with no valid registry, means the official one. */
 export function readRolesConfig(root: string): { config: RolesConfig; errors: string[] } {

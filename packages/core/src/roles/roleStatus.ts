@@ -35,7 +35,11 @@ export function roleStatus(file: {
   const firstError = lint.findings.find((f) => f.level === 'error');
   if (firstError) return { ...base, status: 'invalid', reason: `line ${firstError.line}: ${firstError.message}` };
   if (lint.role?.id !== file.id)
-    return { ...base, status: 'invalid', reason: `its id "${lint.role?.id}" doesn't match the file name ${file.id}.md` };
+    return {
+      ...base,
+      status: 'invalid',
+      reason: `its id "${lint.role?.id}" doesn't match the file name ${file.id}.md`,
+    };
   if (file.origin === 'builtin') return { ...base, status: 'active' };
   if (!file.lock) return { ...base, status: 'unapproved', reason: 'not approved by the trail lead yet' };
   if (file.lock.sha256 !== sha256)

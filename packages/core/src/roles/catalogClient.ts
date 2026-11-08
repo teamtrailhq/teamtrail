@@ -45,6 +45,8 @@ export async function fetchCatalog(registry: Registry, opts: CatalogFetch = {}):
 export async function fetchCatalogRole(registry: Registry, entry: CatalogEntry, opts: CatalogFetch = {}) {
   const text = await get(join(registry.url, entry.path), opts);
   if (roleSha(text) !== entry.sha256)
-    throw new OperationError(`${entry.id} ${entry.version}: the file doesn't match the catalog's sha256; not installed`);
+    throw new OperationError(
+      `${entry.id} ${entry.version}: the file doesn't match the catalog's sha256; not installed`,
+    );
   return text;
 }
