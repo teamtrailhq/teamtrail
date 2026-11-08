@@ -83,19 +83,33 @@ export async function verifyProjects({ browser, cli, log, shots }) {
     const answeredB = await askB;
     await itemB.waitFor({ state: 'detached', timeout: 20_000 });
     const switcher = await page.locator('.project-switcher').count();
+    const visited = [];
+    page.on('framenavigated', (f) => f === page.mainFrame() && visited.push(f.url()));
 
-    // The switcher opens repo B in place: its own runtime, at /p/<id>.
-    await page.locator('.project-switcher .project-btn').click();
-    await page.locator('.project-switcher .trail-item', { hasText: 'billing' }).click();
-    await page.waitForURL(/[?&]project=[0-9a-f]+/, { timeout: 15_000 });
+    // A ticket item from another project: it opens that project with the ticket selected in the inspector.
+    await two.call('start_trail', {
+      discovery: false,
+      title: 'Usage invoices',
+      destination: 'Invoices explain every line',
+      tickets: [{ ref: 'cur', title: 'Which currency ships first?', type: 'junction' }],
+    });
+    const ticketItem = page.locator('.projects-view .pj-item', { hasText: 'Which currency ships first?' });
+    await ticketItem.locator('.ds-row-main').click({ timeout: 20_000 });
+    await page.locator('.inspector', { hasText: 'Which currency ships first?' }).waitFor({ timeout: 20_000 });
     await page.locator('.header .repo', { hasText: 'billing' }).waitFor({ timeout: 15_000 });
+    const ticketLink = visited.find((u) => /[?&]project=[0-9a-f]+/.test(u) && /[?&]item=/.test(u)) ?? '';
+    const ticketOpened = !!ticketLink && !/[?&]item=/.test(page.url());
     if (shots) await page.screenshot({ path: path.join(shots, '18-project-b.png') });
 
+    // A question item from the home project: it opens home with that question's conversation open.
     await page.locator('.project-switcher .project-btn').click();
     await page.locator('.project-switcher .all-projects').click();
-    const itemA = page.locator('.projects-view .pj-item', { hasText: 'Show prices with tax?' });
-    await itemA.locator('textarea').fill('Yes, with tax');
-    await itemA.locator('textarea').press('Enter');
+    await page.locator('.projects-view .pj-item', { hasText: 'Show prices with tax?' }).locator('.ds-row-main').click();
+    await page.locator('.open-q', { hasText: 'Show prices with tax?' }).waitFor({ timeout: 20_000 });
+    const questionLink = visited.at(-1) ?? '';
+    const questionOpened = /[?&]item=question/.test(questionLink) && !/[?&]project=/.test(questionLink);
+    await page.locator('.comms-input textarea').fill('Yes, with tax');
+    await page.locator('.comms-input textarea').press('Enter');
     const answeredA = await askA;
 
     const ok =
@@ -104,11 +118,13 @@ export async function verifyProjects({ browser, cli, log, shots }) {
       cardCount === 2 &&
       both &&
       switcher === 1 &&
+      ticketOpened &&
+      questionOpened &&
       answeredB.answer === 'Yes, always up' &&
       answeredA.answer === 'Yes, with tax' &&
       !errors.length;
     log(
-      `all projects ${ok ? 'ok' : 'WRONG'}: agents registered ${registered.join(' and ')}, ${cardCount} project rows, both questions in one queue (${both}), billing's answered from the overview ("${answeredB.answer}"), storefront's after switching to billing and back ("${answeredA.answer}")${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `all projects ${ok ? 'ok' : 'WRONG'}: agents registered ${registered.join(' and ')}, ${cardCount} project rows, both questions in one queue (${both}), billing's answered from the overview ("${answeredB.answer}"), billing's ticket opened in its inspector from the queue (${ticketOpened}), storefront's question opened in its conversation from the queue (${questionOpened}) and answered there ("${answeredA.answer}")${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {

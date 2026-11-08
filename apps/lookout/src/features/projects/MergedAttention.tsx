@@ -7,7 +7,8 @@ import { projectsApi } from './projectsApi';
 export function MergedAttention(props: {
   view: ProjectsView;
   now: number;
-  onOpen: (projectId: string) => void;
+  /** Opens the item in its project, as that project's inbox row would. */
+  onOpen: (projectId: string, itemId: string) => void;
   onAnswered: () => void;
 }) {
   const items = props.view.attention;
@@ -28,7 +29,7 @@ export function MergedAttention(props: {
             key={`${item.projectId}/${item.id}`}
             item={item}
             now={props.now}
-            onOpen={() => props.onOpen(item.projectId)}
+            onOpen={() => props.onOpen(item.projectId, item.id)}
             onAnswer={
               item.kind === 'question' && answerable(item.projectId)
                 ? (text) => projectsApi.answer(item.projectId, { questionId: item.ref, text }).then(props.onAnswered)

@@ -46,6 +46,11 @@ export function useAppNavigation(api: LookoutApi, bp: Breakpoint) {
       setConvRequest((n) => n + 1);
     }
   };
+  /** Opens a conversation and shows it, on every layout (a deep link to a question). */
+  const showChat = (sessionId: string, ticketId?: string, mapId?: string) => {
+    openChat(sessionId, ticketId, mapId);
+    setConvRequest((n) => n + 1);
+  };
   const openTicket = (mapId: string, ticketId: string) => {
     if (mapId !== api.mapId) actions.selectMap(mapId);
     setSelection({ kind: 'ticket', id: ticketId });
@@ -68,6 +73,7 @@ export function useAppNavigation(api: LookoutApi, bp: Breakpoint) {
     toggleStats,
     select,
     openChat,
+    showChat,
     openTicket,
   };
 }

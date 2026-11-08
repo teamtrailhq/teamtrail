@@ -100,7 +100,7 @@ export function App() {
       activity={scoped}
     />
   );
-  const { projects, overview, openOverview } = useProjectsUi(bp, nav);
+  const { projects, overview, openOverview } = useProjectsUi(bp, nav, attn.link.request);
   const decisions = overview || ((nav.statsOpen || nav.decisionsView) && <RecordViews api={api} bp={bp} nav={nav} />);
   const briefing = brief.shown && (
     <AppBriefing

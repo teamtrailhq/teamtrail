@@ -1,6 +1,6 @@
 import type { ProjectSummary } from '@teamtrail/core';
 import type { EdgeTone, MetaPart } from '../../components/ui';
-import { projectHref } from '../../lib/apiBase';
+import { ITEM_PARAM, projectHref } from '../../lib/apiBase';
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -43,12 +43,17 @@ export function projectDetail(p: ProjectSummary): string {
   return p.top?.title ?? p.note ?? p.path;
 }
 
-/** Opens a project in place; one another Lookout serves opens there instead. A missing one doesn't open. */
-export function openProject(p: ProjectSummary, home: string) {
+/**
+ * Opens a project in place, and with `item` that queue item in it; one another Lookout serves opens there instead.
+ * A missing one doesn't open.
+ */
+export function openProject(p: ProjectSummary, home: string, item?: string) {
   if (p.state.kind === 'missing') return;
   if (p.state.kind === 'elsewhere') {
-    window.open(p.state.url, '_blank', 'noopener');
+    const there = new URL(p.state.url);
+    if (item) there.searchParams.set(ITEM_PARAM, item);
+    window.open(there.toString(), '_blank', 'noopener');
     return;
   }
-  location.href = projectHref({ id: p.id, home, tracker: p.tracker.kind });
+  location.href = projectHref({ id: p.id, home, tracker: p.tracker.kind, item });
 }

@@ -89,7 +89,7 @@ GitHub Issues and Linear store the map and tickets in the tracker instead (`pack
 - `features/<feature>/` holds one folder per zone or dialog (inbox, map, inspector, activity, plan, decisions, briefing, settings, verification, …).
 - Live updates: hooks that refetch when a tracker file changes subscribe through `lib/trackerChanges.ts` (one shared `/events` stream). Don't open a new `EventSource` per hook: browsers allow six connections per host, and requests queue behind open streams.
 - `components/ui/` holds the design-system primitives, `hooks/` app-wide hooks (`useLookout.ts` loads data and subscribes to SSE), `lib/` helpers, and `styles/` the CSS per area (tokens in `styles/design-system.css`).
-- Projects: `lib/apiBase.ts` gives the page's API base (`?project=<id>` → `/__teamtrail/p/<id>`, home keeps the un-prefixed API; switching projects reloads the page). `features/projects/` holds All projects, the header's project switcher, the phone home tab's list and the hooks; Settings → Projects is `features/settings/ProjectsSection.tsx`. With one project nothing of it shows.
+- Projects: `lib/apiBase.ts` gives the page's API base (`?project=<id>` → `/__teamtrail/p/<id>`, home keeps the un-prefixed API; switching projects reloads the page). `?item=<attention item id>` opens a queue item the way its inbox row would (`app/useItemLink.ts`); All projects links to items in other projects with it. `features/projects/` holds All projects, the header's project switcher, the phone home tab's list and the hooks; Settings → Projects is `features/settings/ProjectsSection.tsx`. With one project nothing of it shows.
 - The in-app changelog is `features/settings/releases.ts`.
 
 ## Conventions

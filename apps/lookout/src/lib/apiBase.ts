@@ -1,5 +1,8 @@
 import { BRAND } from '@teamtrail/core';
 
+/** `?item=<attention item id>`: the queue item a link from All projects opens (app/useItemLink.ts). */
+export const ITEM_PARAM = 'item';
+
 /** A project id as the hub hands them out: a short hex hash. */
 const ID = /^[0-9a-f]{6,64}$/;
 
@@ -22,11 +25,10 @@ export function apiBase(project = activeProject()): string {
  * The URL that opens a project in place: no `?project` for home. Another project also names its tracker, since
  * the saved tracker choice belongs to the home project.
  */
-export function projectHref(to: { id?: string; home: string; tracker?: string }): string {
+export function projectHref(to: { id?: string; home: string; tracker?: string; item?: string }): string {
   const q = new URLSearchParams(location.search);
-  q.delete('projects');
-  q.delete('project');
-  q.delete('tracker');
+  for (const k of ['projects', 'project', 'tracker', ITEM_PARAM]) q.delete(k);
+  if (to.item) q.set(ITEM_PARAM, to.item);
   if (to.id && to.id !== to.home) q.set('project', to.id);
   if (to.id && to.id !== to.home && to.tracker) q.set('tracker', to.tracker);
   const s = q.toString();

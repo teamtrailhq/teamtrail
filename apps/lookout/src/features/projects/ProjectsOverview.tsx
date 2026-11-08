@@ -14,7 +14,13 @@ import { useProjectsBriefing } from './useProjectsBriefing';
  * All projects: one row per registered repo, the queue ranked across them, and what changed while you were
  * away. Covers the zones under the header like the Logbook; opening a project loads it in place.
  */
-export function ProjectsOverview(props: { projects: ProjectsApi; bp: Breakpoint; onClose: () => void }) {
+export function ProjectsOverview(props: {
+  projects: ProjectsApi;
+  bp: Breakpoint;
+  onClose: () => void;
+  /** Opens a queue item of the project on screen, without a reload. */
+  onItemHere: (itemId: string) => void;
+}) {
   const { view, reload } = props.projects;
   const now = useNow(15_000);
   const briefing = useProjectsBriefing();
@@ -30,6 +36,13 @@ export function ProjectsOverview(props: { projects: ProjectsApi; bp: Breakpoint;
     if (p?.id === current) props.onClose();
     else if (p) openProject(p, view.home);
   };
+  const openItem = (projectId: string, itemId: string) => {
+    const p = view.projects.find((x) => x.id === projectId);
+    if (!p) return;
+    if (p.id !== current) return openProject(p, view.home, itemId);
+    props.onClose();
+    props.onItemHere(itemId);
+  };
   return (
     <Panel className={`zone decisions-view projects-view dv-${props.bp}`}>
       <header className="dv-head">
@@ -41,7 +54,7 @@ export function ProjectsOverview(props: { projects: ProjectsApi; bp: Breakpoint;
         </span>
       </header>
       <div className="pj-body">
-        <MergedAttention view={view} now={now} onOpen={open} onAnswered={reload} />
+        <MergedAttention view={view} now={now} onOpen={openItem} onAnswered={reload} />
         <section className="pj-section pj-projects">
           <SectionHeader
             title="Projects"
