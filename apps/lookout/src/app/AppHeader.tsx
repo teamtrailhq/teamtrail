@@ -9,7 +9,8 @@ import type { Runtime } from '../lib';
 export function AppHeader(props: {
   api: LookoutApi;
   rt: Runtime;
-  repo: string;
+  /** The repo name, or the project switcher. */
+  repo: ReactNode;
   brief: ReturnType<typeof useBriefing>;
   /** Focus mode and the interrupting count (features/attention), in place of the plain waiting count. */
   attention?: ReactNode;

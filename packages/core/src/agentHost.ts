@@ -115,3 +115,4 @@ export { DEFAULT_REGISTRY, isRegistryUrl, readGuidesConfig } from './guides/guid
 export { fetchCatalog, fetchCatalogGuide, type CatalogFetch, type Registry } from './guides/catalogClient';
 export { addFromCatalog, assertNotBuiltin, previewCatalogGuide } from './guides/addFromCatalog';
 export { readChecklist, writeChecklist } from './guides/checklistStore';
+export { readModelsConfig, type ModelsRead } from './planning/matching/modelsStore';

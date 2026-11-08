@@ -1,6 +1,5 @@
 import {
   allowedTypes,
-  chooseNext,
   OperationError,
   promoteToTicket,
   release,
@@ -14,6 +13,7 @@ import { criteriaView, saveCriteria, type CriterionInput } from './criteria';
 import { briefView, claimable } from './discovery';
 import { assertGuide, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
+import { heldReason, pickNext, tierFields } from './models';
 import { noTicketReason } from './noTicketReason';
 import { recoverStalled } from './recoverStalled';
 import { frozenOn } from './reroutes';
@@ -33,15 +33,18 @@ export async function nextTicket(
     ...frozenOn(ctx, snap.map.id).keys(),
     ...outsideGuides(snap, input.guides),
   ];
-  const t = chooseNext(snap, { types, exclude });
+  const { ticket: t, held } = pickNext(ctx, snap, { types, exclude });
   const extra = recovered.length ? { recovered } : {};
   if (t)
     return {
       ticket: ticketInfo(ctx.root, snap, t, await ctx.decisions(snap.map.id)),
+      ...tierFields(ctx, snap, t),
       knowledge: knowledgeFor(ctx.root, snap, t),
       ...extra,
     };
-  const reason = noTicketReason(snap, { gate, next: gate ? briefView(ctx.root, snap)?.next : undefined });
+  const reason = held.length
+    ? heldReason(ctx, snap, held)
+    : noTicketReason(snap, { gate, next: gate ? briefView(ctx.root, snap)?.next : undefined });
   return { ticket: null, reason, ...extra };
 }
 

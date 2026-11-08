@@ -1,11 +1,12 @@
-import { BRAND, type AttentionItem } from '@teamtrail/core';
+import { type AttentionItem } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button } from '../../components/ui';
+import { apiBase } from '../../lib/apiBase';
 
 /** Creates the suggested ticket that brings two clashing branches together. Nothing is merged. */
 async function addIntegration(item: AttentionItem): Promise<string | undefined> {
   const [a, b] = item.ref.split('+');
-  const r = await fetch(`${BRAND.apiPrefix}/workspaces/integration`, {
+  const r = await fetch(`${apiBase()}/workspaces/integration`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mapId: item.mapId, a, b }),

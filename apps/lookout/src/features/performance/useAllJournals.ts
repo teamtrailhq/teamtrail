@@ -1,5 +1,6 @@
-import { BRAND, type MapSnapshot, type TransitionEntry } from '@teamtrail/core';
+import { type MapSnapshot, type TransitionEntry } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
+import { apiBase } from '../../lib/apiBase';
 
 /** Every trail's lifecycle journal, refetched when any ticket changes. */
 export function useAllJournals(snaps: MapSnapshot[]) {
@@ -9,9 +10,7 @@ export function useAllJournals(snaps: MapSnapshot[]) {
     let live = true;
     void Promise.all(
       snaps.map(async (s) => {
-        const r = await fetch(`${BRAND.apiPrefix}/journal?mapId=${encodeURIComponent(s.map.id)}`).catch(
-          () => undefined,
-        );
+        const r = await fetch(`${apiBase()}/journal?mapId=${encodeURIComponent(s.map.id)}`).catch(() => undefined);
         const body = r?.ok ? ((await r.json()) as { entries: TransitionEntry[] }) : { entries: [] };
         return [s.map.id, body.entries] as const;
       }),

@@ -8,6 +8,7 @@ import {
 import type { KnowledgeStore } from '../features/knowledge';
 import type { LookoutApi } from '../hooks';
 import type { useAppNavigation } from './useAppNavigation';
+import { useItemLink } from './useItemLink';
 
 /**
  * The attention queue, wired to the app: where each kind of item opens, the header's focus control and
@@ -37,8 +38,9 @@ export function useAttentionUi(input: {
     openGuides: input.openGuides,
   };
   const view = attention.view;
+  const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers, showChat: nav.showChat });
   const header = view && (
     <AttentionHeader view={view} onFocus={(focusUntil) => void attention.savePrefs({ ...view.prefs, focusUntil })} />
   );
-  return { attention, handlers, header };
+  return { attention, handlers, header, link };
 }

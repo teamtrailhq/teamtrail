@@ -1,8 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { BRAND, LEASE_MINUTES_ENV, leaseMs, MarkdownAdapter } from '@teamtrail/core';
-import { activeTracker } from '@teamtrail/core/bridge';
-import { nodeMarkdownFs } from '@teamtrail/core/node';
+import { activeTracker, configDir } from '@teamtrail/core/bridge';
+import { autoRegister, nodeMarkdownFs } from '@teamtrail/core/node';
 import { UsageMeter } from '../usage/meter';
 import { TrailAgent } from './agent';
 import { INSTRUCTIONS } from './instructions';
@@ -10,6 +10,7 @@ import { toolDefiner } from './toolKit';
 import { registerGuideTools } from './tools/guideTools';
 import { registerHitlTools } from './tools/hitlTools';
 import { registerKnowledgeTools } from './tools/knowledgeTools';
+import { registerProjectTools } from './tools/projectTools';
 import { registerRerouteTools } from './tools/rerouteTools';
 import { registerTicketTools } from './tools/ticketTools';
 import { registerTrailTools } from './tools/trailTools';
@@ -25,11 +26,20 @@ export function createMcpServer(agent: TrailAgent, version: string) {
   registerKnowledgeTools(tool, agent);
   registerRerouteTools(tool, agent);
   registerGuideTools(tool, agent);
+  registerProjectTools(tool, agent);
   return server;
 }
 
 /** `teamtrail mcp`: serve the agent over stdio until the client disconnects. */
-export async function runMcpServer(opts: { root: string; agent?: string; leaseMinutes?: number; version: string }) {
+export async function runMcpServer(opts: {
+  root: string;
+  agent?: string;
+  leaseMinutes?: number;
+  noRegister?: boolean;
+  version: string;
+}) {
+  // The Lookout's All projects view lists this repo from now on (opt out: --no-register).
+  autoRegister({ configDir: configDir(), root: opts.root, optOut: opts.noRegister });
   let server: McpServer | undefined;
   const client = () => {
     const v = server?.server.getClientVersion();

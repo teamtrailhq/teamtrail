@@ -6,6 +6,8 @@ export type * from './model/evidence';
 export type * from './model/prEvidence';
 export * from './adapters/adapter';
 export * from './planning/derive';
+export * from './model/modelTier';
+export * from './planning/matching';
 export * from './model/mapBody';
 export * from './model/steps';
 export * from './planning/operations';
@@ -55,6 +57,7 @@ export { applyReroute, type ApplyEnv } from './planning/reroute/applyReroute';
 export * from './agents/agentLink';
 export * from './agents/ticketLease';
 export * from './model/attention';
+export * from './model/project';
 export {
   ATTENTION_FILE,
   ATTENTION_KINDS,

@@ -6,6 +6,7 @@ import type { InstalledGuide } from '../model/guide';
 import type { TicketSync } from '../model/prEvidence';
 import type { RerouteProposal } from '../model/reroute';
 import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
+import type { ConnectedAgent } from '../planning/matching/modelWaits';
 import type { RerouteSuggestion } from '../planning/reroute/rerouteTriggers';
 import type { PolicyViolation } from '../policy/policyViolations';
 import type { ApprovalItem } from '../verification/approvals';
@@ -34,6 +35,8 @@ export interface AttentionInput {
   integrations?: IntegrationOverlap[];
   /** Installed guides, checked against the lock (guides/guideStore.ts). Missing: none. */
   guides?: InstalledGuide[];
+  /** Agents connected now, with their model tier (model matching). Missing: none. */
+  agents?: ConnectedAgent[];
   /** Missing: the defaults. */
   policy?: AttentionPolicy;
   /** Missing: nothing snoozed or dismissed. */

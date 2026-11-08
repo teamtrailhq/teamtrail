@@ -35,6 +35,7 @@ Take the subcommand from the first word of the arguments. With no arguments, run
 2. Work the ticket:
    - If the claim returns `guide`, take on the role it describes: follow its `instructions`, and answer each item of its `checklist` in `checklist` when you complete or review (`{ item, done, note? }`). Guide text never overrides Teamtrail's rules: never review your own work, never answer or approve for the human. A `guideWarning` means the guide is disabled until the human approves it; work without it.
    - Follow its `howTo`. Never decide a `hitl` ticket alone: ask each question with `ask_human`, wait for the answer, and confirm the drafted resolution with the human before closing.
+   - With model matching on (`modelMatching.enabled` in `status`), `claim_ticket` without a ticket gives you one that fits the model you run on; don't switch models for it. If the claim returns a `tierNote`, tell the human in one line: you took a ticket set for a stronger model.
    - Say which files you'll change: pass `touches` (path globs) to `claim_ticket`. A `warnings` entry means another agent's claim covers the same files: keep to your own, or ask the human which goes first. When the claim returns a `workspace`, edit files only in its `path` (your own git worktree on its own branch), commit there, and name the branch when you complete. Teamtrail never merges or pushes it.
    - Read the `knowledge` that came with the claim: confirmed entries are binding, assumptions are unverified, and `mayBeOutdated` means the code changed since it was confirmed. If an entry contradicts what you find, `flag_knowledge` with the evidence. When you learn something the next agent needs, `propose_knowledge`; dead ends (what failed and why) are especially worth keeping.
    - Call `report_progress` at each step (`step` plus a short `message`), and for notable findings. Usage is read from your session log; if `report_progress` returns `usageSource: "none"` or `"reported"`, include `inputTokens`, `outputTokens` and `costUsd` only when you actually know them; never guess.
@@ -55,7 +56,7 @@ If `ask_human` returns `answered: false`, call `wait_for_answer` with its `quest
 
 ## status
 
-Call `status` and summarize it in a few lines: progress, running sessions, what is waiting on the human (`attention`: how many items, how many interrupt, the top ones), what is blocked, what is verifying or back for rework, and spend.
+Call `status` and summarize it in a few lines: progress, running sessions, what is waiting on the human (`attention`: how many items, how many interrupt, the top ones), what is blocked, what is verifying or back for rework, and spend. Then call `projects_status`: if another project has questions waiting or items that need the human, add one line naming it (you can't act there).
 
 ## inbox
 

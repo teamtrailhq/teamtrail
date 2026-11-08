@@ -13,6 +13,7 @@ export function fingerprint(e: CacheEntry) {
     map.mode,
     map.verification ?? '',
     map.guides ?? [],
+    map.modelMatching ?? null,
     roundtrip(map.sections),
     [...tickets]
       .sort((a, b) => a.id.localeCompare(b.id))

@@ -21,6 +21,9 @@ export function AppSettings(props: {
       location={rt.adapter.location}
       map={api.snap?.map}
       onMapMode={api.actions.setMode}
+      snaps={Object.values(api.allSnaps)}
+      answered={api.activity.answered}
+      onModelMatching={api.actions.setModelMatching}
       focus={props.focus === 'top' ? undefined : props.focus}
       onClose={() => {
         props.onClose();

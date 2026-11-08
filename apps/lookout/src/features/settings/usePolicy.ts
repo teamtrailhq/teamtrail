@@ -1,5 +1,6 @@
-import { BRAND, type RiskPolicy } from '@teamtrail/core';
+import { type RiskPolicy } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
+import { apiBase } from '../../lib/apiBase';
 import { onTrackerChange } from '../../lib/trackerChanges';
 
 export interface PolicyView {
@@ -9,7 +10,7 @@ export interface PolicyView {
   defaults: boolean;
 }
 
-const url = `${BRAND.apiPrefix}/policy`;
+const url = `${apiBase()}/policy`;
 
 async function fetchPolicy(): Promise<PolicyView | null> {
   const r = await fetch(url);

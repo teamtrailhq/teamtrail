@@ -9,6 +9,12 @@ export interface Release {
 
 export const NEXT: { area: string; items: string[] }[] = [
   {
+    area: 'Model matching',
+    items: [
+      'Match work to models: switch it on for a trail in Settings and each agent gets the tickets that fit the model it runs on, research on fast models and junctions on the strongest. You set the tier per ticket type; Teamtrail never switches a model, and a ticket no connected agent is strong enough for waits in your queue',
+    ],
+  },
+  {
     area: 'Guides',
     items: [
       'Guides: a ticket can ask for a reviewer, QA, security, docs or architect, and the agent that claims it gets that guide’s instructions and a checklist it must answer before the work counts as done. Pick a trail’s team and each ticket’s guide in the Lookout, and add more guides from a moderated catalog in Settings → Guides. A guide can add checks but never remove one, its commands only run after you approve them, and a guide file edited after you approved it is switched off until you look at it again',
@@ -31,12 +37,10 @@ export const NEXT: { area: string; items: string[] }[] = [
       'A new logo, a t whose stem runs along a trail to a node, and a new look for Scout: the original CRT head with ear cups and a baseball cap, with a lamp on the cap at night. No more pixel art, and new fonts too',
     ],
   },
-  { area: 'Every repo', items: ['All your projects in one view, with one list of what needs you across them'] },
   {
-    area: 'Agents',
+    area: 'Every repo',
     items: [
-      'Smarter model choice: hard calls to stronger models, routine work to cheaper ones, based on past results',
-      'Agent roles (reviewer, researcher, builder) and guides you can add to a trail',
+      "All projects: every repo you supervise in one view, with one list of what needs you across them and what changed while you were away. Answer an agent's question in any repo from there, and switch projects from the header. Agents add their repo when they connect (`--no-register` opts out), or add one with `teamtrail projects add`",
     ],
   },
   { area: 'Teamtrail Cloud', items: ['Agents that run in the cloud, steered from the same Lookout'] },

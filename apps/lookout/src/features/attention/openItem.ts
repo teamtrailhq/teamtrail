@@ -31,6 +31,7 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
     case 'hitl-ready':
     case 'overlap':
     case 'integration':
+    case 'model':
       return openTicketOrTrail(item, h);
     case 'knowledge':
       return h.openKnowledge();

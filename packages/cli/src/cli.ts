@@ -7,18 +7,23 @@ import { guidesCli } from './guides/guidesCli';
 import { importKnowledge } from './knowledgeImport';
 import { runMcpServer } from './mcp/server';
 import { printGreeting } from './printGreeting';
+import { runProjects } from './projects';
 import { serveLookout } from './serve/serveLookout';
 import { readStdin, recordClaudeSession } from './usage/hook';
+
+/** `roles` is a hidden alias of `guides`, the name they had while they were built. */
+const GUIDE_COMMANDS = new Set(['guides', 'roles']);
 
 async function main() {
   const argv = process.argv.slice(2);
   if (argv[0] === 'mcp') {
-    const o = parseSubArgs(argv.slice(1), ['--dir', '--agent', '--lease-minutes']);
+    const o = parseSubArgs(argv.slice(1), ['--dir', '--agent', '--lease-minutes', '--no-register']);
     if (o.rest.length) fail(`unexpected argument: ${o.rest[0]}`);
     await runMcpServer({
       root: path.resolve(process.cwd(), o.dir),
       agent: o.agent,
       leaseMinutes: o.leaseMinutes,
+      noRegister: o.noRegister,
       version: __VERSION__,
     });
     return;
@@ -33,6 +38,12 @@ async function main() {
     }
     return;
   }
+  if (argv[0] === 'projects') {
+    const o = parseSubArgs(argv.slice(1), ['--dir']);
+    runProjects(o.rest, o.dir);
+    process.stdout.write('\n');
+    return;
+  }
   if (argv[0] === 'knowledge') {
     const o = parseSubArgs(argv.slice(1), ['--dir']);
     if (o.rest[0] !== 'import' || !o.rest[1]) fail('usage: knowledge import <file.md> [--dir <path>]');
@@ -42,16 +53,15 @@ async function main() {
     );
     return;
   }
-  // `roles` is a hidden alias, the name guides had while they were built
-  if (argv[0] === 'guides' || argv[0] === 'roles') return guidesCli(argv.slice(1));
+  if (GUIDE_COMMANDS.has(argv[0])) return guidesCli(argv.slice(1));
   const slackSetup = argv[0] === 'connect' && argv[1] === 'slack';
   if (argv[0] === 'connect' && !slackSetup) {
-    const o = parseSubArgs(argv.slice(1), ['--dir']);
+    const o = parseSubArgs(argv.slice(1), ['--dir', '--no-register']);
     const target = o.rest[0];
     if (target !== 'claude' && target !== 'codex') fail('connect needs an agent: claude or codex');
     printGreeting();
     process.stdout.write(`\n  ${BRAND.name} · connect ${target === 'claude' ? 'Claude Code' : 'Codex'}\n\n`);
-    runConnect(target, { cwd: process.cwd(), dir: o.dir });
+    runConnect(target, { cwd: process.cwd(), dir: o.dir, noRegister: o.noRegister });
     process.stdout.write('\n');
     return;
   }

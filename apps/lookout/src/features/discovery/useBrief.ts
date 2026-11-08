@@ -1,8 +1,9 @@
-import { BRAND, type DiscoveryBrief, type MapSnapshot } from '@teamtrail/core';
+import { type DiscoveryBrief, type MapSnapshot } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
+import { apiBase } from '../../lib/apiBase';
 import { onTrackerChange } from '../../lib/trackerChanges';
 
-const api = `${BRAND.apiPrefix}/briefs`;
+const api = `${apiBase()}/briefs`;
 
 /** The trail's discovery brief (`/briefs`), live: refetched when a `briefs/` file changes or the trail does. */
 export function useBrief(snap?: MapSnapshot) {

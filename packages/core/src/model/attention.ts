@@ -21,6 +21,7 @@ export type AttentionKind =
   | 'reroute-suggested'
   | 'overlap'
   | 'integration'
+  | 'model'
   | 'guide'
   | 'guide-checks';
 

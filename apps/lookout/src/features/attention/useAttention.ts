@@ -1,8 +1,9 @@
-import { BRAND, type AttentionPrefs, type AttentionView } from '@teamtrail/core';
+import { type AttentionPrefs, type AttentionView } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
+import { apiBase } from '../../lib/apiBase';
 import { onServerEvent } from '../../lib/trackerChanges';
 
-const api = `${BRAND.apiPrefix}/attention`;
+const api = `${apiBase()}/attention`;
 /** Bursts of tracker changes refetch once. */
 const NUDGE_MS = 250;
 

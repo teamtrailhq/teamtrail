@@ -1,6 +1,9 @@
 import {
+  type AnsweredQuestion,
   type MapDoc,
   type MapMode,
+  type MapSnapshot,
+  type ModelMatching,
   MAP_LABEL,
   BRAND,
   HITL_LABEL,
@@ -16,6 +19,8 @@ import { ModeChoice } from '../trail';
 import { AttentionSection } from './AttentionSection';
 import { BriefingChoice } from './BriefingChoice';
 import { Changelog } from './Changelog';
+import { ModelMatchingSection } from './ModelMatchingSection';
+import { ProjectsSection } from './ProjectsSection';
 import { RiskPolicySection } from './RiskPolicySection';
 import { SettingsSection } from './SettingsSection';
 import { SlackSection } from './SlackSection';
@@ -31,6 +36,10 @@ export function SettingsPanel(props: {
   location: string;
   map?: MapDoc;
   onMapMode: (m: MapMode) => void;
+  /** Every trail and the answered questions, for the delivery hints next to model tiers. */
+  snaps: MapSnapshot[];
+  answered: AnsweredQuestion[];
+  onModelMatching: (value: ModelMatching) => void;
   onClose: () => void;
   initialTab?: 'settings' | 'changelog';
   focus?: 'slack' | 'guides';
@@ -77,15 +86,24 @@ export function SettingsPanel(props: {
 
             <VerificationSection map={props.map} />
 
+            <ModelMatchingSection
+              map={props.map}
+              snaps={props.snaps}
+              answered={props.answered}
+              onChange={props.onModelMatching}
+            />
+
             <RiskPolicySection />
 
             <AttentionSection />
 
             <WorkspacesSection />
 
-            {props.map && <TeamSection map={props.map} />}
+            <ProjectsSection />
 
             <GuidesSection focus={props.focus === 'guides'} />
+
+            {props.map && <TeamSection map={props.map} />}
 
             <SettingsSection title="Labels">
               <div className="label-codes">

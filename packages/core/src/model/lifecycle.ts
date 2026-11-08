@@ -1,3 +1,5 @@
+import type { ModelMatching } from './types';
+
 /**
  * Ticket lifecycle. The tracker stores open/closed, the assignee and, on top
  * of those, a `TicketStatus` (frontmatter `status`, or the issue meta marker).
@@ -80,6 +82,8 @@ export interface MapMetaPatch {
   verification?: VerificationLevel | null;
   /** The trail's team of guide ids (`setTrailTeam`). */
   guides?: string[] | null;
+  /** Trail lead only (`setModelMatching`). */
+  modelMatching?: ModelMatching | null;
 }
 
 /** One line of a trail's history (`.events/<mapId>.jsonl`). History and UI only; the tracker holds the state. */

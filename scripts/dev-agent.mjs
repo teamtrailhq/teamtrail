@@ -48,7 +48,7 @@ async function agent(n) {
     args: [cli, 'mcp'],
     // Same folder as the seed and the dev server: <dataDir> at the repo root, or $TEAMTRAIL_DIR.
     cwd: repo,
-    env: { ...process.env },
+    env: { ...process.env, TEAMTRAIL_NO_REGISTER: '1' },
     stderr: 'pipe',
   });
   const client = new Client({ name: 'claude-code', version: `dev-agent-${n}` });

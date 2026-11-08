@@ -1,0 +1,27 @@
+/* Model matching: the tier per ticket type in Settings, a ticket waiting for a stronger model in the inspector. */
+.tier-grid {
+  display: grid;
+  gap: var(--sp-6);
+  margin: var(--sp-8) 0;
+}
+.tier-row {
+  display: grid;
+  grid-template-columns: 6.5rem 8.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-8);
+  font-size: var(--fs-sm);
+}
+.tier-row .tier-hint {
+  white-space: normal;
+}
+.model-wait {
+  margin: var(--sp-4) 0;
+}
+@media (max-width: 640px) {
+  .tier-row {
+    grid-template-columns: minmax(0, 1fr) 8.5rem;
+  }
+  .tier-row .tier-hint {
+    grid-column: 1 / -1;
+  }
+}

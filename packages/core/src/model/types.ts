@@ -1,5 +1,6 @@
 import type { Assumption } from './assumption';
 import type { TicketStatus, VerificationLevel } from './lifecycle';
+import type { ModelTier } from './modelTier';
 import type { DecisionRisk } from './risk';
 
 /**
@@ -91,9 +92,17 @@ export interface MapDoc {
   verification?: VerificationLevel;
   /** The trail's team: the guide ids its tickets may declare. Unset means no team. */
   guides?: string[];
+  /** Match work to the model each agent session runs on. Unset means off: claiming works as it always has. */
+  modelMatching?: ModelMatching;
   sections: MapSections;
   createdAt: number;
   updatedAt: number;
+}
+
+/** A trail's model matching: off unless `enabled`; `tiers` overrides the default tier of a ticket type. */
+export interface ModelMatching {
+  enabled: boolean;
+  tiers?: Partial<Record<TicketType, ModelTier>>;
 }
 
 export interface MapSnapshot {
@@ -231,6 +240,10 @@ export interface SessionInfo {
   endedAt?: number;
   /** Cumulative model usage: read from the agent's local logs, else as reported by the agent. */
   usage?: SessionUsage;
+  /** The model the agent ran on when it last claimed, read from its logs; unset when it reports none. */
+  model?: string;
+  /** That model's tier for model matching (`balanced` when unknown). */
+  tier?: ModelTier;
 }
 
 /**

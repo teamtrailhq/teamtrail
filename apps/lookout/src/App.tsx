@@ -17,12 +17,14 @@ import {
   useScopedActivity,
   useTrailUi,
   useAttentionUi,
+  useProjectsUi,
   RecordViews,
 } from './app/index';
 import { StepZone, LogZone, ActivityStack } from './features/activity';
 import { Inspector } from './features/inspector';
 import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/knowledge';
 import { MapSections } from './features/plan';
+import { PhoneProjects, ProjectSwitcher } from './features/projects';
 import { Onboarding } from './features/settings';
 import { useBriefing, useBreakpoint, usePrefs, useLookout } from './hooks';
 import { applyTheme, createRuntime, trackerKind } from './lib';
@@ -99,7 +101,8 @@ export function App() {
       activity={scoped}
     />
   );
-  const decisions = (nav.statsOpen || nav.decisionsView) && <RecordViews api={api} bp={bp} nav={nav} />;
+  const { projects, overview, openOverview } = useProjectsUi(bp, nav, attn.link.request);
+  const decisions = overview || ((nav.statsOpen || nav.decisionsView) && <RecordViews api={api} bp={bp} nav={nav} />);
   const briefing = brief.shown && (
     <AppBriefing
       brief={brief}
@@ -119,7 +122,7 @@ export function App() {
         <AppHeader
           api={api}
           rt={rt}
-          repo={repo}
+          repo={<ProjectSwitcher repo={repo} projects={projects} onOverview={openOverview} />}
           brief={brief}
           attention={attn.header}
           decisionsOpen={!!nav.decisionsView}
@@ -161,6 +164,7 @@ export function App() {
               tab={nav.phoneTab}
               decisions={decisions}
               inbox={inbox}
+              projects={projects.many && <PhoneProjects projects={projects} onOverview={openOverview} />}
               map={map}
               ticket={inspector(true)}
               activity={<ActivityStack {...zoneProps} />}
