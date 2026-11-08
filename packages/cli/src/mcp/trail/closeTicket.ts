@@ -5,11 +5,9 @@ import {
   OperationError,
   resolve,
   ruleOutOfScope,
-  type CriterionEvidence,
   type DecisionMeta,
   type DecisionRecord,
   type DecisionRisk,
-  type RiskCategory,
   type MapSnapshot,
   type SessionHandle,
   type Ticket,
@@ -22,31 +20,8 @@ import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
 import { withReview } from './parallel';
 import { checkRisk } from './riskCheck';
-import type { WaitControl } from './types';
-
-export interface CloseInput {
-  ticket?: string;
-  trail?: string;
-  resolution: string;
-  summary?: string;
-  rationale?: string;
-  alternatives?: string[];
-  outcome?: 'completed' | 'out_of_scope';
-  postTranscript?: boolean;
-  /** Why no files changed is fine for this ticket (verified completions only). */
-  noCodeReason?: string;
-  /** The pull request with this work (report_completion), recorded on the attempt for PR sync. */
-  pr?: number;
-  /** How long to wait for checks when the completion needs verification. */
-  waitSeconds?: number;
-  /** Evidence per acceptance criterion. */
-  criteria?: CriterionEvidence[];
-  /** What the call touches and the files it changes, for the risk policy. */
-  category?: RiskCategory;
-  paths?: string[];
-  /** Trail assumptions (`S-<n>`) the decision relies on. */
-  assumes?: string[];
-}
+import { checkedAnswers, keepAnswers } from './roles';
+import type { CloseInput, WaitControl } from './types';
 
 type Wait = { seconds: number; ctl?: WaitControl };
 type Transcript = NonNullable<ReturnType<AgentContext['sessions']['transcript']>>;
@@ -135,6 +110,11 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   const transcript = wantsTranscript ? log.map((e) => `**${e.author}:** ${e.text}`).join('\n\n') : undefined;
   const { info } = levelFor(ctx.root, snap, t);
   assertCriteria(ctx.root, snap, t, info.level);
+  await keepAnswers(ctx, {
+    snap,
+    ticket: t,
+    checked: checkedAnswers(ctx, { snap, ticket: t, given: input.checklist }),
+  });
   if (info.level === 'off') {
     await resolveDirectly(c, { meta, transcript });
   } else {

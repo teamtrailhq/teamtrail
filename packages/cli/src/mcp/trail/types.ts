@@ -1,4 +1,11 @@
-import type { CriterionKind, TicketType, TrackerAdapter } from '@teamtrail/core';
+import type {
+  ChecklistAnswer,
+  CriterionEvidence,
+  CriterionKind,
+  RiskCategory,
+  TicketType,
+  TrackerAdapter,
+} from '@teamtrail/core';
 import type { UsageMeter } from '../../usage/meter';
 
 export const TRAIL_LEAD = 'trail lead';
@@ -32,6 +39,7 @@ export interface TicketPlanInput {
   hitl?: boolean;
   blockedBy?: string[];
   criteria?: { text: string; kind: CriterionKind; source?: string }[];
+  role?: string;
 }
 
 export interface AskResult {
@@ -46,4 +54,31 @@ export interface WaitControl {
   signal?: AbortSignal;
   /** Called about every 15 s while waiting, so clients that reset timeouts on progress keep the call open. */
   onProgress?: (waitedSeconds: number) => void;
+}
+
+/** What close_ticket and report_completion take. */
+export interface CloseInput {
+  ticket?: string;
+  trail?: string;
+  resolution: string;
+  summary?: string;
+  rationale?: string;
+  alternatives?: string[];
+  outcome?: 'completed' | 'out_of_scope';
+  postTranscript?: boolean;
+  /** Why no files changed is fine for this ticket (verified completions only). */
+  noCodeReason?: string;
+  /** The pull request with this work (report_completion), recorded on the attempt for PR sync. */
+  pr?: number;
+  /** How long to wait for checks when the completion needs verification. */
+  waitSeconds?: number;
+  /** Evidence per acceptance criterion. */
+  criteria?: CriterionEvidence[];
+  /** Answers to the ticket role's checklist. */
+  checklist?: ChecklistAnswer[];
+  /** What the call touches and the files it changes, for the risk policy. */
+  category?: RiskCategory;
+  paths?: string[];
+  /** Trail assumptions (`S-<n>`) the decision relies on. */
+  assumes?: string[];
 }

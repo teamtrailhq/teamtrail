@@ -10,6 +10,7 @@ import { toolDefiner } from './toolKit';
 import { registerHitlTools } from './tools/hitlTools';
 import { registerKnowledgeTools } from './tools/knowledgeTools';
 import { registerRerouteTools } from './tools/rerouteTools';
+import { registerRoleTools } from './tools/roleTools';
 import { registerTicketTools } from './tools/ticketTools';
 import { registerTrailTools } from './tools/trailTools';
 import { registerWorkTools } from './tools/workTools';
@@ -23,6 +24,7 @@ export function createMcpServer(agent: TrailAgent, version: string) {
   registerHitlTools(tool, agent);
   registerKnowledgeTools(tool, agent);
   registerRerouteTools(tool, agent);
+  registerRoleTools(tool, agent);
   return server;
 }
 

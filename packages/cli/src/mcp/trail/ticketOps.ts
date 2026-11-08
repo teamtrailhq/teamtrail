@@ -4,10 +4,11 @@ import {
   OperationError,
   promoteToTicket,
   release,
+  setTicketRole,
   type Ticket,
   type TicketType,
 } from '@teamtrail/core';
-import { levelFor } from '@teamtrail/core/agents';
+import { levelFor, listRoles } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaView, saveCriteria, type CriterionInput } from './criteria';
 import { briefView, claimable } from './discovery';
@@ -16,14 +17,22 @@ import { noTicketReason } from './noTicketReason';
 import { recoverStalled } from './recoverStalled';
 import { frozenOn } from './reroutes';
 import { ownReviews } from './reviews';
+import { assertRole, outsideRoles } from './roles';
 import { ticketInfo } from './ticketInfo';
 
-export async function nextTicket(ctx: AgentContext, input: { trail?: string; types?: TicketType[] } = {}) {
+export async function nextTicket(
+  ctx: AgentContext,
+  input: { trail?: string; types?: TicketType[]; roles?: string[] } = {},
+) {
   const recovered = await recoverStalled(ctx);
   const snap = await ctx.resolveTrail(input.trail);
   const gate = claimable(ctx.root, snap.map.id);
   const types = gate ? (input.types ?? gate).filter((x) => gate.includes(x)) : input.types;
-  const exclude = [...(await ownReviews(ctx, snap, await ctx.agentId())), ...frozenOn(ctx, snap.map.id).keys()];
+  const exclude = [
+    ...(await ownReviews(ctx, snap, await ctx.agentId())),
+    ...frozenOn(ctx, snap.map.id).keys(),
+    ...outsideRoles(snap, input.roles),
+  ];
   const t = chooseNext(snap, { types, exclude });
   const extra = recovered.length ? { recovered } : {};
   if (t)
@@ -61,9 +70,11 @@ export async function addTicket(
     blockedBy?: string[];
     fromUnspecified?: string;
     criteria?: CriterionInput[];
+    role?: string;
   },
 ) {
   const snap = await ctx.resolveTrail(input.trail);
+  if (input.role) assertRole(listRoles(ctx.root), input.role, input.type);
   if (!allowedTypes(snap.map.mode).includes(input.type))
     throw new OperationError(`${input.type} tickets are disabled on plan-only trails`);
   const s = await ctx.ensureSession();
@@ -87,6 +98,7 @@ export async function addTicket(
     });
     for (const b of blockers) await ctx.adapter.addBlocking(snap.map.id, b, t.id);
   }
+  if (input.role) await setTicketRole(ctx.adapter, { mapId: snap.map.id, ticketId: t.id }, input.role, 'agent');
   if (input.criteria?.length) saveCriteria(ctx.root, snap.map, t, input.criteria);
   const fresh = await ctx.load(snap.map.id);
   const created = fresh.tickets.find((x) => x.id === t.id)!;

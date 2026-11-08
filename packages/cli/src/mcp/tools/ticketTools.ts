@@ -1,7 +1,7 @@
 import { CRITERION_KINDS, type CriterionKind } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
-import { type DefineTool, trail, ticket, ticketType } from '../toolKit';
+import { type DefineTool, roleId, rolesFilter, trail, ticket, ticketType } from '../toolKit';
 
 /** Ticket tools: pick, claim, release and add tickets. */
 const criteriaInput = z.array(
@@ -21,7 +21,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
         'The oldest open, unblocked, unclaimed ticket, with its body, blockers and the decisions they produced. Does not claim it.',
       readOnly: true,
     },
-    { trail, types: z.array(ticketType).optional() },
+    { trail, types: z.array(ticketType).optional(), roles: rolesFilter },
     (a) => agent.nextTicket(a),
   );
 
@@ -30,11 +30,12 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
     {
       title: 'Claim a ticket',
       description:
-        'Assign a ticket to you (default: the next ready one) and start working it. Fails if another agent got it first.',
+        'Assign a ticket to you (default: the next ready one) and start working it. Fails if another agent got it first. When the ticket has a role, the result has `role` (instructions and a checklist): act in it.',
     },
     {
       trail,
       ticket: ticket.optional(),
+      roles: rolesFilter,
       touches: z
         .array(z.string().min(1).max(300))
         .max(50)
@@ -75,6 +76,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
       blockedBy: z.array(z.string()).optional(),
       fromUnspecified: z.string().optional(),
       criteria: criteriaInput.optional().describe('Acceptance criteria: what must be true for this ticket to be done.'),
+      role: roleId.optional(),
     },
     (a) => agent.addTicket(a),
   );
