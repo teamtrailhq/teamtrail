@@ -30,20 +30,21 @@ npm workspaces monorepo. Node 20+, TypeScript, ESM.
 | `apps/lookout` | The React + Vite web UI, bundled into the CLI. |
 | `packages/connector-slack` | The optional Slack connector: questions, approvals and briefings in Slack. |
 | `packages/scout-avatar` | The Teamtrail logo (`src/logo/`) and Scout's badge (`src/scout/badgeArt.ts`): a React component and a framework-free renderer (`mountScout`). |
-| `scripts` | Dev tooling: the seed (`scripts/seed-dev.ts`, with M4's policy, assumptions and proposals in `scripts/seedSupervision.ts` M3's worktree setting and overlapping claims in `scripts/seedParallel.ts`, and a finished trail for Trail stats in `scripts/seedHistory.ts`), scripted MCP dev agents (`scripts/dev-agent.mjs`), the end-to-end check (`scripts/verify-mcp.mjs`, M4 steps in `scripts/verifySupervision.mjs`, M3 steps on a scratch git repo in `scripts/verifyParallel.mjs`) and the local npm registry (`scripts/registry-local.mjs`). |
+| `scripts` | Dev tooling: the seed (`scripts/seed-dev.ts`, with M4's policy, assumptions and proposals in `scripts/seedSupervision.ts` M3's worktree setting and overlapping claims in `scripts/seedParallel.ts`, model matching and two agents on different models in `scripts/seedModels.ts`, and a finished trail for Trail stats in `scripts/seedHistory.ts`), scripted MCP dev agents (`scripts/dev-agent.mjs`), the end-to-end check (`scripts/verify-mcp.mjs`, M4 steps in `scripts/verifySupervision.mjs`, M3 steps on a scratch git repo in `scripts/verifyParallel.mjs`, model-aware claiming in `scripts/verifyModels.mjs`) and the local npm registry (`scripts/registry-local.mjs`). |
 | `.github/workflows` | CI (`ci.yml`, runs `npm run check`) and the manual Release workflow (`release.yml`). |
 
 The landing site lives in its own repo, `teamtrailhq/teamtrail-landing`.
 
 ### Tracker data (`.teamtrail/` in the user's repo)
 
-- `<trail>/map.md`: trail frontmatter plus the map body (Destination, Notes, Assumptions, Decisions so far, Not yet specified, Out of scope). Assumptions are `S-<n>` lines with their status (holding, challenged, invalidated, confirmed), linked tickets and challenge in an HTML comment marker (`packages/core/src/model/assumptionLine.ts`); accepting a brief adds its assumptions. The format is shared by every adapter (`packages/core/src/model/mapBody.ts`).
+- `<trail>/map.md`: trail frontmatter plus the map body (Destination, Notes, Assumptions, Decisions so far, Not yet specified, Out of scope). Assumptions are `S-<n>` lines with their status (holding, challenged, invalidated, confirmed), linked tickets and challenge in an HTML comment marker (`packages/core/src/model/assumptionLine.ts`); accepting a brief adds its assumptions. The format is shared by every adapter (`packages/core/src/model/mapBody.ts`). The frontmatter also holds the trail's verification level and model matching (`model-matching: on`, `model-tiers: [research=fast, …]`; `packages/core/src/adapters/markdown/modelMatchingFront.ts`); GitHub and Linear keep both in the trail issue's meta marker.
 - `<trail>/tickets/<n>.md`: ticket frontmatter, body and comments. `<trail>/decisions/<D-n>.md`: decision records.
 - `verification.json`: the checks agents' completions run. Committed.
 - `briefs/<mapId>.md`: the trail's discovery brief and its status. A trail with a brief requires discovery: implementation tickets can't be claimed until the trail lead accepts it. Committed.
 - `criteria/<mapId>.md`: acceptance criteria per ticket (`AC-<n>`, kind, optional knowledge source) and the trail lead's confirmation. Required for implementation tickets on trails with a brief; each needs evidence when the work is completed. Committed.
 - `knowledge/K-<n>.md`: project and product knowledge entries (suggested, confirmed, assumption, outdated). Committed, so teammates share it.
 - `policy.json`: the risk policy, what always needs the human: a level (low, medium, high) per category and path rules (`packages/core/src/policy/`). Agents can't record high-risk decisions themselves. Optional (defaults apply); committed.
+- `models.json`: the project's extra models for model matching, model id or glob to tier (`fast`, `balanced`, `strongest`), read before the built-in families (`packages/core/src/model/modelTier.ts`). Optional; committed.
 - `workspaces.json`: whether each claimed ticket gets its own git worktree and branch (`teamtrail/<trail>/<n>`, in `<repo parent>/<repo>.teamtrail/<trail>-<n>`). Off when missing; committed. Teamtrail prepares worktrees only: it never merges, pushes or deletes them.
 - `attention.json`: the team's attention policy (kind weights, the interrupt threshold, the digest cadence). Optional; committed. Each person's focus hours and notification channel live in `attention.json` in their user config dir, never in the repo.
 - `.attention/state.json`: snoozes and dismissals of attention items. Local only, git-ignored.
@@ -68,14 +69,15 @@ GitHub Issues and Linear store the map and tickets in the tracker instead (`pack
 - `policy/`: the risk policy: defaults, file parser, store, `riskLevelFor` (the level of a call from its category and paths), `policyViolations` and `decisionsByRisk`.
 - `workspaces/`: safe parallel work: the setting and its parser, `prepareWorktree`, touch-set overlaps (`globsOverlap`, `touchOverlaps`), the integration check (`scanIntegrations`, `findIntegrations`) and the trail lead's integration ticket (`addIntegrationTicket`).
 - `planning/assumptions/` and `planning/reroute/`: trail assumptions (add, seed from the brief, challenge, confirm, settle) and reroute proposals: `validateReroute`, `rerouteDiff` (the dry run), `frozenTickets`, `applyReroute` (idempotent, resumable), the store and `rerouteTriggers` (signs a reroute may be needed).
+- `planning/matching/`: model-aware claiming: `tierOfModel` (a session's model to its tier, models.json first), `tierOfTicket` (the one place a ticket's tier is resolved, from the trail's `modelMatching`), `rankForSession` (own tier first, then lower, never higher), `modelWaits` (ready tickets no connected agent's tier reaches), the models.json parser and store. Turned on per trail with `setModelMatching` (trail lead only). Teamtrail never picks or switches a model.
 - `attention/`: the attention queue. `buildAttention` ranks everything that needs the human (pure, explainable `reasons`), one source per kind in `attention/sources/` registered in `sources/registry.ts`, scoring, batching, the policy and prefs parsers, and `isInterrupting` (focus hours).
 - `activity/`: the activity stream, presence and usage.
-- `server/`: the HTTP bridge (`trackerBridge.ts`), its route handlers (`*Routes.ts`), the `/events` SSE stream and the background loops (`watchLeases.ts`, `watchVerification.ts`, `watchTrackerFolder.ts`, `watchAttention.ts`, `watchIntegration.ts`).
+- `server/`: the HTTP bridge (`trackerBridge.ts`), its route handlers (`*Routes.ts`), `GET /models` (`modelRoutes.ts`), the `/events` SSE stream and the background loops (`watchLeases.ts`, `watchVerification.ts`, `watchTrackerFolder.ts`, `watchAttention.ts`, `watchIntegration.ts`).
 
 ### MCP server (`packages/cli/src/mcp`)
 
 - `server.ts` creates the server; `toolKit.ts` defines how tools are declared (zod schemas, results and errors).
-- Tools are grouped in `tools/` (`trailTools.ts`, `ticketTools.ts`, `workTools.ts`, `hitlTools.ts`, `knowledgeTools.ts`, `rerouteTools.ts`). Their behaviour lives in `trail/` (trail ops, ticket ops, HITL, completion, reviews, leases, sessions, the risk check, the attention summary, assumptions and reroutes, and parallel work in `parallel.ts`).
+- Tools are grouped in `tools/` (`trailTools.ts`, `ticketTools.ts`, `workTools.ts`, `hitlTools.ts`, `knowledgeTools.ts`, `rerouteTools.ts`). Their behaviour lives in `trail/` (trail ops, ticket ops, HITL, completion, reviews, leases, sessions, the risk check, the attention summary, assumptions and reroutes, parallel work in `parallel.ts`, and model matching in `models.ts`).
 - `instructions.ts` holds the server instructions every agent gets. `packages/cli/commands/scout.md` is the `/scout` command for Claude Code (and the Codex prompt).
 
 ### Lookout (`apps/lookout/src`)

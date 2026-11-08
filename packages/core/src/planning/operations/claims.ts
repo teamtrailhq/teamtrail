@@ -13,16 +13,21 @@ export interface ActorOptions extends TransitionOptions {
 }
 
 /**
- * The ticket to work next: rework first (a failed attempt waits on a fix),
+ * The tickets to work next, best first: rework first (a failed attempt waits on a fix),
  * then reviews (finished work waits on them), then the frontier, oldest first.
  */
-export function chooseNext(snap: MapSnapshot, opts: { types?: TicketType[]; exclude?: string[] } = {}) {
+export function orderNext(snap: MapSnapshot, opts: { types?: TicketType[]; exclude?: string[] } = {}) {
   const states = deriveStates(snap.tickets, snap.map.mode);
   const rework = snap.tickets.filter((t) => states.get(t.id) === 'rework').sort((a, b) => a.createdAt - b.createdAt);
   const ready = frontier(snap.tickets, snap.map.mode);
-  return [...rework, ...ready.filter((t) => t.type === 'review'), ...ready.filter((t) => t.type !== 'review')].find(
+  return [...rework, ...ready.filter((t) => t.type === 'review'), ...ready.filter((t) => t.type !== 'review')].filter(
     (t) => (!opts.types || opts.types.includes(t.type)) && !opts.exclude?.includes(t.id),
   );
+}
+
+/** The ticket to work next: the first of `orderNext`. */
+export function chooseNext(snap: MapSnapshot, opts: { types?: TicketType[]; exclude?: string[] } = {}) {
+  return orderNext(snap, opts)[0];
 }
 
 /** Claim = assignment. Re-reads after assigning to detect a parallel session winning the race. */

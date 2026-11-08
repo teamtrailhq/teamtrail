@@ -284,6 +284,22 @@ describe('usage attributed to teamtrail sessions', () => {
     expect(report.session.usage.costUsd).toBeLessThan(1);
   });
 
+  it('Claude Code: reads the model the agent runs on and stamps its tier on the sessions', async () => {
+    const project = path.join(tmp, 'project');
+    const config = path.join(tmp, 'claude-config');
+    const dir = path.join(config, 'projects', claudeProjectDirName(project));
+    fs.mkdirSync(dir, { recursive: true });
+    fs.copyFileSync(CLAUDE_TRANSCRIPT, path.join(dir, `${CLAUDE_SESSION}.jsonl`));
+    const meter = new UsageMeter({
+      root: path.join(tmp, 'tracker'),
+      env: { CLAUDE_CONFIG_DIR: config, CLAUDE_PROJECT_DIR: project },
+      home: tmp,
+    });
+    const { sessions } = await replay(meter, 'claude', 'claude-code');
+    expect(meter.model()).toBe('claude-sonnet-4-5');
+    expect(sessions.at(-1)).toMatchObject({ model: 'claude-sonnet-4-5', tier: 'balanced' });
+  });
+
   it('Claude Code: the SessionStart hook link points at a transcript outside the default folder', async () => {
     const elsewhere = path.join(tmp, 'elsewhere', `${CLAUDE_SESSION}.jsonl`);
     fs.mkdirSync(path.dirname(elsewhere), { recursive: true });

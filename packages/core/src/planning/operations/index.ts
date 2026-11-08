@@ -4,7 +4,7 @@
  * directly so the rules live in one place.
  */
 export { chartMap, type ChartHooks, type ChartPlan, type ChartPlanTicket } from './chart';
-export { chooseNext, claim, release, type ActorOptions } from './claims';
+export { chooseNext, claim, orderNext, release, type ActorOptions } from './claims';
 export { recordDecision, supersedeDecision } from './decisionOps';
 export { allowedTypes, setMapMode } from './mapMode';
 export { OperationError } from './operationError';

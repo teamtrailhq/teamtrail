@@ -1,6 +1,16 @@
-import { attention, type DiffMark, type LaidOutNode, NODE_H, NODE_W, type SessionInfo } from '@teamtrail/core';
+import {
+  attention,
+  type DiffMark,
+  type LaidOutNode,
+  type ModelTier,
+  NODE_H,
+  NODE_W,
+  type SessionInfo,
+} from '@teamtrail/core';
 import { type Selection, STATE_LABEL } from '../../lib';
 import { SIGN_TIP } from './edgePath';
+import { modelWait } from './modelWait';
+import { ModelWaitTitle } from './ModelWaitTitle';
 import { RerouteMarks } from './RerouteMarks';
 import { wrap } from './wrap';
 
@@ -20,6 +30,7 @@ export function GraphNode({
   onSelect,
   mark,
   frozen,
+  needs,
 }: {
   n: LaidOutNode;
   session?: SessionInfo;
@@ -33,13 +44,16 @@ export function GraphNode({
   mark?: DiffMark;
   /** Frozen by a pending reroute: it can't be claimed until the trail lead decides. */
   frozen?: boolean;
+  /** Model matching: ready, but waiting for a stronger model than any connected agent runs. */
+  needs?: ModelTier;
 }) {
   const t = n.ticket;
   const lines = wrap(t.title, 29);
   const hitl = attention(t) === 'hitl';
   const waiting = !!s?.waitingOn;
   const marked = !!mark && mark !== 'unchanged';
-  const state = marked ? undefined : statePart(n, { waiting, stalled });
+  const wait = modelWait(n, needs, !!s);
+  const state = marked ? undefined : statePart(n, { waiting, stalled, wait });
   const needsYou = hitl && !marked && (t.type === 'task' || t.type === 'execute');
   const flags = { hitl, selected, live: !!s, waiting, stalled, mark, frozen };
   return (
@@ -51,6 +65,7 @@ export function GraphNode({
         onSelect({ kind: 'ticket', id: t.id });
       }}
     >
+      <ModelWaitTitle wait={wait} />
       {waiting && <rect className="alarm" x={-6} y={-6} width={NODE_W + 12} height={NODE_H + 12} />}
       <rect className="post" x={NODE_W / 2 - 6} y={NODE_H} width={12} height={12} />
       <rect className="tuft" x={NODE_W / 2 - 11} y={NODE_H + 12} width={22} height={3} />
@@ -107,11 +122,15 @@ function nodeClasses(
   return classes.join(' ');
 }
 
-/** The state part of the meta line: waiting on you beats stalled beats who holds it beats the plain state. */
-function statePart(n: LaidOutNode, flags: { waiting: boolean; stalled?: boolean }) {
+/**
+ * The state part of the meta line: waiting on you beats stalled beats waiting for a stronger model (model matching)
+ * beats who holds it beats the plain state.
+ */
+function statePart(n: LaidOutNode, flags: { waiting: boolean; stalled?: boolean; wait?: ModelTier }) {
   const assignee = n.ticket.assignee;
   if (flags.waiting) return { text: 'waiting on you', tone: 'urgent' };
   if (flags.stalled) return { text: `stalled · ${assignee}`, tone: 'warn' };
+  if (flags.wait) return { text: `needs ${flags.wait}`, tone: 'warn' };
   if (n.state === 'claimed') return { text: assignee ?? 'working', tone: 'agent' };
   return { text: STATE_LABEL[n.state], tone: '' };
 }

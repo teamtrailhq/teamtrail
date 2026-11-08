@@ -1,4 +1,4 @@
-import { chooseNext, deriveStates, type MapMode } from '@teamtrail/core';
+import { deriveStates, type MapMode } from '@teamtrail/core';
 import { readAgentDocs } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
@@ -6,6 +6,7 @@ import { attentionSummary } from './attention';
 import { deliveryView } from './deliveryView';
 import { briefView, claimable } from './discovery';
 import { knowledgeFor } from './knowledge';
+import { matchingView, pickNext, stampModel } from './models';
 import { parallelView } from './parallel';
 import { adaptiveView, frozenOn } from './reroutes';
 import { ticketInfo } from './ticketInfo';
@@ -42,6 +43,7 @@ export async function status(ctx: AgentContext, trailRef?: string) {
     delivery: deliveryView(ctx.root, snap, docs),
     adaptive: adaptiveView(ctx, snap),
     parallel: parallelView(ctx, snap),
+    modelMatching: matchingView(ctx, snap),
   };
 }
 
@@ -50,12 +52,13 @@ export async function resumeTrail(ctx: AgentContext, trailRef?: string) {
   ctx.trail = snap.map.id;
   const cur = ctx.sessions.running();
   if (!cur || cur.info.mapId !== snap.map.id) (await ctx.open('work', snap.map.id)).step(1, 'reading trail + tickets');
+  stampModel(ctx);
   const current = await status(ctx, snap.map.id);
   const agent = await ctx.agentId();
   const states = deriveStates(snap.tickets, snap.map.mode);
   const mine = snap.tickets.find((t) => states.get(t.id) === 'claimed' && t.assignee === agent);
   const exclude = [...frozenOn(ctx, snap.map.id).keys()];
-  const next = chooseNext(snap, { types: claimable(ctx.root, snap.map.id), exclude });
+  const next = pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude }).ticket;
   return {
     ...current,
     discovery: briefView(ctx.root, snap),

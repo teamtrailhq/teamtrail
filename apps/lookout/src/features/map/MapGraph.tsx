@@ -2,6 +2,7 @@ import { type MapSnapshot, type SessionInfo, type TicketLease, layout, leaseHeal
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNow, usePrSync } from '../../hooks';
 import { type Selection, heldLeases, isRunning, prSync, worstFlag } from '../../lib';
+import { useModels } from '../models';
 import { destinationSpot, destinationTrail } from './destination';
 import { DestinationMark } from './DestinationMark';
 import { DestinationTrail } from './DestinationTrail';
@@ -14,11 +15,10 @@ import { OutOfScopeStrip } from './OutOfScopeStrip';
 import { TerrainLayer } from './TerrainLayer';
 import { useFocusSelected } from './useFocusSelected';
 import { useWheelZoom } from './useWheelZoom';
+import { type View, zoomAt } from './zoomAt';
 
 export const PAD = 32;
 const LR_PREFERENCE = 1.8;
-
-export type View = { k: number; x: number; y: number };
 
 /** Decision graph. Fits itself to the zone; drag/pinch/wheel to pan and zoom. */
 export function MapGraph(props: {
@@ -103,10 +103,6 @@ export function MapGraph(props: {
     const dist = pts.length > 1 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0;
     gesture.current = { view, dist, mid, moved: gesture.current?.moved ?? false };
   };
-  const zoomAt = (v: View, k: number, p: { x: number; y: number }): View => {
-    const nk = Math.min(3, Math.max(0.2, k));
-    return { k: nk, x: p.x - ((p.x - v.x) * nk) / v.k, y: p.y - ((p.y - v.y) * nk) / v.k };
-  };
 
   useWheelZoom(box, (factor, at) => {
     touched.current = true;
@@ -116,6 +112,7 @@ export function MapGraph(props: {
   const now = useNow(5000);
   const held = heldLeases(props.leases, snap.map.id);
   const sync = usePrSync();
+  const waits = useModels()?.waiting;
   const live = new Map(props.sessions.filter((s) => isRunning(s) && s.ticketId).map((s) => [s.ticketId!, s]));
   const selId = selection?.kind === 'ticket' ? selection.id : undefined;
   useFocusSelected({ selId, nodes: L.nodes, size, pad: PAD, view, setView, onFocus: () => (touched.current = true) });
@@ -196,6 +193,7 @@ export function MapGraph(props: {
                 onSelect={onSelect}
                 mark={preview?.marks.get(n.ticket.id)}
                 frozen={preview?.frozen.has(n.ticket.id)}
+                needs={waits?.find((w) => w.mapId === snap.map.id && w.ticketId === n.ticket.id)?.tier}
               />
             ))}
           </g>

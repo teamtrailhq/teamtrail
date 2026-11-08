@@ -2,6 +2,7 @@ import { PLAN_ONLY_LABEL } from '../../model/brand';
 import { levelOf } from '../../model/lifecycle';
 import { parseMapBody } from '../../model/mapBody';
 import { DEFAULT_MAP_MODE, type Comment, type DecisionRecord, type MapDoc } from '../../model/types';
+import { modelMatchingOf } from '../modelMatchingOf';
 import { parseDecisionComment, readComment, splitBody } from './format';
 
 export interface TrailIssueParts {
@@ -14,16 +15,18 @@ export interface TrailIssueParts {
   updatedAt: string;
 }
 
-/** The trail issue as a map: plan-only by label, sections and verification level from the issue body. */
+/** The trail issue as a map: plan-only by label, sections, verification level and model matching from the issue body. */
 export function mapFromIssue(p: TrailIssueParts): MapDoc {
   const { text, meta } = splitBody(p.body);
   const verification = levelOf(meta.verification);
+  const modelMatching = modelMatchingOf(meta.modelMatching);
   return {
     id: p.id,
     key: p.key,
     title: p.title,
     mode: p.labels.includes(PLAN_ONLY_LABEL) ? 'plan-only' : DEFAULT_MAP_MODE,
     ...(verification ? { verification } : {}),
+    ...(modelMatching ? { modelMatching } : {}),
     sections: parseMapBody(text),
     createdAt: Date.parse(p.createdAt) || 0,
     updatedAt: Date.parse(p.updatedAt) || 0,
