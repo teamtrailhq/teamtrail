@@ -8,7 +8,7 @@ import {
 } from '@teamtrail/core';
 import { readAgentDocs, readAttempts, reviewConflict, submitReview } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
-import { checkedAnswers, keepAnswers } from './roles';
+import { checkedAnswers, keepAnswers } from './guides';
 
 /** Why this agent may not take review ticket `r`, or undefined. */
 function conflictOf(ctx: AgentContext, snap: MapSnapshot, r: Ticket, agent: string) {
@@ -81,7 +81,7 @@ export async function submitReviewTool(
     verdict: input.verdict,
     summary: input.summary,
     findings: input.findings,
-    ...(checked ? { role: checked.role, checklist: checked.answers } : {}),
+    ...(checked ? { guide: checked.guide, checklist: checked.answers } : {}),
   });
   await keepAnswers(ctx, { snap, ticket: review, checked });
   ctx.leases.drop(snap.map.id, review.id);

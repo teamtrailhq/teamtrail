@@ -9,7 +9,7 @@ export function AppSettings(props: {
   api: LookoutApi;
   prefs: Prefs;
   update: (p: Partial<Prefs>) => void;
-  focus: 'top' | 'slack' | 'roles';
+  focus: 'top' | 'slack' | 'guides';
   onClose: () => void;
 }) {
   const { rt, api } = props;

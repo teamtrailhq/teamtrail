@@ -3,6 +3,8 @@ import path from 'node:path';
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
+import { listGuides } from '../guides/guideStore';
+import { effectiveChecks, resolveGuide } from '../guides/resolveGuide';
 import { BRAND } from '../model/brand';
 import type { Journal, TicketPhase } from '../model/lifecycle';
 import type { MapSnapshot, Ticket } from '../model/types';
@@ -10,8 +12,6 @@ import type { VerificationAttempt } from '../model/verification';
 import { transition } from '../planning/lifecycle/transition';
 import { OperationError } from '../planning/operations/operationError';
 import { resolve, type DecisionMeta } from '../planning/operations/resolve';
-import { effectiveChecks, resolveRole } from '../roles/resolveRole';
-import { listRoles } from '../roles/roleStore';
 import { readWorkspace } from '../workspaces/workspaceStore';
 import { DEFAULT_CONFIG } from './config';
 import { readVerificationConfig, type ConfigRead } from './configFile';
@@ -83,14 +83,14 @@ export interface Settled {
 }
 
 /**
- * The level a completion of `t` needs, with the config it was read from. A ticket's role adds the checks it
- * requires (resolveRole.ts); it never changes the level or drops a check.
+ * The level a completion of `t` needs, with the config it was read from. A ticket's guide adds the checks it
+ * requires (resolveGuide.ts); it never changes the level or drops a check.
  */
 export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: LevelInfo; config: ConfigRead } {
   const config = readVerificationConfig(root);
   const info = verificationFor(config.config, snap.map, t);
-  if (!t.role) return { info, config };
-  return { info: { ...info, checks: effectiveChecks(info.checks, resolveRole(listRoles(root), t)) }, config };
+  if (!t.guide) return { info, config };
+  return { info: { ...info, checks: effectiveChecks(info.checks, resolveGuide(listGuides(root), t)) }, config };
 }
 
 /**

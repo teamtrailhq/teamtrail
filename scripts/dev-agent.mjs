@@ -68,9 +68,9 @@ async function agent(n) {
   await call('resume_trail', { trail });
   let askedFyi = false;
   for (;;) {
-    /** A ticket with a role needs an answer per checklist item; the scripted agent answers each one. */
+    /** A ticket with a guide needs an answer per checklist item; the scripted agent answers each one. */
     const checklistOf = (t) =>
-      t.role?.checklist.length ? { checklist: t.role.checklist.map((item) => ({ item, done: true })) } : {};
+      t.guide?.checklist.length ? { checklist: t.guide.checklist.map((item) => ({ item, done: true })) } : {};
     let claimed;
     try {
       claimed = (await call('claim_ticket', { trail })).claimed;

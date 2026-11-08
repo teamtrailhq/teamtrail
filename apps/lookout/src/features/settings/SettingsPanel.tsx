@@ -10,7 +10,7 @@ import {
 import { useState, useEffect } from 'react';
 import { Panel, Tabs, Choice } from '../../components/ui';
 import type { Prefs, TrackerChoice } from '../../lib';
-import { RolesSection, TeamSection } from '../roles';
+import { GuidesSection, TeamSection } from '../guides';
 import { TrackerConnectors } from '../trackers';
 import { ModeChoice } from '../trail';
 import { AttentionSection } from './AttentionSection';
@@ -33,7 +33,7 @@ export function SettingsPanel(props: {
   onMapMode: (m: MapMode) => void;
   onClose: () => void;
   initialTab?: 'settings' | 'changelog';
-  focus?: 'slack' | 'roles';
+  focus?: 'slack' | 'guides';
 }) {
   const { prefs, update } = props;
   const [tab, setTab] = useState(props.initialTab ?? 'settings');
@@ -85,7 +85,7 @@ export function SettingsPanel(props: {
 
             {props.map && <TeamSection map={props.map} />}
 
-            <RolesSection focus={props.focus === 'roles'} />
+            <GuidesSection focus={props.focus === 'guides'} />
 
             <SettingsSection title="Labels">
               <div className="label-codes">

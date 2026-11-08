@@ -57,7 +57,7 @@ export function App() {
     knowledge,
     reviewBrief: trail.review,
     openReroute: (item) => trail.openReroute(item.mapId, item.ref),
-    openRoles: () => setSettingsOpen('roles'),
+    openGuides: () => setSettingsOpen('guides'),
   });
   const brief = useBriefing(rt, api, prefs.briefing, attn.attention.view?.items);
 

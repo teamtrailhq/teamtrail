@@ -1,6 +1,6 @@
 import { attention, type DiffMark, type LaidOutNode, NODE_H, NODE_W, type SessionInfo } from '@teamtrail/core';
 import { type Selection, STATE_LABEL } from '../../lib';
-import { RoleNodeTag } from '../roles';
+import { GuideNodeTag } from '../guides';
 import { SIGN_TIP } from './edgePath';
 import { RerouteMarks } from './RerouteMarks';
 import { wrap } from './wrap';
@@ -76,7 +76,7 @@ export function GraphNode({
       </text>
       {flag && <circle className={`pr-flag-dot ${flag}`} cx={NODE_W - 2} cy={2} r={4} />}
       <RerouteMarks mark={mark} frozen={frozen} />
-      {t.role && <RoleNodeTag id={t.role} />}
+      {t.guide && <GuideNodeTag id={t.guide} />}
       {s && !waiting && (
         <text className="live-tag" x={NODE_W} y={NODE_H + 13} textAnchor="end">
           {s.agent} · step {s.step}/{s.total} · {s.stepLabel.toLowerCase()}

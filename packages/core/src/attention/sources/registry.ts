@@ -3,6 +3,8 @@ import { approvalSource } from './approvalSource';
 import { blockedSource } from './blockedSource';
 import { briefSource } from './briefSource';
 import { flagSource } from './flagSource';
+import { guideChecksSource } from './guideChecksSource';
+import { guideSource } from './guideSource';
 import { hitlReadySource } from './hitlReadySource';
 import { integrationSource } from './integrationSource';
 import { knowledgeSource } from './knowledgeSource';
@@ -11,8 +13,6 @@ import { policySource } from './policySource';
 import { questionSource } from './questionSource';
 import { rerouteSource } from './rerouteSource';
 import { rerouteSuggestedSource } from './rerouteSuggestedSource';
-import { roleChecksSource } from './roleChecksSource';
-import { roleSource } from './roleSource';
 import { stalledSource } from './stalledSource';
 
 /**
@@ -33,6 +33,6 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   policySource,
   overlapSource,
   integrationSource,
-  roleSource,
-  roleChecksSource,
+  guideSource,
+  guideChecksSource,
 ];

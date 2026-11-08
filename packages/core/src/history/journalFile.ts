@@ -1,17 +1,17 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { Journal, JournalEntry, RoleEntry, TransitionEntry } from '../model/lifecycle';
+import type { Journal, JournalEntry, GuideEntry, TransitionEntry } from '../model/lifecycle';
 
 /*
- * Trail history, one JSON line per transition, reroute step or role change, append-only:
+ * Trail history, one JSON line per transition, reroute step or guide change, append-only:
  *   <tracker dir>/.events/<mapId>.jsonl
  *   <tracker dir>/.events/.gitignore      `*`: local history, never committed
  * Lines stay well under 4 KB, so concurrent appends from several processes never interleave.
  * `read` returns transitions only, so older readers (delivery report, Report tab) are unaffected by newer kinds;
- * `readAll` returns transitions and reroute steps and skips the rest (role changes included); `readRoles` returns the
- * role changes.
+ * `readAll` returns transitions and reroute steps and skips the rest (guide changes included); `readGuides` returns the
+ * guide changes.
  */
-const KNOWN_KINDS = new Set<string>(['transition', 'reroute', 'role']);
+const KNOWN_KINDS = new Set<string>(['transition', 'reroute', 'guide']);
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -20,16 +20,16 @@ const safe = (s: string) => s.replace(/[^\w.-]/g, '_');
 export const journalPath = (root: string, mapId: string) => path.join(root, JOURNAL_DIR, `${safe(mapId)}.jsonl`);
 
 export function journalFile(root: string): Journal & {
-  append(entry: JournalEntry | RoleEntry): void;
+  append(entry: JournalEntry | GuideEntry): void;
   read(mapId: string): TransitionEntry[];
   readAll(mapId: string): JournalEntry[];
-  readRoles(mapId: string): RoleEntry[];
+  readGuides(mapId: string): GuideEntry[];
 } {
-  const raw = (mapId: string) => readEntries(root, mapId) as (JournalEntry | RoleEntry)[];
+  const raw = (mapId: string) => readEntries(root, mapId) as (JournalEntry | GuideEntry)[];
   const readAll = (mapId: string) =>
-    raw(mapId).filter((e): e is JournalEntry => KNOWN_KINDS.has(e.kind) && e.kind !== 'role');
+    raw(mapId).filter((e): e is JournalEntry => KNOWN_KINDS.has(e.kind) && e.kind !== 'guide');
   return {
-    append(entry: JournalEntry | RoleEntry) {
+    append(entry: JournalEntry | GuideEntry) {
       const dir = path.join(root, JOURNAL_DIR);
       mkdirSync(dir, { recursive: true });
       const ignore = path.join(dir, '.gitignore');
@@ -39,7 +39,7 @@ export function journalFile(root: string): Journal & {
     },
     read: (mapId) => readAll(mapId).filter((e): e is TransitionEntry => e.kind === 'transition'),
     readAll,
-    readRoles: (mapId) => raw(mapId).filter((e): e is RoleEntry => e.kind === 'role'),
+    readGuides: (mapId) => raw(mapId).filter((e): e is GuideEntry => e.kind === 'guide'),
   };
 }
 

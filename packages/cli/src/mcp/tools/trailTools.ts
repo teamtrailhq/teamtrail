@@ -1,7 +1,7 @@
 import { CRITERION_KINDS, type CriterionKind } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
-import { type DefineTool, roleId, trail, ticketType } from '../toolKit';
+import { type DefineTool, guideId, trail, ticketType } from '../toolKit';
 
 /** Trail tools: status, start, resume and edit a trail. */
 export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
@@ -41,7 +41,7 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
             body: z.string().optional(),
             hitl: z.boolean().optional().describe('task/execute only: needs the human.'),
             blockedBy: z.array(z.string()).optional().describe('Refs of tickets that must close first.'),
-            role: roleId.optional(),
+            guide: guideId.optional(),
             criteria: z
               .array(
                 z.object({
@@ -69,7 +69,7 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
         .max(20)
         .optional()
         .describe(
-          "The trail's team: the installed roles (list_roles) its tickets use. With reviewer, review tickets get the reviewer role.",
+          "The trail's team: the installed guides (list_guides) its tickets use. With reviewer, review tickets get the reviewer guide.",
         ),
       discovery: z
         .boolean()

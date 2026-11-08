@@ -33,7 +33,7 @@ function types(v: unknown, at: string, errors: string[]): TicketType[] | undefin
   return v as TicketType[];
 }
 
-/** One named check as verification.json (or a role's proposed check) writes it; problems go to `errors`. */
+/** One named check as verification.json (or a guide's proposed check) writes it; problems go to `errors`. */
 export function parseCheckSpec(name: string, v: unknown, errors: string[]): CheckSpec | undefined {
   const at = `checks.${name}`;
   if (!isObj(v)) return void errors.push(`${at} must be an object`);

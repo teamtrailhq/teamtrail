@@ -70,16 +70,16 @@ export interface TicketMetaPatch {
   checks?: string[] | null;
   /** Set once, when Teamtrail creates a review ticket. */
   reviewOf?: string | null;
-  /** The ticket's role; set at creation, or by the trail lead (`setTicketRole`). */
-  role?: string | null;
+  /** The ticket's guide; set at creation, or by the trail lead (`setTicketGuide`). */
+  guide?: string | null;
 }
 
 /** Teamtrail fields stored with a trail. `null` clears a field. */
 export interface MapMetaPatch {
   /** Trail lead only (`setVerification`). */
   verification?: VerificationLevel | null;
-  /** The trail's team of role ids (`setTrailTeam`). */
-  roles?: string[] | null;
+  /** The trail's team of guide ids (`setTrailTeam`). */
+  guides?: string[] | null;
 }
 
 /** One line of a trail's history (`.events/<mapId>.jsonl`). History and UI only; the tracker holds the state. */
@@ -118,20 +118,20 @@ export interface RerouteEntry {
   changes?: number;
 }
 
-export type RoleAction = 'approved' | 'installed' | 'updated' | 'removed' | 'check-approved' | 'ticket-role' | 'team';
+export type GuideAction = 'approved' | 'installed' | 'updated' | 'removed' | 'check-approved' | 'ticket-guide' | 'team';
 
 /**
- * A trail lead's change to roles, in the same history files. Project-wide changes (install, approve, remove) go to
- * the `ROLES_JOURNAL` file; a ticket's role and a trail's team go to that trail's.
+ * A trail lead's change to guides, in the same history files. Project-wide changes (install, approve, remove) go to
+ * the `GUIDES_JOURNAL` file; a ticket's guide and a trail's team go to that trail's.
  */
-export interface RoleEntry {
+export interface GuideEntry {
   v: 1;
-  kind: 'role';
+  kind: 'guide';
   at: number;
   mapId: string;
-  action: RoleAction;
-  /** The role id, or the team's ids joined with ", ". */
-  role: string;
+  action: GuideAction;
+  /** The guide id, or the team's ids joined with ", ". */
+  guide: string;
   version?: string;
   ticketId?: string;
   /** A check the trail lead approved, by name. */
@@ -141,8 +141,8 @@ export interface RoleEntry {
   reason?: string;
 }
 
-/** The journal "trail" that holds project-wide role changes. */
-export const ROLES_JOURNAL = '_roles';
+/** The journal "trail" that holds project-wide guide changes. */
+export const GUIDES_JOURNAL = '_guides';
 
 export type JournalEntry = TransitionEntry | RerouteEntry;
 

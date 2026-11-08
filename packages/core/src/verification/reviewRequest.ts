@@ -6,7 +6,7 @@ import { checkLine } from './outcome';
 import { CHECK_RUNNER, type VerifyEnv } from './verifyCompletion';
 
 const MAX_FILES = 20;
-/** The role review tickets take on when the trail's team includes it. */
+/** The guide review tickets take on when the trail's team includes it. */
 const REVIEWER = 'reviewer';
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
@@ -47,6 +47,6 @@ export async function requestReview(env: VerifyEnv, a: VerificationAttempt) {
     reviewOf: t.id,
     title: clip(`Review ${t.key}: ${t.title}`, 200),
     body: reviewBody(t, a),
-    ...(snap.map.roles?.includes(REVIEWER) ? { role: REVIEWER } : {}),
+    ...(snap.map.guides?.includes(REVIEWER) ? { guide: REVIEWER } : {}),
   });
 }

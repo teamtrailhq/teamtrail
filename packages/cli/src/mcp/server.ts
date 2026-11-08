@@ -7,10 +7,10 @@ import { UsageMeter } from '../usage/meter';
 import { TrailAgent } from './agent';
 import { INSTRUCTIONS } from './instructions';
 import { toolDefiner } from './toolKit';
+import { registerGuideTools } from './tools/guideTools';
 import { registerHitlTools } from './tools/hitlTools';
 import { registerKnowledgeTools } from './tools/knowledgeTools';
 import { registerRerouteTools } from './tools/rerouteTools';
-import { registerRoleTools } from './tools/roleTools';
 import { registerTicketTools } from './tools/ticketTools';
 import { registerTrailTools } from './tools/trailTools';
 import { registerWorkTools } from './tools/workTools';
@@ -24,7 +24,7 @@ export function createMcpServer(agent: TrailAgent, version: string) {
   registerHitlTools(tool, agent);
   registerKnowledgeTools(tool, agent);
   registerRerouteTools(tool, agent);
-  registerRoleTools(tool, agent);
+  registerGuideTools(tool, agent);
   return server;
 }
 

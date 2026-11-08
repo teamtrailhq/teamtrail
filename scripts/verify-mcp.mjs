@@ -9,8 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { chromium } from 'playwright-core';
+import { verifyGuides } from './verifyGuides.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
-import { verifyRoles } from './verifyRoles.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -455,8 +455,8 @@ const supervisionOk = await verifySupervision({ call, page, shot, log, repo, map
 // Safe parallel work: worktrees, overlapping claims and an integration ticket, on a scratch git repo.
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 
-// Roles: a role added from a catalog and its check approved in the Lookout; an agent works a ticket in that role.
-const rolesOk = await verifyRoles({ browser, cli, log, shots });
+// Guides: a guide added from a catalog and its check approved in the Lookout; an agent works a ticket in that guide.
+const guidesOk = await verifyGuides({ browser, cli, log, shots });
 
 await client.close();
 await page.waitForTimeout(1500);
@@ -494,7 +494,7 @@ if (
   !discoveryOk ||
   !supervisionOk ||
   !parallelOk ||
-  !rolesOk
+  !guidesOk
 )
   process.exit(1);
 console.log('\nOK');

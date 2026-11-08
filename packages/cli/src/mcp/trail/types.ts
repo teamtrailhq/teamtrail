@@ -39,7 +39,7 @@ export interface TicketPlanInput {
   hitl?: boolean;
   blockedBy?: string[];
   criteria?: { text: string; kind: CriterionKind; source?: string }[];
-  role?: string;
+  guide?: string;
 }
 
 export interface AskResult {
@@ -74,7 +74,7 @@ export interface CloseInput {
   waitSeconds?: number;
   /** Evidence per acceptance criterion. */
   criteria?: CriterionEvidence[];
-  /** Answers to the ticket role's checklist. */
+  /** Answers to the ticket guide's checklist. */
   checklist?: ChecklistAnswer[];
   /** What the call touches and the files it changes, for the risk policy. */
   category?: RiskCategory;

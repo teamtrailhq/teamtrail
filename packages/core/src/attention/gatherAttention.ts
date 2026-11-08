@@ -3,9 +3,9 @@ import { readAgentDocs } from '../agents/agentDocs';
 import { readLeases } from '../agents/leaseStore';
 import { readBrief } from '../discovery/briefStore';
 import { readTicketSyncs } from '../evidence/syncStore';
+import { listGuides } from '../guides/guideStore';
 import { listKnowledge } from '../knowledge/knowledgeStore';
 import type { AttentionPolicy } from '../model/attention';
-import { listRoles } from '../roles/roleStore';
 import { approvalItems } from '../verification/approvals';
 import { readIntegrationScan } from '../workspaces/integrationStore';
 import { readAttentionState } from './attentionStore';
@@ -38,7 +38,7 @@ export async function gatherAttention(input: {
     ...(await rerouteInputs({ root, adapter, snaps, syncs })),
     violations: await readViolations({ root, adapter, snaps, docs }),
     integrations: integrationsOf(root),
-    roles: listRoles(root).filter((r) => r.origin === 'local'),
+    guides: listGuides(root).filter((r) => r.origin === 'local'),
     policy,
     state: readAttentionState(root),
     now,

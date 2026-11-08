@@ -1,7 +1,7 @@
 import type { TicketMetaPatch } from '../model/lifecycle';
 import type { Ticket } from '../model/types';
 
-const FIELDS = ['status', 'verification', 'checks', 'reviewOf', 'role'] as const;
+const FIELDS = ['status', 'verification', 'checks', 'reviewOf', 'guide'] as const;
 
 /** `t` with `patch` applied; `null` clears a field. */
 export function withMeta(t: Ticket, patch: TicketMetaPatch): Ticket {

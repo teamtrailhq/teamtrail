@@ -18,9 +18,9 @@ import { assertAssumes } from './assumptions';
 import { claimTicket } from './claimTicket';
 import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
+import { checkedAnswers, keepAnswers } from './guides';
 import { withReview } from './parallel';
 import { checkRisk } from './riskCheck';
-import { checkedAnswers, keepAnswers } from './roles';
 import type { CloseInput, WaitControl } from './types';
 
 type Wait = { seconds: number; ctl?: WaitControl };
