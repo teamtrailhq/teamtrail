@@ -9,7 +9,7 @@ export interface BannerFrame {
   at: number;
 }
 
-/** Scout's height in the animated banner, in 40px units: about the wordmark's, so the name leads. */
+/** Scout's height in the animated banner, in 40px units: about the wordmark's, so the name leads. It sits on the name's line. */
 const SCOUT_UNITS = 3.25;
 
 /** card: social preview / Open Graph; header: X profile header (avatar overlaps bottom-left, so content sits right).
@@ -40,9 +40,14 @@ export function Banner({
       style={{ width: w, height: h, ['--u' as string]: `${u}px` }}
     >
       <BannerLand w={w} h={h} progress={progress} wobble={wobble} />
-      {layout === 'card' ? (
+      {layout === 'card' && !frame ? (
         <div className="banner-feed">
-          {frame ? (
+          <Logo size={Math.round(360 * u)} />
+        </div>
+      ) : null}
+      <div className="banner-copy">
+        {frame ? (
+          <div className="banner-badge">
             <ScoutAvatar
               framed={false}
               variant="night"
@@ -52,12 +57,8 @@ export function Banner({
               at={frame.at}
               caption={false}
             />
-          ) : (
-            <Logo size={Math.round(360 * u)} />
-          )}
-        </div>
-      ) : null}
-      <div className="banner-copy">
+          </div>
+        ) : null}
         <Wordmark text={wordmark} />
         <div className="social-cat">The trail map for AI coding agents</div>
         <div className="social-tag">{TAGLINE}</div>
