@@ -1,4 +1,5 @@
-export type SettingsOpen = false | 'top' | 'slack';
+/** `roles`: Settings opened at Roles, from the attention queue. */
+export type SettingsOpen = false | 'top' | 'slack' | 'roles';
 
 /** `?settings=slack` (from `teamtrail connect slack`) opens Settings on the Slack setup. */
 export const settingsFromUrl = (): SettingsOpen =>

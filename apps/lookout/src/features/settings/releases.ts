@@ -9,6 +9,12 @@ export interface Release {
 
 export const NEXT: { area: string; items: string[] }[] = [
   {
+    area: 'Roles',
+    items: [
+      'Roles: a ticket can ask for a reviewer, QA, security, docs or architect, and the agent that claims it gets that role’s instructions and a checklist it must answer before the work counts as done. Pick a trail’s team and each ticket’s role in the Lookout, and add more roles from a moderated catalog in Settings → Roles. A role can add checks but never remove one, its commands only run after you approve them, and a role file edited after you approved it is switched off until you look at it again',
+    ],
+  },
+  {
     area: 'Trail stats',
     items: [
       "Records has a new Trail stats view: delivery across every trail, by vendor, agent and ticket type, with plain observations from your own numbers. Teamtrail doesn't route work from them",

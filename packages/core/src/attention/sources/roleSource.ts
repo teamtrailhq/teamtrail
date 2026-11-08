@@ -3,7 +3,7 @@ import type { AttentionSource, Candidate } from '../types';
 
 const TITLES: Record<string, (id: string) => string> = {
   tampered: (id) => `Role ${id} changed since you approved it`,
-  unapproved: (id) => `Approve role ${id} before agents use it`,
+  unapproved: (id) => `New role ${id} is waiting for your approval`,
   invalid: (id) => `Role ${id} can't be used`,
 };
 

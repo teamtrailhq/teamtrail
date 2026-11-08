@@ -6,6 +6,7 @@ import { TRAIL_LEAD, heldLeases, isRunning } from '../../lib';
 import { CriteriaSection } from '../criteria';
 import { KnowledgePreview, PromoteButton } from '../knowledge';
 import { PrFlagBadges } from '../pr-sync';
+import { TicketRole } from '../roles';
 import { VerificationPanel } from '../verification';
 import { TicketWorkspace } from '../workspaces';
 import { LeaseFacts } from './LeaseFacts';
@@ -46,6 +47,7 @@ export function TicketDetail(props: {
       <TicketFacts t={t} state={state} tickets={snap.tickets} />
 
       <PrFlagBadges mapId={snap.map.id} ticketId={t.id} />
+      <TicketRole mapId={snap.map.id} ticket={t} />
       <CriteriaSection snap={snap} t={t} />
       <KnowledgePreview snap={snap} t={t} />
       {t.closeReason === 'not_planned' && (

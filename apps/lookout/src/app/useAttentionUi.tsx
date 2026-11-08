@@ -20,6 +20,7 @@ export function useAttentionUi(input: {
   knowledge: Pick<KnowledgeStore, 'setOpen'>;
   reviewBrief: () => void;
   openReroute?: (item: AttentionItem) => void;
+  openRoles: () => void;
 }) {
   const { api, nav } = input;
   const attention = useAttention(api.allSnaps);
@@ -33,6 +34,7 @@ export function useAttentionUi(input: {
       input.openReroute ??
       ((item) => (item.ticketId ? nav.openTicket(item.mapId, item.ticketId) : selectTrail(item.mapId))),
     selectTrail,
+    openRoles: input.openRoles,
   };
   const view = attention.view;
   const header = view && (

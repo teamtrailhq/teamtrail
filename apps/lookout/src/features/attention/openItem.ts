@@ -9,6 +9,8 @@ export interface AttentionHandlers {
   /** Reroute proposals and suggestions: the reroute review, once wired; selecting the trail until then. */
   openReroute: (item: AttentionItem) => void;
   selectTrail: (mapId: string) => void;
+  /** Roles and the checks they propose: Settings → Roles. */
+  openRoles: () => void;
 }
 
 function openTicketOrTrail(item: AttentionItem, h: AttentionHandlers) {
@@ -37,6 +39,9 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
     case 'reroute':
     case 'reroute-suggested':
       return h.openReroute(item);
+    case 'role':
+    case 'role-checks':
+      return h.openRoles();
     default: {
       const never: never = item.kind;
       return never;

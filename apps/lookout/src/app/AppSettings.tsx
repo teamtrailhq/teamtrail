@@ -9,7 +9,7 @@ export function AppSettings(props: {
   api: LookoutApi;
   prefs: Prefs;
   update: (p: Partial<Prefs>) => void;
-  focus: 'top' | 'slack';
+  focus: 'top' | 'slack' | 'roles';
   onClose: () => void;
 }) {
   const { rt, api } = props;
@@ -21,7 +21,7 @@ export function AppSettings(props: {
       location={rt.adapter.location}
       map={api.snap?.map}
       onMapMode={api.actions.setMode}
-      focus={props.focus === 'slack' ? 'slack' : undefined}
+      focus={props.focus === 'top' ? undefined : props.focus}
       onClose={() => {
         props.onClose();
         clearSettingsParam();

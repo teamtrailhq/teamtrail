@@ -6,6 +6,7 @@ import { runConnect } from './connect';
 import { importKnowledge } from './knowledgeImport';
 import { runMcpServer } from './mcp/server';
 import { printGreeting } from './printGreeting';
+import { rolesCli } from './roles/rolesCli';
 import { serveLookout } from './serve/serveLookout';
 import { readStdin, recordClaudeSession } from './usage/hook';
 
@@ -41,6 +42,7 @@ async function main() {
     );
     return;
   }
+  if (argv[0] === 'roles') return rolesCli(argv.slice(1));
   const slackSetup = argv[0] === 'connect' && argv[1] === 'slack';
   if (argv[0] === 'connect' && !slackSetup) {
     const o = parseSubArgs(argv.slice(1), ['--dir']);

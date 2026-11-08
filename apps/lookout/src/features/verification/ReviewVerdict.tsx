@@ -1,11 +1,16 @@
-import type { VerificationVerdict } from '@teamtrail/core';
+import type { ChecklistAnswer, VerificationVerdict } from '@teamtrail/core';
 import { MetaLine } from '../../components/ui';
 import { hhmm } from '../../lib';
+import { ChecklistAnswers } from '../roles';
 
 const TEXT = { PASS: 'Passed', FAIL: 'Sent back', NEEDS_HUMAN: 'Needs you' } as const;
 
-/** A review or trail lead decision on an attempt, with its findings. */
+/** What a reviewer working in a role adds to its verdict; older verdicts have neither. */
+type WithRole = { role?: { id: string; version: string }; checklist?: ChecklistAnswer[] };
+
+/** A review or trail lead decision on an attempt, with its findings, and the reviewer's role and checklist. */
 export function ReviewVerdict({ verdict: v }: { verdict: VerificationVerdict }) {
+  const { role, checklist } = v as VerificationVerdict & WithRole;
   return (
     <div className={`vf-verdict v-${v.verdict.toLowerCase()}`}>
       <MetaLine
@@ -14,6 +19,7 @@ export function ReviewVerdict({ verdict: v }: { verdict: VerificationVerdict }) 
           { text: v.id, code: true },
           v.byKind === 'trail lead' ? v.by : `review ${v.by}`,
           v.sessionId && `session ${v.sessionId.slice(0, 8)}`,
+          role && `as ${role.id} ${role.version}`,
           `on ${v.attemptId}`,
           hhmm(v.at),
         ]}
@@ -28,6 +34,7 @@ export function ReviewVerdict({ verdict: v }: { verdict: VerificationVerdict }) 
           ))}
         </ul>
       )}
+      {checklist && checklist.length > 0 && <ChecklistAnswers answers={checklist} />}
     </div>
   );
 }

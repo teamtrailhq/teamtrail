@@ -7,6 +7,7 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} connect claude|codex [--dir <path>]
        ${BRAND.slug} connect slack [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
+       ${BRAND.slug} roles list|search|add|update|remove|lint … [--dir <path>]
 
 Starts the Lookout for the current folder and opens it in your browser.
 
@@ -19,6 +20,18 @@ Commands:
                  (for Claude Code also a SessionStart hook, so usage comes from the transcript)
   knowledge import <file.md>  Seed project knowledge from a markdown document: one suggestion per
                  ## heading, for you to review in the Lookout
+  roles list     Roles agents take on (built in, local and from a catalog), with their status
+  roles search [query] [--verified] [--registry <name>]
+                 Search the role catalogs listed in roles.json (the official one by default)
+  roles add <id>|<file.md> [--registry <name>] [--approve-checks]
+                 Copy a role into the tracker folder and pin it in roles.lock.json, after
+                 the safety lint. Each check command it proposes is shown and asked about;
+                 without a terminal, none is approved unless --approve-checks is given
+  roles update [id...]  Install newer catalog versions; changed check commands are asked about again
+  roles remove <id>     Remove an installed role (its approved checks stay in verification.json)
+  roles lint <dir|file...> [--json]
+                 Catalog tooling: schema, safety lint and a test example per role
+                 (examples/<id>/); exits 1 on any error
   connect slack  Start the Lookout on the Slack setup (Socket Mode from this machine;
                  tokens stay in your local credential store)
   hook claude    The SessionStart hook itself (reads the hook payload on stdin)
