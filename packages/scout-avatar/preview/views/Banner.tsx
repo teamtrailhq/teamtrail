@@ -9,8 +9,8 @@ export interface BannerFrame {
   at: number;
 }
 
-/** Scout's height in the animated banner, in 40px units: about the text block beside it, so the name leads. */
-const SCOUT_UNITS = 6.5;
+/** Scout's height in the animated banner, in 40px units: about the wordmark's, so the name leads. */
+const SCOUT_UNITS = 3.25;
 
 /** card: social preview / Open Graph; header: X profile header (avatar overlaps bottom-left, so content sits right).
  * The logo leads; with a `frame` (the animated README banner) Scout's badge takes its place and speaks. */
@@ -35,7 +35,7 @@ export function Banner({
   const u = h / 640;
   return (
     <div
-      className={`banner ${layout}`}
+      className={`banner ${layout}${frame ? ' with-scout' : ''}`}
       data-capture="banner"
       style={{ width: w, height: h, ['--u' as string]: `${u}px` }}
     >
