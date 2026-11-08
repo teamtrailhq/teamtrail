@@ -20,7 +20,8 @@ export type AttentionKind =
   | 'reroute'
   | 'reroute-suggested'
   | 'overlap'
-  | 'integration';
+  | 'integration'
+  | 'model';
 
 /** `blocking`: the agent can do no useful work until answered. `soon`: the default. `fyi`: whenever convenient. */
 export type AttentionUrgency = 'blocking' | 'soon' | 'fyi';

@@ -1,17 +1,10 @@
-import {
-  allowedTypes,
-  chooseNext,
-  OperationError,
-  promoteToTicket,
-  release,
-  type Ticket,
-  type TicketType,
-} from '@teamtrail/core';
+import { allowedTypes, OperationError, promoteToTicket, release, type Ticket, type TicketType } from '@teamtrail/core';
 import { levelFor } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaView, saveCriteria, type CriterionInput } from './criteria';
 import { briefView, claimable } from './discovery';
 import { knowledgeFor } from './knowledge';
+import { heldReason, pickNext, tierFields } from './models';
 import { noTicketReason } from './noTicketReason';
 import { recoverStalled } from './recoverStalled';
 import { frozenOn } from './reroutes';
@@ -24,15 +17,18 @@ export async function nextTicket(ctx: AgentContext, input: { trail?: string; typ
   const gate = claimable(ctx.root, snap.map.id);
   const types = gate ? (input.types ?? gate).filter((x) => gate.includes(x)) : input.types;
   const exclude = [...(await ownReviews(ctx, snap, await ctx.agentId())), ...frozenOn(ctx, snap.map.id).keys()];
-  const t = chooseNext(snap, { types, exclude });
+  const { ticket: t, held } = pickNext(ctx, snap, { types, exclude });
   const extra = recovered.length ? { recovered } : {};
   if (t)
     return {
       ticket: ticketInfo(ctx.root, snap, t, await ctx.decisions(snap.map.id)),
+      ...tierFields(ctx, snap, t),
       knowledge: knowledgeFor(ctx.root, snap, t),
       ...extra,
     };
-  const reason = noTicketReason(snap, { gate, next: gate ? briefView(ctx.root, snap)?.next : undefined });
+  const reason = held.length
+    ? heldReason(ctx, snap, held)
+    : noTicketReason(snap, { gate, next: gate ? briefView(ctx.root, snap)?.next : undefined });
   return { ticket: null, reason, ...extra };
 }
 

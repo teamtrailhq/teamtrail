@@ -13,6 +13,7 @@ import { BadRequest, openEventStream, readText, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
 import { handleKnowledge } from './knowledgeRoutes';
 import { handleLeases } from './leaseRoutes';
+import { handleModels } from './modelRoutes';
 import { handlePolicy } from './policyRoutes';
 import { handleReroutes } from './rerouteRoutes';
 import { sendTrackerError } from './trackerErrors';
@@ -79,6 +80,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handlePolicy(ctx, req, res, url),
     (req, res, url) => handleAttention({ ...ctx, configDir: trackers.configDir }, req, res, url),
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
+    (req, res, url) => handleModels(ctx, req, res, url),
   ];
 
   /** The live event stream and raw file access to the tracker folder. */
