@@ -295,10 +295,23 @@ body {
   padding: 0 calc(var(--u) * 88) calc(var(--u) * 90);
   background: #101815;
 }
-/* The animated banner: a small Scout beside the name, the pair centred. */
+/* The animated banner: a small Scout on the name's line, the lines below under the name, the block centred. */
 .banner.with-scout {
   justify-content: center;
-  gap: calc(var(--u) * 44);
+}
+.banner.with-scout .banner-copy {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: calc(var(--u) * 44);
+  row-gap: calc(var(--u) * 16);
+}
+.banner.with-scout .banner-copy > :not(.banner-badge) {
+  grid-column: 2;
+}
+.banner-badge {
+  grid-row: 1;
+  align-self: center;
+  line-height: 0;
 }
 .banner.header {
   justify-content: flex-end;
