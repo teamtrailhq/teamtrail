@@ -15,6 +15,7 @@ export const KIND_LABEL: Record<AttentionKind, string> = {
   'reroute-suggested': 'Reroute?',
   overlap: 'Overlap',
   integration: 'Integrate',
+  model: 'Model',
 };
 
 /** What a batch of one kind is called: "3 questions from Reminders, answer together". */
@@ -32,6 +33,7 @@ export const KIND_PLURAL: Record<AttentionKind, string> = {
   'reroute-suggested': 'suggested reroutes',
   overlap: 'overlapping claims',
   integration: 'clashing branches',
+  model: 'tickets waiting for a model',
 };
 
 /** Snooze choices, in minutes. */

@@ -1,6 +1,9 @@
 import {
+  type AnsweredQuestion,
   type MapDoc,
   type MapMode,
+  type MapSnapshot,
+  type ModelMatching,
   MAP_LABEL,
   BRAND,
   HITL_LABEL,
@@ -15,6 +18,7 @@ import { ModeChoice } from '../trail';
 import { AttentionSection } from './AttentionSection';
 import { BriefingChoice } from './BriefingChoice';
 import { Changelog } from './Changelog';
+import { ModelMatchingSection } from './ModelMatchingSection';
 import { ProjectsSection } from './ProjectsSection';
 import { RiskPolicySection } from './RiskPolicySection';
 import { SettingsSection } from './SettingsSection';
@@ -31,6 +35,10 @@ export function SettingsPanel(props: {
   location: string;
   map?: MapDoc;
   onMapMode: (m: MapMode) => void;
+  /** Every trail and the answered questions, for the delivery hints next to model tiers. */
+  snaps: MapSnapshot[];
+  answered: AnsweredQuestion[];
+  onModelMatching: (value: ModelMatching) => void;
   onClose: () => void;
   initialTab?: 'settings' | 'changelog';
   focus?: 'slack';
@@ -76,6 +84,13 @@ export function SettingsPanel(props: {
             <SlackSection focus={props.focus === 'slack'} />
 
             <VerificationSection map={props.map} />
+
+            <ModelMatchingSection
+              map={props.map}
+              snaps={props.snaps}
+              answered={props.answered}
+              onChange={props.onModelMatching}
+            />
 
             <RiskPolicySection />
 

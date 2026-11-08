@@ -6,6 +6,8 @@ export type * from './model/evidence';
 export type * from './model/prEvidence';
 export * from './adapters/adapter';
 export * from './planning/derive';
+export * from './model/modelTier';
+export * from './planning/matching';
 export * from './model/mapBody';
 export * from './model/steps';
 export * from './planning/operations';

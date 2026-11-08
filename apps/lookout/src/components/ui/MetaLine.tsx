@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { cx } from '../../lib';
 
-/** One part of a meta line: plain text, or text marked as code (mono), emphasised, or urgent (red). */
+/** One part of a meta line: plain text, or text marked as code (mono), emphasised, or urgent (red); `tip` on hover. */
 export type MetaPart =
-  string | { text: string; code?: boolean; strong?: boolean; urgent?: boolean; className?: string };
+  string | { text: string; code?: boolean; strong?: boolean; urgent?: boolean; className?: string; tip?: string };
 
 type Shown = Exclude<MetaPart, string>;
 
@@ -26,7 +26,9 @@ export function MetaLine(props: {
       {shown.map((p, i) => (
         <span key={i}>
           {i > 0 && <span className="sep"> · </span>}
-          <span className={partClass(p) || undefined}>{p.text}</span>
+          <span className={partClass(p) || undefined} title={p.tip}>
+            {p.text}
+          </span>
         </span>
       ))}
       {props.children}

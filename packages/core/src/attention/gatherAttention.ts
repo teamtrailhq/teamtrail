@@ -1,5 +1,6 @@
 import type { TrackerAdapter } from '../adapters/adapter';
 import { readAgentDocs } from '../agents/agentDocs';
+import { connectedAgents } from '../agents/connectedAgents';
 import { readLeases } from '../agents/leaseStore';
 import { readBrief } from '../discovery/briefStore';
 import { readTicketSyncs } from '../evidence/syncStore';
@@ -37,6 +38,7 @@ export async function gatherAttention(input: {
     ...(await rerouteInputs({ root, adapter, snaps, syncs })),
     violations: await readViolations({ root, adapter, snaps, docs }),
     integrations: integrationsOf(root),
+    agents: connectedAgents(docs),
     policy,
     state: readAttentionState(root),
     now,

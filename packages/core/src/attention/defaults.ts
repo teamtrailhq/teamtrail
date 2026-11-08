@@ -17,6 +17,7 @@ export const DEFAULT_WEIGHTS: Record<AttentionKind, number> = {
   'hitl-ready': 35,
   flag: 35,
   'reroute-suggested': 30,
+  model: 30,
   knowledge: 15,
 };
 

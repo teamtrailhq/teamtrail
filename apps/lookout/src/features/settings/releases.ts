@@ -9,6 +9,12 @@ export interface Release {
 
 export const NEXT: { area: string; items: string[] }[] = [
   {
+    area: 'Model matching',
+    items: [
+      'Match work to models: switch it on for a trail in Settings and each agent gets the tickets that fit the model it runs on, research on fast models and junctions on the strongest. You set the tier per ticket type; Teamtrail never switches a model, and a ticket no connected agent is strong enough for waits in your queue',
+    ],
+  },
+  {
     area: 'Trail stats',
     items: [
       "Records has a new Trail stats view: delivery across every trail, by vendor, agent and ticket type, with plain observations from your own numbers. Teamtrail doesn't route work from them",

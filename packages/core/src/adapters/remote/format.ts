@@ -17,7 +17,7 @@ import { DECISION_SOURCES } from '../../planning/decisions/decisionRecord';
  *   ticket type, HITL, plan-only    labels (brand.ts)
  *   claim, status, verification     `<!-- teamtrail:meta {"assignee":…,"status":…} -->` at the end of the issue body;
  *                                   a human assignee in the tracker counts as a claim too; on the trail issue,
- *                                   the trail's verification level
+ *                                   the trail's verification level and model matching
  *   comment author                  `<!-- teamtrail:author <id> -->` first line (the API user posts every comment)
  *   comment write id                `<!-- teamtrail:write <id> -->` next line, so a replayed queued write can tell it already landed
  *   decision record                 a comment on its ticket (or the trail) ending in `<!-- teamtrail:decision {json} -->`
@@ -36,12 +36,14 @@ export interface BodyMeta {
   verification?: string;
   checks?: string[];
   reviewOf?: string;
+  /** Trail issue only: its model matching. */
+  modelMatching?: unknown;
 }
 
-/** The trail issue body: its sections, plus a meta marker only when the trail has a verification level. */
-export const mapBody = (m: Pick<MapDoc, 'sections' | 'verification'>) =>
-  m.verification
-    ? joinBody(serializeMapBody(m.sections), { verification: m.verification })
+/** The trail issue body: its sections, plus a meta marker only when the trail has a verification level or model matching. */
+export const mapBody = (m: Pick<MapDoc, 'sections' | 'verification' | 'modelMatching'>) =>
+  m.verification || m.modelMatching
+    ? joinBody(serializeMapBody(m.sections), { verification: m.verification, modelMatching: m.modelMatching })
     : serializeMapBody(m.sections);
 
 /** Everything Teamtrail keeps in a ticket's meta marker, so one write never drops another's field. */

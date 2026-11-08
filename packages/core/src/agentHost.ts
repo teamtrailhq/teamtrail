@@ -105,3 +105,4 @@ export { isClaimed, removeWorkspace, type RemoveWorkspaceResult } from './worksp
 export { readIntegrationScan, writeIntegrationScan } from './workspaces/integrationStore';
 export { scanIntegrations } from './workspaces/scanIntegrations';
 export { attentionView } from './attention/attentionView';
+export { readModelsConfig, type ModelsRead } from './planning/matching/modelsStore';

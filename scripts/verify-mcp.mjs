@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { chromium } from 'playwright-core';
+import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
@@ -459,6 +460,8 @@ const supervisionOk = await verifySupervision({ call, page, shot, log, repo, map
 // Safe parallel work: worktrees, overlapping claims and an integration ticket, on a scratch git repo.
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 
+// Model-aware claiming: two agents on different models, matching switched on in the Lookout, on a scratch project.
+const modelsOk = await verifyModels({ browser, cli, log, shots });
 // Several repos: All projects, the merged queue and answering another repo's agent from it.
 const projectsOk = await verifyProjects({ browser, cli, log, shots });
 
@@ -499,6 +502,7 @@ if (
   !discoveryOk ||
   !supervisionOk ||
   !parallelOk ||
+  !modelsOk ||
   !projectsOk
 )
   process.exit(1);

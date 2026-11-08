@@ -35,6 +35,8 @@ export class UsageMeter {
   private files = new Map<string, LogFile>();
   private events = new Map<string, UsageEvent>();
   private source?: Exclude<UsageSource, 'reported'>;
+  /** The latest model call of the agent's own log (not a subagent's): the model it runs on now. */
+  private latest?: { at: number; model: string };
   private threadId?: string;
   /** Claude Code tool_use ids of recent calls not yet found in an attached transcript. */
   private toolUses: string[] = [];
@@ -75,6 +77,13 @@ export class UsageMeter {
     return typeof meta?.callId === 'string' ? meta.callId : undefined;
   }
 
+  /** The model the agent runs on now: the one of its latest model call, once a log is attached. */
+  model(): string | undefined {
+    this.resolveClaude();
+    if (this.files.size) this.poll();
+    return this.latest?.model;
+  }
+
   /** When the model call that issued tool call `callId` began, once its log record is read. */
   issuedAt(callId: string) {
     for (const f of this.files.values()) {
@@ -91,8 +100,10 @@ export class UsageMeter {
   }
 
   private poll() {
-    for (const f of this.files.values()) {
+    for (const [file, f] of this.files) {
+      const own = path.basename(path.dirname(file)) !== 'subagents';
       for (const e of f.read()) {
+        if (own && e.model && (!this.latest || e.at >= this.latest.at)) this.latest = { at: e.at, model: e.model };
         const prev = this.events.get(e.key);
         this.events.set(
           e.key,

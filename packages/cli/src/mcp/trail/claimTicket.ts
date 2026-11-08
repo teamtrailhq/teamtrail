@@ -1,6 +1,5 @@
 import {
   attention,
-  chooseNext,
   claim,
   deriveStates,
   leaseSpan,
@@ -15,6 +14,7 @@ import type { AgentContext } from './agentContext';
 import { criteriaView } from './criteria';
 import { assertClaimable, briefView, claimable } from './discovery';
 import { knowledgeFor } from './knowledge';
+import { pickNext, stampModel, tierFields } from './models';
 import { claimParallel } from './parallel';
 import { recoverStalled } from './recoverStalled';
 import { sessionView } from './reporting';
@@ -43,6 +43,7 @@ export async function claimTicket(
     ? target
     : await claim(ctx.adapter, snap.map.id, target.id, { assignee: agent, journal: ctx.journal });
   const s = await sessionFor(ctx, snap, t);
+  stampModel(ctx);
   const lease = ctx.leases.hold(agent, snap.map.id, t, { sessionId: s.id });
   const parallel = await claimParallel(ctx, {
     mapId: snap.map.id,
@@ -66,6 +67,7 @@ export async function claimTicket(
   if (delivered) s.log(`knowledge delivered: ${delivered.map((k) => k.id).join(', ')}`);
   return {
     claimed: ticketInfo(ctx.root, fresh, current, await ctx.decisions(snap.map.id)),
+    ...tierFields(ctx, fresh, current, !!input.ticket),
     session: sessionView(ctx),
     discovery: briefView(ctx.root, fresh),
     knowledge: delivered,
@@ -90,7 +92,7 @@ async function pickTarget(ctx: AgentContext, at: { snap: MapSnapshot; agent: str
   const exclude = [...(await ownReviews(ctx, snap, agent)), ...frozen.keys()];
   const target = at.ref
     ? ctx.findTicket(snap, at.ref)
-    : chooseNext(snap, { types: claimable(ctx.root, snap.map.id), exclude });
+    : pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude }).ticket;
   if (!target) {
     const r = await nextTicket(ctx, { trail: snap.map.id });
     throw new OperationError(('reason' in r ? r.reason : undefined) ?? 'No ready ticket');

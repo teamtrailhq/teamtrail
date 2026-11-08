@@ -5,6 +5,7 @@ import type { AttentionItem, AttentionKind, AttentionPolicy, AttentionState } fr
 import type { TicketSync } from '../model/prEvidence';
 import type { RerouteProposal } from '../model/reroute';
 import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
+import type { ConnectedAgent } from '../planning/matching/modelWaits';
 import type { RerouteSuggestion } from '../planning/reroute/rerouteTriggers';
 import type { PolicyViolation } from '../policy/policyViolations';
 import type { ApprovalItem } from '../verification/approvals';
@@ -31,6 +32,8 @@ export interface AttentionInput {
   violations?: PolicyViolation[];
   /** Active claim branches that changed the same files (workspaces/scanIntegrations.ts). Missing: none. */
   integrations?: IntegrationOverlap[];
+  /** Agents connected now, with their model tier (model matching). Missing: none. */
+  agents?: ConnectedAgent[];
   /** Missing: the defaults. */
   policy?: AttentionPolicy;
   /** Missing: nothing snoozed or dismissed. */

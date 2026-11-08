@@ -1,4 +1,5 @@
 import { uid } from '../lib/emitter';
+import type { ModelTier } from '../model/modelTier';
 import { STEPS, stepTag } from '../model/steps';
 import type { ChatMessage, FeedEntry, PendingQuestion, SessionInfo, SessionMode, SessionUsage } from '../model/types';
 import { addUsage, subUsage } from './usage';
@@ -20,6 +21,8 @@ export interface SessionHandle {
   usage(delta: SessionUsage): void;
   /** Replace the session's cumulative usage (measured from the agent's logs); the trail total moves by the difference. */
   setUsage(total: SessionUsage): void;
+  /** The model the agent runs on and its tier, for model matching and the sessions list. */
+  setModel(model: string | undefined, tier: ModelTier): void;
 }
 
 /** What a session handle reads and changes in its ActivityStream. */
@@ -127,6 +130,11 @@ export function createSessionHandle(host: SessionHost, info: SessionInfo, mode: 
       if (d.inputTokens > 0 || d.outputTokens > 0 || d.costUsd > 0) host.ledger()?.add(mapId, d, info.id);
       host.addMapUsage(mapId, d);
       host.patchSession(info.id, { usage: total });
+    },
+    setModel(model, tier) {
+      const now = current();
+      if (now.model === model && now.tier === tier) return;
+      host.patchSession(info.id, { model, tier });
     },
   };
 }

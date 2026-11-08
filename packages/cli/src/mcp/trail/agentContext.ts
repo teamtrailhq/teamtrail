@@ -24,6 +24,7 @@ import {
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { AgentLeases } from './agentLeases';
 import { AgentSessions } from './agentSessions';
+import { stampModel } from './models';
 import { trailNameFamily } from './trailName';
 import type { AgentOptions, AgentTracker } from './types';
 
@@ -134,6 +135,7 @@ export class AgentContext {
     const agent = await this.agentId();
     const s = this.sessions.start(agent, mode, mapId, ticketId);
     this.sessionIds.push(s.id);
+    stampModel(this);
     return s;
   }
 
@@ -159,6 +161,7 @@ export class AgentContext {
   /** Renews this agent's claim leases: on every tool call, and while waiting on a human. */
   heartbeat(extra: { ticketId?: string; note?: string; decision?: string } = {}) {
     if (!this.trailName) return;
+    stampModel(this);
     const s = this.sessions.running()?.info;
     const lost = this.leases.renew(this.trailName, { ticketId: s?.ticketId, sessionId: s?.id, ...extra });
     const gone = lost.find((h) => h.ticketId === s?.ticketId && h.mapId === s?.mapId);

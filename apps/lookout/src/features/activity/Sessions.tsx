@@ -38,6 +38,7 @@ export function Sessions({
   const claims = snap?.tickets.filter((t) => t.state === 'open' && t.assignee && !live.has(t.id)) ?? [];
   if (!running.length && !claims.length) return <Empty>No agent on a ticket</Empty>;
   const stalled = (l?: TicketLease) => !!l && leaseHealth(l, now) !== 'live';
+  const matching = !!snap?.map.modelMatching?.enabled;
   return (
     <ul className="sessions-list">
       {running.map((s) => {
@@ -55,6 +56,7 @@ export function Sessions({
               <MetaLine
                 parts={[
                   { text: s.agent, strong: true },
+                  matching && tierPart(s),
                   s.waitingOn ? { text: 'Waiting on you', urgent: true } : `${s.mode} · ${s.stepLabel.toLowerCase()}`,
                   hitl && !s.waitingOn && 'with you',
                   usageText(s),
@@ -94,6 +96,12 @@ export function Sessions({
 function sessionEdge(s: Session, stalled: boolean): EdgeTone {
   if (s.waitingOn) return 'urgent';
   return stalled ? 'attention' : 'neutral';
+}
+
+/** Model matching: the session's tier next to its callsign, the model it was read from on hover. */
+function tierPart(s: Session) {
+  const tip = s.model ? `Runs ${s.model}` : 'No model reported, so it counts as balanced';
+  return { text: s.tier ?? 'balanced', tip, className: 'session-tier' };
 }
 
 /** Spend in plain words (where the numbers come from is in the trail spend tooltip). */

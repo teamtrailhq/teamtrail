@@ -17,7 +17,7 @@ export interface AgentOptions {
   /** Tracker the trails live in (the project's active tracker). Default: local markdown in `root`. */
   tracker?: AgentTracker;
   /** Reads real usage from the agent's local logs; without one (or until it finds a log) the agent's reported numbers count. */
-  usage?: Pick<UsageMeter, 'noteCall' | 'measure'>;
+  usage?: Pick<UsageMeter, 'noteCall' | 'measure'> & Partial<Pick<UsageMeter, 'model'>>;
   /** How often usage of the running session is re-read. */
   usagePollMs?: number;
   /** Lease length of a claim; renewed by every tool call. Default: $TEAMTRAIL_LEASE_MINUTES, else 15 min. */
