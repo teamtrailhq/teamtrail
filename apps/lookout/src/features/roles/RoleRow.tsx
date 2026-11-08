@@ -25,7 +25,7 @@ export function RoleRow(props: {
               { text: id, code: true },
               sourceLabel(r),
               r.status !== 'active' && STATUS_TEXT[r.status],
-              r.role && `${r.role.checklist.length} checklist items`,
+              r.role && checklistCount(r.role.checklist.length),
             ]}
           />
         }
@@ -60,3 +60,5 @@ export function RoleRow(props: {
     </li>
   );
 }
+
+const checklistCount = (n: number) => (n === 1 ? '1 checklist item' : `${n} checklist items`);
