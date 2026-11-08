@@ -105,3 +105,13 @@ export { isClaimed, removeWorkspace, type RemoveWorkspaceResult } from './worksp
 export { readIntegrationScan, writeIntegrationScan } from './workspaces/integrationStore';
 export { scanIntegrations } from './workspaces/scanIntegrations';
 export { attentionView } from './attention/attentionView';
+export { activeRoleIds, listRoles, readRoleFiles, roleFilePath, rolesDir } from './roles/roleStore';
+export { readRoleLock, roleLockPath, writeRoleLock } from './roles/roleLock';
+export { checkSha, roleSha } from './roles/roleHash';
+export { approveRole, installRole, lintRefusal, type Installed } from './roles/installRole';
+export { approveCheck } from './roles/approveCheck';
+export { removeRole } from './roles/removeRole';
+export { DEFAULT_REGISTRY, isRegistryUrl, readRolesConfig } from './roles/rolesConfig';
+export { fetchCatalog, fetchCatalogRole, type CatalogFetch, type Registry } from './roles/catalogClient';
+export { addFromCatalog, previewCatalogRole } from './roles/addFromCatalog';
+export { readChecklist, writeChecklist } from './roles/checklistStore';

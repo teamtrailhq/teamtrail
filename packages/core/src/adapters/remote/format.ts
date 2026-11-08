@@ -36,23 +36,30 @@ export interface BodyMeta {
   verification?: string;
   checks?: string[];
   reviewOf?: string;
+  role?: string;
+  /** Trail issue: the team's role ids. */
+  roles?: string[];
 }
 
-/** The trail issue body: its sections, plus a meta marker only when the trail has a verification level. */
-export const mapBody = (m: Pick<MapDoc, 'sections' | 'verification'>) =>
-  m.verification
-    ? joinBody(serializeMapBody(m.sections), { verification: m.verification })
+/** The trail issue body: its sections, plus a meta marker only when the trail has a verification level or a team. */
+export const mapBody = (m: Pick<MapDoc, 'sections' | 'verification' | 'roles'>) =>
+  m.verification || m.roles?.length
+    ? joinBody(serializeMapBody(m.sections), {
+        verification: m.verification,
+        roles: m.roles?.length ? m.roles : undefined,
+      })
     : serializeMapBody(m.sections);
 
 /** Everything Teamtrail keeps in a ticket's meta marker, so one write never drops another's field. */
 export const ticketMeta = (
-  t: Pick<Ticket, 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf'>,
+  t: Pick<Ticket, 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | 'role'>,
 ): BodyMeta => ({
   assignee: t.assignee,
   status: t.status,
   verification: t.verification,
   checks: t.checks,
   reviewOf: t.reviewOf,
+  role: t.role,
 });
 
 export function splitBody(raw: string | null | undefined): { text: string; meta: BodyMeta } {
@@ -194,6 +201,7 @@ export function ticketFromIssue(p: IssueParts): Ticket {
     ...(verification ? { verification } : {}),
     ...(checks ? { checks } : {}),
     ...(typeof meta.reviewOf === 'string' && meta.reviewOf ? { reviewOf: meta.reviewOf } : {}),
+    ...(typeof meta.role === 'string' && meta.role ? { role: meta.role } : {}),
     blockedBy: p.blockedBy,
     comments: p.comments,
     createdAt: Date.parse(p.createdAt) || 0,

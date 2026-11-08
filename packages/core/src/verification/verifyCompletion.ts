@@ -10,6 +10,8 @@ import type { VerificationAttempt } from '../model/verification';
 import { transition } from '../planning/lifecycle/transition';
 import { OperationError } from '../planning/operations/operationError';
 import { resolve, type DecisionMeta } from '../planning/operations/resolve';
+import { effectiveChecks, resolveRole } from '../roles/resolveRole';
+import { listRoles } from '../roles/roleStore';
 import { readWorkspace } from '../workspaces/workspaceStore';
 import { DEFAULT_CONFIG } from './config';
 import { readVerificationConfig, type ConfigRead } from './configFile';
@@ -80,10 +82,15 @@ export interface Settled {
   maxAttempts: number;
 }
 
-/** The level a completion of `t` needs, with the config it was read from. */
+/**
+ * The level a completion of `t` needs, with the config it was read from. A ticket's role adds the checks it
+ * requires (resolveRole.ts); it never changes the level or drops a check.
+ */
 export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: LevelInfo; config: ConfigRead } {
   const config = readVerificationConfig(root);
-  return { info: verificationFor(config.config, snap.map, t), config };
+  const info = verificationFor(config.config, snap.map, t);
+  if (!t.role) return { info, config };
+  return { info: { ...info, checks: effectiveChecks(info.checks, resolveRole(listRoles(root), t)) }, config };
 }
 
 /**

@@ -4,6 +4,7 @@ import type { KnowledgeEntry } from '../knowledge/knowledge';
 import type { AttentionItem, AttentionKind, AttentionPolicy, AttentionState } from '../model/attention';
 import type { TicketSync } from '../model/prEvidence';
 import type { RerouteProposal } from '../model/reroute';
+import type { InstalledRole } from '../model/role';
 import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
 import type { RerouteSuggestion } from '../planning/reroute/rerouteTriggers';
 import type { PolicyViolation } from '../policy/policyViolations';
@@ -31,6 +32,8 @@ export interface AttentionInput {
   violations?: PolicyViolation[];
   /** Active claim branches that changed the same files (workspaces/scanIntegrations.ts). Missing: none. */
   integrations?: IntegrationOverlap[];
+  /** Installed roles, checked against the lock (roles/roleStore.ts). Missing: none. */
+  roles?: InstalledRole[];
   /** Missing: the defaults. */
   policy?: AttentionPolicy;
   /** Missing: nothing snoozed or dismissed. */

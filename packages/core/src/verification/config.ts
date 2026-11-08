@@ -33,7 +33,8 @@ function types(v: unknown, at: string, errors: string[]): TicketType[] | undefin
   return v as TicketType[];
 }
 
-function check(name: string, v: unknown, errors: string[]): CheckSpec | undefined {
+/** One named check as verification.json (or a role's proposed check) writes it; problems go to `errors`. */
+export function parseCheckSpec(name: string, v: unknown, errors: string[]): CheckSpec | undefined {
   const at = `checks.${name}`;
   if (!isObj(v)) return void errors.push(`${at} must be an object`);
   if (typeof v.run === 'string') return void errors.push(`${at}.run must be an argv array, not a shell string`);
@@ -108,7 +109,7 @@ function parseChecks(v: unknown, c: VerificationConfig, errors: string[]) {
   if (v === undefined) return;
   if (!isObj(v)) return void errors.push('"checks" must be an object of named checks');
   for (const [name, spec] of Object.entries(v)) {
-    const s = check(name, spec, errors);
+    const s = parseCheckSpec(name, spec, errors);
     if (s) c.checks[name] = s;
   }
 }

@@ -3,3 +3,5 @@ export { createReviewTicket, openReviews, withdrawReviews } from './reviewTicket
 export { setVerification, type VerificationTarget } from './setVerification';
 export { transition, type TransitionOptions, type TransitionRequest } from './transition';
 export { ruleFor, TRANSITIONS, type TransitionRule } from './transitions';
+export { setTicketRole } from './setTicketRole';
+export { setTrailTeam } from './setTrailTeam';

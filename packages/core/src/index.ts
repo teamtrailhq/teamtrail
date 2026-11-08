@@ -98,3 +98,10 @@ export { TrackerError, isTransient, type RateInfo, type TrackerErrorCode } from 
 export { BridgeAdapter, trackerSettingsApi } from './adapters/remote/bridgeClient';
 export type * from './adapters/remote/types';
 export * from './model/integrations';
+export * from './model/role';
+export { parseRole, splitRoleFile } from './roles/roleFile';
+export { argvProblems, lintRole, type RoleLint } from './roles/roleLint';
+export { BUILTIN_ROLES } from './roles/builtin/builtinRoles';
+export { effectiveChecks, requiredChecksOf, resolveRole, rolePayload, type ResolvedRole } from './roles/resolveRole';
+export { checkChecklist, checklistProblem, type ChecklistCheck } from './roles/checklist';
+export { parseCatalogIndex, searchCatalog } from './roles/catalogIndex';

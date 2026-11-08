@@ -47,6 +47,8 @@ export interface Ticket {
   checks?: string[];
   /** `review` tickets: id of the ticket under review. */
   reviewOf?: string;
+  /** The role (model/role.ts) an agent takes on when it claims this ticket, e.g. `qa`. */
+  role?: string;
   /** Ids of tickets that block this one (native blocking edges). */
   blockedBy: string[];
   comments: Comment[];
@@ -87,6 +89,8 @@ export interface MapDoc {
   mode: MapMode;
   /** Unset means off: trails that predate verification complete as they always have. */
   verification?: VerificationLevel;
+  /** The trail's team: the role ids its tickets may declare. Unset means no team. */
+  roles?: string[];
   sections: MapSections;
   createdAt: number;
   updatedAt: number;

@@ -15,6 +15,7 @@ export function parseMapFile(mapId: string, md: string): MapDoc {
     mode:
       str(front.mode) === 'plan-only' || arr(front.labels).includes(PLAN_ONLY_LABEL) ? 'plan-only' : DEFAULT_MAP_MODE,
     ...(verification ? { verification } : {}),
+    ...(arr(front.roles).length ? { roles: arr(front.roles) } : {}),
     sections: parseMapBody(body),
     createdAt: time(front.created),
     updatedAt: time(front.updated),
@@ -28,6 +29,7 @@ export function serializeMapFile(m: MapDoc) {
       title: m.title,
       mode: m.mode,
       ...(m.verification ? { verification: m.verification } : {}),
+      ...(m.roles?.length ? { roles: m.roles } : {}),
       labels: [MAP_LABEL, ...(m.mode === 'plan-only' ? [PLAN_ONLY_LABEL] : [])],
       created: iso(m.createdAt),
       updated: iso(m.updatedAt),

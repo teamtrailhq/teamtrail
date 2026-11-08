@@ -19,7 +19,8 @@ export function parseFront(md: string): { front: Front; body: string } {
 const needsQuote = (v: string) =>
   v === '' || /^[\s#&*!|>'"%@`[\]{},?:-]|[:#]\s|\s$|,/.test(v) || /^(true|false|null|~|\d[\d.e+-]*)$/i.test(v);
 const quote = (v: string) => (needsQuote(v) ? JSON.stringify(v) : v);
-function unquote(v: string) {
+/** A scalar as written: quotes removed. */
+export function unquote(v: string) {
   if (v.startsWith('"')) {
     try {
       return JSON.parse(v) as string;
@@ -30,7 +31,8 @@ function unquote(v: string) {
   if (v.startsWith("'")) return v.slice(1, -1).replace(/''/g, "'");
   return v;
 }
-function splitList(v: string) {
+/** The items of an inline `[a, "b, c"]` list body, split on commas outside quotes. */
+export function splitList(v: string) {
   const out: string[] = [];
   let cur = '';
   let inQ = false;

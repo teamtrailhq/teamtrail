@@ -1,16 +1,17 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { Journal, JournalEntry, TransitionEntry } from '../model/lifecycle';
+import type { Journal, JournalEntry, RoleEntry, TransitionEntry } from '../model/lifecycle';
 
 /*
- * Trail history, one JSON line per transition or reroute step, append-only:
+ * Trail history, one JSON line per transition, reroute step or role change, append-only:
  *   <tracker dir>/.events/<mapId>.jsonl
  *   <tracker dir>/.events/.gitignore      `*`: local history, never committed
  * Lines stay well under 4 KB, so concurrent appends from several processes never interleave.
  * `read` returns transitions only, so older readers (delivery report, Report tab) are unaffected by newer kinds;
- * `readAll` returns every entry of a known kind and skips the rest.
+ * `readAll` returns transitions and reroute steps and skips the rest (role changes included); `readRoles` returns the
+ * role changes.
  */
-const KNOWN_KINDS = new Set<string>(['transition', 'reroute']);
+const KNOWN_KINDS = new Set<string>(['transition', 'reroute', 'role']);
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -19,13 +20,16 @@ const safe = (s: string) => s.replace(/[^\w.-]/g, '_');
 export const journalPath = (root: string, mapId: string) => path.join(root, JOURNAL_DIR, `${safe(mapId)}.jsonl`);
 
 export function journalFile(root: string): Journal & {
-  append(entry: JournalEntry): void;
+  append(entry: JournalEntry | RoleEntry): void;
   read(mapId: string): TransitionEntry[];
   readAll(mapId: string): JournalEntry[];
+  readRoles(mapId: string): RoleEntry[];
 } {
-  const readAll = (mapId: string) => readEntries(root, mapId).filter((e) => KNOWN_KINDS.has(e.kind));
+  const raw = (mapId: string) => readEntries(root, mapId) as (JournalEntry | RoleEntry)[];
+  const readAll = (mapId: string) =>
+    raw(mapId).filter((e): e is JournalEntry => KNOWN_KINDS.has(e.kind) && e.kind !== 'role');
   return {
-    append(entry: JournalEntry) {
+    append(entry: JournalEntry | RoleEntry) {
       const dir = path.join(root, JOURNAL_DIR);
       mkdirSync(dir, { recursive: true });
       const ignore = path.join(dir, '.gitignore');
@@ -35,6 +39,7 @@ export function journalFile(root: string): Journal & {
     },
     read: (mapId) => readAll(mapId).filter((e): e is TransitionEntry => e.kind === 'transition'),
     readAll,
+    readRoles: (mapId) => raw(mapId).filter((e): e is RoleEntry => e.kind === 'role'),
   };
 }
 

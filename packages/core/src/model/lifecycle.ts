@@ -70,12 +70,16 @@ export interface TicketMetaPatch {
   checks?: string[] | null;
   /** Set once, when Teamtrail creates a review ticket. */
   reviewOf?: string | null;
+  /** The ticket's role; set at creation, or by the trail lead (`setTicketRole`). */
+  role?: string | null;
 }
 
 /** Teamtrail fields stored with a trail. `null` clears a field. */
 export interface MapMetaPatch {
   /** Trail lead only (`setVerification`). */
   verification?: VerificationLevel | null;
+  /** The trail's team of role ids (`setTrailTeam`). */
+  roles?: string[] | null;
 }
 
 /** One line of a trail's history (`.events/<mapId>.jsonl`). History and UI only; the tracker holds the state. */
@@ -113,6 +117,32 @@ export interface RerouteEntry {
   /** How many changes the proposal carries (proposed) or executed (applied). */
   changes?: number;
 }
+
+export type RoleAction = 'approved' | 'installed' | 'updated' | 'removed' | 'check-approved' | 'ticket-role' | 'team';
+
+/**
+ * A trail lead's change to roles, in the same history files. Project-wide changes (install, approve, remove) go to
+ * the `ROLES_JOURNAL` file; a ticket's role and a trail's team go to that trail's.
+ */
+export interface RoleEntry {
+  v: 1;
+  kind: 'role';
+  at: number;
+  mapId: string;
+  action: RoleAction;
+  /** The role id, or the team's ids joined with ", ". */
+  role: string;
+  version?: string;
+  ticketId?: string;
+  /** A check the trail lead approved, by name. */
+  check?: string;
+  actor: string;
+  actorKind: ActorKind;
+  reason?: string;
+}
+
+/** The journal "trail" that holds project-wide role changes. */
+export const ROLES_JOURNAL = '_roles';
 
 export type JournalEntry = TransitionEntry | RerouteEntry;
 

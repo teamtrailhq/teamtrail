@@ -18,12 +18,14 @@ export interface TrailIssueParts {
 export function mapFromIssue(p: TrailIssueParts): MapDoc {
   const { text, meta } = splitBody(p.body);
   const verification = levelOf(meta.verification);
+  const roles = Array.isArray(meta.roles) ? meta.roles.filter((r) => typeof r === 'string' && r) : [];
   return {
     id: p.id,
     key: p.key,
     title: p.title,
     mode: p.labels.includes(PLAN_ONLY_LABEL) ? 'plan-only' : DEFAULT_MAP_MODE,
     ...(verification ? { verification } : {}),
+    ...(roles.length ? { roles } : {}),
     sections: parseMapBody(text),
     createdAt: Date.parse(p.createdAt) || 0,
     updatedAt: Date.parse(p.updatedAt) || 0,
