@@ -9,6 +9,9 @@ export interface BannerFrame {
   at: number;
 }
 
+/** Scout's height in the animated banner, in 40px units: about the text block beside it, so the name leads. */
+const SCOUT_UNITS = 6.5;
+
 /** card: social preview / Open Graph; header: X profile header (avatar overlaps bottom-left, so content sits right).
  * The logo leads; with a `frame` (the animated README banner) Scout's badge takes its place and speaks. */
 export function Banner({
@@ -43,7 +46,7 @@ export function Banner({
             <ScoutAvatar
               framed={false}
               variant="night"
-              size={9 * u}
+              size={SCOUT_UNITS * u}
               state={frame.state}
               speaking={frame.speaking}
               at={frame.at}
