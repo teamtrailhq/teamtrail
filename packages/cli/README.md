@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/teamtrailhq/teamtrail/main/brand/teamtrail-banner.gif?v=6" alt="Scout, the voice of Teamtrail, next to the name Teamtrail and a trail through the mountains." width="100%" />
+<img src="https://raw.githubusercontent.com/teamtrailhq/teamtrail/main/brand/teamtrail-banner.gif?v=7" alt="Scout, the voice of Teamtrail, next to the name Teamtrail and a trail through the mountains." width="100%" />
 
 # teamtrail
 

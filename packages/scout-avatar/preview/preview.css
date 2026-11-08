@@ -295,6 +295,11 @@ body {
   padding: 0 calc(var(--u) * 88) calc(var(--u) * 90);
   background: #101815;
 }
+/* The animated banner: a small Scout beside the name, the pair centred. */
+.banner.with-scout {
+  justify-content: center;
+  gap: calc(var(--u) * 44);
+}
 .banner.header {
   justify-content: flex-end;
   padding: 0 calc(var(--u) * 210) calc(var(--u) * 90) 0;
