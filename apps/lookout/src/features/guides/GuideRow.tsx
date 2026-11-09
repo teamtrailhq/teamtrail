@@ -1,9 +1,9 @@
 import type { InstalledGuide } from '@teamtrail/core';
 import { Button, MetaLine, Row } from '../../components/ui';
 import { GuideChecks } from './GuideChecks';
-import { sourceLabel, STATUS_TEXT } from './guideLabels';
+import { reviewPart, sourceLabel, STATUS_TEXT } from './guideLabels';
 
-/** One guide in Settings → Guides: name and version, where it's from, its status and checks, and what to do. */
+/** One guide in Settings → Guides: name and version, where it's from (and the catalog's review), its status and checks, and what to do. */
 export function GuideRow(props: {
   r: InstalledGuide;
   busy?: boolean;
@@ -24,6 +24,7 @@ export function GuideRow(props: {
             parts={[
               { text: id, code: true },
               sourceLabel(r),
+              reviewPart(r),
               r.status !== 'active' && STATUS_TEXT[r.status],
               r.guide && checklistCount(r.guide.checklist.length),
             ]}

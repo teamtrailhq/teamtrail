@@ -69,6 +69,7 @@ export async function seedGuides({ root, adapter, main, now }: SeedInput) {
     root,
     text: A11Y,
     source: { registry: 'https://raw.githubusercontent.com/teamtrailhq/teamtrail-guides/main', path: 'guides/a11y.md' },
+    review: { verified: true, reviewedBy: ['teamtrail-maintainers'] },
     by: 'trail lead',
     now: now - 3 * 3_600_000,
   });

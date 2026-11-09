@@ -59,6 +59,15 @@ export interface GuideFinding {
 /** Where an installed guide came from, as the lockfile records it. */
 export type GuideLockSource = 'local' | { registry: string; path: string; commit?: string };
 
+/**
+ * What the catalog said about a guide when the trail lead added or updated it from there. Display only: it never
+ * relaxes a check, and a lock entry edited outside Teamtrail is caught like any other change.
+ */
+export interface GuideLockReview {
+  verified: boolean;
+  reviewedBy: string[];
+}
+
 export interface GuideLockEntry {
   version: string;
   /** `sha256:<hex>` of the guide file the trail lead approved. */
@@ -70,6 +79,8 @@ export interface GuideLockEntry {
   approvedChecks: Record<string, string>;
   /** The required checks of the approved version: still enforced if the file is edited after approval. */
   requiresChecks: string[];
+  /** The catalog's review at install time. Missing for local files and for locks written before it was recorded. */
+  review?: GuideLockReview;
 }
 
 /** `<tracker dir>/guides.lock.json`. */

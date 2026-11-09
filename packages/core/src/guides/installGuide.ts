@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import type { GuideDoc, GuideLockEntry, GuideLockSource } from '../model/guide';
+import type { GuideDoc, GuideLockEntry, GuideLockReview, GuideLockSource } from '../model/guide';
 import { OperationError } from '../planning/operations/operationError';
+import { readApprovedLock } from './approvedLock';
 import { guideSha } from './guideHash';
 import { lintGuide } from './guideLint';
 import { readGuideLock, writeGuideLock } from './guideLock';
@@ -27,7 +28,8 @@ export function lintRefusal(text: string): string | undefined {
 /**
  * Writes a guide file into `guides/` and pins it in `guides.lock.json`: its version, sha256, source and who added it.
  * Earlier check approvals stay on record, but a check whose argv changed needs approval again. Refuses a file that
- * fails the lint. `expectId` guards against a catalog entry that names a different guide.
+ * fails the lint. `expectId` guards against a catalog entry that names a different guide. `review` is what the catalog
+ * says about it, recorded for display only.
  */
 export function installGuide(input: {
   root: string;
@@ -35,6 +37,7 @@ export function installGuide(input: {
   source: GuideLockSource;
   by: string;
   expectId?: string;
+  review?: GuideLockReview;
   now?: number;
 }): Installed {
   const refusal = lintRefusal(input.text);
@@ -56,6 +59,7 @@ export function installGuide(input: {
     addedBy: input.by,
     approvedChecks: Object.fromEntries(kept),
     requiresChecks: guide.requiresChecks,
+    ...(input.review ? { review: input.review } : {}),
   };
   lock.guides[guide.id] = entry;
   writeGuideLock(input.root, lock, guide.id);
@@ -71,5 +75,8 @@ export function approveGuide(input: { root: string; id: string; by: string; now?
     throw new OperationError(`no guide file ${input.id}.md to approve`);
   }
   const prev = readGuideLock(input.root).guides[input.id];
-  return installGuide({ ...input, text, source: prev?.source ?? 'local', expectId: input.id });
+  // the catalog's review stays only for the exact file Teamtrail recorded it for, never for an edited or re-pinned one
+  const approved = readApprovedLock(input.root).guides[input.id];
+  const review = approved?.sha256 === guideSha(text) ? approved.review : undefined;
+  return installGuide({ ...input, text, source: prev?.source ?? 'local', expectId: input.id, review });
 }

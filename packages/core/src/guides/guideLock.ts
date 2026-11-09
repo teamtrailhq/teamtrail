@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
-import { GUIDES_LOCK_FILE, type GuideLock, type GuideLockEntry } from '../model/guide';
+import { GUIDES_LOCK_FILE, type GuideLock, type GuideLockEntry, type GuideLockReview } from '../model/guide';
 import { readApprovedLock, writeApprovedLock } from './approvedLock';
 
 export const guideLockPath = (root: string) => path.join(root, GUIDES_LOCK_FILE);
@@ -8,13 +8,31 @@ export const guideLockPath = (root: string) => path.join(root, GUIDES_LOCK_FILE)
 const isEntry = (e: unknown): e is GuideLockEntry =>
   !!e && typeof e === 'object' && typeof (e as GuideLockEntry).sha256 === 'string';
 
+/** A review recorded in the lock, or nothing when it's missing (older locks) or malformed. */
+function reviewOf(raw: unknown): GuideLockReview | undefined {
+  const r = raw as Partial<GuideLockReview> | undefined;
+  if (!r || typeof r !== 'object' || typeof r.verified !== 'boolean') return undefined;
+  const reviewedBy = Array.isArray(r.reviewedBy) ? r.reviewedBy.filter((x) => typeof x === 'string') : [];
+  return { verified: r.verified, reviewedBy };
+}
+
+const entryOf = (e: GuideLockEntry): GuideLockEntry => {
+  const { review: raw, ...rest } = e;
+  const review = reviewOf(raw);
+  return {
+    ...rest,
+    approvedChecks: e.approvedChecks ?? {},
+    requiresChecks: e.requiresChecks ?? [],
+    ...(review ? { review } : {}),
+  };
+};
+
 /** `guides.lock.json`; missing or unreadable means nothing is pinned, so every local guide waits for approval. */
 export function readGuideLock(root: string): GuideLock {
   const raw = readJsonFile<GuideLock>(guideLockPath(root));
   const guides: Record<string, GuideLockEntry> = {};
   for (const [id, e] of Object.entries(raw?.v === 1 && raw.guides ? raw.guides : {}))
-    if (isEntry(e))
-      guides[id] = { ...e, approvedChecks: e.approvedChecks ?? {}, requiresChecks: e.requiresChecks ?? [] };
+    if (isEntry(e)) guides[id] = entryOf(e);
   return { v: 1, guides };
 }
 
