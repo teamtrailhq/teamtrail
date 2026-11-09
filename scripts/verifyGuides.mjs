@@ -111,6 +111,8 @@ async function addInLookout({ page, url, shot }) {
   if (await onboarding.isVisible().catch(() => false)) await onboarding.click();
   const section = page.locator('.guides-section');
   await section.waitFor({ timeout: 15_000 });
+  // the deep link lands on the Project group, at Guides
+  await page.locator('.sp-nav button[aria-current="page"]', { hasText: 'Project' }).waitFor();
   await section.getByRole('button', { name: 'Browse guides' }).click();
   const dialog = page.locator('.catalog-dialog');
   const row = dialog.locator('li.catalog-row[data-guide-id="a11y"]');
@@ -126,7 +128,10 @@ async function addInLookout({ page, url, shot }) {
   // the catalog's review is pinned in the lock, so Settings (under the dialog) shows it without fetching the catalog
   const installed = section.locator('li.guide-row[data-guide-id="a11y"]');
   await installed.getByText('Verified', { exact: true }).waitFor({ timeout: 15_000 });
+  // Esc belongs to the dialog on top; the Settings page under it goes once the catalog is closed
+  await dialog.getByRole('button', { name: 'Close' }).click();
   await page.keyboard.press('Escape');
+  await page.locator('.settings-page').waitFor({ state: 'detached' });
   return true;
 }
 

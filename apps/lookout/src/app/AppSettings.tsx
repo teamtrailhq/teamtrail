@@ -1,33 +1,35 @@
-import { SettingsPanel } from '../features/settings';
-import type { LookoutApi } from '../hooks';
+import { SettingsPage } from '../features/settings';
+import type { Breakpoint, LookoutApi } from '../hooks';
 import type { Prefs, Runtime } from '../lib';
-import { clearSettingsParam } from './settingsParam';
+import type { useSettingsPage } from './useSettingsPage';
 
-/** Settings dialog for the active runtime; closing it also clears `?settings=` from the URL. */
+/** The Settings page for the active runtime, when open; it covers the zones and keeps the header. */
 export function AppSettings(props: {
   rt: Runtime;
   api: LookoutApi;
+  bp: Breakpoint;
   prefs: Prefs;
   update: (p: Partial<Prefs>) => void;
-  focus: 'top' | 'slack' | 'guides';
-  onClose: () => void;
+  settings: ReturnType<typeof useSettingsPage>;
 }) {
-  const { rt, api } = props;
+  const { rt, api, settings } = props;
+  if (!settings.route) return null;
   return (
-    <SettingsPanel
-      prefs={props.prefs}
-      update={props.update}
-      activeTracker={rt.kind}
-      location={rt.adapter.location}
-      map={api.snap?.map}
-      onMapMode={api.actions.setMode}
-      snaps={Object.values(api.allSnaps)}
-      answered={api.activity.answered}
-      onModelMatching={api.actions.setModelMatching}
-      focus={props.focus === 'top' ? undefined : props.focus}
-      onClose={() => {
-        props.onClose();
-        clearSettingsParam();
+    <SettingsPage
+      bp={props.bp}
+      route={settings.route}
+      onShow={settings.show}
+      onClose={settings.close}
+      data={{
+        prefs: props.prefs,
+        update: props.update,
+        activeTracker: rt.kind,
+        location: rt.adapter.location,
+        map: api.snap?.map,
+        onMapMode: api.actions.setMode,
+        snaps: Object.values(api.allSnaps),
+        answered: api.activity.answered,
+        onModelMatching: api.actions.setModelMatching,
       }}
     />
   );

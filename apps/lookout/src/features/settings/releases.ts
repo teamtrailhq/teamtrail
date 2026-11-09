@@ -12,6 +12,7 @@ export const NEXT: { area: string; items: string[] }[] = [
     area: 'Polish',
     items: [
       'Settings → Guides shows whether a guide you added from the catalog was Verified or Not reviewed, saved when you added it, so no network is needed',
+      'Settings is now its own page instead of a big dialog: pick This trail, Project, Attention & alerts, You, All projects or About on the left, and each says whether it is committed to the repo or kept on this machine. The address shows where you are, so you can link to a section, and Back or Esc returns to the Lookout',
       "A ticket's guide now sits in its map sign's quiet line, next to the type and state, instead of floating above the sign; hover it for the full name and version",
       'Tickets on the trail map are flat cards: a status dot, the title and one quiet line with the key, type, guide and who is on it. Thin elbow lines join them, and the landscape underneath is quieter',
     ],

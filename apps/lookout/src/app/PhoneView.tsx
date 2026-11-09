@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Panel } from '../components/ui';
 import type { PhoneTab } from './tabs';
 
-/** The single phone view: an open decisions view covers it, otherwise the selected tab's layer. */
+/** The single phone view: an open full view (Settings, the Logbook, Trail stats) covers it, otherwise the selected tab's layer. */
 export function PhoneView(props: {
   tab: PhoneTab;
   decisions: ReactNode;

@@ -96,6 +96,7 @@ GitHub Issues and Linear store the map and tickets in the tracker instead (`pack
 - Live updates: hooks that refetch when a tracker file changes subscribe through `lib/trackerChanges.ts` (one shared `/events` stream). Don't open a new `EventSource` per hook: browsers allow six connections per host, and requests queue behind open streams.
 - `components/ui/` holds the design-system primitives, `hooks/` app-wide hooks (`useLookout.ts` loads data and subscribes to SSE), `lib/` helpers, and `styles/` the CSS per area (tokens in `styles/design-system.css`).
 - Projects: `lib/apiBase.ts` gives the page's API base (`?project=<id>` → `/__teamtrail/p/<id>`, home keeps the un-prefixed API; switching projects reloads the page). `?item=<attention item id>` opens a queue item the way its inbox row would (`app/useItemLink.ts`); All projects links to items in other projects with it. `features/projects/` holds All projects, the header's project switcher, the phone home tab's list and the hooks; Settings → Projects is `features/settings/ProjectsSection.tsx`. With one project nothing of it shows.
+- Settings is a full page that covers the zones, like the Logbook (`features/settings/SettingsPage.tsx`): a side nav of groups (`features/settings/settingsGroups.ts`) and one group at a time, each rendered by its group component (`TrailGroup.tsx`, `ProjectGroup.tsx`, …) from the unchanged section components. `?settings=<group or section>` opens it there (`?settings=guides`, `?settings=slack`); `app/useSettingsPage.ts` keeps the URL in step so the browser's Back returns to the Lookout. On a phone the nav is a list that drills into one group.
 - The in-app changelog is `features/settings/releases.ts`.
 
 ## Conventions
@@ -120,7 +121,7 @@ Follow `CONTRIBUTING.md`: one export per file, 200 lines max, the layout rules, 
 
 **Add a lookout zone, view or setting.**
 1. Create `apps/lookout/src/features/<name>/` with an `index.ts` barrel, and styles in `styles/`.
-2. Settings sections go in `features/settings/` (see `SettingsSection.tsx`); full views opened from the header follow `features/decisions/`.
+2. Settings sections go in `features/settings/` (see `SettingsSection.tsx`): add the section to its group in `settingsGroups.ts`, render it in that group's component inside a `SettingsSlot` (which notes whether it's committed to the repo or only on this machine), and it gets its own `?settings=<section>` link. Full views opened from the header follow `features/decisions/`.
 3. Check the wide, laptop and phone layouts (`app/LaptopSide.tsx`, `app/PhoneView.tsx`). Zone titles carry an info tip (`components/ui/InfoTip.tsx`).
 
 **Add a changelog entry.** Add a plain-language line to `NEXT` or the current release in `apps/lookout/src/features/settings/releases.ts`.

@@ -15,6 +15,8 @@ export function Row(props: {
   className?: string;
   edge?: EdgeTone;
   selected?: boolean;
+  /** Marks the row that opens the page on screen (`aria-current`), as in a side nav. */
+  current?: 'page' | 'true';
   title: ReactNode;
   /** Full title for the tooltip when it's clamped. */
   titleText?: string;
@@ -35,6 +37,7 @@ export function Row(props: {
         className="ds-row-main"
         {...(props.onOpen ? { type: 'button', onClick: props.onOpen } : {})}
         title={props.titleText}
+        aria-current={props.current}
       >
         <span className="ds-row-top">
           <span className="ds-row-title t-row-title">{props.title}</span>
