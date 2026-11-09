@@ -8,7 +8,7 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} projects add [path] | list | remove <id|path>
        ${BRAND.slug} connect slack [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
-       ${BRAND.slug} guides list|search|add|update|remove|lint … [--dir <path>]
+       ${BRAND.slug} guides list|search|add|new|update|remove|lint … [--dir <path>]
 
 Starts the Lookout for the current folder and opens it in your browser.
 
@@ -27,16 +27,22 @@ Commands:
                  ## heading, for you to review in the Lookout
   guides list     Guides agents take on (built in, local and from a catalog), with their status
   guides search [query] [--verified] [--registry <name>]
-                 Search the guide catalogs listed in guides.json (the official one by default)
-  guides add <id>|<file.md> [--registry <name>] [--approve-checks]
+                 Search the guide catalogs: those listed in guides.json, then the official one
+                 (unless guides.json says "official": false)
+  guides add <id>|<catalog/id>|<file.md> [--registry <name>] [--approve-checks]
                  Copy a guide into the tracker folder and pin it in guides.lock.json, after
-                 the safety lint. Each check command it proposes is shown and asked about;
-                 without a terminal, none is approved unless --approve-checks is given
+                 the safety lint. An id is looked up in every catalog, in order; one found in
+                 more than one is refused until you name it as catalog/id. Each check command
+                 it proposes is shown and asked about; without a terminal, none is approved
+                 unless --approve-checks is given
+  guides new <id> [--author <name>]
+                 Write your own guide: a template in guides/<id>.md that passes the lint.
+                 Agents can use it once the trail lead approves it in the Lookout
   guides update [id...]  Install newer catalog versions; changed check commands are asked about again
   guides remove <id>     Remove an installed guide (its approved checks stay in verification.json)
-  guides lint <dir|file...> [--json]
-                 Catalog tooling: schema, safety lint and a test example per guide
-                 (examples/<id>/); exits 1 on any error
+  guides lint [dir|file...] [--json]
+                 Schema and safety lint (default: the project's own guides); in a catalog
+                 checkout also a test example per guide (examples/<id>/). Exits 1 on any error
   connect slack  Start the Lookout on the Slack setup (Socket Mode from this machine;
                  tokens stay in your local credential store)
   hook claude    The SessionStart hook itself (reads the hook payload on stdin)

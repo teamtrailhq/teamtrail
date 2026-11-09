@@ -1,7 +1,7 @@
 import type { InstalledGuide } from '@teamtrail/core';
 import { Button, MetaLine, Row } from '../../components/ui';
 import { GuideChecks } from './GuideChecks';
-import { reviewPart, sourceLabel, STATUS_TEXT } from './guideLabels';
+import { reviewPart, sourceLabel, statusPart } from './guideLabels';
 
 /** One guide in Settings → Guides: name and version, where it's from (and the catalog's review), its status and checks, and what to do. */
 export function GuideRow(props: {
@@ -25,12 +25,13 @@ export function GuideRow(props: {
               { text: id, code: true },
               sourceLabel(r),
               reviewPart(r),
-              r.status !== 'active' && STATUS_TEXT[r.status],
+              statusPart(r),
               r.guide && checklistCount(r.guide.checklist.length),
             ]}
           />
         }
-        detail={r.reason ?? r.guide?.summary}
+        // "not approved yet" is already in the context line, so a new guide shows what it does
+        detail={r.status === 'unapproved' ? r.guide?.summary : (r.reason ?? r.guide?.summary)}
         actions={
           r.origin === 'local' && (
             <Button

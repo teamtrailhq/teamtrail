@@ -9,7 +9,7 @@ import { useGuides } from './useGuides';
 
 /**
  * The guide catalog: search, verified only by default, and a guide's full preview before adding it. Catalogs come
- * from guides.json (the official one by default); Teamtrail reads them over HTTPS and hosts nothing.
+ * from guides.json, followed by the official one unless it opts out; Teamtrail reads them over HTTPS and hosts nothing.
  */
 export function CatalogDialog(props: { registries: { name: string; url: string }[]; onClose: () => void }) {
   const [registry, setRegistry] = useState(props.registries[0]?.name ?? '');

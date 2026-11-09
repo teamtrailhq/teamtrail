@@ -1,9 +1,11 @@
 import { BRAND } from '@teamtrail/core';
 import type { GuidesArgs } from './types';
 
+const VALUE_FLAGS = { '--dir': 'dir', '--registry': 'registry', '--author': 'author' } as const;
+
 const defaultDir = () => process.env[BRAND.dataDirEnv] || BRAND.dataDir;
 
-/** `guides <command> [args] [--dir <path>] [--registry <name>] [--verified] [--approve-checks] [--json]`. */
+/** `guides <command> [args] [--dir <path>] [--registry <name>] [--author <name>] [--verified] [--approve-checks] [--json]`. */
 export function parseGuidesArgs(argv: string[]): GuidesArgs | { error: string } {
   const o: GuidesArgs = {
     command: argv[0] ?? '',
@@ -17,11 +19,10 @@ export function parseGuidesArgs(argv: string[]): GuidesArgs | { error: string } 
   for (let i = 0; i < args.length; i++) {
     const [flag, inline] = args[i].startsWith('--') && args[i].includes('=') ? args[i].split(/=(.*)/s, 2) : [args[i]];
     const value = () => inline ?? args[++i];
-    if (flag === '--dir' || flag === '--registry') {
+    if (flag in VALUE_FLAGS) {
       const v = value();
       if (!v) return { error: `${flag} needs a value` };
-      if (flag === '--dir') o.dir = v;
-      else o.registry = v;
+      o[VALUE_FLAGS[flag as keyof typeof VALUE_FLAGS]] = v;
     } else if (flag === '--verified') o.verified = true;
     else if (flag === '--approve-checks') o.approveChecks = true;
     else if (flag === '--json') o.json = true;

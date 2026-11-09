@@ -19,6 +19,15 @@ export const NEXT: { area: string; items: string[] }[] = [
     ],
   },
   {
+    area: 'Guides',
+    items: [
+      "Write your own guide: `teamtrail guides new <id>` starts one from a template that passes the safety lint. Settings → Guides → Write your own lists your team's guides as Local, Not approved yet or Approved; agents can use one once you approve it, and again after every edit",
+      'Share a guide you wrote with everyone: `teamtrail guides lint` checks it, and Write your own links to how to send it to the public catalog',
+      '`teamtrail guides add <id>` now looks in every catalog in guides.json, in order, and says which one the guide came from. An id in more than one catalog is refused until you name it, like `ours/perf`',
+      'Catalogs you list in guides.json now add to the official one instead of replacing it; `"official": false` leaves it out',
+    ],
+  },
+  {
     area: 'Trackers',
     items: [
       'GitHub Issues no longer connects the moment you choose it. Onboarding and Settings → Tracker show the account and repo first ("Will use owner/name as you (your gh login)"), let you pick any repo you can push or triage in, or type owner/name, and connect only when you press Connect. Each project in All projects keeps its own repo, and the overview row says where its issues live',

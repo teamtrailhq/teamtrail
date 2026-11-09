@@ -1,7 +1,8 @@
 // M5 guides steps of the end-to-end check (verify-mcp.mjs), on their own scratch project: the trail lead adds a guide
 // from a fake catalog in the Lookout and approves the one check it proposes; an agent claims a ticket with that guide,
 // gets its instructions and checklist, is refused completion without the checklist, then completes it and the
-// guide's check runs. Waits on what the user sees, never on sleeps.
+// guide's check runs. Then a guide of the team's own and one from the second catalog (verifyOwnGuides.mjs).
+// Waits on what the user sees, never on sleeps.
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -10,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { PERF, verifyOwnGuides } from './verifyOwnGuides.mjs';
 
 const A11Y = `---
 v: 1
@@ -33,29 +35,30 @@ license: MIT
 You make sure everyone can use what this ticket builds. Tab through every new control and check the labels.
 `;
 
-/** A guide catalog as a public catalog repo serves it: index.json and the guide file. */
-async function fakeCatalog() {
+const sha = (text) => `sha256:${createHash('sha256').update(text).digest('hex')}`;
+
+/** A guide catalog as a public catalog repo serves it: index.json and the guide files ({ id: text }). */
+async function fakeCatalog(files) {
   const index = {
     v: 1,
     repo: 'https://github.com/teamtrailhq/teamtrail-guides',
-    guides: [
-      {
-        id: 'a11y',
-        name: 'Accessibility',
-        version: '1.0.0',
-        path: 'guides/a11y.md',
-        sha256: `sha256:${createHash('sha256').update(A11Y).digest('hex')}`,
-        summary: 'Checks that the change works with a keyboard and a screen reader.',
-        author: 'Ada Lovelace',
-        verified: true,
-        reviewedBy: ['maintainer'],
-        history: [{ version: '1.0.0', commit: 'abc1234', at: '2026-11-01T10:00:00Z', reviewer: 'maintainer' }],
-      },
-    ],
+    guides: Object.entries(files).map(([id, text]) => ({
+      id,
+      name: /name: (.+)/.exec(text)[1],
+      version: '1.0.0',
+      path: `guides/${id}.md`,
+      sha256: sha(text),
+      summary: /summary: (.+)/.exec(text)[1],
+      author: /author: (.+)/.exec(text)[1],
+      verified: true,
+      reviewedBy: ['maintainer'],
+      history: [{ version: '1.0.0', commit: 'abc1234', at: '2026-11-01T10:00:00Z', reviewer: 'maintainer' }],
+    })),
   };
   const server = http.createServer((req, res) => {
     if (req.url === '/index.json') return res.end(JSON.stringify(index));
-    if (req.url === '/guides/a11y.md') return res.end(A11Y);
+    const id = /^\/guides\/(.+)\.md$/.exec(req.url ?? '')?.[1];
+    if (id && files[id]) return res.end(files[id]);
     res.statusCode = 404;
     res.end();
   });
@@ -63,17 +66,17 @@ async function fakeCatalog() {
   return { server, url: `http://127.0.0.1:${server.address().port}` };
 }
 
-/** A project whose catalog is the fake one, with verification on and a passing a11y script in the repo. */
-function scratchProject(catalogUrl) {
+/**
+ * A project whose catalogs are the two fake ones, searched in order (the official one left out, so the check stays
+ * offline), with verification on and a passing a11y script in the repo.
+ */
+function scratchProject(catalogs) {
   const top = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-guides-e2e-')), 'app');
   const root = path.join(top, '.teamtrail');
   fs.mkdirSync(root, { recursive: true });
   fs.mkdirSync(path.join(top, 'checks'));
   fs.writeFileSync(path.join(top, 'checks', 'a11y.js'), "console.log('no issues');\n");
-  fs.writeFileSync(
-    path.join(root, 'guides.json'),
-    JSON.stringify({ v: 1, registries: [{ name: 'e2e', url: catalogUrl }] }),
-  );
+  fs.writeFileSync(path.join(root, 'guides.json'), JSON.stringify({ v: 1, registries: catalogs, official: false }));
   fs.writeFileSync(path.join(root, 'verification.json'), JSON.stringify({ v: 1, default: 'checks', checks: {} }));
   return { top, root };
 }
@@ -136,8 +139,13 @@ async function addInLookout({ page, url, shot }) {
 }
 
 export async function verifyGuides({ browser, cli, log, shots }) {
-  const catalog = await fakeCatalog();
-  const { top, root } = scratchProject(catalog.url);
+  const catalog = await fakeCatalog({ a11y: A11Y });
+  const second = await fakeCatalog({ perf: PERF });
+  const catalogs = [
+    { name: 'e2e', url: catalog.url },
+    { name: 'second', url: second.url },
+  ];
+  const { top, root } = scratchProject(catalogs);
   const { server, url } = await startServer(cli, top);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
@@ -181,15 +189,18 @@ export async function verifyGuides({ browser, cli, log, shots }) {
       done.status === 'done' &&
       ran === 'a11y:true' &&
       !errors.length;
+    const own = await verifyOwnGuides({ page, url, cli, root, call: worker.call, shot, second: second.url });
     log(
       `guides ${ok ? 'ok' : 'WRONG'}: a11y added from the catalog and pinned (${pinned?.version}), its check approved in the Lookout (${approved}), Verified in Settings, "${signText?.trim()}" on its map card; the claim carried the guide with ${guide?.checklist.length} checklist items; completion refused without them, then ${done.status} with checks ${ran}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
-    return ok;
+    log(own.line);
+    return ok && own.ok && !errors.length;
   } finally {
     await worker.client.close();
     await page.close();
     server.kill('SIGTERM');
     catalog.server.close();
+    second.server.close();
     if (!process.env.KEEP) fs.rmSync(path.dirname(top), { recursive: true, force: true });
   }
 }
