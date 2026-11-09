@@ -93,7 +93,14 @@ export {
   testGitHub,
   type GitHubOptions,
 } from './adapters/remote/github';
-export { LinearAdapter, testLinear, type LinearOptions } from './adapters/remote/linear';
+export {
+  LinearAdapter,
+  linearViewer,
+  listLinearProjects,
+  listLinearTeams,
+  testLinear,
+  type LinearOptions,
+} from './adapters/remote/linear';
 export { SyncedAdapter } from './adapters/remote/sync/syncedAdapter';
 export type {
   SyncState,

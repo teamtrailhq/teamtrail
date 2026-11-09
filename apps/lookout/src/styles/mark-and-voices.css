@@ -18,7 +18,7 @@
 .onb-brand {
   display: flex;
   align-items: center;
-  gap: var(--sp-14);
+  gap: var(--sp-8);
   color: var(--accent);
 }
 

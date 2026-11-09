@@ -18,12 +18,61 @@ interface LIssue {
   projectId?: string;
 }
 
-export function fakeLinear(opts: { start?: number } = {}) {
+/** Another team the key can access, beyond the one whose issues the fake holds. */
+export interface FakeLinearTeam {
+  id: string;
+  key: string;
+  name: string;
+  /** Latest issue update, for the picker's activity line. */
+  activeAt?: string;
+  projects?: { id: string; name: string; state?: string }[];
+  /** Listed in `teams`, but `team(id)` refuses it: a team the key can see but not read. */
+  unreadable?: boolean;
+}
+
+const AUTH_ERROR = {
+  message: 'Authentication required, not authenticated',
+  extensions: { type: 'authentication error', code: 'AUTHENTICATION_ERROR', statusCode: 401 },
+};
+
+class NotFound extends Error {}
+
+export function fakeLinear(
+  opts: {
+    start?: number;
+    /** When set, any other key is refused with 401, like api.linear.app. */
+    apiKey?: string;
+    viewer?: { name: string; email?: string };
+    org?: string;
+    /** Other teams the key can access, listed after the main one. */
+    teams?: FakeLinearTeam[];
+  } = {},
+) {
   let clock = opts.start ?? Date.UTC(2026, 9, 31, 12, 0, 0);
   const tick = () => new Date((clock += 1000)).toISOString();
   let n = 0;
   const uid = (p: string) => `${p}-${String(++n).padStart(4, '0')}-fake`;
   const team = { id: 'team-eng', key: 'ENG', name: 'Engineering' };
+  const viewer = { name: opts.viewer?.name ?? 'Ada Ops', email: opts.viewer?.email ?? 'ada@octo.dev' };
+  const org = { name: opts.org ?? 'Octo Inc' };
+  const mainProjects = [{ id: 'proj-mobile', name: 'Mobile', state: 'started' }];
+  const allTeams = (): FakeLinearTeam[] => [{ ...team, projects: mainProjects }, ...(opts.teams ?? [])];
+  const teamById = (id: string) => allTeams().find((t) => t.id === id && !t.unreadable);
+  /** Cursor pages over a list, like Linear's connections: the cursor is the index to start from. */
+  const paged = <T>(list: T[], first = 50, after?: string | null) => {
+    const from = after ? Number(after) : 0;
+    const nodes = list.slice(from, from + first);
+    const end = from + nodes.length;
+    return { nodes, pageInfo: { hasNextPage: end < list.length, endCursor: nodes.length ? String(end) : null } };
+  };
+  const activeAt = (t: FakeLinearTeam) => {
+    if (t.id !== team.id) return t.activeAt;
+    const latest = [...issues.values()]
+      .map((i) => i.updatedAt)
+      .sort()
+      .at(-1);
+    return latest ?? t.activeAt;
+  };
   const states = [
     { id: 'st-backlog', name: 'Backlog', type: 'backlog', position: 0 },
     { id: 'st-todo', name: 'Todo', type: 'unstarted', position: 1 },
@@ -93,12 +142,35 @@ export function fakeLinear(opts: { start?: number } = {}) {
   function op(name: string, v: Record<string, any>): unknown {
     switch (name) {
       case 'Test':
-        return { viewer: { name: 'Ada Ops' }, organization: { name: 'Octo Inc' }, teams: { nodes: [team] } };
-      case 'Projects':
-        return { team: { projects: { nodes: [{ id: 'proj-mobile', name: 'Mobile' }] } } };
+        return {
+          viewer,
+          organization: org,
+          teams: { nodes: allTeams().map(({ id, key, name }) => ({ id, key, name })) },
+        };
+      case 'Viewer':
+        return { viewer, organization: org };
+      case 'Teams': {
+        const page = paged(allTeams(), v.first, v.after);
+        const nodes = page.nodes.map((t) => {
+          const at = activeAt(t);
+          return { id: t.id, key: t.key, name: t.name, issues: { nodes: at ? [{ updatedAt: at }] : [] } };
+        });
+        return { teams: { ...page, nodes } };
+      }
+      case 'Projects': {
+        const t = teamById(v.id);
+        if (!t) throw new NotFound('Team');
+        const projects = (t.projects ?? []).map(({ id, name }) => ({ id, name }));
+        return { team: { id: t.id, key: t.key, name: t.name, projects: { nodes: projects } } };
+      }
+      case 'TeamProjects': {
+        const t = teamById(v.id);
+        if (!t) throw new NotFound('Team');
+        return { team: { projects: paged(t.projects ?? [], v.first, v.after) } };
+      }
       case 'Team':
         return {
-          team: v.id === team.id ? { ...team, states: { nodes: states } } : null,
+          team: teamById(v.id) ? { ...teamById(v.id)!, states: { nodes: states } } : null,
           issueLabels: {
             nodes: [...labels.values()]
               .filter((l) => l.name.startsWith(v.prefix))
@@ -218,7 +290,17 @@ export function fakeLinear(opts: { start?: number } = {}) {
       'x-ratelimit-requests-remaining': '1490',
       'x-ratelimit-requests-reset': String(clock + 3_600_000),
     };
-    return new Response(JSON.stringify({ data: op(name, variables ?? {}) }), { status: 200, headers });
+    const auth = new Headers(init.headers).get('authorization');
+    if (opts.apiKey && auth !== opts.apiKey && auth !== `Bearer ${opts.apiKey}`)
+      return new Response(JSON.stringify({ errors: [AUTH_ERROR] }), { status: 401, headers });
+    try {
+      return new Response(JSON.stringify({ data: op(name, variables ?? {}) }), { status: 200, headers });
+    } catch (err) {
+      if (!(err instanceof NotFound)) throw err;
+      // What api.linear.app answers for an id the key can't see.
+      const error = { message: `Entity not found: ${err.message}`, extensions: { code: 'INVALID_INPUT' } };
+      return new Response(JSON.stringify({ data: null, errors: [error] }), { status: 200, headers });
+    }
   };
 
   return {

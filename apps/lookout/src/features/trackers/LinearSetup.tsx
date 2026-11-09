@@ -1,110 +1,81 @@
 import type { TrackerSettings, TrackerTestResult } from '@teamtrail/core';
-import { useState, useCallback, useEffect } from 'react';
-import { Select } from '../../components/ui';
-import { Credential } from './Credential';
+import { useEffect, useState } from 'react';
+import { LinearIdentity } from './LinearIdentity';
+import { LinearKeyEntry } from './LinearKeyEntry';
+import { LinearProjectChoice } from './LinearProjectChoice';
+import { LinearTeamChoice } from './LinearTeamChoice';
+import { keyWorks, personOf, willUseLinear } from './linearText';
+import { defaultTeam } from './teamOptions';
 import { TestLine } from './TestLine';
 import { trackerApi } from './trackerApi';
+import { useLinearLookups } from './useLinearLookups';
 
+/**
+ * Connect Linear: says whose key it is and which team (and optional project) it will use, and connects only on
+ * Connect. With a working key (LINEAR_API_KEY or saved) the teams are listed at once; otherwise paste a key first.
+ */
 export function LinearSetup(props: { s: TrackerSettings; onConnected: () => void }) {
   const ln = props.s.linear;
+  const works = keyWorks(ln);
+  const [paste, setPaste] = useState(!works);
   const [apiKey, setApiKey] = useState('');
   const [teamId, setTeamId] = useState(ln.teamId ?? '');
   const [projectId, setProjectId] = useState(ln.projectId ?? '');
   const [result, setResult] = useState<TrackerTestResult>();
-  const [teams, setTeams] = useState<NonNullable<TrackerTestResult['teams']>>([]);
-  const [busy, setBusy] = useState<'test' | 'connect'>();
-  const test = useCallback(
-    async (team = teamId) => {
-      setBusy('test');
-      const r = await trackerApi
-        .test({ kind: 'linear', apiKey: apiKey || undefined, teamId: team || undefined })
-        .catch((e: Error) => ({ ok: false, error: e.message }) as TrackerTestResult);
-      setResult(r);
-      if (r.teams) {
-        setTeams(r.teams);
-        if (!team && r.teams.length === 1) setTeamId(r.teams[0].id);
-      }
-      setBusy(undefined);
-    },
-    [apiKey, teamId],
-  );
+  const [busy, setBusy] = useState(false);
+  const { enabled, list, teams, projects } = useLinearLookups({ ln, paste, apiKey, teamId });
+  // `LINEAR_API_KEY` set and the Lookout restarted, or a key saved elsewhere: the picker takes over.
   useEffect(() => {
-    if (ln.auth) void test();
+    if (works && !apiKey) setPaste(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [works]);
+  // The saved team if the key still sees it, else the only team, else none and a prompt to pick.
+  useEffect(() => {
+    if (list?.kind === 'ok') setTeamId(defaultTeam(list.teams, ln.teamId) ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list]);
   const team = teams.find((t) => t.id === teamId);
-  const project = result?.projects?.find((p) => p.id === projectId);
+  const project = projects?.kind === 'ok' ? projects.projects.find((p) => p.id === projectId) : undefined;
+  const viewer = list?.kind === 'ok' ? list.viewer : ln.viewer;
+  const source = paste ? null : ln.auth;
+  const line = willUseLinear({ viewer, team: team?.name, project: project?.name, source });
   const connect = async () => {
     if (!team) return;
-    setBusy('connect');
+    setBusy(true);
+    setResult(undefined);
     try {
       await trackerApi.connect({
         active: 'linear',
         linear: {
-          teamId: team.id,
-          teamKey: team.key,
-          teamName: team.name,
-          projectId: project?.id,
-          projectName: project?.name,
-          apiKey: apiKey || undefined,
+          ...{ teamId: team.id, teamKey: team.key, teamName: team.name },
+          ...{ projectId: project?.id, projectName: project?.name },
+          apiKey: paste ? apiKey.trim() : undefined,
         },
       });
       props.onConnected();
     } catch (e) {
       setResult({ ok: false, error: (e as Error).message });
-      setBusy(undefined);
+      setBusy(false);
     }
   };
+  const pickTeam = (id: string) => {
+    setTeamId(id);
+    setProjectId('');
+  };
   return (
-    <div className="card inset tracker-setup">
-      <Credential
-        source={ln.auth}
-        value={apiKey}
-        onChange={setApiKey}
-        label="API key"
-        placeholder="lin_api_…"
-        link={{ href: 'https://linear.app/settings/account/security', text: 'New key' }}
+    <div className="card inset tracker-setup linear-setup">
+      {paste && <LinearKeyEntry ln={ln} apiKey={apiKey} onKey={setApiKey} />}
+      <LinearIdentity
+        line={line}
+        email={personOf(viewer)?.email}
+        onUseAnother={paste ? undefined : () => setPaste(true)}
       />
-      {teams.length > 0 && (
-        <div className="ts-row">
-          <label className="field">
-            Team
-            <Select
-              aria-label="Team"
-              value={teamId}
-              onChange={(id) => {
-                setTeamId(id);
-                setProjectId('');
-                void test(id);
-              }}
-              options={[
-                ...(teamId ? [] : [{ value: '', label: 'Choose…' }]),
-                ...teams.map((t) => ({ value: t.id, label: `${t.key} · ${t.name}` })),
-              ]}
-            />
-          </label>
-          <label className="field">
-            Project
-            <Select
-              aria-label="Project"
-              value={projectId}
-              onChange={setProjectId}
-              disabled={!result?.projects}
-              options={[
-                { value: '', label: 'All projects' },
-                ...(result?.projects ?? []).map((p) => ({ value: p.id, label: p.name })),
-              ]}
-            />
-          </label>
-        </div>
-      )}
+      {enabled && <LinearTeamChoice list={list} value={teamId} onChange={pickTeam} />}
+      {team && <LinearProjectChoice list={projects} value={projectId} onChange={setProjectId} />}
       <TestLine r={result} />
       <footer>
-        <button type="button" className="btn" disabled={!!busy || (!ln.auth && !apiKey)} onClick={() => void test()}>
-          {busy === 'test' ? 'Testing…' : 'Test connection'}
-        </button>
-        <button type="button" className="btn primary" disabled={!!busy || !team} onClick={() => void connect()}>
-          {busy === 'connect' ? 'Connecting…' : 'Connect'}
+        <button type="button" className="btn primary" disabled={busy || !team} onClick={() => void connect()}>
+          {busy ? 'Connecting…' : 'Connect'}
         </button>
       </footer>
     </div>

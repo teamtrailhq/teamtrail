@@ -39,7 +39,13 @@ export type ProjectTracker =
   | { kind: 'markdown' }
   /** A GitHub or Linear tracker; `cached` once this process has it open, else only file-based counts show. */
   | { kind: 'github'; cached: boolean; /** `owner/name` the issues live in. */ repo?: string }
-  | { kind: 'linear'; cached: boolean };
+  | {
+      kind: 'linear';
+      cached: boolean;
+      /** The team key the trails live in, and its organization. */
+      team?: string;
+      org?: string;
+    };
 
 /** Ticket counts in the phases that mean work in flight or held up. */
 export interface ProjectPhases {

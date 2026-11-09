@@ -17,6 +17,8 @@ import { TrackerError } from './http';
 import type { SyncStatus } from './sync/types';
 import type {
   GitHubRepoList,
+  LinearProjectList,
+  LinearTeamList,
   RemoteKind,
   TrackerConnectRequest,
   TrackerSettings,
@@ -146,5 +148,15 @@ export function trackerSettingsApi(base: string) {
     forget: (kind: RemoteKind) => post<TrackerSettings>(`${base}/trackers/credentials/${kind}`, 'DELETE'),
     /** The repos the found GitHub token can track issues in, with its login. */
     githubRepos: () => post<GitHubRepoList>(`${base}/trackers/github/repos`, 'GET'),
+    /** The teams a Linear key can access, with who it belongs to: the found key, or `apiKey` pasted in the page. */
+    linearTeams: (apiKey?: string) =>
+      apiKey
+        ? post<LinearTeamList>(`${base}/trackers/linear/teams`, 'POST', { apiKey })
+        : post<LinearTeamList>(`${base}/trackers/linear/teams`, 'GET'),
+    /** The projects of one Linear team. */
+    linearProjects: (teamId: string, apiKey?: string) =>
+      apiKey
+        ? post<LinearProjectList>(`${base}/trackers/linear/projects`, 'POST', { apiKey, teamId })
+        : post<LinearProjectList>(`${base}/trackers/linear/projects?team=${encodeURIComponent(teamId)}`, 'GET'),
   };
 }
