@@ -32,9 +32,11 @@ function countPhases(snaps: MapSnapshot[]): ProjectPhases {
 }
 
 function trackerOf(input: SummaryInput): ProjectTracker {
-  const kind = projectConfig(input.entry.root).read().active;
-  if (kind === 'markdown') return { kind };
-  return { kind, cached: !!input.adapter };
+  const cfg = projectConfig(input.entry.root).read();
+  const cached = !!input.adapter;
+  if (cfg.active === 'github') return { kind: 'github', cached, repo: cfg.github?.repo };
+  if (cfg.active === 'linear') return { kind: 'linear', cached };
+  return { kind: 'markdown' };
 }
 
 /** What a project shows when its folder is gone: the name and path, nothing else, never an error. */

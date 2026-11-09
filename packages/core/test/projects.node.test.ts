@@ -316,3 +316,15 @@ test('hub: adding a path creates its tracker folder; a missing one reads as miss
   assert.deepEqual(view.json.projects.find((p) => p.id === gone.entry.id)?.state, { kind: 'missing' });
   assert.equal((await call('DELETE', `/projects/${gone.entry.id}`)).status, 200);
 });
+
+test('summary: a GitHub project names the repo its issues live in', async () => {
+  const root = path.join(tmp, 'gh-project', '.teamtrail');
+  mkdirSync(root, { recursive: true });
+  writeFileSync(
+    path.join(root, 'trackers.json'),
+    JSON.stringify({ active: 'github', github: { repo: 'octo-org/ops' } }),
+  );
+  const entry: ProjectEntry = { id: 'abc123', name: 'gh-project', path: path.dirname(root), root, addedAt: now };
+  const { summary } = await projectSummary({ entry, home: false, state: { kind: 'ok' }, configDir, now });
+  assert.deepEqual(summary.tracker, { kind: 'github', cached: false, repo: 'octo-org/ops' });
+});

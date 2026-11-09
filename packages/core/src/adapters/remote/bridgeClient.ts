@@ -16,6 +16,7 @@ import type { MapInput, TicketEdit, TrackerAdapter } from '../adapter';
 import { TrackerError } from './http';
 import type { SyncStatus } from './sync/types';
 import type {
+  GitHubRepoList,
   RemoteKind,
   TrackerConnectRequest,
   TrackerSettings,
@@ -143,5 +144,7 @@ export function trackerSettingsApi(base: string) {
     test: (req: TrackerTestRequest) => post<TrackerTestResult>(`${base}/trackers/test`, 'POST', req),
     connect: (req: TrackerConnectRequest) => post<TrackerSettings>(`${base}/trackers`, 'PUT', req),
     forget: (kind: RemoteKind) => post<TrackerSettings>(`${base}/trackers/credentials/${kind}`, 'DELETE'),
+    /** The repos the found GitHub token can track issues in, with its login. */
+    githubRepos: () => post<GitHubRepoList>(`${base}/trackers/github/repos`, 'GET'),
   };
 }

@@ -132,6 +132,39 @@
 .tracker-setup .ts-auth .btn {
   margin-left: auto;
 }
+/* GitHub: who and where before connecting, and the repo picker (rows from components/ui Row). */
+.tracker-setup .gh-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+}
+.tracker-setup .gh-identity .btn {
+  margin-left: auto;
+}
+.repo-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+.repo-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-height: 264px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.repo-row .ds-row-main {
+  padding: var(--sp-6) var(--sp-10);
+}
+.connector .c-who {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .test-line {
   font-family: var(--mono);
   font-size: var(--fs-label);

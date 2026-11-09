@@ -26,9 +26,40 @@ export interface FakeIssue {
 
 type Res = { status: number; headers?: Record<string, string>; body?: unknown };
 
-export function fakeGitHub(opts: { repo?: string; login?: string; start?: number } = {}) {
+/** A repo in `GET /user/repos` and `GET /repos/<owner>/<name>`, beyond the one whose issues the fake holds. */
+export interface FakeRepo {
+  full_name: string;
+  private?: boolean;
+  archived?: boolean;
+  has_issues?: boolean;
+  pushed_at?: string;
+  permissions?: Record<string, boolean>;
+}
+
+const WRITE = { admin: false, maintain: false, push: true, triage: true, pull: true };
+
+export function fakeGitHub(
+  opts: {
+    repo?: string;
+    login?: string;
+    start?: number;
+    /** Other repos the login can see, listed after the main one. */
+    repos?: FakeRepo[];
+    /** When set, any other bearer token is refused with 401. */
+    token?: string;
+  } = {},
+) {
   const repo = opts.repo ?? 'octo-org/launchpad';
   const login = opts.login ?? 'octo-dev';
+  const allRepos: FakeRepo[] = [{ full_name: repo, private: true, permissions: WRITE }, ...(opts.repos ?? [])];
+  const repoJson = (r: FakeRepo) => ({
+    full_name: r.full_name,
+    private: r.private ?? false,
+    archived: r.archived ?? false,
+    has_issues: r.has_issues ?? true,
+    pushed_at: r.pushed_at ?? '2026-10-30T09:00:00Z',
+    permissions: r.permissions ?? WRITE,
+  });
   let clock = opts.start ?? Date.UTC(2026, 9, 31, 12, 0, 0);
   let nextNumber = 1;
   let nextComment = 9001;
@@ -133,7 +164,12 @@ export function fakeGitHub(opts: { repo?: string; login?: string; start?: number
         : null;
       return ok({ data: { repository: { issue } } });
     }
+    if (opts.token && headers.get('authorization') !== `Bearer ${opts.token}`)
+      return { status: 401, headers: rate(), body: { message: 'Bad credentials' } };
     if (method === 'GET' && p === '/user') return ok({ login, id: 4242, type: 'User' });
+    if (method === 'GET' && p === '/user/repos') return userRepos(url);
+    const other = allRepos.find((r) => r.full_name !== repo && p === `/repos/${r.full_name}`);
+    if (method === 'GET' && other) return ok(repoJson(other));
     if (!p.startsWith(base)) return notFound;
     const rest_ = p.slice(base.length);
 
@@ -244,6 +280,20 @@ export function fakeGitHub(opts: { repo?: string; login?: string; start?: number
       return ok(issue.labels.map((n) => ({ name: n })));
     }
     return notFound;
+  }
+
+  /** `GET /user/repos`, paged with a `Link` header like the live API. */
+  function userRepos(url: URL): Res {
+    const per = Number(url.searchParams.get('per_page') ?? 30);
+    const page = Number(url.searchParams.get('page') ?? 1);
+    const slice = allRepos.slice((page - 1) * per, page * per).map(repoJson);
+    const headers: Record<string, string> = { 'content-type': 'application/json; charset=utf-8', ...rate() };
+    if (page * per < allRepos.length) {
+      const next = new URL(url);
+      next.searchParams.set('page', String(page + 1));
+      headers.link = `<${next}>; rel="next"`;
+    }
+    return { status: 200, headers, body: slice };
   }
 
   const fetch = async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {

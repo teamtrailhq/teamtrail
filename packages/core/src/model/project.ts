@@ -38,7 +38,8 @@ export type ProjectState = { kind: 'ok' } | { kind: 'missing' } | { kind: 'elsew
 export type ProjectTracker =
   | { kind: 'markdown' }
   /** A GitHub or Linear tracker; `cached` once this process has it open, else only file-based counts show. */
-  | { kind: 'github' | 'linear'; cached: boolean };
+  | { kind: 'github'; cached: boolean; /** `owner/name` the issues live in. */ repo?: string }
+  | { kind: 'linear'; cached: boolean };
 
 /** Ticket counts in the phases that mean work in flight or held up. */
 export interface ProjectPhases {

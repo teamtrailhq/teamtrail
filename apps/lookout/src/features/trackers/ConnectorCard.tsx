@@ -1,6 +1,7 @@
 import type { RemoteKind, TrackerSettings } from '@teamtrail/core';
 import type { TrackerChoice } from '../../lib';
 import { ConnectorActions } from './ConnectorActions';
+import { ConnectorWhere } from './ConnectorWhere';
 import { isRemote } from './labels';
 import { SyncLine } from './SyncLine';
 
@@ -20,16 +21,13 @@ export function ConnectorCard(props: {
   const remote = isRemote(id);
   const usable = !remote || !!s;
   const classes = ['card connector', active ? 'active' : '', usable ? '' : 'disabled', props.open ? 'open' : ''];
-  const showLocation = (id === 'markdown' || remote) && active;
-  const saved = remote && !active && configured && s ? savedTarget(id as RemoteKind, s) : undefined;
   return (
     <div className={classes.join(' ')}>
       <div className="card-row">
         <b className="choice-title t-row-title">{props.name}</b>
         {active && <span className="pill on">Active</span>}
       </div>
-      {showLocation && <div className="c-loc">{props.location}</div>}
-      {saved !== undefined && <div className="c-loc">{saved}</div>}
+      <ConnectorWhere id={id} active={active} configured={configured} location={props.location} s={s} />
       {remote && active && <SyncLine status={s?.[id as RemoteKind].status} />}
       <ConnectorActions
         canSwitch={!active && (!remote || configured)}
@@ -42,10 +40,4 @@ export function ConnectorCard(props: {
       />
     </div>
   );
-}
-
-/** What a connected but inactive remote tracker points at: the repo, or the Linear team and project. */
-function savedTarget(id: RemoteKind, s: TrackerSettings) {
-  if (id === 'github') return s.github.repo;
-  return [s.linear.teamKey, s.linear.projectName].filter(Boolean).join(' · ');
 }

@@ -29,12 +29,14 @@ export async function testGitHub(
         code: 'invalid',
         target: repo.full_name,
         account,
-        error: 'Issues are turned off for this repository',
+        error: `Issues are turned off in ${repo.full_name}. Turn them on in its settings, or pick another repo.`,
       };
     const p = repo.permissions;
     const canWrite = p ? !!(p.push || p.triage || p.maintain || p.admin) : undefined;
     return { ok: true, account, target: repo.full_name, canWrite, rate: http.rate };
   } catch (err) {
-    return { ok: false, ...describeError(err, 'GitHub') };
+    const described = describeError(err, 'GitHub');
+    if (described.code !== 'not_found') return { ok: false, ...described };
+    return { ok: false, code: 'not_found', error: `${owner}/${name} not found, or this token can't read it.` };
   }
 }

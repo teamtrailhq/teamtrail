@@ -24,6 +24,8 @@ export interface TrackerSettings {
     /** `owner/name` of the `origin` remote, offered as the default. */
     detectedRepo?: string;
     auth: CredentialSource | null;
+    /** Who the found token signs in as, from `GET /user`; absent when no token was found. */
+    account?: GitHubAccount;
     status?: SyncStatus;
   };
   linear: Partial<LinearTarget> & {
@@ -31,6 +33,34 @@ export interface TrackerSettings {
     status?: SyncStatus;
   };
 }
+
+/** The GitHub account behind a token: a user, or why the lookup failed (a rejected token, an app token). */
+export type GitHubAccount =
+  { kind: 'user'; login: string } | { kind: 'unknown'; error: string; code?: TrackerErrorCode };
+
+/** One repo in the picker: issues are on and the login can push or triage there. */
+export interface GitHubRepoOption {
+  /** `owner/name`. */
+  fullName: string;
+  private: boolean;
+  /** ISO time of the last push, for "pushed 3 days ago". */
+  pushedAt?: string;
+}
+
+/** `GET <api>/trackers/github/repos`: the repos the found token can track issues in. Contains no secrets. */
+export type GitHubRepoList =
+  | {
+      kind: 'ok';
+      account: GitHubAccount;
+      auth: CredentialSource;
+      repos: GitHubRepoOption[];
+      /** True when the list stopped at the cap; typing `owner/name` still reaches the rest. */
+      truncated: boolean;
+      /** This project's repo, from its git `origin`. */
+      detectedRepo?: string;
+    }
+  | { kind: 'no-token' }
+  | { kind: 'error'; auth?: CredentialSource; error: string; code?: TrackerErrorCode };
 
 /** `POST <api>/trackers/test` body. Omitted credentials fall back to the stored / detected ones. */
 export interface TrackerTestRequest {

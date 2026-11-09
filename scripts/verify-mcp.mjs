@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { chromium } from 'playwright-core';
+import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
@@ -467,6 +468,8 @@ const modelsOk = await verifyModels({ browser, cli, log, shots });
 const projectsOk = await verifyProjects({ browser, cli, log, shots });
 // Guides: a guide added from a catalog and its check approved in the Lookout; an agent works a ticket in that guide.
 const guidesOk = await verifyGuides({ browser, cli, log, shots });
+// GitHub Issues: who and where before connecting, the repo picker, and a refused repo, against a fake GitHub.
+const githubOk = await verifyGitHub({ browser, cli, log, shots });
 
 await client.close();
 await page.waitForTimeout(1500);
@@ -507,7 +510,8 @@ if (
   !parallelOk ||
   !modelsOk ||
   !projectsOk ||
-  !guidesOk
+  !guidesOk ||
+  !githubOk
 )
   process.exit(1);
 console.log('\nOK');
