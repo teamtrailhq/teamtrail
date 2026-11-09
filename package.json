@@ -16,6 +16,7 @@
     "dev": "npm run seed && npm run dev:keep",
     "dev:keep": "npm run dev -w @teamtrail/lookout",
     "dev:empty": "node scripts/dev-empty.mjs",
+    "dev:fresh": "node scripts/dev-fresh.mjs",
     "dev:agent": "node scripts/dev-agent.mjs",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
