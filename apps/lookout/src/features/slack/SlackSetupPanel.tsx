@@ -49,26 +49,27 @@ export function SlackSetupPanel(props: { s: SlackStatus; set: (s: SlackStatus) =
     1: (
       <>
         <p>
-          Slack opens with the Scout app filled in from a manifest: the {s.command} command, Save as decision, and
-          Socket Mode. Nothing is hosted by {BRAND.name}.
+          Create your app in Slack. It opens filled in from a manifest, so your app already has the {s.command} command,
+          Save as decision and Socket Mode.
         </p>
         <div className="sl-actions">
           <ExtLink primary href={s.links.create} onClick={() => void slackApi.created().then(set, () => {})}>
-            Create Slack app
+            Create your Slack app
           </ExtLink>
         </div>
       </>
     ),
     2: (
       <p>
-        In Slack: pick the workspace → <b>Next</b> → <b>Create</b>.
+        In Slack: pick your workspace → <b>Next</b> → <b>Create</b>. Your app lives in the workspace you pick.
       </p>
     ),
     3: (
       <>
         <p>
-          On the page Slack just opened: <b>App-Level Tokens</b> → <b>Generate Token and Scopes</b> → name it{' '}
-          <code>teamtrail</code> → add <code>connections:write</code> → <b>Generate</b> → <b>Copy</b>, then {pickup}.
+          Give your app a token so Scout can connect from this machine. On the page Slack just opened:{' '}
+          <b>App-Level Tokens</b> → <b>Generate Token and Scopes</b> → name it <code>teamtrail</code> → add{' '}
+          <code>connections:write</code> → <b>Generate</b> → <b>Copy</b>, then {pickup}.
         </p>
         <div className="sl-actions">
           <PasteToken busy={busy} placeholder="xapp-…" onToken={onToken} />
@@ -90,6 +91,7 @@ export function SlackSetupPanel(props: { s: SlackStatus; set: (s: SlackStatus) =
     4: (
       <>
         <p>
+          Install your app so Scout can post and DM you.{' '}
           {installOpened ? (
             "Slack's install page is open in a new tab: "
           ) : (
@@ -127,6 +129,10 @@ export function SlackSetupPanel(props: { s: SlackStatus; set: (s: SlackStatus) =
   };
   return (
     <Card tone="inset" className="slack-setup">
+      <p className="sl-own">
+        You create your own Scout app in your Slack workspace. It runs from this machine over Socket Mode; nothing goes
+        through {BRAND.name}. Prefer one click? Add to Slack is coming with {BRAND.name} Cloud.
+      </p>
       <ol className="pipeline sl-pipeline" aria-label="Slack setup">
         {STEPS.map((x) => (
           <li key={x.n} className={stepClass(step, x.n)}>

@@ -2,6 +2,7 @@
 // the brief's assumption is already the trail's S-1. Asserts on what the user sees in the Lookout.
 import fs from 'node:fs';
 import path from 'node:path';
+import { verifyFocus } from './verifyFocus.mjs';
 
 const refused = (p) =>
   p.then(
@@ -95,11 +96,15 @@ async function rerouteFlow({ call, page, shot, repo, mapId, discoveryKey }) {
 export async function verifySupervision(ctx) {
   const ranked = await rankedQuestions(ctx);
   ctx.log(`attention ${ranked ? 'ok' : 'WRONG'}: the blocking question ranks above the fyi one in the queue`);
+  const focus = await verifyFocus(ctx);
+  ctx.log(
+    `focus ${focus.ok ? 'ok' : 'WRONG'}: "${focus.offText}" → "${focus.onText}" (${focus.held}) → off, kept in the config dir`,
+  );
   const risk = await riskyDecision(ctx);
   ctx.log(`risk policy ${risk.ok ? 'ok' : 'WRONG'}: ${risk.msg.split('\n')[0].slice(0, 140)}`);
   const reroute = await rerouteFlow(ctx);
   ctx.log(
     `reroute ${reroute.ok ? 'ok' : 'WRONG'}: frozen claim refused (${reroute.frozen.slice(0, 80)}), approved in the Lookout, journal ${reroute.journal.join(' → ')}, next claim "${reroute.next}"`,
   );
-  return ranked && risk.ok && reroute.ok;
+  return ranked && focus.ok && risk.ok && reroute.ok;
 }

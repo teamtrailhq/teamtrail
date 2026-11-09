@@ -95,8 +95,90 @@
   align-items: center;
   gap: var(--sp-6);
 }
-.focus-btn.on {
+/* The focus state: a filled lake dot and bright text while focus holds interruptions back, a hollow ring and quiet
+ * text while it's off. Never red: focus is a calm state, not something that needs you. */
+.focus-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  white-space: nowrap;
+}
+.focus-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  box-shadow: inset 0 0 0 1.2px var(--faint);
+}
+.focus-off,
+.focus-paused {
+  color: var(--dim);
+}
+.focus-paused .focus-dot {
+  box-shadow: inset 0 0 0 1.2px var(--accent);
+}
+.focus-manual,
+.focus-hours {
   color: var(--text-hi);
+}
+.focus-manual .focus-dot,
+.focus-hours .focus-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
+}
+.focus-until {
+  font-variant-numeric: tabular-nums;
+}
+.focus-until .sep {
+  color: var(--faint);
+}
+.focus-menu .btn:has(.focus-manual),
+.focus-menu .btn:has(.focus-hours) {
+  border-color: rgba(var(--accent-rgb), 0.45);
+  background: var(--accent-bg);
+}
+.focus-menu .header-menu-list {
+  width: 300px;
+  padding: var(--sp-12);
+}
+.focus-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.focus-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+}
+.focus-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  padding-top: var(--sp-8);
+}
+/* Laptop and phone: "Focus on · 12:00", the word "until" goes. */
+.bp-laptop .focus-until-word,
+.bp-mobile .focus-until-word {
+  display: none;
+}
+/* Phone: the dot and "Focus · 19:50" only, so the header stays on one row; the dot carries on or off, the panel and
+ * the button's label say it in words. */
+.bp-mobile .focus-word,
+.bp-mobile .focus-menu .caret {
+  display: none;
+}
+.bp-mobile .focus-menu .btn {
+  padding: 0 var(--sp-6);
+}
+.bp-mobile .focus-menu .header-menu-list {
+  position: fixed;
+  top: auto;
+  left: var(--gutter);
+  right: var(--gutter);
+  width: auto;
+  margin-top: var(--sp-6);
 }
 
 /* Settings → Attention. */

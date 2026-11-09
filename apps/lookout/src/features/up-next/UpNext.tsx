@@ -26,14 +26,10 @@ export function UpNext(props: {
         <ul className="ticket-list">
           {items.map((t) => {
             const st = states.get(t.id)!;
-            const stateText = upNextState({
-              state: st,
-              waiting: waiting.has(t.id),
-              assignee: t.assignee,
-              hitl: attention(t) === 'hitl',
-            });
+            const row = { state: st, waiting: waiting.has(t.id), assignee: t.assignee, hitl: attention(t) === 'hitl' };
+            const stateText = upNextState(row);
             return (
-              <li key={t.id} className={`${selId === t.id ? 'sel' : ''} st-${waiting.has(t.id) ? 'waiting' : st}`}>
+              <li key={t.id} className={`${selId === t.id ? 'sel' : ''} st-${upNextTone(row)}`}>
                 <button onClick={() => props.onSelect({ kind: 'ticket', id: t.id })}>
                   <i className="dot" />
                   <span className="key t-code">{t.key}</span>
@@ -55,4 +51,11 @@ function upNextState(t: { state: NodeState; waiting: boolean; assignee?: string;
   if (t.state === 'claimed') return t.assignee ?? 'claimed';
   const ready = STATE_TEXT[t.state].toLowerCase();
   return t.hitl ? `${ready}, needs you` : ready;
+}
+
+/** The dot, as on the map's cards: green working, grey ready, amber when it's ready but needs a person, red waiting on you. */
+function upNextTone(t: { state: NodeState; waiting: boolean; hitl: boolean }) {
+  if (t.waiting) return 'waiting';
+  if (t.state === 'frontier' && t.hitl) return 'attention';
+  return t.state;
 }

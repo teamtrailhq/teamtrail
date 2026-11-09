@@ -78,7 +78,7 @@
 }
 .trail-item.new {
   display: block;
-  color: var(--st-claimed);
+  color: var(--accent);
   margin-top: var(--sp-4);
   border-top: 1px solid var(--line);
   font-size: var(--fs-sm);

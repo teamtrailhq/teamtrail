@@ -713,14 +713,15 @@ button.card.urgent:hover,
   opacity: 0.85;
 }
 
-/* Info icon next to a zone title: an "i" in a circle; explains the zone on hover or focus. */
+/* Info icon next to a zone title: an "i" in a square, square-cornered like the panels and the tooltip; explains the
+ * zone on hover or focus. */
 .info-tip {
   display: inline-grid;
   place-items: center;
   width: 16px;
   height: 16px;
   flex: 0 0 auto;
-  border-radius: 50%;
+  border-radius: 0;
   border: 1px solid rgba(var(--accent-rgb), 0.55);
   background: rgba(var(--accent-rgb), 0.08);
   color: var(--accent);

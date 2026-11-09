@@ -1,4 +1,4 @@
-import type { AttentionItem } from '@teamtrail/core';
+import { changeFocus, type AttentionItem } from '@teamtrail/core';
 import {
   AttentionHeader,
   useAttention,
@@ -22,6 +22,8 @@ export function useAttentionUi(input: {
   reviewBrief: () => void;
   openReroute?: (item: AttentionItem) => void;
   openGuides: () => void;
+  /** Settings → Attention, where the quiet hours are set. */
+  openFocusSettings: () => void;
 }) {
   const { api, nav } = input;
   const attention = useAttention(api.allSnaps);
@@ -40,7 +42,11 @@ export function useAttentionUi(input: {
   const view = attention.view;
   const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers, showChat: nav.showChat });
   const header = view && (
-    <AttentionHeader view={view} onFocus={(focusUntil) => void attention.savePrefs({ ...view.prefs, focusUntil })} />
+    <AttentionHeader
+      view={view}
+      onFocus={(change) => void attention.savePrefs(changeFocus(view.prefs, change, Date.now()))}
+      onSettings={input.openFocusSettings}
+    />
   );
   return { attention, handlers, header, link };
 }

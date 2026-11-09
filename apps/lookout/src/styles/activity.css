@@ -65,12 +65,12 @@
   height: 3px;
   background: var(--line);
 }
+/* Walked steps fade like the map's walked connectors; the current one is the map's working green. */
 .pipeline li.done i {
-  background: var(--st-decided);
+  background: rgba(var(--decided-rgb), 0.55);
 }
 .pipeline li.cur i {
   background: var(--st-claimed);
-  box-shadow: 0 0 6px rgba(var(--claimed-rgb), 0.7);
 }
 .pipeline span {
   font-family: var(--label);
@@ -129,7 +129,7 @@
   background: var(--line);
 }
 .sessions-list .segs i.done {
-  background: var(--st-decided);
+  background: rgba(var(--decided-rgb), 0.55);
 }
 .sessions-list .segs i.cur {
   background: var(--st-claimed);
