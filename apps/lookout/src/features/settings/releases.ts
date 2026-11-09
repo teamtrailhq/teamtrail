@@ -16,6 +16,10 @@ export const NEXT: { area: string; items: string[] }[] = [
       "A ticket's guide now sits in its map sign's quiet line, next to the type and state, instead of floating above the sign; hover it for the full name and version",
       'Onboarding opens calmer: a small logo and one question, "Where should your trails live?"',
       'Tickets on the trail map are flat cards: a status dot, the title and one quiet line with the key, type, guide and who is on it. Thin elbow lines join them, and the landscape underneath is quieter',
+      'Working looks the same everywhere: green, as on the map, in Up next, the ticket pill, the activity steps and the legend. Ready is grey and done steps back; red still only means it needs you now',
+      'The header always shows whether focus is on: "Focus on · until 12:00" or "Focus off". Click it to see what it holds back, focus for an hour, or end focus now, even during your quiet hours, which then pause until they would have ended. It stays on this machine',
+      'Settings → Slack says plainly that you create your own Scout app in your Slack workspace, running from this machine with nothing going through Teamtrail, and each step says what you do in Slack and why. One-click Add to Slack is coming with Teamtrail Cloud',
+      'Info icons are square, like the panels and their tooltips',
     ],
   },
   {

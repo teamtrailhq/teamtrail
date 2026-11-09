@@ -7,7 +7,7 @@ function signature(v: AttentionView) {
   return JSON.stringify([
     v.items.map((i) => [i.id, i.score, i.urgency, i.reasons]),
     v.interrupting,
-    v.focused,
+    v.focus,
     v.policy.errors,
   ]);
 }

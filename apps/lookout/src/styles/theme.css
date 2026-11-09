@@ -23,9 +23,8 @@
   --accent-rgb: 34, 98, 122; /* lake: ready work, links */
   --accent: rgb(var(--accent-rgb));
   --accent-bg: rgba(var(--accent-rgb), 0.08);
-  --claimed-rgb: 200, 88, 30; /* blaze: being worked on */
   --amber-rgb: 154, 95, 12; /* held up or at risk */
-  --decided-rgb: 63, 107, 69; /* moss: done */
+  --decided-rgb: 63, 107, 69; /* moss: an agent is working on it (map cards), passed checks */
   --urgent-rgb: 196, 48, 31;
   --primary: #3f6b45;
   --primary-hover: #345a3a;
@@ -70,7 +69,6 @@
     --dim: #93a497;
     --faint: #5f6e63;
     --accent-rgb: 127, 195, 216;
-    --claimed-rgb: 232, 131, 58;
     --amber-rgb: 224, 169, 74;
     --decided-rgb: 143, 191, 132;
     --urgent-rgb: 255, 107, 92;
@@ -113,7 +111,6 @@
   --dim: #93a497;
   --faint: #5f6e63;
   --accent-rgb: 127, 195, 216;
-  --claimed-rgb: 232, 131, 58;
   --amber-rgb: 224, 169, 74;
   --decided-rgb: 143, 191, 132;
   --urgent-rgb: 255, 107, 92;
@@ -137,15 +134,17 @@
   --map-card: #1d2823;
 }
 
-/* Derived: the same in both themes. */
+/* Derived: the same in both themes. Ticket states read as on the map cards (features/map/nodeTone.ts):
+ * green working, grey ready, amber held up, red only when it needs you now. `--st-decided` stays the colour
+ * of a passed check or a done step; done tickets themselves step back (`.st-decided` in map.css). */
 :root {
-  --st-frontier: var(--accent);
-  --st-claimed: rgb(var(--claimed-rgb));
+  --st-frontier: var(--dim);
+  --st-claimed: rgb(var(--decided-rgb));
   --st-decided: rgb(var(--decided-rgb));
   --st-blocked: var(--faint);
   --st-parked: var(--faint);
   --st-oos: var(--faint);
-  --st-verifying: var(--accent);
+  --st-verifying: rgb(var(--decided-rgb));
   --st-rework: var(--amber);
   --st-held: var(--urgent);
   --urgent: rgb(var(--urgent-rgb));
