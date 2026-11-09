@@ -47,8 +47,13 @@ export function GuideRow(props: {
         below={
           <>
             {approvable && (
-              <Button size="sm" disabled={props.busy} onClick={() => props.onAct('/guides/approve', { id })}>
-                Approve guide {id}
+              <Button
+                size="sm"
+                aria-label={`Approve guide ${id}`}
+                disabled={props.busy}
+                onClick={() => props.onAct('/guides/approve', { id })}
+              >
+                Approve
               </Button>
             )}
             <GuideChecks
