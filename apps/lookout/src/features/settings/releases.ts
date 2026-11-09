@@ -8,6 +8,13 @@ export interface Release {
 }
 
 export const NEXT: { area: string; items: string[] }[] = [
+  {
+    area: 'Polish',
+    items: [
+      'Settings → Guides shows whether a guide you added from the catalog was Verified or Not reviewed, saved when you added it, so no network is needed',
+      "A ticket's guide now sits in its map sign's quiet line, next to the type and state, instead of floating above the sign; hover it for the full name and version",
+    ],
+  },
   { area: 'Teamtrail Cloud', items: ['Agents that run in the cloud, steered from the same Lookout'] },
 ];
 

@@ -123,7 +123,11 @@ async function addInLookout({ page, url, shot }) {
   await shot('21-guide-approve-check');
   await approve.click();
   await approve.waitFor({ state: 'detached', timeout: 15_000 });
+  // the catalog's review is pinned in the lock, so Settings (under the dialog) shows it without fetching the catalog
+  const installed = section.locator('li.guide-row[data-guide-id="a11y"]');
+  await installed.getByText('Verified', { exact: true }).waitFor({ timeout: 15_000 });
   await page.keyboard.press('Escape');
+  return true;
 }
 
 export async function verifyGuides({ browser, cli, log, shots }) {
@@ -136,7 +140,7 @@ export async function verifyGuides({ browser, cli, log, shots }) {
   const shot = async (name) => shots && page.screenshot({ path: path.join(shots, `${name}.png`) });
   const worker = await agent(cli, top);
   try {
-    await addInLookout({ page, url, shot });
+    const verifiedInSettings = await addInLookout({ page, url, shot });
     const config = JSON.parse(fs.readFileSync(path.join(root, 'verification.json'), 'utf8'));
     const approved = config.checks.a11y?.run?.join(' ') === 'node checks/a11y.js';
     const pinned = JSON.parse(fs.readFileSync(path.join(root, 'guides.lock.json'), 'utf8')).guides.a11y;
@@ -150,7 +154,10 @@ export async function verifyGuides({ browser, cli, log, shots }) {
     const claim = await worker.call('claim_ticket', { guides: ['a11y'] });
     const guide = claim.claimed.guide;
     await page.goto(url);
-    await page.locator('.guide-chip[data-guide-id="a11y"]').first().waitFor({ timeout: 15_000 });
+    // the guide's name sits in the sign's meta line: #1 · task · Accessibility · …
+    const signGuide = page.locator('g.node text.meta .guide[data-guide-id="a11y"]').first();
+    await signGuide.waitFor({ timeout: 15_000 });
+    const signText = await signGuide.evaluate((el) => el.lastChild?.textContent ?? '');
     await shot('22-guide-chip');
     let refused = '';
     await worker.call('report_completion', { resolution: 'Added the sheet' }).catch((e) => (refused = e.message));
@@ -159,7 +166,10 @@ export async function verifyGuides({ browser, cli, log, shots }) {
     const ran = done.checks?.map((c) => `${c.name}:${c.ok}`).join(',');
     const ok =
       approved &&
+      verifiedInSettings &&
+      /Access/.test(signText ?? '') &&
       pinned?.version === '1.0.0' &&
+      pinned?.review?.verified === true &&
       guide?.id === 'a11y' &&
       guide.checklist.length === 2 &&
       /needs an answer for every checklist item/.test(refused) &&
@@ -167,7 +177,7 @@ export async function verifyGuides({ browser, cli, log, shots }) {
       ran === 'a11y:true' &&
       !errors.length;
     log(
-      `guides ${ok ? 'ok' : 'WRONG'}: a11y added from the catalog and pinned (${pinned?.version}), its check approved in the Lookout (${approved}); the claim carried the guide with ${guide?.checklist.length} checklist items; completion refused without them, then ${done.status} with checks ${ran}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `guides ${ok ? 'ok' : 'WRONG'}: a11y added from the catalog and pinned (${pinned?.version}), its check approved in the Lookout (${approved}), Verified in Settings, "${signText?.trim()}" on its sign; the claim carried the guide with ${guide?.checklist.length} checklist items; completion refused without them, then ${done.status} with checks ${ran}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {
