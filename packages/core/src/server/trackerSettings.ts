@@ -8,18 +8,30 @@ import type {
 } from '../adapters/remote/types';
 import type { GitHubLookups } from './githubLookups';
 import { BadRequest } from './http';
+import type { LinearLookups } from './linearLookups';
 import type { RemoteAdapters } from './remoteAdapters';
 import { resolveLinearKey } from './trackerConfig';
 import type { TrackerContext } from './trackerContext';
 
 /** Reading, testing and switching the project's tracker connection. */
-export function trackerSettings(ctx: TrackerContext, remotes: RemoteAdapters, lookups: GitHubLookups) {
+export function trackerSettings(deps: {
+  ctx: TrackerContext;
+  remotes: RemoteAdapters;
+  lookups: GitHubLookups;
+  linear: LinearLookups;
+}) {
+  const { ctx, remotes, lookups, linear } = deps;
   const { o, env, creds, project, apiUrl } = ctx;
 
   async function settings(): Promise<TrackerSettings> {
     const cfg = project.read();
     const detected = ctx.detectedRepo();
-    const [gh, repo, account] = await Promise.all([ctx.githubToken(), detected, lookups.account()]);
+    const [gh, repo, account, viewer] = await Promise.all([
+      ctx.githubToken(),
+      detected,
+      lookups.account(),
+      linear.viewer(),
+    ]);
     return {
       active: cfg.active,
       github: {
@@ -32,6 +44,7 @@ export function trackerSettings(ctx: TrackerContext, remotes: RemoteAdapters, lo
       linear: {
         ...cfg.linear,
         auth: resolveLinearKey(creds.read(), env)?.source ?? null,
+        viewer,
         status: remotes.status('linear'),
       },
     };
@@ -50,7 +63,34 @@ export function trackerSettings(ctx: TrackerContext, remotes: RemoteAdapters, lo
     }
     const apiKey = req.apiKey?.trim() || resolveLinearKey(creds.read(), env)?.token;
     if (!apiKey) return { ok: false, code: 'auth', error: 'Paste a Linear personal API key.' };
-    return testLinear({ apiKey, teamId: req.teamId ?? cfg.linear?.teamId, apiUrl: apiUrl.linear, fetch: o.fetch });
+    const teamId = req.teamId ?? cfg.linear?.teamId;
+    return testLinear({ apiKey, teamId, projectId: req.projectId, apiUrl: apiUrl.linear, fetch: o.fetch });
+  }
+
+  /** Linear: the team (and project) the key can read, checked first; the names saved are Linear's, not the page's. */
+  async function connectLinear(l: TrackerConnectRequest['linear']): Promise<{ status: number; body: unknown }> {
+    if (!l?.teamId) throw new BadRequest('"linear.teamId" is required');
+    const projectId = l.projectId || undefined;
+    const result = await test({ kind: 'linear', apiKey: l.apiKey, teamId: l.teamId, projectId });
+    if (!result.ok) return { status: 400, body: result };
+    if (l.apiKey?.trim()) creds.write({ ...creds.read(), linear: { apiKey: l.apiKey.trim() } });
+    linear.reset();
+    const team = result.teams?.find((t) => t.id === l.teamId);
+    const projectName = result.projects?.find((p) => p.id === projectId)?.name;
+    project.write({
+      ...project.read(),
+      active: 'linear',
+      linear: {
+        teamId: l.teamId,
+        teamKey: team?.key ?? l.teamKey,
+        teamName: team?.name ?? l.teamName,
+        projectId,
+        projectName: projectId ? (projectName ?? l.projectName) : undefined,
+        orgName: result.organization,
+      },
+    });
+    remotes.reset('linear');
+    return { status: 200, body: await settings() };
   }
 
   async function connect(req: TrackerConnectRequest): Promise<{ status: number; body: unknown }> {
@@ -70,26 +110,7 @@ export function trackerSettings(ctx: TrackerContext, remotes: RemoteAdapters, lo
       remotes.reset('github');
       return { status: 200, body: await settings() };
     }
-    if (req.active === 'linear') {
-      const l = req.linear;
-      if (!l?.teamId) throw new BadRequest('"linear.teamId" is required');
-      const result = await test({ kind: 'linear', apiKey: l.apiKey, teamId: l.teamId });
-      if (!result.ok) return { status: 400, body: result };
-      if (l.apiKey?.trim()) creds.write({ ...creds.read(), linear: { apiKey: l.apiKey.trim() } });
-      project.write({
-        ...cfg,
-        active: 'linear',
-        linear: {
-          teamId: l.teamId,
-          teamKey: l.teamKey,
-          teamName: l.teamName,
-          projectId: l.projectId || undefined,
-          projectName: l.projectId ? l.projectName : undefined,
-        },
-      });
-      remotes.reset('linear');
-      return { status: 200, body: await settings() };
-    }
+    if (req.active === 'linear') return connectLinear(req.linear);
     throw new BadRequest('"active" must be markdown, github or linear');
   }
 

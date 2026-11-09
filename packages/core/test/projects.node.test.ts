@@ -328,3 +328,13 @@ test('summary: a GitHub project names the repo its issues live in', async () => 
   const { summary } = await projectSummary({ entry, home: false, state: { kind: 'ok' }, configDir, now });
   assert.deepEqual(summary.tracker, { kind: 'github', cached: false, repo: 'octo-org/ops' });
 });
+
+test('summary: a Linear project names its team and organization', async () => {
+  const root = path.join(tmp, 'linear-project', '.teamtrail');
+  mkdirSync(root, { recursive: true });
+  const linear = { teamId: 'team-eng', teamKey: 'ENG', teamName: 'Engineering', orgName: 'Octo Inc' };
+  writeFileSync(path.join(root, 'trackers.json'), JSON.stringify({ active: 'linear', linear }));
+  const entry: ProjectEntry = { id: 'lin123', name: 'linear-project', path: path.dirname(root), root, addedAt: now };
+  const { summary } = await projectSummary({ entry, home: false, state: { kind: 'ok' }, configDir, now });
+  assert.deepEqual(summary.tracker, { kind: 'linear', cached: false, team: 'ENG', org: 'Octo Inc' });
+});

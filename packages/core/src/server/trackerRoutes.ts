@@ -5,6 +5,8 @@ import { githubCiAccess } from './githubCiAccess';
 import { githubLookups } from './githubLookups';
 import { handleGitHubRepos } from './githubRepoRoutes';
 import { BadRequest, readJson, sendJson } from './http';
+import { linearLookups } from './linearLookups';
+import { handleLinearTeams, LINEAR_PROJECTS, LINEAR_TEAMS } from './linearTeamRoutes';
 import { isKind, remoteAdapters } from './remoteAdapters';
 import { CALLS } from './trackerCalls';
 import { trackerContext, type TrackerRoutesOptions } from './trackerContext';
@@ -21,6 +23,9 @@ export type { TrackerRoutesOptions } from './trackerContext';
  *   PUT    /trackers                       TrackerConnectRequest → TrackerSettings (tests the connection first)
  *   POST   /trackers/test                  TrackerTestRequest → TrackerTestResult
  *   GET    /trackers/github/repos          GitHubRepoList: repos the found token can track issues in, and its login
+ *   GET    /trackers/linear/teams          LinearTeamList: teams the key can access, and who it belongs to (POST
+ *                                          `{ apiKey }` for a key pasted in the page)
+ *   GET    /trackers/linear/projects?team= LinearProjectList: that team's projects (POST `{ apiKey, teamId }`)
  *   DELETE /trackers/credentials/<kind>    forget the saved token / key
  *   POST   /tracker/<kind>/call            `{ method, args }` → `{ result }` (TrackerAdapter methods)
  *   GET    /tracker/<kind>/events          SSE: TrackerEvent per message; named `status` events (SyncStatus & { location })
@@ -29,7 +34,8 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
   const ctx = trackerContext(o);
   const remotes = remoteAdapters(ctx);
   const lookups = githubLookups(ctx);
-  const { settings, test, connect } = trackerSettings(ctx, remotes, lookups);
+  const linear = linearLookups(ctx);
+  const { settings, test, connect } = trackerSettings({ ctx, remotes, lookups, linear });
   remotes.resumeQueued();
 
   async function handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
@@ -37,10 +43,12 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
     const call = p.match(/^\/tracker\/([^/]+)\/(call|events)$/);
     const forget = p.match(/^\/trackers\/credentials\/([^/]+)$/);
     const repos = p === '/trackers/github/repos';
-    if (p !== '/trackers' && p !== '/trackers/test' && !call && !forget && !repos) return false;
+    const lookup = repos || p === LINEAR_TEAMS || p === LINEAR_PROJECTS;
+    if (p !== '/trackers' && p !== '/trackers/test' && !call && !forget && !lookup) return false;
     try {
       if (crossSite(req)) return (void sendJson(res, 403, { error: 'cross-site request refused' }), true);
       if (repos) return await handleGitHubRepos(req, res, { path: p, lookups });
+      if (lookup) return await handleLinearTeams(req, res, { url, lookups: linear });
       const handled = call ? await remoteRoute(req, res, call) : await settingsRoute(req, res, p, forget);
       if (!handled) sendJson(res, 405, { error: 'method not allowed' });
     } catch (err) {
@@ -81,6 +89,7 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
     ctx.creds.write(c);
     remotes.reset(kind);
     lookups.reset();
+    linear.reset();
   }
 
   /** `/tracker/<kind>/events` and `/tracker/<kind>/call`. */

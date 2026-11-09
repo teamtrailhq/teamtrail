@@ -1,8 +1,8 @@
-import { BRAND } from '@teamtrail/core';
 import { useState } from 'react';
-import { Panel, ScoutBadge, TeamtrailLogo, Wordmark, Label, Choice, Button } from '../../components/ui';
+import { Panel, ScoutBadge, TeamtrailLogo, Wordmark, Choice, Button } from '../../components/ui';
 import type { Prefs, TrackerChoice } from '../../lib';
-import { GitHubSetup, LinearSetup, useTrackerSettings, trackerApi, switchTracker, willUse } from '../trackers';
+import { GitHubSetup, LinearSetup, useTrackerSettings, trackerApi, switchTracker } from '../trackers';
+import { onboardingChoices } from './onboardingChoices';
 import { SettingsSection } from './SettingsSection';
 import { TranscriptChoice } from './TranscriptChoice';
 
@@ -11,18 +11,11 @@ export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) =>
   // Polled, so `gh auth login` in a terminal shows up here without a reload.
   const [trackers] = useTrackerSettings(5000);
   const [busy, setBusy] = useState(false);
-  const gh = trackers?.github;
-  /** Who and where GitHub would use, said before anything connects; once chosen, its setup below says it. */
-  let ghSub: string | undefined;
-  if (gh && prefs.tracker !== 'github') ghSub = willUse(gh, gh.repo ?? gh.detectedRepo);
-  const choices: { id: TrackerChoice; title: string; sub?: string }[] = [
-    { id: 'markdown', title: 'Local markdown', sub: 'Files in .teamtrail/ in this repo' },
-    { id: 'github', title: 'GitHub Issues', sub: ghSub ?? 'Trails as labelled issues in your repo' },
-    { id: 'linear', title: 'Linear', sub: 'Trails and tickets in your Linear team' },
-  ];
+  const choices = onboardingChoices(trackers ?? undefined, prefs.tracker);
   /** GitHub and Linear connect with their own Connect button, which finishes onboarding; nothing connects on choice. */
-  const connectedHere = trackers?.active === prefs.tracker && prefs.tracker === 'github';
-  const needsSetup = (prefs.tracker === 'github' && !connectedHere) || prefs.tracker === 'linear';
+  const remote = prefs.tracker === 'github' || prefs.tracker === 'linear';
+  const connectedHere = remote && trackers?.active === prefs.tracker;
+  const needsSetup = remote && !connectedHere;
   const finish = (tracker: TrackerChoice) => {
     update({ onboarded: true });
     switchTracker(update, tracker);
@@ -37,17 +30,13 @@ export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) =>
     <div className="scrim">
       <Panel as="div" className="dialog onboarding">
         <div className="onb-brand">
-          <TeamtrailLogo size={64} />
-          <Wordmark as="div" className="onb-title" />
+          <TeamtrailLogo size={22} bare />
+          <Wordmark className="onb-title" />
         </div>
-        <div className="onb-cat mono-label">{BRAND.category}</div>
-        <p className="onb-tagline">{BRAND.tagline}</p>
-        <p className="scout-line">
-          <Label>
-            <ScoutBadge className="voice-badge" /> {BRAND.assistant.name}
-          </Label>{' '}
+        <h2 className="onb-question t-heading">
+          <ScoutBadge className="voice-badge" size={22} />
           Where should your trails live?
-        </p>
+        </h2>
 
         <SettingsSection title="Tracker">
           <div className="choice-row">
@@ -64,7 +53,9 @@ export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) =>
           {trackers && prefs.tracker === 'github' && !connectedHere && (
             <GitHubSetup s={trackers} onConnected={() => finish('github')} />
           )}
-          {trackers && prefs.tracker === 'linear' && <LinearSetup s={trackers} onConnected={() => finish('linear')} />}
+          {trackers && prefs.tracker === 'linear' && !connectedHere && (
+            <LinearSetup s={trackers} onConnected={() => finish('linear')} />
+          )}
         </SettingsSection>
 
         <SettingsSection title="HITL transcript">

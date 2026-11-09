@@ -11,6 +11,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { chromium } from 'playwright-core';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
+import { verifyLinear } from './verifyLinear.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
@@ -470,6 +471,8 @@ const projectsOk = await verifyProjects({ browser, cli, log, shots });
 const guidesOk = await verifyGuides({ browser, cli, log, shots });
 // GitHub Issues: who and where before connecting, the repo picker, and a refused repo, against a fake GitHub.
 const githubOk = await verifyGitHub({ browser, cli, log, shots });
+// Linear: whose key and which team before connecting, the team picker, and a team the key can't read.
+const linearOk = await verifyLinear({ browser, cli, log, shots });
 
 await client.close();
 await page.waitForTimeout(1500);
@@ -511,7 +514,8 @@ if (
   !modelsOk ||
   !projectsOk ||
   !guidesOk ||
-  !githubOk
+  !githubOk ||
+  !linearOk
 )
   process.exit(1);
 console.log('\nOK');

@@ -34,8 +34,16 @@ export function projectParts(p: ProjectSummary): MetaPart[] {
   if (p.flags) parts.push(plural(p.flags, 'PR flag'));
   if (p.stalled) parts.push(plural(p.stalled, 'stalled claim'));
   if (!parts.length) parts.push(p.trails ? 'Nothing waiting' : 'No trails yet');
-  if (p.tracker.kind === 'github' && p.tracker.repo) parts.push(`Issues in ${p.tracker.repo}`);
+  const where = trackerWhere(p.tracker);
+  if (where) parts.push(where);
   return parts;
+}
+
+/** Where the issues live: "Issues in owner/name", "Linear: ENG in Octo Inc"; nothing for local markdown. */
+function trackerWhere(t: ProjectSummary['tracker']): string | undefined {
+  if (t.kind === 'github' && t.repo) return `Issues in ${t.repo}`;
+  if (t.kind !== 'linear' || !t.team) return undefined;
+  return t.org ? `Linear: ${t.team} in ${t.org}` : `Linear: ${t.team}`;
 }
 
 /** The detail line: the top of its queue, else why the summary is partial, else where it lives. */

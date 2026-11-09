@@ -35,7 +35,7 @@ function trackerOf(input: SummaryInput): ProjectTracker {
   const cfg = projectConfig(input.entry.root).read();
   const cached = !!input.adapter;
   if (cfg.active === 'github') return { kind: 'github', cached, repo: cfg.github?.repo };
-  if (cfg.active === 'linear') return { kind: 'linear', cached };
+  if (cfg.active === 'linear') return { kind: 'linear', cached, team: cfg.linear?.teamKey, org: cfg.linear?.orgName };
   return { kind: 'markdown' };
 }
 

@@ -14,6 +14,8 @@ export interface LinearTarget {
   /** Optional: trails are created in this project and only its trails are listed. */
   projectId?: string;
   projectName?: string;
+  /** The Linear organization the team belongs to, saved on connect for "ENG in Octo Inc". */
+  orgName?: string;
 }
 
 /** `GET <api>/trackers`: what Settings shows. Contains no secrets. */
@@ -30,6 +32,8 @@ export interface TrackerSettings {
   };
   linear: Partial<LinearTarget> & {
     auth: CredentialSource | null;
+    /** Who the found key belongs to, from `viewer` and `organization`; absent when no key was found. */
+    viewer?: LinearViewer;
     status?: SyncStatus;
   };
 }
@@ -62,6 +66,54 @@ export type GitHubRepoList =
   | { kind: 'no-token' }
   | { kind: 'error'; auth?: CredentialSource; error: string; code?: TrackerErrorCode };
 
+/** The Linear user behind a key and their organization, or why the lookup failed. */
+export type LinearViewer =
+  | { kind: 'user'; name: string; email?: string; orgName: string }
+  | { kind: 'unknown'; error: string; code?: TrackerErrorCode };
+
+/** One team in the Linear picker. */
+export interface LinearTeamOption {
+  id: string;
+  key: string;
+  name: string;
+  /** ISO time of the team's most recently updated issue, for "Active 3d ago"; absent when it has none. */
+  activeAt?: string;
+}
+
+/** One project in the optional project picker. */
+export interface LinearProjectOption {
+  id: string;
+  name: string;
+  /** Linear's project state: planned, started, paused, completed, canceled, backlog. */
+  state?: string;
+}
+
+/** Where the key for a Linear lookup comes from: the found one (env or saved), or one pasted in the page. */
+export interface LinearLookupRequest {
+  apiKey?: string;
+  teamId?: string;
+}
+
+/** `GET|POST <api>/trackers/linear/teams`: the teams a key can access, and who it belongs to. Contains no secrets. */
+export type LinearTeamList =
+  | {
+      kind: 'ok';
+      viewer: LinearViewer;
+      /** Null when the key was pasted in the page rather than found. */
+      auth: CredentialSource | null;
+      teams: LinearTeamOption[];
+      /** True when the list stopped at the cap. */
+      truncated: boolean;
+    }
+  | { kind: 'no-key' }
+  | { kind: 'error'; auth?: CredentialSource | null; error: string; code?: TrackerErrorCode };
+
+/** `GET|POST <api>/trackers/linear/projects`: the projects of one team. Contains no secrets. */
+export type LinearProjectList =
+  | { kind: 'ok'; projects: LinearProjectOption[]; truncated: boolean }
+  | { kind: 'no-key' }
+  | { kind: 'error'; error: string; code?: TrackerErrorCode };
+
 /** `POST <api>/trackers/test` body. Omitted credentials fall back to the stored / detected ones. */
 export interface TrackerTestRequest {
   kind: RemoteKind;
@@ -69,6 +121,8 @@ export interface TrackerTestRequest {
   token?: string;
   apiKey?: string;
   teamId?: string;
+  /** Linear: checked to belong to `teamId` when given. */
+  projectId?: string;
 }
 
 export interface TrackerTestResult {
@@ -80,6 +134,8 @@ export interface TrackerTestResult {
   /** False when the token can read but not write issues; undefined when the tracker does not say. */
   canWrite?: boolean;
   rate?: RateInfo;
+  /** Linear: the organization the key belongs to. */
+  organization?: string;
   /** Linear: teams the key can see, and the projects of the chosen team. */
   teams?: { id: string; key: string; name: string }[];
   projects?: { id: string; name: string }[];

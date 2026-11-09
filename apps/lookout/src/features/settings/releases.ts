@@ -14,6 +14,7 @@ export const NEXT: { area: string; items: string[] }[] = [
       'Settings → Guides shows whether a guide you added from the catalog was Verified or Not reviewed, saved when you added it, so no network is needed',
       'Settings is now its own page instead of a big dialog: pick This trail, Project, Attention & alerts, You, All projects or About on the left, and each says whether it is committed to the repo or kept on this machine. The address shows where you are, so you can link to a section, and Back or Esc returns to the Lookout',
       "A ticket's guide now sits in its map sign's quiet line, next to the type and state, instead of floating above the sign; hover it for the full name and version",
+      'Onboarding opens calmer: a small logo and one question, "Where should your trails live?"',
       'Tickets on the trail map are flat cards: a status dot, the title and one quiet line with the key, type, guide and who is on it. Thin elbow lines join them, and the landscape underneath is quieter',
     ],
   },
@@ -21,6 +22,7 @@ export const NEXT: { area: string; items: string[] }[] = [
     area: 'Trackers',
     items: [
       'GitHub Issues no longer connects the moment you choose it. Onboarding and Settings → Tracker show the account and repo first ("Will use owner/name as you (your gh login)"), let you pick any repo you can push or triage in, or type owner/name, and connect only when you press Connect. Each project in All projects keeps its own repo, and the overview row says where its issues live',
+      'Linear works the same way: once a Linear API key is found or pasted, onboarding and Settings → Tracker say whose it is ("Will use Engineering in Octo Inc as you"), list the teams it can access with a search box and how recently each was active, and offer an optional project. The team saved for this project is picked again, or the only team; otherwise you pick one. Nothing connects until you press Connect, a team the key can\'t read is refused without switching, and All projects shows "Linear: ENG in Octo Inc"',
     ],
   },
   { area: 'Teamtrail Cloud', items: ['Agents that run in the cloud, steered from the same Lookout'] },
