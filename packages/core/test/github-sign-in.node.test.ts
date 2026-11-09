@@ -32,9 +32,9 @@ function setup(device: ReturnType<typeof fakeGitHubDevice>) {
   return fetch;
 }
 
-test('client id: the env override, else the constant (empty until the OAuth app is registered)', () => {
+test('client id: the env override, else the registered Teamtrail app', () => {
   assert.equal(githubClientId({ TEAMTRAIL_GITHUB_CLIENT_ID: ' Iv1.abc ' }), 'Iv1.abc');
-  assert.equal(githubClientId({}), undefined);
+  assert.equal(githubClientId({}), 'Ov23lilBuZFa2VJLNrlN');
 });
 
 test('token order: pasted, env, signed in, then gh', async () => {
