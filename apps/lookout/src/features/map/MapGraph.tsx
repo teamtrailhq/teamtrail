@@ -7,9 +7,9 @@ import { destinationSpot, destinationTrail } from './destination';
 import { DestinationMark } from './DestinationMark';
 import { DestinationTrail } from './DestinationTrail';
 import { GraphDefs } from './GraphDefs';
-import { GraphEdge } from './GraphEdge';
+import { GraphEdges } from './GraphEdges';
 import { GraphNode } from './GraphNode';
-import { edgeKey, type MapPreview } from './mapPreview';
+import type { MapPreview } from './mapPreview';
 import { openingView } from './openingView';
 import { OutOfScopeStrip } from './OutOfScopeStrip';
 import { TerrainLayer } from './TerrainLayer';
@@ -168,16 +168,14 @@ export function MapGraph(props: {
               <OutOfScopeStrip y={L.quarantineY} width={L.width} height={L.quarantineH} />
             )}
 
-            {L.edges.map(({ from, to }) => (
-              <GraphEdge
-                key={`${from.ticket.id}-${to.ticket.id}`}
-                from={from}
-                to={to}
-                direction={L.direction}
-                added={preview?.newEdges.has(edgeKey(from.ticket.id, to.ticket.id))}
-                removed={preview?.removedEdges.has(edgeKey(from.ticket.id, to.ticket.id))}
-              />
-            ))}
+            <GraphEdges
+              snap={snap}
+              tickets={tickets}
+              direction={L.direction}
+              nodes={L.nodes}
+              edges={L.edges}
+              preview={preview}
+            />
 
             <DestinationTrail trails={destinationTrail(L, destination)} />
             {L.nodes.length > 0 && <DestinationMark x={destination.x} y={destination.y} />}

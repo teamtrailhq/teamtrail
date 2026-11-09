@@ -13,6 +13,7 @@ export const NEXT: { area: string; items: string[] }[] = [
     items: [
       'Settings → Guides shows whether a guide you added from the catalog was Verified or Not reviewed, saved when you added it, so no network is needed',
       "A ticket's guide now sits in its map sign's quiet line, next to the type and state, instead of floating above the sign; hover it for the full name and version",
+      'Tickets on the trail map are flat cards: a status dot, the title and one quiet line with the key, type, guide and who is on it. Thin elbow lines join them, and the landscape underneath is quieter',
     ],
   },
   { area: 'Teamtrail Cloud', items: ['Agents that run in the cloud, steered from the same Lookout'] },

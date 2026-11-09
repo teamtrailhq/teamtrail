@@ -15,9 +15,9 @@
   border-color: var(--edge-attention);
   color: var(--dim);
 }
-/* On a map sign: the guide's name in the meta line. */
+/* On a map card: the guide's name in the meta line. */
 .node .meta .guide {
-  fill: var(--sign-text);
+  fill: var(--text);
 }
 .node .meta .guide.off {
   fill: var(--amber);

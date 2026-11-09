@@ -2,7 +2,7 @@ import type { SignGuide } from './types';
 import { useGuides } from './useGuides';
 
 /**
- * What a map sign shows of a ticket's guide: its name, the full name and version (or why agents can't use it) for
+ * What a map card shows of a ticket's guide: its name, the full name and version (or why agents can't use it) for
  * the tooltip, and whether it's off. Nothing for a ticket without a guide.
  */
 export function useSignGuide(id?: string): SignGuide | undefined {
