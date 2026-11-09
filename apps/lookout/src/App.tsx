@@ -9,8 +9,6 @@ import {
   MapZone,
   PhoneTabBar,
   PhoneView,
-  type SettingsOpen,
-  settingsFromUrl,
   useAppNavigation,
   useDocumentTitle,
   useRepoName,
@@ -18,6 +16,7 @@ import {
   useTrailUi,
   useAttentionUi,
   useProjectsUi,
+  useSettingsPage,
   RecordViews,
 } from './app/index';
 import { StepZone, LogZone, ActivityStack } from './features/activity';
@@ -43,7 +42,7 @@ export function App() {
   const { snap, activity, selection, actions } = api;
   const [prefs, updatePrefs] = usePrefs();
   useEffect(() => applyTheme(prefs.theme), [prefs.theme]);
-  const [settingsOpen, setSettingsOpen] = useState<SettingsOpen>(settingsFromUrl);
+  const settings = useSettingsPage();
   const [newTrail, setNewTrail] = useState(false);
   const repo = useRepoName(rt.kind);
   const bp = useBreakpoint();
@@ -59,7 +58,7 @@ export function App() {
     knowledge,
     reviewBrief: trail.review,
     openReroute: (item) => trail.openReroute(item.mapId, item.ref),
-    openGuides: () => setSettingsOpen('guides'),
+    openGuides: () => settings.open('guides'),
   });
   const brief = useBriefing(rt, api, prefs.briefing, attn.attention.view?.items);
 
@@ -102,7 +101,11 @@ export function App() {
     />
   );
   const { projects, overview, openOverview } = useProjectsUi(bp, nav, attn.link.request);
-  const decisions = overview || ((nav.statsOpen || nav.decisionsView) && <RecordViews api={api} bp={bp} nav={nav} />);
+  const settingsPage = settings.route && (
+    <AppSettings rt={rt} api={api} bp={bp} prefs={prefs} update={updatePrefs} settings={settings} />
+  );
+  const records = (nav.statsOpen || nav.decisionsView) && <RecordViews api={api} bp={bp} nav={nav} />;
+  const decisions = settingsPage || overview || records;
   const briefing = brief.shown && (
     <AppBriefing
       brief={brief}
@@ -126,10 +129,18 @@ export function App() {
           brief={brief}
           attention={attn.header}
           decisionsOpen={!!nav.decisionsView}
-          onDecisions={() => (nav.decisionsView ? nav.setDecisionsView(null) : nav.openDecisions())}
-          onStats={nav.toggleStats}
+          onDecisions={() => {
+            settings.close();
+            if (nav.decisionsView) nav.setDecisionsView(null);
+            else nav.openDecisions();
+          }}
+          onStats={() => {
+            settings.close();
+            nav.toggleStats();
+          }}
           onNewTrail={() => setNewTrail(true)}
-          onSettings={setSettingsOpen}
+          onSettings={settings.toggle}
+          onSlack={() => settings.open('slack')}
           onToggleTheme={(night) => updatePrefs({ theme: night ? 'night' : 'day' })}
         />
         {bp === 'wide' && (
@@ -175,6 +186,7 @@ export function App() {
               covered={!!decisions}
               pending={pending}
               onPick={(id) => {
+                settings.close();
                 nav.setPhoneTab(id);
                 nav.setDecisionsView(null);
               }}
@@ -185,16 +197,6 @@ export function App() {
         {briefing}
         {trail.dialog}
         {api.error && <div className="error-toast">{api.error}</div>}
-        {settingsOpen && (
-          <AppSettings
-            rt={rt}
-            api={api}
-            prefs={prefs}
-            update={updatePrefs}
-            focus={settingsOpen}
-            onClose={() => setSettingsOpen(false)}
-          />
-        )}
         {newTrail && (
           <AppNewTrail rt={rt} onClose={() => setNewTrail(false)} onCreated={(id) => actions.selectMap(id)} />
         )}
