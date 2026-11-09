@@ -29,3 +29,13 @@ export interface CatalogPreview {
 export interface AddResult extends GuidesView {
   installed: { id: string; version: string; pendingChecks: string[] };
 }
+
+/** A ticket's guide as its map sign shows it (useSignGuide). */
+export interface SignGuide {
+  id: string;
+  name: string;
+  /** The full name and version, or why agents can't use it. */
+  tip: string;
+  /** Agents can't use it now (not approved, changed, invalid, missing). */
+  off: boolean;
+}

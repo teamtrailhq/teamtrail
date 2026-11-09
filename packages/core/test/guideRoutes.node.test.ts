@@ -85,6 +85,11 @@ test('catalog: list, preview without writing, add and pin, then approve its chec
     id: 'a11y',
   });
   assert.deepEqual(added.json.installed.pendingChecks, ['a11y']);
+  assert.deepEqual(
+    guideIn(added.json, 'a11y')?.lock?.review,
+    { verified: true, reviewedBy: ['maintainer'] },
+    "the catalog's review is pinned with it, so Settings needs no network",
+  );
   assert.equal(readVerificationConfig(root).exists, false, 'no command before approval');
   const approved = await call<View>('POST', '/guides/checks/approve', { id: 'a11y', name: 'a11y' });
   assert.deepEqual(guideIn(approved.json, 'a11y')?.pendingChecks, []);

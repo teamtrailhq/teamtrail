@@ -22,7 +22,7 @@ export function assertNotBuiltin(entry: CatalogEntry) {
 
 /**
  * Adds (or updates) a guide from a catalog: fetched, sha-checked against the index, linted, copied into `guides/` and
- * pinned. Its proposed checks wait for the trail lead's approval (approveCheck.ts); nothing runs before that.
+ * pinned with the catalog's review (display only). Its proposed checks wait for the trail lead's approval (approveCheck.ts); nothing runs before that.
  */
 export async function addFromCatalog(
   input: { root: string; registry: Registry; id: string; by: string } & CatalogFetch,
@@ -31,6 +31,7 @@ export async function addFromCatalog(
   assertNotBuiltin(entry);
   const commit = entry.history.at(-1)?.commit;
   const source = { registry: input.registry.url, path: entry.path, ...(commit ? { commit } : {}) };
-  const installed = installGuide({ root: input.root, text, source, by: input.by, expectId: entry.id });
+  const review = { verified: entry.verified, reviewedBy: entry.reviewedBy };
+  const installed = installGuide({ root: input.root, text, source, by: input.by, expectId: entry.id, review });
   return { ...installed, catalog: entry };
 }

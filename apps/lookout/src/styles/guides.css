@@ -15,14 +15,11 @@
   border-color: var(--edge-attention);
   color: var(--dim);
 }
-/* On a map sign: a quiet tag above the board. */
-.node .guide-tag {
-  font-family: var(--mono);
-  font-size: var(--fs-node-meta);
-  fill: var(--text-hi);
-  font-weight: 500;
+/* On a map sign: the guide's name in the meta line. */
+.node .meta .guide {
+  fill: var(--sign-text);
 }
-.node .guide-tag.off {
+.node .meta .guide.off {
   fill: var(--amber);
 }
 .ticket-guide .guide-head {

@@ -8,8 +8,9 @@ import {
   type SessionInfo,
 } from '@teamtrail/core';
 import { type Selection, STATE_LABEL } from '../../lib';
-import { GuideNodeTag } from '../guides';
+import { GuideSignPart, useSignGuide } from '../guides';
 import { SIGN_TIP } from './edgePath';
+import { fitSignMeta } from './fitSignMeta';
 import { modelWait } from './modelWait';
 import { ModelWaitTitle } from './ModelWaitTitle';
 import { RerouteMarks } from './RerouteMarks';
@@ -20,7 +21,7 @@ const SIGN_TIP_PATH = `M${NODE_W} 0L${NODE_W + SIGN_TIP} ${NODE_H / 2}L${NODE_W}
 
 /**
  * One ticket on the graph, drawn as a trail sign, in the three levels of the presenting-data rules: a state edge on the left, the title
- * (what it is, two lines at most), and one quiet line (key · type · state). The live session line sits under it.
+ * (what it is, two lines at most), and one quiet line (key · type · guide · state). The live session line sits under it.
  */
 export function GraphNode({
   n,
@@ -56,6 +57,8 @@ export function GraphNode({
   const wait = modelWait(n, needs, !!s);
   const state = marked ? undefined : statePart(n, { waiting, stalled, wait });
   const needsYou = hitl && !marked && (t.type === 'task' || t.type === 'execute');
+  const guide = useSignGuide(t.guide);
+  const meta = fitSignMeta({ parts: [t.key, t.type, state?.text, needsYou && 'needs you'], guide: guide?.name });
   const flags = { hitl, selected, live: !!s, waiting, stalled, mark, frozen };
   return (
     <g
@@ -83,15 +86,15 @@ export function GraphNode({
           {l}
         </text>
       ))}
-      <text className="meta" x={12} y={NODE_H - 8}>
+      <text className="meta" x={12} y={NODE_H - 8} {...meta.squeeze}>
         <tspan className="key">{t.key}</tspan>
         <tspan> · {t.type}</tspan>
+        <GuideSignPart guide={guide} text={meta.guideText} />
         {state && <tspan className={state.tone}> · {state.text}</tspan>}
         {needsYou && <tspan> · needs you</tspan>}
       </text>
       {flag && <circle className={`pr-flag-dot ${flag}`} cx={NODE_W - 2} cy={2} r={4} />}
       <RerouteMarks mark={mark} frozen={frozen} />
-      {t.guide && <GuideNodeTag id={t.guide} />}
       {s && !waiting && (
         <text className="live-tag" x={NODE_W} y={NODE_H + 13} textAnchor="end">
           {s.agent} · step {s.step}/{s.total} · {s.stepLabel.toLowerCase()}

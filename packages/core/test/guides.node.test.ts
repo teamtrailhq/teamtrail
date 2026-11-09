@@ -326,3 +326,75 @@ test('an agent that edits a guide and re-pins it in guides.lock.json is caught u
   assert.deepEqual(back.guide?.requiresChecks, []);
   assert.equal(listGuides(root).find((r) => r.id === 'perf')!.status, 'tampered', 'other guides stay caught');
 });
+
+test("the catalog's review in the lock is display only: older locks load, and editing it never vouches for a guide", () => {
+  const root = tmpRoot();
+  const source = { registry: 'https://guides.example', path: 'guides/a11y.md' };
+  installGuide({ root, text: A11Y, source, by: 'trail lead', review: { verified: false, reviewedBy: [] } });
+  writeFileSync(guideFilePath(root, 'perf'), guideText({ id: 'perf' }));
+  installGuide({ root, text: guideText({ id: 'perf' }), source: 'local', by: 'trail lead' });
+  assert.deepEqual(readGuideLock(root).guides.a11y.review, { verified: false, reviewedBy: [] });
+  assert.equal(readGuideLock(root).guides.perf.review, undefined, 'a local file has no review');
+
+  // a lock written before the review was recorded still loads, and its guides stay active
+  const lockFile = path.join(root, 'guides.lock.json');
+  const older = JSON.parse(readFileSync(lockFile, 'utf8'));
+  delete older.guides.a11y.review;
+  writeFileSync(lockFile, JSON.stringify(older, null, 2));
+  writeFileSync(path.join(root, '.agents', 'guides-approved.json'), JSON.stringify(older, null, 2));
+  assert.equal(readGuideLock(root).guides.a11y.review, undefined);
+  assert.deepEqual(
+    listGuides(root).map((r) => [r.id, r.status]),
+    [
+      ['a11y', 'active'],
+      ['architect', 'active'],
+      ['docs', 'active'],
+      ['perf', 'active'],
+      ['qa', 'active'],
+      ['reviewer', 'active'],
+      ['security', 'active'],
+    ],
+  );
+
+  // an agent marks guides verified in the lock: the change is caught like any other, and nothing relaxes
+  const forged = JSON.parse(readFileSync(lockFile, 'utf8'));
+  forged.guides.a11y.review = { verified: true, reviewedBy: ['maintainer'] };
+  forged.guides.perf.review = { verified: true, reviewedBy: ['maintainer'] };
+  writeFileSync(lockFile, JSON.stringify(forged, null, 2));
+  for (const id of ['a11y', 'perf']) {
+    const caught = listGuides(root).find((r) => r.id === id)!;
+    assert.equal(caught.status, 'tampered', `${id} is caught`);
+    assert.equal(caught.lock?.review, undefined, 'the approved entry is shown, without the forged review');
+  }
+  assert.deepEqual(effectiveChecks([], resolveGuide(listGuides(root), { guide: 'a11y' })), ['a11y']);
+
+  // approving again trusts the file, not the forged review
+  approveGuide({ root, id: 'a11y', by: 'trail lead' });
+  assert.equal(listGuides(root).find((r) => r.id === 'a11y')!.status, 'active');
+  assert.equal(readGuideLock(root).guides.a11y.review, undefined);
+
+  // a malformed review is dropped when read
+  const bad = JSON.parse(readFileSync(lockFile, 'utf8'));
+  bad.guides.a11y.review = { verified: 'yes' };
+  writeFileSync(lockFile, JSON.stringify(bad, null, 2));
+  assert.equal(readGuideLock(root).guides.a11y.review, undefined);
+});
+
+test('a verified review never covers an edited file, and re-approving the edit drops it', () => {
+  const root = tmpRoot();
+  const source = { registry: 'https://guides.example', path: 'guides/a11y.md' };
+  installGuide({ root, text: A11Y, source, by: 'trail lead', review: { verified: true, reviewedBy: ['maintainer'] } });
+  const relaxed = A11Y.replace('requiresChecks: [a11y]', 'requiresChecks: []');
+  writeFileSync(guideFilePath(root, 'a11y'), relaxed);
+  const edited = listGuides(root).find((r) => r.id === 'a11y')!;
+  assert.equal(edited.status, 'tampered', 'verified or not, a changed file is caught');
+  assert.deepEqual(effectiveChecks([], resolveGuide(listGuides(root), { guide: 'a11y' })), ['a11y']);
+
+  // re-approving the unchanged file keeps the review; approving the edit drops it
+  writeFileSync(guideFilePath(root, 'a11y'), A11Y);
+  approveGuide({ root, id: 'a11y', by: 'trail lead' });
+  assert.deepEqual(readGuideLock(root).guides.a11y.review, { verified: true, reviewedBy: ['maintainer'] });
+  writeFileSync(guideFilePath(root, 'a11y'), relaxed);
+  approveGuide({ root, id: 'a11y', by: 'trail lead' });
+  assert.equal(readGuideLock(root).guides.a11y.review, undefined, 'the catalog never reviewed this file');
+});
