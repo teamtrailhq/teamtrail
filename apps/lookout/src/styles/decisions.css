@@ -193,7 +193,7 @@
   --c: var(--st-decided);
 }
 .dv-st-superseded {
-  --c: var(--st-claimed);
+  --c: var(--faint);
 }
 .dv-d .ref {
   font-family: var(--mono);
@@ -264,7 +264,7 @@
   width: 9px;
   height: 9px;
   margin-top: var(--sp-4);
-  border: 1px solid var(--st-claimed);
+  border: 1px solid var(--faint);
   transform: rotate(45deg);
 }
 .dv-chain li.live i {

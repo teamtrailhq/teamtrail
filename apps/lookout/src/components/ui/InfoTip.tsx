@@ -1,4 +1,4 @@
-/** A small "i" in a circle that explains what it sits next to, on hover or keyboard focus (via the app tooltip). */
+/** A small "i" in a square that explains what it sits next to, on hover or keyboard focus (via the app tooltip). */
 export function InfoTip({ text }: { text: string }) {
   return (
     <span className="info-tip" data-tip={text} data-tip-scout tabIndex={0} role="img" aria-label={text}>

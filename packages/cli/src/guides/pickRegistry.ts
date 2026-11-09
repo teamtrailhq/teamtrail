@@ -1,6 +1,6 @@
 import { readGuidesConfig, type Registry } from '@teamtrail/core/agents';
 
-/** The catalogs to use: the one named with --registry, else every catalog in guides.json (the official one by default). */
+/** The catalogs to use: the one named with --registry, else every catalog: those in guides.json, then the official one (readGuidesConfig). */
 export function pickRegistries(root: string, name?: string): Registry[] {
   const { registries } = readGuidesConfig(root).config;
   if (!name) return registries;

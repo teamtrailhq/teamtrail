@@ -3,16 +3,21 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, MetaLine } from '../../components/ui';
 import { SettingsSection } from '../settings/SettingsSection';
 import { CatalogDialog } from './CatalogDialog';
+import { isHandWritten } from './guideLabels';
 import { GuideRow } from './GuideRow';
 import { useGuides } from './useGuides';
+import { WriteYourOwn } from './WriteYourOwn';
+
+type Act = (path: string, body: Record<string, string>) => void;
 
 /**
- * Settings → Guides: every guide the project has (built in, hand-written, from a catalog), its status against the
- * lockfile, the checks it proposes, and the trail lead's actions. `focus` scrolls here (from the attention queue).
+ * Settings → Guides: the built-in guides and those added from a catalog, then the ones your team wrote (Write your
+ * own), each with its status against the lockfile, the checks it proposes, and the trail lead's actions. A refusal
+ * shows under the list it came from. `focus` scrolls here (from the attention queue).
  */
 export function GuidesSection(props: { focus?: boolean }) {
   const { view, act } = useGuides();
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<{ own: boolean; message: string }>();
   const [busy, setBusy] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -20,11 +25,16 @@ export function GuidesSection(props: { focus?: boolean }) {
     if (props.focus && view) ref.current?.scrollIntoView({ block: 'start' });
   }, [props.focus, !!view]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!view) return null;
-  const run = async (path: string, body: Record<string, string>) => {
-    setBusy(true);
-    setError(await act(path, body));
-    setBusy(false);
-  };
+  const actFrom =
+    (own: boolean): Act =>
+    (path, body) => {
+      setBusy(true);
+      void act(path, body).then((message) => {
+        setError(message ? { own, message } : undefined);
+        setBusy(false);
+      });
+    };
+  const errorOf = (own: boolean) => (error && error.own === own ? error.message : undefined);
   return (
     <div className="guides-section" ref={ref}>
       <SettingsSection title="Guides">
@@ -33,9 +43,11 @@ export function GuidesSection(props: { focus?: boolean }) {
           never remove them, and its commands only run once you approve them.
         </p>
         <ul className="guides-list">
-          {view.guides.map((r) => (
-            <GuideRow key={r.id} r={r} busy={busy} onAct={(path, body) => void run(path, body)} />
-          ))}
+          {view.guides
+            .filter((r) => !isHandWritten(r))
+            .map((r) => (
+              <GuideRow key={r.id} r={r} busy={busy} onAct={actFrom(false)} />
+            ))}
         </ul>
         <div className="guides-foot">
           <Button size="sm" onClick={() => setBrowsing(true)}>
@@ -55,8 +67,14 @@ export function GuidesSection(props: { focus?: boolean }) {
             ))}
           </ul>
         )}
-        {error && <span className="vf-err">{error}</span>}
+        {errorOf(false) && <span className="vf-err">{errorOf(false)}</span>}
       </SettingsSection>
+      <WriteYourOwn
+        guides={view.guides.filter(isHandWritten)}
+        busy={busy}
+        onAct={actFrom(true)}
+        error={errorOf(true)}
+      />
       {browsing && <CatalogDialog registries={view.registries} onClose={() => setBrowsing(false)} />}
     </div>
   );

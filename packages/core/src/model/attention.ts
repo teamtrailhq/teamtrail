@@ -81,8 +81,23 @@ export interface AttentionPrefs {
   focus?: FocusHours;
   /** Focus mode switched on by hand until this time (epoch ms). */
   focusUntil?: number;
+  /** Quiet hours set aside by hand until this time (epoch ms): focus ended early, interruptions are back. */
+  focusOffUntil?: number;
   channel: NotifyChannel;
 }
+
+/**
+ * Whether focus holds interruptions back right now, and why: switched on by hand, the daily quiet hours, quiet
+ * hours paused by hand, or off. `until` is when that state ends on its own.
+ */
+export type FocusState =
+  | { kind: 'off' }
+  | { kind: 'manual'; until: number }
+  | { kind: 'hours'; until: number }
+  | { kind: 'paused'; until: number };
+
+/** What the person did from the focus control: focus for a while, end focus now, or let quiet hours hold again. */
+export type FocusChange = { kind: 'for'; minutes: number } | { kind: 'end' } | { kind: 'resume' };
 
 /** `<tracker dir>/.attention/state.json`. */
 export interface AttentionState {
@@ -103,6 +118,10 @@ export interface AttentionView {
   prefs: AttentionPrefs;
   /** True while focus hours or focus mode hold interruptions back. */
   focused: boolean;
+  /** Why focus is on or off, and until when. */
+  focus: FocusState;
+  /** Items that would interrupt now if focus were off; they wait in the queue meanwhile. */
+  heldBack: number;
   /** Items hidden by snoozes and dismissals. */
   hidden: number;
 }

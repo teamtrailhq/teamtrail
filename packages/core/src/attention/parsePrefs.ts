@@ -3,7 +3,7 @@ import { DEFAULT_ATTENTION_PREFS } from './defaults';
 import type { Parsed } from './parsePolicy';
 
 const CHANNELS: NotifyChannel[] = ['browser', 'slack-dm', 'slack-channel', 'none'];
-const KEYS = ['v', 'focus', 'focusUntil', 'channel'];
+const KEYS = ['v', 'focus', 'focusUntil', 'focusOffUntil', 'channel'];
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -44,6 +44,11 @@ export function parseAttentionPrefs(raw: unknown): Parsed<AttentionPrefs> {
   if (raw.focusUntil !== undefined) {
     if (typeof raw.focusUntil === 'number' && Number.isFinite(raw.focusUntil)) value.focusUntil = raw.focusUntil;
     else errors.push('"focusUntil" must be a time in epoch milliseconds');
+  }
+  if (raw.focusOffUntil !== undefined) {
+    const ok = typeof raw.focusOffUntil === 'number' && Number.isFinite(raw.focusOffUntil);
+    if (ok) value.focusOffUntil = raw.focusOffUntil as number;
+    else errors.push('"focusOffUntil" must be a time in epoch milliseconds');
   }
   return { value, errors };
 }

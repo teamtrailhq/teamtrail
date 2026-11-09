@@ -32,9 +32,22 @@ async function catalog(files: Record<string, string>) {
   closers.push(cat.close);
   fs.writeFileSync(
     path.join(root, 'guides.json'),
-    JSON.stringify({ v: 1, registries: [{ name: 'test', url: cat.url }] }),
+    JSON.stringify({ v: 1, registries: [{ name: 'test', url: cat.url }], official: false }),
   );
   return cat;
+}
+
+/** Two catalogs in guides.json, searched in order; the official one is left out so tests stay offline. */
+async function twoCatalogs(first: Record<string, string>, second: Record<string, string>) {
+  const a = await fakeGuideCatalog(first);
+  const b = await fakeGuideCatalog(second);
+  closers.push(a.close, b.close);
+  const registries = [
+    { name: 'first', url: a.url },
+    { name: 'second', url: b.url },
+  ];
+  fs.writeFileSync(path.join(root, 'guides.json'), JSON.stringify({ v: 1, registries, official: false }));
+  return { a, b };
 }
 
 const run = (args: string[], t = io()) => runGuides([...args, '--dir', root], t.io).then((code) => ({ code, ...t }));
@@ -162,6 +175,51 @@ describe('teamtrail guides', () => {
       ok: true,
     });
     expect(a.sha256).toMatch(/^sha256:[0-9a-f]{64}$/);
+  });
+
+  it('adds a guide from whichever catalog has it, and says which', async () => {
+    const { b } = await twoCatalogs({ a11y: A11Y }, { perf: guideText({ id: 'perf' }) });
+    const r = await run(['add', 'perf']);
+    expect(r.code).toBe(0);
+    expect(r.out()).toContain(`Found perf 1.0.0 in catalog second (${b.url})`);
+    expect(readGuideLock(root).guides.perf.source).toMatchObject({ registry: b.url, path: 'guides/perf.md' });
+  });
+
+  it('refuses an id in more than one catalog until it is named as catalog/id', async () => {
+    const { b } = await twoCatalogs({ a11y: A11Y }, { a11y: A11Y.replace('1.0.0', '1.1.0') });
+    const r = await run(['add', 'a11y']);
+    expect(r.code).toBe(1);
+    expect(r.err()).toContain('"a11y" is in more than one catalog; say which: first/a11y or second/a11y');
+    expect(fs.existsSync(path.join(root, 'guides', 'a11y.md'))).toBe(false);
+    const named = await run(['add', 'second/a11y']);
+    expect(named.code).toBe(0);
+    expect(readGuideLock(root).guides.a11y).toMatchObject({ version: '1.1.0', source: { registry: b.url } });
+    expect((await run(['add', 'nope'])).err()).toContain('no catalog has a guide "nope" (searched first, second)');
+  });
+
+  it('writes your own guide with guides new: linted, not approved, with the next steps and where to share it', async () => {
+    const r = await run(['new', 'api-design', '--author', 'Ada Lovelace']);
+    expect(r.code).toBe(0);
+    expect(r.out()).toContain('passes the guide lint');
+    expect(r.out()).toContain('Settings → Guides → Write your own');
+    expect(r.out()).toContain(
+      'Share it with everyone: https://github.com/teamtrailhq/teamtrail-guides/blob/main/CONTRIBUTING.md',
+    );
+    const file = path.join(root, 'guides', 'api-design.md');
+    expect(fs.readFileSync(file, 'utf8')).toContain('author: Ada Lovelace');
+    expect(listGuides(root).find((g) => g.id === 'api-design')?.status).toBe('unapproved');
+    expect(readGuideLock(root).guides['api-design']).toBeUndefined();
+    // the project's own guides need no test example, and a clean lint points to sharing
+    const lint = await run(['lint']);
+    expect(lint.code).toBe(0);
+    expect(lint.out()).toContain('1 guides linted, all clean');
+    expect(lint.out()).toContain('Share it with everyone');
+    expect((await run(['lint', file])).code).toBe(0);
+    const again = await run(['new', 'api-design']);
+    expect(again.code).toBe(1);
+    expect(again.err()).toContain('already exists');
+    expect((await run(['new', 'qa'])).err()).toContain('built-in guide');
+    expect((await run(['new'])).code).toBe(2);
   });
 
   it('answers usage errors with exit code 2', async () => {

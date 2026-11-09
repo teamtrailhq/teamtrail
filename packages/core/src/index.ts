@@ -71,7 +71,8 @@ export type { AttentionInput, AttentionSource, Candidate } from './attention/typ
 export { ATTENTION_SOURCES } from './attention/sources/registry';
 export { parseAttentionPolicy, type Parsed } from './attention/parsePolicy';
 export { parseAttentionPrefs } from './attention/parsePrefs';
-export { isFocused, isInterrupting } from './attention/focus';
+export { focusState, isFocused, isInterrupting } from './attention/focus';
+export { changeFocus } from './attention/changeFocus';
 export { waitLabel } from './attention/score';
 export { heldTickets } from './attention/heldTickets';
 export { isDismissable } from './attention/isDismissable';
