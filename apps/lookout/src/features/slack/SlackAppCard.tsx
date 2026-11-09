@@ -16,15 +16,15 @@ export function SlackAppCard(props: {
   return (
     <Card className={cardClass(s, setup)}>
       <div className="card-row">
-        <b className="choice-title t-row-title">Scout app</b>
+        <b className="choice-title t-row-title">Your Scout app</b>
         {connected && <Pill className={s.enabled ? 'on' : ''}>{s.enabled ? 'On' : 'Off'}</Pill>}
       </div>
       {connected && <div className="c-loc">{workspaceLine(s)}</div>}
       {connected && <SlackStateLine s={s} />}
       {!connected && s.step === 1 && !setup && (
         <p className="sl-lead">
-          Answer agents and save threads as decisions from Slack. Your own Slack app, connected from this machine;
-          tokens stay in your local credential store.
+          Answer agents and save threads as decisions from Slack. You create your own Scout app in your workspace; it
+          runs from this machine and its tokens stay in your local credential store.
         </p>
       )}
       <div className="c-actions">

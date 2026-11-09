@@ -1,28 +1,18 @@
-import type { AttentionView } from '@teamtrail/core';
-import { Button, ScoutMark } from '../../components/ui';
+import type { AttentionView, FocusChange } from '@teamtrail/core';
+import { ScoutMark } from '../../components/ui';
+import { FocusControl } from './FocusControl';
 
-const FOCUS_MS = 60 * 60_000;
-
-/** Header: focus mode (an hour without interruptions) and how many items interrupt right now. */
-export function AttentionHeader(props: { view: AttentionView; onFocus: (until?: number) => void }) {
+/** Header: whether focus is on (and what it holds back), and how many items interrupt right now. */
+export function AttentionHeader(props: {
+  view: AttentionView;
+  onFocus: (change: FocusChange) => void;
+  onSettings: () => void;
+}) {
   const { view } = props;
-  const manual = (view.prefs.focusUntil ?? 0) > Date.now();
   const n = view.interrupting.length;
-  const tip = view.focused
-    ? 'Focus is on: nothing interrupts you. Everything still waits in Waiting on you. Click to end focus.'
-    : 'Focus for an hour: nothing interrupts you, everything still waits in Waiting on you.';
   return (
     <span className="attention-head">
-      <Button
-        variant="ghost"
-        className="focus-btn"
-        on={view.focused}
-        aria-pressed={view.focused}
-        data-tip={tip}
-        onClick={() => props.onFocus(manual ? undefined : Date.now() + FOCUS_MS)}
-      >
-        Focus
-      </Button>
+      <FocusControl view={view} onChange={props.onFocus} onSettings={props.onSettings} />
       {n > 0 && (
         <span className="waiting-chip interrupting" title={`${n} need you now`}>
           <ScoutMark variant="alert" size={14} />

@@ -1,7 +1,7 @@
 import type { SlackStatus } from '@teamtrail/connector-slack';
 
 export const STEPS: { n: 1 | 2 | 3 | 4 | 5; title: string }[] = [
-  { n: 1, title: 'Create app' },
+  { n: 1, title: 'Create your app' },
   { n: 2, title: 'Workspace' },
   { n: 3, title: 'App token' },
   { n: 4, title: 'Install' },
