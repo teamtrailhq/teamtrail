@@ -3,8 +3,8 @@ import { clock } from '../../lib';
 
 /** What the focus control says: the header chip's state and time, and the panel's title, reason and held-back line. */
 interface FocusCopy {
-  /** "Focus on", "Focus paused" or "Focus off". */
-  label: string;
+  /** "on", "paused" or "off", after "Focus". */
+  word: string;
   /** "12:00", when the state ends on its own; empty when off. */
   until: string;
   on: boolean;
@@ -41,7 +41,7 @@ export function focusCopy(view: AttentionView): FocusCopy {
       const until = at(state.until);
       const reason = state.kind === 'manual' ? 'Switched on here' : hoursText(view);
       return {
-        label: 'Focus on',
+        word: 'on',
         until,
         on: true,
         title: `Focus is on until ${until}`,
@@ -52,11 +52,11 @@ export function focusCopy(view: AttentionView): FocusCopy {
     case 'paused': {
       const until = at(state.until);
       const title = `Quiet hours paused until ${until}`;
-      return { label: 'Focus paused', until, on: false, title, reason: hoursText(view), detail: interruptLine(view) };
+      return { word: 'paused', until, on: false, title, reason: hoursText(view), detail: interruptLine(view) };
     }
     case 'off':
       return {
-        label: 'Focus off',
+        word: 'off',
         until: '',
         on: false,
         title: 'Focus is off',

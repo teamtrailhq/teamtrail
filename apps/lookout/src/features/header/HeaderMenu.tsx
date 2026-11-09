@@ -11,6 +11,8 @@ export function HeaderMenu(props: {
   badge?: ReactNode;
   className?: string;
   tip?: string;
+  /** The button's accessible name when its visible label is shortened. */
+  ariaLabel?: string;
   role?: 'menu' | 'dialog';
   children: (close: () => void) => ReactNode;
 }) {
@@ -35,6 +37,7 @@ export function HeaderMenu(props: {
       <Button
         variant="ghost"
         aria-haspopup={role}
+        aria-label={props.ariaLabel}
         aria-expanded={open}
         on={open}
         data-tip={open ? undefined : props.tip}

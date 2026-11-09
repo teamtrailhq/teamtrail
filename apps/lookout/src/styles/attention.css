@@ -163,6 +163,15 @@
 .bp-mobile .focus-until-word {
   display: none;
 }
+/* Phone: the dot and "Focus · 19:50" only, so the header stays on one row; the dot carries on or off, the panel and
+ * the button's label say it in words. */
+.bp-mobile .focus-word,
+.bp-mobile .focus-menu .caret {
+  display: none;
+}
+.bp-mobile .focus-menu .btn {
+  padding: 0 var(--sp-6);
+}
 .bp-mobile .focus-menu .header-menu-list {
   position: fixed;
   top: auto;

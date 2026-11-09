@@ -25,7 +25,9 @@ export function FocusControl(props: {
   const label = (
     <span className={cx('focus-state', `focus-${state}`)}>
       <i className="focus-dot" aria-hidden="true" />
-      <span className="focus-label">{copy.label}</span>
+      <span className="focus-label">
+        Focus<span className="focus-word"> {copy.word}</span>
+      </span>
       {copy.until && (
         <span className="focus-until">
           <span className="sep"> · </span>
@@ -36,7 +38,7 @@ export function FocusControl(props: {
     </span>
   );
   return (
-    <HeaderMenu className="focus-menu" label={label} role="dialog" tip={copy.title}>
+    <HeaderMenu className="focus-menu" label={label} role="dialog" tip={copy.title} ariaLabel={copy.title}>
       {(close) => (
         <div className="focus-panel" aria-label="Focus">
           <div className="focus-panel-head">
