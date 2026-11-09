@@ -105,7 +105,7 @@
   color: var(--dim);
 }
 
-/* A zone with nothing yet: Scout's small badge, a title and one hint line. Minimal next to the map's Scout. */
+/* A zone with nothing yet: a title and one hint line. Scout is only on the empty map. */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -116,7 +116,7 @@
   padding: var(--sp-14) var(--gutter);
   text-align: center;
 }
-/* With art (Scout), the state reads as one compact row: the art, then the words. */
+/* With art, the state reads as one compact row: the art, then the words. */
 .empty-state.has-art {
   flex-direction: row;
   justify-content: flex-start;
@@ -130,9 +130,6 @@
   flex-direction: column;
   gap: var(--sp-2);
   min-width: 0;
-}
-.empty-state .es-mark {
-  display: inline-flex;
 }
 .empty-state .es-title {
   font-family: var(--sans);
