@@ -70,7 +70,19 @@ async function switchOn({ page, top, shot }) {
   await page.locator('.tier-grid').waitFor({ timeout: 15_000 });
   await page.locator('.tier-grid').scrollIntoViewIfNeeded();
   await shot('17-model-matching-settings');
+  // Settings is a page with its place in the URL: another group replaces it, the browser's Back returns to the Lookout
+  await page
+    .locator('.sp-nav')
+    .getByRole('button', { name: /^Project/ })
+    .click();
+  await page.waitForURL(/[?&]settings=project\b/);
+  await page.locator('.sp-nav button[aria-current="page"]', { hasText: 'Project' }).waitFor();
+  await page.goBack();
+  await page.locator('.settings-page').waitFor({ state: 'detached' });
+  await page.goForward();
+  await page.locator('.settings-page').waitFor();
   await page.keyboard.press('Escape');
+  await page.locator('.settings-page').waitFor({ state: 'detached' });
   const dir = fs.readdirSync(path.join(top, '.teamtrail')).find((d) => d.startsWith('release-search'));
   return /^model-matching: on$/m.test(fs.readFileSync(path.join(top, '.teamtrail', dir, 'map.md'), 'utf8'));
 }

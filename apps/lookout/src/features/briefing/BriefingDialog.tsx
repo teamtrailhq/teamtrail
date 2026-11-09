@@ -138,7 +138,7 @@ export function BriefingDialog(
         </header>
         <Card className="bf-scout">
           <ScoutAvatar
-            size={phone ? 2 : 'sm'}
+            size={phone ? 1.1 : 1.3}
             speaking={props.line || 'Nothing new since you were last here.'}
             caption={false}
             framed={false}

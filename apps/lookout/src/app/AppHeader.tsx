@@ -18,7 +18,8 @@ export function AppHeader(props: {
   onDecisions: () => void;
   onStats: () => void;
   onNewTrail: () => void;
-  onSettings: (focus: 'top' | 'slack') => void;
+  onSettings: () => void;
+  onSlack: () => void;
   onToggleTheme: (night: boolean) => void;
 }) {
   const { api, rt, brief } = props;
@@ -38,11 +39,11 @@ export function AppHeader(props: {
       trackerLabel={rt.adapter.label.toLowerCase()}
       onSelectMap={actions.selectMap}
       onToggleMode={() => snap && actions.setMode(snap.map.mode === 'plan-only' ? 'plan+execute' : 'plan-only')}
-      onSettings={() => props.onSettings('top')}
+      onSettings={props.onSettings}
       onToggleTheme={props.onToggleTheme}
       attention={props.attention}
       slackAlert={slackAlert}
-      onSlack={() => props.onSettings('slack')}
+      onSlack={props.onSlack}
       decisions={api.decisions.length}
       decisionsOpen={props.decisionsOpen}
       onDecisions={props.onDecisions}

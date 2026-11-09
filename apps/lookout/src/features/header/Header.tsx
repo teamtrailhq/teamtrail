@@ -128,7 +128,6 @@ export function Header(props: {
           briefingStatus={props.briefingStatus}
           onBriefing={props.onBriefing}
         />
-        <ThemeToggle onToggle={props.onToggleTheme} />
         <Button
           variant="ghost"
           onClick={props.onSettings}
@@ -136,6 +135,7 @@ export function Header(props: {
         >
           Settings
         </Button>
+        <ThemeToggle onToggle={props.onToggleTheme} />
       </div>
     </Panel>
   );
