@@ -6,7 +6,7 @@ import type { TicketType } from './types';
  *   built-in guides                      bundled with Teamtrail (guides/builtin/)
  *   <tracker dir>/guides/<id>.md         installed or hand-written guides; a file with a built-in's id overrides it. Committed.
  *   <tracker dir>/guides.lock.json       GuideLock: the version and sha256 the trail lead approved, and approved checks. Committed.
- *   <tracker dir>/guides.json            GuidesConfig: the catalogs to search. Optional; committed.
+ *   <tracker dir>/guides.json            GuidesConfig: catalogs to search besides the official one. Optional; committed.
  *   <tracker dir>/.evidence/<map>/<ticket>/checklist.json   ChecklistRecord: the latest checklist answers. Local.
  */
 export const GUIDES_DIR = 'guides';
@@ -142,11 +142,19 @@ export interface GuidePayload {
   preferredAgent?: string;
 }
 
-/** `<tracker dir>/guides.json`. */
+/**
+ * `<tracker dir>/guides.json`: catalogs to search, in order, before the official one. `official: false` leaves the
+ * official catalog out; listing its URL places it where you list it.
+ */
 export interface GuidesConfig {
   v: 1;
   registries: { name: string; url: string }[];
+  official?: boolean;
 }
+
+/** The official guide catalog's repo, and its guide to contributing a guide. */
+export const GUIDE_CATALOG_REPO = 'https://github.com/teamtrailhq/teamtrail-guides';
+export const GUIDE_CATALOG_CONTRIBUTING = `${GUIDE_CATALOG_REPO}/blob/main/CONTRIBUTING.md`;
 
 /** One guide in a catalog's `index.json`. */
 export interface CatalogEntry {

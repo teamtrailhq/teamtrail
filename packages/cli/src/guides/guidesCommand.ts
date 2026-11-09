@@ -4,12 +4,13 @@ import { guidesAdd } from './guidesAdd';
 import { parseGuidesArgs } from './guidesArgs';
 import { guidesLint } from './guidesLint';
 import { guidesList } from './guidesList';
+import { guidesNew } from './guidesNew';
 import { guidesSearch } from './guidesSearch';
 import { guidesUpdate } from './guidesUpdate';
 import { journalGuide } from './journalGuide';
 import type { GuidesArgs, GuidesIo } from './types';
 
-export const GUIDES_USAGE = 'usage: guides search|add|update|remove|list|lint … (see --help)';
+export const GUIDES_USAGE = 'usage: guides search|add|new|update|remove|list|lint … (see --help)';
 
 function guidesRemove(a: GuidesArgs, io: GuidesIo) {
   const id = a.rest[0];
@@ -27,6 +28,7 @@ function guidesRemove(a: GuidesArgs, io: GuidesIo) {
 
 const COMMANDS: Record<string, (a: GuidesArgs, io: GuidesIo) => number | Promise<number>> = {
   add: guidesAdd,
+  new: guidesNew,
   update: guidesUpdate,
   remove: guidesRemove,
   list: guidesList,

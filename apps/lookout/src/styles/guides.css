@@ -151,3 +151,11 @@
 .add-guide p {
   margin: 0;
 }
+.guides-share {
+  margin: 0;
+}
+.guides-share a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

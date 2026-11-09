@@ -18,6 +18,8 @@ export interface GuidesArgs {
   dir: string;
   rest: string[];
   registry?: string;
+  /** Who `guides new` signs the guide with; defaults to the repo's user.name. */
+  author?: string;
   verified: boolean;
   approveChecks: boolean;
   json: boolean;

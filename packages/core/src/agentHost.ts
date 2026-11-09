@@ -114,5 +114,7 @@ export { removeGuide } from './guides/removeGuide';
 export { DEFAULT_REGISTRY, isRegistryUrl, readGuidesConfig } from './guides/guidesConfig';
 export { fetchCatalog, fetchCatalogGuide, type CatalogFetch, type Registry } from './guides/catalogClient';
 export { addFromCatalog, assertNotBuiltin, previewCatalogGuide } from './guides/addFromCatalog';
+export { findCatalogGuide, parseGuideRef, type CatalogHit } from './guides/findCatalogGuide';
+export { guideTemplate, newGuide } from './guides/newGuide';
 export { readChecklist, writeChecklist } from './guides/checklistStore';
 export { readModelsConfig, type ModelsRead } from './planning/matching/modelsStore';
