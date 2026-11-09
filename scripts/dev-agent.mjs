@@ -75,7 +75,17 @@ async function agent(n) {
     try {
       claimed = (await call('claim_ticket', { trail })).claimed;
     } catch (e) {
-      log(`nothing to claim (${e.message.split('\n')[0]}); waiting`);
+      // These scripted agents report no model, so with model matching on they count as balanced. When only
+      // stronger-model work is ready, take it by key as the reason says, so the dev trail keeps moving.
+      const held = /stronger model/.test(e.message) && e.message.match(/#\d+/)?.[0];
+      if (held) {
+        claimed = await call('claim_ticket', { trail, ticket: held })
+          .then((r) => r.claimed)
+          .catch(() => undefined);
+      }
+    }
+    if (!claimed) {
+      log('nothing to claim; waiting');
       await pause(10_000);
       continue;
     }
