@@ -23,7 +23,12 @@ export function LinearSetup(props: { s: TrackerSettings; onConnected: () => void
   const [projectId, setProjectId] = useState(ln.projectId ?? '');
   const [result, setResult] = useState<TrackerTestResult>();
   const [busy, setBusy] = useState(false);
-  const { enabled, list, teams, projects } = useLinearLookups({ ln, paste, apiKey, teamId });
+  const { enabled, list, teams, projects, loading, retryTeams, retryProjects } = useLinearLookups({
+    ln,
+    paste,
+    apiKey,
+    teamId,
+  });
   // `LINEAR_API_KEY` set and the Lookout restarted, or a key saved elsewhere: the picker takes over.
   useEffect(() => {
     if (works && !apiKey) setPaste(false);
@@ -70,11 +75,18 @@ export function LinearSetup(props: { s: TrackerSettings; onConnected: () => void
         email={personOf(viewer)?.email}
         onUseAnother={paste ? undefined : () => setPaste(true)}
       />
-      {enabled && <LinearTeamChoice list={list} value={teamId} onChange={pickTeam} />}
-      {team && <LinearProjectChoice list={projects} value={projectId} onChange={setProjectId} />}
+      {enabled && <LinearTeamChoice list={list} value={teamId} onChange={pickTeam} onRetry={retryTeams} />}
+      {team && (
+        <LinearProjectChoice list={projects} value={projectId} onChange={setProjectId} onRetry={retryProjects} />
+      )}
       <TestLine r={result} />
       <footer>
-        <button type="button" className="btn primary" disabled={busy || !team} onClick={() => void connect()}>
+        <button
+          type="button"
+          className="btn primary"
+          disabled={busy || loading || !team}
+          onClick={() => void connect()}
+        >
           {busy ? 'Connecting…' : 'Connect'}
         </button>
       </footer>

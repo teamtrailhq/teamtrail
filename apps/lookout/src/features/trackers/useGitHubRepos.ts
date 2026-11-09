@@ -1,20 +1,17 @@
-import type { GitHubRepoList } from '@teamtrail/core';
-import { useEffect, useState } from 'react';
+import type { CredentialSource, GitHubRepoList } from '@teamtrail/core';
 import { trackerApi } from './trackerApi';
+import { useLookup } from './useLookup';
 
-/** The repos the found GitHub token can track issues in; undefined while loading or when `enabled` is off. */
-export function useGitHubRepos(enabled: boolean) {
-  const [list, setList] = useState<GitHubRepoList>();
-  useEffect(() => {
-    if (!enabled) return;
-    let live = true;
-    trackerApi.githubRepos().then(
-      (l) => live && setList(l),
-      (e: Error) => live && setList({ kind: 'error', error: e.message }),
-    );
-    return () => {
-      live = false;
-    };
-  }, [enabled]);
-  return list;
+/**
+ * The repos the found GitHub token can track issues in; `list` is undefined while loading or when `enabled` is off.
+ * `auth` is where the token came from: signing in or out asks again.
+ */
+export function useGitHubRepos(o: { enabled: boolean; auth: CredentialSource | null }) {
+  const { value: list, retry } = useLookup<GitHubRepoList>({
+    enabled: o.enabled,
+    key: o.auth ?? '',
+    load: () => trackerApi.githubRepos(),
+    failed: (error) => ({ kind: 'error', error }),
+  });
+  return { list, retry };
 }

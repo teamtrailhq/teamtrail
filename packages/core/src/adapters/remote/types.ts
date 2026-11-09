@@ -5,7 +5,7 @@ export type RemoteKind = 'github' | 'linear';
 export type ActiveTracker = 'markdown' | RemoteKind;
 
 /** Where a credential came from. Values never leave the machine running `teamtrail`; only the source is reported. */
-export type CredentialSource = 'stored' | 'GITHUB_TOKEN' | 'GH_TOKEN' | 'gh' | 'LINEAR_API_KEY';
+export type CredentialSource = 'stored' | 'GITHUB_TOKEN' | 'GH_TOKEN' | 'signed-in' | 'gh' | 'LINEAR_API_KEY';
 
 export interface LinearTarget {
   teamId: string;
@@ -28,6 +28,8 @@ export interface TrackerSettings {
     auth: CredentialSource | null;
     /** Who the found token signs in as, from `GET /user`; absent when no token was found. */
     account?: GitHubAccount;
+    /** Sign in with GitHub: offered when Teamtrail has an OAuth client id; `signedIn` when its token is saved here. */
+    signIn: { available: boolean; signedIn: boolean };
     status?: SyncStatus;
   };
   linear: Partial<LinearTarget> & {

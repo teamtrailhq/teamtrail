@@ -7,6 +7,7 @@ import type {
   TrackerTestResult,
 } from '../adapters/remote/types';
 import type { GitHubLookups } from './githubLookups';
+import type { GitHubSignIn } from './githubSignIn';
 import { BadRequest } from './http';
 import type { LinearLookups } from './linearLookups';
 import type { RemoteAdapters } from './remoteAdapters';
@@ -19,8 +20,9 @@ export function trackerSettings(deps: {
   remotes: RemoteAdapters;
   lookups: GitHubLookups;
   linear: LinearLookups;
+  signIn: GitHubSignIn;
 }) {
-  const { ctx, remotes, lookups, linear } = deps;
+  const { ctx, remotes, lookups, linear, signIn } = deps;
   const { o, env, creds, project, apiUrl } = ctx;
 
   async function settings(): Promise<TrackerSettings> {
@@ -39,6 +41,7 @@ export function trackerSettings(deps: {
         detectedRepo: repo,
         auth: gh?.source ?? null,
         account,
+        signIn: { available: signIn.available(), signedIn: signIn.signedIn() },
         status: remotes.status('github'),
       },
       linear: {

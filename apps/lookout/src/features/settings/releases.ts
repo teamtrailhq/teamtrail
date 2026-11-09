@@ -21,6 +21,8 @@ export const NEXT: { area: string; items: string[] }[] = [
   {
     area: 'Trackers',
     items: [
+      'Sign in with GitHub: no gh login or token needed. GitHub Issues setup shows a code, Open GitHub takes you to enter it, and once you approve, the picker shows your repos as you. The token stays in your own config folder (never the repo), and Sign out forgets it',
+      'Tracker setup shows a calm loading state while it looks up your account, repos, Linear teams and projects: placeholder rows and a quiet line instead of an empty list. Connect waits until they arrive, and a lookup that fails says why with a Retry',
       'GitHub Issues no longer connects the moment you choose it. Onboarding and Settings → Tracker show the account and repo first ("Will use owner/name as you (your gh login)"), let you pick any repo you can push or triage in, or type owner/name, and connect only when you press Connect. Each project in All projects keeps its own repo, and the overview row says where its issues live',
       'Linear works the same way: once a Linear API key is found or pasted, onboarding and Settings → Tracker say whose it is ("Will use Engineering in Octo Inc as you"), list the teams it can access with a search box and how recently each was active, and offer an optional project. The team saved for this project is picked again, or the only team; otherwise you pick one. Nothing connects until you press Connect, a team the key can\'t read is refused without switching, and All projects shows "Linear: ENG in Octo Inc"',
     ],

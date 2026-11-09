@@ -8,6 +8,7 @@ const FROM: Record<CredentialSource, string> = {
   GITHUB_TOKEN: 'GITHUB_TOKEN',
   GH_TOKEN: 'GH_TOKEN',
   stored: 'a saved token',
+  'signed-in': 'your GitHub sign-in',
   LINEAR_API_KEY: 'LINEAR_API_KEY',
 };
 

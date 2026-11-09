@@ -14,6 +14,7 @@ import type {
 } from '../../model/types';
 import type { MapInput, TicketEdit, TrackerAdapter } from '../adapter';
 import { TrackerError } from './http';
+import type { GitHubSignInPoll, GitHubSignInStart } from './signInTypes';
 import type { SyncStatus } from './sync/types';
 import type {
   GitHubRepoList,
@@ -148,6 +149,13 @@ export function trackerSettingsApi(base: string) {
     forget: (kind: RemoteKind) => post<TrackerSettings>(`${base}/trackers/credentials/${kind}`, 'DELETE'),
     /** The repos the found GitHub token can track issues in, with its login. */
     githubRepos: () => post<GitHubRepoList>(`${base}/trackers/github/repos`, 'GET'),
+    /** Sign in with GitHub (device flow): start, ask where it stands, give up, and sign out. */
+    githubSignIn: {
+      start: () => post<GitHubSignInStart>(`${base}/trackers/github/sign-in/start`, 'POST'),
+      poll: () => post<GitHubSignInPoll>(`${base}/trackers/github/sign-in/poll`, 'POST'),
+      cancel: () => post<unknown>(`${base}/trackers/github/sign-in/cancel`, 'POST'),
+      signOut: () => post<TrackerSettings>(`${base}/trackers/github/sign-in`, 'DELETE'),
+    },
     /** The teams a Linear key can access, with who it belongs to: the found key, or `apiKey` pasted in the page. */
     linearTeams: (apiKey?: string) =>
       apiKey

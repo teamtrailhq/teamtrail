@@ -14,8 +14,11 @@ import type { TrackerContext } from './trackerContext';
 
 const VIEWER_MS = 5 * 60_000;
 const LIST_MS = 60_000;
-/** A failed lookup is retried sooner: the network or the key may be back. */
+/** A failed viewer lookup is retried sooner: the network or the key may be back. */
 const FAILED_MS = 15_000;
+/** A failed list isn't kept, so the picker's Retry asks Linear again. */
+const LIST = { ok: LIST_MS, failed: 0 };
+const VIEWER = { ok: VIEWER_MS, failed: FAILED_MS };
 /** Lookups kept at once: the found key, a pasted one, a few teams' projects. */
 const MAX_ENTRIES = 16;
 
@@ -25,19 +28,24 @@ interface Cached<T> {
   value: Promise<T>;
 }
 
-/** A small per-key cache: entries expire after their ttl, a failure after `FAILED_MS`. */
+/** A small per-key cache: entries expire after `ttl.ok`, a failure after `ttl.failed`. */
 function cache() {
   const entries = new Map<string, Cached<unknown>>();
   return {
-    get<T>(id: string, ttl: number, load: () => Promise<T>, failed: (v: T) => boolean): Promise<T> {
+    get<T>(
+      id: string,
+      ttl: { ok: number; failed: number },
+      load: () => Promise<T>,
+      failed: (v: T) => boolean,
+    ): Promise<T> {
       const hit = entries.get(id) as Cached<T> | undefined;
       if (hit && Date.now() - hit.at < hit.ttl) return hit.value;
-      const c: Cached<T> = { at: Date.now(), ttl, value: load() };
+      const c: Cached<T> = { at: Date.now(), ttl: ttl.ok, value: load() };
       entries.delete(id);
       entries.set(id, c);
       if (entries.size > MAX_ENTRIES) entries.delete(entries.keys().next().value!);
       void c.value.then((v) => {
-        if (failed(v)) c.ttl = FAILED_MS;
+        if (failed(v)) c.ttl = ttl.failed;
       });
       return c.value;
     },
@@ -62,7 +70,7 @@ export function linearLookups(ctx: TrackerContext) {
 
   function viewerFor(apiKey: string): Promise<LinearViewer> {
     const load = () => linearViewer({ apiKey, ...http });
-    return memo.get(`viewer:${apiKey}`, VIEWER_MS, load, (v) => v.kind !== 'user');
+    return memo.get(`viewer:${apiKey}`, VIEWER, load, (v) => v.kind !== 'user');
   }
 
   async function teamsFor(apiKey: string, auth: CredentialSource | null): Promise<LinearTeamList> {
@@ -94,13 +102,13 @@ export function linearLookups(ctx: TrackerContext) {
       const found = keyFor(req);
       if (!found) return Promise.resolve({ kind: 'no-key' });
       const load = () => teamsFor(found.token, found.source);
-      return memo.get(`teams:${found.token}`, LIST_MS, load, (v) => v.kind !== 'ok');
+      return memo.get(`teams:${found.token}`, LIST, load, (v) => v.kind !== 'ok');
     },
     projects(req: LinearLookupRequest & { teamId: string }): Promise<LinearProjectList> {
       const found = keyFor(req);
       if (!found) return Promise.resolve({ kind: 'no-key' });
       const load = () => projectsFor(found.token, req.teamId);
-      return memo.get(`projects:${found.token}:${req.teamId}`, LIST_MS, load, (v) => v.kind !== 'ok');
+      return memo.get(`projects:${found.token}:${req.teamId}`, LIST, load, (v) => v.kind !== 'ok');
     },
     /** A key was saved or forgotten: look again. */
     reset: memo.clear,

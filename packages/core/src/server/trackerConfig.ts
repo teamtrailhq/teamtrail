@@ -20,6 +20,8 @@ export interface ProjectTrackerConfig {
 
 export interface Credentials {
   github?: { token: string };
+  /** The token from "Sign in with GitHub" (OAuth device flow, `repo` scope), kept apart from a pasted token. */
+  githubSignIn?: { token: string; scope?: string; at: string };
   linear?: { apiKey: string };
   /** Socket Mode app-level token (`xapp-…`) and bot token (`xoxb-…`) of the user's own Slack app. */
   slack?: { appToken?: string; botToken?: string };
@@ -79,7 +81,14 @@ export const run: Run = (cmd, args, cwd) =>
     ),
   );
 
-/** First usable GitHub token: saved in Settings, then $GITHUB_TOKEN / $GH_TOKEN, then `gh auth token`. */
+/**
+ * First usable GitHub token:
+ *   1. a token pasted in Settings ('stored'),
+ *   2. $GITHUB_TOKEN, then $GH_TOKEN (set on purpose for this shell or CI),
+ *   3. the token from Sign in with GitHub ('signed-in'), chosen in Teamtrail so it beats an ambient gh login,
+ *   4. `gh auth token`.
+ * Signing in drops a pasted token, so whichever of the two was set last is the one used.
+ */
 export async function resolveGitHubToken(
   creds: Credentials,
   env: Env = process.env,
@@ -88,6 +97,7 @@ export async function resolveGitHubToken(
   if (creds.github?.token) return { token: creds.github.token, source: 'stored' };
   if (env.GITHUB_TOKEN) return { token: env.GITHUB_TOKEN, source: 'GITHUB_TOKEN' };
   if (env.GH_TOKEN) return { token: env.GH_TOKEN, source: 'GH_TOKEN' };
+  if (creds.githubSignIn?.token) return { token: creds.githubSignIn.token, source: 'signed-in' };
   const token = await exec('gh', ['auth', 'token']).catch(() => '');
   return token ? { token, source: 'gh' } : null;
 }

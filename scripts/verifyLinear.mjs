@@ -2,7 +2,8 @@
 // (packages/core/test/fakes/linear.ts) served over HTTP, with a key in LINEAR_API_KEY: onboarding says whose key it
 // is before anything connects, the picker lists the teams the key can access with none picked (there are several),
 // a team the key can't read is refused without switching, and the team picked instead is saved for this project and
-// shown in Settings → Tracker. No response carries the key.
+// shown in Settings → Tracker. While the teams and a team's projects are held back, the setup shows its loading state
+// with Connect disabled, then the answer. No response carries the key.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -10,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import { responseGate, shootThemes } from './e2eHelpers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const KEY = 'lin_api_e2e_never_shown_5b1c';
@@ -35,18 +37,20 @@ async function serveFake(top) {
       { id: 'team-archive', key: 'ARC', name: 'Archive', unreadable: true },
     ],
   });
+  const gate = responseGate();
   const server = http.createServer(async (req, res) => {
     // Only Linear lives here; GitHub calls get a plain 404.
     if (req.method !== 'POST' || req.url !== '/graphql') return void res.writeHead(404).end('{}');
     const chunks = [];
     for await (const c of req) chunks.push(c);
     const body = Buffer.concat(chunks).toString('utf8') || undefined;
+    await gate.pass(body ?? '');
     const r = await ln.fetch(`http://fake${req.url}`, { method: req.method, headers: req.headers, body });
     res.writeHead(r.status, Object.fromEntries(r.headers));
     res.end(await r.text());
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  return { server, url: `http://127.0.0.1:${server.address().port}/graphql` };
+  return { server, gate, url: `http://127.0.0.1:${server.address().port}/graphql` };
 }
 
 async function startLookout(cli, cwd, env) {
@@ -91,13 +95,22 @@ export async function verifyLinear({ browser, cli, log, shots }) {
     await choice
       .getByText('Will use the team you pick in Octo Inc as Ada Ops (LINEAR_API_KEY)')
       .waitFor({ timeout: 15_000 });
+    // The teams are held back: skeleton rows and a quiet line, Connect disabled, then the list arrives.
+    const releaseTeams = fake.gate.hold('query Teams');
     await choice.click();
+    const connect = dialog.locator('.linear-setup').getByRole('button', { name: 'Connect', exact: true });
+    const teamsLoading = dialog.locator('.picker-loading', { hasText: 'Loading teams…' });
+    await teamsLoading.waitFor({ timeout: 15_000 });
+    const skeletons = await teamsLoading.locator('.ds-skeleton-row').count();
+    const disabledLoadingTeams = await connect.isDisabled();
+    await shootThemes(page, shots, '27-linear-loading-teams');
+    releaseTeams();
     const rows = dialog.locator('.team-row');
     await rows.first().waitFor({ timeout: 15_000 });
+    await teamsLoading.waitFor({ state: 'detached' });
     const first = await rows.first().innerText();
     const listed = await rows.count();
     const prompted = await dialog.getByText('Pick the team your trails go in').isVisible();
-    const connect = dialog.locator('.linear-setup').getByRole('button', { name: 'Connect', exact: true });
     const disabledFirst = await connect.isDisabled();
     const onChoice = JSON.parse(await api('/trackers')).active;
     if (shots) await page.screenshot({ path: path.join(shots, '22-linear-picker.png') });
@@ -109,8 +122,17 @@ export async function verifyLinear({ browser, cli, log, shots }) {
     const afterRefusal = JSON.parse(await api('/trackers')).active;
 
     // The team picked instead connects, is saved for this project and shown in Settings.
+    // Its projects are held back too: a spinner line and Connect disabled until they arrive.
     await dialog.getByLabel('Search teams').fill('eng');
+    const releaseProjects = fake.gate.hold('query TeamProjects');
     await rows.filter({ hasText: 'Engineering' }).locator('.ds-row-main').click();
+    const projectsLoading = dialog.getByText('Loading projects…');
+    await projectsLoading.waitFor({ timeout: 15_000 });
+    const disabledLoadingProjects = await connect.isDisabled();
+    await shootThemes(page, shots, '28-linear-loading-projects');
+    releaseProjects();
+    await projectsLoading.waitFor({ state: 'detached', timeout: 15_000 });
+    const loadingOk = skeletons === 3 && disabledLoadingTeams && disabledLoadingProjects && (await connect.isEnabled());
     await dialog.getByText('Will use Engineering in Octo Inc as Ada Ops (LINEAR_API_KEY)').waitFor();
     await connect.click();
     await dialog.waitFor({ state: 'detached', timeout: 20_000 });
@@ -129,6 +151,7 @@ export async function verifyLinear({ browser, cli, log, shots }) {
     const leaked = responses.some((t) => t.includes(KEY));
 
     const ok =
+      loadingOk &&
       first.includes('Design') &&
       listed === 3 &&
       prompted &&
@@ -141,7 +164,7 @@ export async function verifyLinear({ browser, cli, log, shots }) {
       !leaked &&
       !errors.length;
     log(
-      `linear picker ${ok ? 'ok' : 'WRONG'}: choosing Linear left the tracker ${onChoice}, ${listed} teams listed with "${first.split('\n')[0]}" first, none picked (${prompted && disabledFirst}), unreadable team refused (still ${afterRefusal}), saved ${saved.linear?.teamKey} in ${saved.linear?.orgName}, Settings says "${whoText}", key in responses: ${leaked}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `linear picker ${ok ? 'ok' : 'WRONG'}: loading showed ${skeletons} skeleton rows, Connect disabled while teams and projects loaded (${disabledLoadingTeams && disabledLoadingProjects}) and resolved (${loadingOk}), choosing Linear left the tracker ${onChoice}, ${listed} teams listed with "${first.split('\n')[0]}" first, none picked (${prompted && disabledFirst}), unreadable team refused (still ${afterRefusal}), saved ${saved.linear?.teamKey} in ${saved.linear?.orgName}, Settings says "${whoText}", key in responses: ${leaked}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {
