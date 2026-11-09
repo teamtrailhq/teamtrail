@@ -30,7 +30,7 @@ export interface AddResult extends GuidesView {
   installed: { id: string; version: string; pendingChecks: string[] };
 }
 
-/** A ticket's guide as its map sign shows it (useSignGuide). */
+/** A ticket's guide as its map card shows it (useSignGuide). */
 export interface SignGuide {
   id: string;
   name: string;

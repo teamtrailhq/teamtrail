@@ -159,7 +159,7 @@ export async function verifyGuides({ browser, cli, log, shots }) {
     const claim = await worker.call('claim_ticket', { guides: ['a11y'] });
     const guide = claim.claimed.guide;
     await page.goto(url);
-    // the guide's name sits in the sign's meta line: #1 · task · Accessibility · …
+    // the guide's name sits in the card's meta line: #1 · Task · Accessibility · …
     const signGuide = page.locator('g.node text.meta .guide[data-guide-id="a11y"]').first();
     await signGuide.waitFor({ timeout: 15_000 });
     const signText = await signGuide.evaluate((el) => el.lastChild?.textContent ?? '');
@@ -182,7 +182,7 @@ export async function verifyGuides({ browser, cli, log, shots }) {
       ran === 'a11y:true' &&
       !errors.length;
     log(
-      `guides ${ok ? 'ok' : 'WRONG'}: a11y added from the catalog and pinned (${pinned?.version}), its check approved in the Lookout (${approved}), Verified in Settings, "${signText?.trim()}" on its sign; the claim carried the guide with ${guide?.checklist.length} checklist items; completion refused without them, then ${done.status} with checks ${ran}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `guides ${ok ? 'ok' : 'WRONG'}: a11y added from the catalog and pinned (${pinned?.version}), its check approved in the Lookout (${approved}), Verified in Settings, "${signText?.trim()}" on its map card; the claim carried the guide with ${guide?.checklist.length} checklist items; completion refused without them, then ${done.status} with checks ${ran}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {

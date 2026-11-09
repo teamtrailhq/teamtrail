@@ -1,0 +1,232 @@
+/* ---------- Map cards and connectors ----------
+ * Each ticket is a flat card: a status dot and the title, then one quiet meta line. Borders and connectors stay 1px
+ * at any zoom. Red only ever means "needs you now": an agent waiting on you, or a ticket held for your approval. */
+
+/* The landscape stays under the cards, quietly. */
+.graph .terrain {
+  opacity: 0.55;
+}
+
+.node {
+  cursor: pointer;
+  transition: transform 0.4s ease;
+}
+.node .card {
+  fill: var(--map-card);
+  stroke: var(--line2);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  transition:
+    stroke 0.15s,
+    fill 0.3s;
+}
+.node .ring {
+  fill: none;
+  stroke: none;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.node .title {
+  font-family: var(--sans);
+  font-size: var(--fs-node-title);
+  font-weight: 600;
+  fill: var(--text-hi);
+}
+.node .meta {
+  font-family: var(--sans);
+  font-size: var(--fs-node-meta);
+  font-weight: 400;
+  letter-spacing: var(--ls-text);
+  text-transform: none;
+  fill: var(--dim);
+}
+.node .meta .key {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  letter-spacing: 0;
+}
+.node .meta .agent,
+.node .meta .warn {
+  fill: var(--text);
+  font-weight: 500;
+}
+.node .meta .urgent {
+  fill: var(--urgent);
+  font-weight: 500;
+}
+
+/* The status dot: green working, amber waiting on a person or held up, grey ready, a ring in the backlog,
+ * a muted check when done, faint when cancelled. */
+.node .dot-working {
+  fill: rgb(var(--decided-rgb));
+}
+.node .dot-attention {
+  fill: var(--amber);
+}
+.node .dot-ready {
+  fill: var(--dim);
+}
+.node .dot-backlog {
+  fill: none;
+  stroke: var(--faint);
+  stroke-width: 1.2;
+}
+.node .dot-done {
+  fill: none;
+  stroke: var(--faint);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.node .dot-cancelled {
+  fill: var(--faint);
+}
+
+/* Hover and selection: a stronger border, never a heavier font. */
+.node:hover .card {
+  stroke: var(--dim);
+}
+.node.sel .card {
+  stroke: var(--accent);
+}
+.node.sel .ring {
+  stroke: rgba(var(--accent-rgb), 0.35);
+}
+
+/* Held up: an amber border. Needs you now: a red one, with a faint halo. */
+.node.st-rework .card,
+.node.stalled .card {
+  stroke: rgba(var(--amber-rgb), 0.75);
+}
+.node.st-held .card,
+.node.waiting .card {
+  stroke: var(--urgent);
+}
+.node.waiting .ring {
+  stroke: rgba(var(--urgent-rgb), 0.45);
+}
+
+/* Done, backlog and cancelled cards step back. */
+.node.st-blocked .title,
+.node.st-parked .title {
+  fill: var(--text);
+}
+.node.st-decided .title {
+  fill: var(--dim);
+}
+.node.st-decided .meta {
+  fill: var(--faint);
+}
+.node.st-out-of-scope {
+  opacity: 0.6;
+}
+.node.st-out-of-scope .title {
+  fill: var(--dim);
+  text-decoration: line-through;
+}
+
+/* Connectors: thin elbows. Walked ones are green and quiet, the critical path a shade stronger than the rest. */
+.graph .edge {
+  fill: none;
+  stroke: var(--line2);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.graph .edge-done {
+  stroke: rgba(var(--decided-rgb), 0.55);
+}
+.graph .edge-critical {
+  stroke: var(--dim);
+}
+/* A pending reroute: connectors it would add in amber, ones it would remove faded. */
+.graph .edge-added {
+  stroke: var(--amber);
+  stroke-dasharray: 4 3;
+}
+.graph .edge-removed {
+  stroke: var(--faint);
+  stroke-dasharray: 2 4;
+  opacity: 0.7;
+}
+
+/* A pending reroute on the cards: ghosts for added tickets, a strike for cancelled ones, ❄ for frozen ones. */
+.node.mark-added .card {
+  stroke: var(--amber);
+  stroke-dasharray: 4 3;
+}
+.node.mark-added .meta .key {
+  fill: var(--amber);
+}
+.node.mark-cancelled {
+  opacity: 0.55;
+}
+.node .strike {
+  stroke: var(--urgent);
+  stroke-width: 1.2;
+}
+.node.mark-revised .card,
+.node.mark-rewired .card,
+.node.mark-reopened .card {
+  stroke: rgba(var(--amber-rgb), 0.8);
+}
+.node .reroute-tag {
+  font-family: var(--sans);
+  font-size: var(--fs-node-meta);
+  fill: var(--amber);
+}
+.node .freeze {
+  font-size: 11px;
+  fill: var(--accent);
+}
+.node.frozen .card {
+  stroke: var(--accent);
+}
+
+/* The legend and the status counts use the cards' dots. */
+.lg i,
+.status-panel li i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dim);
+  justify-self: center;
+}
+.lg.st-claimed i,
+.lg.st-verifying i,
+.status-panel li.st-claimed i,
+.status-panel li.st-verifying i {
+  background: rgb(var(--decided-rgb));
+}
+.lg.st-rework i,
+.lg.st-held i,
+.lg.st-stalled i,
+.lg.st-waiting i,
+.status-panel li.st-rework i,
+.status-panel li.st-held i,
+.status-panel li.st-waiting i {
+  background: var(--amber);
+}
+.lg.st-blocked i,
+.lg.st-parked i,
+.status-panel li.st-blocked i,
+.status-panel li.st-parked i {
+  width: 7px;
+  height: 7px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.2px var(--faint);
+}
+.lg.st-out-of-scope i,
+.status-panel li.st-out-of-scope i {
+  background: var(--faint);
+}
+.lg.st-decided i,
+.status-panel li.st-decided i {
+  width: 4px;
+  height: 7px;
+  border-radius: 0;
+  background: transparent;
+  border: solid var(--faint);
+  border-width: 0 1.6px 1.6px 0;
+  transform: translateY(-1px) rotate(45deg);
+}

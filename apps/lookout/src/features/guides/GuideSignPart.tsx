@@ -2,7 +2,7 @@ import { cx } from '../../lib';
 import type { SignGuide } from './types';
 
 /**
- * A ticket's guide in its map sign's meta line (`#8 · task · QA · ready`): `text` is the name as it fits the sign,
+ * A ticket's guide in its map card's meta line (`#8 · Task · QA · ready`): `text` is the name as it fits the card,
  * with the full name and version on hover. Quietly marked when agents can't use it now.
  */
 export function GuideSignPart(props: { guide?: SignGuide; text?: string }) {
