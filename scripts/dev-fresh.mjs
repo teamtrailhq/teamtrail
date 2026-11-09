@@ -1,7 +1,8 @@
 // `npm run dev:fresh`: a first-time user, from nothing. A brand-new git repo, an empty user config dir (no projects,
 // no saved tokens, no focus hours), the built CLI serving it exactly as `npx teamtrail` would, and a brand-new
 // browser profile, so onboarding shows and nothing is remembered. Your real config, the dev seed and its projects
-// registry are never read. A `gh` login on this machine is still found, as it would be for a real user.
+// registry are never read. A `gh` login on this machine is still found, as it would be for a real user. The CLI is
+// rebuilt first when its build is older than the code (after a pull, or your edits).
 // Usage: npm run dev:fresh [-- --name my-app --remote owner/repo --no-browser --keep]
 //   --remote sets the repo's origin (the GitHub picker suggests it); --keep leaves the temp folder when you stop.
 import { spawn, execFileSync } from 'node:child_process';
@@ -22,8 +23,22 @@ const name = opt('--name') ?? 'my-app';
 const remote = opt('--remote');
 const browser = !args.includes('--no-browser');
 
-if (!fs.existsSync(cli)) {
-  console.log('Building the CLI first (npm run build -w teamtrail)…');
+/** The newest file under the sources the CLI bundle is built from, so a pull or an edit triggers a rebuild. */
+const SOURCES = [
+  'packages/core/src',
+  'packages/cli/src',
+  'packages/connector-slack/src',
+  'packages/scout-avatar/src',
+  'apps/lookout/src',
+];
+const newest = (dir) =>
+  fs
+    .readdirSync(dir, { withFileTypes: true, recursive: true })
+    .filter((e) => e.isFile())
+    .reduce((t, e) => Math.max(t, fs.statSync(path.join(e.parentPath, e.name)).mtimeMs), 0);
+const built = fs.existsSync(cli) ? fs.statSync(cli).mtimeMs : 0;
+if (SOURCES.some((d) => newest(path.join(repo, d)) > built)) {
+  console.log(built ? 'The CLI build is older than the code; rebuilding…' : 'Building the CLI first…');
   execFileSync('npm', ['run', 'build', '-w', 'teamtrail'], { cwd: repo, stdio: 'inherit' });
 }
 
