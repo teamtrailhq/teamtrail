@@ -86,7 +86,13 @@ export { MemoryAdapter, type MemoryAdapterOptions } from './adapters/memoryAdapt
 export { MarkdownAdapter } from './adapters/markdown/markdownAdapter';
 export type { MarkdownFs } from './adapters/markdown/markdownFs';
 export { sampleSnapshot, seedDecisions, seedSnapshot } from './adapters/seed';
-export { GitHubAdapter, testGitHub, type GitHubOptions } from './adapters/remote/github';
+export {
+  GitHubAdapter,
+  githubAccount,
+  listGitHubRepos,
+  testGitHub,
+  type GitHubOptions,
+} from './adapters/remote/github';
 export { LinearAdapter, testLinear, type LinearOptions } from './adapters/remote/linear';
 export { SyncedAdapter } from './adapters/remote/sync/syncedAdapter';
 export type {

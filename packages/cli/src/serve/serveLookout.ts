@@ -50,10 +50,10 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
     plugins: [slackPlugin()],
     url: () => url,
   });
-  // Other registered projects open on first use, at /p/<id>/…; Slack stays with the home project.
+  // Other registered projects open on first use, at /p/<id>/…, with their own checkout for the GitHub origin; Slack stays with the home project.
   hub = createProjectsHub({
     home: bridge,
-    openBridge: (p) => createTrackerBridge(p.root, { url: () => url }),
+    openBridge: (p) => createTrackerBridge(p.root, { cwd: p.path, url: () => url }),
     url: () => url,
   });
   printGreeting();

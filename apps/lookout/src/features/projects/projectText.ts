@@ -34,6 +34,7 @@ export function projectParts(p: ProjectSummary): MetaPart[] {
   if (p.flags) parts.push(plural(p.flags, 'PR flag'));
   if (p.stalled) parts.push(plural(p.stalled, 'stalled claim'));
   if (!parts.length) parts.push(p.trails ? 'Nothing waiting' : 'No trails yet');
+  if (p.tracker.kind === 'github' && p.tracker.repo) parts.push(`Issues in ${p.tracker.repo}`);
   return parts;
 }
 

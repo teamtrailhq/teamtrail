@@ -2,40 +2,34 @@ import { BRAND } from '@teamtrail/core';
 import { useState } from 'react';
 import { Panel, ScoutBadge, TeamtrailLogo, Wordmark, Label, Choice, Button } from '../../components/ui';
 import type { Prefs, TrackerChoice } from '../../lib';
-import { GitHubSetup, LinearSetup, useTrackerSettings, trackerApi, switchTracker } from '../trackers';
+import { GitHubSetup, LinearSetup, useTrackerSettings, trackerApi, switchTracker, willUse } from '../trackers';
 import { SettingsSection } from './SettingsSection';
 import { TranscriptChoice } from './TranscriptChoice';
 
 export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) => void; activeTracker: TrackerChoice }) {
   const { prefs, update } = props;
-  const [trackers] = useTrackerSettings();
-  const [error, setError] = useState<string>();
+  // Polled, so `gh auth login` in a terminal shows up here without a reload.
+  const [trackers] = useTrackerSettings(5000);
   const [busy, setBusy] = useState(false);
-  /** One-click GitHub when a token (gh / env) and a GitHub `origin` are already on this machine. */
-  const ghRepo = trackers?.github.auth ? (trackers.github.repo ?? trackers.github.detectedRepo) : undefined;
+  const gh = trackers?.github;
+  /** Who and where GitHub would use, said before anything connects; once chosen, its setup below says it. */
+  let ghSub: string | undefined;
+  if (gh && prefs.tracker !== 'github') ghSub = willUse(gh, gh.repo ?? gh.detectedRepo);
   const choices: { id: TrackerChoice; title: string; sub?: string }[] = [
     { id: 'markdown', title: 'Local markdown', sub: 'Files in .teamtrail/ in this repo' },
-    { id: 'github', title: 'GitHub Issues', sub: 'Trails as labelled issues in your repo' },
+    { id: 'github', title: 'GitHub Issues', sub: ghSub ?? 'Trails as labelled issues in your repo' },
     { id: 'linear', title: 'Linear', sub: 'Trails and tickets in your Linear team' },
   ];
-  /** GitHub without a detected repo, and Linear, need setup first; their Connect button finishes onboarding. */
-  const needsSetup = (prefs.tracker === 'github' && !ghRepo) || prefs.tracker === 'linear';
+  /** GitHub and Linear connect with their own Connect button, which finishes onboarding; nothing connects on choice. */
+  const connectedHere = trackers?.active === prefs.tracker && prefs.tracker === 'github';
+  const needsSetup = (prefs.tracker === 'github' && !connectedHere) || prefs.tracker === 'linear';
   const finish = (tracker: TrackerChoice) => {
     update({ onboarded: true });
     switchTracker(update, tracker);
   };
   const start = async () => {
-    if (prefs.tracker === 'github' && ghRepo) {
-      setBusy(true);
-      try {
-        await trackerApi.connect({ active: 'github', github: { repo: ghRepo } });
-      } catch (e) {
-        setError((e as Error).message);
-        setBusy(false);
-        return;
-      }
-    } else if (prefs.tracker === 'markdown' && trackers)
-      await trackerApi.connect({ active: 'markdown' }).catch(() => {});
+    setBusy(true);
+    if (prefs.tracker === 'markdown' && trackers) await trackerApi.connect({ active: 'markdown' }).catch(() => {});
     update({ onboarded: true });
     if (prefs.tracker !== props.activeTracker) switchTracker(update, prefs.tracker);
   };
@@ -67,11 +61,10 @@ export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) =>
               />
             ))}
           </div>
-          {trackers && prefs.tracker === 'github' && !ghRepo && (
+          {trackers && prefs.tracker === 'github' && !connectedHere && (
             <GitHubSetup s={trackers} onConnected={() => finish('github')} />
           )}
           {trackers && prefs.tracker === 'linear' && <LinearSetup s={trackers} onConnected={() => finish('linear')} />}
-          {error && <div className="test-line alert">✕ {error}</div>}
         </SettingsSection>
 
         <SettingsSection title="HITL transcript">

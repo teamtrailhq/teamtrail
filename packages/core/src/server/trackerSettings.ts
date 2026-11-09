@@ -6,25 +6,27 @@ import type {
   TrackerTestRequest,
   TrackerTestResult,
 } from '../adapters/remote/types';
+import type { GitHubLookups } from './githubLookups';
 import { BadRequest } from './http';
 import type { RemoteAdapters } from './remoteAdapters';
 import { resolveLinearKey } from './trackerConfig';
 import type { TrackerContext } from './trackerContext';
 
 /** Reading, testing and switching the project's tracker connection. */
-export function trackerSettings(ctx: TrackerContext, remotes: RemoteAdapters) {
+export function trackerSettings(ctx: TrackerContext, remotes: RemoteAdapters, lookups: GitHubLookups) {
   const { o, env, creds, project, apiUrl } = ctx;
 
   async function settings(): Promise<TrackerSettings> {
     const cfg = project.read();
     const detected = ctx.detectedRepo();
-    const [gh, repo] = await Promise.all([ctx.githubToken(), detected]);
+    const [gh, repo, account] = await Promise.all([ctx.githubToken(), detected, lookups.account()]);
     return {
       active: cfg.active,
       github: {
         repo: cfg.github?.repo,
         detectedRepo: repo,
         auth: gh?.source ?? null,
+        account,
         status: remotes.status('github'),
       },
       linear: {
@@ -63,6 +65,7 @@ export function trackerSettings(ctx: TrackerContext, remotes: RemoteAdapters) {
       const result = await test({ kind: 'github', repo, token: req.github?.token });
       if (!result.ok) return { status: 400, body: result };
       if (req.github?.token?.trim()) creds.write({ ...creds.read(), github: { token: req.github.token.trim() } });
+      lookups.reset();
       project.write({ ...cfg, active: 'github', github: { repo: result.target ?? repo } });
       remotes.reset('github');
       return { status: 200, body: await settings() };

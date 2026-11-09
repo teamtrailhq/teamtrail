@@ -2,6 +2,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { RemoteKind, TrackerConnectRequest, TrackerTestRequest } from '../adapters/remote/types';
 import { githubCiAccess } from './githubCiAccess';
+import { githubLookups } from './githubLookups';
+import { handleGitHubRepos } from './githubRepoRoutes';
 import { BadRequest, readJson, sendJson } from './http';
 import { isKind, remoteAdapters } from './remoteAdapters';
 import { CALLS } from './trackerCalls';
@@ -18,6 +20,7 @@ export type { TrackerRoutesOptions } from './trackerContext';
  *   GET    /trackers                       TrackerSettings
  *   PUT    /trackers                       TrackerConnectRequest → TrackerSettings (tests the connection first)
  *   POST   /trackers/test                  TrackerTestRequest → TrackerTestResult
+ *   GET    /trackers/github/repos          GitHubRepoList: repos the found token can track issues in, and its login
  *   DELETE /trackers/credentials/<kind>    forget the saved token / key
  *   POST   /tracker/<kind>/call            `{ method, args }` → `{ result }` (TrackerAdapter methods)
  *   GET    /tracker/<kind>/events          SSE: TrackerEvent per message; named `status` events (SyncStatus & { location })
@@ -25,16 +28,19 @@ export type { TrackerRoutesOptions } from './trackerContext';
 export function createTrackerRoutes(o: TrackerRoutesOptions) {
   const ctx = trackerContext(o);
   const remotes = remoteAdapters(ctx);
-  const { settings, test, connect } = trackerSettings(ctx, remotes);
+  const lookups = githubLookups(ctx);
+  const { settings, test, connect } = trackerSettings(ctx, remotes, lookups);
   remotes.resumeQueued();
 
   async function handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
     const p = url.pathname;
     const call = p.match(/^\/tracker\/([^/]+)\/(call|events)$/);
     const forget = p.match(/^\/trackers\/credentials\/([^/]+)$/);
-    if (p !== '/trackers' && p !== '/trackers/test' && !call && !forget) return false;
+    const repos = p === '/trackers/github/repos';
+    if (p !== '/trackers' && p !== '/trackers/test' && !call && !forget && !repos) return false;
     try {
       if (crossSite(req)) return (void sendJson(res, 403, { error: 'cross-site request refused' }), true);
+      if (repos) return await handleGitHubRepos(req, res, { path: p, lookups });
       const handled = call ? await remoteRoute(req, res, call) : await settingsRoute(req, res, p, forget);
       if (!handled) sendJson(res, 405, { error: 'method not allowed' });
     } catch (err) {
@@ -74,6 +80,7 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
     delete c[kind];
     ctx.creds.write(c);
     remotes.reset(kind);
+    lookups.reset();
   }
 
   /** `/tracker/<kind>/events` and `/tracker/<kind>/call`. */

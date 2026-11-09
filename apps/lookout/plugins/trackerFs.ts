@@ -17,7 +17,7 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
       const bridge = createTrackerBridge(opts.root, { plugins: [slackPlugin()], url });
       const hub = createProjectsHub({
         home: bridge,
-        openBridge: (p) => createTrackerBridge(p.root, { url }),
+        openBridge: (p) => createTrackerBridge(p.root, { cwd: p.path, url }),
         configDir: opts.projectsConfigDir,
         url,
       });

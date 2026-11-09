@@ -17,6 +17,12 @@ export const NEXT: { area: string; items: string[] }[] = [
       'Tickets on the trail map are flat cards: a status dot, the title and one quiet line with the key, type, guide and who is on it. Thin elbow lines join them, and the landscape underneath is quieter',
     ],
   },
+  {
+    area: 'Trackers',
+    items: [
+      'GitHub Issues no longer connects the moment you choose it. Onboarding and Settings → Tracker show the account and repo first ("Will use owner/name as you (your gh login)"), let you pick any repo you can push or triage in, or type owner/name, and connect only when you press Connect. Each project in All projects keeps its own repo, and the overview row says where its issues live',
+    ],
+  },
   { area: 'Teamtrail Cloud', items: ['Agents that run in the cloud, steered from the same Lookout'] },
 ];
 
