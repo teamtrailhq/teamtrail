@@ -7,7 +7,7 @@ export { LaptopSide } from './LaptopSide';
 export { MapZone } from './MapZone';
 export { PhoneTabBar } from './PhoneTabBar';
 export { PhoneView } from './PhoneView';
-export { clearSettingsParam, type SettingsOpen, settingsFromUrl } from './settingsParam';
+export { useSettingsPage } from './useSettingsPage';
 export type { PhoneTab, SideTab } from './tabs';
 export { useAppNavigation } from './useAppNavigation';
 export { useDocumentTitle } from './useDocumentTitle';

@@ -1,7 +1,80 @@
-/* ---------- Settings + changelog ---------- */
-.dialog.settings header .tabs {
+/* ---------- Settings page: covers the zones like the Logbook; side nav of groups, one group at a time ---------- */
+.sp-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+.sp-laptop .sp-body {
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+.sp-mobile .sp-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+.sp-nav {
+  min-height: 0;
+  overflow: auto;
+  border-right: 1px solid var(--line);
+  padding: var(--sp-8) 0;
+}
+.sp-mobile .sp-nav {
+  border-right: 0;
   padding: 0;
-  margin-left: calc(-1 * var(--sp-8));
+}
+.sp-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sp-mobile .sp-nav-row {
+  border-bottom: 1px solid var(--line);
+}
+.sp-mobile .sp-nav-row .ds-row-trail {
+  font-size: var(--fs-title);
+}
+.sp-pane {
+  min-height: 0;
+  overflow: auto;
+}
+.sp-pane-in {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-18);
+  max-width: 760px;
+  padding: var(--sp-18) var(--gutter) var(--sp-18) calc(var(--gutter) + var(--sp-10));
+}
+.sp-mobile .sp-pane-in {
+  padding: var(--sp-14) var(--gutter);
+}
+.sp-pane-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.sp-title {
+  margin: 0;
+  outline: none;
+}
+.sp-intro {
+  margin: 0;
+  max-width: 64ch;
+}
+.sp-slot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  scroll-margin-top: var(--sp-12);
+}
+.sp-slot:empty,
+.sp-slot:not(:has(.set-sec)) {
+  display: none;
+}
+.sp-pane-in > .sp-slot:first-of-type .set-sec {
+  border-top: 0;
+  padding-top: 0;
+}
+.sp-where {
+  color: var(--faint);
 }
 .set-sec {
   display: flex;

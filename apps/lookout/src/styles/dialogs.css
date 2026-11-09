@@ -34,9 +34,6 @@
   justify-content: flex-end;
   gap: var(--sp-8);
 }
-.dialog.settings {
-  width: min(680px, 100%);
-}
 .choice-row.compact {
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
 }
