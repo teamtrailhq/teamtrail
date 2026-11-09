@@ -1,16 +1,17 @@
 import type { GitHubRepoList } from '@teamtrail/core';
-import { MetaLine } from '../../components/ui';
+import { LoadFailed, Loading, MetaLine } from '../../components/ui';
 import { RepoPicker } from './RepoPicker';
 
-/** The picker once the repo list has loaded; a quiet line while it loads or when GitHub couldn't list repos. */
+/** The picker once the repo list has loaded; skeleton rows while it loads, and Retry when GitHub couldn't list repos. */
 export function GitHubRepoChoice(props: {
   list?: GitHubRepoList;
   detected?: string;
   value: string;
   onChange: (repo: string) => void;
+  onRetry: () => void;
 }) {
   const { list } = props;
-  if (!list) return <MetaLine parts={['Loading your repos…']} />;
+  if (!list) return <Loading label="Loading your repos…" rows={3} className="picker-loading" />;
   switch (list.kind) {
     case 'ok':
       return (
@@ -28,7 +29,7 @@ export function GitHubRepoChoice(props: {
       // Typing owner/name still works when GitHub won't list repos.
       return (
         <>
-          <MetaLine parts={["Couldn't list your repos", list.error]} />
+          <LoadFailed what="Couldn't list your repos" reason={list.error} onRetry={props.onRetry} />
           <RepoPicker
             repos={[]}
             truncated={false}

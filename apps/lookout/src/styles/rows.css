@@ -286,3 +286,83 @@ button.ds-row-main:focus-visible {
     white-space: normal;
   }
 }
+
+/* Loading and failed lookups (components/ui Loading, LoadFailed): a small spinner, skeleton rows, and Retry. */
+.ds-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+.ds-loading-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+}
+.ds-spinner {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--line2);
+  border-top-color: var(--dim);
+  border-radius: 50%;
+  animation: ds-spin 0.9s linear infinite;
+}
+.ds-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ds-skeleton-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding: var(--sp-8) var(--sp-10);
+  border: 1px solid var(--line);
+  border-left: var(--edge-w) solid var(--edge-neutral);
+}
+.ds-skeleton-bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(var(--line-rgb), 0.55);
+  animation: ds-shimmer 1.4s ease-in-out infinite;
+}
+.ds-skeleton-bar.title {
+  width: 46%;
+}
+.ds-skeleton-bar.meta {
+  width: 28%;
+  opacity: 0.6;
+}
+.ds-skeleton-row:nth-child(2) .ds-skeleton-bar.title {
+  width: 38%;
+}
+.ds-skeleton-row:nth-child(3) .ds-skeleton-bar.title {
+  width: 54%;
+}
+.ds-load-failed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+}
+@keyframes ds-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ds-shimmer {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-spinner,
+  .ds-skeleton-bar {
+    animation: none;
+  }
+}

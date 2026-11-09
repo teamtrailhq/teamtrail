@@ -40,6 +40,8 @@ export function trackerContext(o: TrackerRoutesOptions) {
     apiUrl: {
       github: env[`${BRAND.slug.toUpperCase()}_GITHUB_API`],
       linear: env[`${BRAND.slug.toUpperCase()}_LINEAR_API`],
+      /** github.com's OAuth endpoints (device flow); the fake GitHub's base in the end-to-end check. */
+      githubWeb: env[`${BRAND.slug.toUpperCase()}_GITHUB_WEB`],
     },
     /** Resolved at most every 30 s: `gh auth token` spawns a process. */
     githubToken() {

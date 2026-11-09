@@ -4,6 +4,8 @@ import type { RemoteKind, TrackerConnectRequest, TrackerTestRequest } from '../a
 import { githubCiAccess } from './githubCiAccess';
 import { githubLookups } from './githubLookups';
 import { handleGitHubRepos } from './githubRepoRoutes';
+import { githubSignIn } from './githubSignIn';
+import { GITHUB_SIGN_IN, handleGitHubSignIn } from './githubSignInRoutes';
 import { BadRequest, readJson, sendJson } from './http';
 import { linearLookups } from './linearLookups';
 import { handleLinearTeams, LINEAR_PROJECTS, LINEAR_TEAMS } from './linearTeamRoutes';
@@ -16,6 +18,10 @@ import { trackerSettings } from './trackerSettings';
 
 export type { TrackerRoutesOptions } from './trackerContext';
 
+const GITHUB_REPOS = '/trackers/github/repos';
+const isSignIn = (p: string) => p === GITHUB_SIGN_IN || p.startsWith(`${GITHUB_SIGN_IN}/`);
+const isLookup = (p: string) => p === GITHUB_REPOS || p === LINEAR_TEAMS || p === LINEAR_PROJECTS || isSignIn(p);
+
 /**
  * Tracker settings and the remote-tracker API. Credentials are read and
  * stored here, in the local process, and never sent to the browser:
@@ -26,6 +32,8 @@ export type { TrackerRoutesOptions } from './trackerContext';
  *   GET    /trackers/linear/teams          LinearTeamList: teams the key can access, and who it belongs to (POST
  *                                          `{ apiKey }` for a key pasted in the page)
  *   GET    /trackers/linear/projects?team= LinearProjectList: that team's projects (POST `{ apiKey, teamId }`)
+ *   POST   /trackers/github/sign-in/start|poll|cancel, DELETE /trackers/github/sign-in
+ *                                          Sign in with GitHub (device flow) and sign out; see githubSignInRoutes.ts
  *   DELETE /trackers/credentials/<kind>    forget the saved token / key
  *   POST   /tracker/<kind>/call            `{ method, args }` → `{ result }` (TrackerAdapter methods)
  *   GET    /tracker/<kind>/events          SSE: TrackerEvent per message; named `status` events (SyncStatus & { location })
@@ -35,20 +43,19 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
   const remotes = remoteAdapters(ctx);
   const lookups = githubLookups(ctx);
   const linear = linearLookups(ctx);
-  const { settings, test, connect } = trackerSettings({ ctx, remotes, lookups, linear });
+  const signIn = githubSignIn({ ctx, changed: () => githubChanged() });
+  const { settings, test, connect } = trackerSettings({ ctx, remotes, lookups, linear, signIn });
   remotes.resumeQueued();
 
   async function handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
     const p = url.pathname;
     const call = p.match(/^\/tracker\/([^/]+)\/(call|events)$/);
     const forget = p.match(/^\/trackers\/credentials\/([^/]+)$/);
-    const repos = p === '/trackers/github/repos';
-    const lookup = repos || p === LINEAR_TEAMS || p === LINEAR_PROJECTS;
-    if (p !== '/trackers' && p !== '/trackers/test' && !call && !forget && !lookup) return false;
+    const own = p === '/trackers' || p === '/trackers/test' || !!call || !!forget;
+    if (!own && !isLookup(p)) return false;
     try {
       if (crossSite(req)) return (void sendJson(res, 403, { error: 'cross-site request refused' }), true);
-      if (repos) return await handleGitHubRepos(req, res, { path: p, lookups });
-      if (lookup) return await handleLinearTeams(req, res, { url, lookups: linear });
+      if (!own) return await lookupRoute(req, res, url);
       const handled = call ? await remoteRoute(req, res, call) : await settingsRoute(req, res, p, forget);
       if (!handled) sendJson(res, 405, { error: 'method not allowed' });
     } catch (err) {
@@ -56,6 +63,14 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
       else if (!sendTrackerError(res, err)) sendJson(res, 500, { error: String((err as Error)?.message ?? err) });
     }
     return true;
+  }
+
+  /** The pickers' lookups and Sign in with GitHub. */
+  function lookupRoute(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
+    const p = url.pathname;
+    if (p === GITHUB_REPOS) return handleGitHubRepos(req, res, { path: p, lookups });
+    if (isSignIn(p)) return handleGitHubSignIn(req, res, { path: p, signIn, settings });
+    return handleLinearTeams(req, res, { url, lookups: linear });
   }
 
   /** `/trackers`, `/trackers/test` and `/trackers/credentials/<kind>`. */
@@ -88,8 +103,16 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
     delete c[kind];
     ctx.creds.write(c);
     remotes.reset(kind);
+    ctx.forgetGitHubToken();
     lookups.reset();
     linear.reset();
+  }
+
+  /** A GitHub token was saved or forgotten by signing in or out: resolve it again. */
+  function githubChanged() {
+    ctx.forgetGitHubToken();
+    lookups.reset();
+    remotes.reset('github');
   }
 
   /** `/tracker/<kind>/events` and `/tracker/<kind>/call`. */

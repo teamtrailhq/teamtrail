@@ -14,7 +14,7 @@ export function TrackerConnectors(props: {
   location: string;
   update: (p: Partial<Prefs>) => void;
 }) {
-  const [s] = useTrackerSettings(5000);
+  const [s, , reload] = useTrackerSettings(5000);
   const [open, setOpen] = useState<RemoteKind | null>(null);
   const select = async (id: TrackerChoice) => {
     if (s && (id === 'markdown' || isRemote(id)))
@@ -59,7 +59,9 @@ export function TrackerConnectors(props: {
           );
         })}
       </div>
-      {s && open === 'github' && <GitHubSetup s={s} onConnected={() => switchTracker(props.update, 'github')} />}
+      {s && open === 'github' && (
+        <GitHubSetup s={s} reload={reload} onConnected={() => switchTracker(props.update, 'github')} />
+      )}
       {s && open === 'linear' && <LinearSetup s={s} onConnected={() => switchTracker(props.update, 'linear')} />}
     </>
   );

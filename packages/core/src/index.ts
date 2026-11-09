@@ -114,6 +114,7 @@ export type {
 export { TrackerError, isTransient, type RateInfo, type TrackerErrorCode } from './adapters/remote/http';
 export { BridgeAdapter, trackerSettingsApi } from './adapters/remote/bridgeClient';
 export type * from './adapters/remote/types';
+export type * from './adapters/remote/signInTypes';
 export * from './model/integrations';
 export * from './model/guide';
 export { parseGuide, splitGuideFile } from './guides/guideFile';

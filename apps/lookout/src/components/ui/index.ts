@@ -9,6 +9,8 @@ export { Field } from './Field';
 export { InputRow } from './InputRow';
 export { InfoTip } from './InfoTip';
 export { Label } from './Label';
+export { LoadFailed } from './LoadFailed';
+export { Loading } from './Loading';
 export { MarkSheet } from './MarkSheet';
 export { Meta } from './Meta';
 export { MetaLine, type MetaPart } from './MetaLine';

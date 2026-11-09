@@ -1,15 +1,21 @@
 import { useState } from 'react';
-import { Panel, ScoutBadge, TeamtrailLogo, Wordmark, Choice, Button } from '../../components/ui';
+import { Panel, ScoutBadge, TeamtrailLogo, Wordmark, Choice, Button, Loading } from '../../components/ui';
 import type { Prefs, TrackerChoice } from '../../lib';
 import { GitHubSetup, LinearSetup, useTrackerSettings, trackerApi, switchTracker } from '../trackers';
 import { onboardingChoices } from './onboardingChoices';
 import { SettingsSection } from './SettingsSection';
 import { TranscriptChoice } from './TranscriptChoice';
 
+/** While the first settings load (the token lookup and who it is can take a moment). */
+const CHECKING: Partial<Record<TrackerChoice, string>> = {
+  github: 'Checking for a GitHub login…',
+  linear: 'Checking for a Linear key…',
+};
+
 export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) => void; activeTracker: TrackerChoice }) {
   const { prefs, update } = props;
   // Polled, so `gh auth login` in a terminal shows up here without a reload.
-  const [trackers] = useTrackerSettings(5000);
+  const [trackers, , reloadTrackers] = useTrackerSettings(5000);
   const [busy, setBusy] = useState(false);
   const choices = onboardingChoices(trackers ?? undefined, prefs.tracker);
   /** GitHub and Linear connect with their own Connect button, which finishes onboarding; nothing connects on choice. */
@@ -50,8 +56,9 @@ export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) =>
               />
             ))}
           </div>
+          {trackers === undefined && remote && <Loading label={CHECKING[prefs.tracker] ?? 'Checking…'} />}
           {trackers && prefs.tracker === 'github' && !connectedHere && (
-            <GitHubSetup s={trackers} onConnected={() => finish('github')} />
+            <GitHubSetup s={trackers} reload={reloadTrackers} onConnected={() => finish('github')} />
           )}
           {trackers && prefs.tracker === 'linear' && !connectedHere && (
             <LinearSetup s={trackers} onConnected={() => finish('linear')} />
