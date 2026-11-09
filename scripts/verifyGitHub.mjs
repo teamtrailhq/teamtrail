@@ -103,7 +103,9 @@ export async function verifyGitHub({ browser, cli, log, shots }) {
     await dialog.getByText('Will use octo-org/tracker as octo-dev (GITHUB_TOKEN)').waitFor();
     await dialog.getByRole('button', { name: 'Connect', exact: true }).click();
     await dialog.waitFor({ state: 'detached', timeout: 20_000 });
-    await page.getByRole('button', { name: 'Settings' }).click();
+    // Settings is a full page: `?settings=tracker` opens its Project group at Tracker.
+    await page.goto(`${url}?settings=tracker`);
+    await page.locator('.settings-page').waitFor({ timeout: 15_000 });
     const who = page.locator('.connector .c-who');
     await who.waitFor({ timeout: 15_000 });
     const whoText = await who.innerText();
