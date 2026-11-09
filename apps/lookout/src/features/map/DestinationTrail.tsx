@@ -1,9 +1,4 @@
-/** The last stretches of trail, each a cleared path with dashes on it, leading to the X. */
+/** The last stretches of trail, thin connectors like the rest, leading to the X. */
 export function DestinationTrail({ trails }: { trails: string[] }) {
-  return trails.map((d) => (
-    <g key={d}>
-      <path className="edge-path" d={d} />
-      <path className="edge edge-open" d={d} />
-    </g>
-  ));
+  return trails.map((d) => <path key={d} className="edge edge-open edge-destination" d={d} />);
 }

@@ -259,25 +259,6 @@
   font: var(--type-meta);
   color: var(--text);
 }
-.status-panel li i {
-  width: 12px;
-  height: 8px;
-  background: var(--c);
-}
-.status-panel li.st-blocked i {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--c);
-}
-.status-panel li.st-parked i {
-  background: transparent;
-  border: 1px dashed var(--c);
-}
-.status-panel li.st-verifying i {
-  background: repeating-linear-gradient(90deg, var(--c) 0 4px, transparent 4px 6px);
-}
-.status-panel li.st-out-of-scope i {
-  background: repeating-linear-gradient(45deg, var(--c) 0 2px, transparent 2px 4px);
-}
 .status-panel li b {
   font-weight: 500;
   color: var(--text-hi);
@@ -369,160 +350,15 @@
   align-items: center;
   gap: 5px;
 }
-.lg i {
-  width: 8px;
-  height: 8px;
-  background: var(--c);
-  display: inline-block;
-}
-.lg.st-blocked i,
-.lg.st-decided i,
 .lg.hitl {
   display: none;
 }
 
-/* Graph nodes: trail signs. */
-.node {
-  cursor: pointer;
-  transition: transform 0.4s ease;
-}
-.node .body {
-  fill: var(--sign);
-  stroke: var(--sign-line);
-  stroke-width: 1.5;
-  transition:
-    stroke 0.3s,
-    fill 0.3s;
-}
-.node .post {
-  fill: var(--sign-post);
-  stroke: var(--sign-line);
-  stroke-width: 1;
-}
-.node .tuft {
-  fill: rgb(var(--decided-rgb));
-  opacity: 0.7;
-}
-.node .edge-bar {
-  fill: var(--c);
-}
-.node .title {
-  font-family: var(--sans);
-  font-size: var(--fs-node-title);
-  fill: var(--sign-text);
-  font-weight: 600;
-}
-.node .meta {
-  font-family: var(--sans);
-  font-size: var(--fs-node-meta);
-  font-weight: 500;
-  fill: var(--sign-meta);
-}
-.node .meta .key {
-  font-family: var(--mono);
-}
-.node .meta .agent,
-.node .meta .warn {
-  fill: var(--sign-text);
-  font-weight: 600;
-}
-.node .meta .urgent {
-  fill: var(--urgent);
-  font-weight: 600;
-}
-.node .live-tag {
-  font-family: var(--sans);
-  font-size: var(--fs-node-meta);
-  font-weight: 500;
-  fill: var(--text-hi);
-}
-.node:hover .body {
-  stroke: var(--sign-text);
-}
-.node.st-claimed .body {
-  stroke-width: 2;
-}
-.node.st-verifying .body {
-  stroke-dasharray: 6 3;
-}
-.node.st-rework .body {
-  stroke: var(--amber);
-}
-.node.st-held .body {
-  fill: var(--sign-held);
-  stroke: var(--urgent);
-}
-.node.st-decided .body {
-  fill: var(--sign-done);
-}
-.node.st-blocked .body,
-.node.st-parked .body,
-.node.st-out-of-scope .body {
-  fill: var(--sign-soft);
-}
-.node.st-blocked .title,
-.node.st-parked .title {
-  fill: var(--sign-text-soft);
-}
-.node.st-blocked .body:not(.tip) {
-  stroke-dasharray: 5 3;
-}
-.node.st-parked .body:not(.tip) {
-  stroke-dasharray: 4 3;
-}
-.node.st-out-of-scope .title {
-  fill: var(--sign-text-soft);
-  text-decoration: line-through;
-}
-.node.sel .body {
-  stroke: var(--text-hi);
-  stroke-width: 2.5;
-}
-.node.waiting {
-  --c: var(--urgent);
-}
-.node.waiting .body {
-  fill: var(--sign-held);
-  stroke: var(--urgent);
-  stroke-width: 2;
-}
-/* Claimed by an agent that went quiet: the lease is about to return the ticket to the queue. */
-.node.stalled {
-  --c: var(--amber);
-}
-.node.stalled .body:not(.tip) {
-  stroke: var(--amber);
-  stroke-dasharray: 5 3;
-}
-.node .alarm {
-  fill: none;
-  stroke: var(--urgent);
-  stroke-dasharray: 6 4;
-  stroke-opacity: 0.8;
-}
-
-/* The trail: a cleared path with dashes on it. Solid colour is walked, ink is still ahead. */
-.edge-path {
-  fill: none;
-  stroke: var(--trail-path);
-  stroke-width: 11;
-  stroke-linecap: round;
-}
-.edge {
-  fill: none;
-  stroke-width: 3;
-  stroke-dasharray: 9 6;
-}
-.edge-open {
-  stroke: var(--trail-ahead);
-}
-.edge-done {
-  stroke: rgb(var(--decided-rgb));
-}
 .destination .x-stroke {
   fill: none;
   stroke: var(--mark);
-  stroke-width: 7;
+  stroke-width: 5;
+  opacity: 0.75;
   stroke-linecap: round;
 }
 .destination .x-sketch {
@@ -662,48 +498,4 @@
   .fm-shadow {
     animation: none;
   }
-}
-
-/* A pending reroute drawn over the map: ghosts for added tickets, a strike for cancelled ones, ❄ for frozen ones. */
-.node.mark-added .body {
-  stroke: var(--amber);
-  stroke-dasharray: 4 3;
-}
-.node.mark-added .meta .key {
-  fill: var(--amber);
-}
-.node.mark-cancelled {
-  opacity: 0.55;
-}
-.node .strike {
-  stroke: var(--urgent);
-  stroke-width: 1.4;
-}
-.node.mark-revised .body,
-.node.mark-rewired .body,
-.node.mark-reopened .body {
-  stroke: var(--amber);
-  stroke-opacity: 0.8;
-}
-.node .reroute-tag {
-  font-family: var(--sans);
-  font-size: var(--fs-node-meta);
-  fill: var(--amber);
-}
-.node .freeze {
-  font-size: 11px;
-  fill: var(--accent);
-}
-.node.frozen .body {
-  stroke: var(--accent);
-  stroke-opacity: 0.8;
-}
-.edge-added {
-  stroke: var(--amber);
-  stroke-dasharray: 3 7;
-}
-/* An edge the pending reroute removes: still drawn, faded. */
-.edge-removed {
-  stroke: var(--faint);
-  stroke-dasharray: 2 6;
 }

@@ -45,19 +45,8 @@
   --map-trunk: #bfae8e;
   --map-rock: #d2cbb5;
   --map-rock2: #bfb8a1;
-  --trail-path: #e0d3b2;
-  --trail-ahead: #4a5249;
   --mark: #c8581e;
-  --sign: #eadbbd;
-  --sign-soft: #f0e8d6;
-  --sign-done: #deddbe;
-  --sign-held: #fbe6df;
-  --sign-post: #b89b6e;
-  --sign-line: #7f6a4a;
-  --sign-grain: rgba(127, 106, 74, 0.13);
-  --sign-text: #1b1510;
-  --sign-text-soft: #3b362b;
-  --sign-meta: #4a4336;
+  --map-card: #fbfaf4;
 }
 
 /* The same values twice: browsers can't share a block between a media query and an attribute selector. */
@@ -101,19 +90,8 @@
     --map-trunk: #2c2a22;
     --map-rock: #27322c;
     --map-rock2: #303c35;
-    --trail-path: #2a2b20;
-    --trail-ahead: #efe6ce;
     --mark: #e8833a;
-    --sign: #3f3628;
-    --sign-soft: #2f2a20;
-    --sign-done: #363a28;
-    --sign-held: #4b241e;
-    --sign-post: #5e4f39;
-    --sign-line: #8a7757;
-    --sign-grain: rgba(0, 0, 0, 0.14);
-    --sign-text: #f4eedd;
-    --sign-text-soft: #d5cdb9;
-    --sign-meta: #d6ccb2;
+    --map-card: #1d2823;
   }
 }
 :root[data-theme='night'] {
@@ -155,19 +133,8 @@
   --map-trunk: #2c2a22;
   --map-rock: #27322c;
   --map-rock2: #303c35;
-  --trail-path: #2a2b20;
-  --trail-ahead: #efe6ce;
   --mark: #e8833a;
-  --sign: #3f3628;
-  --sign-soft: #2f2a20;
-  --sign-done: #363a28;
-  --sign-held: #4b241e;
-  --sign-post: #5e4f39;
-  --sign-line: #8a7757;
-  --sign-grain: rgba(0, 0, 0, 0.14);
-  --sign-text: #f4eedd;
-  --sign-text-soft: #d5cdb9;
-  --sign-meta: #d6ccb2;
+  --map-card: #1d2823;
 }
 
 /* Derived: the same in both themes. */
