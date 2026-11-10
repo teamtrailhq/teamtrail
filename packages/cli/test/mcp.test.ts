@@ -200,7 +200,10 @@ describe('teamtrail MCP server', () => {
     expect(grill.comments.map((c) => c.body.split('\n')[0])).toEqual(['**HITL transcript**', '**Resolution**']);
     const records = await adapter.listDecisions(started.trail.id);
     expect(records.find((r) => r.ticketId === grill.id)?.transcript.map((e) => e.from)).toEqual(['agent', 'human']);
-    expect(snap.map.sections.decisions.map((d) => d.text)).toContain('Static page, no backend');
+    // A decision passed when charting is the agent's account, and says so: never read as the human's.
+    expect(snap.map.sections.decisions.map((d) => d.text)).toContainEqual(
+      expect.stringMatching(/^Static page, no backend \(stated by claude-\d+ when charting\)$/),
+    );
   });
 
   it('returns answered=false when the wait runs out and picks the answer up later', async () => {
@@ -271,8 +274,13 @@ describe('teamtrail MCP server', () => {
     });
     const c = await call<{ claimed: { key: string }; session: { id: string } }>('claim_ticket');
     await call('close_ticket', { resolution: 'Found it.' });
-    await call('close_ticket', { ticket: '#3', resolution: 'Not needed.', outcome: 'out_of_scope' });
-    await call('claim_ticket', { ticket: '#3' }).catch(() => {});
+    // Ruling #3 out without the human is a proposal, not a transition: nothing is journaled for it.
+    const ruled = await call<{ outcome: string }>('close_ticket', {
+      ticket: '#3',
+      resolution: 'Not needed.',
+      outcome: 'out_of_scope',
+    });
+    expect(ruled.outcome).toBe('proposed');
     const lines = fs
       .readFileSync(journalPath(root, started.trail.id), 'utf8')
       .trim()
@@ -281,8 +289,9 @@ describe('teamtrail MCP server', () => {
     expect(lines.map((e) => [e.ticketKey, e.event, e.from, e.to, e.actor, e.actorKind])).toEqual([
       [c.claimed.key, 'claim', 'ready', 'working', 'claude-07', 'agent'],
       [c.claimed.key, 'complete', 'working', 'done', 'claude-07', 'agent'],
-      ['#3', 'cancel', 'ready', 'cancelled', 'claude-07', 'agent'],
+      [undefined, undefined, undefined, undefined, 'claude-07', 'agent'],
     ]);
+    expect(lines[2]).toMatchObject({ kind: 'reroute', action: 'proposed' });
     expect(lines[1].sessionId).toBe(c.session.id);
   });
 

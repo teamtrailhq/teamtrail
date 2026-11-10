@@ -57,7 +57,9 @@ describe('acceptance criteria', () => {
       [{ id: 'AC-2', evidence: 'test:workspace isolation', note: 'scoped' }],
       [],
     );
-    expect(stated).toMatchObject({ missing: [], failed: [], manual: [] });
+    // A stated test is the agent's word: claimed, not verified. On a business rule the human signs it off.
+    expect(stated).toMatchObject({ missing: [], failed: [], claimed: ['AC-2'] });
+    expect(stated.lines[0]).toMatch(/^AC-2 \? claimed, not verified: test:workspace isolation/);
   });
 
   it('are required for implementation tickets on trails with a brief and verification on', () => {
