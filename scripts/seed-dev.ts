@@ -21,6 +21,7 @@ import { seedModels } from './seedModels';
 import { seedParallel } from './seedParallel';
 import { seedProjects } from './seedProjects';
 import { seedSupervision } from './seedSupervision';
+import { HISTORY_FINISHED_MIN_AGO, seedTimeline } from './seedTimeline';
 
 const DEV_MARKER = '.dev-seed';
 // Bundled to node_modules/.cache before it runs, so the repo root comes from npm, not from the file's path.
@@ -107,8 +108,9 @@ const mainBrief = {
   mapId: main.id,
   status: 'accepted' as const,
   author: 'claude-01',
-  submittedAt: now - 2 * day,
-  decidedAt: now - 2 * day + 3_600_000,
+  // Written and accepted right after the trail was charted (seedTimeline dates the trail).
+  submittedAt: now - 20 * 3_600_000,
+  decidedAt: now - 19 * 3_600_000 - 30 * 60_000,
   sections: {
     summary:
       'Add offline editing to the Fieldnote mobile app, with edits that merge cleanly when the device reconnects.',
@@ -243,10 +245,13 @@ await seedModels({ root, adapter, main, now });
 await seedGuides({ root, adapter, main, now });
 
 // 10. A finished trail with two vendors' work on it, for Trail stats.
-const history = await seedHistory({ root, adapter, now });
+const history = await seedHistory({ root, adapter, finishedAt: now - HISTORY_FINISHED_MIN_AGO * 60_000 });
 
 // 11. More than one project: a second repo and a missing one in a dev-only registry, for All projects.
 const projects = await seedProjects({ repoRoot, homeRoot: root, now });
+
+// 12. A lived-in day: the trails were charted hours ago, and the finished work has claims to time it by.
+await seedTimeline({ root, adapter, main, second, history, now });
 
 console.log(`seeded ${root}`);
 console.log(`  ${main.key} ${main.title} · mid-flight`);

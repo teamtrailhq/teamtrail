@@ -45,10 +45,10 @@ export async function seedDecisions(
       alternatives: ['Last-write-wins per note (Bear, Obsidian Sync)', 'Server-side three-way merge'],
       rationale:
         'Users already expect per-block merges from Notion; per-note last-write-wins silently drops concurrent edits in 3 of 4 tested apps.',
-      decidedBy: 'claude-r1',
+      decidedBy: 'claude-01',
       decidedAt: t143,
-      participants: [{ id: 'claude-r1' }],
-      source: { kind: 'agent', ref: 'seed-s-143', label: 'claude-r1 session' },
+      participants: [{ id: 'claude-01' }],
+      source: { kind: 'agent', ref: 's_4fq2_1', label: 'claude-01 session' },
     },
     { appendToTrail: false },
   );
@@ -112,10 +112,10 @@ export async function seedDecisions(
       alternatives: ['Last-write-wins with tombstones (~1.1x storage)', 'Yjs with custom persistence'],
       rationale:
         'Measured on 10k fixture notes. Only Automerge kept full history under budget after nightly compaction.',
-      decidedBy: 'claude-r2',
+      decidedBy: 'claude-02',
       decidedAt: at(145),
-      participants: [{ id: 'claude-r2' }],
-      source: { kind: 'agent', ref: 'seed-s-145', label: 'claude-r2 session' },
+      participants: [{ id: 'claude-02' }],
+      source: { kind: 'agent', ref: 's_9kd7_2', label: 'claude-02 session' },
     },
     { appendToTrail: false },
   );

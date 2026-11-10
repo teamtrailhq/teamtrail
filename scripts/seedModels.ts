@@ -25,9 +25,27 @@ interface SeedInput {
 
 const ALWAYS_RUNNING_PID = 1;
 
+// What each session has used so far and, for the earlier one, the questions you answered it today (minutes ago asked,
+// minutes waited), so the trail's spend and your answer times start from a morning's work, not from zero.
 const AGENTS = [
-  { agent: 'codex-01', model: 'gpt-5.1-codex-mini', ticket: 'Show sync status in the note list', ago: 12 },
-  { agent: 'claude-05', model: 'claude-sonnet-4-5', ago: 30 },
+  {
+    agent: 'codex-01',
+    model: 'gpt-5.1-codex-mini',
+    ticket: 'Show sync status in the note list',
+    ago: 12,
+    usage: { inputTokens: 412_000, outputTokens: 38_600, costUsd: 0.91 },
+    answered: [],
+  },
+  {
+    agent: 'claude-05',
+    model: 'claude-sonnet-4-5',
+    ago: 30,
+    usage: { inputTokens: 1_284_000, outputTokens: 96_400, costUsd: 5.3 },
+    answered: [
+      { ago: 212, waited: 3 },
+      { ago: 95, waited: 7 },
+    ],
+  },
 ];
 
 function sessionDoc(input: {
@@ -37,6 +55,8 @@ function sessionDoc(input: {
   ticketId?: string;
   at: number;
   now: number;
+  usage: { inputTokens: number; outputTokens: number; costUsd: number };
+  answered: { ago: number; waited: number }[];
 }) {
   const { tier } = tierOfModel(input.model);
   const working = !!input.ticketId;
@@ -56,10 +76,18 @@ function sessionDoc(input: {
       ...(working ? {} : { endedAt: input.now - 5 * 60_000 }),
       model: input.model,
       tier,
+      usage: { ...input.usage, source: 'reported' },
     },
     chats: [],
     pending: [],
-    answered: [],
+    answered: input.answered.map((q, i) => ({
+      id: `q_seed_${input.agent}_${i}`,
+      mapId: input.mapId,
+      sessionId: `s_seed_${input.agent}`,
+      agent: input.agent,
+      askedAt: input.now - q.ago * 60_000,
+      answeredAt: input.now - (q.ago - q.waited) * 60_000,
+    })),
     feed: [],
     client: input.agent.startsWith('codex') ? 'codex 0.50.0' : 'claude-code 2.1.0',
     pid: ALWAYS_RUNNING_PID,
@@ -77,7 +105,7 @@ export async function seedModels({ root, adapter, main, now }: SeedInput) {
   const snap = await adapter.loadMap(main.id);
   for (const a of AGENTS) {
     const ticketId = a.ticket && snap.tickets.find((t) => t.title.startsWith(a.ticket) && t.state === 'open')?.id;
-    const doc = sessionDoc({ mapId: main.id, agent: a.agent, model: a.model, ticketId, at: now - a.ago * 60_000, now });
+    const doc = sessionDoc({ ...a, mapId: main.id, ticketId, at: now - a.ago * 60_000, now });
     writeJsonAtomic(path.join(root, agentPaths.session(doc.session.id)), doc);
   }
 }

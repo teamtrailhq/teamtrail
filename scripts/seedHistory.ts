@@ -1,7 +1,8 @@
 // A finished sample trail with two vendors' work on it, so Trail stats has differences to show. The numbers are
 // made up and deliberately even-handed: each vendor comes out ahead on something, because this appears in marketing.
 // Its journal is
-// written the way a real run writes it; the tickets close at seed time, so claims are dated back from now.
+// written the way a real run writes it. The trail finished `finishedAt` (seedTimeline dates its files to then), so its
+// claims are dated back from that moment.
 import { type MapSnapshot, type TicketType, type TrackerAdapter, type TransitionEntry } from '@teamtrail/core';
 import { journalFile } from '@teamtrail/core/agents';
 
@@ -53,6 +54,10 @@ const WORK: Work[] = [
   { title: 'Fuzzy matching: worth the index cost?', type: 'research', agent: 'codex-01', leadMin: 74 },
   { title: 'Attachment text: index it or skip it?', type: 'research', agent: 'codex-02', leadMin: 88 },
   { title: 'Highlighting matches in long notes', type: 'research', agent: 'codex-01', leadMin: 79 },
+  { title: 'Prototype search-as-you-type on a 10k note library', type: 'prototype', agent: 'claude-02', leadMin: 74 },
+  { title: 'Prototype the results screen with snippets', type: 'prototype', agent: 'codex-02', leadMin: 66 },
+  { title: 'Sign off the search index ADR', type: 'task', agent: 'claude-01', leadMin: 18 },
+  { title: 'Write the search release notes', type: 'task', agent: 'codex-01', leadMin: 21 },
   {
     title: 'Build the search index on first launch',
     type: 'execute',
@@ -142,10 +147,18 @@ const claimOf = (actor: string) => ({
   actorKind: 'agent' as const,
 });
 
-export async function seedHistory({ root, adapter, now }: { root: string; adapter: TrackerAdapter; now: number }) {
+export async function seedHistory({
+  root,
+  adapter,
+  finishedAt,
+}: {
+  root: string;
+  adapter: TrackerAdapter;
+  finishedAt: number;
+}) {
   const map = await adapter.createMap({
     title: 'Search across notes',
-    mode: 'plan-and-execute',
+    mode: 'plan+execute',
     sections: {
       destination: 'Users find any note by what it says, online or off, in under a second.',
       notes: '',
@@ -157,7 +170,7 @@ export async function seedHistory({ root, adapter, now }: { root: string; adapte
   const journal = journalFile(root);
   for (const w of WORK) {
     const t = await adapter.createTicket(map.id, { title: w.title, type: w.type, body: '', hitl: false });
-    const start = now - w.leadMin * MIN;
+    const start = finishedAt - w.leadMin * MIN;
     journal.append(entry(map, t, start, claimOf(w.agent)));
     for (let r = 0; r < (w.reworks ?? 0); r++) {
       journal.append(
@@ -195,6 +208,7 @@ async function seedReview({
   const journal = journalFile(root);
   const r = await adapter.createTicket(map.id, { title: `Review ${work.key}`, type: 'review', body: '', hitl: false });
   await adapter.setMeta(map.id, r.id, { reviewOf: work.id });
+  await adapter.assign(map.id, r.id, review.by);
   const at = start + 15 * MIN;
   journal.append(entry(map, r, at, claimOf(review.by)));
   const engine = { actor: 'teamtrail', actorKind: 'engine' as const };
