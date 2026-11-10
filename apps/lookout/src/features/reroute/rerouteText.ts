@@ -14,6 +14,43 @@ export interface ChangeText {
   detail?: string;
 }
 
+/** A labelled part of what a change writes, in full: what approving it puts in the trail word for word. */
+export interface ChangePart {
+  label: string;
+  text: string;
+}
+
+/** The note a one-click dismiss sends the agent. */
+export const DISMISS_NOTE = 'Dismissed by the trail lead. Carry on with the current plan.';
+
+/**
+ * Everything a change writes that its row only names: the new title and description of an edit, the description
+ * and HITL mark of a new ticket, a superseding decision's words and how it will be recorded. Empty when the row
+ * already says it all.
+ */
+export function changeParts(c: RerouteChange, by: string): ChangePart[] {
+  switch (c.op) {
+    case 'edit_ticket':
+      return [
+        ...(c.title?.trim() ? [{ label: 'New title', text: c.title.trim() }] : []),
+        ...(c.body?.trim() ? [{ label: 'New description (replaces the old one)', text: c.body.trim() }] : []),
+      ];
+    case 'add_ticket':
+      return [
+        ...(c.body?.trim() ? [{ label: 'Description', text: c.body.trim() }] : []),
+        { label: 'Who decides', text: c.hitl ? 'You (HITL)' : 'Agents, without you' },
+      ];
+    case 'supersede_decision':
+      return [
+        { label: `New answer to ${c.decision}`, text: c.answer },
+        { label: 'Rationale', text: c.rationale },
+        { label: 'Recorded as', text: `Proposed by ${by}, approved by you; the words stay ${by}'s.` },
+      ];
+    default:
+      return [];
+  }
+}
+
 /** Describes a change; `name` turns a ticket id or a new ticket's ref into what the trail lead sees (`#4`, a title). */
 export function describeChange(c: RerouteChange, name: (idOrRef: string) => string): ChangeText {
   switch (c.op) {
@@ -24,11 +61,11 @@ export function describeChange(c: RerouteChange, name: (idOrRef: string) => stri
     case 'cancel_ticket':
       return { verb: 'Cancel', text: name(c.ticket), detail: c.reason };
     case 'edit_ticket':
-      return { verb: 'Revise', text: name(c.ticket), detail: c.title ? `New title: ${c.title}` : 'New description' };
+      return { verb: 'Revise', text: name(c.ticket), detail: reviseDetail(c) };
     case 'rewire':
       return { verb: 'Rewire', text: name(c.ticket), detail: rewireDetail(c, name) };
     case 'supersede_decision':
-      return { verb: 'Supersede', text: c.decision, detail: `${c.answer}. ${c.rationale}` };
+      return { verb: 'Supersede', text: c.decision, detail: 'Replaced by the answer below' };
     case 'update_destination':
       return { verb: 'Destination', text: c.text };
     case 'add_unspecified':
@@ -42,6 +79,12 @@ export function describeChange(c: RerouteChange, name: (idOrRef: string) => stri
       return unknown;
     }
   }
+}
+
+/** What an edit changes, named; its full text is in the change's parts. */
+function reviseDetail(c: Extract<RerouteChange, { op: 'edit_ticket' }>) {
+  const parts = [c.title?.trim() && 'New title', c.body?.trim() && 'new description'].filter(Boolean);
+  return parts.join(' and ').replace(/^new/, 'New');
 }
 
 /** "now also after #3 · no longer after #2" */

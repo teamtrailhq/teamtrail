@@ -12,9 +12,9 @@ import { confirmTrackerSettings } from '../src/planning/lifecycle/confirmTracker
 import { setVerification } from '../src/planning/lifecycle/setVerification';
 import { tierOfTicket } from '../src/planning/matching/tierOfTicket';
 import { claim } from '../src/planning/operations/claims';
+import { assertConfirmed } from '../src/verification/assertConfirmed';
 import { DEFAULT_CONFIG } from '../src/verification/config';
 import { verificationFor } from '../src/verification/policy';
-import { assertConfirmed } from '../src/verification/verifyCompletion';
 import { fakeGitHub } from './fakes/github';
 import { fakeLinear } from './fakes/linear';
 import { noSleep } from './scenarios';

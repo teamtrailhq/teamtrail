@@ -38,6 +38,11 @@ export interface TicketLease {
   /** Trail name of the agent holding the claim (the ticket's assignee). */
   agent: string;
   sessionId?: string;
+  /**
+   * Who is behind the claim, beyond the trail name: `token:<id>` for a remote agent, `local:<id>` for one
+   * connection on this machine. Two connections under one trail name are told apart by it.
+   */
+  origin?: string;
   pid: number;
   claimedAt: number;
   renewedAt: number;

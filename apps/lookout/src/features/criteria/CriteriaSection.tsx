@@ -1,11 +1,16 @@
 import { pathsIn, selectKnowledge, uncoveredRules, type MapSnapshot, type Ticket } from '@teamtrail/core';
-import { Button, MetaLine } from '../../components/ui';
+import { MetaLine } from '../../components/ui';
 import { useKnowledge } from '../knowledge';
+import { ConfirmCriteria } from './ConfirmCriteria';
+import { ProposedCriteria } from './ProposedCriteria';
 import { useCriteria } from './useCriteria';
+import { useCriteriaProposals } from './useCriteriaProposals';
 
 /** In the inspector: what "done" means for this ticket, the trail lead's confirm, and business rules nothing covers. */
 export function CriteriaSection({ snap, t }: { snap: MapSnapshot; t: Ticket }) {
   const { tickets, confirm } = useCriteria(snap.map.id);
+  const changes = useCriteriaProposals(snap.map.id);
+  const proposal = changes.proposals.find((p) => p.ticketId === t.id);
   const k = useKnowledge();
   const entry = tickets.find((x) => x.ticketId === t.id);
   const criteria = entry?.criteria ?? [];
@@ -15,7 +20,7 @@ export function CriteriaSection({ snap, t }: { snap: MapSnapshot; t: Ticket }) {
     paths: pathsIn(`${t.body}\n${k.briefText}`),
   }).filter((r) => r.kind === 'business-rule');
   const uncovered = rules.filter((r) => uncoveredRules(criteria, [r.id]).length);
-  if (!criteria.length && !uncovered.length) return null;
+  if (!criteria.length && !uncovered.length && !proposal) return null;
   return (
     <div className="criteria-section d-section">
       <span
@@ -37,6 +42,12 @@ export function CriteriaSection({ snap, t }: { snap: MapSnapshot; t: Ticket }) {
           ))}
         </ul>
       )}
+      {proposal && (
+        <ProposedCriteria
+          proposal={proposal}
+          decide={(action, hash) => changes.decide(action, { title: snap.map.title, ticketId: t.id, hash })}
+        />
+      )}
       {uncovered.length > 0 && (
         <div className="crit-uncovered edge-note edge-attention">
           <p className="t-meta">No criterion covers these rules yet:</p>
@@ -51,18 +62,14 @@ export function CriteriaSection({ snap, t }: { snap: MapSnapshot; t: Ticket }) {
         </div>
       )}
       {criteria.length > 0 && t.state === 'open' && (
-        <Button
-          size="sm"
-          variant={entry?.confirmed ? 'ghost' : 'default'}
-          data-tip={
-            entry?.confirmed ? 'Take your confirmation back' : 'Agree that these criteria define done for this ticket'
+        <ConfirmCriteria
+          ticketId={t.id}
+          hash={entry?.hash}
+          confirmed={!!entry?.confirmed}
+          confirm={(confirmed, hash) =>
+            confirm({ title: snap.map.title, ticketId: t.id, ticketKey: t.key, confirmed, hash })
           }
-          onClick={() =>
-            void confirm({ title: snap.map.title, ticketId: t.id, ticketKey: t.key, confirmed: !entry?.confirmed })
-          }
-        >
-          {entry?.confirmed ? 'Unconfirm' : 'Confirm criteria'}
-        </Button>
+        />
       )}
     </div>
   );

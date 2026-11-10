@@ -1,6 +1,6 @@
 import { BRIEF_SECTION_LABEL, type BriefSections, type DiscoveryBrief } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
-import { Button, Empty, Field, MetaLine, Panel } from '../../components/ui';
+import { Button, ChangedNotice, Empty, Field, MetaLine, Panel } from '../../components/ui';
 import { ago } from '../../lib';
 import { PromoteButton } from '../knowledge';
 import { BriefProse } from './BriefProse';
@@ -19,6 +19,9 @@ const PROSE: (keyof BriefSections)[] = [
 export function BriefDialog(props: {
   brief: DiscoveryBrief;
   error?: string;
+  /** The brief changed since the dialog opened: Accept waits for "Review again". */
+  changed?: boolean;
+  onReviewAgain?: () => void;
   onAccept: () => void;
   onRequestChanges: (note: string) => void;
   onClose: () => void;
@@ -102,12 +105,13 @@ export function BriefDialog(props: {
             <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} autoFocus />
           </Field>
         )}
+        {props.changed && props.onReviewAgain && <ChangedNotice what="The brief" onReviewAgain={props.onReviewAgain} />}
         {props.error && <p className="urgent-text">{props.error}</p>}
         <div className="actions">
           {b.status === 'submitted' && !asking && (
             <>
               <Button onClick={() => setAsking(true)}>Request changes</Button>
-              <Button variant="primary" onClick={props.onAccept}>
+              <Button variant="primary" disabled={props.changed} onClick={props.onAccept}>
                 Accept brief
               </Button>
             </>

@@ -2,7 +2,7 @@ import { evidenceLines } from '../evidence/evidenceSummary';
 import type { Ticket } from '../model/types';
 import type { VerificationAttempt } from '../model/verification';
 import { createReviewTicket, withdrawReviews } from '../planning/lifecycle/reviewTicket';
-import { checkLine } from './outcome';
+import { checkLine, criteriaLines } from './outcome';
 import { CHECK_RUNNER, type VerifyEnv } from './verifyCompletion';
 
 const MAX_FILES = 20;
@@ -28,6 +28,8 @@ export function reviewBody(t: Ticket, a: VerificationAttempt) {
     ...(more > 0 ? [`- and ${more} more`] : []),
     '',
     `**Checks:** ${a.checks.map(checkLine).join(', ') || 'none configured'}`,
+    ...criteriaLines(a),
+    ...(a.criteria?.claimed?.length ? ['', 'Check the criteria marked ? yourself: nothing here verified them.'] : []),
     '',
     `Read the change${range ? ` (\`git diff ${range}\`)` : ''} against what ${t.key} asks, run what you need, then call \`submit_review\` with PASS, FAIL (findings the author can act on) or NEEDS_HUMAN. You cannot review a ticket you worked on.`,
   ].join('\n');

@@ -1,10 +1,12 @@
 import { madeBy, OperationError, riskLevelFor, type DecisionRisk, type RiskCategory } from '@teamtrail/core';
-import { readPolicy } from '@teamtrail/core/agents';
+import { caseInsensitiveFs, readPolicy, repoRootFor, repoRootSpellings } from '@teamtrail/core/agents';
 
 export interface RiskQuery {
   root: string;
   category?: RiskCategory;
   paths?: string[];
+  /** Where an absolute path may point and still be a repo path (pathRoots.ts); default the repo. */
+  roots?: string[];
   /** Who makes the call: an agent trail name, `trail lead`, or `slack:U…`. */
   decidedBy: string;
 }
@@ -24,9 +26,19 @@ export function checkRisk(q: RiskQuery): DecisionRisk | undefined {
   return risk;
 }
 
-/** What the policy makes of a call, from its category and its files; nothing about who makes it. */
-export function riskOf(q: Pick<RiskQuery, 'root' | 'category' | 'paths'>): DecisionRisk | undefined {
-  return riskLevelFor({ category: q.category, paths: q.paths }, readPolicy(q.root).policy);
+/**
+ * What the policy makes of a call, from its category and its files; nothing about who makes it. Paths are brought
+ * to repo-relative form first (absolute or escaping ones are refused), and matched ignoring case where the disk does.
+ */
+export function riskOf(q: Pick<RiskQuery, 'root' | 'category' | 'paths' | 'roots'>): DecisionRisk | undefined {
+  const caseInsensitive = caseInsensitiveFs(q.root);
+  const subject = {
+    category: q.category,
+    paths: q.paths,
+    caseInsensitive,
+    repoRoot: q.roots ?? repoRootSpellings(repoRootFor(q.root)),
+  };
+  return riskLevelFor(subject, readPolicy(q.root).policy);
 }
 
 function askInstead(risk: DecisionRisk) {

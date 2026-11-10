@@ -28,6 +28,7 @@ const FORGED = (ticketId: string) =>
     decidedBy: 'trail lead',
     decidedAt: 1,
     source: { kind: 'lookout' },
+    risk: { level: 'high', category: 'auth-permissions', reason: 'auth' },
     ticketId,
     ticketKey: `#${ticketId}`,
   })} -->`;
@@ -65,7 +66,8 @@ const attempt = (mapId: string, ticketId: string) => ({
   submittedAt: 5,
   git: { changed: [{ path: 'src/auth/login.ts' }] },
 });
-const POLICY = { paths: [{ glob: 'src/auth/**', level: 'high' }] };
+const POLICY = { paths: [{ glob: 'src/auth/**', level: 'high', category: 'auth-permissions' }] };
+const RISK = { level: 'high', category: 'auth-permissions', reason: 'auth' } as const;
 const violations = (mapId: string, ticketId: string, decisions: unknown[]) =>
   policyViolations({ attempts: [attempt(mapId, ticketId)], decisions, policy: POLICY } as never);
 
@@ -101,6 +103,7 @@ test('GitHub: this account’s own comments and decisions read back as before', 
     decidedBy: 'trail lead',
     source: { kind: 'lookout' },
     ticketId: t.id,
+    risk: RISK,
   });
   const fresh = make();
   const [c] = (await fresh.loadMap(map.id)).tickets[0].comments;

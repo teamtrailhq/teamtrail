@@ -131,7 +131,12 @@ describe('policyViolations', () => {
       attempt('5', ['db/migrations/3.sql']),
     ];
     const decisions = [
-      decision('D-1', { ticketId: '3', decidedBy: 'trail lead' }),
+      // The human's decisions and answers cover a rule only in the category they were made in.
+      decision('D-1', {
+        ticketId: '3',
+        decidedBy: 'trail lead',
+        risk: { level: 'high', category: 'schema', reason: 'r' },
+      }),
       decision('D-2', { ticketId: '4' }),
       decision('D-3', { ticketId: '2' }),
     ];
@@ -139,7 +144,7 @@ describe('policyViolations', () => {
       attempts,
       decisions,
       policy: DEFAULT_POLICY,
-      covered: [{ mapId: 'm1', ticketId: '5' }],
+      covered: [{ mapId: 'm1', ticketId: '5', category: 'schema' }],
     });
     expect(found).toEqual([
       expect.objectContaining({

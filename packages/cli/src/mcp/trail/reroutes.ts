@@ -12,6 +12,8 @@ import type { WaitControl } from './types';
 
 export interface ProposeArgs {
   trail?: string;
+  /** `rule-out`: close_ticket out_of_scope, in its own lane (ruleOut.ts). */
+  lane?: 'rule-out';
   kind?: RerouteKind;
   destinationReason?: DestinationReason;
   reason: string;
@@ -41,6 +43,8 @@ export async function proposeRerouteOp(ctx: AgentContext, input: ProposeArgs) {
         changes: withIds(ctx, snap, input.changes),
         by,
         sessionId: s.id,
+        origin: ctx.origin,
+        ...(input.lane ? { lane: input.lane } : {}),
       },
     );
     s.log(`proposed ${r.proposal.id} · ${r.proposal.changes.length} changes · waiting on the human`, 'warn');
@@ -50,6 +54,11 @@ export async function proposeRerouteOp(ctx: AgentContext, input: ProposeArgs) {
       kind: r.proposal.kind,
       diff: r.diff,
       frozen: r.frozen.map((id) => ctx.keyOf(id)),
+      ...(r.proposal.wide
+        ? {
+            wide: `It touches ${r.proposal.wide.touched} of ${r.proposal.wide.open} open tickets, so it freezes nothing: the human is asked to decide it, and the current plan stands until they do.`,
+          }
+        : {}),
       next: 'The human reviews it in the Lookout. Keep working on tickets it does not freeze; reroute_status (wait: true) returns the decision.',
     };
   } catch (e) {

@@ -1,6 +1,7 @@
 import type { KnowledgeEntry } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
-import { Button, Field, MetaLine } from '../../components/ui';
+import { Button, ChangedNotice, Field, MetaLine } from '../../components/ui';
+import { useShown } from '../../hooks/useShown';
 import { useKnowledge } from './knowledgeContext';
 
 const STATUS_TEXT: Record<KnowledgeEntry['status'], string> = {
@@ -22,6 +23,8 @@ export function KnowledgeDetail({ e }: { e: KnowledgeEntry }) {
     setBody(e.body);
   }, [e.id, e.title, e.body]);
   const stale = k.stale[e.id];
+  // Confirming binds to the entry as the trail lead opened it; an edit by an agent meanwhile waits for "Review again".
+  const shown = useShown(e.id, k.hashes[e.id]);
   return (
     <div className="kn-detail">
       <MetaLine parts={[{ text: e.id, code: true }, e.kind.replace('-', ' '), e.status]} />
@@ -73,6 +76,7 @@ export function KnowledgeDetail({ e }: { e: KnowledgeEntry }) {
           </>
         )}
       </dl>
+      {shown.changed && <ChangedNotice what="This entry" onReviewAgain={shown.reviewAgain} />}
       {k.error && <p className="vf-err">{k.error}</p>}
       <div className="actions">
         {editing ? (
@@ -91,12 +95,18 @@ export function KnowledgeDetail({ e }: { e: KnowledgeEntry }) {
         ) : (
           <>
             {(e.status !== 'confirmed' || stale) && (
-              <Button variant="primary" onClick={() => void k.call(e.id, { kind: 'confirm' })}>
+              <Button
+                variant="primary"
+                disabled={shown.changed}
+                onClick={() => void k.call(e.id, { kind: 'confirm' }, shown.hash)}
+              >
                 {e.status === 'confirmed' ? 'Re-confirm' : 'Confirm'}
               </Button>
             )}
             {e.status !== 'assumption' && e.status !== 'outdated' && (
-              <Button onClick={() => void k.call(e.id, { kind: 'assumption' })}>Keep as assumption</Button>
+              <Button disabled={shown.changed} onClick={() => void k.call(e.id, { kind: 'assumption' }, shown.hash)}>
+                Keep as assumption
+              </Button>
             )}
             {e.flag && <Button onClick={() => void k.call(e.id, { kind: 'resolve-flag' })}>Resolve flag</Button>}
             <Button variant="ghost" onClick={() => setEditing(true)}>

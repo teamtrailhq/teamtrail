@@ -239,6 +239,18 @@
 .vf-criteria .wait {
   color: var(--amber);
 }
+/* The agent's word, not checked here: neither proven nor failed. */
+.vf-criteria .claimed {
+  color: var(--dim);
+}
+.crit-proposal {
+  margin: var(--sp-6) 0;
+}
+.crit-proposal .actions {
+  display: flex;
+  gap: var(--sp-6);
+  justify-content: flex-end;
+}
 .criteria-section {
   margin: var(--sp-4) 0;
 }

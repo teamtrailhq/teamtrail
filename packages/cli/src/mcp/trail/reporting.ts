@@ -10,6 +10,7 @@ import {
 import type { AgentContext } from './agentContext';
 import { assertAssumes } from './assumptions';
 import { humanAnswerFor, humanDecision, release, spend, type HumanAnswer } from './humanAnswer';
+import { pathRoots } from './pathRoots';
 import { checkRisk, riskOf } from './riskCheck';
 
 export function sessionView(ctx: AgentContext) {
@@ -109,7 +110,7 @@ export async function recordDecision(ctx: AgentContext, input: DecisionInput) {
   const agent = await ctx.agentId();
   const t = input.ticket ? ctx.findTicket(snap, input.ticket) : undefined;
   refuseClaim(input.decidedBy, agent);
-  const subject = { root: ctx.root, category: input.category, paths: input.paths };
+  const subject = { root: ctx.root, category: input.category, paths: input.paths, roots: pathRoots(ctx) };
   const answered = humanAnswerFor(ctx, {
     questionId: input.questionId,
     category: input.category,
@@ -137,7 +138,8 @@ async function saveWith(
     ? humanDecision(answered, { agent, said: input.answer, rationale: input.rationale })
     : { ...input, decidedBy: agent, transcript: undefined };
   const { decidedBy } = said;
-  const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, decidedBy });
+  const roots = pathRoots(ctx);
+  const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, roots, decidedBy });
   assertAssumes(c.snap, input.assumes);
   return saveDecision(
     ctx.adapter,

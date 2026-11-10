@@ -95,6 +95,7 @@ async function recordVerdict({ env, r, t, last, summary }: Reviewed & { r: Revie
     by: r.agent,
     byKind: 'agent',
     ...(r.sessionId ? { sessionId: r.sessionId } : {}),
+    ...(r.origin ? { origin: r.origin } : {}),
     verdict: r.verdict,
     summary,
     findings: r.findings ?? [],

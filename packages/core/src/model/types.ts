@@ -266,15 +266,6 @@ export interface SessionUsage {
   models?: string[];
 }
 
-export interface AnsweredQuestion {
-  id: string;
-  mapId: string;
-  sessionId: string;
-  agent: string;
-  askedAt: number;
-  answeredAt: number;
-}
-
 export interface FeedEntry {
   id: string;
   at: number;
@@ -306,3 +297,4 @@ export interface ChatMessage {
 }
 
 export type { PendingQuestion } from './pendingQuestion';
+export type { AnsweredQuestion } from './answeredQuestion';

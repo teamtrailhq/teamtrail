@@ -19,6 +19,8 @@ export class AgentLeases {
   constructor(
     private root: string,
     readonly ttlMs: number,
+    /** Who is behind the agent (AgentContext.origin), kept on every lease it holds. */
+    private origin?: string,
   ) {}
 
   private id = (mapId: string, ticketId: string) => `${mapId}/${ticketId}`;
@@ -32,6 +34,7 @@ export class AgentLeases {
       ticketKey: t.key,
       agent,
       sessionId,
+      ...(this.origin ? { origin: this.origin } : {}),
       pid: process.pid,
       claimedAt: now,
       renewedAt: now,

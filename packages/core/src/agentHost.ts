@@ -9,6 +9,10 @@ export { LEASE_REAPER, reclaimExpired, returnToQueue, type ReturnOutcome } from 
 export { journalFile, journalPath, JOURNAL_DIR } from './history/journalFile';
 export { briefPath, readBrief, writeBrief } from './discovery/briefStore';
 export { criteriaOf, readCriteria, writeTicketCriteria } from './criteria/criteriaStore';
+export { dropCriteriaProposal, readCriteriaProposals, writeCriteriaProposal } from './criteria/criteriaProposals';
+export { caseInsensitiveFs } from './policy/caseInsensitiveFs';
+export { repoRootSpellings } from './policy/repoRootSpellings';
+export { chartedBy, recordCharted, type ChartedBy } from './agents/chartedStore';
 export { POLICY_FILE, policyPath, readPolicy, writePolicy, type PolicyRead } from './policy/policyStore';
 export {
   createReroute,
@@ -29,6 +33,7 @@ export { approveReroute, rejectReroute, type RerouteDecision } from './planning/
 export {
   blobHash,
   listKnowledge,
+  createKnowledge,
   nextKnowledgeId,
   readKnowledge,
   repoRootFor,
@@ -59,7 +64,6 @@ export {
 export { attemptComment, checkLine, outcomeOf, type Outcome } from './verification/outcome';
 export {
   CHECK_RUNNER,
-  assertConfirmed,
   levelFor,
   repoRootOf,
   rerun,
@@ -68,6 +72,7 @@ export {
   type Submission,
   type VerifyEnv,
 } from './verification/verifyCompletion';
+export { assertConfirmed } from './verification/assertConfirmed';
 export { operatorAction, type OperatorAction, type OperatorRequest } from './verification/operatorActions';
 export { approvalItems, type ApprovalItem } from './verification/approvals';
 export { rerunChecks } from './verification/operatorRerun';
