@@ -85,6 +85,10 @@ const shot = async (name) => {
 await page.goto(`${url}${url.includes('?') ? '&' : '?'}settings=approvals`);
 const checksRow = page.locator('.ap-row', { hasText: 'Check commands in verification.json' });
 await checksRow.waitFor({ timeout: 15_000 });
+// the reload can come before onboarding's "done" is saved: dismiss it again rather than race its scrim
+const again = page.getByRole('button', { name: 'Get started' });
+if (await again.isVisible()) await again.click();
+await page.locator('.dialog.onboarding').waitFor({ state: 'detached', timeout: 15_000 });
 const argvShown = await checksRow.locator('.ap-lines').innerText();
 if (!argvShown.includes('["npm","run","--silent","check"]')) throw new Error(`approvals show: ${argvShown}`);
 await shot('approvals-first-run');
