@@ -172,3 +172,24 @@ test(
     assert.equal(existsSync(marker), false, existsSync(marker) ? readFileSync(marker, 'utf8') : '');
   },
 );
+
+test('PASS-shaped names stay behind, and proxies pass without the credentials in their URL', () => {
+  const { env, withheld } = childEnv({
+    PATH: '/bin',
+    DB_PASS: 'x',
+    SMTP_PASS: 'x',
+    PASS_PHRASE: 'x',
+    MY_PASSWD_FILE: 'x',
+    HTTPS_PROXY: 'http://ada:s3cret@proxy.example:3128',
+    http_proxy: 'http://user@proxy.example:8080/',
+    ALL_PROXY: 'socks5://proxy.example:1080',
+    NO_PROXY: 'localhost',
+  });
+  assert.deepEqual(withheld.sort(), ['DB_PASS', 'MY_PASSWD_FILE', 'PASS_PHRASE', 'SMTP_PASS']);
+  assert.equal(env.HTTPS_PROXY, 'http://proxy.example:3128');
+  assert.equal(env.http_proxy, 'http://proxy.example:8080/');
+  assert.equal(env.ALL_PROXY, 'socks5://proxy.example:1080');
+  assert.equal(env.NO_PROXY, 'localhost');
+  // A proxy value that isn't a URL is passed as it is: there's nothing to strip.
+  assert.equal(childEnv({ HTTP_PROXY: 'proxy.example:3128' }).env.HTTP_PROXY, 'proxy.example:3128');
+});

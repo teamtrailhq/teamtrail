@@ -11,7 +11,7 @@ const OWN =
 
 /** Names that read like a secret, and the prefixes of cloud and model providers' credentials. */
 const SECRET_SHAPED =
-  /TOKEN|SECRET|PASSWORD|PASSWD|PASSPHRASE|CREDENTIAL|PRIVATE|AUTH|COOKIE|APIKEY|(^|_)(KEY|PAT|DSN)(_|$)|_PWD$|^(AWS|GCP|GCLOUD|GOOGLE|AZURE|ARM|ANTHROPIC|CLAUDE|OPENAI|GH|GITHUB|GITLAB|HF|STRIPE|VAULT|DOCKER|KUBE\w*|SSH|GPG)_|^NPM_(?!CONFIG_|PACKAGE_|LIFECYCLE_|EXECPATH$|NODE_EXECPATH$|COMMAND$)/i;
+  /TOKEN|SECRET|PASSWORD|PASSWD|PASSPHRASE|(^|_)PASS(_|$)|CREDENTIAL|PRIVATE|AUTH|COOKIE|APIKEY|(^|_)(KEY|PAT|DSN)(_|$)|_PWD$|^(AWS|GCP|GCLOUD|GOOGLE|AZURE|ARM|ANTHROPIC|CLAUDE|OPENAI|GH|GITHUB|GITLAB|HF|STRIPE|VAULT|DOCKER|KUBE\w*|SSH|GPG)_|^NPM_(?!CONFIG_|PACKAGE_|LIFECYCLE_|EXECPATH$|NODE_EXECPATH$|COMMAND$)/i;
 
 /** Shell, locale, terminal and operating-system basics. */
 const BASICS = [
@@ -31,6 +31,11 @@ const ALLOWED = new RegExp(
   `^(${BASICS})$|^(LC_|NODE_|npm_config_|npm_package_|npm_lifecycle_|npm_execpath$|npm_node_execpath$|npm_command$|XDG_|COREPACK_|YARN_|PNPM_|FNM_|PYTHON|PYENV_|CONDA_|RBENV_|PLAYWRIGHT_|PUPPETEER_|VITEST_|JEST_|DYLD_)`,
   'i',
 );
+
+const PROXY = /^(https?|all|ftp)_proxy$/i;
+
+/** A proxy URL without the user and password it may carry (`http://ada:pw@proxy:3128` → `http://proxy:3128`). */
+const withoutUserinfo = (value: string) => value.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^@/?#]*@/i, '$1');
 
 export interface ChildEnv {
   env: NodeJS.ProcessEnv;
@@ -63,7 +68,7 @@ export function childEnv(source: NodeJS.ProcessEnv, extra: string[] = []): Child
   const withheld: string[] = [];
   for (const [name, value] of Object.entries(source)) {
     if (value === undefined) continue;
-    if (passes(name, extra)) env[name] = value;
+    if (passes(name, extra)) env[name] = PROXY.test(name) ? withoutUserinfo(value) : value;
     else withheld.push(name);
   }
   return { env, withheld };
