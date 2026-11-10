@@ -8,6 +8,7 @@ import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MemoryAdapter, chartMap, transition, type MapSections } from '@teamtrail/core';
 import { journalFile, writeAttempt } from '@teamtrail/core/agents';
+import { attentionView } from '@teamtrail/core/bridge';
 import { SLACK_JOURNAL } from '../../core/src/model/lifecycle';
 import { askMessage, label } from '../src/blocks';
 import { CODE, EVE, ANA, RAJ, TOKENS, agentDoc, connected, freezeTime, liveWorld, readJson, until } from './harness';
@@ -51,7 +52,7 @@ test('wrong tries: the Lookout shows which accounts made them; four people can n
     assert.deepEqual(
       s.ownerCode!.wrongTries,
       [
-        { id: EVE, name: 'Eve Moreau', count: 5 },
+        { id: EVE, name: 'eve', count: 5 },
         { id: RAJ, name: 'raj', count: 5 },
         { id: 'U0X000001', count: 5 },
         { id: 'U0X000002', count: 5 },
@@ -66,7 +67,7 @@ test('wrong tries: the Lookout shows which accounts made them; four people can n
     const dropped = svc.status();
     assert.equal(dropped.ownerCode, undefined);
     assert.equal(dropped.ownerCodeDropped?.by.length, 10, 'the Lookout says the code was dropped, and by whom');
-    assert.deepEqual(dropped.ownerCodeDropped?.by[0], { id: EVE, name: 'Eve Moreau', count: 5 });
+    assert.deepEqual(dropped.ownerCodeDropped?.by[0], { id: EVE, name: 'eve', count: 5 });
     svc.startOwnerCode();
     assert.equal(svc.status().ownerCodeDropped, undefined, 'a new code clears the notice');
   } finally {
@@ -249,4 +250,68 @@ test('names can not fake a line: newlines, *, ~ and ` in agent, trail and ticket
   assert.equal(body.split('\n').length, 2, 'the header is one line, the question the other');
   assert.equal((header.match(/\*/g) ?? []).length, 2, 'only our own *AWAITING YOU* is bold');
   assert.doesNotMatch(m.text, /\n/);
+});
+
+/* ---------- re-check: handles, invisible characters, refused deliveries ---------- */
+
+test('the confirmation card shows the unique Slack username as the handle; a display name copied from someone else is only secondary', async () => {
+  const { w, svc, fake } = await online();
+  try {
+    // raj sets his display name to the lead's
+    (fake.users.get(RAJ) as { display_name: string }).display_name = 'ana';
+    svc.startOwnerCode();
+    await (await svc.onEnvelope(typed(fake, RAJ, CODE)))?.after?.();
+    const p = svc.status().pendingOwner!;
+    assert.deepEqual([p.name, p.displayName, p.realName], ['raj', 'ana', 'Raj Patel']);
+  } finally {
+    w.cleanup();
+  }
+});
+
+test('label strips control and format characters (bidi overrides, zero-width space, NEL) but keeps ZWJ and ZWNJ', () => {
+  assert.equal(label('a‮b\u0085c​d‍e⁦f‌g\u0007h­i'), 'ab cd‍ef‌ghi');
+  assert.equal(label('👩‍💻 Ana'), '👩‍💻 Ana', 'emoji sequences still render');
+  assert.equal(label('x y z'), 'x y z');
+});
+
+test('a message Slack refuses for good is shown in Settings and, once deliveries keep failing, in the attention queue', async () => {
+  const { w, svc, fake, a, map } = await online({ batchMs: 0 });
+  try {
+    svc.startOwnerCode();
+    await (await svc.onEnvelope(typed(fake, ANA, CODE)))?.after?.();
+    await svc.confirmOwner(ANA);
+    svc.updateSettings({ notify: { target: 'C0INFRA01', events: ['awaiting'] } });
+    fake.state.reject = (method, args) =>
+      method === 'chat.postMessage' && args.channel === 'C0INFRA01' ? 'is_archived' : undefined;
+    for (let i = 0; i < 3; i++) {
+      agentDoc(w.root, {
+        sid: `s${i}`,
+        mapId: map.id,
+        agent: `a${i}`,
+        pending: [{ id: `q${i}`, text: 'Q?', at: Date.now() }],
+      });
+      await svc.tick();
+    }
+    const s = svc.status();
+    assert.equal(s.delivery?.code, 'is_archived');
+    assert.match(s.delivery!.message, /archived/);
+    assert.ok(s.delivery!.failures >= 3);
+    const queue = await attentionView({ root: w.root, adapter: a, configDir: w.configDir });
+    const item = queue.items.find((i) => i.kind === 'delivery');
+    assert.ok(item, 'a low-priority item in the queue');
+    assert.equal(item.urgency, 'fyi');
+    assert.match(item.title, /Slack/);
+
+    fake.state.reject = undefined;
+    agentDoc(w.root, { sid: 's9', mapId: map.id, agent: 'a9', pending: [{ id: 'q9', text: 'Q?', at: Date.now() }] });
+    await svc.tick();
+    assert.equal(svc.status().delivery, undefined, 'a message that gets through clears it');
+    const after = await attentionView({ root: w.root, adapter: a, configDir: w.configDir });
+    assert.equal(
+      after.items.find((i) => i.kind === 'delivery'),
+      undefined,
+    );
+  } finally {
+    w.cleanup();
+  }
 });
