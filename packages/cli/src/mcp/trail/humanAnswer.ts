@@ -24,7 +24,8 @@ export interface HumanAnswer {
   mapId: string;
   /** The ticket the asking session was working on; none for framing questions. */
   ticketId?: string;
-  category?: RiskCategory;
+  /** The risk categories the question was asked with; empty when none. */
+  categories: RiskCategory[];
   /** How much the agent said it needed the answer. */
   urgency: 'blocking' | 'soon' | 'fyi';
   /** The conversation the answer was given in. */
@@ -58,6 +59,13 @@ function categoriesNeeded(w: Wanted, high: boolean): RiskCategory[] {
   return [...new Set([w.category, ...fromRisk])].filter((c): c is RiskCategory => !!c);
 }
 
+/** How a question's categories read in a refusal. */
+function askedWith(categories: RiskCategory[]) {
+  if (!categories.length) return 'without a category';
+  const list = categories.map((c) => `"${c}"`).join(' and ');
+  return categories.length > 1 ? `with categories ${list}` : `with category ${list}`;
+}
+
 /** The refusal for an answer asked about something else, naming every category the decision needs. */
 function mismatch(m: { q: string; asked: string; missing: RiskCategory; needs: RiskCategory[] }) {
   const several = m.needs.length > 1;
@@ -78,9 +86,9 @@ function refusal(a: HumanAnswer, w: Wanted): string | undefined {
   if (w.ticket && a.ticketId !== w.ticket.id)
     return `${q} was not asked on ${w.ticket.key}. Ask the human about ${w.ticket.key} while you hold it.`;
   const high = w.risk?.level === 'high';
-  const asked = a.category ? `with category "${a.category}"` : 'without a category';
+  const asked = askedWith(a.categories);
   const needs = categoriesNeeded(w, high);
-  const missing = needs.find((c) => a.category !== c);
+  const missing = needs.find((c) => !a.categories.includes(c));
   if (missing) return mismatch({ q, asked, missing, needs });
   if (high && !needs.length)
     return `${q} can't back this: the decision is high risk by its files (${w.risk?.reason}) and names no category. Record it with the category you asked with, or ask again with the category it falls under.`;

@@ -206,6 +206,35 @@ describe('risk policy over MCP', () => {
         questionId: billing,
       }),
     ).rejects.toThrow(/"schema"/);
+    // Asked about both, the answer covers both: it backs the decision.
+    const both = await askAndAnswer(
+      call,
+      { question: 'Change the invoice and its table?', categories: ['billing', 'schema'] },
+      'Yes',
+    );
+    const d = await call<Decision>('record_decision', {
+      question: 'Change?',
+      answer: 'Yes',
+      category: 'billing',
+      paths: ['db/migrations/002.sql'],
+      questionId: both,
+    });
+    expect(d.decision.decidedBy).toBe('trail lead');
+    // `category` and `categories` together are one list.
+    const mixed = await askAndAnswer(
+      call,
+      { question: 'Both again?', category: 'schema', categories: ['billing'] },
+      'Yes',
+    );
+    await expect(
+      call('record_decision', {
+        question: 'Again?',
+        answer: 'Yes',
+        category: 'billing',
+        paths: ['db/migrations/3.sql'],
+        questionId: mixed,
+      }),
+    ).resolves.toBeTruthy();
   });
 
   it('a close that fails after the ticket is resolved has still used the answer', async () => {

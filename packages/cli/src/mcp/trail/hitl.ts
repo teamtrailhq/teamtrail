@@ -13,7 +13,9 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   const suggestions = input.suggestions?.length ? input.suggestions : undefined;
   const answer = s.ask(input.question, suggestions, { urgency: input.urgency, blocks });
   const q = ctx.activity.snapshot.pending.filter((p) => p.sessionId === s.id).at(-1)!;
-  if (input.category) q.category = input.category;
+  const categories = askedCategories(input);
+  if (categories.length) q.category = categories[0];
+  if (categories.length > 1) q.categories = categories;
   ctx.writer.flush();
   const sid = s.id;
   // The ticket the question is about: the one this session holds as it asks.
@@ -34,7 +36,7 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
         at,
         mapId: s.info.mapId,
         ticketId: askedOn,
-        category: input.category,
+        categories,
         urgency: input.urgency ?? 'soon',
         transcript: ctx.sessions.transcript(sid) ?? [],
       });
@@ -44,10 +46,16 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   return waitForAnswer(ctx, { questionId: q.id, waitSeconds: input.waitSeconds }, ctl);
 }
 
+/** `category` and `categories` as one list, without repeats. */
+const askedCategories = (input: AskInput) =>
+  [...new Set([input.category, ...(input.categories ?? [])])].filter((c): c is RiskCategory => !!c);
+
 export interface AskInput {
   question: string;
   /** What the call touches (risk policy). */
   category?: RiskCategory;
+  /** More than one category; `category` counts as one of them. */
+  categories?: RiskCategory[];
   suggestions?: string[];
   waitSeconds?: number;
   framing?: boolean;
@@ -127,6 +135,7 @@ export async function inbox(ctx: AgentContext, input: { kinds?: AttentionKind[] 
         question: q.text,
         suggestions: q.suggestions,
         ...(q.category ? { category: q.category } : {}),
+        ...(q.categories ? { categories: q.categories } : {}),
         askedSecondsAgo: Math.round((Date.now() - q.at) / 1000),
         step: d.session.stepLabel,
       })),
