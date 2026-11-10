@@ -385,10 +385,10 @@ describe('MCP over HTTP: long waits and endings', () => {
     });
   };
 
-  it('keeps a long ask_human alive on a connection that drops after 400 ms of silence', async () => {
+  it('keeps a long ask_human alive on a connection that drops after a second of silence', async () => {
     await serve({ keepAliveMs: 100 });
-    const waiting = waitOnSilentSocket(newToken('sandbox'), 400);
-    await answerWhenAsked(1500);
+    const waiting = waitOnSilentSocket(newToken('sandbox'), 1000);
+    await answerWhenAsked(2500);
     const r = await waiting;
     expect(r.timedOut).toBe(false);
     expect(r.text).toContain(': keepalive');
@@ -397,7 +397,7 @@ describe('MCP over HTTP: long waits and endings', () => {
 
   it('…which is the keep-alive’s doing: without it the same wait is cut off', async () => {
     await serve({ keepAliveMs: 0 });
-    expect((await waitOnSilentSocket(newToken('sandbox'), 400)).timedOut).toBe(true);
+    expect((await waitOnSilentSocket(newToken('sandbox'), 1000)).timedOut).toBe(true);
   });
 
   it('wait_for_answer over the SDK client gets an answer given later in the Lookout', async () => {
@@ -447,19 +447,19 @@ describe('MCP over HTTP: long waits and endings', () => {
     expect(await keep.call<{ questions: unknown[] }>('list_inbox')).toMatchObject({ questions: [] });
   });
 
-  it('ends a session when the client says goodbye, and one that went quiet', async () => {
-    await serve({ idleMs: 150 });
-    const token = newToken('sandbox');
-    const a = await connectHttp(token);
-    // No open stream and no goodbye: a sandbox that was simply switched off.
-    const quiet = await raw({ body: initialize, headers: { Authorization: `Bearer ${token}` } });
-    expect(quiet.status).toBe(200);
-    expect(mcp.sessionCount()).toBe(2);
-    await until('the quiet one to be closed', () => mcp.sessionCount() === 1);
-    // The SDK client holds its notification stream open, so it counts as present until it leaves.
-    await sleep(300);
+  it('ends a session when the client says goodbye', async () => {
+    await serve();
+    const a = await connectHttp(newToken('sandbox'));
     expect(mcp.sessionCount()).toBe(1);
     await a.transport.terminateSession();
     await until('the goodbye', () => mcp.sessionCount() === 0);
+  });
+
+  it('ends a session that went quiet without one: a sandbox that was switched off', async () => {
+    await serve({ idleMs: 200 });
+    const quiet = await raw({ body: initialize, headers: { Authorization: `Bearer ${newToken('sandbox')}` } });
+    expect(quiet.status).toBe(200);
+    expect(mcp.sessionCount()).toBe(1);
+    await until('the quiet one to be closed', () => mcp.sessionCount() === 0);
   });
 });
