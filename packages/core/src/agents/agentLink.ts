@@ -69,6 +69,8 @@ export interface LookoutLock {
   url: string;
   pid: number;
   startedAt: number;
+  /** This machine's signature of the lock (machine/announcementSig.ts): only then is its URL offered as a link. */
+  sig?: string;
 }
 
 /** A doc whose process is gone while the session still claims to run: show it as ended, with nothing left pending. */

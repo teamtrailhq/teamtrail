@@ -3,11 +3,17 @@ import path from 'node:path';
 import { writeLocalJson } from '../lib/ensureLocalDir';
 import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
+import { announcementSig } from '../machine/announcementSig';
 import { agentPaths, type LookoutLock } from './agentLink';
 
-/** Claims the tracker for this process's Lookout; returns the release function. */
+/** What a Lookout's lock signature is for (projects/elsewhereUrl.ts checks it). */
+export const LOCK_SIG = 'lookout-lock';
+
+/** Claims the tracker for this process's Lookout, signed with the machine key; returns the release function. */
 export function writeLookoutLock(root: string, url: string) {
-  const lock: LookoutLock = { url, pid: process.pid, startedAt: Date.now() };
+  const startedAt = Date.now();
+  const sig = announcementSig(root, LOCK_SIG, [url, process.pid, startedAt]);
+  const lock: LookoutLock = { url, pid: process.pid, startedAt, ...(sig ? { sig } : {}) };
   writeLocalJson(root, agentPaths.lock, lock);
   return () => {
     const cur = readJsonFile<LookoutLock>(path.join(root, agentPaths.lock));

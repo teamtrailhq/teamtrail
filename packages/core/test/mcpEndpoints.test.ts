@@ -25,6 +25,9 @@ test('a forged endpoint announcement is not believed', () => {
   expect(readMcpEndpoints(root).map((e) => e.url)).toEqual(['http://localhost:7421/mcp']);
   plant(`${process.ppid}.json`, { ...mine, url: 'http://evil.example:7421/mcp' });
   expect(readMcpEndpoints(root).map((e) => e.url)).toEqual(['http://localhost:7421/mcp']);
+  // a plain local URL from a live process, but not signed with this machine's key: another local process announcing
+  plant(`${process.ppid}.json`, { ...mine, url: 'http://localhost:7422/mcp' });
+  expect(readMcpEndpoints(root).map((e) => e.url)).toEqual(['http://localhost:7421/mcp']);
   release();
 });
 

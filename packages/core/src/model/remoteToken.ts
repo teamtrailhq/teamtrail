@@ -31,4 +31,6 @@ export interface McpEndpoint {
   /** Bound beyond this machine (not a loopback address). */
   network: boolean;
   startedAt: number;
+  /** This machine's signature of the announcement (machine/announcementSig.ts); without a valid one it is ignored. */
+  sig?: string;
 }

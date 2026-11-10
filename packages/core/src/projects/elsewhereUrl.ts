@@ -1,4 +1,9 @@
 import { realpathSync } from 'node:fs';
+import path from 'node:path';
+import { agentPaths, type LookoutLock } from '../agents/agentLink';
+import { LOCK_SIG } from '../agents/lookoutLock';
+import { readJsonFile } from '../lib/jsonFile';
+import { announcementSigned } from '../machine/announcementSigned';
 import { BRAND } from '../model/brand';
 import type { ProjectState } from '../model/project';
 
@@ -31,13 +36,21 @@ async function answersFor(url: string, root: string, fetcher: typeof fetch) {
   }
 }
 
+/** The lock in the folder names `url` and carries this machine's signature of it. */
+function signedLock(root: string, url: string) {
+  const lock = readJsonFile<LookoutLock>(path.join(root, agentPaths.lock));
+  return (
+    !!lock && lock.url === url && announcementSigned(root, LOCK_SIG, [lock.url, lock.pid, lock.startedAt], lock.sig)
+  );
+}
+
 /**
  * The state with its URL only when that URL can be believed. `.agents/server.json` is a file any local process
  * can write: the project stays closed here either way (one root, one reconciler), but the link to "the Lookout
  * that serves it" is offered only for a loopback URL that answers as a Teamtrail for this very folder. Answers
  * are remembered for half a minute, so the overview's polling doesn't ask every time.
- * TODO(#60): with the per-machine key, check that the lock was written by a Teamtrail of this machine, not only
- * that its URL answers as one.
+ * The lock must also be signed with this machine's key (agents/lookoutLock.ts): only a Teamtrail of this machine
+ * wrote it, not just any process that knows the URL of one.
  */
 export async function verifiedElsewhere(
   root: string,
@@ -49,7 +62,8 @@ export async function verifiedElsewhere(
   const key = `${root}\n${url}`;
   const cached = known.get(key);
   const fresh = cached && Date.now() - cached.at < TTL_MS;
-  const ok = isLoopbackLookoutUrl(url) && (fresh ? cached.ok : await answersFor(url, root, fetcher));
+  const ok =
+    isLoopbackLookoutUrl(url) && signedLock(root, url) && (fresh ? cached.ok : await answersFor(url, root, fetcher));
   if (!fresh) known.set(key, { at: Date.now(), ok });
   return ok ? state : { kind: 'elsewhere' };
 }
