@@ -6,7 +6,8 @@ export function ElsewhereNote() {
     <p className="sp-elsewhere t-meta" role="note">
       You're looking at this Lookout from another device. You can read, answer and approve from here. What changes what
       runs on the machine {BRAND.name} runs on, or whom it trusts, is set there: the tracker connection, Slack, the risk
-      policy, workspaces, guides, remote agents and the projects list.
+      policy, verification levels, workspaces, guides, remote agents, your attention settings and the projects list.
+      Paths on that machine and its tracker account are not shown here.
     </p>
   );
 }

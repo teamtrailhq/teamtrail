@@ -29,6 +29,10 @@ const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-'));
 // one repo. verifyProjects.mjs uses its own config dir with auto-registration on.
 process.env.TEAMTRAIL_CONFIG_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-config-'));
 process.env.TEAMTRAIL_NO_REGISTER = '1';
+// Nor the credentials of whoever runs this: no `gh` login, no token from the shell. Steps that need a token set
+// their own, for a fake tracker.
+process.env.TEAMTRAIL_NO_GH_CLI = '1';
+for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) delete process.env[k];
 const log = (...a) => console.log('·', ...a);
 
 // The repo's own check, which passes once fixed.txt exists. With verification.json present, new trails

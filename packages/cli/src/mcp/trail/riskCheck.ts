@@ -16,12 +16,17 @@ export interface RiskQuery {
  * call names no category and no files.
  */
 export function checkRisk(q: RiskQuery): DecisionRisk | undefined {
-  const { policy } = readPolicy(q.root);
-  const risk = riskLevelFor({ category: q.category, paths: q.paths }, policy);
+  const risk = riskOf(q);
+
   if (risk?.level !== 'high') return risk;
   const byAgent = madeBy({ decidedBy: q.decidedBy, source: { kind: 'agent' } }) === 'agent';
   if (byAgent) throw new OperationError(askInstead(risk));
   return risk;
+}
+
+/** What the policy makes of a call, from its category and its files; nothing about who makes it. */
+export function riskOf(q: Pick<RiskQuery, 'root' | 'category' | 'paths'>): DecisionRisk | undefined {
+  return riskLevelFor({ category: q.category, paths: q.paths }, readPolicy(q.root).policy);
 }
 
 function askInstead(risk: DecisionRisk) {

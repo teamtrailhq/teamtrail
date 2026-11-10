@@ -13,6 +13,7 @@ import { projectsView } from '../projects/projectsView';
 import type { TrackerBridge } from './bridgeTypes';
 import { BadRequest, refuseEarly, sendJson } from './http';
 import { handleProjects } from './projectRoutes';
+import { redactResponse } from './redactForLan';
 import { fromThisMachine, requestRefusal, type PeerAddress } from './requestGuard';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { configDir as defaultConfigDir } from './trackerConfig';
@@ -115,8 +116,12 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     const url = new URL(req.url ?? '/', 'http://x');
     const refusal = requestRefusal(req);
     if (refusal) return refuseEarly(res, { error: refusal });
-    if (!fromThisMachine(req, o.peer) && thisMachineOnly(req.method, url.pathname))
-      return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
+    // The same list for every project: `/p/<id>/policy` is `/policy` of that project.
+    const inProject = /^\/p\/[^/]+(\/.*)?$/.exec(url.pathname);
+    const route = inProject ? (inProject[1] ?? '/') : url.pathname;
+    const local = fromThisMachine(req, o.peer);
+    if (!local && thisMachineOnly(req.method, route)) return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
+    if (!local) redactResponse(res);
     try {
       const m = /^\/p\/([^/]+)(\/.*)?$/.exec(url.pathname);
       if (m) return await forward(req, res, { id: m[1], rest: m[2] ?? '/', url });

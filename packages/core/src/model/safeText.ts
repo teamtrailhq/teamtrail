@@ -8,15 +8,23 @@ import { BRAND } from './brand';
  * as a field, an author, a confirmation or a marker. Files written before this existed still read the same.
  */
 
-/** Characters that end a line somewhere (for JavaScript's `^`, for YAML, for a terminal), and other controls. */
+/**
+ * What a single-line value may not hold: anything that ends a line somewhere (for JavaScript's `^`, for YAML, for
+ * a terminal), the other C0 and C1 controls, and the invisible characters that change how text reads without
+ * showing: the byte-order mark, zero-width space and word joiner, and the bidirectional overrides and isolates
+ * (which can make "approved by X" display as something else). The zero-width joiner and non-joiner stay: emoji
+ * sequences and several scripts need them. So do the left-to-right and right-to-left marks.
+ */
 // eslint-disable-next-line no-control-regex -- control characters are exactly what this looks for
-const CONTROL = /[\u0000-\u001f\u007f\u0085\u2028\u2029]/;
+const CONTROL = /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u200b\u2060\ufeff\u202a-\u202e\u2066-\u2069]/;
 // eslint-disable-next-line no-control-regex -- control characters are exactly what this looks for
-const CONTROLS = /[\u0000-\u001f\u007f\u0085\u2028\u2029]+/g;
+const CONTROLS = /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u200b\u2060\ufeff\u202a-\u202e\u2066-\u2069]+/g;
 const LINE_BREAK = /\r\n|[\r\u0085\u2028\u2029]/g;
-/** Control characters that are no line break and no tab: never meaningful in text. */
-// eslint-disable-next-line no-control-regex -- control characters are exactly what this looks for
-const STRAY = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g;
+/** In multi-line text: the same characters, minus the line breaks and the tab. They are dropped. */
+/* eslint-disable no-control-regex -- control characters are exactly what this looks for */
+const STRAY =
+  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u0084\u0086-\u009f\u200b\u2060\ufeff\u202a-\u202e\u2066-\u2069]/g;
+/* eslint-enable no-control-regex */
 
 /** Whether a single-line value holds a line break or another control character. */
 export const hasControl = (s: string) => CONTROL.test(s);
@@ -30,11 +38,13 @@ export const plainBreaks = (s: string) => s.replace(LINE_BREAK, '\n').replace(ST
 /**
  * Makes sure no line of `text` can be read as one of a format's structural lines. `structure` is that format's
  * line pattern without the `^` (e.g. `##\s`). A matching line gets a leading backslash, which markdown shows as
- * the same text; lines that already look escaped get one more, so `unguardLines` restores the text exactly.
+ * the same text; lines that already look escaped get one more, so `unguardLines` restores the (trimmed) text exactly.
  */
 export function guardLines(text: string, structure: string) {
   const hit = new RegExp(`^\\\\*(?:${structure})`);
+  // Trimmed first, the way every writer and reader trims a block: what is guarded is what ends up at column 0.
   return plainBreaks(text)
+    .trim()
     .split('\n')
     .map((line) => (hit.test(line) ? `\\${line}` : line))
     .join('\n');

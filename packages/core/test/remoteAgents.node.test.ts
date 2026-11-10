@@ -23,6 +23,7 @@ import {
 } from '../src/remoteAgents/remoteTokens';
 import { REMOTE_TOKENS_FILE } from '../src/remoteAgents/remoteTokenStore';
 import { thisMachineOnly } from '../src/server/thisMachineRoutes';
+import { NO_GH_CLI_ENV, resolveGitHubToken } from '../src/server/trackerConfig';
 
 const tmp = (name: string) =>
   path.join(mkdtempSync(path.join(os.tmpdir(), `teamtrail-${name}-`)), 'repo', '.teamtrail');
@@ -324,6 +325,11 @@ test('another device on the network reads, answers and approves, but changes not
     ['POST', '/trackers/github/sign-in/start'],
     ['DELETE', '/trackers/github/sign-in'],
     ['POST', '/trackers/linear/teams'],
+    // lookups with this machine's stored credentials: the repos a token can see, a key's teams and projects
+    ['GET', '/trackers/github/repos'],
+    ['GET', '/trackers/linear/teams'],
+    ['GET', '/trackers/linear/projects?team=T1'],
+    ['PUT', '/attention/prefs'],
     ['POST', '/slack/setup'],
     ['PUT', '/policy'],
     ['PUT', '/workspaces'],
@@ -364,6 +370,38 @@ test('another device on the network reads, answers and approves, but changes not
       const res = await from(phone, method, p);
       assert.notEqual(res.status, 403, `${method} ${p} from the phone`);
     }
+    // Approving and re-running are steering; how much proof a trail needs is a trust setting.
+    const action = (headers: Record<string, string>, body: unknown) =>
+      raw({ port, method: 'POST', path: '/verification/action', headers, body: JSON.stringify(body) });
+    const level = await action(phone, { action: 'level', mapId: 'trail', level: 'off' });
+    assert.equal(level.status, 403);
+    assert.equal(JSON.parse(level.text).elsewhere, true);
+    assert.notEqual((await action(phone, { action: 'approve', mapId: 'trail', ticketId: '1' })).status, 403);
+    assert.notEqual((await action({}, { action: 'level', mapId: 'trail', level: 'off' })).status, 403);
+
+    // What the phone reads says nothing about where things live on this disk.
+    const far = JSON.parse((await from(phone, 'GET', '/list')).text) as { root: string };
+    const near = JSON.parse((await from({}, 'GET', '/list')).text) as { root: string };
+    assert.ok(path.isAbsolute(near.root));
+    assert.equal(far.root, near.root.split(path.sep).slice(-2).join('/'));
+    assert.equal('account' in (JSON.parse((await from(phone, 'GET', '/trackers')).text).github ?? {}), false);
+
+    // A brief is a trail's; an id is an id.
+    const brief = (mapId: string) =>
+      raw({ port, method: 'POST', path: '/briefs/create', headers: phone, body: JSON.stringify({ mapId }) });
+    assert.equal((await brief('no-such-trail')).status, 404);
+    assert.equal((await brief('../../outside')).status, 400);
+    assert.equal(existsSync(path.join(r, 'briefs')), false);
+    const answer = (sessionId: string) =>
+      raw({
+        port,
+        method: 'POST',
+        path: '/agents/answer',
+        headers: phone,
+        body: JSON.stringify({ sessionId, questionId: 'q1', text: 'yes' }),
+      });
+    assert.equal((await answer('../../../etc/x')).status, 400);
+    assert.equal((await answer('a/b')).status, 400);
     assert.deepEqual(JSON.parse((await from(phone, 'GET', '/machine')).text), { local: false });
     assert.deepEqual(JSON.parse((await from({}, 'GET', '/machine')).text), { local: true });
     assert.equal(existsSync(path.join(r, 'policy.json')), false);
@@ -392,12 +430,34 @@ test('the projects hub: another device sees the projects, and cannot add, remove
   const port = (srv.address() as { port: number }).port;
   const phone = { 'x-test-peer': '192.168.1.20', Host: `192.168.1.5:${port}` };
   try {
+    // A second, registered project: its routes are held to the same list, checked in the hub itself.
+    const otherRepo = path.dirname(tmp('remote-hub-other'));
+    mkdirSync(path.join(otherRepo, '.teamtrail'), { recursive: true });
+    const added = await raw({ port, method: 'POST', path: '/projects', body: JSON.stringify({ path: otherRepo }) });
+    assert.equal(added.status, 201, added.text);
+    const listed = JSON.parse((await raw({ port, path: '/projects' })).text) as {
+      projects: { id: string; path: string }[];
+    };
+    const other = listed.projects.find((x) => x.id !== hub.homeId)!;
+    assert.ok(other && path.isAbsolute(other.path));
+    const seen = JSON.parse((await raw({ port, path: '/projects', headers: phone })).text) as {
+      projects: { path: string }[];
+    };
+    assert.deepEqual(
+      seen.projects.map((x) => path.isAbsolute(x.path)),
+      seen.projects.map(() => false),
+    );
     for (const [method, p] of [
       ['POST', '/projects'],
       ['PUT', '/projects/settings'],
       ['DELETE', `/projects/${hub.homeId}`],
+      ['DELETE', `/projects/${other.id}`],
       ['POST', `/p/${hub.homeId}/remote-agents/tokens`],
       ['PUT', `/p/${hub.homeId}/policy`],
+      ['PUT', `/p/${other.id}/policy`],
+      ['POST', `/p/${other.id}/remote-agents/tokens`],
+      ['GET', `/p/${other.id}/trackers/github/repos`],
+      ['POST', `/p/${other.id}/guides/approve`],
     ]) {
       const res = await raw({ port, method, path: p, headers: phone, body: '{}' });
       assert.equal(res.status, 403, `${method} ${p}`);
@@ -470,6 +530,16 @@ test('a real connection from a non-loopback address is another device (no test s
     real.close();
     srv.close();
   }
+});
+
+test('tests never reach for the credentials of whoever runs them', async () => {
+  // The runner sets the switch and clears the shell's tokens (test/run.mjs); with it, `gh` is never asked.
+  assert.equal(process.env[NO_GH_CLI_ENV], '1');
+  for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) assert.ok(!process.env[k], k);
+  assert.equal(await resolveGitHubToken({}, {}), null);
+  // A test that brings its own `gh` still gets it called, and an explicit token in the given env still counts.
+  assert.deepEqual(await resolveGitHubToken({}, {}, async () => 'ghp_fake'), { token: 'ghp_fake', source: 'gh' });
+  assert.deepEqual(await resolveGitHubToken({}, { GITHUB_TOKEN: 'x' }), { token: 'x', source: 'GITHUB_TOKEN' });
 });
 
 test('links built from stored data are web links or nothing', () => {

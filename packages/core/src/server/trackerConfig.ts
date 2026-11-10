@@ -82,6 +82,14 @@ export const run: Run = (cmd, args, cwd) =>
   );
 
 /**
+ * `$TEAMTRAIL_NO_GH_CLI`: never ask the `gh` CLI for its token. Every test suite and end-to-end script sets it,
+ * so a test can't reach the real GitHub with the login of whoever runs it; it is read from the real environment
+ * too, because tests pass their own (often empty) `env`. A test that passes its own `exec` still gets it called.
+ */
+export const NO_GH_CLI_ENV = 'TEAMTRAIL_NO_GH_CLI';
+const ghCliOff = (env: Env) => !!(env[NO_GH_CLI_ENV] || process.env[NO_GH_CLI_ENV]);
+
+/**
  * First usable GitHub token:
  *   1. a token pasted in Settings ('stored'),
  *   2. $GITHUB_TOKEN, then $GH_TOKEN (set on purpose for this shell or CI),
@@ -98,6 +106,7 @@ export async function resolveGitHubToken(
   if (env.GITHUB_TOKEN) return { token: env.GITHUB_TOKEN, source: 'GITHUB_TOKEN' };
   if (env.GH_TOKEN) return { token: env.GH_TOKEN, source: 'GH_TOKEN' };
   if (creds.githubSignIn?.token) return { token: creds.githubSignIn.token, source: 'signed-in' };
+  if (exec === run && ghCliOff(env)) return null;
   const token = await exec('gh', ['auth', 'token']).catch(() => '');
   return token ? { token, source: 'gh' } : null;
 }

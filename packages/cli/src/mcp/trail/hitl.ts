@@ -35,6 +35,7 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
         mapId: s.info.mapId,
         ticketId: askedOn,
         category: input.category,
+        urgency: input.urgency ?? 'soon',
         transcript: ctx.sessions.transcript(sid) ?? [],
       });
       return { text, author };

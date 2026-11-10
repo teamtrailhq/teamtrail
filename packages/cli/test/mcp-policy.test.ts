@@ -3,7 +3,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { MarkdownAdapter } from '@teamtrail/core';
 import { readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
+import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
@@ -94,6 +96,97 @@ describe('risk policy over MCP', () => {
       ).rejects.toThrow(/already backs/);
     const own = await call<{ decision: { decidedBy: string } }>('close_ticket', { resolution: 'Keep it' });
     expect(own.decision.decidedBy).toBe('claude-01');
+  });
+
+  /** Asks, and answers as the trail lead would in the Lookout. */
+  const askAndAnswer = async (
+    call: Awaited<ReturnType<typeof connect>>,
+    args: Record<string, unknown>,
+    text: string,
+  ) => {
+    const asked = call<{ questionId: string }>('ask_human', { waitSeconds: 30, ...args });
+    let doc = (await readAgentDocs(root)).find((d) => d.pending.length);
+    while (!doc) {
+      await new Promise((r) => setTimeout(r, 20));
+      doc = (await readAgentDocs(root)).find((d) => d.pending.length);
+    }
+    writeAgentAnswer(root, { sessionId: doc.session.id, questionId: doc.pending[0].id, text, author: 'trail lead' });
+    const { questionId } = await asked;
+    while ((await readAgentDocs(root)).some((d) => d.pending.length)) await new Promise((r) => setTimeout(r, 20));
+    return questionId;
+  };
+  const junctions = (call: Awaited<ReturnType<typeof connect>>) =>
+    call<{ trail: { id: string }; tickets: { key: string }[] }>('start_trail', {
+      discovery: false,
+      title: 'Style',
+      destination: 'One style',
+      tickets: [
+        { ref: 'j', title: 'Tabs or spaces?', type: 'junction' },
+        { ref: 'k', title: 'Keep the users table?', type: 'junction' },
+      ],
+    });
+
+  it('an answer covers the risk of what it is used for, when the risk comes from the files too', async () => {
+    const call = await connect();
+    const m = await junctions(call);
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const tabs = await askAndAnswer(call, { question: 'Tabs or spaces?' }, 'tabs');
+    const decision = { question: 'Drop it?', answer: 'Drop the users table' };
+    const migration = { paths: ['db/migrations/001_drop_users.sql'] };
+    // No category declared: the policy still calls it high risk by its path, and "tabs" was not about that.
+    await expect(call('record_decision', { ...decision, ...migration, questionId: tabs })).rejects.toThrow(
+      /asked without a category, and this decision is (high risk|"schema")/,
+    );
+    await expect(
+      call('close_ticket', { resolution: 'Drop the users table', ...migration, questionId: tabs }),
+    ).rejects.toThrow(/asked without a category/);
+    // Refused calls give the answer back: it still closes what it was about.
+    const closed = await call<{ decision: { decidedBy: string } }>('close_ticket', {
+      resolution: 'Tabs',
+      questionId: tabs,
+    });
+    expect(closed.decision.decidedBy).toBe('trail lead');
+  });
+
+  it('an fyi question is not a decision: it cannot close a ticket that is the human’s to decide', async () => {
+    const call = await connect();
+    const m = await junctions(call);
+    await call('claim_ticket', { ticket: m.tickets[1].key });
+    const lunch = await askAndAnswer(call, { question: 'Lunch?', urgency: 'fyi' }, 'yes');
+    await expect(call('close_ticket', { resolution: 'Drop the users table', questionId: lunch })).rejects.toThrow(
+      /asked as an fyi/,
+    );
+    // Unnamed, it is not picked up either: the close is the agent's own (a local agent may; remote may not).
+    const own = await call<{ decision: { decidedBy: string } }>('close_ticket', { resolution: 'Keep it' });
+    expect(own.decision.decidedBy).toBe('claude-01');
+  });
+
+  it('one answer backs one decision, also when two calls race for it; decisions made at once all get an id', async () => {
+    const call = await connect();
+    const m = await junctions(call);
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const questionId = await askAndAnswer(call, { question: 'Tabs or spaces?' }, 'tabs');
+    const settled = await Promise.allSettled([
+      call('close_ticket', { resolution: 'Tabs', questionId }),
+      call('record_decision', { question: 'Indent?', answer: 'Tabs', questionId }),
+      call('record_decision', { question: 'Indent again?', answer: 'Tabs', questionId }),
+    ]);
+    expect(settled.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    for (const r of settled.filter((x) => x.status === 'rejected'))
+      expect(String((r as PromiseRejectedResult).reason)).toMatch(/already backs/);
+
+    const before = (
+      await new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root).listDecisions(m.trail.id)
+    ).length;
+    const made = await Promise.all(
+      [1, 2, 3, 4, 5].map((n) => call<Decision>('record_decision', { question: `Q${n}?`, answer: `A${n}` })),
+    );
+    expect(new Set(made.map((d) => d.decision.id)).size).toBe(5);
+    const after = await new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root).listDecisions(
+      m.trail.id,
+    );
+    expect(after.length).toBe(before + 5);
+    expect(after.map((d) => d.answer)).toEqual(expect.arrayContaining(['A1', 'A2', 'A3', 'A4', 'A5']));
   });
 
   it('rejects agent decisions on high-risk calls and tells the agent to ask', async () => {

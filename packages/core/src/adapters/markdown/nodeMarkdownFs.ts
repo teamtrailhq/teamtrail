@@ -29,6 +29,16 @@ export function nodeMarkdownFs(root: string): MarkdownFs {
       await fs.mkdir(path.dirname(safe(p)), { recursive: true });
       await fs.writeFile(safe(p), text);
     },
+    async create(p, text) {
+      await fs.mkdir(path.dirname(safe(p)), { recursive: true });
+      try {
+        await fs.writeFile(safe(p), text, { flag: 'wx' });
+        return true;
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code === 'EEXIST') return false;
+        throw e;
+      }
+    },
     watch(cb) {
       const w = watch(abs, { recursive: true }, (_e, f) => f && cb(String(f).split(path.sep).join('/')));
       return () => w.close();

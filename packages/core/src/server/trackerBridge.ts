@@ -16,6 +16,7 @@ import { handleKnowledge } from './knowledgeRoutes';
 import { handleLeases } from './leaseRoutes';
 import { handleModels } from './modelRoutes';
 import { handlePolicy } from './policyRoutes';
+import { redactResponse } from './redactForLan';
 import { handleRemoteAgents } from './remoteAgentRoutes';
 import { fromThisMachine, requestRefusal } from './requestGuard';
 import { handleReroutes } from './rerouteRoutes';
@@ -77,7 +78,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       url.pathname.startsWith('/decisions') && handleDecisions(await routes.active(), req, res, url),
     (req, res, url) => handleLeases(ctx, req, res, url),
     (req, res, url) => handleJournal(abs, req, res, url),
-    (req, res, url) => handleVerification(ctx, req, res, url),
+    (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
     (req, res, url) => handleAgents(abs, req, res, url),
     (req, res, url) => handleBriefs(ctx, req, res, url),
@@ -126,6 +127,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     if (url.pathname === '/machine') return sendJson(res, 200, { local });
     if (!local && thisMachineOnly(req.method, url.pathname))
       return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
+    if (!local) redactResponse(res);
     try {
       for (const route of api) if (await route(req, res, url)) return;
       res.statusCode = 404;

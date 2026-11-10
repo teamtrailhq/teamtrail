@@ -695,6 +695,18 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
         /already backs the close of #\d+: one answer, one decision/,
       );
 
+    // An fyi asked while holding the next ticket is not a decision about it.
+    await call('claim_ticket', { ticket: m.tickets[1].key });
+    const lunch = await ask('Lunch?', 'yes', { urgency: 'fyi' });
+    await expect(call('close_ticket', { resolution: 'Drop the users table' })).rejects.toThrow(/the human's to decide/);
+    await expect(call('close_ticket', { resolution: 'Drop the users table', questionId: lunch })).rejects.toThrow(
+      /asked as an fyi/,
+    );
+    // Nor does a risk that comes from the files slip past an answer asked without a category.
+    await expect(
+      call('record_decision', { ...decision, paths: ['db/migrations/001_drop_users.sql'], questionId: lunch }),
+    ).rejects.toThrow(/asked without a category/);
+
     // A second HITL ticket: an answer given on the first can't close it, and neither can a question asked elsewhere.
     await call('claim_ticket', { ticket: m.tickets[1].key });
     await expect(call('close_ticket', { resolution: 'Same as before' })).rejects.toThrow(/the human's to decide/);

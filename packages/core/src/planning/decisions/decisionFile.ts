@@ -75,8 +75,13 @@ export function parseDecision(md: string): DecisionRecord {
     .map((chunk) => {
       const nl = chunk.indexOf('\n');
       const head = nl < 0 ? chunk : chunk.slice(0, nl);
-      const [who, at = ''] = head.split(' @ ');
-      const [author, from = 'agent'] = who.split(' · ');
+      // `<author> · <role> @ <time>`, read from the end: whatever the author's name holds, the role is ours.
+      const atMark = head.lastIndexOf(' @ ');
+      const who = atMark < 0 ? head : head.slice(0, atMark);
+      const at = atMark < 0 ? '' : head.slice(atMark + 3);
+      const roleMark = who.lastIndexOf(' · ');
+      const author = roleMark < 0 ? who : who.slice(0, roleMark);
+      const from = roleMark < 0 ? 'agent' : who.slice(roleMark + 3);
       return {
         author: author.trim(),
         from: (['agent', 'human', 'system'].includes(from.trim()) ? from.trim() : 'agent') as TranscriptEntry['from'],

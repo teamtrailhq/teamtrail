@@ -21,9 +21,9 @@ import { closeDecisionMeta } from './closeDecision';
 import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
 import { checkedAnswers, keepAnswers } from './guides';
-import { humanAnswerFor, type HumanAnswer } from './humanAnswer';
+import { humanAnswerFor, release, spend, type HumanAnswer } from './humanAnswer';
 import { withReview } from './parallel';
-import { checkRisk } from './riskCheck';
+import { checkRisk, riskOf } from './riskCheck';
 import type { CloseInput, WaitControl } from './types';
 
 type Wait = { seconds: number; ctl?: WaitControl };
@@ -54,6 +54,16 @@ type Completion = { kind: 'closed'; verified: object } | { kind: 'stopped'; resu
  */
 export async function closeTicket(ctx: AgentContext, input: CloseInput, wait: Wait) {
   const c = await startClosing(ctx, input);
+  try {
+    return await closeWith(c, wait);
+  } catch (e) {
+    release(c.human);
+    throw e;
+  }
+}
+
+async function closeWith(c: Closing, wait: Wait) {
+  const { ctx, input } = c;
   const before = frontier(c.snap);
   const ruledOut = input.outcome === 'out_of_scope';
   let verified: object = {};
@@ -66,10 +76,12 @@ export async function closeTicket(ctx: AgentContext, input: CloseInput, wait: Wa
     );
   } else {
     const done = await complete(c, wait);
-    if (done.kind === 'stopped') return withReview(c, used(c, done.result));
+    // A completion that waits on checks or a review has still used the human's answer.
+    if (done.kind === 'stopped') spend(c.human, `the completion of ${c.ticket.key}`);
+    if (done.kind === 'stopped') return withReview(c, done.result);
     verified = done.verified;
   }
-  if (c.human) c.human.usedFor = `the close of ${c.ticket.key}`;
+  spend(c.human, `the close of ${c.ticket.key}`);
   const decision = await findDecision(c);
   return withReview(c, await finish(c, { before, verified, decision }));
 }
@@ -84,18 +96,29 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
   let ticket = ctx.findTicket(snap, ref);
   assertCloseable(ticket, agent);
   // The human's decision only by their answer to a question asked on this ticket (humanAnswer.ts).
-  const human = humanAnswerFor(ctx, { questionId: input.questionId, ticket, category: input.category });
-  assertHumanDecided({ remote: ctx.remote, ticket, humanAnswered: !!human });
-  const risk = checkRisk({ ...input, root: ctx.root, decidedBy: human?.author ?? agent });
-  if (!ticket.assignee && input.outcome !== 'out_of_scope') {
-    await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });
-    const id = ticket.id;
-    ticket = (await ctx.load(snap.map.id)).tickets.find((x) => x.id === id)!;
+  const human = humanAnswerFor(ctx, {
+    questionId: input.questionId,
+    ticket,
+    category: input.category,
+    risk: riskOf({ ...input, root: ctx.root }),
+    hitl: attention(ticket) === 'hitl',
+  });
+  try {
+    assertHumanDecided({ remote: ctx.remote, ticket, humanAnswered: !!human });
+    const risk = checkRisk({ ...input, root: ctx.root, decidedBy: human?.author ?? agent });
+    if (!ticket.assignee && input.outcome !== 'out_of_scope') {
+      await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });
+      const id = ticket.id;
+      ticket = (await ctx.load(snap.map.id)).tickets.find((x) => x.id === id)!;
+    }
+    const current = ctx.sessions.running();
+    const session = current?.info.ticketId === ticket.id ? current : await ctx.ensureSession();
+    const source = { kind: 'agent' as const, ref: `${session.id}/${ticket.id}`, label: `${agent} session` };
+    return { ctx, input, snap, ticket, agent, session, source, risk, human };
+  } catch (e) {
+    release(human);
+    throw e;
   }
-  const current = ctx.sessions.running();
-  const session = current?.info.ticketId === ticket.id ? current : await ctx.ensureSession();
-  const source = { kind: 'agent' as const, ref: `${session.id}/${ticket.id}`, label: `${agent} session` };
-  return { ctx, input, snap, ticket, agent, session, source, risk, human };
 }
 
 function assertCloseable(t: Ticket, agent: string) {
@@ -154,12 +177,6 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   }
   if (s.info.mode === 'work') s.step(5);
   return { kind: 'closed', verified: {} };
-}
-
-/** A completion that waits on checks or a review has still used the human's answer. */
-function used<R>(c: Closing, result: R) {
-  if (c.human) c.human.usedFor = `the completion of ${c.ticket.key}`;
-  return result;
 }
 
 async function resolveDirectly(c: Closing, parts: { meta: DecisionMeta; transcript?: string }) {

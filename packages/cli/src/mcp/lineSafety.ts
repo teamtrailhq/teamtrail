@@ -7,6 +7,7 @@ import { z } from 'zod';
  * item), so a tool call that puts a line break or another control character in one is refused before anything
  * is written. A field that really is free text (a body, a question, a resolution) is declared with `text()`.
  * The check walks the tool's own schema, so a new tool, or a new field, is line-safe without doing anything.
+ * The same walk bounds sizes: a single line, free text and a list each have a maximum.
  */
 
 /** Free text: may span lines. The serialisers keep it from being read back as structure. */
@@ -76,14 +77,24 @@ function childOf(node: Node | undefined, value: unknown, key: string): Node | un
 }
 
 const REFUSAL = 'must be a single line: it holds a line break or another control character';
+/** Nothing an agent sends needs to be bigger: a single line (a title, a name, an id, a path), free text, a list. */
+export const INPUT_LIMITS = { line: 500, text: 50_000, items: 500 } as const;
 
 /** Refuses a call in which a single-line input holds a line break or control character. Unknown inputs count as single-line. */
 export function assertLineSafe(tool: string, shape: z.ZodRawShape, args: unknown) {
   const walk = (value: unknown, node: Node | undefined, path: string) => {
     if (typeof value === 'string') {
-      if (hasControl(value) && !multilineAt(node)) throw new OperationError(`${tool}: \`${path}\` ${REFUSAL}.`);
+      const free = multilineAt(node);
+      if (hasControl(value) && !free) throw new OperationError(`${tool}: \`${path}\` ${REFUSAL}.`);
+      const max = free ? INPUT_LIMITS.text : INPUT_LIMITS.line;
+      if (value.length > max)
+        throw new OperationError(`${tool}: \`${path}\` is too long (${value.length} characters; at most ${max}).`);
       return;
     }
+    if (Array.isArray(value) && value.length > INPUT_LIMITS.items)
+      throw new OperationError(
+        `${tool}: \`${path}\` has too many items (${value.length}; at most ${INPUT_LIMITS.items}).`,
+      );
     if (Array.isArray(value)) return value.forEach((v, i) => walk(v, childOf(node, value, String(i)), `${path}[${i}]`));
     if (!value || typeof value !== 'object') return;
     for (const [k, v] of Object.entries(value)) {

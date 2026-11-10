@@ -19,13 +19,19 @@ const WRITES: RegExp[] = [
   // Guides: installing, approving, and approving the check commands they add to verification.json. Which guide a
   // ticket or a trail uses is steering, not trust, and stays open.
   /^\/guides\/(?!ticket$|team$)/,
+  // This person's own attention preferences, kept in their config dir.
+  /^\/attention\/prefs$/,
   // The projects this Lookout supervises.
   /^\/projects$/,
   /^\/projects\/settings$/,
 ];
 
-/** Every method, reads included. */
-const ALWAYS: RegExp[] = [/^\/remote-agents(\/|$)/];
+/**
+ * Every method, reads included: the tokens, and everything under the tracker settings that uses this machine's
+ * stored credentials to look something up (the repos a GitHub token can see, a Linear key's teams and projects).
+ * The settings themselves (`GET /trackers`) stay readable, without the account (redactForLan.ts).
+ */
+const ALWAYS: RegExp[] = [/^\/remote-agents(\/|$)/, /^\/trackers\/.+/];
 
 const REMOVE_PROJECT = /^\/projects\/[^/]+$/;
 

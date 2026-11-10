@@ -1,8 +1,16 @@
-import { OperationError, recordDecision as saveDecision, STEPS, stepTag, type RiskCategory } from '@teamtrail/core';
+import {
+  OperationError,
+  recordDecision as saveDecision,
+  STEPS,
+  stepTag,
+  type RiskCategory,
+  type MapSnapshot,
+  type Ticket,
+} from '@teamtrail/core';
 import type { AgentContext } from './agentContext';
 import { assertAssumes } from './assumptions';
-import { humanAnswerFor, humanDecision } from './humanAnswer';
-import { checkRisk } from './riskCheck';
+import { humanAnswerFor, humanDecision, release, spend, type HumanAnswer } from './humanAnswer';
+import { checkRisk, riskOf } from './riskCheck';
 
 export function sessionView(ctx: AgentContext) {
   const s = ctx.sessions.current?.info;
@@ -77,41 +85,63 @@ function refuseClaim(claimed: string | undefined, agent: string) {
   );
 }
 
-export async function recordDecision(
-  ctx: AgentContext,
-  input: {
-    trail?: string;
-    ticket?: string;
-    question: string;
-    answer: string;
-    summary?: string;
-    rationale?: string;
-    alternatives?: string[];
-    decidedBy?: string;
-    /** The answered question this decision is the human's by. */
-    questionId?: string;
-    appendToTrail?: boolean;
-    category?: RiskCategory;
-    paths?: string[];
-    assumes?: string[];
-  },
-) {
+/** What record_decision takes. */
+interface DecisionInput {
+  trail?: string;
+  ticket?: string;
+  question: string;
+  answer: string;
+  summary?: string;
+  rationale?: string;
+  alternatives?: string[];
+  decidedBy?: string;
+  /** The answered question this decision is the human's by. */
+  questionId?: string;
+  appendToTrail?: boolean;
+  category?: RiskCategory;
+  paths?: string[];
+  assumes?: string[];
+}
+
+export async function recordDecision(ctx: AgentContext, input: DecisionInput) {
   const s = ctx.sessions.running();
   const snap = await ctx.resolveTrail(input.trail ?? (s?.info.mapId || undefined));
   const agent = await ctx.agentId();
   const t = input.ticket ? ctx.findTicket(snap, input.ticket) : undefined;
   refuseClaim(input.decidedBy, agent);
-  const answered = humanAnswerFor(ctx, { questionId: input.questionId, category: input.category });
-  // The human's: the question as asked and their words. The agent's own: what it passed.
+  const subject = { root: ctx.root, category: input.category, paths: input.paths };
+  const answered = humanAnswerFor(ctx, {
+    questionId: input.questionId,
+    category: input.category,
+    risk: riskOf(subject),
+  });
+  try {
+    const rec = await saveWith(ctx, { input, agent, answered, snap, ticket: t });
+    spend(answered, rec.id);
+    ctx.heartbeat({ ticketId: t?.id ?? s?.info.ticketId, decision: `${rec.id} · ${rec.summary}` });
+    return { decision: rec };
+  } catch (e) {
+    release(answered);
+    throw e;
+  }
+}
+
+/** Writes the record: the human's (the question as asked, their words) or the agent's own (what it passed). */
+async function saveWith(
+  ctx: AgentContext,
+  c: { input: DecisionInput; agent: string; answered?: HumanAnswer; snap: MapSnapshot; ticket?: Ticket },
+) {
+  const { input, agent, answered, ticket: t } = c;
+  const s = ctx.sessions.running();
   const said = answered
     ? humanDecision(answered, { agent, said: input.answer, rationale: input.rationale })
     : { ...input, decidedBy: agent, transcript: undefined };
   const { decidedBy } = said;
   const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, decidedBy });
-  assertAssumes(snap, input.assumes);
-  const rec = await saveDecision(
+  assertAssumes(c.snap, input.assumes);
+  return saveDecision(
     ctx.adapter,
-    snap.map.id,
+    c.snap.map.id,
     {
       ticketId: t?.id,
       ticketKey: t?.key,
@@ -133,7 +163,4 @@ export async function recordDecision(
     },
     { appendToTrail: input.appendToTrail },
   );
-  if (answered) answered.usedFor = rec.id;
-  ctx.heartbeat({ ticketId: t?.id ?? s?.info.ticketId, decision: `${rec.id} · ${rec.summary}` });
-  return { decision: rec };
 }
