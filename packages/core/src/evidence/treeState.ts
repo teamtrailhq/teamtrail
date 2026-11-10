@@ -55,9 +55,10 @@ export async function readTreeState(wt: Worktree): Promise<GitTreeState> {
   const head = (await gitText(wt.toplevel, ['rev-parse', '--verify', '-q', 'HEAD'])) || null;
   const branch = (await gitText(wt.toplevel, ['symbolic-ref', '-q', '--short', 'HEAD'])) || null;
   const against = head ?? (await emptyTree(wt));
-  const diff = await git(wt.toplevel, ['diff', '--binary', '--no-ext-diff', '--no-color', against, ...wt.pathspec]);
+  const diff = await git(wt.toplevel, ['diff', '--binary', '--no-color', '--end-of-options', against, ...wt.pathspec]);
   const names = zList(
-    (await git(wt.toplevel, ['diff', '--name-only', '-z', '--no-renames', against, ...wt.pathspec])).stdout,
+    (await git(wt.toplevel, ['diff', '--name-only', '-z', '--no-renames', '--end-of-options', against, ...wt.pathspec]))
+      .stdout,
   );
   const untracked = await untrackedFiles(wt);
   const dirty = await hashFiles(wt, [...new Set([...names, ...untracked])].sort());

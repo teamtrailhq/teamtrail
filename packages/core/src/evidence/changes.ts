@@ -34,10 +34,11 @@ function lineCount(wt: Worktree, f: string) {
  */
 export async function changesSince(wt: Worktree, now: GitTreeState, base: GitTreeState): Promise<ChangedFile[]> {
   let from = base.head ?? (await emptyTree(wt));
-  if (base.head && (await gitText(wt.toplevel, ['cat-file', '-t', base.head])) !== 'commit')
+  if (base.head && (await gitText(wt.toplevel, ['cat-file', '-t', '--end-of-options', base.head])) !== 'commit')
     from = now.head ?? (await emptyTree(wt));
   const stats = numstat(
-    (await git(wt.toplevel, ['diff', '--numstat', '-z', '--no-renames', '--no-ext-diff', from, ...wt.pathspec])).stdout,
+    (await git(wt.toplevel, ['diff', '--numstat', '-z', '--no-renames', '--end-of-options', from, ...wt.pathspec]))
+      .stdout,
   );
   const fresh = (await untrackedFiles(wt)).filter((f) => !stats.has(f));
   const claimed = Object.keys(base.dirty);

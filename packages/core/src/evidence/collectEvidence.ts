@@ -64,7 +64,7 @@ export async function collectEvidence(r: EvidenceRequest): Promise<GitEvidence> 
 async function descendsFrom(b: GitTreeState | undefined, now: GitTreeState | undefined): Promise<boolean | undefined> {
   if (!now || !b) return undefined;
   if (!b.head || !now.head || b.head === now.head) return true;
-  return (await git(now.toplevel, ['merge-base', '--is-ancestor', b.head, now.head])).code === 0;
+  return (await git(now.toplevel, ['merge-base', '--is-ancestor', '--end-of-options', b.head, now.head])).code === 0;
 }
 
 const treeOf = (now: GitTreeState) => ({

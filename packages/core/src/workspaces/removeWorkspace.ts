@@ -34,6 +34,8 @@ export async function removeWorkspace(i: RemoveWorkspaceInput): Promise<RemoveWo
   if (!ws) return refused('This ticket has no workspace.');
   if (isClaimed(i.root, i.mapId, i.ticketId))
     return refused(`${ws.ticketKey} is still claimed. Finish it or release it to the queue first.`);
+  if (typeof ws.path !== 'string' || !path.isAbsolute(ws.path))
+    return refused("This ticket's workspace record doesn't name a folder, so Teamtrail won't remove anything.");
   if (!existsSync(ws.path)) {
     dropWorkspace(i.root, i.mapId, i.ticketId);
     return { kind: 'removed', workspace: ws };
@@ -45,7 +47,7 @@ export async function removeWorkspace(i: RemoveWorkspaceInput): Promise<RemoveWo
     const n = changes.split('\n').length;
     return refused(`${ws.path} has uncommitted changes (${n} ${n === 1 ? 'file' : 'files'}).`, true);
   }
-  const r = await git(repo, ['worktree', 'remove', ...(i.force ? ['--force'] : []), ws.path]);
+  const r = await git(repo, ['worktree', 'remove', ...(i.force ? ['--force'] : []), '--end-of-options', ws.path]);
   if (r.code !== 0) return refused(r.stderr.trim().split('\n')[0] || 'git worktree remove failed');
   await git(repo, ['worktree', 'prune']);
   dropWorkspace(i.root, i.mapId, i.ticketId);
