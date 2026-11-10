@@ -38,7 +38,7 @@
   font-weight: 400;
   letter-spacing: var(--ls-text);
   text-transform: none;
-  fill: var(--dim);
+  fill: var(--map-card-meta);
 }
 .node .meta .key {
   font-family: var(--mono);
@@ -112,7 +112,7 @@
   fill: var(--text);
 }
 .node.st-decided .title {
-  fill: var(--dim);
+  fill: var(--map-card-meta);
 }
 .node.st-decided .meta {
   fill: var(--map-card-quiet);
@@ -184,7 +184,7 @@
 
 /* The legend and the status counts use the cards' dots. */
 .lg i,
-.status-panel li i {
+.status-panel .sp-status li i {
   display: inline-block;
   width: 8px;
   height: 8px;
