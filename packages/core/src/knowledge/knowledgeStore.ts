@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { KNOWLEDGE_DIR, type KnowledgeEntry } from './knowledge';
+import { contentHash, trustKey, trustLedger } from '../trust/trustLedger';
+import { isLive, KNOWLEDGE_DIR, type KnowledgeEntry } from './knowledge';
 import { parseKnowledge, serializeKnowledge } from './knowledgeFile';
 
 const dir = (root: string) => path.join(root, KNOWLEDGE_DIR);
 
-export function listKnowledge(root: string): KnowledgeEntry[] {
+export function listKnowledgeFiles(root: string): KnowledgeEntry[] {
   if (!existsSync(dir(root))) return [];
   return readdirSync(dir(root))
     .filter((n) => /^K-\d+\.md$/.test(n))
@@ -21,11 +22,47 @@ export function listKnowledge(root: string): KnowledgeEntry[] {
     .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
 }
 
+/** What the trail lead's call on an entry covers: what agents are handed, and the status it is handed with. */
+export function knowledgeContent(e: KnowledgeEntry) {
+  const scope = e.scope.length ? [`scope: ${e.scope.join(', ')}`] : [];
+  const tags = e.tags.length ? [`tags: ${e.tags.join(', ')}`] : [];
+  return [`${e.status} ${e.kind}: ${e.title}`, ...scope, ...tags, '', e.body].join('\n');
+}
+
+/**
+ * The entries as this machine trusts them. The files are committed, so anyone who can write the repo can mark an
+ * entry confirmed, and confirmed entries are handed to agents as binding. A live status counts only for the content
+ * the trail lead made that call on, here (trust/trustLedger.ts). Otherwise the entry reads as suggested, with
+ * `approval` saying why. That holds for a teammate's confirmation too: it is shown as theirs and asked for once.
+ */
+export function listKnowledge(root: string): KnowledgeEntry[] {
+  const all = listKnowledgeFiles(root);
+  if (!all.some(isLive)) return all;
+  const ledger = trustLedger(root);
+  return all.map((e) => {
+    if (!isLive(e)) return e;
+    const standing = ledger.standing(trustKey.knowledge(e.id), contentHash(knowledgeContent(e)));
+    if (standing === 'approved') return e;
+    return { ...e, status: 'suggested', approval: { standing, claimed: e.status } };
+  });
+}
+
+/** Records the trail lead's call on `e`, the entry as their call left it; an entry that is no longer live is forgotten. */
+export function approveKnowledgeHere(root: string, e: KnowledgeEntry, by: string) {
+  const ledger = trustLedger(root);
+  if (!isLive(e)) return ledger.drop(trustKey.knowledge(e.id));
+  const content = knowledgeContent(e);
+  ledger.set({ [trustKey.knowledge(e.id)]: { hash: contentHash(content), at: Date.now(), by, content } });
+}
+
 export const readKnowledge = (root: string, id: string) => listKnowledge(root).find((e) => e.id === id);
 
 export function writeKnowledge(root: string, e: KnowledgeEntry) {
   mkdirSync(dir(root), { recursive: true });
-  writeFileSync(path.join(dir(root), `${e.id}.md`), serializeKnowledge(e));
+  // an entry read as suggested because this machine hasn't approved it keeps the status its file has
+  const { approval, ...entry } = e;
+  const kept = approval ? { ...entry, status: approval.claimed } : entry;
+  writeFileSync(path.join(dir(root), `${e.id}.md`), serializeKnowledge(kept));
 }
 
 /**

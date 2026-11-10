@@ -9,7 +9,7 @@ import {
   type MapMode,
   type Ticket,
 } from '@teamtrail/core';
-import { listGuides, readVerificationConfig, recordCharted, writeBrief } from '@teamtrail/core/agents';
+import { listGuides, recordCharted, recordLevel, recordTypes, trustedChecks, writeBrief } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
 import { saveCriteria } from './criteria';
@@ -74,6 +74,10 @@ export async function startTrail(ctx: AgentContext, input: StartInput) {
     tickets.map((t) => t.id),
     { agent, origin: ctx.origin },
   );
+  // the level came from the approved config: it is this trail's approved level here, so an edit can't lower it
+  if (map.verification) recordLevel(ctx.root, { mapId: map.id }, map.verification);
+  // and each ticket's type, which the trail level applies by: an edited type doesn't move a ticket out of it
+  recordTypes(ctx.root, map.id, tickets);
   saveAllCriteria(ctx, { map, tickets, planned });
   await saveGuides(ctx, { map, tickets, planned, team: input.team });
   await saveAssumptions(ctx, { map, tickets, planned, items: input.assumptions ?? [] });
@@ -128,7 +132,8 @@ const statedBy = (agent: string) => (text: string) => `${text.trim()} (stated by
 
 /** The map to chart: sections from the input, the repo's default verification level, discovery first. */
 function chartInput(ctx: AgentContext, input: StartInput, agent: string) {
-  const level = readVerificationConfig(ctx.root).config?.default;
+  // the approved config's default: an unapproved edit to verification.json can't pick a new trail's level
+  const level = trustedChecks(ctx.root).config.config?.default;
   const verifies = level !== undefined && level !== 'off';
   const discovery = input.discovery === false ? [] : [{ ref: '__discovery', ...DISCOVERY_TICKET }];
   return {

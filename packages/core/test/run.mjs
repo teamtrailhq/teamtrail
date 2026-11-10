@@ -3,7 +3,8 @@
 //   node test/run.mjs record [fake|live]   re-record fixtures (see record.ts)
 //   node test/run.mjs serve [port]         fake GitHub + Linear over HTTP (see serve-fakes.ts)
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
@@ -38,7 +39,12 @@ const files = entries.map((f) => path.join(out, f.replace(/\.ts$/, '.mjs')));
 const TEST_FLAGS = ['--test', '--enable-source-maps', '--test-timeout=120000', '--test-force-exit'];
 const args = script ? [files[0], ...rest] : [...TEST_FLAGS, ...files];
 // Tests never use the credentials of whoever runs them: no `gh` login, no token from the shell.
-const env = { ...process.env, TEAMTRAIL_NO_GH_CLI: '1' };
+// Nor their config dir: approvals, the machine key and the projects registry go to a folder of this run.
+const env = {
+  ...process.env,
+  TEAMTRAIL_NO_GH_CLI: '1',
+  TEAMTRAIL_CONFIG_DIR: mkdtempSync(path.join(os.tmpdir(), 'teamtrail-test-config-')),
+};
 for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) delete env[k];
 const r = spawnSync(process.execPath, args, { stdio: 'inherit', env });
 process.exit(r.status ?? 1);

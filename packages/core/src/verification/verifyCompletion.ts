@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { CriterionEvidence } from '../criteria/criteria';
@@ -12,10 +11,12 @@ import type { VerificationAttempt } from '../model/verification';
 import { transition } from '../planning/lifecycle/transition';
 import { OperationError } from '../planning/operations/operationError';
 import { resolve, type DecisionMeta } from '../planning/operations/resolve';
-import { readWorkspace } from '../workspaces/workspaceStore';
+import { withApprovedLevel } from './approvedLevel';
 import { assertConfirmed } from './assertConfirmed';
+import { checkoutFor } from './checkoutFor';
+import { checksWaitReason, trustedChecks } from './checksApproval';
 import { DEFAULT_CONFIG } from './config';
-import { readVerificationConfig, type ConfigRead } from './configFile';
+import type { ConfigRead } from './configFile';
 import { nextAttemptId, readAttempts, writeAttempt } from './evidenceStore';
 import { gradeAttempt } from './gradeAttempt';
 import { attemptComment, outcomeOf } from './outcome';
@@ -40,12 +41,6 @@ export interface VerifyEnv {
 
 /** The repo a tracker's checks and git evidence use. */
 export const repoRootOf = (env: Pick<VerifyEnv, 'root' | 'repoRoot'>) => env.repoRoot ?? path.dirname(env.root);
-
-/** Where one ticket's checks and git evidence run: its worktree when it has one, else the repo. */
-const checkoutOf = (env: Pick<VerifyEnv, 'root' | 'repoRoot'>, mapId: string, ticketId: string) => {
-  const ws = env.repoRoot ? undefined : readWorkspace(env.root, mapId, ticketId);
-  return ws && existsSync(ws.path) ? ws.path : repoRootOf(env);
-};
 
 /** What the agent claimed, kept on the attempt and used to resolve the ticket when it passes. */
 export interface Submission {
@@ -95,8 +90,11 @@ export interface Settled {
  * requires (resolveGuide.ts); it never changes the level or drops a check.
  */
 export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: LevelInfo; config: ConfigRead } {
-  const config = readVerificationConfig(root);
-  const info = verificationFor(config.config, snap.map, t);
+  // the approved config and the approved level: an edit to verification.json or to a trail's or ticket's level in
+  // the tracker files lowers nothing until the trail lead approves it (approvedLevel.ts)
+  const { config } = trustedChecks(root);
+  const asked = verificationFor(config.config, snap.map, t);
+  const info = withApprovedLevel(root, { config: config.config, map: snap.map, t, info: asked });
   if (!t.guide) return { info, config };
   return { info: { ...info, checks: effectiveChecks(info.checks, resolveGuide(listGuides(root), t)) }, config };
 }
@@ -105,12 +103,17 @@ export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: Le
  * Runs the checks for a ticket that is verifying, writes the attempt and moves
  * the ticket on (done, rework, blocked, or still verifying for review). The
  * attempt id is taken under the ticket's run lock, so only one run per ticket
- * happens at a time across processes.
+ * happens at a time across processes. While verification.json is not the file
+ * the trail lead approved on this machine, no command runs: the attempt is an
+ * error naming why, so the ticket goes to the human instead of staying stuck
+ * (completions are held before they get here, submitVerified in the CLI).
  */
 export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptId: string; done: Promise<Settled> }> {
   const { mapId, ticket: t, info, sub } = job;
   assertConfirmed(t, info);
-  const config = readVerificationConfig(env.root);
+  // Read once: the commands that run are the ones whose approval was just checked.
+  const { config, approval } = trustedChecks(env.root);
+  const waiting = approval.waiting ? checksWaitReason(approval) : undefined;
   const base = {
     v: 1 as const,
     mapId,
@@ -143,7 +146,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
   const done = (async (): Promise<Settled> => {
     let attempt: VerificationAttempt;
     try {
-      const graded = sub.remote ? remoteGraded(env, job) : await gradeHere(env, job, { id, config });
+      const graded = await grade(env, job, { id, config, waiting });
       attempt = { ...base, id, finishedAt: Date.now(), ...graded };
       writeAttempt(env.root, attempt);
     } finally {
@@ -155,10 +158,19 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
   return { attemptId: id, done };
 }
 
+/** What an attempt finds: nothing run for a remote agent or for unapproved commands, else the checks here. */
+function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; waiting?: string }) {
+  if (job.sub.remote) return remoteGraded(env, job);
+  const checkout = checkoutFor(env, job.mapId, job.ticket.id);
+  const none = run.waiting ?? (checkout.kind === 'none' ? `No check ran: ${checkout.reason}.` : undefined);
+  if (none || checkout.kind === 'none') return { checks: [], result: 'error' as const, note: none };
+  return gradeHere(env, job, { ...run, checkout: checkout.path });
+}
+
 /** Git evidence, checks and criteria for work that is in this checkout (or the ticket's worktree). */
-async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead }) {
+async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; checkout: string }) {
   const { mapId, ticket: t, info, sub } = job;
-  const repoRoot = checkoutOf(env, mapId, t.id);
+  const repoRoot = run.checkout;
   const git = await completionEvidence({
     ...env,
     repoRoot,

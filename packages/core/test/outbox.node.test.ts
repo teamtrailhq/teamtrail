@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import os from 'node:os';
@@ -11,11 +11,12 @@ import { fileURLToPath } from 'node:url';
 import type { TrackerAdapter } from '../src/adapters/adapter';
 import { GitHubAdapter } from '../src/adapters/remote/github';
 import { LinearAdapter } from '../src/adapters/remote/linear';
-import { OUTBOX_DIR, orphanedWrites, outboxFile, outboxKey } from '../src/adapters/remote/outboxFile';
+import { orphanedWrites, outboxDir, outboxFile, outboxKey } from '../src/adapters/remote/outboxFile';
 import type { SyncedAdapter } from '../src/adapters/remote/sync/syncedAdapter';
 import type { OutboxStore } from '../src/adapters/remote/sync/types';
 import type { TrackerSettings } from '../src/adapters/remote/types';
 import { chartMap } from '../src/planning/operations/chart';
+import { trackerPin } from '../src/server/trackerPin';
 import { createTrackerRoutes } from '../src/server/trackerRoutes';
 import { fakeGitHub } from './fakes/github';
 import { fakeLinear } from './fakes/linear';
@@ -194,8 +195,9 @@ for (const kind of process.env.OUTBOX_CHILD ? [] : (['github', 'linear'] as cons
       const first = await killedFirstRun(kind, fake.api, root);
       assert.deepEqual([first.state, first.queued], ['offline', 7]);
 
-      const dir = path.join(root, OUTBOX_DIR);
-      assert.equal(readFileSync(path.join(dir, '.gitignore'), 'utf8'), '*\n', 'the queue is never committed');
+      const dir = root;
+      const [queued] = readdirSync(dir);
+      assert.equal(statSync(path.join(dir, queued)).mode & 0o777, 0o600, 'only this user can read the queue');
       assert.equal(orphanedWrites(root, key(kind)), 7, 'the dead run left its queue on disk');
       const before = await remote(kind, fake.api, first.mapId, first.r);
       assert.deepEqual(
@@ -215,7 +217,7 @@ for (const kind of process.env.OUTBOX_CHILD ? [] : (['github', 'linear'] as cons
 
       await b.tick();
       assert.deepEqual([b.status.state, b.status.queued, b.status.error], ['online', 0, undefined]);
-      assert.deepEqual(readdirSync(dir), ['.gitignore'], 'drained queue leaves no file');
+      assert.deepEqual(readdirSync(dir), [], 'drained queue leaves no file');
 
       const after = await remote(kind, fake.api, first.mapId, first.r);
       assert.deepEqual(
@@ -282,8 +284,12 @@ if (!process.env.OUTBOX_CHILD)
   test('settings: after a restart the sync line reports the queue a dead run left', async () => {
     const fake = await serve('github');
     const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-outbox-'));
-    await killedFirstRun('github', fake.api, root);
-    writeFileSync(path.join(root, 'trackers.json'), JSON.stringify({ active: 'github', github: { repo: REPO } }));
+    const configDir = path.join(root, 'config');
+    // the queue of this machine's earlier run, where Teamtrail keeps it: outside the repo
+    await killedFirstRun('github', fake.api, outboxDir(root, configDir));
+    const gh = { active: 'github' as const, github: { repo: REPO } };
+    writeFileSync(path.join(root, 'trackers.json'), JSON.stringify(gh));
+    trackerPin(root, configDir).approve(gh);
     fake.offline(true);
     // the restarted Lookout: nothing asks for the adapter, yet the queue is picked up
     const routes = createTrackerRoutes({
@@ -291,7 +297,7 @@ if (!process.env.OUTBOX_CHILD)
       markdown: {} as TrackerAdapter,
       env: { GITHUB_TOKEN: 'test-token', TEAMTRAIL_GITHUB_API: fake.api },
       exec: () => Promise.reject(new Error('no exec in tests')),
-      configDir: path.join(root, 'config'),
+      configDir,
     });
     const server = http.createServer(
       (req, res) => void routes.handle(req, res, new URL(req.url ?? '/', 'http://localhost')),
@@ -330,7 +336,6 @@ if (!process.env.OUTBOX_CHILD)
     assert.equal(orphanedWrites(root, outboxKey('github', 'octo-org/other')), 0, 'another repo never sees it');
     assert.deepEqual(outboxFile(root, outboxKey('github', REPO)).load(), [w]);
     assert.deepEqual(outboxFile(root, outboxKey('github', REPO)).load(), [], 'already claimed');
-    assert.ok(existsSync(path.join(root, OUTBOX_DIR, '.gitignore')));
   });
 
 if (process.env.OUTBOX_CHILD) {

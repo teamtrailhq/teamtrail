@@ -18,6 +18,7 @@ import { operatorAction } from '../src/verification/operatorActions';
 import { reviewConflict } from '../src/verification/reviewIndependence';
 import { submitReview, type ReviewSubmission } from '../src/verification/submitReview';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
+import { approveAllHere } from './fakes/trailLead';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const config = (extra: object = {}) =>
@@ -29,6 +30,7 @@ async function setup(level: VerificationLevel) {
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root);
   writeFileSync(path.join(root, 'verification.json'), config());
+  approveAllHere(root);
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(adapter, {
     title: 'Review',
@@ -158,6 +160,7 @@ test('NEEDS_HUMAN holds the ticket for the trail lead', async () => {
 test('a PASS on code that changed since its checks ran runs them again instead (stale: reverify)', async () => {
   const s = await setup('checks+review');
   writeFileSync(path.join(s.root, 'verification.json'), config({ stale: 'reverify', maxAttempts: 4 }));
+  approveAllHere(s.root);
   const r = await s.answer('Scout-2', {});
   assert.equal(r.phase, 'verifying');
   assert.equal(r.attemptId, 'A-2');

@@ -8,6 +8,8 @@ export interface VerificationConfigView {
   errors: string[];
   hash?: string;
   config?: VerificationConfig;
+  /** Whether its commands run on this machine: `waiting` until the trail lead approves the file as it is. */
+  approval?: { state: string; waiting: boolean };
 }
 
 /** `verification.json` as the local server reads it; undefined while loading, null without a server (static build). */

@@ -6,8 +6,9 @@ import { setVerification } from '../planning/lifecycle/setVerification';
 import { transition } from '../planning/lifecycle/transition';
 import { OperationError } from '../planning/operations/operationError';
 import { resolve } from '../planning/operations/resolve';
+import { recordLevel, recordTypes } from './approvedLevel';
+import { trustedChecks } from './checksApproval';
 import { DEFAULT_CONFIG } from './config';
-import { readVerificationConfig } from './configFile';
 import { readAttempts, writeVerdict } from './evidenceStore';
 import { rerunChecks } from './operatorRerun';
 import { CHECK_RUNNER, type VerifyEnv } from './verifyCompletion';
@@ -41,6 +42,11 @@ export async function operatorAction(env: VerifyEnv, r: OperatorRequest): Promis
   if (r.action === 'level') {
     if (r.level === undefined) throw new OperationError('"level" is required');
     await setVerification(env.adapter, { mapId: r.mapId, ticketId: r.ticketId }, r.level, 'trail lead');
+    // set by the trail lead on this machine: a later edit of the file below this level waits for them
+    recordLevel(env.root, { mapId: r.mapId, ticketId: r.ticketId }, r.level);
+    // and the types its level applies by, so a type edited in a file later doesn't move a ticket out of it
+    const { tickets } = await env.adapter.loadMap(r.mapId);
+    recordTypes(env.root, r.mapId, r.ticketId ? tickets.filter((t) => t.id === r.ticketId) : tickets);
     return {};
   }
   if (!r.ticketId) throw new OperationError('"ticketId" is required');
@@ -106,7 +112,8 @@ async function decide(a: Act, action: 'approve' | 'accept') {
 
 /** An approval only counts for the code that was checked. */
 async function assertCurrent(env: VerifyEnv, last: VerificationAttempt) {
-  const config = readVerificationConfig(env.root).config ?? DEFAULT_CONFIG;
+  // the approved config: an unapproved edit to verification.json changes nothing the trail lead sees as current
+  const config = trustedChecks(env.root).config.config ?? DEFAULT_CONFIG;
   const s = await staleAction(env.root, config, last);
   if (s.action === 'reverify')
     throw new OperationError(`${last.id} no longer matches the code (${s.check.reason}): re-run checks first`);

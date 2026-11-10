@@ -3,7 +3,7 @@ import path from 'node:path';
 import { readJsonFile } from '../lib/jsonFile';
 import type { GitBaseline } from '../model/evidence';
 import type { Ticket } from '../model/types';
-import { readVerificationConfig } from '../verification/configFile';
+import { trustedChecks } from '../verification/checksApproval';
 import { evidencePaths, writeOnce } from '../verification/evidenceStore';
 import { findWorktree, readTreeState } from './treeState';
 
@@ -51,7 +51,8 @@ export interface ClaimInfo {
 /** Records HEAD, branch, the dirty files and the verification.json hash as a claim finds them. Never throws. */
 export async function captureBaseline(c: ClaimInfo): Promise<GitBaseline> {
   const wt = await findWorktree(c.cwd, c.root);
-  const config = readVerificationConfig(c.root);
+  // the approved config, as completions use it, so "changed during the ticket" compares like with like
+  const { config } = trustedChecks(c.root);
   const rec = {
     v: 1 as const,
     mapId: c.mapId,

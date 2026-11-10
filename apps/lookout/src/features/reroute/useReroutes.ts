@@ -36,7 +36,8 @@ export function useReroutes(snap?: MapSnapshot) {
     const r = await fetch(`${api}/${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mapId, id, note }),
+      // the proposal as this page shows it: the bridge refuses the approval if the file changed since
+      body: JSON.stringify({ mapId, id, note, hash: reroutes.find((p) => p.id === id)?.hash }),
     });
     const b = (await r.json().catch(() => ({}))) as { error?: string; errors?: { message: string }[] };
     if (r.ok) {

@@ -23,6 +23,7 @@ describe('agent guidance', () => {
       expect(text).toContain('flag_knowledge');
       expect(text).toContain('set_criteria');
       expect(text).toMatch(/Never decide (HITL|a `hitl`)/);
+      expect(text).toMatch(/get past a gate doesn't work/);
     }
   });
 });

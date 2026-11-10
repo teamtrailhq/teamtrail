@@ -2,11 +2,12 @@ import { acceptedSettingsFile } from '../adapters/remote/acceptedSettingsFile';
 import { GitHubAdapter } from '../adapters/remote/github';
 import { TrackerError } from '../adapters/remote/http';
 import { LinearAdapter } from '../adapters/remote/linear';
-import { orphanedWrites, outboxFile, outboxKey } from '../adapters/remote/outboxFile';
+import { orphanedWrites, outboxDir, outboxFile, outboxKey } from '../adapters/remote/outboxFile';
 import type { SyncedAdapter } from '../adapters/remote/sync/syncedAdapter';
 import type { RemoteKind } from '../adapters/remote/types';
 import { resolveLinearKey, type ProjectTrackerConfig } from './trackerConfig';
 import type { TrackerContext } from './trackerContext';
+import { trackerTargetLabel } from './trackerPin';
 
 export const isKind = (k: string | undefined): k is RemoteKind => k === 'github' || k === 'linear';
 
@@ -18,12 +19,20 @@ const queueKey = (cfg: ProjectTrackerConfig, kind: RemoteKind) =>
 
 /** One GitHub and one Linear adapter at most, built on first use from the project config and credentials. */
 export function remoteAdapters(ctx: TrackerContext) {
-  const { o, env, creds, project, apiUrl } = ctx;
+  const { o, env, creds, pin, apiUrl } = ctx;
   const adapters: Partial<Record<RemoteKind, Promise<SyncedAdapter>>> = {};
   const live: Partial<Record<RemoteKind, SyncedAdapter>> = {};
+  /** Outside the repo: only this machine's Teamtrail queues writes there. */
+  const queueDir = outboxDir(o.root, ctx.configDir);
 
+  /** Only the tracker approved on this machine is ever built: the token goes nowhere else. */
   async function build(kind: RemoteKind): Promise<SyncedAdapter> {
-    const cfg = project.read();
+    const cfg = pin.read().config;
+    if (cfg.active !== kind)
+      throw new TrackerError(
+        'invalid',
+        `${kind === 'github' ? 'GitHub' : 'Linear'} is not the tracker approved on this machine (${trackerTargetLabel(cfg)}); connect it in Settings`,
+      );
     if (kind === 'github') {
       if (!cfg.github?.repo) throw new TrackerError('invalid', 'GitHub is not connected; connect it in Settings');
       const t = await ctx.githubToken();
@@ -37,7 +46,7 @@ export function remoteAdapters(ctx: TrackerContext) {
         token: t.token,
         apiUrl: apiUrl.github,
         fetch: o.fetch,
-        outbox: outboxFile(o.root, queueKey(cfg, 'github')),
+        outbox: outboxFile(queueDir, queueKey(cfg, 'github')),
         accepted: acceptedSettingsFile(o.root, queueKey(cfg, 'github')),
       });
     }
@@ -52,7 +61,7 @@ export function remoteAdapters(ctx: TrackerContext) {
       display,
       apiUrl: apiUrl.linear,
       fetch: o.fetch,
-      outbox: outboxFile(o.root, queueKey(cfg, 'linear')),
+      outbox: outboxFile(queueDir, queueKey(cfg, 'linear')),
       accepted: acceptedSettingsFile(o.root, queueKey(cfg, 'linear')),
     });
   }
@@ -81,8 +90,8 @@ export function remoteAdapters(ctx: TrackerContext) {
     status: (k: RemoteKind) => (live[k] ? { ...live[k]!.status } : undefined),
     /** Writes an earlier run queued but never sent: start the adapter now so they replay (and show in Settings). */
     resumeQueued() {
-      const cfg = project.read();
-      if (isKind(cfg.active) && orphanedWrites(o.root, queueKey(cfg, cfg.active))) get(cfg.active).catch(() => {});
+      const cfg = pin.read().config;
+      if (isKind(cfg.active) && orphanedWrites(queueDir, queueKey(cfg, cfg.active))) get(cfg.active).catch(() => {});
     },
     close() {
       for (const k of Object.keys(live) as RemoteKind[]) reset(k);

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { AGENTS_DIR } from '../agents/agentLink';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
 import { DEFAULT_WORKSPACE_SETTINGS, WORKSPACES_FILE, type WorkspaceRecord, type WorkspaceSettings } from './workspace';
 import { parseWorkspaceSettings, serializeWorkspaceSettings } from './workspaceFile';
@@ -35,6 +36,7 @@ export function readWorkspace(root: string, mapId: string, ticketId: string) {
 }
 
 export function writeWorkspace(root: string, r: WorkspaceRecord) {
+  ensureLocalDir(path.join(root, AGENTS_DIR));
   writeJsonAtomic(recordFile(root, r.mapId, r.ticketId), r);
 }
 

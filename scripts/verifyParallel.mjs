@@ -41,7 +41,13 @@ async function startServer(cli, cwd) {
 }
 
 async function agent(cli, cwd) {
-  const transport = new StdioClientTransport({ command: process.execPath, args: [cli, 'mcp'], cwd, stderr: 'pipe' });
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [cli, 'mcp'],
+    cwd,
+    stderr: 'pipe',
+    env: { ...process.env },
+  });
   const client = new Client({ name: 'claude-code', version: '2.1.0' });
   await client.connect(transport);
   const call = async (name, args = {}) => {

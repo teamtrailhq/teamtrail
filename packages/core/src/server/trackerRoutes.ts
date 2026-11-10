@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { TrackerAdapter } from '../adapters/adapter';
+import { TrackerError } from '../adapters/remote/http';
 import type { RemoteKind, TrackerConnectRequest, TrackerTestRequest } from '../adapters/remote/types';
 import { githubCiAccess } from './githubCiAccess';
 import { githubLookups } from './githubLookups';
@@ -8,6 +9,7 @@ import { githubSignIn } from './githubSignIn';
 import { GITHUB_SIGN_IN, handleGitHubSignIn } from './githubSignInRoutes';
 import { BadRequest, readJson, sendFailure, sendJson } from './http';
 import { lanCallRefusal } from './lanCallRefusal';
+import { handleLegacyOutbox, LEGACY_OUTBOX } from './legacyOutboxRoutes';
 import { linearLookups } from './linearLookups';
 import { handleLinearTeams, LINEAR_PROJECTS, LINEAR_TEAMS } from './linearTeamRoutes';
 import { isKind, remoteAdapters } from './remoteAdapters';
@@ -16,11 +18,13 @@ import { CALLS } from './trackerCalls';
 import { trackerContext, type TrackerRoutesOptions } from './trackerContext';
 import { crossSite, sendTrackerError } from './trackerErrors';
 import { streamTrackerEvents } from './trackerEvents';
+import { pendingTrackerMessage } from './trackerPin';
 import { trackerSettings } from './trackerSettings';
 
 export type { TrackerRoutesOptions } from './trackerContext';
 
 const GITHUB_REPOS = '/trackers/github/repos';
+const TRACKER_APPROVAL = '/trackers/approval';
 const isSignIn = (p: string) => p === GITHUB_SIGN_IN || p.startsWith(`${GITHUB_SIGN_IN}/`);
 const isLookup = (p: string) => p === GITHUB_REPOS || p === LINEAR_TEAMS || p === LINEAR_PROJECTS || isSignIn(p);
 
@@ -36,6 +40,8 @@ const isLookup = (p: string) => p === GITHUB_REPOS || p === LINEAR_TEAMS || p ==
  *   GET    /trackers/linear/projects?team= LinearProjectList: that team's projects (POST `{ apiKey, teamId }`)
  *   POST   /trackers/github/sign-in/start|poll|cancel, DELETE /trackers/github/sign-in
  *                                          Sign in with GitHub (device flow) and sign out; see githubSignInRoutes.ts
+ *   POST   /trackers/approval              `{ use: boolean, target }` → TrackerSettings: use the tracker trackers.json
+ *                                          now names (`target` is the one the page showed), or keep the approved one
  *   DELETE /trackers/credentials/<kind>    forget the saved token / key
  *   POST   /tracker/<kind>/call            `{ method, args }` → `{ result }` (TrackerAdapter methods)
  *   GET    /tracker/<kind>/events          SSE: TrackerEvent per message; named `status` events (SyncStatus & { location })
@@ -46,14 +52,15 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
   const lookups = githubLookups(ctx);
   const linear = linearLookups(ctx);
   const signIn = githubSignIn({ ctx, changed: () => githubChanged() });
-  const { settings, test, connect } = trackerSettings({ ctx, remotes, lookups, linear, signIn });
+  const { settings, test, connect, decide } = trackerSettings({ ctx, remotes, lookups, linear, signIn });
   remotes.resumeQueued();
 
   async function handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
     const p = url.pathname;
     const call = p.match(/^\/tracker\/([^/]+)\/(call|events)$/);
     const forget = p.match(/^\/trackers\/credentials\/([^/]+)$/);
-    const own = p === '/trackers' || p === '/trackers/test' || !!call || !!forget;
+    const own = p === '/trackers' || p === '/trackers/test' || p === TRACKER_APPROVAL || !!call || !!forget;
+    if (p === LEGACY_OUTBOX) return legacyRoute(req, res);
     if (!own && !isLookup(p)) return false;
     try {
       if (crossSite(req)) return (void sendJson(res, 403, { error: 'cross-site request refused' }), true);
@@ -65,6 +72,17 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
       else if (!sendTrackerError(res, err)) sendFailure(res, err);
     }
     return true;
+  }
+
+  /** The writes an earlier version queued in the repo: shown to the trail lead, sent or discarded by them. */
+  async function legacyRoute(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+    if (crossSite(req)) return (void sendJson(res, 403, { error: 'cross-site request refused' }), true);
+    const adopt = () => {
+      remotes.reset('github');
+      remotes.reset('linear');
+      remotes.resumeQueued();
+    };
+    return handleLegacyOutbox(req, res, { root: o.root, configDir: ctx.configDir, adopt });
   }
 
   /** The pickers' lookups and Sign in with GitHub. */
@@ -91,6 +109,10 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
       const b = await readJson<TrackerTestRequest>(req, '{}');
       if (!isKind(b.kind)) throw new BadRequest('"kind" must be github or linear');
       return (void sendJson(res, 200, await test(b)), true);
+    }
+    if (p === TRACKER_APPROVAL && req.method === 'POST') {
+      const r = decide(await readJson<{ use?: unknown; target?: unknown }>(req, '{}'));
+      return (void sendJson(res, r.status, r.status === 200 ? await settings() : r.body), true);
     }
     if (forget && req.method === 'DELETE') {
       forgetCredentials(forget[1]);
@@ -149,7 +171,10 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
     handle,
     /** The adapter the project is connected to, for routes shared with local markdown (decisions). */
     async active(): Promise<TrackerAdapter> {
-      const a = ctx.project.read().active;
+      const t = ctx.pin.read();
+      if (t.pending && o.unapproved !== 'stay')
+        throw new TrackerError('invalid', pendingTrackerMessage({ config: t.config, pending: t.pending }));
+      const a = t.config.active;
       return isKind(a) ? remotes.get(a) : o.markdown;
     },
     /** GitHub PR and CI reads for the reconciler, with the same token resolution as the tracker. */

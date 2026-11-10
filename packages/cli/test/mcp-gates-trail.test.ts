@@ -20,6 +20,7 @@ import {
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { agents, type Call } from './fakes/agents';
+import { approveAllHere } from './fakes/trailLead';
 
 let repo: string;
 let root: string;
@@ -292,6 +293,7 @@ describe('a ticket reaches done only through every gate its trail sets', () => {
         noChanges: { allow: ['execute', 'task', 'prototype', 'research', 'junction'], else: 'flag' },
       }),
     );
+    approveAllHere(root);
     const a = await hub.connect({ name: 'claude-01' });
     const m = await a<Started>('start_trail', {
       title: 'Exports',
@@ -325,6 +327,7 @@ describe('a ticket reaches done only through every gate its trail sets', () => {
     // Accepted: the claim goes through, criteria are required, and the check runs.
     await a('submit_brief', { summary: 'Exports', existing: '- `src/export.ts`' });
     writeBrief(root, decided(readBrief(root, m.trail.id)!, { kind: 'accept' }));
+    approveAllHere(root);
     // The human turns down the proposal to rule it out.
     const env = { root, adapter: adapter(), journal: journalFile(root) };
     for (const p of listReroutes(root, m.trail.id).filter((x) => x.status === 'pending'))

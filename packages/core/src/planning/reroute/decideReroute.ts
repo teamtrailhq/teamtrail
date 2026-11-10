@@ -4,6 +4,7 @@ import type { RerouteProposal } from '../../model/reroute';
 import { settleAssumptions } from '../assumptions/assumptionOps';
 import { OperationError } from '../operations/operationError';
 import { applyReroute } from './applyReroute';
+import { approvedReroute, keepApprovedReroute, keepRerouteProgress, rerouteHash } from './rerouteApproval';
 import { journal, RerouteInvalid, type RerouteEnv } from './rerouteFlow';
 import { readReroute, writeReroute } from './rerouteStore';
 import { validateReroute } from './validateReroute';
@@ -15,19 +16,28 @@ export interface RerouteDecision {
   by: string;
   note?: string;
   now?: number;
+  /** `rerouteHash` of the proposal the trail lead looked at; the bridge always sends it. A file that differs is refused. */
+  hash?: string;
 }
 
 /**
  * The trail lead approves a proposal: it is checked again against the map as it is now, marked approved, applied
  * through the existing operations (resumable), and the assumptions it invalidates are settled and kept as suggested
- * `dead-end` knowledge. Approving an approved proposal that didn't finish applying finishes it.
+ * `dead-end` knowledge. Approving an approved proposal that didn't finish applying finishes it. The approval is of
+ * the proposal's content (rerouteApproval.ts): what is applied is exactly what was approved here.
  */
 export async function approveReroute(env: RerouteEnv, d: RerouteDecision): Promise<RerouteProposal> {
   const found = readOrThrow(env, d);
-  const resuming = found.status === 'approved' && found.applied.length < found.changes.length;
+  // An approval is this machine's record, not the file's status: without one, "approved" in the file resumes nothing.
+  const kept = found.status === 'approved' ? approvedReroute(env.root, found) : undefined;
+  if (found.status === 'approved' && !kept)
+    throw new OperationError(`${found.id} says approved, but the trail lead never approved it on this machine`);
+  const resuming = !!kept && kept.applied.length < kept.changes.length;
   if (found.status !== 'pending' && !resuming) throw new OperationError(`${found.id} is ${found.status}`);
-  let p = found;
+  let p = kept ?? found;
   if (!resuming) {
+    if (d.hash !== undefined && d.hash !== rerouteHash(found))
+      throw new OperationError(`${found.id} changed since you looked at it. Review it again before approving.`);
     const snap = await env.adapter.loadMap(d.mapId);
     const errors = validateReroute(snap, await env.adapter.listDecisions(d.mapId), p);
     if (errors.length) throw new RerouteInvalid(errors);
@@ -38,13 +48,16 @@ export async function approveReroute(env: RerouteEnv, d: RerouteDecision): Promi
       decidedAt: d.now ?? Date.now(),
       note: d.note?.trim() || undefined,
     };
+    keepApprovedReroute(env.root, p, d.by);
     writeReroute(env.root, p);
     journal(env, p, { action: 'approved', actor: d.by, actorKind: 'trail lead', reason: p.note });
   }
-  p = await applyReroute(
-    { adapter: env.adapter, actor: d.by, journal: env.journal, save: (x) => writeReroute(env.root, x) },
-    p,
-  );
+  // what runs is the approved content kept on this machine; the file only mirrors the progress
+  const save = (x: RerouteProposal) => {
+    keepRerouteProgress(env.root, x, d.by);
+    writeReroute(env.root, x);
+  };
+  p = await applyReroute({ adapter: env.adapter, actor: d.by, journal: env.journal, save }, p);
   journal(env, p, { action: 'applied', actor: d.by, actorKind: 'trail lead', changes: p.applied.length });
   const invalidated = await settleAssumptions(env.adapter, d.mapId, {
     ids: p.invalidates,

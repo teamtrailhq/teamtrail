@@ -38,6 +38,18 @@ export interface TrackerSettings {
     viewer?: LinearViewer;
     status?: SyncStatus;
   };
+  /** `trackers.json` names another tracker than the one approved on this machine; `active` is still the approved one. */
+  pending?: PendingTracker;
+}
+
+/** A tracker `trackers.json` asks for that the human hasn't approved on this machine yet. */
+export interface PendingTracker {
+  /** Sent back with the decision, so a file that changed again is not approved unseen. */
+  target: string;
+  /** "GitHub Issues in octo-org/launchpad". */
+  label: string;
+  /** What this machine uses meanwhile: "local markdown files". */
+  approved: string;
 }
 
 /** The GitHub account behind a token: a user, or why the lookup failed (a rejected token, an app token). */

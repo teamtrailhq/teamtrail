@@ -18,6 +18,7 @@ import { verificationEvents } from '../src/server/verificationEvents';
 import { readAttempts, readVerdicts } from '../src/verification/evidenceStore';
 import { operatorAction } from '../src/verification/operatorActions';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
+import { approveAllHere } from './fakes/trailLead';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const CHECK = `process.exit(require('fs').existsSync('ok') ? 0 : 1)`;
@@ -31,6 +32,7 @@ async function setup(level: VerificationLevel = 'checks', maxAttempts = 3) {
     path.join(root, 'verification.json'),
     JSON.stringify({ v: 1, maxAttempts, checks: { ok: { run: [process.execPath, '-e', CHECK] } }, run: ['ok'] }),
   );
+  approveAllHere(root);
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(adapter, {
     title: 'Op',

@@ -30,6 +30,7 @@ import { setSecurityHeaders } from './securityHeaders';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { createTrackerRoutes } from './trackerRoutes';
 import { handleTrackerSettings } from './trackerSettingsRoutes';
+import { handleTrust } from './trustRoutes';
 import { handleVerification } from './verificationRoutes';
 import { handleVerificationSync } from './verificationSyncRoutes';
 import { watchAttention } from './watchAttention';
@@ -60,7 +61,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const abs = path.resolve(root);
   const fs = nodeMarkdownFs(abs);
   const markdown = new MarkdownAdapter({ ...fs, watch: undefined }, abs);
-  const routes = createTrackerRoutes({ ...trackers, root: abs, markdown, peer });
+  // The Lookout stays on the approved tracker while a change to trackers.json waits for the human.
+  const routes = createTrackerRoutes({ unapproved: 'stay', ...trackers, root: abs, markdown, peer });
   const plugins = factories.map((f) => f({ root: abs, active: () => routes.active(), url: publicUrl }));
   const clients = new Set<ServerResponse>();
   const streams = new Map<string, number>();
@@ -105,6 +107,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
+    (req, res, url) => handleTrust(ctx, req, res, url),
     (req, res, url) => handleRemoteAgents({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
   ];
 

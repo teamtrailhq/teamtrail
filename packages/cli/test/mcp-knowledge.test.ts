@@ -4,7 +4,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { applyCall, withCurrentHashes } from '@teamtrail/core';
-import { blobHash, readKnowledge, writeKnowledge } from '@teamtrail/core/agents';
+import { approveKnowledgeHere, blobHash, readKnowledge, writeKnowledge } from '@teamtrail/core/agents';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { importKnowledge } from '../src/knowledgeImport';
 import { TrailAgent } from '../src/mcp/agent';
@@ -29,11 +29,14 @@ async function connect() {
 }
 
 /** The trail lead's confirm, as the Lookout does it (records the anchored files' hashes). */
-const confirm = (id: string) =>
-  writeKnowledge(
-    root,
-    withCurrentHashes(applyCall(readKnowledge(root, id)!, { kind: 'confirm' }), (p) => blobHash(repo, p)),
+/** The trail lead confirming an entry in the Lookout, on this machine. */
+const confirm = (id: string) => {
+  const confirmed = withCurrentHashes(applyCall(readKnowledge(root, id)!, { kind: 'confirm' }), (p) =>
+    blobHash(repo, p),
   );
+  writeKnowledge(root, confirmed);
+  approveKnowledgeHere(root, confirmed, 'trail lead');
+};
 
 beforeEach(() => {
   repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-knowledge-'));

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BRAND } from '@teamtrail/core';
+import { approveCli } from './approve/approveCli';
 import { fail } from './args/help';
 import { parseArgs, parseSubArgs } from './args/parseArgs';
 import { runConnect } from './connect';
@@ -102,6 +103,7 @@ async function main() {
     return;
   }
   if (GUIDE_COMMANDS.has(argv[0])) return guidesCli(argv.slice(1));
+  if (argv[0] === 'approve') return approveCli(argv.slice(1));
   const slackSetup = argv[0] === 'connect' && argv[1] === 'slack';
   if (argv[0] === 'connect' && !slackSetup) return connectCommand(argv.slice(1));
   await serveLookout(parseArgs(slackSetup ? argv.slice(2) : argv), slackSetup);

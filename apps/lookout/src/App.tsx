@@ -60,6 +60,7 @@ export function App() {
     openReroute: (item) => trail.openReroute(item.mapId, item.ref),
     openGuides: () => settings.open('guides'),
     openConnector: (channel) => settings.open(channel),
+    openApprovals: () => settings.open('approvals'),
     openFocusSettings: () => settings.open('attention'),
   });
   const brief = useBriefing(rt, api, prefs.briefing, attn.attention.view?.items);

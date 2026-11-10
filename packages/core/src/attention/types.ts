@@ -1,4 +1,5 @@
 import type { UnacceptedSettings } from '../adapters/remote/settingsInForce';
+import type { PendingTracker } from '../adapters/remote/types';
 import type { TicketLease } from '../agents/ticketLease';
 import type { DiscoveryBrief } from '../discovery/brief';
 import type { KnowledgeEntry } from '../knowledge/knowledge';
@@ -11,6 +12,7 @@ import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
 import type { ConnectedAgent } from '../planning/matching/modelWaits';
 import type { RerouteSuggestion } from '../planning/reroute/rerouteTriggers';
 import type { PolicyViolation } from '../policy/policyViolations';
+import type { TrustItem } from '../trust/trustItem';
 import type { ApprovalItem } from '../verification/approvals';
 import type { IntegrationOverlap } from '../workspaces/workspace';
 
@@ -43,6 +45,12 @@ export interface AttentionInput {
   trackerSettings?: UnacceptedSettings[];
   /** When the record of accepted tracker settings last couldn't be written (it was locked). Missing: never. */
   trackerSettingsSkipped?: number;
+  /** What the repo's files ask this machine to trust, not approved here (trust/pendingTrust.ts). Missing: none. */
+  trust?: TrustItem[];
+  /** trackers.json names another tracker than the one approved here (server/trackerPin.ts). Missing: none. */
+  trackerPending?: PendingTracker;
+  /** Tracker writes an earlier version queued in the repo, never sent without the trail lead. Missing: none. */
+  legacyOutbox?: { writes: number; targets: string[] };
   /** Agents connected now, with their model tier (model matching). Missing: none. */
   agents?: ConnectedAgent[];
   /** Missing: the defaults. */

@@ -9,6 +9,7 @@ import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { approveAllHere } from './fakes/trailLead';
 
 let repo: string;
 let root: string;
@@ -43,6 +44,7 @@ function writeConfig(
       ...extra,
     }),
   );
+  approveAllHere(root);
 }
 
 async function trail(call: Call) {
@@ -171,6 +173,7 @@ describe('verified completion over MCP', () => {
     const call = await connect();
     const m = await trail(call);
     fs.writeFileSync(path.join(root, 'verification.json'), '{"v":1,"run":"npm test"}');
+    approveAllHere(root);
     await call('claim_ticket', { ticket: m.tickets[1].key });
     const r = await call<Done>('close_ticket', { resolution: 'Built' });
     expect(r.status).toBe('blocked');

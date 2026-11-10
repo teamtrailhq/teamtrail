@@ -1,7 +1,8 @@
-import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { readdirSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { AGENTS_DIR } from '../agents/agentLink';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
 import type { McpEndpoint } from '../model/remoteToken';
@@ -17,7 +18,7 @@ const DIR = `${AGENTS_DIR}/mcp-endpoints`;
 /** Announces this process's MCP endpoint; returns the function that takes the announcement back. */
 export function writeMcpEndpoint(root: string, e: Pick<McpEndpoint, 'url' | 'kind' | 'network'>) {
   const file = path.join(root, DIR, `${process.pid}.json`);
-  mkdirSync(path.dirname(file), { recursive: true });
+  ensureLocalDir(path.join(root, AGENTS_DIR));
   const endpoint: McpEndpoint = { ...e, pid: process.pid, startedAt: Date.now() };
   writeJsonAtomic(file, endpoint);
   return () => rmSync(file, { force: true });

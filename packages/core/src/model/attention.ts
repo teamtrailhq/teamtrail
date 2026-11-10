@@ -25,7 +25,8 @@ export type AttentionKind =
   | 'guide'
   | 'guide-checks'
   | 'delivery'
-  | 'tracker-settings';
+  | 'tracker-settings'
+  | 'trust';
 
 /** `blocking`: the agent can do no useful work until answered. `soon`: the default. `fyi`: whenever convenient. */
 export type AttentionUrgency = 'blocking' | 'soon' | 'fyi';

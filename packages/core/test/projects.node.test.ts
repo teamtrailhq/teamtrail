@@ -22,6 +22,7 @@ import { projectsPath, readProjects } from '../src/projects/projectsFile';
 import { projectState } from '../src/projects/projectState';
 import { projectSummary } from '../src/projects/projectSummary';
 import { registerProject, unregisterProject } from '../src/projects/registerProject';
+import { trackerPin } from '../src/server/trackerPin';
 
 const tmp = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-projects-')));
 const configDir = path.join(tmp, 'config');
@@ -341,10 +342,10 @@ test('hub: adding a path creates its tracker folder; a missing one reads as miss
 test('summary: a GitHub project names the repo its issues live in', async () => {
   const root = path.join(tmp, 'gh-project', '.teamtrail');
   mkdirSync(root, { recursive: true });
-  writeFileSync(
-    path.join(root, 'trackers.json'),
-    JSON.stringify({ active: 'github', github: { repo: 'octo-org/ops' } }),
-  );
+  // connected in Settings on this machine: the file for the team, and this machine's approval
+  const gh = { active: 'github' as const, github: { repo: 'octo-org/ops' } };
+  writeFileSync(path.join(root, 'trackers.json'), JSON.stringify(gh));
+  trackerPin(root, configDir).approve(gh);
   const entry: ProjectEntry = { id: 'abc123', name: 'gh-project', path: path.dirname(root), root, addedAt: now };
   const { summary } = await projectSummary({ entry, home: false, state: { kind: 'ok' }, configDir, now });
   assert.deepEqual(summary.tracker, { kind: 'github', cached: false, repo: 'octo-org/ops' });
@@ -355,6 +356,7 @@ test('summary: a Linear project names its team and organization', async () => {
   mkdirSync(root, { recursive: true });
   const linear = { teamId: 'team-eng', teamKey: 'ENG', teamName: 'Engineering', orgName: 'Octo Inc' };
   writeFileSync(path.join(root, 'trackers.json'), JSON.stringify({ active: 'linear', linear }));
+  trackerPin(root, configDir).approve({ active: 'linear', linear });
   const entry: ProjectEntry = { id: 'lin123', name: 'linear-project', path: path.dirname(root), root, addedAt: now };
   const { summary } = await projectSummary({ entry, home: false, state: { kind: 'ok' }, configDir, now });
   assert.deepEqual(summary.tracker, { kind: 'linear', cached: false, team: 'ENG', org: 'Octo Inc' });

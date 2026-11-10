@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { BRAND, agentPaths, shellLine, type HostSessionLink } from '@teamtrail/core';
-import { writeJsonAtomic } from '@teamtrail/core/agents';
+import { writeLocalJson } from '@teamtrail/core/agents';
 import { writeIfChanged } from '../files';
 import type { SelfCommand } from '../selfCommand';
 
@@ -38,9 +38,9 @@ export function recordClaudeSession(input: string, opts: { dir: string; env?: No
     source: p.source,
     at: Date.now(),
   };
-  const file = path.join(root, agentPaths.host('claude-code', p.session_id));
-  writeJsonAtomic(file, link);
-  return file;
+  const rel = agentPaths.host('claude-code', p.session_id);
+  writeLocalJson(root, rel, link);
+  return path.join(root, rel);
 }
 
 export async function readStdin(timeoutMs = 5000) {

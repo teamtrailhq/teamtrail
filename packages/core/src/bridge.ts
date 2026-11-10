@@ -17,6 +17,7 @@ export { attentionView } from './attention/attentionView';
 export { readAttentionPolicy } from './attention/attentionStore';
 export { readDeliveryProblems, writeDeliveryProblem } from './delivery/deliveryStore';
 export { readLookoutLock } from './agents/lookoutLock';
+export { ensureLocalDir, writeLocalJson } from './lib/ensureLocalDir';
 export { writeJsonAtomic } from './lib/jsonFile';
 export { outboxFile, outboxKey } from './adapters/remote/outboxFile';
 export { createProjectsHub, type ProjectsHub, type ProjectsHubOptions } from './server/projectsHub';

@@ -7,6 +7,7 @@ import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { buildAttention } from '../src/attention/buildAttention';
 import { approveCheck } from '../src/guides/approveCheck';
+import { writeApprovedLock } from '../src/guides/approvedLock';
 import { BUILTIN_GUIDES } from '../src/guides/builtin/builtinGuides';
 import { checkChecklist, checklistProblem } from '../src/guides/checklist';
 import { parseGuide } from '../src/guides/guideFile';
@@ -26,6 +27,7 @@ import { readVerificationConfig } from '../src/verification/configFile';
 import { runChecks } from '../src/verification/runChecks';
 import { levelFor } from '../src/verification/verifyCompletion';
 import { guideText } from './fakes/guideCatalog';
+import { approveAllHere } from './fakes/trailLead';
 
 const tmpRoot = () => {
   const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-guides-')), '.teamtrail');
@@ -164,6 +166,7 @@ test('a guide only adds checks: it never lowers the level or removes one, and it
     path.join(root, 'verification.json'),
     JSON.stringify({ v: 1, checks: { test: { run: NODE_OK } }, run: ['test'] }),
   );
+  approveAllHere(root);
   installGuide({ root, text: A11Y, source: 'local', by: 'trail lead' });
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(adapter, {
@@ -318,13 +321,15 @@ test('an agent that edits a guide and re-pins it in guides.lock.json is caught u
   writeFileSync(guideFilePath(root, 'perf'), guideText({ id: 'perf' }));
   lock.guides.perf = { ...lock.guides.a11y, version: '1.0.0', sha256: guideSha(guideText({ id: 'perf' })) };
   writeFileSync(lockFile, JSON.stringify(lock, null, 2));
-  assert.equal(listGuides(root).find((r) => r.id === 'perf')!.status, 'tampered');
+  const planted = listGuides(root).find((r) => r.id === 'perf')!;
+  assert.equal(planted.status, 'unapproved', 'never approved on this machine, whatever the lock says');
+  assert.match(planted.reason!, /not on this machine/);
 
   approveGuide({ root, id: 'a11y', by: 'trail lead' });
   const back = listGuides(root).find((r) => r.id === 'a11y')!;
   assert.equal(back.status, 'active', 're-approval clears it');
   assert.deepEqual(back.guide?.requiresChecks, []);
-  assert.equal(listGuides(root).find((r) => r.id === 'perf')!.status, 'tampered', 'other guides stay caught');
+  assert.equal(listGuides(root).find((r) => r.id === 'perf')!.status, 'unapproved', 'other guides stay caught');
 });
 
 test("the catalog's review in the lock is display only: older locks load, and editing it never vouches for a guide", () => {
@@ -341,7 +346,7 @@ test("the catalog's review in the lock is display only: older locks load, and ed
   const older = JSON.parse(readFileSync(lockFile, 'utf8'));
   delete older.guides.a11y.review;
   writeFileSync(lockFile, JSON.stringify(older, null, 2));
-  writeFileSync(path.join(root, '.agents', 'guides-approved.json'), JSON.stringify(older, null, 2));
+  writeApprovedLock(root, older);
   assert.equal(readGuideLock(root).guides.a11y.review, undefined);
   assert.deepEqual(
     listGuides(root).map((r) => [r.id, r.status]),

@@ -1,5 +1,6 @@
 import type { TrackerAdapter } from '../adapters/adapter';
 import { reportsSettings } from '../adapters/remote/settingsLedger';
+import { legacyOutbox } from '../adapters/remote/legacyOutbox';
 import { readAgentDocs } from '../agents/agentDocs';
 import { connectedAgents } from '../agents/connectedAgents';
 import { readLeases } from '../agents/leaseStore';
@@ -9,6 +10,8 @@ import { readTicketSyncs } from '../evidence/syncStore';
 import { listGuides } from '../guides/guideStore';
 import { listKnowledge } from '../knowledge/knowledgeStore';
 import type { AttentionPolicy } from '../model/attention';
+import { trackerPin, trackerTargetKey, trackerTargetLabel } from '../server/trackerPin';
+import { pendingTrust } from '../trust/pendingTrust';
 import { approvalItems } from '../verification/approvals';
 import { readIntegrationScan } from '../workspaces/integrationStore';
 import { readAttentionState } from './attentionStore';
@@ -47,10 +50,31 @@ export async function gatherAttention(input: {
       : {}),
     agents: connectedAgents(docs),
     deliveries: readDeliveryProblems(root),
+    trust: pendingTrust(root, snaps),
+    ...oldQueue(root),
+    ...trackerWaiting(root),
     policy,
     state: readAttentionState(root),
     now,
   };
+}
+
+/** Writes an earlier version queued in the repo: shown to the trail lead, never sent on their own. */
+function oldQueue(root: string) {
+  const { writes, targets } = legacyOutbox(root).list();
+  return writes ? { legacyOutbox: { writes, targets } } : {};
+}
+
+/** The tracker trackers.json asks for when it isn't the one approved on this machine. */
+function trackerWaiting(root: string) {
+  const { config, pending } = trackerPin(root).read();
+  if (!pending) return {};
+  const trackerPending = {
+    target: trackerTargetKey(pending),
+    label: trackerTargetLabel(pending),
+    approved: trackerTargetLabel(config),
+  };
+  return { trackerPending };
 }
 
 function integrationsOf(root: string) {

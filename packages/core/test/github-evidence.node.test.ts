@@ -21,6 +21,7 @@ import { chartMap } from '../src/planning/operations/chart';
 import { watchVerification } from '../src/server/watchVerification';
 import { writeAttempt } from '../src/verification/evidenceStore';
 import { fakeGitHubPulls } from './fakes/githubPulls';
+import { approveAllHere } from './fakes/trailLead';
 
 const TOKEN = 'ghp_FAKEtoken0123456789abcdefghijkl';
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
@@ -299,6 +300,7 @@ test('watchVerification: off without config, ok after a clean tick, failed (neve
     assert.equal((await next()).status.state, 'off');
     assert.equal(existsSync(path.join(root, '.evidence')), false, 'nothing is written while sync is off');
     writeFileSync(path.join(root, 'verification.json'), JSON.stringify({ v: 1, github: { requiredChecks: ['test'] } }));
+    approveAllHere(root);
     gh.open(1, { sha: SHA_A, ref: `teamtrail-${mapId}-${t[0].id}` });
     const ok = await next();
     assert.equal(ok.status.state, 'ok');

@@ -33,6 +33,12 @@ export interface DiscoveryBrief {
   /** The trail lead's note with a change request. */
   note?: string;
   sections: BriefSections;
+  /**
+   * Set when the file says accepted but the trail lead never accepted this content on this machine: `elsewhere`
+   * (a teammate's machine, or before approvals were kept per machine) or `changed` (edited since). The brief then
+   * reads as submitted, so the gate is closed and the human reviews it again. Never written to the file.
+   */
+  approval?: 'elsewhere' | 'changed';
 }
 
 export const BRIEF_DIR = 'briefs';
@@ -57,10 +63,19 @@ export function claimableTypes(brief: DiscoveryBrief | undefined): TicketType[] 
   return !brief || brief.status === 'accepted' ? undefined : DISCOVERY_TYPES;
 }
 
+const UNAPPROVED: Record<NonNullable<DiscoveryBrief['approval']>, string> = {
+  elsewhere:
+    'the brief was accepted on another machine, not on this one: the human has to accept it here in the Lookout (editing the file does not accept it)',
+  changed:
+    'the brief file changed after the human accepted it, so they have to review it again in the Lookout (editing the file does not accept it)',
+};
+
 function briefState(brief: DiscoveryBrief): string {
   switch (brief.status) {
     case 'submitted':
-      return 'the brief is waiting for the human to review it in the Lookout';
+      return brief.approval
+        ? UNAPPROVED[brief.approval]
+        : 'the brief is waiting for the human to review it in the Lookout';
     case 'changes-requested':
       return `the human asked for changes to the brief: ${brief.note ?? 'see the Lookout'}`;
     default:
@@ -118,8 +133,8 @@ export function decided(
   now = Date.now(),
 ): DiscoveryBrief {
   if (b.status !== 'submitted') throw new Error(`the brief is ${b.status}, not submitted`);
-  if (call.kind === 'accept') return { ...b, status: 'accepted', decidedAt: now, note: undefined };
+  if (call.kind === 'accept') return { ...b, status: 'accepted', decidedAt: now, note: undefined, approval: undefined };
   const note = call.note.trim();
   if (!note) throw new Error('say what should change');
-  return { ...b, status: 'changes-requested', decidedAt: now, note };
+  return { ...b, status: 'changes-requested', decidedAt: now, note, approval: undefined };
 }

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { processAlive } from '../lib/processAlive';
 import { AGENTS_DIR } from './agentLink';
 
@@ -19,6 +20,7 @@ const name = (family: string, n: number) => `${family}-${String(n).padStart(2, '
  */
 export function claimTrailName(root: string, family: string, taken: Set<string> = new Set(), holder?: string): string {
   const dir = path.join(root, AGENTS_DIR, TRAIL_NAMES_DIR);
+  ensureLocalDir(path.join(root, AGENTS_DIR));
   fs.mkdirSync(dir, { recursive: true });
   for (let n = 1; ; n++) {
     const trailName = name(family, n);

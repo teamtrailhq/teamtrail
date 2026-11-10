@@ -18,6 +18,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     label: 'Project',
     intro: 'Where this repo keeps its trails, and the rules every agent working in it follows.',
     sections: [
+      { id: 'approvals', title: 'Approvals' },
       { id: 'tracker', title: 'Tracker' },
       { id: 'workspaces', title: 'Workspaces' },
       { id: 'remote-agents', title: 'Remote agents' },

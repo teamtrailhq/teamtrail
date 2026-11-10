@@ -11,6 +11,7 @@ import {
   run,
   type Run,
 } from './trackerConfig';
+import { trackerPin } from './trackerPin';
 
 export interface TrackerRoutesOptions {
   /** Tracker folder; `trackers.json` lives here. */
@@ -25,6 +26,12 @@ export interface TrackerRoutesOptions {
   configDir?: string;
   /** Who is on the other end of a request (requestGuard.ts); tests stand in another device. */
   peer?: PeerAddress;
+  /**
+   * When `trackers.json` names a tracker the human hasn't approved on this machine. `refuse` (the default, what
+   * agents get): every call fails with the reason. `stay`: keep using the approved one, so the Lookout can show
+   * the trail and ask.
+   */
+  unapproved?: 'refuse' | 'stay';
 }
 
 /** Configuration, credentials and lookups shared by the tracker routes. */
@@ -32,14 +39,20 @@ export function trackerContext(o: TrackerRoutesOptions) {
   const env = o.env ?? process.env;
   const exec = o.exec ?? run;
   const project = projectConfig(o.root);
-  const creds = credentialStore(o.configDir ?? configDir(env));
+  const dir = o.configDir ?? configDir(env);
+  const creds = credentialStore(dir);
+  const pin = trackerPin(o.root, dir);
   let detected: Promise<string | undefined> | undefined;
   let ghToken: { at: number; value: ReturnType<typeof resolveGitHubToken> } | undefined;
   return {
     o,
+    /** The user config dir: credentials, and what this machine trusts about the project (machine/). */
+    configDir: dir,
     env,
     exec,
     project,
+    /** The tracker approved on this machine, and the one `trackers.json` asks for when it differs. */
+    pin,
     creds,
     apiUrl: {
       github: overrideUrl(env, `${BRAND.slug.toUpperCase()}_GITHUB_API`),

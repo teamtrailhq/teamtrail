@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Choice, MetaLine } from '../../components/ui';
 import { TRAIL_LEAD } from '../../lib';
 import { LEVEL_HELP, LEVEL_TEXT, verificationApi } from '../../lib/verification';
+import { settingsHref } from './settingsHref';
 import { SettingsSection } from './SettingsSection';
 import { useVerificationConfig } from './useVerificationConfig';
 import { VerificationSetup } from './VerificationSetup';
@@ -64,6 +65,15 @@ export function VerificationSection(props: { map?: MapDoc }) {
           </ul>
         </>
       )}
+      {view.approval?.waiting && (
+        <div className="sync-line alert">
+          <span className="dot" />
+          <span>
+            Its commands don't run on this machine until you approve them.{' '}
+            <a href={settingsHref(location.href, { group: 'project', section: 'approvals' })}>Review the commands</a>
+          </span>
+        </div>
+      )}
       {!view.exists && <VerificationSetup file={file} />}
       {c && view.exists && (
         <>
@@ -95,7 +105,8 @@ export function VerificationSection(props: { map?: MapDoc }) {
         </>
       )}
       <span className="set-hint t-meta">
-        Teamtrail never edits {file}. Change checks in the repo, so no agent can change what verifies its own work.
+        Teamtrail never edits {file}. Change checks in the repo, then approve them here: an edit by an agent or a
+        teammate runs nothing on this machine until you do.
       </span>
       <span className="set-hint t-meta">
         Checks run on this machine as you, with no sandbox. Teamtrail passes them only the environment variables they

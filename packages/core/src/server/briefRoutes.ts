@@ -1,12 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { TrackerAdapter } from '../adapters/adapter';
 import { decided, EMPTY_SECTIONS, type DiscoveryBrief } from '../discovery/brief';
-import { readBrief, writeBrief } from '../discovery/briefStore';
-import { contentHash } from '../lib/contentHash';
+import { approveBriefHere, readBrief, readBriefFile, writeBrief, writeBriefText } from '../discovery/briefStore';
 import { seedFromBrief } from '../planning/assumptions/assumptionOps';
+import { contentHash } from '../trust/trustLedger';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
-import { matchesShown } from './shownContent';
+import { checkShown } from './shownHash';
 
 const text = (v: unknown, max = 300) => typeof v === 'string' && v.length > 0 && v.length <= max;
 
@@ -34,8 +34,9 @@ export async function handleBriefs(
   if (url.pathname === '/briefs' && req.method === 'GET') {
     const mapId = url.searchParams.get('mapId');
     if (!trailId(mapId)) throw new BadRequest('"mapId" is required');
-    const shown = readBrief(root, mapId!);
-    sendJson(res, 200, { brief: shown ?? null, ...(shown ? { hash: contentHash(shown.sections) } : {}) });
+    // the hash of the file as the page shows it: accepting sends it back (shownHash.ts)
+    const file = readBriefFile(root, mapId!);
+    sendJson(res, 200, { brief: readBrief(root, mapId!) ?? null, ...(file ? { hash: contentHash(file.text) } : {}) });
     return true;
   }
   if (req.method !== 'POST') return false;
@@ -60,19 +61,28 @@ export async function handleBriefs(
   }
   const kind = DECISION_ROUTES[url.pathname];
   if (!kind) return false;
-  await decide({ root, active }, res, { kind, brief, body: b });
+  if (!brief) return (sendJson(res, 404, { error: 'this trail has no discovery brief' }), true);
+  const r = await decide({ root, active, brief, kind, b });
+  sendJson(res, r.status, r.body);
   return true;
 }
 
-/** The trail lead's accept (of the brief they were shown) or request for changes. */
-async function decide(
-  { root, active }: RouteContext,
-  res: ServerResponse,
-  at: { kind: 'accept' | 'request-changes'; brief?: DiscoveryBrief; body: { note?: unknown; hash?: unknown } },
-) {
-  const { kind, brief, body: b } = at;
-  if (!brief) return sendJson(res, 404, { error: 'this trail has no discovery brief' });
-  if (kind === 'accept' && !matchesShown(res, { given: b.hash, now: brief.sections, what: 'The brief' })) return;
+/**
+ * The trail lead's call on a submitted brief. Accepting needs the hash of the brief as the page showed it, and is
+ * this machine's approval of exactly the text it writes; the status in the file alone opens nothing.
+ */
+async function decide(i: {
+  root: string;
+  active: RouteContext['active'];
+  brief: DiscoveryBrief;
+  kind: 'accept' | 'request-changes';
+  b: { note?: unknown; hash?: unknown };
+}): Promise<{ status: number; body: unknown }> {
+  const { root, brief, kind, b } = i;
+  if (kind === 'accept') {
+    const shown = checkShown(b.hash, readBriefFile(root, brief.mapId)?.text, 'The brief');
+    if (!shown.ok) return { status: shown.status, body: { error: shown.error } };
+  }
   let next: DiscoveryBrief;
   try {
     next = decided(
@@ -80,11 +90,12 @@ async function decide(
       kind === 'accept' ? { kind } : { kind, note: typeof b.note === 'string' ? b.note.slice(0, 2000) : '' },
     );
   } catch (e) {
-    return sendJson(res, 409, { error: (e as Error).message });
+    return { status: 409, body: { error: (e as Error).message } };
   }
-  writeBrief(root, next);
-  const seeded = kind === 'accept' ? await seedAssumptions(await active(), next) : [];
-  sendJson(res, 200, { brief: next, ...(seeded.length ? { assumptions: seeded } : {}) });
+  const written = writeBriefText(root, next);
+  if (kind === 'accept') approveBriefHere(root, brief.mapId, 'trail lead', written);
+  const seeded = kind === 'accept' ? await seedAssumptions(await i.active(), next) : [];
+  return { status: 200, body: { brief: next, ...(seeded.length ? { assumptions: seeded } : {}) } };
 }
 
 /**

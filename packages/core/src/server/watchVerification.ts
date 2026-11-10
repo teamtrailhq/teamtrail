@@ -2,7 +2,7 @@ import { TrackerError } from '../adapters/remote/http';
 import { reconcile } from '../evidence/reconcile';
 import { readSyncStatus, writeSyncStatus } from '../evidence/syncStore';
 import type { CiProvider, PrSyncStatus, TicketSync, VerificationSyncEvent } from '../model/prEvidence';
-import { readVerificationConfig } from '../verification/configFile';
+import { trustedChecks } from '../verification/checksApproval';
 import { redact } from '../verification/redact';
 import type { RouteContext } from './routeContext';
 
@@ -47,7 +47,8 @@ export function watchVerification(
   };
 
   async function pass(at: number): Promise<{ status: PrSyncStatus; tickets: TicketSync[]; pollMs: number }> {
-    const cfg = readVerificationConfig(root);
+    // the approved config only: required GitHub checks an edit added or removed wait for the trail lead
+    const cfg = trustedChecks(root).config;
     const off = (reason: string) => ({ status: { state: 'off' as const, reason }, tickets: [], pollMs: 60_000 });
     if (!cfg.exists) return off('no verification.json');
     if (!cfg.config) return off('verification.json has errors');

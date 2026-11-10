@@ -1,13 +1,14 @@
 import { rmSync } from 'node:fs';
 import path from 'node:path';
-import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
+import { writeLocalJson } from '../lib/ensureLocalDir';
+import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
 import { agentPaths, type LookoutLock } from './agentLink';
 
 /** Claims the tracker for this process's Lookout; returns the release function. */
 export function writeLookoutLock(root: string, url: string) {
   const lock: LookoutLock = { url, pid: process.pid, startedAt: Date.now() };
-  writeJsonAtomic(path.join(root, agentPaths.lock), lock);
+  writeLocalJson(root, agentPaths.lock, lock);
   return () => {
     const cur = readJsonFile<LookoutLock>(path.join(root, agentPaths.lock));
     if (cur?.pid === process.pid) rmSync(path.join(root, agentPaths.lock), { force: true });

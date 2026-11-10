@@ -1,6 +1,7 @@
 import { readdirSync, renameSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
+import { writeLocalJson } from '../lib/ensureLocalDir';
+import { readJsonFile } from '../lib/jsonFile';
 import { leasePaths, type TicketLease } from './ticketLease';
 
 const MAX_NOTES = 20;
@@ -26,7 +27,7 @@ export function readLease(root: string, mapId: string, ticketId: string) {
 }
 
 export function writeLease(root: string, l: TicketLease) {
-  writeJsonAtomic(file(root, l.mapId, l.ticketId), l);
+  writeLocalJson(root, leasePaths.lease(l.mapId, l.ticketId), l);
 }
 
 export function dropLease(root: string, mapId: string, ticketId: string) {

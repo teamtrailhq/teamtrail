@@ -10,7 +10,7 @@ import {
   type SessionMode,
   type Ticket,
 } from '@teamtrail/core';
-import { baselineForClaim, levelFor, repoRootOf } from '@teamtrail/core/agents';
+import { baselineForClaim, levelFor, recordTypes, repoRootOf } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaView } from './criteria';
 import { assertClaimable, briefView, claimable } from './discovery';
@@ -62,6 +62,8 @@ export async function claimTicket(
     touches: input.touches,
     workspace: input.workspace,
   });
+  // the type it was claimed as: the trail's level applies by it until the trail lead approves a change
+  recordTypes(ctx.root, snap.map.id, [t]);
   const baseline = await baselineForClaim({
     root: ctx.root,
     cwd: parallel.workspace?.path ?? repoRootOf(ctx.verifyEnv()),

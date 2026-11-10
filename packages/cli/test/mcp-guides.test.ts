@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { guideText } from '../../core/test/fakes/guideCatalog';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { approveAllHere } from './fakes/trailLead';
 
 let repo: string;
 let root: string;
@@ -53,7 +54,8 @@ async function trail(call: Call, extra: Record<string, unknown> = {}) {
   });
 }
 
-const writeConfig = (level: string, extra: object = {}) =>
+/** verification.json as the trail lead wrote and approved it on this machine. */
+function writeConfig(level: string, extra: object = {}) {
   fs.writeFileSync(
     path.join(root, 'verification.json'),
     JSON.stringify({
@@ -64,6 +66,8 @@ const writeConfig = (level: string, extra: object = {}) =>
       ...extra,
     }),
   );
+  approveAllHere(root);
+}
 
 beforeEach(() => {
   repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-guides-'));

@@ -8,6 +8,7 @@ import { briefPath, readBrief, writeBrief } from '@teamtrail/core/agents';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { approveAllHere } from './fakes/trailLead';
 
 let root: string;
 const open: { close(): void | Promise<void> }[] = [];
@@ -86,6 +87,7 @@ describe('discovery brief over MCP', () => {
     // Resubmitted and accepted: implementation opens up.
     await call('submit_brief', { summary: 'Scheduler with quiet hours.', existing: '- src/notify/service.ts' });
     writeBrief(root, decided(readBrief(root, mapId)!, { kind: 'accept' }));
+    approveAllHere(root);
     const claimed = await call<{ claimed: { key: string }; discovery: { implementationClaimable: boolean } }>(
       'claim_ticket',
       { ticket: build.key },

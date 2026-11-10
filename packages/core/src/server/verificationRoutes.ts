@@ -3,6 +3,7 @@ import { journalFile } from '../history/journalFile';
 import { levelOf } from '../model/lifecycle';
 import { OperationError } from '../planning/operations/operationError';
 import { approvalItems } from '../verification/approvals';
+import { checksApproval } from '../verification/checksApproval';
 import { readVerificationConfig, VERIFICATION_FILE } from '../verification/configFile';
 import { operatorAction, type OperatorAction, type OperatorRequest } from '../verification/operatorActions';
 import { readEvidenceLog, ticketEvidence } from '../verification/ticketEvidence';
@@ -34,7 +35,8 @@ function request(b: Record<string, unknown>): OperatorRequest {
 
 /**
  * Verification routes of the bridge:
- *   GET  /verification/config                     the parsed `verification.json`, read-only
+ *   GET  /verification/config                     the parsed `verification.json`, read-only, and whether the trail
+ *                                                 lead approved its commands on this machine (`approval`)
  *   GET  /verification/ticket?mapId=&ticketId=    level, attempts and verdicts (newest first), the run in progress
  *   GET  /verification/log?path=                  the end of a check log under `.evidence/`
  *   GET  /verification/inbox                      tickets waiting on the trail lead (ApprovalItem[]), every trail
@@ -53,7 +55,9 @@ export async function handleVerification(
   if (p === '/verification/config' && req.method === 'GET') {
     const read = readVerificationConfig(root);
     const { exists, errors, hash, config } = read;
-    sendJson(res, 200, { file: VERIFICATION_FILE, exists, errors, hash, config });
+    // whether its commands run on this machine yet: only once the trail lead approved this exact file here
+    const { state, waiting } = checksApproval(root);
+    sendJson(res, 200, { file: VERIFICATION_FILE, exists, errors, hash, config, approval: { state, waiting } });
     return true;
   }
   if (p === '/verification/ticket' && req.method === 'GET') {

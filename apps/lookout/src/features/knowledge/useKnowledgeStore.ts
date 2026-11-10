@@ -19,7 +19,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 /** Project knowledge for the Lookout (`/knowledge`), live: refetched when a `knowledge/` file changes. */
 export function useKnowledgeStore(briefText: string): KnowledgeStore {
-  const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
+  // each entry as served carries the hash of it as shown: a call sends it, so an entry changed since is refused
+  const [entries, setEntries] = useState<(KnowledgeEntry & { hash?: string })[]>([]);
   const [stale, setStale] = useState<Record<string, string[]>>({});
   /** Per entry, the hash of the content shown: a confirm names it, so an entry changed since is not confirmed. */
   const [hashes, setHashes] = useState<Record<string, string>>({});

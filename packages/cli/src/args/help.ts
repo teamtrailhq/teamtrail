@@ -10,6 +10,7 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} projects add [path] | list | remove <id|path>
        ${BRAND.slug} connect slack [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
+       ${BRAND.slug} approve [--hash <hash>]… [--dir <path>]
        ${BRAND.slug} guides list|search|add|new|update|remove|lint … [--dir <path>]
 
 Starts the Lookout for the current folder and opens it in your browser.
@@ -41,6 +42,10 @@ Commands:
                  (default: this one), list shows them, remove <id|path> forgets one. The list is
                  kept in your config dir, never in a repo. mcp and connect add their repo on start
                  unless --no-register or $${BRAND.noRegisterEnv} is set
+  approve        What the repo asks this machine to trust and you haven't approved here (check
+                 commands, policy, accepted briefs, confirmed criteria and knowledge, levels): shows
+                 exactly what changed and asks y/N for each. Without a terminal it approves only
+                 what --hash names exactly. The Lookout's Settings → Approvals does the same
   knowledge import <file.md>  Seed project knowledge from a markdown document: one suggestion per
                  ## heading, for you to review in the Lookout
   guides list     Guides agents take on (built in, local and from a catalog), with their status

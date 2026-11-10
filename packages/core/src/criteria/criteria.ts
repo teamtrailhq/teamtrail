@@ -33,6 +33,11 @@ export interface TicketCriteria {
   criteria: Criterion[];
   /** The trail lead confirmed these criteria; cleared whenever they change. */
   confirmed?: boolean;
+  /**
+   * The file says confirmed, but not by the trail lead on this machine for these exact criteria: `elsewhere` or
+   * `changed`. `confirmed` is then unset. Never written to the file.
+   */
+  approval?: 'elsewhere' | 'changed';
 }
 
 /**

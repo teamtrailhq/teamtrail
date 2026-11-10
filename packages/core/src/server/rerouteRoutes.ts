@@ -4,6 +4,7 @@ import type { RerouteProposal } from '../model/reroute';
 import { confirmAssumption } from '../planning/assumptions/confirmAssumption';
 import { OperationError } from '../planning/operations/operationError';
 import { approveReroute, rejectReroute } from '../planning/reroute/decideReroute';
+import { rerouteHash } from '../planning/reroute/rerouteApproval';
 import { rerouteView, RerouteInvalid, type RerouteEnv } from '../planning/reroute/rerouteFlow';
 import { listAllReroutes, listReroutes, readReroute } from '../planning/reroute/rerouteStore';
 import { BadRequest, readJson, sendJson } from './http';
@@ -19,8 +20,8 @@ const text = (v: unknown, max = 200) => typeof v === 'string' && v.length > 0 &&
 /**
  * `/reroutes` and `/assumptions` routes; false when none matches.
  * GET `/reroutes?map=` lists proposals (pending first, with their diff and frozen tickets; decided ones without),
- * GET `/reroutes/<id>?map=` reads one; POST `/reroutes/approve` and `/reroutes/reject` (`mapId`, `id`, `note`, `by`)
- * are the trail lead's calls, journaled and applied through the existing operations. GET `/assumptions?map=`, and
+ * GET `/reroutes/<id>?map=` reads one; POST `/reroutes/approve` (`mapId`, `id`, `hash` of the proposal as the page
+ * showed it, `note`, `by`) and `/reroutes/reject` (`mapId`, `id`, `note`, `by`) are the trail lead's calls, journaled and applied through the existing operations. GET `/assumptions?map=`, and
  * POST `/assumptions/confirm` (`mapId`, `id`), the trail lead confirming one holds.
  */
 export async function handleReroutes(ctx: RouteContext, req: IncomingMessage, res: ServerResponse, url: URL) {
@@ -36,14 +37,20 @@ export async function handleReroutes(ctx: RouteContext, req: IncomingMessage, re
   if (req.method !== 'POST') return false;
   const decide = DECISIONS[pathname];
   if (!decide) return false;
-  const b = await readJson<{ mapId?: unknown; id?: unknown; note?: unknown; by?: unknown }>(req, '{}');
+  const b = await readJson<{ mapId?: unknown; id?: unknown; note?: unknown; by?: unknown; hash?: unknown }>(req, '{}');
   if (!text(b.mapId) || !text(b.id)) throw new BadRequest('"mapId" and "id" are required');
+  // Approving is of what the page showed: its content hash comes with the request (finishing an interrupted apply
+  // needs none, it runs what this machine already approved).
+  const resumes = readReroute(ctx.root, b.mapId as string, b.id as string)?.status === 'approved';
+  if (decide === approveReroute && !resumes && !text(b.hash))
+    throw new BadRequest('"hash" is required: the hash of the proposal you reviewed');
   const env: RerouteEnv = { root: ctx.root, adapter: await ctx.active(), journal: journalFile(ctx.root) };
   const decision = {
     mapId: b.mapId as string,
     id: b.id as string,
     by: text(b.by) ? (b.by as string) : 'trail lead',
     note: typeof b.note === 'string' ? b.note.slice(0, 2000) : undefined,
+    ...(text(b.hash) ? { hash: b.hash as string } : {}),
   };
   try {
     sendJson(res, 200, { reroute: await decide(env, decision) });
@@ -86,7 +93,7 @@ async function confirm(ctx: RouteContext, req: IncomingMessage, res: ServerRespo
 /** A proposal with its dry-run diff and the tickets it freezes. */
 async function withView(ctx: RouteContext, p: RerouteProposal) {
   const snap = await (await ctx.active()).loadMap(p.mapId);
-  return { ...p, ...rerouteView(ctx.root, snap, p) };
+  return { ...p, ...rerouteView(ctx.root, snap, p), hash: rerouteHash(p) };
 }
 
 function requiredMap(url: URL) {

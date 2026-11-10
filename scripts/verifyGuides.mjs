@@ -96,7 +96,13 @@ async function startServer(cli, cwd) {
 }
 
 async function agent(cli, cwd) {
-  const transport = new StdioClientTransport({ command: process.execPath, args: [cli, 'mcp'], cwd, stderr: 'pipe' });
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [cli, 'mcp'],
+    cwd,
+    stderr: 'pipe',
+    env: { ...process.env },
+  });
   const client = new Client({ name: 'claude-code', version: '2.1.0' });
   await client.connect(transport);
   const call = async (name, args = {}) => {
@@ -109,9 +115,17 @@ async function agent(cli, cwd) {
 
 /** Settings → Guides → Browse guides → a11y → Add guide → Approve check a11y, as the trail lead. */
 async function addInLookout({ page, url, shot }) {
-  await page.goto(`${url}?settings=guides`);
+  // verification.json came with the repo: the trail lead approves it on this machine first (Settings → Approvals).
+  // A fresh browser shows onboarding over it first: wait for it rather than race it.
+  await page.goto(`${url}?settings=approvals`);
   const onboarding = page.getByRole('button', { name: 'Get started' });
-  if (await onboarding.isVisible().catch(() => false)) await onboarding.click();
+  const checksRow = page.locator('.ap-row', { hasText: 'Check commands in verification.json' });
+  await Promise.race([onboarding.waitFor({ timeout: 15_000 }), checksRow.waitFor({ timeout: 15_000 })]);
+  if (await onboarding.isVisible()) await onboarding.click();
+  await page.locator('.dialog.onboarding').waitFor({ state: 'detached', timeout: 15_000 });
+  await checksRow.getByRole('button', { name: 'Approve' }).click({ timeout: 15_000 });
+  await page.getByText('Nothing waiting').waitFor({ timeout: 15_000 });
+  await page.goto(`${url}?settings=guides`);
   const section = page.locator('.guides-section');
   await section.waitFor({ timeout: 15_000 });
   // the deep link lands on the Project group, at Guides

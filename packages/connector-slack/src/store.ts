@@ -1,7 +1,7 @@
 import { readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { BRAND } from '@teamtrail/core';
-import { credentialStore, writeJsonAtomic } from '@teamtrail/core/bridge';
+import { credentialStore, writeJsonAtomic, writeLocalJson } from '@teamtrail/core/bridge';
 import type { AskView } from './blocks';
 import { DEFAULT_COMMAND } from './manifest';
 import { settleOwners, type OwnerRedo, type PendingOwner } from './owners';
@@ -162,12 +162,15 @@ export interface AskRecord {
   view?: AskView & { mapId: string; ticketId?: string; at: number };
 }
 
+const ASKS_FILE = '.agents/slack.json';
+const APPROVALS_FILE = '.agents/slack-approvals.json';
+
 export function askStore(root: string) {
-  const file = path.join(root, '.agents', 'slack.json');
+  const file = path.join(root, ASKS_FILE);
   return {
     read: (): Record<string, AskRecord> =>
       (readJson<{ asks: Record<string, AskRecord> }>(file).asks ?? {}) as Record<string, AskRecord>,
-    write: (asks: Record<string, AskRecord>) => writeJsonAtomic(file, { asks }),
+    write: (asks: Record<string, AskRecord>) => writeLocalJson(root, ASKS_FILE, { asks }),
   };
 }
 
@@ -177,10 +180,10 @@ export function askStore(root: string) {
  * posting again. Stays on this machine.
  */
 export function approvalStore(root: string) {
-  const file = path.join(root, '.agents', 'slack-approvals.json');
+  const file = path.join(root, APPROVALS_FILE);
   return {
     read: (): Record<string, PostedApproval> =>
       (readJson<{ approvals: Record<string, PostedApproval> }>(file).approvals ?? {}) as Record<string, PostedApproval>,
-    write: (approvals: Record<string, PostedApproval>) => writeJsonAtomic(file, { approvals }),
+    write: (approvals: Record<string, PostedApproval>) => writeLocalJson(root, APPROVALS_FILE, { approvals }),
   };
 }

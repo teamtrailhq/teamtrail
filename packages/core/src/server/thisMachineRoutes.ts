@@ -19,6 +19,9 @@ const WRITES: RegExp[] = [
   // Guides: installing, approving, the check commands they add to verification.json, and which guide a ticket or
   // a trail's team uses (a guide brings its checks with it: trustFields.ts).
   /^\/guides\//,
+  // Approving what the repo's files ask this machine to trust (trustRoutes.ts): the check commands it runs, a
+  // lowered risk policy, and adopting a teammate's accepted briefs, confirmed criteria and knowledge in one step.
+  /^\/trust\/approve$/,
   // This person's own attention preferences, kept in their config dir.
   /^\/attention\/prefs$/,
   // The projects this Lookout supervises.
