@@ -66,6 +66,9 @@ function shown(v: BodySettings[keyof BodySettings]): string {
   return v.enabled ? 'on' : 'off';
 }
 
+/** The settings themselves, one plain line each: `verification level: checks+review`. */
+export const settingsLines = (s: BodySettings) => settingsChanges({}, s).map((l) => l.replace(/not set → /, ''));
+
 /** What differs between two sets of settings, one plain line each: `verification level: checks → off`. */
 export function settingsChanges(from: BodySettings, to: BodySettings): string[] {
   return LABELS.filter(([k]) => JSON.stringify(from[k]) !== JSON.stringify(to[k])).map(([k, label]) => {

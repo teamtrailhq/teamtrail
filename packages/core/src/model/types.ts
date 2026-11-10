@@ -50,6 +50,8 @@ export interface Ticket {
   reviewOf?: string;
   /** The guide (model/guide.ts) an agent takes on when it claims this ticket, e.g. `qa`. */
   guide?: string;
+  /** Remote trackers: settings someone else wrote that this machine never confirmed (remote/settingsInForce.ts). */
+  settingsUnconfirmed?: true;
   /** Ids of tickets that block this one (native blocking edges). */
   blockedBy: string[];
   comments: Comment[];
@@ -94,16 +96,15 @@ export interface MapDoc {
   guides?: string[];
   /** Match work to the model each agent session runs on. Unset means off: claiming works as it always has. */
   modelMatching?: ModelMatching;
+  /** Remote trackers: settings someone else wrote that this machine never confirmed (remote/settingsInForce.ts). */
+  settingsUnconfirmed?: true;
   sections: MapSections;
   createdAt: number;
   updatedAt: number;
 }
 
 /** A trail's model matching: off unless `enabled`; `tiers` overrides the default tier of a ticket type. */
-export interface ModelMatching {
-  enabled: boolean;
-  tiers?: Partial<Record<TicketType, ModelTier>>;
-}
+export type ModelMatching = { enabled: boolean; tiers?: Partial<Record<TicketType, ModelTier>> };
 
 export interface MapSnapshot {
   map: MapDoc;

@@ -12,6 +12,7 @@ import {
   type TicketType,
 } from '../../model/types';
 import { settingsOf, type BodySettings } from './bodySettings';
+import type { Settled } from './settingsInForce';
 import { teammateActor, type Writer } from './writer';
 
 /*
@@ -178,7 +179,7 @@ export interface IssueParts {
   /** Who last wrote the body, as far as the tracker says. */
   writer: Writer;
   /** The settings in force given the ones the body carries (settingsLedger.ts); missing: the body's own. */
-  settle?: (found: BodySettings) => BodySettings;
+  settle?: (found: BodySettings) => Settled;
   closed: boolean;
   closeReason?: 'completed' | 'not_planned';
   /** Assignee shown by the tracker itself (a person). */
@@ -195,7 +196,8 @@ export function ticketFromIssue(p: IssueParts): Ticket {
   const type = typeFromLabels(p.labels);
   const status = TICKET_STATUSES.find((s) => s === meta.status);
   const found = settingsOf({ ...meta });
-  const { verification, checks, guide } = p.settle ? p.settle(found) : found;
+  const settled = p.settle ? p.settle(found) : { use: found };
+  const { verification, checks, guide } = settled.use;
   return {
     id: p.id,
     key: p.key,
@@ -211,6 +213,7 @@ export function ticketFromIssue(p: IssueParts): Ticket {
     ...(checks ? { checks } : {}),
     ...(typeof meta.reviewOf === 'string' && meta.reviewOf ? { reviewOf: meta.reviewOf } : {}),
     ...(guide ? { guide } : {}),
+    ...(settled.unconfirmed ? { settingsUnconfirmed: true as const } : {}),
     blockedBy: p.blockedBy,
     comments: p.comments,
     createdAt: Date.parse(p.createdAt) || 0,

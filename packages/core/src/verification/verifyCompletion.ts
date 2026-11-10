@@ -86,6 +86,17 @@ export interface Settled {
 }
 
 /**
+ * Settings someone else wrote into the tracker that nobody here confirmed: the work waits for the human to set
+ * them, so no one's settings decide unchecked what a completion has to prove.
+ */
+export function assertConfirmed(t: Pick<Ticket, 'key'>, info: Pick<LevelInfo, 'unconfirmed'>) {
+  if (!info.unconfirmed) return;
+  throw new OperationError(
+    `${t.key} can't be completed yet: its verification settings came from the tracker and the human hasn't confirmed them here. Tell the human; they set them in the Lookout (it's in their queue).`,
+  );
+}
+
+/**
  * The level a completion of `t` needs, with the config it was read from. A ticket's guide adds the checks it
  * requires (resolveGuide.ts); it never changes the level or drops a check.
  */
@@ -104,6 +115,7 @@ export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: Le
  */
 export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptId: string; done: Promise<Settled> }> {
   const { mapId, ticket: t, info, sub } = job;
+  assertConfirmed(t, info);
   const config = readVerificationConfig(env.root);
   const base = {
     v: 1 as const,

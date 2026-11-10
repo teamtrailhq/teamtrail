@@ -103,6 +103,7 @@ export class GitHubAdapter extends SyncedAdapter {
     const canWrite = await this.permissions.resolve(loginsToCheck(viewer, authoredIn(root)));
     const gate = this.ledger.gate({ mapId, now: this.now(), viewer });
     const m = readTrail(mapId, root, { who: { viewer, canWrite }, gate });
+    await gate.save();
     for (const [n, id] of m.issueIds) this.issueIds.set(n, id);
     for (const [key, id] of m.decisionComments) this.decisionComments.set(key, id);
     return { snap: m.snap, decisions: m.decisions };

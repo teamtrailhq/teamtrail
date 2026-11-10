@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -8,15 +8,30 @@ import { decisionComment, parseDecisionComment } from '../src/adapters/remote/de
 import { GitHubAdapter } from '../src/adapters/remote/github';
 import { LinearAdapter } from '../src/adapters/remote/linear';
 import { SettingsLedger } from '../src/adapters/remote/settingsLedger';
+import { buildAttention } from '../src/attention/buildAttention';
 import { buildDecision, madeBy } from '../src/planning/decisions/decisionRecord';
 import { setVerification } from '../src/planning/lifecycle/setVerification';
 import { recordDecision } from '../src/planning/operations/decisionOps';
+import { DEFAULT_CONFIG } from '../src/verification/config';
+import { verificationFor } from '../src/verification/policy';
+import { assertConfirmed } from '../src/verification/verifyCompletion';
 import { fakeGitHub } from './fakes/github';
 import { fakeLinear } from './fakes/linear';
 import { noSleep } from './scenarios';
 
 /* Follow-up attacks from the review of the tracker trust rule. */
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
+const EMPTY_INPUT = {
+  snaps: [],
+  questions: [],
+  sessions: [],
+  approvals: [],
+  syncs: [],
+  leases: [],
+  knowledge: [],
+  briefs: [],
+  now: 1,
+};
 const tmpRoot = () => mkdtempSync(path.join(os.tmpdir(), 'teamtrail-trust-review-'));
 
 const record = (o: Record<string, unknown>) =>
@@ -72,7 +87,7 @@ test('1: a teammate’s record with the same id as ours never shadows ours', asy
   const ours = all.find((d) => d.id === 'D-1')!;
   assert.equal(ours.answer, 'Use Yjs.');
   assert.equal(ours.postedBy, undefined);
-  assert.equal(all.find((d) => d.id === 'D-1@mona')?.postedBy, 'mona');
+  assert.equal(all.find((d) => d.id === 'D-1@mona')?.postedBy, '@mona');
 });
 
 test('1: a comment that looks like a decision but isn’t one is shown, never dropped', async () => {
@@ -97,16 +112,16 @@ test('2: whatever a teammate’s record names, it reads as that person’s, neve
   assert.deepEqual(
     ['D-5', 'D-6', 'D-7'].map((id) => [by(id).decidedBy, madeBy(by(id))]),
     [
-      ['mona', 'teammate'],
-      ['mona', 'teammate'],
-      ['claude-07 (mona)', 'teammate'],
+      ['@mona', 'teammate'],
+      ['@mona', 'teammate'],
+      ['claude-07 (@mona)', 'teammate'],
     ],
   );
   assert.deepEqual(
     by('D-7').participants.map((p) => p.id),
-    ['claude-07 (mona)', 'mona'],
+    ['claude-07 (@mona)', '@mona'],
   );
-  assert.equal(by('D-7').transcript[0].author, 'mona');
+  assert.equal(by('D-7').transcript[0].author, '@mona');
   assert.equal(by('D-5').postedIn, 'GitHub');
 });
 
@@ -120,7 +135,7 @@ test('3: read-only collaborators and org members without access are outsiders', 
   const comments = (await b.loadMap(map.id)).tickets[0].comments;
   assert.deepEqual(
     comments.map((c) => c.author),
-    ['rita', 'rita', 'max', 'max'],
+    ['@rita', '@rita', '@max', '@max'],
   );
   assert.deepEqual(await b.listDecisions(map.id), []);
   assert.deepEqual(fake.permissionChecks, ['max', 'rita']);
@@ -142,11 +157,11 @@ test('3: Linear guests, deactivated users and integrations are outsiders', async
   const b = new LinearAdapter(opts);
   assert.deepEqual(
     (await b.listDecisions(map.id)).map((d) => d.decidedBy),
-    ['Grace'],
+    ['Grace (@grace)'],
   );
   assert.deepEqual(
     (await b.loadMap(map.id)).tickets[0].comments.map((c) => c.author),
-    ['Gus', 'Ivy'],
+    ['Gus (@gus)', 'Ivy (@ivy)'],
   );
 });
 
@@ -159,14 +174,17 @@ test('4: one of our comments edited by a deleted account is no longer ours', asy
   assert.match(c.body, /<\\!-- teamtrail:author/);
 });
 
-test('5: with nothing accepted, a teammate’s settings wait, even a level that looks stricter', async () => {
+test('5 / N2: with nothing accepted, a teammate’s settings are never weakened, and completions wait', async () => {
   const fake = fakeGitHub({ team: ['mona'] });
   const seed = fake.human.seed({ title: 'Trail', body: '## Destination\n\nD', labels: ['teamtrail:map'] });
+  fake.human.editBody(
+    seed.number,
+    'mona',
+    '## Destination\n\nD\n\n<!-- teamtrail:meta {"verification":"checks+review+human"} -->',
+  );
   const sub = fake.human.createSubIssue(seed.number, 'T', ['teamtrail:task'], 'mona');
-  const meta = '<!-- teamtrail:meta {"verification":"off","checks":[]} -->';
-  fake.human.editBody(sub.number, 'mona', `Body\n\n${meta}`);
-  const stricter = fake.human.createSubIssue(seed.number, 'U', ['teamtrail:task'], 'mona');
-  fake.human.editBody(stricter.number, 'mona', 'Body\n\n<!-- teamtrail:meta {"verification":"checks+review"} -->');
+  fake.human.editBody(sub.number, 'mona', 'Body\n\n<!-- teamtrail:meta {"verification":"off","checks":[]} -->');
+  const config = { ...DEFAULT_CONFIG, run: ['lint', 'test'], default: 'checks' as const };
   for (const setup of ['missing', 'corrupt', 'another account']) {
     const root = tmpRoot();
     mkdirSync(path.join(root, ACCEPTED_DIR), { recursive: true });
@@ -177,12 +195,45 @@ test('5: with nothing accepted, a teammate’s settings wait, even a level that 
     if (setup === 'another account') writeFileSync(file, JSON.stringify(entry));
     const opts = { repo: fake.repo, token: 'x', fetch: fake.fetch, manual: true, ...noSleep };
     const a = new GitHubAdapter({ ...opts, accepted: acceptedSettingsFile(root, 'github-test') });
-    const tickets = (await a.loadMap(String(seed.number))).tickets;
-    const lowered = tickets.find((x) => x.id === String(sub.number))!;
-    assert.deepEqual([lowered.verification, lowered.checks], [undefined, undefined], setup);
-    assert.equal(tickets.find((x) => x.id === String(stricter.number))!.verification, undefined, setup);
-    assert.equal(a.unacceptedSettings().length, 2, setup);
+    const snap = await a.loadMap(String(seed.number));
+    const t = snap.tickets[0];
+    assert.equal(t.settingsUnconfirmed, true, setup);
+    const info = verificationFor(config, snap.map, t);
+    assert.deepEqual(
+      [info.level, info.checks, info.unconfirmed],
+      ['checks+review+human', ['lint', 'test'], true],
+      setup,
+    );
+    assert.throws(() => assertConfirmed(t, info), /can't be completed yet/, setup);
+    const items = buildAttention({ ...EMPTY_INPUT, snaps: [snap], trackerSettings: a.unacceptedSettings() }).items;
+    assert.deepEqual(
+      items.map((x) => [x.title, x.urgency]),
+      [
+        ["Teamtrail doesn't know which settings you accepted for this trail", 'soon'],
+        [`Teamtrail doesn't know which settings you accepted for #${sub.number}`, 'soon'],
+      ],
+      setup,
+    );
   }
+});
+
+test('N2: on Linear, losing the record never drops a trail to the defaults', async () => {
+  const fake = fakeLinear();
+  const root = tmpRoot();
+  const opts = { apiKey: 'lin_api_x', teamId: fake.team.id, fetch: fake.fetch, manual: true, ...noSleep };
+  const a = new LinearAdapter({ ...opts, accepted: acceptedSettingsFile(root, 'linear-test') });
+  const map = await a.createMap({ title: 'Trail', sections: SECTIONS, verification: 'checks+review+human' });
+  const t = await a.createTicket(map.id, { title: 'T', type: 'task', body: 'B' });
+  rmSync(path.join(root, ACCEPTED_DIR), { recursive: true, force: true }); // an agent deletes it
+  const b = new LinearAdapter({ ...opts, accepted: acceptedSettingsFile(root, 'linear-test') });
+  const snap = await b.loadMap(map.id);
+  const info = verificationFor(
+    DEFAULT_CONFIG,
+    snap.map,
+    snap.tickets.find((x) => x.id === t.id)!,
+  );
+  assert.equal(info.level, 'checks+review+human');
+  assert.equal(info.unconfirmed, true);
 });
 
 test('6: a decision too long for a comment keeps its record', () => {
@@ -226,11 +277,11 @@ test('8: a write that fails leaves nothing that later counts as ours', async () 
   assert.deepEqual(store.read()['7'], { viewer: 'octo-dev', ok: '{"verification":"checks"}' });
 });
 
-test('8: the lock keeps every process’s entries', () => {
+test('8: the lock keeps every process’s entries, also when they write at once', async () => {
   const root = tmpRoot();
-  const stores = Array.from({ length: 4 }, () => acceptedSettingsFile(root, 'github-test'));
-  stores.forEach((s, i) => s.put({ [String(i)]: { viewer: 'octo-dev', ok: '{}' } }));
-  assert.deepEqual(Object.keys(stores[0].read()).sort(), ['0', '1', '2', '3']);
+  const stores = Array.from({ length: 8 }, () => acceptedSettingsFile(root, 'github-test'));
+  await Promise.all(stores.map((s, i) => s.update(() => ({ [String(i)]: { viewer: 'octo-dev', ok: '{}' } }))));
+  assert.deepEqual(Object.keys(stores[0].read()).sort(), ['0', '1', '2', '3', '4', '5', '6', '7']);
 });
 
 test('setting a level here takes the place of what waits', async () => {

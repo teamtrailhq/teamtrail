@@ -5,6 +5,7 @@ import { settingsOf, type BodySettings } from './bodySettings';
 import { parseDecisionComment } from './decisionComment';
 import { readBody, readComment, splitBody } from './format';
 import { teammateDecision } from './teammateDecision';
+import type { Settled } from './settingsInForce';
 import type { Writer } from './writer';
 
 export interface TrailIssueParts {
@@ -16,7 +17,7 @@ export interface TrailIssueParts {
   /** Who last wrote the body, as far as the tracker says. */
   writer: Writer;
   /** The settings in force given the ones the body carries (settingsLedger.ts); missing: the body's own. */
-  settle?: (found: BodySettings) => BodySettings;
+  settle?: (found: BodySettings) => Settled;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,7 +28,8 @@ export function mapFromIssue(p: TrailIssueParts): MapDoc {
   // is; an outsider's comes back with every marker guarded, which makes its assumption markers text too.
   const { text, meta } = p.writer.kind === 'outsider' ? readBody(p.body, p.writer) : splitBody(p.body);
   const found = settingsOf({ ...meta });
-  const { verification, guides, modelMatching } = p.settle ? p.settle(found) : found;
+  const settled = p.settle ? p.settle(found) : { use: found };
+  const { verification, guides, modelMatching } = settled.use;
   return {
     id: p.id,
     key: p.key,
@@ -36,6 +38,7 @@ export function mapFromIssue(p: TrailIssueParts): MapDoc {
     ...(verification ? { verification } : {}),
     ...(guides?.length ? { guides } : {}),
     ...(modelMatching ? { modelMatching } : {}),
+    ...(settled.unconfirmed ? { settingsUnconfirmed: true as const } : {}),
     sections: parseMapBody(text),
     createdAt: Date.parse(p.createdAt) || 0,
     updatedAt: Date.parse(p.updatedAt) || 0,

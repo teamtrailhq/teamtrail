@@ -110,8 +110,10 @@ export function decisionStats(all: DecisionRecord[], now = Date.now()) {
     bySource[d.source.kind]++;
     if (d.supersededBy) superseded++;
     if (now - d.decidedAt < 86_400_000) last24h++;
-    // A person made the call (see `madeBy`), or took part in the conversation behind it.
-    if (madeBy(d) === 'human' || d.transcript.some((e) => e.from === 'human')) human++;
+    // This machine's human made the call (see `madeBy`), or took part in the conversation behind one of its
+    // records; a teammate's record (`madeBy` says so) never counts, whoever its transcript names.
+    const by = madeBy(d);
+    if (by === 'human' || (by === 'agent' && d.transcript.some((e) => e.from === 'human'))) human++;
   }
   return { total: all.length, active: all.length - superseded, superseded, last24h, human, bySource };
 }

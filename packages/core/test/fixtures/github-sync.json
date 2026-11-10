@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T19:47:14.122Z",
+  "recordedAt": "2026-11-10T20:10:17.384Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). Between polls, user \"mona\" comments on and closes the ticket in GitHub.",
   "exchanges": [
     {
@@ -494,7 +494,9 @@
                 "author": {
                   "login": "octo-dev"
                 },
-                "editor": null,
+                "userContentEdits": {
+                  "nodes": []
+                },
                 "lastEditedAt": null,
                 "authorAssociation": "COLLABORATOR",
                 "labels": {
@@ -526,7 +528,9 @@
                       "author": {
                         "login": "octo-dev"
                       },
-                      "editor": null,
+                      "userContentEdits": {
+                        "nodes": []
+                      },
                       "lastEditedAt": null,
                       "authorAssociation": "COLLABORATOR",
                       "labels": {
@@ -650,7 +654,9 @@
                 "author": {
                   "login": "octo-dev"
                 },
-                "editor": null,
+                "userContentEdits": {
+                  "nodes": []
+                },
                 "lastEditedAt": null,
                 "authorAssociation": "COLLABORATOR",
                 "labels": {
@@ -682,7 +688,9 @@
                       "author": {
                         "login": "octo-dev"
                       },
-                      "editor": null,
+                      "userContentEdits": {
+                        "nodes": []
+                      },
                       "lastEditedAt": null,
                       "authorAssociation": "COLLABORATOR",
                       "labels": {
@@ -704,7 +712,9 @@
                             "author": {
                               "login": "mona"
                             },
-                            "editor": null,
+                            "userContentEdits": {
+                              "nodes": []
+                            },
                             "lastEditedAt": null,
                             "authorAssociation": "NONE"
                           }

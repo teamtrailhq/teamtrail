@@ -114,7 +114,9 @@ export class LinearAdapter extends SyncedAdapter {
     if (!root || !root.labels.nodes.some((l) => l.name === MAP_LABEL))
       throw new TrackerError('not_found', `Linear: ${mapId} is not a trail`);
     const gate = this.ledger.gate({ mapId, now: this.now(), viewer: d.viewer?.id });
-    return readTrail(mapId, root, { viewer: d.viewer?.id, gate, found: this.found });
+    const trail = readTrail(mapId, root, { viewer: d.viewer?.id, gate, found: this.found });
+    await gate.save();
+    return trail;
   }
 
   protected async changedSince(known: (ref: string) => string | undefined): Promise<string[] | 'all'> {

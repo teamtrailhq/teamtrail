@@ -79,7 +79,6 @@ export function readTrail(mapId: string, root: GqlIssue, { who, gate }: TrailRea
     createdAt: root.createdAt,
     updatedAt: root.updatedAt,
   });
-  gate.save();
   return {
     snap: { map, tickets: tickets.sort((a, b) => a.createdAt - b.createdAt || Number(a.id) - Number(b.id)) },
     decisions,

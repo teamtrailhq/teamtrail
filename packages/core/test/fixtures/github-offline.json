@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T19:47:14.126Z",
+  "recordedAt": "2026-11-10T20:10:17.388Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). status 0 = network failure.",
   "exchanges": [
     {
@@ -442,7 +442,9 @@
                 "author": {
                   "login": "octo-dev"
                 },
-                "editor": null,
+                "userContentEdits": {
+                  "nodes": []
+                },
                 "lastEditedAt": null,
                 "authorAssociation": "COLLABORATOR",
                 "labels": {
@@ -474,7 +476,9 @@
                       "author": {
                         "login": "octo-dev"
                       },
-                      "editor": null,
+                      "userContentEdits": {
+                        "nodes": []
+                      },
                       "lastEditedAt": null,
                       "authorAssociation": "COLLABORATOR",
                       "labels": {
@@ -605,7 +609,9 @@
                 "author": {
                   "login": "octo-dev"
                 },
-                "editor": null,
+                "userContentEdits": {
+                  "nodes": []
+                },
                 "lastEditedAt": null,
                 "authorAssociation": "COLLABORATOR",
                 "labels": {
@@ -637,8 +643,14 @@
                       "author": {
                         "login": "octo-dev"
                       },
-                      "editor": {
-                        "login": "octo-dev"
+                      "userContentEdits": {
+                        "nodes": [
+                          {
+                            "editor": {
+                              "login": "octo-dev"
+                            }
+                          }
+                        ]
                       },
                       "lastEditedAt": "2026-10-31T12:00:05Z",
                       "authorAssociation": "COLLABORATOR",
@@ -661,7 +673,9 @@
                             "author": {
                               "login": "octo-dev"
                             },
-                            "editor": null,
+                            "userContentEdits": {
+                              "nodes": []
+                            },
                             "lastEditedAt": null,
                             "authorAssociation": "COLLABORATOR"
                           }

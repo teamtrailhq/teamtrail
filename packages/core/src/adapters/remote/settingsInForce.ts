@@ -26,9 +26,15 @@ export interface AcceptedEntry {
 /** An issue whose settings in the tracker differ from the ones in force here. */
 export interface UnacceptedSettings {
   issueId: string;
-  /** The settings in force, as `settingsKey` writes them. */
-  inForce: string;
+  /** The settings in force, as `settingsKey` writes them; missing when this machine never confirmed any. */
+  inForce?: string;
   waiting: WaitingSettings;
+}
+
+/** The settings to use; `unconfirmed` when they are someone else's that nobody here confirmed yet. */
+export interface Settled {
+  use: BodySettings;
+  unconfirmed?: true;
 }
 
 interface Input {
@@ -42,6 +48,8 @@ interface Input {
   now: number;
 }
 
+const EMPTY = settingsKey({});
+
 /** The entry when it was made under this account; any other (another login, an edited file) counts as none. */
 const ownEntry = (entry: AcceptedEntry | undefined, viewer: string | undefined) =>
   entry && viewer && entry.viewer === viewer ? entry : undefined;
@@ -49,11 +57,12 @@ const ownEntry = (entry: AcceptedEntry | undefined, viewer: string | undefined) 
 /**
  * Which settings apply to an issue, and what to remember about it. The body's own are taken when this account
  * wrote the body, or when they are what this machine last put or accepted. A teammate's other settings wait for
- * the human (the attention queue), with the accepted ones in force meanwhile: a ticket's own level overrides its
- * trail's, so even a "stricter" one can lower the bar, and none is taken unchecked. An outsider's are never taken. Nothing accepted yet (a new machine, a fresh clone, a lost or edited file) is no exception: it never
- * means "take what is there".
+ * the human (the attention queue), with the accepted ones in force meanwhile. With nothing accepted (a new
+ * machine, a fresh clone, a lost or edited record) there is nothing to fall back to, and dropping to the defaults
+ * could weaken a trail: theirs are used, marked `unconfirmed`, so verification takes the stricter of them and the
+ * project's (verification/policy.ts) and completions wait for the human. An outsider's are never taken.
  */
-export function settingsInForce(i: Input): { use: BodySettings; entry: AcceptedEntry | undefined } {
+export function settingsInForce(i: Input): Settled & { entry: AcceptedEntry | undefined } {
   const { writer, viewer } = i;
   const entry = ownEntry(i.entry, viewer);
   const accepted = settingsFromKey(entry?.ok);
@@ -63,6 +72,8 @@ export function settingsInForce(i: Input): { use: BodySettings; entry: AcceptedE
   if (entry && (key === entry.ok || key === entry.sending)) return { use: i.found, entry: { viewer, ok: key } };
   const at = entry?.waiting?.found === key ? entry.waiting.at : i.now;
   const waiting: WaitingSettings = { mapId: i.mapId, found: key, at, ...(writer.name ? { by: writer.name } : {}) };
-  const next: AcceptedEntry = { viewer, ...(entry?.ok ? { ok: entry.ok } : {}), waiting };
-  return { use: accepted, entry: next };
+  // No settings of its own: nothing to weaken, nothing to confirm.
+  if (!entry?.ok && key === EMPTY) return { use: i.found, entry: entry && { viewer } };
+  if (!entry?.ok) return { use: i.found, unconfirmed: true, entry: { viewer, waiting } };
+  return { use: accepted, entry: { viewer, ok: entry.ok, waiting } };
 }

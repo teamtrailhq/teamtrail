@@ -103,6 +103,5 @@ export function readTrail(
     updatedAt: root.updatedAt,
   });
   const tickets = kids.map((k) => linearTicket(mapId, k, siblings, r)).sort((a, b) => a.createdAt - b.createdAt);
-  reader.gate.save();
   return { snap: { map, tickets }, decisions };
 }

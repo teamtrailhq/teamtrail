@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T19:47:14.128Z",
+  "recordedAt": "2026-11-10T20:10:17.390Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). Error bodies and headers as documented for secondary (429 + retry-after) and primary (403 + x-ratelimit-remaining: 0) limits.",
   "exchanges": [
     {
@@ -495,7 +495,9 @@
                 "author": {
                   "login": "octo-dev"
                 },
-                "editor": null,
+                "userContentEdits": {
+                  "nodes": []
+                },
                 "lastEditedAt": null,
                 "authorAssociation": "COLLABORATOR",
                 "labels": {
@@ -527,7 +529,9 @@
                       "author": {
                         "login": "octo-dev"
                       },
-                      "editor": null,
+                      "userContentEdits": {
+                        "nodes": []
+                      },
                       "lastEditedAt": null,
                       "authorAssociation": "COLLABORATOR",
                       "labels": {
@@ -549,7 +553,9 @@
                             "author": {
                               "login": "octo-dev"
                             },
-                            "editor": null,
+                            "userContentEdits": {
+                              "nodes": []
+                            },
                             "lastEditedAt": null,
                             "authorAssociation": "COLLABORATOR"
                           },
@@ -560,7 +566,9 @@
                             "author": {
                               "login": "octo-dev"
                             },
-                            "editor": null,
+                            "userContentEdits": {
+                              "nodes": []
+                            },
                             "lastEditedAt": null,
                             "authorAssociation": "COLLABORATOR"
                           }

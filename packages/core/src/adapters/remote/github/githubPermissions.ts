@@ -36,14 +36,15 @@ export class GitHubPermissions {
     private readonly now: () => number,
   ) {}
 
-  /** Looks up the logins not known (or stale), then answers from the cache. */
+  /** Looks up the logins not known (or stale), then answers from the cache; an answer past its time is no answer. */
   async resolve(logins: string[]): Promise<(login: string) => boolean> {
-    const stale = logins.filter((l) => {
-      const k = this.known.get(l.toLowerCase());
-      return !k || this.now() - k.at >= k.ttl;
-    });
+    const fresh = (k: Known | undefined): k is Known => !!k && this.now() - k.at < k.ttl;
+    const stale = logins.filter((l) => !fresh(this.known.get(l.toLowerCase())));
     await Promise.all(stale.map((l) => this.lookUp(l)));
-    return (login) => this.known.get(login.toLowerCase())?.write ?? false;
+    return (login) => {
+      const k = this.known.get(login.toLowerCase());
+      return fresh(k) && k.write;
+    };
   }
 
   private async lookUp(login: string) {

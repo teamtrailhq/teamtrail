@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T19:47:14.132Z",
+  "recordedAt": "2026-11-10T20:10:17.394Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema).",
   "exchanges": [
     {
@@ -1057,6 +1057,7 @@
                           "user": {
                             "id": "usr-ada",
                             "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
                             "guest": false,
                             "active": true
                           }
@@ -1068,6 +1069,7 @@
                           "user": {
                             "id": "usr-ada",
                             "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
                             "guest": false,
                             "active": true
                           }
@@ -1079,6 +1081,7 @@
                           "user": {
                             "id": "usr-ada",
                             "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
                             "guest": false,
                             "active": true
                           }
@@ -1090,6 +1093,7 @@
                           "user": {
                             "id": "usr-ada",
                             "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
                             "guest": false,
                             "active": true
                           }

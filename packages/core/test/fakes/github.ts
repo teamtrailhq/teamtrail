@@ -93,8 +93,9 @@ export function fakeGitHub(
   const team = new Set(opts.team ?? []);
   const readers = new Set(opts.readers ?? []);
   const members = new Set(opts.members ?? []);
+  const former = new Set<string>();
   const association = (user: string | null) => {
-    if (user === login || (user && (team.has(user) || readers.has(user)))) return 'COLLABORATOR';
+    if (user === login || (user && (team.has(user) || readers.has(user) || former.has(user)))) return 'COLLABORATOR';
     return user && members.has(user) ? 'MEMBER' : 'NONE';
   };
   const permissionOf = (user: string) => {
@@ -102,6 +103,8 @@ export function fakeGitHub(
     return readers.has(user) ? { permission: 'read', role_name: 'read' } : undefined;
   };
   const permissionChecks: string[] = [];
+  /** Set `status` to make permission lookups fail (a 5xx outage). */
+  const permissionFault: { status?: number } = {};
   const actor = (user: string | null | undefined) => (user ? { login: user } : null);
 
   const rest = (i: FakeIssue) => ({
@@ -215,6 +218,8 @@ export function fakeGitHub(
     if (method === 'GET' && perm) {
       const user = decodeURIComponent(perm[1]);
       permissionChecks.push(user);
+      if (permissionFault.status)
+        return { status: permissionFault.status, headers: rate(), body: { message: 'Server Error' } };
       const found = permissionOf(user);
       return found ? ok({ ...found, user: { login: user } }) : notFound;
     }
@@ -366,6 +371,7 @@ export function fakeGitHub(
     handle,
     /** Logins whose repo permission the adapter asked about, in order. */
     permissionChecks,
+    permissionFault,
     /** What a teammate does in the GitHub UI. */
     human: {
       close(number: number, reason: 'completed' | 'not_planned' = 'completed') {
@@ -398,6 +404,12 @@ export function fakeGitHub(
         return i;
       },
       seed: createIssue,
+      /** The repo's admin removes a collaborator; GitHub may still describe their old comments as a collaborator's. */
+      revoke(user: string) {
+        team.delete(user);
+        readers.delete(user);
+        former.add(user);
+      },
     },
   };
 }

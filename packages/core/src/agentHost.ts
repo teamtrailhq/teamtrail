@@ -59,6 +59,7 @@ export {
 export { attemptComment, checkLine, outcomeOf, type Outcome } from './verification/outcome';
 export {
   CHECK_RUNNER,
+  assertConfirmed,
   levelFor,
   repoRootOf,
   rerun,

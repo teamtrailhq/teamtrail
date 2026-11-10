@@ -1,4 +1,4 @@
-import { settingsChanges, settingsFromKey } from '../../adapters/remote/bodySettings';
+import { settingsChanges, settingsFromKey, settingsLines } from '../../adapters/remote/bodySettings';
 import type { AttentionSource, Candidate } from '../types';
 
 /** A short, stable tag for one set of settings, so dismissing a change doesn't hide the next one. */
@@ -10,8 +10,9 @@ function tag(s: string) {
 
 /**
  * Settings someone else wrote into a tracked issue (a verification level, checks, a guide, model matching) that
- * this machine hasn't accepted. The ones in force stay until the human sets them in the Lookout; setting them
- * aside keeps the current ones.
+ * this machine hasn't accepted. With settings accepted before, those stay in force until the human sets new ones
+ * in the Lookout. With none (a new machine, a lost record), the stricter of the issue's and the project's apply
+ * and completions wait, so it needs the human soon.
  */
 export const trackerSettingsSource: AttentionSource = {
   kind: 'tracker-settings',
@@ -20,23 +21,26 @@ export const trackerSettingsSource: AttentionSource = {
       const snap = snaps.find((s) => s.map.id === u.waiting.mapId);
       const ticket = snap?.tickets.find((t) => t.id === u.issueId);
       if (!snap || (!ticket && snap.map.id !== u.issueId)) return [];
-      const changes = settingsChanges(settingsFromKey(u.inForce), settingsFromKey(u.waiting.found));
+      const found = settingsFromKey(u.waiting.found);
+      const what = ticket ? ticket.key : 'this trail';
+      const base = {
+        kind: 'tracker-settings' as const,
+        mapId: snap.map.id,
+        ...(ticket ? { ticketId: ticket.id } : {}),
+        since: u.waiting.at,
+        urgency: 'soon' as const,
+        ref: `${u.issueId}:${tag(u.waiting.found)}`,
+      };
+      if (u.inForce === undefined) {
+        const holds = ticket ? [ticket.id] : snap.tickets.filter((t) => t.state === 'open').map((t) => t.id);
+        const title = `Teamtrail doesn't know which settings you accepted for ${what}`;
+        const using = "using the stricter of these and your project's until you choose";
+        return [{ ...base, title, holds, notes: [using, ...settingsLines(found), 'completions wait for you'] }];
+      }
+      const changes = settingsChanges(settingsFromKey(u.inForce), found);
       if (!changes.length) return [];
-      const what = ticket ? ticket.key : 'the trail';
-      const who = u.waiting.by ?? 'Someone';
-      return [
-        {
-          kind: 'tracker-settings',
-          mapId: snap.map.id,
-          ...(ticket ? { ticketId: ticket.id } : {}),
-          title: `${who} changed the settings of ${what} in the tracker`,
-          since: u.waiting.at,
-          urgency: 'fyi',
-          ref: `${u.issueId}:${tag(u.waiting.found)}`,
-          holds: [],
-          notes: [...changes, 'yours stay in force until you set them here'],
-        },
-      ];
+      const title = `${u.waiting.by ?? 'Someone'} changed the settings of ${what} in the tracker`;
+      return [{ ...base, title, holds: [], notes: [...changes, 'yours stay in force until you set them here'] }];
     });
   },
 };

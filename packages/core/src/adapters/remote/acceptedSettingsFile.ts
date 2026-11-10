@@ -1,6 +1,8 @@
-import { closeSync, existsSync, mkdirSync, openSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { open, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { AGENTS_DIR } from '../../agents/agentLink';
+import { sleep } from '../../lib/emitter';
 import { readJsonFile, writeJsonAtomic } from '../../lib/jsonFile';
 import type { AcceptedEntry } from './settingsInForce';
 import type { AcceptedStore } from './settingsLedger';
@@ -8,15 +10,17 @@ import type { AcceptedStore } from './settingsLedger';
 /*
  * The settings this machine accepted for each issue of a remote tracker:
  *   <tracker dir>/.agents/tracker-settings/<kind>-<target>.json   `{ v: 1, target, issues: { <issue id>: AcceptedEntry } }`
- * Local and never committed. Read on every use: the Lookout and each MCP server share it, and writes go through a
- * lock file so two processes never lose each other's entries. A file that is missing, unreadable or made for
- * another target holds nothing: every setting someone else wrote then waits for the human, it is never taken as
- * it stands. (Moving this into the per-machine store is a change to this file only.)
+ * Local and never committed. Read on every use: the Lookout and each MCP server share it, and changes go through
+ * a lock file so two processes never lose each other's entries. A file that is missing, unreadable or made for
+ * another target holds nothing accepted; so does a change that can't get the lock (it is skipped). Either way
+ * settings someone else wrote are then only "unconfirmed" (settingsInForce.ts), never taken as they stand.
+ * (Moving this into the per-machine store is a change to this file only.)
  */
 export const ACCEPTED_DIR = `${AGENTS_DIR}/tracker-settings`;
 
 const LOCK_STALE_MS = 5_000;
-const LOCK_TRIES = 200;
+/** Waits between tries, about a second in all; the event loop keeps running meanwhile. */
+const BACKOFF_MS = [0, 5, 10, 20, 40, 80, 160, 320, 400];
 
 interface Doc {
   v: 1;
@@ -32,45 +36,63 @@ function readDoc(file: string, target: string): Record<string, AcceptedEntry> {
   return Object.fromEntries(Object.entries(raw.issues).filter(([, e]) => isEntry(e)));
 }
 
-const pause = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+/** Creates the lock file, or says it is taken. */
+const tryLock = (lock: string) =>
+  open(lock, 'wx').then(
+    (h) => h.close().then(() => true),
+    () => false,
+  );
 
-/** Runs `fn` holding `<file>.lock`; a lock left by a process that died is taken over after a few seconds. */
-function locked(file: string, fn: () => void) {
+/**
+ * A lock left by a process that died is moved aside with one atomic rename: of two processes that both find it
+ * stale, only one rename succeeds, and the other goes back to waiting for the lock.
+ */
+async function clearStale(lock: string) {
+  const s = await stat(lock).catch(() => undefined);
+  if (!s || Date.now() - s.mtimeMs < LOCK_STALE_MS) return;
+  const aside = `${lock}.stale-${process.pid}-${Date.now()}`;
+  const moved = await rename(lock, aside).then(
+    () => true,
+    () => false,
+  );
+  if (moved) await rm(aside, { force: true });
+}
+
+/** Runs `fn` holding `<file>.lock`; false when the lock couldn't be had (nothing ran). */
+async function withLock(file: string, fn: () => void): Promise<boolean> {
   const lock = `${file}.lock`;
-  for (let i = 0; i < LOCK_TRIES; i++) {
-    try {
-      closeSync(openSync(lock, 'wx'));
-    } catch {
-      const age = Date.now() - (statSync(lock, { throwIfNoEntry: false })?.mtimeMs ?? Date.now());
-      if (age > LOCK_STALE_MS) rmSync(lock, { force: true });
-      else pause(10);
-      continue;
+  for (const wait of BACKOFF_MS) {
+    if (wait) await sleep(wait);
+    if (await tryLock(lock)) {
+      try {
+        fn();
+        return true;
+      } finally {
+        await rm(lock, { force: true });
+      }
     }
-    try {
-      return fn();
-    } finally {
-      rmSync(lock, { force: true });
-    }
+    await clearStale(lock);
   }
-  throw new Error(`could not lock ${file}`);
+  return false;
 }
 
 export function acceptedSettingsFile(root: string, target: string): AcceptedStore {
   const file = path.join(root, ACCEPTED_DIR, `${target}.json`);
   return {
     read: () => readDoc(file, target),
-    put(entries) {
+    async update(change) {
       const ignore = path.join(root, AGENTS_DIR, '.gitignore');
       mkdirSync(path.dirname(file), { recursive: true });
       if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
-      locked(file, () => {
+      const done = await withLock(file, () => {
         const issues = readDoc(file, target);
-        for (const [id, e] of Object.entries(entries)) {
+        for (const [id, e] of Object.entries(change(issues))) {
           if (e) issues[id] = e;
           else delete issues[id];
         }
         writeJsonAtomic(file, { v: 1, target, issues } satisfies Doc);
       });
+      if (!done) console.warn(`teamtrail: ${path.basename(file)} is locked; settings not recorded this time`);
     },
   };
 }

@@ -63,7 +63,8 @@ export function fakeLinear(
     const guest = (opts.guests ?? []).includes(name);
     const active = !(opts.inactive ?? []).includes(name);
     const id = name === viewer.name ? viewer.id : `usr-${name.toLowerCase()}`;
-    return { id, displayName: name, guest, active };
+    const email = name === viewer.name ? viewer.email : `${name.toLowerCase().replace(/\s+/g, '.')}@octo.dev`;
+    return { id, displayName: name, email, guest, active };
   };
   const org = { name: opts.org ?? 'Octo Inc' };
   const mainProjects = [{ id: 'proj-mobile', name: 'Mobile', state: 'started' }];

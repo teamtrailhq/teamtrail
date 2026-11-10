@@ -12,7 +12,7 @@ import {
   type SessionHandle,
   type Ticket,
 } from '@teamtrail/core';
-import { levelFor } from '@teamtrail/core/agents';
+import { assertConfirmed, levelFor } from '@teamtrail/core/agents';
 import { assertHumanDecided } from '../remoteGate';
 import type { AgentContext } from './agentContext';
 import { assertAssumes } from './assumptions';
@@ -138,6 +138,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   const wantsTranscript = input.postTranscript && log.length > 0;
   const transcript = wantsTranscript ? log.map((e) => `**${e.author}:** ${e.text}`).join('\n\n') : undefined;
   const { info } = levelFor(ctx.root, snap, t);
+  assertConfirmed(t, info);
   assertCriteria(ctx.root, snap, t, info.level);
   await keepAnswers(ctx, {
     snap,
