@@ -8,7 +8,7 @@ import {
   type Ticket,
   type TicketType,
 } from '@teamtrail/core';
-import { levelFor, listGuides } from '@teamtrail/core/agents';
+import { levelFor, listGuides, recordCharted } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaView, saveCriteria, type CriterionInput } from './criteria';
 import { briefView, claimable } from './discovery';
@@ -113,7 +113,7 @@ export async function addTicket(
     });
     for (const b of blockers) await ctx.adapter.addBlocking(snap.map.id, b, t.id);
   }
-  ctx.charted.add(`${snap.map.id}/${t.id}`);
+  recordCharted(ctx.root, snap.map.id, [t.id], { agent: await ctx.agentId(), origin: ctx.origin });
   await ctx.adapter.comment(snap.map.id, t.id, await ctx.agentId(), addedLine(ctx, attention(t) === 'hitl'));
   if (input.guide) await setTicketGuide(ctx.adapter, { mapId: snap.map.id, ticketId: t.id }, input.guide, 'agent');
   if (input.criteria?.length) saveCriteria(ctx.root, snap.map, t, input.criteria);

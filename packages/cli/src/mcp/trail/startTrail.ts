@@ -9,7 +9,7 @@ import {
   type MapMode,
   type Ticket,
 } from '@teamtrail/core';
-import { listGuides, readVerificationConfig, writeBrief } from '@teamtrail/core/agents';
+import { listGuides, readVerificationConfig, recordCharted, writeBrief } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
 import { saveCriteria } from './criteria';
@@ -68,7 +68,12 @@ export async function startTrail(ctx: AgentContext, input: StartInput) {
     },
   });
   ctx.trail = map.id;
-  for (const t of tickets) ctx.charted.add(`${map.id}/${t.id}`);
+  recordCharted(
+    ctx.root,
+    map.id,
+    tickets.map((t) => t.id),
+    { agent, origin: ctx.origin },
+  );
   saveAllCriteria(ctx, { map, tickets, planned });
   await saveGuides(ctx, { map, tickets, planned, team: input.team });
   await saveAssumptions(ctx, { map, tickets, planned, items: input.assumptions ?? [] });

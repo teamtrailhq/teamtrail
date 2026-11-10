@@ -1,7 +1,9 @@
 import { rmSync } from 'node:fs';
 import path from 'node:path';
+import { AGENTS_DIR } from '../agents/agentLink';
+import { ignoreAgentsDir } from '../agents/ignoreAgentsDir';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
-import { CRITERIA_DIR, type CriteriaProposal } from './criteria';
+import type { CriteriaProposal } from './criteria';
 
 interface ProposalFile {
   v: 1;
@@ -9,10 +11,11 @@ interface ProposalFile {
 }
 
 /*
- * Kept in `<tracker dir>/criteria/<mapId>.proposed.json`, next to the criteria, and removed once decided.
+ * Kept on this machine, out of git (an agent's proposal is not the project's criteria), and removed once decided:
+ *   <tracker dir>/.agents/criteria-proposals/<mapId>.json
  */
 const safe = (s: string) => s.replace(/[^\w.-]/g, '_');
-const file = (root: string, mapId: string) => path.join(root, CRITERIA_DIR, `${safe(mapId)}.proposed.json`);
+const file = (root: string, mapId: string) => path.join(root, AGENTS_DIR, 'criteria-proposals', `${safe(mapId)}.json`);
 
 const isProposal = (p: Partial<CriteriaProposal> | undefined): p is CriteriaProposal =>
   !!p && typeof p.ticketId === 'string' && typeof p.by === 'string' && Array.isArray(p.criteria);
@@ -24,6 +27,7 @@ export function readCriteriaProposals(root: string, mapId: string): CriteriaProp
 }
 
 function save(root: string, mapId: string, proposals: CriteriaProposal[]) {
+  ignoreAgentsDir(root);
   if (proposals.length) writeJsonAtomic(file(root, mapId), { v: 1, proposals } satisfies ProposalFile);
   else rmSync(file(root, mapId), { force: true });
 }

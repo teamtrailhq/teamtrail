@@ -9,6 +9,7 @@ import {
   type Ticket,
 } from '@teamtrail/core';
 import {
+  chartedBy,
   readBrief,
   readCriteria,
   readCriteriaProposals,
@@ -110,7 +111,9 @@ export async function setCriteria(
 function assertMayWriteCriteria(ctx: AgentContext, at: { snap: MapSnapshot; t: Ticket; agent: string }) {
   const { snap, t, agent } = at;
   if (t.assignee) return assertOwnClaim(ctx, { mapId: snap.map.id, ticket: t, agent });
-  if (ctx.charted.has(`${snap.map.id}/${t.id}`)) return;
+  const charted = chartedBy(ctx.root, snap.map.id, t.id);
+  // The charting agent, by its token (remote) or its trail name (here), even after it reconnects.
+  if (charted && (charted.origin === ctx.origin || (!ctx.remote && charted.agent === agent))) return;
   throw new OperationError(
     `${t.key}'s criteria are written by the agent that claims it, or by the one that charted it before anyone does. Claim ${t.key} first.`,
   );

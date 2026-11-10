@@ -334,6 +334,38 @@ describe('acceptance criteria: who writes them, and what counts as proof', () =>
     expect(comment).toMatch(/rest on claude-01's word/);
   });
 
+  it('the charting agent may still write criteria after it reconnects, and proposals stay out of git', async () => {
+    const lead = await hub.connect({ name: 'claude-01' });
+    const m = await chart(lead);
+    for (const who of [{ name: 'claude-02' }, { token: 'sandbox' }]) {
+      const first = await hub.connect(who);
+      const added = await first<{ ticket: { key: string; id: string } }>('add_ticket', {
+        trail: m.trail.id,
+        title: `Docs for ${JSON.stringify(who)}`,
+        type: 'task',
+      });
+      const k = added.ticket.key;
+      const again = await hub.connect(who);
+      const saved = await again<{ criteria: unknown[] }>('set_criteria', {
+        trail: m.trail.id,
+        ticket: k,
+        criteria: [{ text: 'Every page listed', kind: 'unit' }],
+      });
+      expect(saved.criteria).toHaveLength(1);
+      const stranger = await hub.connect({ name: 'codex-07' });
+      await expect(
+        stranger('set_criteria', { trail: m.trail.id, ticket: k, criteria: [{ text: 'x', kind: 'unit' }] }),
+      ).rejects.toThrow(/Claim .* first/);
+      // Confirmed, a change is a proposal: kept on this machine, not in the committed criteria folder.
+      const ticket = { id: k.slice(1), key: k };
+      writeTicketCriteria(root, { id: m.trail.id, title: 'Exports' }, ticket, { confirmed: true });
+      await again('set_criteria', { trail: m.trail.id, ticket: k, criteria: [{ text: 'Less', kind: 'unit' }] });
+    }
+    expect(fs.readdirSync(path.join(root, 'criteria')).filter((f) => !f.endsWith('.md'))).toEqual([]);
+    expect(readCriteriaProposals(root, m.trail.id)).toHaveLength(2);
+    expect(fs.readFileSync(path.join(root, '.agents', '.gitignore'), 'utf8')).toBe('*\n');
+  });
+
   it('a criterion source is a knowledge id, nothing else', async () => {
     const a = await hub.connect({ name: 'claude-01' });
     const m = await chart(a);

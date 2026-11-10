@@ -49,8 +49,6 @@ export class AgentContext {
   readonly waits = new Map<string, Promise<{ text: string; author: string }>>();
   /** The human's answers to this agent's questions, by question id: what a decision of theirs rests on. */
   readonly answers = new Map<string, HumanAnswer>();
-  /** Tickets this connection created (start_trail, add_ticket): it may set their criteria before anyone claims them. */
-  readonly charted = new Set<string>();
   /** Knowledge entries this connection proposed: its own words, which it may read back before they are reviewed. */
   readonly proposed = new Set<string>();
   /**
