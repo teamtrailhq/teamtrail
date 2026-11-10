@@ -1,8 +1,10 @@
 import { execFile } from 'node:child_process';
-import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { ActiveTracker, CredentialSource, LinearTarget } from '../adapters/remote/types';
+import { withFileLock } from '../lib/fileLock';
+import { ensurePrivateDir } from '../lib/privateDir';
 import { BRAND } from '../model/brand';
 
 /*
@@ -45,13 +47,16 @@ function readJson<T>(file: string, fallback: T): T {
   }
 }
 
-/** Write-then-rename so a crash never leaves half a file; `mode` applies before the file is visible. */
-function writeJson(file: string, value: unknown, mode?: number) {
-  mkdirSync(path.dirname(file), { recursive: true, ...(mode ? { mode: 0o700 } : {}) });
+/**
+ * Write-then-rename so a crash never leaves half a file. `secret`: the folder is made private (0700, looser
+ * files in it tightened, see privateDir.ts) and the file is 0600 before it is visible.
+ */
+function writeJson(file: string, value: unknown, secret = false) {
+  if (secret) ensurePrivateDir(path.dirname(file));
+  else mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.tmp`;
-  writeFileSync(tmp, JSON.stringify(value, null, 2) + '\n', mode ? { mode } : {});
+  writeFileSync(tmp, JSON.stringify(value, null, 2) + '\n', secret ? { mode: 0o600 } : {});
   renameSync(tmp, file);
-  if (mode) chmodSync(file, mode);
 }
 
 export function projectConfig(trackerRoot: string) {
@@ -68,7 +73,19 @@ export function credentialStore(dir = configDir()) {
   return {
     file,
     read: (): Credentials => readJson<Credentials>(file, {}),
-    write: (c: Credentials) => writeJson(file, c, 0o600),
+    write: (c: Credentials) => withFileLock(file, () => writeJson(file, c, true)),
+    /**
+     * Read, change and write under one lock: what every change should use, so a Lookout and an `mcp` process
+     * saving different tokens at once both keep theirs.
+     */
+    update(change: (c: Credentials) => Credentials) {
+      ensurePrivateDir(dir);
+      return withFileLock(file, () => {
+        const next = change(readJson<Credentials>(file, {}));
+        writeJson(file, next, true);
+        return next;
+      });
+    },
   };
 }
 

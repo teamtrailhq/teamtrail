@@ -37,7 +37,7 @@ export function readAttentionPrefs(dir = configDir()): AttentionPrefs {
 /** Validates and saves this person's prefs; returns the errors instead of saving when there are any. */
 export function writeAttentionPrefs(raw: unknown, dir = configDir()): Parsed<AttentionPrefs> {
   const parsed = parseAttentionPrefs(raw);
-  if (!parsed.errors.length) writeJsonAtomic(path.join(dir, ATTENTION_FILE), parsed.value);
+  if (!parsed.errors.length) writeJsonAtomic(path.join(dir, ATTENTION_FILE), parsed.value, { private: true });
   return parsed;
 }
 

@@ -76,7 +76,7 @@ export function trackerSettings(deps: {
     const projectId = l.projectId || undefined;
     const result = await test({ kind: 'linear', apiKey: l.apiKey, teamId: l.teamId, projectId });
     if (!result.ok) return { status: 400, body: result };
-    if (l.apiKey?.trim()) creds.write({ ...creds.read(), linear: { apiKey: l.apiKey.trim() } });
+    if (l.apiKey?.trim()) creds.update((c) => ({ ...c, linear: { apiKey: l.apiKey!.trim() } }));
     linear.reset();
     const team = result.teams?.find((t) => t.id === l.teamId);
     const projectName = result.projects?.find((p) => p.id === projectId)?.name;
@@ -107,7 +107,7 @@ export function trackerSettings(deps: {
       if (!repo) throw new BadRequest('"github.repo" is required');
       const result = await test({ kind: 'github', repo, token: req.github?.token });
       if (!result.ok) return { status: 400, body: result };
-      if (req.github?.token?.trim()) creds.write({ ...creds.read(), github: { token: req.github.token.trim() } });
+      if (req.github?.token?.trim()) creds.update((c) => ({ ...c, github: { token: req.github!.token!.trim() } }));
       lookups.reset();
       project.write({ ...cfg, active: 'github', github: { repo: result.target ?? repo } });
       remotes.reset('github');

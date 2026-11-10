@@ -52,10 +52,11 @@ export function githubSignIn(deps: { ctx: TrackerContext; changed: () => void; n
   }
 
   async function save(token: string, scope: string): Promise<GitHubSignInPoll> {
-    const creds = ctx.creds.read();
     // Signing in replaces a pasted token, so the account you just approved is the one used.
-    delete creds.github;
-    ctx.creds.write({ ...creds, githubSignIn: { token, scope, at: new Date().toISOString() } });
+    ctx.creds.update(({ github: _pasted, ...rest }) => ({
+      ...rest,
+      githubSignIn: { token, scope, at: new Date().toISOString() },
+    }));
     deps.changed();
     const account = await githubAccount({ token, apiUrl: ctx.apiUrl.github, fetch: ctx.o.fetch });
     return { kind: 'signed-in', account };
@@ -114,9 +115,7 @@ export function githubSignIn(deps: { ctx: TrackerContext; changed: () => void; n
     /** Forget the signed-in token on this machine. GitHub keeps the grant until it's revoked there. */
     signOut() {
       pending = undefined;
-      const creds = ctx.creds.read();
-      delete creds.githubSignIn;
-      ctx.creds.write(creds);
+      ctx.creds.update(({ githubSignIn: _gone, ...rest }) => rest);
       deps.changed();
     },
     available: () => !!githubClientId(ctx.env),

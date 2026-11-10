@@ -25,7 +25,7 @@ export function readProjects(configDir: string): ProjectsFile {
 
 /** Writes the registry atomically, so a reader never sees half of it. */
 export function writeProjects(configDir: string, file: ProjectsFile) {
-  writeJsonAtomic(projectsPath(configDir), file);
+  writeJsonAtomic(projectsPath(configDir), file, { private: true });
 }
 
 /** Read, change, write. */

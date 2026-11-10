@@ -99,9 +99,10 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
 
   function forgetCredentials(kind: string) {
     if (!isKind(kind)) throw new BadRequest('unknown tracker');
-    const c = ctx.creds.read();
-    delete c[kind];
-    ctx.creds.write(c);
+    ctx.creds.update((c) => {
+      const { [kind]: _gone, ...rest } = c;
+      return rest;
+    });
     remotes.reset(kind);
     ctx.forgetGitHubToken();
     lookups.reset();
