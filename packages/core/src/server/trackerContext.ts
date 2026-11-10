@@ -56,7 +56,7 @@ export function trackerContext(o: TrackerRoutesOptions) {
       ghToken = undefined;
     },
     detectedRepo() {
-      detected ??= detectGitHubRepo(o.cwd ?? process.cwd(), exec);
+      detected ??= detectGitHubRepo(o.cwd ?? process.cwd(), o.exec);
       return detected;
     },
   };

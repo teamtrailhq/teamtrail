@@ -94,4 +94,16 @@ describe('git is never handed a value it could read as an option', () => {
     const bad = all.flatMap((f) => problems(fs.readFileSync(f, 'utf8')).map((p) => `${path.relative(repo, f)} ${p}`));
     expect(bad).toEqual([]);
   });
+
+  it('only the helpers start git: every other call goes through git(), gitText() or gitConfigValue()', () => {
+    const helpers = [path.join('evidence', 'git.ts'), path.join('evidence', 'gitConfigValue.ts')];
+    const direct = /\b(?:spawn|spawnSync|execFile|execFileSync|execSync)\(\s*['"`]git['"`]/;
+    const all = SOURCES.flatMap((s) => files(path.join(repo, s)));
+    const bad = all
+      .filter((f) => !helpers.some((h) => f.endsWith(h)))
+      .filter((f) => direct.test(fs.readFileSync(f, 'utf8')))
+      .map((f) => path.relative(repo, f));
+    expect(bad).toEqual([]);
+    expect(direct.test("execFileSync('git', ['config', 'user.name'])")).toBe(true);
+  });
 });

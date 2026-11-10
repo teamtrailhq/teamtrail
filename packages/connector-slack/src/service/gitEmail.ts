@@ -1,15 +1,4 @@
-import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { gitConfigValue } from '@teamtrail/core/agents';
 
-export function gitEmail(cwd: string) {
-  try {
-    return execFileSync('git', ['config', '--get', 'user.email'], {
-      cwd: existsSync(cwd) ? cwd : undefined,
-      encoding: 'utf8',
-      timeout: 2000,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-  } catch {
-    return undefined;
-  }
-}
+/** This person's git email, read the way every git call of Teamtrail's is (no full environment, no repo commands). */
+export const gitEmail = (cwd: string) => gitConfigValue(cwd, 'user.email');

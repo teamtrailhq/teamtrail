@@ -3,6 +3,7 @@ export { AgentDocWriter } from './agents/agentDocWriter';
 export { TRAIL_NAMES_DIR, claimTrailName, releaseTrailName } from './agents/trailNameClaim';
 export { AnswerError, readAgentDoc, readAgentDocs, writeAgentAnswer } from './agents/agentDocs';
 export { readLookoutLock, writeLookoutLock } from './agents/lookoutLock';
+export { gitConfigValue } from './evidence/gitConfigValue';
 export { writeJsonAtomic } from './lib/jsonFile';
 export { dropLease, readLease, readLeases, renewLease, writeLease } from './agents/leaseStore';
 export { LEASE_REAPER, reclaimExpired, returnToQueue, type ReturnOutcome } from './agents/returnToQueue';

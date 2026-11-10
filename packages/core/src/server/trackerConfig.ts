@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { ActiveTracker, CredentialSource, LinearTarget } from '../adapters/remote/types';
+import { gitText } from '../evidence/git';
 import { withFileLock } from '../lib/fileLock';
 import { ensurePrivateDir } from '../lib/privateDir';
 import { BRAND } from '../model/brand';
@@ -147,7 +148,11 @@ export function parseGitHubRemote(url: string): string | undefined {
   return m ? `${m[1]}/${m[2]}` : undefined;
 }
 
-export async function detectGitHubRepo(cwd: string, exec: Run = run): Promise<string | undefined> {
-  const url = await exec('git', ['remote', 'get-url', 'origin'], cwd).catch(() => '');
+/** The `origin` remote's GitHub repo, read through git.ts like every git call; `exec` is the tests' stand-in. */
+export async function detectGitHubRepo(cwd: string, exec?: Run): Promise<string | undefined> {
+  const read = exec
+    ? exec('git', ['remote', 'get-url', '--end-of-options', 'origin'], cwd)
+    : gitText(cwd, ['remote', 'get-url', '--end-of-options', 'origin']).then((s) => s ?? '');
+  const url = await read.catch(() => '');
   return url ? parseGitHubRemote(url) : undefined;
 }
