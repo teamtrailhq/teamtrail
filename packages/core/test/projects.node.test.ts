@@ -282,23 +282,44 @@ test("hub: answering from the overview writes that project's answer file", async
   assert.equal((await call('POST', '/projects/0123456789/answer', { questionId: 'q1', text: 'x' })).status, 404);
 });
 
-test('hub: a project another live Lookout serves is only read, and links there', async () => {
+test('hub: a project another live Lookout serves is only read, and links there once it answers for it', async () => {
   const gamma = path.join(tmp, 'served', '.teamtrail');
   mkdirSync(path.join(gamma, '.agents'), { recursive: true });
-  writeJsonAtomic(path.join(gamma, '.agents', 'server.json'), {
-    url: 'http://localhost:7999/',
-    pid: process.ppid,
-    startedAt: now,
+  // The other Lookout: it answers on its URL for this very tracker folder.
+  const other = http.createServer((req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(req.url === '/__teamtrail/list' ? JSON.stringify({ root: realpathSync(gamma), files: [] }) : '{}');
   });
+  await new Promise<void>((r) => other.listen(0, '127.0.0.1', r));
+  const at = `http://localhost:${(other.address() as { port: number }).port}/`;
+  const lock = (url: string) =>
+    writeJsonAtomic(path.join(gamma, '.agents', 'server.json'), { url, pid: process.ppid, startedAt: now });
+  lock(at);
   const { entry } = registerProject({ configDir, root: gamma });
-  const r = await call<{ url: string }>('GET', `/p/${entry.id}/list`);
-  assert.equal(r.status, 409);
-  assert.equal(r.json.url, 'http://localhost:7999/');
-  const view = await call<ProjectsView>('GET', '/projects');
-  assert.deepEqual(view.json.projects.find((p) => p.id === entry.id)?.state, {
-    kind: 'elsewhere',
-    url: 'http://localhost:7999/',
-  });
+  const stateOf = async () =>
+    (await call<ProjectsView>('GET', '/projects')).json.projects.find((p) => p.id === entry.id)?.state;
+  try {
+    const r = await call<{ url: string }>('GET', `/p/${entry.id}/list`);
+    assert.equal(r.status, 409);
+    assert.equal(r.json.url, at);
+    assert.deepEqual(await stateOf(), { kind: 'elsewhere', url: at });
+    // A lock any local process could write: still not opened here (one root, one reconciler), but its URL is
+    // never offered unless it is on this machine and answers as a Teamtrail for this folder.
+    for (const forged of [
+      'https://evil.example/',
+      'http://192.168.1.9:7420/',
+      'javascript:alert(1)',
+      'http://localhost:1/',
+    ]) {
+      lock(forged);
+      assert.deepEqual(await stateOf(), { kind: 'elsewhere' }, forged);
+      const refused = await call<{ url?: string }>('GET', `/p/${entry.id}/list`);
+      assert.equal(refused.status, 409);
+      assert.equal(refused.json.url, undefined, forged);
+    }
+  } finally {
+    other.close();
+  }
 });
 
 test('hub: adding a path creates its tracker folder; a missing one reads as missing', async () => {

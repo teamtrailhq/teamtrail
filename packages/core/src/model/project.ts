@@ -33,7 +33,10 @@ export interface ProjectsFile {
  * `ok`: readable, and served by this process (or by nobody yet). `missing`: the folder is gone.
  * `elsewhere`: another live `teamtrail` serves it; this process only reads its files and links there.
  */
-export type ProjectState = { kind: 'ok' } | { kind: 'missing' } | { kind: 'elsewhere'; url: string };
+export type ProjectState =
+  | { kind: 'ok' }
+  | { kind: 'missing' }
+  | { kind: 'elsewhere'; /** The Lookout serving it, once it answers as one (elsewhereUrl.ts). */ url?: string };
 
 export type ProjectTracker =
   | { kind: 'markdown' }

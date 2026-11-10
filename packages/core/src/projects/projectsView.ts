@@ -1,6 +1,7 @@
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { AttentionView } from '../model/attention';
 import type { ProjectEntry, ProjectsView, ProjectState } from '../model/project';
+import { verifiedElsewhere } from './elsewhereUrl';
 import { mergeAttention } from './mergeAttention';
 import { projectSummary } from './projectSummary';
 
@@ -21,7 +22,7 @@ export async function projectsView(src: ProjectsSource): Promise<ProjectsView> {
   const results = await Promise.all(
     src.entries.map(async (entry) => {
       const home = entry.id === src.homeId;
-      const state = src.stateOf(entry);
+      const state = await verifiedElsewhere(entry.root, src.stateOf(entry));
       try {
         const adapter = state.kind === 'missing' ? undefined : await src.adapterOf(entry, state);
         return await projectSummary({ entry, home, state, adapter, configDir: src.configDir, now });

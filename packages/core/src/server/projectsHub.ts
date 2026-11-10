@@ -3,6 +3,7 @@ import path from 'node:path';
 import { writeLookoutLock } from '../agents/lookoutLock';
 import type { ProjectEntry, ProjectState } from '../model/project';
 import { insideRoot } from '../projects/confinePath';
+import { verifiedElsewhere } from '../projects/elsewhereUrl';
 import { fileAdapter } from '../projects/fileAdapter';
 import { ProjectBridges, type ProjectBridgesOptions } from '../projects/projectBridges';
 import { projectEntries } from '../projects/projectEntries';
@@ -103,8 +104,11 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     if (!entry) return sendJson(res, 404, { error: `unknown project "${id}"` });
     const state = stateOf(entry);
     if (state.kind === 'missing') return sendJson(res, 404, { error: 'project folder not found' });
-    if (state.kind === 'elsewhere')
-      return sendJson(res, 409, { error: 'another Lookout serves this project', url: state.url });
+    if (state.kind === 'elsewhere') {
+      const checked = await verifiedElsewhere(entry.root, state);
+      const there = checked.kind === 'elsewhere' ? checked.url : undefined;
+      return sendJson(res, 409, { error: 'another Lookout serves this project', ...(there ? { url: there } : {}) });
+    }
     checkPath(entry.root, url);
     const bridge = id === homeId ? o.home : bridges.get(entry);
     req.url = rest + url.search;

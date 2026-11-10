@@ -48,7 +48,8 @@ function trackerWhere(t: ProjectSummary['tracker']): string | undefined {
 
 /** The detail line: the top of its queue, else why the summary is partial, else where it lives. */
 export function projectDetail(p: ProjectSummary): string {
-  if (p.state.kind === 'elsewhere') return `Served by another Lookout · ${p.state.url}`;
+  if (p.state.kind === 'elsewhere')
+    return p.state.url ? `Served by another Lookout · ${p.state.url}` : 'Served by another Teamtrail on this machine';
   return p.top?.title ?? p.note ?? p.path;
 }
 
@@ -59,7 +60,7 @@ export function projectDetail(p: ProjectSummary): string {
 export function openProject(p: ProjectSummary, home: string, item?: string) {
   if (p.state.kind === 'missing') return;
   if (p.state.kind === 'elsewhere') {
-    const url = webUrl(p.state.url);
+    const url = p.state.url ? webUrl(p.state.url) : undefined;
     if (!url) return;
     const there = new URL(url);
     if (item) there.searchParams.set(ITEM_PARAM, item);
