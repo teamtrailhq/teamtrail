@@ -34,8 +34,18 @@ const ALLOWED = new RegExp(
 
 const PROXY = /^(https?|all|ftp)_proxy$/i;
 
-/** A proxy URL without the user and password it may carry (`http://ada:pw@proxy:3128` → `http://proxy:3128`). */
-const withoutUserinfo = (value: string) => value.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^@/?#]*@/i, '$1');
+/**
+ * A proxy setting without the user and password it may carry, with or without a scheme
+ * (`http://ada:pw@proxy:3128` and `ada:pw@proxy:3128` → `proxy:3128` after the scheme). Everything up to the
+ * last `@` goes: a password may hold an unencoded `/`, `?`, `#` or `@`, and a proxy URL has no path worth an
+ * `@`. Erring that way can only lose a setting, never pass a credential.
+ */
+function withoutUserinfo(value: string) {
+  const scheme = /^[a-z][a-z0-9+.-]*:\/\//i.exec(value)?.[0] ?? '';
+  const rest = value.slice(scheme.length);
+  const at = rest.lastIndexOf('@');
+  return at === -1 ? value : scheme + rest.slice(at + 1);
+}
 
 export interface ChildEnv {
   env: NodeJS.ProcessEnv;

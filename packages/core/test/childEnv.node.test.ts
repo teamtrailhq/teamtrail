@@ -193,3 +193,13 @@ test('PASS-shaped names stay behind, and proxies pass without the credentials in
   // A proxy value that isn't a URL is passed as it is: there's nothing to strip.
   assert.equal(childEnv({ HTTP_PROXY: 'proxy.example:3128' }).env.HTTP_PROXY, 'proxy.example:3128');
 });
+
+test('proxy credentials are stripped with or without a scheme, whatever the password holds', () => {
+  const proxy = (v: string) => childEnv({ HTTPS_PROXY: v }).env.HTTPS_PROXY;
+  assert.equal(proxy('user:pw@proxy.example:8080'), 'proxy.example:8080');
+  assert.equal(proxy('http://user:p/a?s#s@proxy.example:8080/'), 'http://proxy.example:8080/');
+  assert.equal(proxy('http://us@er:p@ss@proxy.example:8080'), 'http://proxy.example:8080');
+  assert.equal(proxy('p/w@proxy.example:8080'), 'proxy.example:8080');
+  assert.equal(proxy('http://proxy.example:8080'), 'http://proxy.example:8080');
+  assert.equal(proxy('proxy.example:8080'), 'proxy.example:8080');
+});
