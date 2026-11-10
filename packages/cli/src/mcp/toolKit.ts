@@ -37,7 +37,7 @@ export const riskPaths = z
   .array(z.string())
   .max(200)
   .describe(
-    'Repo-relative files the decision changes (no absolute paths, nothing outside the repo); checked against the risk policy path rules. Required for a remote completion of verified work.',
+    'Repo-relative files the decision changes (an absolute path inside the repo counts as relative; nothing outside it); checked against the risk policy path rules. Required for a remote completion of verified work.',
   );
 
 type Extra = {
