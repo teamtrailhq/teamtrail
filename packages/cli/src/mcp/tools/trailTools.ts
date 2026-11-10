@@ -1,6 +1,7 @@
 import { CRITERION_KINDS, type CriterionKind } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
+import { text } from '../lineSafety';
 import { type DefineTool, guideId, trail, ticketType } from '../toolKit';
 
 /** Trail tools: status, start, resume and edit a trail. */
@@ -36,8 +37,8 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
     },
     {
       title: z.string().min(1).describe('Short trail title.'),
-      destination: z.string().min(1).describe('What "done" looks like.'),
-      notes: z.string().optional(),
+      destination: text().min(1).describe('What "done" looks like.'),
+      notes: text().optional(),
       mode: z.enum(['plan+execute', 'plan-only']).optional().describe('plan-only disables execute tickets.'),
       decided: z.array(z.string()).optional().describe('Decisions already made, one line each.'),
       unspecified: z.array(z.string()).optional().describe('Known unknowns, kept under Not yet specified.'),
@@ -48,7 +49,7 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
             ref: z.string().describe('Local ref used by blockedBy, e.g. "auth".'),
             title: z.string(),
             type: ticketType,
-            body: z.string().optional(),
+            body: text().optional(),
             hitl: z.boolean().optional().describe('task/execute only: needs the human.'),
             blockedBy: z.array(z.string()).optional().describe('Refs of tickets that must close first.'),
             guide: guideId.optional(),
@@ -121,8 +122,8 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
     },
     {
       trail,
-      destination: z.string().optional(),
-      notes: z.string().optional(),
+      destination: text().optional(),
+      notes: text().optional(),
       addUnspecified: z.array(z.string()).optional(),
       addOutOfScope: z.array(z.string()).optional(),
       addAssumptions: z
@@ -143,16 +144,15 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
     },
     {
       trail,
-      summary: z.string().min(1).describe('What this trail changes, in a few lines.'),
-      productContext: z
-        .string()
+      summary: text().min(1).describe('What this trail changes, in a few lines.'),
+      productContext: text()
         .optional()
         .describe('Who it affects, business rules and UX principles that apply, plan or pricing constraints.'),
-      existing: z.string().min(1).describe('Files, services and modules involved, each with its path and one line.'),
-      conventions: z.string().optional().describe('Conventions and abstractions to follow.'),
-      dataModel: z.string().optional().describe('Data model impact.'),
-      api: z.string().optional().describe('API impact.'),
-      risks: z.string().optional().describe('Risks and possible regressions.'),
+      existing: text().min(1).describe('Files, services and modules involved, each with its path and one line.'),
+      conventions: text().optional().describe('Conventions and abstractions to follow.'),
+      dataModel: text().optional().describe('Data model impact.'),
+      api: text().optional().describe('API impact.'),
+      risks: text().optional().describe('Risks and possible regressions.'),
       assumptions: z.array(z.string()).optional().describe('Assumptions you rely on, one each.'),
       openQuestions: z.array(z.string()).optional(),
     },

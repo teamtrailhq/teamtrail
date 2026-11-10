@@ -4,6 +4,7 @@ import {
   supersessionChain,
   decisionStatus,
   DECISION_SOURCES,
+  webUrl,
 } from '@teamtrail/core';
 import { useState, useEffect, type FormEvent } from 'react';
 import { Pill, Meta, MetaLine, Button, Card, Field, Empty } from '../../components/ui';
@@ -35,6 +36,7 @@ export function DecisionDetail(props: {
   const status = decisionStatus(d);
   const ticket = d.ticketId ? snap?.tickets.find((t) => t.id === d.ticketId) : undefined;
   const now = Date.now();
+  const link = webUrl(d.source.url);
   return (
     <div className="detail dv-d">
       <div className="d-head">
@@ -74,15 +76,15 @@ export function DecisionDetail(props: {
         <dt>Source</dt>
         <dd>
           {DECISION_SOURCES[d.source.kind].label}
-          {d.source.url && (
+          {link && (
             <>
               {' · '}
-              <a href={d.source.url} target="_blank" rel="noreferrer">
+              <a href={link} target="_blank" rel="noreferrer">
                 {d.source.label ?? 'link'}
               </a>
             </>
           )}
-          {!d.source.url && d.source.label && ` · ${d.source.label}`}
+          {!link && d.source.label && ` · ${d.source.label}`}
           {d.source.ref && <span className="ref"> {d.source.ref}</span>}
         </dd>
       </dl>

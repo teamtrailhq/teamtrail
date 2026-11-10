@@ -1,3 +1,4 @@
+import { webUrl } from '@teamtrail/core';
 import { Pill } from '../../components/ui';
 import { usePrSync } from '../../hooks';
 import { prSync, syncedAgo } from '../../lib';
@@ -22,7 +23,7 @@ export function PrFlagBadges({ mapId, ticketId }: { mapId: string; ticketId: str
     <div className="pr-flags">
       <span className={`pr-chip pr-${pr?.state ?? 'unread'}`} title={pr ? `${pr.title}\n${pr.headRef}` : undefined}>
         {pr ? (
-          <a href={pr.url} target="_blank" rel="noreferrer noopener">
+          <a href={webUrl(pr.url)} target="_blank" rel="noreferrer noopener">
             PR #{pr.number} · {pr.state}
             {pr.draft ? ' · draft' : ''}
           </a>

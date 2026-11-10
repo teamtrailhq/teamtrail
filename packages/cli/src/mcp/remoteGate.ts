@@ -90,6 +90,6 @@ export function refuseHumanTools(server: McpServer) {
 export function assertHumanDecided(at: { remote: boolean; ticket: Ticket; humanAnswered: boolean }) {
   if (!at.remote || attention(at.ticket) !== 'hitl' || at.humanAnswered) return;
   throw new OperationError(
-    `${at.ticket.key} is the human's to decide, and over a remote connection their answer has to come through the Lookout or Slack. Ask with ask_human, then close it in this session once they've answered.`,
+    `${at.ticket.key} is the human's to decide, and over a remote connection their answer has to come through the Lookout or Slack. Ask with ask_human while you hold the ticket, then close it once they've answered (each answer backs one decision).`,
   );
 }

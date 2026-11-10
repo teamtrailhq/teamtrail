@@ -1,21 +1,25 @@
 import { DESTINATION_REASONS, type DestinationReason } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
+import { text as multiline } from '../lineSafety';
 import { type DefineTool, trail, ticket, ticketType, waitControl } from '../toolKit';
 import { challengeAssumptionOp, listAssumptions } from '../trail/assumptions';
 import { proposeRerouteOp, rerouteStatus } from '../trail/reroutes';
 
 const ref = z.string().min(1);
-const text = z.string().min(1);
+/** One line: a title, a list item. */
+const line = z.string().min(1);
+/** Free text: reasons, evidence, bodies. */
+const text = multiline().min(1);
 
 /** One typed change to the map. Tickets by key (#12) or id; tickets this proposal adds by their `ref`. */
 const change = z.discriminatedUnion('op', [
   z.object({
     op: z.literal('add_ticket'),
     ref: ref.describe('Local name other changes can use, e.g. "batch-fallback".'),
-    title: text,
+    title: line,
     type: ticketType,
-    body: z.string().optional(),
+    body: multiline().optional(),
     hitl: z.boolean().optional(),
     blockedBy: z.array(ref).optional(),
   }),
@@ -24,7 +28,7 @@ const change = z.discriminatedUnion('op', [
     op: z.literal('edit_ticket'),
     ticket: ref,
     title: z.string().optional().describe('The new title.'),
-    body: z.string().optional().describe('The new description; it replaces the old one.'),
+    body: multiline().optional().describe('The new description; it replaces the old one.'),
   }),
   z.object({
     op: z.literal('rewire'),
@@ -34,8 +38,8 @@ const change = z.discriminatedUnion('op', [
   }),
   z.object({ op: z.literal('supersede_decision'), decision: ref.describe('D-<n>'), answer: text, rationale: text }),
   z.object({ op: z.literal('update_destination'), text }),
-  z.object({ op: z.literal('add_unspecified'), text }),
-  z.object({ op: z.literal('add_out_of_scope'), text }),
+  z.object({ op: z.literal('add_unspecified'), text: line }),
+  z.object({ op: z.literal('add_out_of_scope'), text: line }),
   z.object({ op: z.literal('reopen'), ticket: ref, reason: text }),
 ]);
 

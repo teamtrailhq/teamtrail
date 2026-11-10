@@ -10,7 +10,7 @@ import { handleBriefs } from './briefRoutes';
 import { handleCriteria } from './criteriaRoutes';
 import { handleDecisions } from './decisionRoutes';
 import { handleGuides } from './guideRoutes';
-import { BadRequest, openEventStream, readText, sendJson } from './http';
+import { BadRequest, openEventStream, readText, refuseEarly, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
 import { handleKnowledge } from './knowledgeRoutes';
 import { handleLeases } from './leaseRoutes';
@@ -19,6 +19,7 @@ import { handlePolicy } from './policyRoutes';
 import { handleRemoteAgents } from './remoteAgentRoutes';
 import { fromThisMachine, requestRefusal } from './requestGuard';
 import { handleReroutes } from './rerouteRoutes';
+import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { sendTrackerError } from './trackerErrors';
 import { createTrackerRoutes } from './trackerRoutes';
 import { handleVerification } from './verificationRoutes';
@@ -120,7 +121,11 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   async function handle(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? '/', 'http://x');
     const refusal = requestRefusal(req);
-    if (refusal) return sendJson(res, 403, { error: refusal });
+    if (refusal) return refuseEarly(res, { error: refusal });
+    const local = fromThisMachine(req, peer);
+    if (url.pathname === '/machine') return sendJson(res, 200, { local });
+    if (!local && thisMachineOnly(req.method, url.pathname))
+      return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
     try {
       for (const route of api) if (await route(req, res, url)) return;
       res.statusCode = 404;

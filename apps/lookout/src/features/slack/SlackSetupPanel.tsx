@@ -1,5 +1,5 @@
 import { type SlackStatus, type SlackTokenResult, appIdFromToken, slackLinks } from '@teamtrail/connector-slack';
-import { BRAND } from '@teamtrail/core';
+import { BRAND, webUrl } from '@teamtrail/core';
 import { useState, type ReactNode } from 'react';
 import { Meta, Card } from '../../components/ui';
 import { ExtLink } from './ExtLink';
@@ -80,7 +80,7 @@ export function SlackSetupPanel(props: { s: SlackStatus; set: (s: SlackStatus) =
           parts={[
             'Waiting for the app-level token',
             s.links.create && (
-              <a key="again" href={s.links.create} target="_blank" rel="noreferrer">
+              <a key="again" href={webUrl(s.links.create)} target="_blank" rel="noreferrer">
                 Open the manifest again
               </a>
             ),

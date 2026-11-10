@@ -28,6 +28,6 @@ function askInstead(risk: DecisionRisk) {
   const category = risk.category ? ` with category "${risk.category}"` : '';
   return (
     `High-risk call (${risk.reason}): the project's risk policy says the human decides this, not an agent. ` +
-    `Ask with ask_human${category}. Once they answer, close the ticket, or record_decision with decidedBy "trail lead": their answer is what makes it theirs.`
+    `Ask with ask_human${category}. Once they answer, close the ticket, or record_decision with that questionId: their answer is what makes it theirs.`
   );
 }

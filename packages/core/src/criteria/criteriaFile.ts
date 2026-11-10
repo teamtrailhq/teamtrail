@@ -1,3 +1,4 @@
+import { oneLine } from '../model/safeText';
 import { isCriterionKind, type Criterion, type TicketCriteria } from './criteria';
 
 /**
@@ -9,10 +10,19 @@ export function serializeCriteria(title: string, tickets: TicketCriteria[]) {
     .filter((t) => t.criteria.length)
     .map(
       (t) =>
-        `## ${t.ticketKey} (id ${t.ticketId})${t.confirmed ? ' · confirmed' : ''}\n\n` +
-        t.criteria.map((c) => `- ${c.id} (${c.kind}${c.source ? `, ${c.source}` : ''}) ${c.text}`).join('\n'),
+        `## ${oneLine(t.ticketKey)} (id ${oneLine(t.ticketId)})${t.confirmed ? ' · confirmed' : ''}\n\n` +
+        t.criteria.map(criterionLine).join('\n'),
     );
   return `# Acceptance criteria: ${title}\n\n${parts.join('\n\n')}\n`;
+}
+
+/**
+ * One criterion, on one line whatever its text holds: a line break in it could otherwise start another ticket's
+ * section, "· confirmed" included. A source that isn't a plain id is left out rather than written.
+ */
+function criterionLine(c: Criterion) {
+  const source = c.source && /^[\w-]+$/.test(c.source) ? `, ${c.source}` : '';
+  return `- ${c.id} (${c.kind}${source}) ${oneLine(c.text)}`;
 }
 
 const LINE = /^-\s+(AC-\d+)\s+\(([\w-]+)(?:,\s*([\w-]+))?\)\s+(.+)$/;

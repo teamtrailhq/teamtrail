@@ -66,6 +66,8 @@ export interface CloseInput {
   ticket?: string;
   trail?: string;
   resolution: string;
+  /** The answered question this close is the human's decision by; default the latest one asked on the ticket. */
+  questionId?: string;
   summary?: string;
   rationale?: string;
   alternatives?: string[];

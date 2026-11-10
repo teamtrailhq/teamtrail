@@ -26,6 +26,7 @@ import {
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { AgentLeases } from './agentLeases';
 import { AgentSessions } from './agentSessions';
+import type { HumanAnswer } from './humanAnswer';
 import { stampModel } from './models';
 import { trailNameFamily } from './trailName';
 import type { AgentOptions, AgentTracker } from './types';
@@ -46,6 +47,8 @@ export class AgentContext {
   readonly sessionIds: string[] = [];
   /** Answers being waited for, by question id. */
   readonly waits = new Map<string, Promise<{ text: string; author: string }>>();
+  /** The human's answers to this agent's questions, by question id: what a decision of theirs rests on. */
+  readonly answers = new Map<string, HumanAnswer>();
   private trailName?: string;
   /** Set for an agent that shares its process with others (HTTP): what holds its trail name instead of the pid. */
   private nameHolder?: string;

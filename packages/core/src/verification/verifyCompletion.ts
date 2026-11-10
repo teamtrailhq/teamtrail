@@ -209,7 +209,7 @@ async function settle(env: VerifyEnv, a: VerificationAttempt, sub: Submission, m
       summary: a.summary,
       author: a.agent,
       transcript: sub.transcript,
-      decision: { ...d, rationale: a.rationale ?? d.rationale, alternatives: a.alternatives ?? d.alternatives },
+      decision: { ...d, rationale: d.rationale ?? a.rationale, alternatives: a.alternatives ?? d.alternatives },
     });
   } else
     await transition(env.adapter, a.mapId, a.ticketId, { ...engine, event: o.event, to: o.to, expect: 'verifying' });

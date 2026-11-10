@@ -8,9 +8,8 @@ import { createRemoteToken, remoteTokenViews, revokeRemoteToken } from '../remot
 import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
+import { ELSEWHERE } from './thisMachineRoutes';
 import { crossSite } from './trackerErrors';
-
-const ELSEWHERE = 'Tokens are managed on the machine Teamtrail runs on. Open the Lookout there.';
 
 const view = (root: string) => ({ tokens: remoteTokenViews(root), endpoints: readMcpEndpoints(root) });
 

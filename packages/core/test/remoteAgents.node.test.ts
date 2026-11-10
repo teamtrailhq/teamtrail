@@ -1,15 +1,17 @@
 import assert from 'node:assert/strict';
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { claimTrailName, releaseTrailName } from '../src/agents/trailNameClaim';
-import { createTrackerBridge, fromThisMachine, type TrackerBridge } from '../src/bridge';
+import { createProjectsHub, createTrackerBridge, fromThisMachine, type TrackerBridge } from '../src/bridge';
 import { journalFile, journalPath } from '../src/history/journalFile';
 import { blobHash } from '../src/knowledge/knowledgeStore';
 import { REMOTE_AGENTS_JOURNAL } from '../src/model/lifecycle';
 import type { McpEndpoint, RemoteTokenView } from '../src/model/remoteToken';
+import { webUrl } from '../src/model/webUrl';
 import { readMcpEndpoints, writeMcpEndpoint } from '../src/remoteAgents/mcpEndpoints';
 import {
   createRemoteToken,
@@ -20,6 +22,7 @@ import {
   verifyRemoteToken,
 } from '../src/remoteAgents/remoteTokens';
 import { REMOTE_TOKENS_FILE } from '../src/remoteAgents/remoteTokenStore';
+import { thisMachineOnly } from '../src/server/thisMachineRoutes';
 
 const tmp = (name: string) =>
   path.join(mkdtempSync(path.join(os.tmpdir(), `teamtrail-${name}-`)), 'repo', '.teamtrail');
@@ -292,6 +295,202 @@ test('bridge: tokens are managed from this machine only; another device on the n
     lan.close();
     srv.close();
   }
+});
+
+test('another device on the network reads, answers and approves, but changes nothing this machine runs or trusts', async () => {
+  const r = tmp('remote-lan');
+  mkdirSync(r, { recursive: true });
+  const lan = createTrackerBridge(r, {
+    env: {},
+    configDir: tmp('remote-lan-config'),
+    cwd: path.dirname(r),
+    peer: (req) => (req.headers['x-test-peer'] as string | undefined) ?? req.socket.remoteAddress,
+  });
+  const srv = http.createServer((req, res) => void lan.handle(req, res));
+  await new Promise<void>((done) => srv.listen(0, '127.0.0.1', done));
+  const port = (srv.address() as { port: number }).port;
+  const phone = { 'x-test-peer': '192.168.1.20', Host: `192.168.1.5:${port}` };
+  const from = (headers: Record<string, string>, method: string, p: string) =>
+    raw({ port, method, path: p, headers, body: method === 'GET' ? undefined : '{}' }).catch((e) => {
+      throw new Error(`${method} ${p}: ${(e as Error).message}`);
+    });
+  const REFUSED: [string, string][] = [
+    ['GET', '/remote-agents'],
+    ['POST', '/remote-agents/tokens'],
+    ['POST', '/remote-agents/tokens/revoke'],
+    ['PUT', '/trackers'],
+    ['POST', '/trackers/test'],
+    ['DELETE', '/trackers/credentials/github'],
+    ['POST', '/trackers/github/sign-in/start'],
+    ['DELETE', '/trackers/github/sign-in'],
+    ['POST', '/trackers/linear/teams'],
+    ['POST', '/slack/setup'],
+    ['PUT', '/policy'],
+    ['PUT', '/workspaces'],
+    ['POST', '/workspaces/remove'],
+    ['POST', '/guides/approve'],
+    ['POST', '/guides/checks/approve'],
+    ['POST', '/guides/catalog/add'],
+    ['POST', '/guides/remove'],
+    ['PUT', '/file?path=verification.json'],
+  ];
+  const OPEN: [string, string][] = [
+    ['GET', '/machine'],
+    ['GET', '/list'],
+    ['GET', '/agents'],
+    ['POST', '/agents/answer'],
+    ['GET', '/agents/leases'],
+    ['POST', '/agents/leases/release'],
+    ['GET', '/trackers'],
+    ['GET', '/policy'],
+    ['GET', '/workspaces'],
+    ['GET', '/guides'],
+    ['POST', '/guides/ticket'],
+    ['POST', '/guides/team'],
+    ['GET', '/verification/config'],
+    ['POST', '/verification/action'],
+    ['POST', '/criteria/confirm'],
+    ['POST', '/attention/snooze'],
+    ['POST', '/journal'],
+    ['PUT', '/file?path=trail/notes.md'],
+  ];
+  try {
+    for (const [method, p] of REFUSED) {
+      const res = await from(phone, method, p);
+      assert.ok(res.status === 403 || res.status === 400, `${method} ${p} from the phone: ${res.status}`);
+      if (!p.startsWith('/file')) assert.equal(JSON.parse(res.text).elsewhere, true, `${method} ${p}`);
+    }
+    for (const [method, p] of OPEN) {
+      const res = await from(phone, method, p);
+      assert.notEqual(res.status, 403, `${method} ${p} from the phone`);
+    }
+    assert.deepEqual(JSON.parse((await from(phone, 'GET', '/machine')).text), { local: false });
+    assert.deepEqual(JSON.parse((await from({}, 'GET', '/machine')).text), { local: true });
+    assert.equal(existsSync(path.join(r, 'policy.json')), false);
+    assert.equal(existsSync(path.join(r, 'workspaces.json')), false);
+  } finally {
+    lan.close();
+    srv.close();
+  }
+});
+
+test('the projects hub: another device sees the projects, and cannot add, remove or reconfigure them', async () => {
+  const r = tmp('remote-hub');
+  const configDir = tmp('remote-hub-config');
+  mkdirSync(r, { recursive: true });
+  const peer = (req: http.IncomingMessage) =>
+    (req.headers['x-test-peer'] as string | undefined) ?? req.socket.remoteAddress;
+  const home = createTrackerBridge(r, { env: {}, configDir, cwd: path.dirname(r), peer });
+  const hub = createProjectsHub({
+    home,
+    openBridge: (p) => createTrackerBridge(p.root, { env: {}, configDir }),
+    configDir,
+    peer,
+  });
+  const srv = http.createServer((req, res) => void hub.handle(req, res));
+  await new Promise<void>((done) => srv.listen(0, '127.0.0.1', done));
+  const port = (srv.address() as { port: number }).port;
+  const phone = { 'x-test-peer': '192.168.1.20', Host: `192.168.1.5:${port}` };
+  try {
+    for (const [method, p] of [
+      ['POST', '/projects'],
+      ['PUT', '/projects/settings'],
+      ['DELETE', `/projects/${hub.homeId}`],
+      ['POST', `/p/${hub.homeId}/remote-agents/tokens`],
+      ['PUT', `/p/${hub.homeId}/policy`],
+    ]) {
+      const res = await raw({ port, method, path: p, headers: phone, body: '{}' });
+      assert.equal(res.status, 403, `${method} ${p}`);
+      assert.equal(JSON.parse(res.text).elsewhere, true, `${method} ${p}`);
+    }
+    assert.equal((await raw({ port, path: '/projects', headers: phone })).status, 200);
+    assert.equal((await raw({ port, path: `/p/${hub.homeId}/agents`, headers: phone })).status, 200);
+  } finally {
+    hub.close();
+    home.close();
+    srv.close();
+  }
+});
+
+test('the list of this-machine-only routes, as the predicate reads it', () => {
+  const only = (method: string, p: string) => thisMachineOnly(method, p);
+  assert.equal(only('GET', '/remote-agents'), true);
+  assert.equal(only('DELETE', '/projects/abc123'), true);
+  assert.equal(only('POST', '/projects'), true);
+  assert.equal(only('PUT', '/projects/settings'), true);
+  assert.equal(only('POST', '/projects/abc123/answer'), false, 'answering from the overview stays open');
+  assert.equal(only('GET', '/projects'), false);
+  assert.equal(only('POST', '/guides/ticket'), false);
+  assert.equal(only('POST', '/guides/ticketx'), true);
+  assert.equal(only('POST', '/tracker/github/call'), false, 'the Lookout reads a GitHub tracker through this');
+});
+
+test('a real connection from a non-loopback address is another device (no test seam)', async (t) => {
+  const external = Object.values(os.networkInterfaces())
+    .flatMap((list) => list ?? [])
+    .find((a) => a.family === 'IPv4' && !a.internal)?.address;
+  // The socket's own view of both ends, with nothing injected.
+  const seen: (string | undefined)[] = [];
+  const probe = net.createServer((socket) => {
+    seen.push(String(fromThisMachine({ socket } as http.IncomingMessage)));
+    socket.end();
+  });
+  await new Promise<void>((done) => probe.listen(0, '0.0.0.0', done));
+  const probePort = (probe.address() as net.AddressInfo).port;
+  const dial = (host: string) =>
+    new Promise<void>((done, fail) => {
+      const c = net.connect(probePort, host);
+      c.on('close', () => done());
+      c.on('error', fail);
+    });
+  await dial('127.0.0.1');
+  assert.deepEqual(seen, ['true']);
+  if (!external) {
+    probe.close();
+    return t.skip('this machine has no non-loopback IPv4 address to connect from');
+  }
+  await dial(external);
+  probe.close();
+  assert.deepEqual(seen, ['true', 'false'], `a connection arriving from ${external} is not this machine`);
+
+  // And through a real bridge with no seam: the same route, by loopback and by the LAN address.
+  const r = tmp('remote-real-peer');
+  mkdirSync(r, { recursive: true });
+  const real = createTrackerBridge(r, { env: {}, cwd: path.dirname(r) });
+  const srv = http.createServer((req, res) => void real.handle(req, res));
+  await new Promise<void>((done) => srv.listen(0, '0.0.0.0', done));
+  const port = (srv.address() as { port: number }).port;
+  try {
+    const viaLan = await fetch(`http://${external}:${port}/remote-agents`);
+    assert.equal(viaLan.status, 403);
+    assert.equal(((await viaLan.json()) as { elsewhere?: boolean }).elsewhere, true);
+    assert.equal((await fetch(`http://${external}:${port}/agents`)).status, 200);
+    assert.equal((await fetch(`http://127.0.0.1:${port}/remote-agents`)).status, 200);
+  } finally {
+    real.close();
+    srv.close();
+  }
+});
+
+test('links built from stored data are web links or nothing', () => {
+  for (const ok of ['https://github.com/o/r/pull/3', 'http://localhost:7420/?project=ab12cd'])
+    assert.equal(webUrl(ok), ok);
+  for (const bad of [
+    'javascript:alert(1)',
+    'JaVaScRiPt:alert(1)',
+    ' javascript:alert(1)',
+    'data:text/html,x',
+    'vbscript:x',
+    'file:///etc/passwd',
+    '//evil.example',
+    'not a url',
+    '',
+    undefined,
+    null,
+  ])
+    assert.equal(webUrl(bad), undefined, String(bad));
+  assert.equal(webUrl('slack://open?team=T1', ['slack:']), 'slack://open?team=T1');
+  assert.equal(webUrl('slack://open?team=T1'), undefined);
 });
 
 test('where a request comes from is read from the socket: loopback in every spelling, nothing else', () => {

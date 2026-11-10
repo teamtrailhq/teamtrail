@@ -1,16 +1,23 @@
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
+import { text } from '../lineSafety';
 import { checklistAnswers, type DefineTool, trail, riskCategory, riskPaths, ticket, waitControl } from '../toolKit';
 
 const CHECKS_WAIT = 'Waiting for the verification checks';
 const completion = {
   trail,
   ticket: ticket.optional(),
-  resolution: z.string().min(1).describe('The decision or what was done, in full.'),
+  resolution: text().min(1).describe('The decision or what was done, in full.'),
   summary: z.string().optional().describe('One line for the Logbook. Default: first sentence of the resolution.'),
-  rationale: z.string().optional(),
+  rationale: text().optional(),
   alternatives: z.array(z.string()).optional(),
   postTranscript: z.boolean().optional().describe('Also post the question/answer transcript as a ticket comment.'),
+  questionId: z
+    .string()
+    .optional()
+    .describe(
+      'When the human decided this: the ask_human question they answered, asked on this ticket. Default: your latest unused one on it. The record then keeps their answer as given.',
+    ),
   category: riskCategory.optional(),
   paths: riskPaths.optional(),
   assumes: z
@@ -55,7 +62,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
       message: z.string().optional().describe('Log line, or detail for the step.'),
       step: z.union([z.string(), z.number().int()]).optional(),
       level: z.enum(['info', 'ok', 'warn', 'alert']).optional(),
-      say: z.string().optional().describe('Message shown in the session conversation.'),
+      say: text().optional().describe('Message shown in the session conversation.'),
       inputTokens: z.number().nonnegative().optional().describe('Input tokens used since the last report.'),
       outputTokens: z.number().nonnegative().optional(),
       costUsd: z.number().nonnegative().optional().describe('Spend in USD since the last report.'),
@@ -127,14 +134,14 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
       trail,
       ticket: ticket.optional().describe('The review ticket.'),
       verdict: z.enum(['PASS', 'FAIL', 'NEEDS_HUMAN']),
-      summary: z.string().min(1).describe('What you checked and what you found, in a few sentences.'),
+      summary: text().min(1).describe('What you checked and what you found, in a few sentences.'),
       findings: z
         .array(
           z.object({
             path: z.string().optional(),
             line: z.number().int().positive().optional(),
             severity: z.enum(['info', 'warn', 'error']),
-            text: z.string().min(1),
+            text: text().min(1),
           }),
         )
         .max(50)
@@ -156,17 +163,18 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
     {
       trail,
       ticket: ticket.optional(),
-      question: z.string().min(1),
-      answer: z.string().min(1),
+      question: text().min(1),
+      answer: text().min(1),
       summary: z.string().optional(),
-      rationale: z.string().optional(),
+      rationale: text().optional(),
       alternatives: z.array(z.string()).optional(),
-      decidedBy: z
+      questionId: z
         .string()
         .optional()
         .describe(
-          'Leave out for a decision of yours. "trail lead" when the human decided: accepted only after they answered a question you asked (ask_human); the record then carries their name and that conversation.',
+          'For a decision the human made: the ask_human question they answered. The record keeps the question as asked and their answer word for word, yours as its reading; each answer backs one decision.',
         ),
+      decidedBy: z.string().optional().describe('Not taken any more: use questionId for the human, leave out for you.'),
 
       appendToTrail: z.boolean().optional(),
       category: riskCategory.optional(),

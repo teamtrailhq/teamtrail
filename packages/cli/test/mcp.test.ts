@@ -173,7 +173,6 @@ describe('teamtrail MCP server', () => {
     await call('record_decision', {
       question: 'Host it where?',
       answer: 'Same static host as the landing page.',
-      decidedBy: 'trail lead',
     });
 
     const status = await call<{
@@ -188,7 +187,8 @@ describe('teamtrail MCP server', () => {
     expect(status.trail.ready.map((t) => t.key)).toEqual([key('build')]);
     expect(status.trail.decisions.map((d) => d.summary)).toEqual([
       'Release notes live in the in-app changelog module.',
-      'Group entries by version, newest first.',
+      // the human's decision is summarised in their own words, not the agent's
+      'By version (asked: Timeline or grouped by version?)',
       'Same static host as the landing page.',
     ]);
     expect(status.trail.spend).toMatchObject({ inputTokens: 1200, costUsd: 0.0081 });

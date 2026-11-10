@@ -1,6 +1,7 @@
 import { CRITERION_KINDS, type CriterionKind } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
+import { text } from '../lineSafety';
 import { type DefineTool, guideId, guidesFilter, trail, ticket, ticketType } from '../toolKit';
 
 /** Ticket tools: pick, claim, release and add tickets. */
@@ -78,7 +79,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
       trail,
       title: z.string().min(1),
       type: ticketType,
-      body: z.string().optional(),
+      body: text().optional(),
       hitl: z.boolean().optional(),
       blockedBy: z.array(z.string()).optional(),
       fromUnspecified: z.string().optional(),

@@ -1,5 +1,6 @@
 import { cachedUntilFailure } from '../../../lib/cachedUntilFailure';
 import { BRAND, MAP_LABEL, PLAN_ONLY_LABEL } from '../../../model/brand';
+import { guardMarkers } from '../../../model/safeText';
 import type {
   DecisionRecord,
   MapDoc,
@@ -13,12 +14,11 @@ import type { MapInput } from '../../adapter';
 import {
   authoredBody,
   decisionComment,
-  joinBody,
   mapLabels,
   mapBody,
   ticketFromIssue,
   ticketLabels,
-  ticketMeta,
+  ticketBody,
 } from '../format';
 import { TrackerError, type HttpOptions } from '../http';
 import { SyncedAdapter } from '../sync/syncedAdapter';
@@ -156,7 +156,7 @@ export class GitHubAdapter extends SyncedAdapter {
     await this.ensureLabels();
     const { body: i } = await this.gh.repo<RestIssue>('POST', '/issues', {
       title: input.title,
-      body: input.body,
+      body: guardMarkers(input.body),
       labels: ticketLabels(input.type, input.hitl),
     });
     this.issueIds.set(String(i.number), i.id);
@@ -189,7 +189,7 @@ export class GitHubAdapter extends SyncedAdapter {
   }
 
   protected async remoteEditTicket(_map: MapDoc, t: Ticket) {
-    await this.gh.repo('PATCH', `/issues/${t.id}`, { title: t.title, body: joinBody(t.body, ticketMeta(t)) });
+    await this.gh.repo('PATCH', `/issues/${t.id}`, { title: t.title, body: ticketBody(t) });
   }
 
   protected async remoteReopen(_map: MapDoc, t: Ticket) {
@@ -197,7 +197,7 @@ export class GitHubAdapter extends SyncedAdapter {
   }
 
   protected async remoteSetMeta(_map: MapDoc, t: Ticket) {
-    await this.gh.repo('PATCH', `/issues/${t.id}`, { body: joinBody(t.body, ticketMeta(t)) });
+    await this.gh.repo('PATCH', `/issues/${t.id}`, { body: ticketBody(t) });
   }
 
   protected async remoteComment(_map: MapDoc, t: Ticket, c: RemoteComment) {

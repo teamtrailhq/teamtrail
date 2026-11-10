@@ -1,6 +1,7 @@
 import { OperationError, recordDecision as saveDecision, STEPS, stepTag, type RiskCategory } from '@teamtrail/core';
 import type { AgentContext } from './agentContext';
 import { assertAssumes } from './assumptions';
+import { humanAnswerFor, humanDecision } from './humanAnswer';
 import { checkRisk } from './riskCheck';
 
 export function sessionView(ctx: AgentContext) {
@@ -66,16 +67,13 @@ function usageSource(measured: boolean, usage?: { source?: string }): string {
 }
 
 /**
- * Who a decision is by is never taken from the caller's word. Naming anyone but yourself in `decidedBy` says
- * "the human decided this": that holds only when they answered a question of this agent's, and then the record
- * carries their name from that answer and the conversation itself, so they can see what they were asked.
+ * `decidedBy` used to let the caller say who decided. Nobody can say that for the human: their decision is their
+ * answer to a question, named by `questionId`.
  */
-function decidedByHuman(ctx: AgentContext, claimed: string | undefined, agent: string) {
-  if (claimed === undefined || claimed === agent) return undefined;
-  const answered = ctx.sessions.lastHumanAnswer();
-  if (answered) return answered;
+function refuseClaim(claimed: string | undefined, agent: string) {
+  if (claimed === undefined || claimed === agent) return;
   throw new OperationError(
-    "decidedBy can't make a decision the human's: only their answer can. Ask with ask_human and record the decision once they've answered; without decidedBy it is recorded as yours.",
+    "decidedBy can't make a decision someone else's. For a decision the human made, pass questionId: the question you asked with ask_human that they answered. Without it the decision is recorded as yours.",
   );
 }
 
@@ -90,6 +88,8 @@ export async function recordDecision(
     rationale?: string;
     alternatives?: string[];
     decidedBy?: string;
+    /** The answered question this decision is the human's by. */
+    questionId?: string;
     appendToTrail?: boolean;
     category?: RiskCategory;
     paths?: string[];
@@ -100,8 +100,13 @@ export async function recordDecision(
   const snap = await ctx.resolveTrail(input.trail ?? (s?.info.mapId || undefined));
   const agent = await ctx.agentId();
   const t = input.ticket ? ctx.findTicket(snap, input.ticket) : undefined;
-  const human = decidedByHuman(ctx, input.decidedBy, agent);
-  const decidedBy = human?.author ?? agent;
+  refuseClaim(input.decidedBy, agent);
+  const answered = humanAnswerFor(ctx, { questionId: input.questionId, category: input.category });
+  // The human's: the question as asked and their words. The agent's own: what it passed.
+  const said = answered
+    ? humanDecision(answered, { agent, said: input.answer, rationale: input.rationale })
+    : { ...input, decidedBy: agent, transcript: undefined };
+  const { decidedBy } = said;
   const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, decidedBy });
   assertAssumes(snap, input.assumes);
   const rec = await saveDecision(
@@ -110,11 +115,11 @@ export async function recordDecision(
     {
       ticketId: t?.id,
       ticketKey: t?.key,
-      question: input.question,
-      answer: input.answer,
-      summary: input.summary,
+      question: said.question,
+      answer: said.answer,
+      summary: said.summary,
       alternatives: input.alternatives,
-      rationale: input.rationale,
+      rationale: said.rationale,
       decidedBy,
       participants: [...new Set([agent, decidedBy])].map((id) => ({ id })),
       source: {
@@ -124,10 +129,11 @@ export async function recordDecision(
       },
       ...(risk ? { risk } : {}),
       ...(input.assumes?.length ? { assumes: input.assumes } : {}),
-      ...(human ? { transcript: human.transcript } : {}),
+      ...(said.transcript ? { transcript: said.transcript } : {}),
     },
     { appendToTrail: input.appendToTrail },
   );
+  if (answered) answered.usedFor = rec.id;
   ctx.heartbeat({ ticketId: t?.id ?? s?.info.ticketId, decision: `${rec.id} · ${rec.summary}` });
   return { decision: rec };
 }

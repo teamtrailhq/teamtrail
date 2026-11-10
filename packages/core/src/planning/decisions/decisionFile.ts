@@ -1,4 +1,5 @@
 import { type Front, iso, writeFront, parseFront, str, arr, time } from '../../model/frontmatter';
+import { guardLines, oneLine, unguardLines } from '../../model/safeText';
 import type { Participant, DecisionRecord, TranscriptEntry, DecisionSource } from '../../model/types';
 import { isSourceKind, firstSentence } from './decisionRecord';
 import { riskFront, riskOf } from './decisionRiskFront';
@@ -6,6 +7,11 @@ import { riskFront, riskOf } from './decisionRiskFront';
 /* ---------- local-markdown file: <trail>/decisions/<id>.md ---------- */
 
 const SECTIONS = ['Question', 'Decision', 'Summary', 'Alternatives', 'Rationale', 'Transcript'] as const;
+
+/** The lines the reader takes for structure: the section headings, and inside the transcript each entry's head. */
+const SECTION = `## (?:${SECTIONS.join('|')})\\s*$`;
+const IN_TRANSCRIPT = `${SECTION}|### `;
+const block = (text: string) => guardLines(text.trim(), SECTION);
 
 const participantOut = (p: Participant) => (p.name ? `${p.id}|${p.name}` : p.id);
 
@@ -32,16 +38,20 @@ export function serializeDecision(d: DecisionRecord): string {
     ...riskFront(d.risk),
     ...(d.assumes?.length ? { assumes: d.assumes } : {}),
   };
-  const list = (xs: string[]) => (xs.length ? xs.map((x) => `- ${x}`).join('\n') : '_None._');
+  const list = (xs: string[]) => (xs.length ? xs.map((x) => `- ${oneLine(x)}`).join('\n') : '_None._');
   const transcript = d.transcript.length
-    ? d.transcript.map((e) => `### ${e.author} · ${e.from} @ ${iso(e.at)}\n\n${e.text.trim()}`).join('\n\n')
+    ? d.transcript
+        .map(
+          (e) => `### ${oneLine(e.author)} · ${e.from} @ ${iso(e.at)}\n\n${guardLines(e.text.trim(), IN_TRANSCRIPT)}`,
+        )
+        .join('\n\n')
     : '_None._';
   const body = [
-    `## Question\n\n${d.question.trim()}`,
-    `## Decision\n\n${d.answer.trim()}`,
-    `## Summary\n\n${d.summary.trim()}`,
+    `## Question\n\n${block(d.question)}`,
+    `## Decision\n\n${block(d.answer)}`,
+    `## Summary\n\n${block(d.summary)}`,
     `## Alternatives\n\n${list(d.alternatives)}`,
-    `## Rationale\n\n${d.rationale.trim() || '_None._'}`,
+    `## Rationale\n\n${block(d.rationale) || '_None._'}`,
     `## Transcript\n\n${transcript}`,
   ].join('\n\n');
   return writeFront(front, body);
@@ -54,7 +64,10 @@ export function parseDecision(md: string): DecisionRecord {
   const marks = [...body.matchAll(re)];
   marks.forEach((m, i) => {
     const text = body.slice(m.index! + m[0].length, marks[i + 1]?.index ?? body.length).trim();
-    sec[m[1] as (typeof SECTIONS)[number]] = /^_none\._$/i.test(text) ? '' : text;
+    const name = m[1] as (typeof SECTIONS)[number];
+    // The transcript keeps its guards until its entries are split.
+    const plain = name === 'Transcript' ? text : unguardLines(text, SECTION);
+    sec[name] = /^_none\._$/i.test(text) ? '' : plain;
   });
   const transcript: TranscriptEntry[] = (sec.Transcript ?? '')
     .split(/^### /m)
@@ -68,7 +81,7 @@ export function parseDecision(md: string): DecisionRecord {
         author: author.trim(),
         from: (['agent', 'human', 'system'].includes(from.trim()) ? from.trim() : 'agent') as TranscriptEntry['from'],
         at: Date.parse(at) || 0,
-        text: nl < 0 ? '' : chunk.slice(nl + 1).trim(),
+        text: nl < 0 ? '' : unguardLines(chunk.slice(nl + 1).trim(), IN_TRANSCRIPT),
       };
     });
   const kind = str(front.source);

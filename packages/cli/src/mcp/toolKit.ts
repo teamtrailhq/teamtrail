@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { RISK_CATEGORIES, TICKET_TYPES, type TicketType } from '@teamtrail/core';
 import { z } from 'zod';
 import { OperationError, type TrailAgent, type WaitControl } from './agent';
+import { assertLineSafe, toolShapes } from './lineSafety';
 import { assertNoHumanInputs, humanRoles, markHumanInputs, type HumanRole } from './remoteGate';
 
 export const ticketType = z.enum(TICKET_TYPES as [TicketType, ...TicketType[]]);
@@ -86,7 +87,7 @@ export function waitControl(extra: Extra, message = 'Waiting on the human in the
 
 /**
  * Registers one tool: its result is JSON text, errors become tool errors, and agent state is flushed after every
- * call. `human` says whether the tool speaks for the human (remoteGate.ts): a remote session doesn't get a tool
+ * call. Every string input is a single line unless its schema is `text()` (lineSafety.ts). `human` says whether the tool speaks for the human (remoteGate.ts): a remote session doesn't get a tool
  * that does, and can't pass the inputs that claim the human's word.
  */
 export function toolDefiner(server: McpServer, agent: TrailAgent) {
@@ -97,6 +98,7 @@ export function toolDefiner(server: McpServer, agent: TrailAgent) {
     fn: (args: z.infer<z.ZodObject<S>>, extra: Extra) => Promise<unknown>,
   ) => {
     humanRoles(server).set(name, meta.human);
+    toolShapes(server).set(name, shape);
     const actsForHuman = meta.human !== 'none' && meta.human.kind === 'acts';
     if (agent.remote && actsForHuman) return undefined;
     return server.registerTool(
@@ -112,6 +114,7 @@ export function toolDefiner(server: McpServer, agent: TrailAgent) {
         try {
           agent.noteCall(extra?._meta);
           agent.heartbeat();
+          assertLineSafe(name, shape, args);
           if (agent.remote) assertNoHumanInputs(name, meta.human, args);
           return result(withLostLeases(await fn(args, extra), agent.takeLostLeases()));
         } catch (e) {

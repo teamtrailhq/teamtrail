@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { Label, Panel } from '../../components/ui';
 import type { Breakpoint } from '../../hooks';
+import { ElsewhereNote } from './ElsewhereNote';
 import { SettingsGroupPane } from './SettingsGroupPane';
 import { SettingsNav } from './SettingsNav';
 import { shownGroup } from './shownGroup';
 import type { SettingsData, SettingsGroupId, SettingsRoute } from './types';
+import { useThisMachine } from './useThisMachine';
 
 /** What the back control says: on a phone, the list of groups or one group; elsewhere the whole page. */
 const BACK = { page: 'Back to the Lookout', list: 'Lookout', group: 'Settings' } as const;
@@ -31,6 +33,7 @@ export function SettingsPage(props: {
   const phone = bp === 'mobile';
   const shown = shownGroup(route, bp);
   const step = settingsStep(phone, !!shown);
+  const elsewhere = useThisMachine() === false;
   const back = () => (step === 'group' ? props.onShow({}) : props.onClose());
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -53,6 +56,7 @@ export function SettingsPage(props: {
         {step !== 'group' && <Label as="h2">Settings</Label>}
         {!phone && <span className="dv-head-right t-meta">Esc</span>}
       </header>
+      {elsewhere && <ElsewhereNote />}
       <div className="sp-body">
         {nav}
         {shown && <SettingsGroupPane group={shown} data={props.data} route={route} />}

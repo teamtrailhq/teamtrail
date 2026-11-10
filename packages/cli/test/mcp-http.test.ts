@@ -5,6 +5,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { MarkdownAdapter } from '@teamtrail/core';
 import {
   createRemoteToken,
   readAgentDocs,
@@ -14,6 +15,7 @@ import {
   revokeRemoteToken,
   writeAgentAnswer,
 } from '@teamtrail/core/agents';
+import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpHttp } from '../src/mcp/http/createMcpHttp';
@@ -569,13 +571,13 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
     });
     await call('start_trail', { discovery: false, title: 'Local', destination: 'Works as before' });
     await call('update_trail', { mode: 'plan-only', destination: 'Still the local agent\u2019s to edit' });
-    const d = await call<{ decision: { decidedBy: string } }>('record_decision', {
+    // The local agent passed on the human's answer with answer_question: the decision is theirs by that question.
+    const d = await call<{ decision: { decidedBy: string; answer: string } }>('record_decision', {
       question: 'Which?',
       answer: 'This',
-      decidedBy: 'operator',
+      questionId: asked.questionId,
     });
-    // The local agent passed on the human's answer with answer_question, so the decision is theirs by that answer.
-    expect(d.decision.decidedBy).toBe('trail lead');
+    expect(d.decision).toMatchObject({ decidedBy: 'trail lead', answer: 'Go' });
   });
 
   it('a remote agent cannot answer its own question, nor anyone else\u2019s', async () => {
@@ -614,24 +616,25 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
     // Naming the human in an argument is not the human deciding, high risk or not.
     for (const decidedBy of ['operator', 'trail lead', 'slack:U123'])
       for (const extra of [{}, { category: 'data-deletion' }])
-        await expect(call('record_decision', { ...decision, ...extra, decidedBy })).rejects.toThrow(
-          /only their answer can/,
-        );
+        await expect(call('record_decision', { ...decision, ...extra, decidedBy })).rejects.toThrow(/pass questionId/);
     const own = await call<{ decision: { decidedBy: string } }>('record_decision', decision);
     expect(own.decision.decidedBy).toBe('claude-01');
     // A high-risk call is the human's: recording it is refused, and the way out is asking, not "operator".
     const risky = call('record_decision', { ...decision, category: 'data-deletion' });
-    await expect(risky).rejects.toThrow(/High-risk call.*Once they answer/);
+    await expect(risky).rejects.toThrow(/High-risk call.*record_decision with that questionId/);
   });
 
   it('a remote agent closes a HITL ticket only after the human answered in the Lookout', async () => {
     await serve();
     const local = await connectLocal();
-    const m = await local<{ tickets: { key: string }[] }>('start_trail', {
+    const m = await local<{ trail: { id: string }; tickets: { key: string }[] }>('start_trail', {
       discovery: false,
       title: 'Pick a format',
       destination: 'A format is chosen',
-      tickets: [{ ref: 'j', title: 'Which format?', type: 'junction' }],
+      tickets: [
+        { ref: 'j', title: 'Which format?', type: 'junction' },
+        { ref: 'k', title: 'Keep the legacy exports?', type: 'junction' },
+      ],
     });
     const { call } = await connectHttp(newToken('sandbox'));
     await call('claim_ticket', { ticket: m.tickets[0].key });
@@ -639,28 +642,71 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
     await expect(call('close_ticket', { resolution: 'Not needed', outcome: 'out_of_scope' })).rejects.toThrow(
       /the human's to decide/,
     );
-    const waiting = call<{ answered: boolean }>('ask_human', { question: 'JSON or YAML?', waitSeconds: 30 });
-    await until('the question', async () => (await readAgentDocs(root)).some((d) => d.pending.length > 0));
-    const doc = (await readAgentDocs(root)).find((d) => d.pending.length)!;
-    writeAgentAnswer(root, {
-      sessionId: doc.session.id,
-      questionId: doc.pending[0].id,
-      text: 'JSON',
-      author: 'trail lead',
-    });
-    expect((await waiting).answered).toBe(true);
-    const done = await call<{ closed: string; decision: { decidedBy: string } }>('close_ticket', {
-      resolution: 'JSON',
-    });
+    const ask = async (question: string, answer: string, extra: Record<string, unknown> = {}) => {
+      const waiting = call<{ answered: boolean; questionId: string }>('ask_human', {
+        question,
+        waitSeconds: 30,
+        ...extra,
+      });
+      await until('the question', async () => (await readAgentDocs(root)).some((d) => d.pending.length > 0));
+      const doc = (await readAgentDocs(root)).find((d) => d.pending.length)!;
+      writeAgentAnswer(root, {
+        sessionId: doc.session.id,
+        questionId: doc.pending[0].id,
+        text: answer,
+        author: 'trail lead',
+      });
+      const r = await waiting;
+      expect(r.answered).toBe(true);
+      await until(
+        'the answer to be gone from the inbox',
+        async () => !(await readAgentDocs(root)).some((d) => d.pending.length),
+      );
+      return r.questionId;
+    };
+    // The reviewer's attack: the human says "tabs" to a harmless question, and that answer is then spent on
+    // dropping a table. An answer carries only the category it was asked with, so none of these go through.
+    const harmless = await ask('Tabs or spaces?', 'tabs');
+    const drop = { resolution: 'Drop the users table', category: 'data-deletion' };
+    await expect(call('close_ticket', drop)).rejects.toThrow(/the human's to decide/);
+    await expect(call('close_ticket', { ...drop, questionId: harmless })).rejects.toThrow(
+      /asked without a category, and this decision is "data-deletion"/,
+    );
+    const decision = { question: 'Drop it?', answer: 'Drop the users table' };
+    await expect(
+      call('record_decision', { ...decision, category: 'data-deletion', questionId: harmless }),
+    ).rejects.toThrow(/asked without a category/);
+
+    // Used for what it answered, it closes the ticket: the record holds the question as asked and their word.
+    type Closed = { closed: string; decision: { id: string; decidedBy: string } };
+    const done = await call<Closed>('close_ticket', { resolution: 'Indent with tabs everywhere' });
     expect(done).toMatchObject({ closed: m.tickets[0].key, decision: { decidedBy: 'trail lead' } });
-    // With that answer on record, a decision of theirs can be recorded, and carries the conversation.
-    const theirs = await call<{ decision: { decidedBy: string; transcript: { text: string }[] } }>('record_decision', {
-      question: 'Which format?',
-      answer: 'JSON',
-      decidedBy: 'operator',
-      category: 'data-deletion',
+    const record = (
+      await new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root).listDecisions(m.trail.id)
+    ).find((d) => d.id === done.decision.id)!;
+    expect(record).toMatchObject({
+      question: 'Tabs or spaces?',
+      answer: 'tabs',
+      rationale: "claude-02's reading: Indent with tabs everywhere",
     });
-    expect(theirs.decision.decidedBy).toBe('trail lead');
-    expect(theirs.decision.transcript.map((e) => e.text)).toEqual(['JSON or YAML?', 'JSON']);
+    // And it is used up: three more "human" decisions on the back of it are three refusals.
+    for (let i = 0; i < 3; i++)
+      await expect(call('record_decision', { ...decision, questionId: harmless })).rejects.toThrow(
+        /already backs the close of #\d+: one answer, one decision/,
+      );
+
+    // A second HITL ticket: an answer given on the first can't close it, and neither can a question asked elsewhere.
+    await call('claim_ticket', { ticket: m.tickets[1].key });
+    await expect(call('close_ticket', { resolution: 'Same as before' })).rejects.toThrow(/the human's to decide/);
+    await expect(call('close_ticket', { resolution: 'Same as before', questionId: harmless })).rejects.toThrow(
+      /already backs|was not asked on/,
+    );
+    const right = await ask('Delete the legacy exports?', 'Yes, delete them', { category: 'data-deletion' });
+    const risky = await call<Closed>('close_ticket', {
+      resolution: 'Deleted',
+      category: 'data-deletion',
+      questionId: right,
+    });
+    expect(risky.decision.decidedBy).toBe('trail lead');
   });
 });

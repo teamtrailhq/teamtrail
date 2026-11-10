@@ -1,6 +1,7 @@
 import { BRAND, HITL_LABEL, MAP_LABEL, PLAN_ONLY_LABEL, label, takesHitlLabel } from '../../model/brand';
 import { levelOf, TICKET_STATUSES } from '../../model/lifecycle';
 import { serializeMapBody } from '../../model/mapBody';
+import { guardMarkers, oneLine, unguardMarkers } from '../../model/safeText';
 import {
   ALL_TICKET_TYPES,
   type Comment,
@@ -10,6 +11,7 @@ import {
   type Ticket,
   type TicketType,
 } from '../../model/types';
+import { webUrl } from '../../model/webUrl';
 import { DECISION_SOURCES } from '../../planning/decisions/decisionRecord';
 
 /*
@@ -83,8 +85,16 @@ export function joinBody(text: string, meta: BodyMeta): string {
   return Object.keys(clean).length ? `${text.trim()}\n\n<!-- ${P}:meta ${JSON.stringify(clean)} -->` : text.trim();
 }
 
+/**
+ * A ticket's issue body: its text, in which nothing can open a marker of ours, then the real meta marker. (The
+ * trail issue's text is the map body, which guards its own fields and carries real assumption markers.)
+ */
+export const ticketBody = (
+  t: Pick<Ticket, 'body' | 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | 'guide'>,
+) => joinBody(guardMarkers(t.body), ticketMeta(t));
+
 export const authoredBody = (author: string, body: string, writeId?: string) =>
-  `<!-- ${P}:author ${author.replace(/-->/g, '')} -->\n${writeId ? `<!-- ${P}:write ${writeId.replace(/\s|-->/g, '')} -->\n` : ''}${body}`;
+  `<!-- ${P}:author ${oneLine(author).replace(/-->/g, '')} -->\n${writeId ? `<!-- ${P}:write ${writeId.replace(/\s|-->/g, '')} -->\n` : ''}${guardMarkers(body)}`;
 
 /** A tracker comment as a ticket comment; `undefined` for decision-record comments, which are not conversation. */
 export function readComment(c: {
@@ -102,7 +112,7 @@ export function readComment(c: {
   return {
     id: c.id,
     author: m ? m[1] : (c.author ?? 'unknown'),
-    body: body.trim(),
+    body: unguardMarkers(body.trim()),
     createdAt: typeof c.createdAt === 'number' ? c.createdAt : Date.parse(c.createdAt) || 0,
     ...(w ? { writeId: w[1] } : {}),
   };
@@ -118,20 +128,30 @@ export function decisionComment(d: DecisionRecord): string {
     rec = { ...rec, transcript: rec.transcript.slice(0, -Math.ceil(rec.transcript.length / 4)) };
     json = escapeJson(JSON.stringify(rec));
   }
+  // The readable part is text for people; only the marker at the end is the record.
+  const text = guardMarkers;
   const lines = [
-    `**Decision ${d.id}**${d.supersededBy ? ` · ~~superseded by ${d.supersededBy}~~` : ''} · ${d.decidedBy} · ${DECISION_SOURCES[d.source.kind]?.label ?? d.source.kind}${d.source.url ? ` · [${d.source.label ?? 'source'}](${d.source.url})` : ''}`,
+    `**Decision ${d.id}**${d.supersededBy ? ` · ~~superseded by ${d.supersededBy}~~` : ''} · ${d.decidedBy} · ${DECISION_SOURCES[d.source.kind]?.label ?? d.source.kind}${sourceLink(d)}`,
     '',
-    `> ${d.summary.replace(/\n/g, '\n> ')}`,
-    ...(d.answer.trim() !== d.summary.trim() ? ['', d.answer.trim()] : []),
+    `> ${text(d.summary).replace(/\n/g, '\n> ')}`,
+    ...(d.answer.trim() !== d.summary.trim() ? ['', text(d.answer.trim())] : []),
     '',
-    `**Question:** ${d.question}`,
-    ...(d.alternatives.length ? [`**Alternatives:** ${d.alternatives.join('; ')}`] : []),
-    ...(d.rationale ? [`**Rationale:** ${d.rationale}`] : []),
+    `**Question:** ${text(d.question)}`,
+    ...(d.alternatives.length ? [`**Alternatives:** ${text(d.alternatives.join('; '))}`] : []),
+    ...(d.rationale ? [`**Rationale:** ${text(d.rationale)}`] : []),
     ...(d.supersedes ? [`**Supersedes:** ${d.supersedes}`] : []),
     '',
     `<!-- ${P}:decision ${json} -->`,
   ];
   return lines.join('\n');
+}
+
+/** The source as a markdown link, only for a web URL; its label can't close the link or break the line. */
+function sourceLink(d: DecisionRecord) {
+  const url = webUrl(d.source.url);
+  if (!url) return '';
+  const label = oneLine(d.source.label ?? 'source').replace(/[[\]()]/g, '');
+  return ` · [${label || 'source'}](${encodeURI(decodeURI(url)).replace(/[()]/g, encodeURIComponent)})`;
 }
 
 export function parseDecisionComment(body: string): DecisionRecord | undefined {
@@ -196,7 +216,7 @@ export function ticketFromIssue(p: IssueParts): Ticket {
     title: p.title,
     type,
     hitl: (takesHitlLabel(type) && p.labels.includes(HITL_LABEL)) || undefined,
-    body: text,
+    body: unguardMarkers(text),
     state: p.closed ? 'closed' : 'open',
     closeReason: p.closed ? (p.closeReason ?? 'completed') : undefined,
     assignee: meta.assignee ?? p.trackerAssignee,

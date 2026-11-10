@@ -117,6 +117,8 @@ export type * from './adapters/remote/types';
 export type * from './adapters/remote/signInTypes';
 export * from './model/integrations';
 export * from './model/guide';
+export { hasControl, oneLine } from './model/safeText';
+export { webUrl } from './model/webUrl';
 export type * from './model/remoteToken';
 export { parseGuide, splitGuideFile } from './guides/guideFile';
 export { argvProblems, lintGuide, type GuideLint } from './guides/guideLint';

@@ -1,6 +1,7 @@
 import { ATTENTION_KINDS, type AttentionKind } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
+import { text } from '../lineSafety';
 import { type DefineTool, riskCategory, waitControl } from '../toolKit';
 
 const ATTENTION_KIND_VALUES = ATTENTION_KINDS as [AttentionKind, ...AttentionKind[]];
@@ -16,7 +17,7 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
         'Ask the human a question. It lands in the Lookout inbox (Waiting on you), ranked with everything else that needs them, and this call waits for the answer, up to waitSeconds (default 600; 50 for Codex). Returns answered=false with a questionId on timeout: call wait_for_answer to keep waiting. Set framing=true for the framing questions of a trail that does not exist yet. Set urgency honestly and ask related questions together.',
     },
     {
-      question: z.string().min(1),
+      question: text().min(1),
       suggestions: z.array(z.string()).optional().describe('Suggested replies, shown as one-click answers.'),
       waitSeconds: z.number().int().min(0).max(86_400).optional(),
       framing: z.boolean().optional(),
@@ -76,7 +77,7 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
       description:
         "Answer a waiting question on the human's behalf, with the human's own words from this chat. Only use text the human gave you.",
     },
-    { questionId: z.string(), answer: z.string().min(1) },
+    { questionId: z.string(), answer: text().min(1) },
     (a) => agent.answerQuestion(a),
   );
 }

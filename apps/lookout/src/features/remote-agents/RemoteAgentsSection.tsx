@@ -45,6 +45,12 @@ export function RemoteAgentsSection() {
           to you to review instead of running the checks here.
         </p>
         <p className="t-meta ra-note">
+          <b>How far to trust one.</b> The risk policy only sees what an agent declares: a call is held for you when the
+          agent names a high-risk category or touches files your path rules cover. An agent that declares nothing isn't
+          caught. Give an agent you don't fully trust only trails with verification on, where its finished work comes to
+          you.
+        </p>
+        <p className="t-meta ra-note">
           <b>What it does as you.</b> With GitHub Issues or Linear as the tracker, everything a remote agent writes
           (tickets, comments, closing) goes to the tracker with your credentials, like the agents here.
         </p>

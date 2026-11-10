@@ -73,6 +73,14 @@
   border-top: 0;
   padding-top: 0;
 }
+.sp-elsewhere {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-12);
+  border-bottom: 1px solid var(--line);
+  border-left: var(--edge-w) solid var(--edge-attention);
+  color: var(--text);
+  line-height: var(--lh-body);
+}
 .sp-where {
   color: var(--faint);
 }

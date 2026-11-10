@@ -1,7 +1,12 @@
 import { HITL_LABEL, label, takesHitlLabel } from '../../model/brand';
 import { arr, iso, parseFront, str, time, writeFront, type Front } from '../../model/frontmatter';
 import { levelOf, TICKET_STATUSES } from '../../model/lifecycle';
+import { guardLines, oneLine, unguardLines } from '../../model/safeText';
 import type { Comment, Ticket, TicketType } from '../../model/types';
+
+/** The lines this file's reader takes for structure: where comments start, and each comment's author line. */
+const COMMENTS = '## Comments\\s*$';
+const IN_COMMENT = `${COMMENTS}|### `;
 
 /** `<map-slug>/tickets/<n>.md`: frontmatter + body + "## Comments". */
 export function parseTicket(md: string): Ticket {
@@ -12,8 +17,14 @@ export function parseTicket(md: string): Ticket {
     .slice(1)
     .map((chunk, i) => {
       const nl = chunk.indexOf('\n');
-      const [author, at] = chunk.slice(0, nl).split(' @ ');
-      return { id: `c${i}`, author: author.trim(), createdAt: Date.parse(at) || 0, body: chunk.slice(nl + 1).trim() };
+      const head = chunk.slice(0, nl);
+      const at = head.lastIndexOf(' @ ');
+      return {
+        id: `c${i}`,
+        author: head.slice(0, at < 0 ? undefined : at).trim(),
+        createdAt: (at >= 0 && Date.parse(head.slice(at + 3))) || 0,
+        body: unguardLines(chunk.slice(nl + 1).trim(), IN_COMMENT),
+      };
     });
   const reason = str(front.close_reason);
   const status = TICKET_STATUSES.find((s) => s === str(front.status));
@@ -33,7 +44,7 @@ export function parseTicket(md: string): Ticket {
     ...(str(front.review_of) ? { reviewOf: str(front.review_of) } : {}),
     ...(str(front.guide) ? { guide: str(front.guide) } : {}),
     blockedBy: arr(front.blocked_by),
-    body: main.trim(),
+    body: unguardLines(main.trim(), COMMENTS),
     comments,
     createdAt: time(front.created),
     updatedAt: time(front.updated),
@@ -60,8 +71,11 @@ export function serializeTicket(t: Ticket) {
     updated: iso(t.updatedAt),
     ...(t.closedAt ? { closed: iso(t.closedAt) } : {}),
   };
-  const comments = t.comments.length
-    ? `\n\n## Comments\n\n${t.comments.map((c) => `### ${c.author} @ ${iso(c.createdAt)}\n\n${c.body}`).join('\n\n')}`
-    : '';
-  return writeFront(front, t.body + comments);
+  const comments = t.comments.length ? `\n\n## Comments\n\n${t.comments.map(commentBlock).join('\n\n')}` : '';
+  return writeFront(front, guardLines(t.body, COMMENTS) + comments);
+}
+
+/** One comment: its author line, then its text, in which no line can start another comment or name an author. */
+function commentBlock(c: Comment) {
+  return `### ${oneLine(c.author)} @ ${iso(c.createdAt)}\n\n${guardLines(c.body, IN_COMMENT)}`;
 }

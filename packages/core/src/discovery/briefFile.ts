@@ -1,4 +1,5 @@
 import { iso, parseFront, time, writeFront } from '../model/frontmatter';
+import { guardLines, oneLine, unguardLines } from '../model/safeText';
 import { type BriefSections, type BriefStatus, type DiscoveryBrief, EMPTY_SECTIONS } from './brief';
 
 /** `briefs/<mapId>.md`: frontmatter (status, ticket, author, times, note) plus one `##` section per part. */
@@ -16,13 +17,16 @@ const HEADINGS: [keyof BriefSections, string][] = [
 
 export const BRIEF_SECTION_LABEL = Object.fromEntries(HEADINGS) as Record<keyof BriefSections, string>;
 
+/** Any `## ` line starts a section for the reader. */
+const HEADING = '##\\s';
+
 const STATUSES: BriefStatus[] = ['draft', 'submitted', 'accepted', 'changes-requested'];
 const str = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
 
 function sectionText(s: BriefSections, k: keyof BriefSections): string {
-  if (k === 'assumptions') return s.assumptions.map((a) => `- ${a.id}: ${a.text}`).join('\n');
-  if (k === 'openQuestions') return s.openQuestions.map((q) => `- ${q}`).join('\n');
-  return s[k].trim();
+  if (k === 'assumptions') return s.assumptions.map((a) => `- ${oneLine(a.id)}: ${oneLine(a.text)}`).join('\n');
+  if (k === 'openQuestions') return s.openQuestions.map((q) => `- ${oneLine(q)}`).join('\n');
+  return guardLines(s[k].trim(), HEADING);
 }
 
 export function serializeBrief(b: DiscoveryBrief): string {
@@ -62,7 +66,7 @@ export function parseBrief(mapId: string, md: string): DiscoveryBrief {
         const m = l.match(/^(A-\d+):\s*(.*)$/);
         return m ? { id: m[1], text: m[2] } : { id: `A-${i + 1}`, text: l };
       });
-    else sections[key] = text;
+    else sections[key] = unguardLines(text, HEADING);
   }
   const status = STATUSES.find((x) => x === front.status) ?? 'draft';
   return {
