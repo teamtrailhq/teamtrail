@@ -1,5 +1,5 @@
 import { readAgentDocs } from '@teamtrail/core/bridge';
-import { askMessage, escape } from '../blocks';
+import { askMessage, label } from '../blocks';
 import { briefTrail, trailListBlocks, statusBlocks } from '../status';
 import { askView } from './asks';
 import type { SlackContext } from './slackContext';
@@ -26,7 +26,7 @@ export async function statusMessage(ctx: SlackContext, arg: string, command: str
     const m =
       maps.find((x) => x.key.toLowerCase().replace(/^#/, '') === a || x.id === arg) ??
       maps.find((x) => x.title.toLowerCase().includes(a));
-    if (!m) return { text: `No trail matches “${escape(arg)}”.` };
+    if (!m) return { text: `No trail matches “${label(arg)}”.` };
     return statusBlocks(briefTrail(await adapter.loadMap(m.id), docs), { now, url: ctx.o.url() });
   }
   const briefs = await Promise.all(maps.slice(0, 20).map(async (m) => briefTrail(await adapter.loadMap(m.id), docs)));

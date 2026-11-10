@@ -21,6 +21,7 @@ export const DEFAULT_WEIGHTS: Record<AttentionKind, number> = {
   knowledge: 15,
   guide: 45,
   'guide-checks': 30,
+  delivery: 10,
   'tracker-settings': 40,
 };
 

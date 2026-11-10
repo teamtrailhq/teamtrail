@@ -48,6 +48,8 @@ export function world(mode: 'record' | 'replay', name: string) {
     root,
     configDir,
     fetch: (rec?.fetch ?? rp!.fetch) as typeof fetch,
+    /** Every Web API call and response_url post so far (while recording against the fake). */
+    exchanges: () => rec?.exchanges ?? [],
     service(adapter: TrackerAdapter, extra: Partial<SlackServiceOptions> = {}) {
       const s = new SlackService({
         root,
@@ -65,6 +67,7 @@ export function world(mode: 'record' | 'replay', name: string) {
         sleep: async () => {},
         lockOwner: `${name}:${services.length}`,
         ownerEmail: () => undefined,
+        ownerCode: () => CODE,
         ...extra,
       });
       services.push(s);
@@ -113,8 +116,24 @@ export function world(mode: 'record' | 'replay', name: string) {
 }
 export type World = ReturnType<typeof world>;
 
-/** A finished setup, as `pasteToken` + the owner claim leave it. */
-export function connected(w: World, o: { owners?: string[]; allow?: string[]; notify?: Record<string, unknown> } = {}) {
+/** The code the trail lead reads in the Lookout, fixed so recorded envelopes replay. */
+export const CODE = 'K7QF2M9X';
+
+/** A finished setup, as `pasteToken` + the confirmed owner leave it. `legacy` writes owners as older versions did. */
+export function connected(
+  w: World,
+  o: {
+    owners?: string[];
+    allow?: string[];
+    notify?: Record<string, unknown>;
+    legacy?: 'home' | 'git-email' | 'unmarked';
+  } = {},
+) {
+  const how = (): Record<string, unknown> => {
+    if (o.legacy === 'unmarked') return {};
+    if (o.legacy) return { via: o.legacy };
+    return { via: 'code', confirmedAt: 1 };
+  };
   writeJsonAtomic(path.join(w.configDir, 'credentials.json'), {
     slack: { appToken: TOKENS.app, botToken: TOKENS.bot },
   });
@@ -124,11 +143,39 @@ export function connected(w: World, o: { owners?: string[]; allow?: string[]; no
     appId: 'A0Scout0001',
     workspace: { id: 'T0EFIKA01', name: 'efika', url: 'https://efika.slack.com/' },
     bot: { userId: 'U0ScoutBOT', name: 'scout' },
-    owners: (o.owners ?? [ANA]).map((id) => ({ id, name: id === ANA ? 'ana' : id })),
+    owners: (o.owners ?? [ANA]).map((id) => ({ id, name: id === ANA ? 'ana' : id, ...how() })),
     allow: (o.allow ?? []).map((id) => ({ id })),
     ...(o.notify ? { notify: o.notify } : {}),
   });
 }
+
+/** A world on the in-memory fake, for tests that assert on what Slack was sent rather than on a fixture. */
+export function liveWorld() {
+  const w = world('record', 'unused.json');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type Body = Record<string, any>;
+  const bodies = (prefix: string) =>
+    w
+      .exchanges()
+      .filter((e) => e.req.url.startsWith(prefix))
+      .map((e) => (e.req.body ?? {}) as Body);
+  return {
+    w,
+    fake: w.fake!,
+    /** Request bodies of one Web API method, in order. */
+    calls: (method: string) => bodies(`/api/${method}`),
+    /** Every Web API method called, in order. */
+    methods: () =>
+      w
+        .exchanges()
+        .filter((e) => e.req.url.startsWith('/api/'))
+        .map((e) => e.req.url.replace('/api/', '').replace(/\?.*$/, '')),
+    /** Ephemeral replies posted to a response_url. */
+    replies: () => bodies('/actions/'),
+    lastView: () => [...w.fake!.views.keys()].at(-1)!,
+  };
+}
+export type LiveWorld = ReturnType<typeof liveWorld>;
 
 export async function until(cond: () => boolean, what = 'condition') {
   for (let i = 0; i < 500; i++) {

@@ -84,11 +84,14 @@ export class SlackApi {
   }
 }
 
-/** POST to a `response_url` (ephemeral replies to commands, shortcuts and button clicks). */
-export async function postResponse(url: string, body: unknown, f: typeof fetch = fetch) {
+/** Every message Scout posts, edits or replies with goes out as written: no names or links parsed, no unfurls. */
+export const AS_WRITTEN = { parse: 'none', link_names: false, unfurl_links: false, unfurl_media: false } as const;
+
+/** POST to a `response_url` (ephemeral replies to commands, shortcuts and button clicks), as written. */
+export async function postResponse(url: string, body: object, f: typeof fetch = fetch) {
   await f(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, ...AS_WRITTEN }),
   }).catch(() => {});
 }

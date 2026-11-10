@@ -1,9 +1,11 @@
 import { BRAND, type AgentSessionDoc, type PendingQuestion, type TrackerAdapter } from '@teamtrail/core';
 import { AnswerError, attentionView, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/bridge';
-import { askClosedMessage, askMessage, clip, escape, type AskRef, type AskView } from '../blocks';
+import { askClosedMessage, askMessage, clip, label, mention, type AskRef, type AskView } from '../blocks';
 import type { SlackConfig } from '../store';
+import { takeAskSlot } from './askLimit';
 import { askRoute } from './askRoute';
 import { queueLine } from './queueLine';
+import { refusedForGood } from './refusedForGood';
 import type { SlackContext } from './slackContext';
 
 export async function askView(
@@ -74,14 +76,14 @@ export async function closeAsk(ctx: SlackContext, questionId: string, docs?: Age
   let line: string;
   let answered = true;
   if (rec.by)
-    line = `✓ Answered by <@${rec.by.user}> via Slack: “${escape(clip(rec.by.text, 300))}”. ${escape(rec.view.agent)} resumed.`;
+    line = `✓ Answered by ${mention(rec.by.user)} via Slack: “${label(clip(rec.by.text, 300))}”. ${label(rec.view.agent)} resumed.`;
   else {
     const doc = (docs ?? (await readAgentDocs(ctx.o.root))).find((d) => d.session.id === rec.sessionId);
     const reply = doc?.chats.find((c) => c.from === 'human' && c.at >= rec.view!.at);
     answered = !!reply;
     line = reply
-      ? `✓ Answered in ${BRAND.name} by ${escape(reply.author)}: “${escape(clip(reply.text, 300))}”.`
-      : `No longer waiting: ${escape(rec.view.agent)} ${doc?.session.status === 'running' ? 'withdrew the question' : 'session ended'}.`;
+      ? `✓ Answered in ${BRAND.name} by ${label(reply.author)}: “${label(clip(reply.text, 300))}”.`
+      : `No longer waiting: ${label(rec.view.agent)} ${doc?.session.status === 'running' ? 'withdrew the question' : 'session ended'}.`;
   }
   rec.closed = true;
   ctx.asks.write(asks);
@@ -104,28 +106,42 @@ export async function syncAsks(ctx: SlackContext, docs: AgentSessionDoc[], c: Sl
   for (const [id, rec] of Object.entries(asks)) if (!rec.closed && !open.has(id)) await closeAsk(ctx, id, docs);
 }
 
-/** Posts new questions as asks, or with interrupt gating puts the ones that don't interrupt in the digest. */
+/**
+ * Posts new questions as asks. The ones that don't interrupt (with interrupt gating), the ones past an agent's
+ * limit (askLimit.ts), and one Slack refuses to post, go to the trail's digest instead; the rest still go out.
+ */
 async function postAsks(ctx: SlackContext, fresh: PendingQuestion[], c: SlackConfig): Promise<boolean> {
   let adapter: TrackerAdapter | undefined;
   const queue = ctx.o.interruptOnly
     ? await attentionView({ root: ctx.o.root, adapter: (adapter = await ctx.o.active()), configDir: ctx.o.configDir })
     : undefined;
   for (const q of fresh) {
-    if (askRoute(q, queue) === 'digest') {
+    if (ctx.capped.has(q.id) || askRoute(q, queue) === 'digest') {
       digestOnce(ctx, q);
       continue;
     }
     const channel = await ctx.target();
     if (!channel) return false;
+    if (!takeAskSlot(ctx, q.agent)) {
+      ctx.capped.add(q.id);
+      digestOnce(ctx, q);
+      continue;
+    }
     adapter ??= await ctx.o.active();
     const view = await askView(ctx, q, adapter);
-    const r = await ctx.call<{ channel: string; ts: string }>('chat.postMessage', {
-      channel,
-      ...askMessage(view, { url: ctx.o.url(), detail: c.notify.detail }),
-    });
-    const asks = ctx.asks.read();
-    asks[q.id] = { sessionId: q.sessionId, channel: r.channel, ts: r.ts, view };
-    ctx.asks.write(asks);
+    try {
+      const r = await ctx.call<{ channel: string; ts: string }>('chat.postMessage', {
+        channel,
+        ...askMessage(view, { url: ctx.o.url(), detail: c.notify.detail }),
+      });
+      const asks = ctx.asks.read();
+      asks[q.id] = { sessionId: q.sessionId, channel: r.channel, ts: r.ts, view };
+      ctx.asks.write(asks);
+    } catch (e) {
+      if (!refusedForGood(e)) throw e;
+      ctx.capped.add(q.id);
+      digestOnce(ctx, q);
+    }
   }
   return true;
 }
@@ -134,5 +150,5 @@ async function postAsks(ctx: SlackContext, fresh: PendingQuestion[], c: SlackCon
 function digestOnce(ctx: SlackContext, q: PendingQuestion) {
   if (ctx.digested.has(q.id)) return;
   ctx.digested.add(q.id);
-  queueLine(ctx, q.mapId, `${escape(q.agent)} asks: ${escape(clip(q.text, 200))} (answer in ${BRAND.name})`);
+  queueLine(ctx, q.mapId, `${label(q.agent)} asks: ${label(clip(q.text, 200))} (answer in ${BRAND.name})`);
 }

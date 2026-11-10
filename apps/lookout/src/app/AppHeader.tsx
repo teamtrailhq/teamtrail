@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Header } from '../features/header';
 import { useKnowledge } from '../features/knowledge';
-import { useSlackStatus } from '../features/slack';
+import { slackNeeds, useSlackStatus } from '../features/slack';
 import type { LookoutApi, useBriefing } from '../hooks';
 import type { Runtime } from '../lib';
 
@@ -26,8 +26,7 @@ export function AppHeader(props: {
   const { snap, actions } = api;
   const [slack] = useSlackStatus(15000);
   const knowledge = useKnowledge();
-  const slackAlert =
-    slack?.enabled && slack.state === 'auth-error' ? (slack.error ?? 'Slack rejected the tokens') : undefined;
+  const slackAlert = slack ? slackNeeds(slack) : undefined;
   return (
     <Header
       repo={props.repo}

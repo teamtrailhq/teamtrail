@@ -2,6 +2,7 @@ import type { AttentionSource } from '../types';
 import { approvalSource } from './approvalSource';
 import { blockedSource } from './blockedSource';
 import { briefSource } from './briefSource';
+import { deliverySource } from './deliverySource';
 import { flagSource } from './flagSource';
 import { guideChecksSource } from './guideChecksSource';
 import { guideSource } from './guideSource';
@@ -38,5 +39,6 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   guideSource,
   guideChecksSource,
   modelSource,
+  deliverySource,
   trackerSettingsSource,
 ];

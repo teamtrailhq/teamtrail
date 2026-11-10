@@ -1,18 +1,27 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { GuideEntry, Journal, JournalEntry, RemoteAgentEntry, TransitionEntry } from '../model/lifecycle';
+import type {
+  GuideEntry,
+  Journal,
+  JournalEntry,
+  RemoteAgentEntry,
+  SlackOwnerEntry,
+  TransitionEntry,
+} from '../model/lifecycle';
 
 /*
- * Trail history, one JSON line per transition, reroute step, guide change or remote-agent token change, append-only:
+ * Trail history, one JSON line per transition, reroute step, guide change, remote-agent token change or Slack owner
+ * change, append-only:
  *   <tracker dir>/.events/<mapId>.jsonl
  *   <tracker dir>/.events/.gitignore      `*`: local history, never committed
  * Lines stay well under 4 KB, so concurrent appends from several processes never interleave.
  * `read` returns transitions only, so older readers (delivery report, Report tab) are unaffected by newer kinds;
  * `readAll` returns transitions and reroute steps and skips the rest (guide and remote-agent changes included, and
- * kinds a newer version wrote); `readGuides` returns the guide changes, `readRemoteAgents` the token changes.
+ * kinds a newer version wrote); `readGuides` returns the guide changes, `readRemoteAgents` the token changes,
+ * `readSlack` the Slack owner changes.
  */
 const TRAIL_KINDS = new Set<string>(['transition', 'reroute']);
-type AnyEntry = JournalEntry | GuideEntry | RemoteAgentEntry;
+type AnyEntry = JournalEntry | GuideEntry | RemoteAgentEntry | SlackOwnerEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -26,6 +35,7 @@ export function journalFile(root: string): Journal & {
   readAll(mapId: string): JournalEntry[];
   readGuides(mapId: string): GuideEntry[];
   readRemoteAgents(mapId: string): RemoteAgentEntry[];
+  readSlack(mapId: string): SlackOwnerEntry[];
 } {
   const raw = (mapId: string) => readEntries(root, mapId) as AnyEntry[];
   const readAll = (mapId: string) => raw(mapId).filter((e): e is JournalEntry => TRAIL_KINDS.has(e.kind));
@@ -42,6 +52,7 @@ export function journalFile(root: string): Journal & {
     readAll,
     readGuides: (mapId) => raw(mapId).filter((e): e is GuideEntry => e.kind === 'guide'),
     readRemoteAgents: (mapId) => raw(mapId).filter((e): e is RemoteAgentEntry => e.kind === 'remote-agent'),
+    readSlack: (mapId) => raw(mapId).filter((e): e is SlackOwnerEntry => e.kind === 'slack'),
   };
 }
 

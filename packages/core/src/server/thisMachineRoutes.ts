@@ -9,7 +9,7 @@ export const ELSEWHERE = 'This can only be changed on the machine Teamtrail runs
 const WRITES: RegExp[] = [
   // Tracker connection: tokens and keys, sign-in, which repo or team the trails live in.
   /^\/trackers(\/|$)/,
-  // Slack tokens and where questions are sent.
+  // Slack tokens, who the owner is (the one-time code, confirming, resetting) and where questions are sent.
   /^\/slack(\/|$)/,
   // What agents may decide alone.
   /^\/policy$/,
@@ -28,10 +28,11 @@ const WRITES: RegExp[] = [
 
 /**
  * Every method, reads included: the tokens, and everything under the tracker settings that uses this machine's
- * stored credentials to look something up (the repos a GitHub token can see, a Linear key's teams and projects).
- * The settings themselves (`GET /trackers`) stay readable, without the account (redactForLan.ts).
+ * stored credentials to look something up (the repos a GitHub token can see, a Linear key's teams and projects,
+ * the members of the Slack workspace). The settings themselves (`GET /trackers`, `GET /slack`) stay readable,
+ * without the account (redactForLan.ts).
  */
-const ALWAYS: RegExp[] = [/^\/remote-agents(\/|$)/, /^\/trackers\/.+/];
+const ALWAYS: RegExp[] = [/^\/remote-agents(\/|$)/, /^\/trackers\/.+/, /^\/slack\/.+/];
 
 const REMOVE_PROJECT = /^\/projects\/[^/]+$/;
 
