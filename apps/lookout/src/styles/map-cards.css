@@ -40,17 +40,29 @@
   text-transform: none;
   fill: var(--map-card-meta);
 }
-.node .meta .key {
+/* The meta row is label chips: a quiet flat fill, the text in the meta role. */
+.node .card-chip rect {
+  fill: rgba(var(--line-rgb), 0.16);
+}
+.node .card-chip.key {
   font-family: var(--mono);
-  font-size: 0.92em;
+  font-size: 0.9em;
   letter-spacing: 0;
 }
-.node .meta .agent,
-.node .meta .warn {
-  fill: var(--text);
+.node .card-chip.state.agent text,
+.node .card-chip.state.warn text {
+  fill: var(--text-hi);
   font-weight: 500;
 }
-.node .meta .urgent {
+.node .card-chip.state.warn rect {
+  fill: rgba(var(--amber-rgb), 0.2);
+}
+.node .card-chip.state.urgent rect,
+.node .card-chip.needs rect {
+  fill: rgba(var(--urgent-rgb), 0.16);
+}
+.node .card-chip.state.urgent text,
+.node .card-chip.needs text {
   fill: var(--urgent);
   font-weight: 500;
 }
@@ -154,7 +166,7 @@
   stroke: var(--amber);
   stroke-dasharray: 4 3;
 }
-.node.mark-added .meta .key {
+.node.mark-added .chip.key text {
   fill: var(--amber);
 }
 .node.mark-cancelled {

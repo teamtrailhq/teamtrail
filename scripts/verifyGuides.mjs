@@ -167,10 +167,10 @@ export async function verifyGuides({ browser, cli, log, shots }) {
     const claim = await worker.call('claim_ticket', { guides: ['a11y'] });
     const guide = claim.claimed.guide;
     await page.goto(url);
-    // the guide's name sits in the card's meta line: #1 · Task · Accessibility · …
-    const signGuide = page.locator('g.node text.meta .guide[data-guide-id="a11y"]').first();
+    // the guide's name is a chip in the card's meta row: #1, Task, Accessibility, …
+    const signGuide = page.locator('g.node .meta .guide[data-guide-id="a11y"]').first();
     await signGuide.waitFor({ timeout: 15_000 });
-    const signText = await signGuide.evaluate((el) => el.lastChild?.textContent ?? '');
+    const signText = await signGuide.evaluate((el) => el.querySelector('text')?.textContent ?? '');
     await shot('22-guide-chip');
     let refused = '';
     await worker.call('report_completion', { resolution: 'Added the sheet' }).catch((e) => (refused = e.message));

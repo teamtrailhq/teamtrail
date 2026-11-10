@@ -8,9 +8,10 @@ import {
   type SessionInfo,
 } from '@teamtrail/core';
 import { type Selection, TYPE_TEXT } from '../../lib';
-import { GuideSignPart, useSignGuide } from '../guides';
+import { useSignGuide } from '../guides';
+import { CardChips } from './CardChips';
 import { CARD_TEXT_X } from './cardLayout';
-import { fitCardMeta } from './fitCardMeta';
+import { layoutChips } from './layoutChips';
 import { modelWait } from './modelWait';
 import { nodeClasses } from './nodeClasses';
 import { NodeTip } from './NodeTip';
@@ -25,8 +26,8 @@ const TITLE_CHARS = 26;
 
 /**
  * One ticket on the graph, drawn as a flat card in the three levels of the presenting-data rules: a status dot and
- * the title (what it is, two lines at most), then one quiet line (key · type · guide · who or state). The agent on
- * it sits in that line too, with its step when no guide takes the room; the step's name is in the tooltip.
+ * the title (what it is, two lines at most), then one quiet row of label chips (key, type, guide, who or state). The
+ * agent on it is a chip too, with its step when no guide takes the room; the step's name is in the tooltip.
  */
 export function GraphNode({
   n,
@@ -66,7 +67,8 @@ export function GraphNode({
   const heldUp = waiting || !!stalled || !!wait || (needsYou && n.state === 'frontier');
   const tone = nodeTone({ state: n.state, live: !!s, attention: heldUp });
   const type = TYPE_TEXT[t.type];
-  const meta = fitCardMeta({ parts: [t.key, type, state?.text, needsYou && 'needs you'], guide: guide?.name });
+  const reserve = (marked && mark !== 'cancelled' ? 44 : 0) + (frozen ? 12 : 0);
+  const chips = layoutChips({ key: t.key, type, guide: guide?.name, state: state?.text, needsYou, reserve });
   const top = lines.length > 1 ? 19 : 24;
   return (
     <g
@@ -86,13 +88,7 @@ export function GraphNode({
           {l}
         </text>
       ))}
-      <text className="meta" x={CARD_TEXT_X} y={top + lines.length * 14 + 2} {...meta.squeeze}>
-        <tspan className="key">{t.key}</tspan>
-        <tspan> · {type}</tspan>
-        <GuideSignPart guide={guide} text={meta.guideText} />
-        {state && <tspan className={state.tone}> · {state.text}</tspan>}
-        {needsYou && <tspan> · needs you</tspan>}
-      </text>
+      <CardChips chips={chips} y={top + lines.length * 14 - 8} tone={state?.tone} guide={guide} />
       {flag && <circle className={`pr-flag-dot ${flag}`} cx={NODE_W - 2} cy={2} r={4} />}
       <RerouteMarks mark={mark} frozen={frozen} />
     </g>

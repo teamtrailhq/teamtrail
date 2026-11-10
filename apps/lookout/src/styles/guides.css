@@ -15,11 +15,11 @@
   border-color: var(--edge-attention);
   color: var(--dim);
 }
-/* On a map card: the guide's name in the meta line. */
-.node .meta .guide {
-  fill: var(--text);
+/* On a map card: the guide's chip in the meta row. */
+.node .card-chip.guide text {
+  fill: var(--text-hi);
 }
-.node .meta .guide.off {
+.node .card-chip.guide.off text {
   fill: var(--amber);
 }
 .ticket-guide .guide-head {
