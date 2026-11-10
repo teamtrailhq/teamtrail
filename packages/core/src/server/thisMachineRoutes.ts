@@ -16,9 +16,9 @@ const WRITES: RegExp[] = [
   // Worktrees on this disk: the setting, and removing a folder.
   /^\/workspaces$/,
   /^\/workspaces\/remove$/,
-  // Guides: installing, approving, and approving the check commands they add to verification.json. Which guide a
-  // ticket or a trail uses is steering, not trust, and stays open.
-  /^\/guides\/(?!ticket$|team$)/,
+  // Guides: installing, approving, the check commands they add to verification.json, and which guide a ticket or
+  // a trail's team uses (a guide brings its checks with it: trustFields.ts).
+  /^\/guides\//,
   // This person's own attention preferences, kept in their config dir.
   /^\/attention\/prefs$/,
   // The projects this Lookout supervises.

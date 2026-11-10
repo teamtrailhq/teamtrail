@@ -13,6 +13,7 @@ import { handleGuides } from './guideRoutes';
 import { BadRequest, openEventStream, readText, refuseEarly, requestUrl, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
 import { handleKnowledge } from './knowledgeRoutes';
+import { lanFileRefusal } from './lanFileRefusal';
 import { lanPlaces } from './lanPlaces';
 import { handleLeases } from './leaseRoutes';
 import { handleModels } from './modelRoutes';
@@ -52,7 +53,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const abs = path.resolve(root);
   const fs = nodeMarkdownFs(abs);
   const markdown = new MarkdownAdapter({ ...fs, watch: undefined }, abs);
-  const routes = createTrackerRoutes({ ...trackers, root: abs, markdown });
+  const routes = createTrackerRoutes({ ...trackers, root: abs, markdown, peer });
   const plugins = factories.map((f) => f({ root: abs, active: () => routes.active(), url: publicUrl }));
   const clients = new Set<ServerResponse>();
   const send = (text: string) => {
@@ -113,7 +114,13 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     const p = url.searchParams.get('path') ?? '';
     if (!isTrackerFile(p)) throw new BadRequest('not a tracker file');
     if (req.method === 'PUT') {
-      await fs.write(p, await readText(req));
+      const text = await readText(req);
+      if (!fromThisMachine(req, peer)) {
+        const before = await fs.read(p).catch(() => undefined);
+        const refused = lanFileRefusal(p, before, text);
+        if (refused) return (sendJson(res, 403, { error: refused, elsewhere: true }), true);
+      }
+      await fs.write(p, text);
       res.end('ok');
       return true;
     }

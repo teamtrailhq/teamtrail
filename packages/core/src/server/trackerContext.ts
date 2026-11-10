@@ -1,5 +1,6 @@
 import type { TrackerAdapter } from '../adapters/adapter';
 import { BRAND } from '../model/brand';
+import type { PeerAddress } from './requestGuard';
 import {
   configDir,
   credentialStore,
@@ -21,6 +22,8 @@ export interface TrackerRoutesOptions {
   exec?: Run;
   fetch?: typeof fetch;
   configDir?: string;
+  /** Who is on the other end of a request (requestGuard.ts); tests stand in another device. */
+  peer?: PeerAddress;
 }
 
 /** Configuration, credentials and lookups shared by the tracker routes. */
