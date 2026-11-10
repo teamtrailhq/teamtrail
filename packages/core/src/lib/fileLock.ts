@@ -12,6 +12,12 @@ const aside = (lock: string) => `${lock}.${process.pid}.${randomBytes(6).toStrin
  * Moves `lock` aside and deletes it only if it is the file `keep` says (the stale one we saw, or ours). Anything
  * else was put there by another process in between: it goes back, so its holder keeps its lock. Renaming is
  * atomic, so of several processes doing this at once only one gets the file.
+ *
+ * One window stays open, and is accepted: if a lock was taken over by someone else between our check and our
+ * rename, it is aside for the instant before it goes back, and a third process may take the lock in that
+ * instant; the holder whose lock we moved then loses it while it still works. It needs three processes on the
+ * same file within milliseconds of a ten-second-old lock; what it can cost is one lost change to
+ * credentials.json, not a credential leak. Closing it needs an OS lock Node has no synchronous call for.
  */
 function removeIf(lock: string, keep: (moved: string) => boolean) {
   const moved = aside(lock);
@@ -27,6 +33,18 @@ function removeIf(lock: string, keep: (moved: string) => boolean) {
     // someone holds the lock again by now; theirs stays
   }
   rmSync(moved, { force: true });
+}
+
+/** Our lock goes; one that isn't ours any more (we were thought dead and taken over) is not even moved. */
+function release(lock: string, token: string) {
+  const mine = (p: string) => {
+    try {
+      return readFileSync(p, 'utf8') === token;
+    } catch {
+      return false;
+    }
+  };
+  if (mine(lock)) removeIf(lock, mine);
 }
 
 const inode = (p: string) => {
@@ -65,6 +83,6 @@ export function withFileLock<T>(file: string, fn: () => T): T {
   try {
     return fn();
   } finally {
-    removeIf(lock, (moved) => readFileSync(moved, 'utf8') === token);
+    release(lock, token);
   }
 }
