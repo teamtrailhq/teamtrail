@@ -1,0 +1,247 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { MarkdownAdapter } from '@teamtrail/core';
+import {
+  listReroutes,
+  readAgentDocs,
+  readAttempts,
+  readCriteria,
+  readCriteriaProposals,
+  writeAgentAnswer,
+  writeTicketCriteria,
+} from '@teamtrail/core/agents';
+import { nodeMarkdownFs } from '@teamtrail/core/node';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { agents, type Call } from './fakes/agents';
+
+let repo: string;
+let root: string;
+const hub = agents(() => root);
+
+beforeEach(() => {
+  repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-gates-'));
+  root = path.join(repo, '.teamtrail');
+  fs.mkdirSync(root);
+});
+afterEach(async () => {
+  await hub.closeAll();
+  fs.rmSync(repo, { recursive: true, force: true });
+});
+
+const load = async (mapId: string) => new MarkdownAdapter(nodeMarkdownFs(root), root).loadMap(mapId);
+const ticketOf = async (mapId: string, key: string) => (await load(mapId)).tickets.find((t) => t.key === key)!;
+
+/** The human answers the one question waiting, in the Lookout. */
+async function answer(text: string) {
+  for (;;) {
+    const doc = (await readAgentDocs(root)).find((d) => d.pending.length);
+    if (doc)
+      return writeAgentAnswer(root, {
+        sessionId: doc.session.id,
+        questionId: doc.pending[0].id,
+        text,
+        author: 'trail lead',
+      });
+    await new Promise((r) => setTimeout(r, 20));
+  }
+}
+
+async function ask(call: Call, question: string) {
+  const asked = call<{ answered: boolean; questionId: string }>('ask_human', { question, waitSeconds: 30 });
+  await answer('Yes, drop it');
+  return asked;
+}
+
+type Started = { trail: { id: string }; tickets: { ref: string; key: string }[] };
+const keyOf = (m: Started, ref: string) => m.tickets.find((t) => t.ref === ref)!.key;
+
+async function chart(call: Call) {
+  return call<Started>('start_trail', {
+    discovery: false,
+    title: 'Exports',
+    destination: 'Clients export their data',
+    tickets: [
+      { ref: 'x', title: 'Build the export', type: 'task' },
+      { ref: 'y', title: 'Ship the export', type: 'task', blockedBy: ['x'] },
+      { ref: 'z', title: 'Legacy CSV', type: 'task' },
+    ],
+  });
+}
+
+describe('ruling a ticket out is the human’s call (close_ticket out_of_scope)', () => {
+  for (const kind of ['local', 'remote'] as const)
+    it(`${kind}: without the human's answer it becomes a reroute proposal; with it, a held claim rules it out`, async () => {
+      const lead = await hub.connect({ name: 'claude-01' });
+      const m = await chart(lead);
+      const call = await hub.connect(kind === 'local' ? { name: 'claude-02' } : { token: 'sandbox' });
+      const [x, y, z] = ['x', 'y', 'z'].map((r) => keyOf(m, r));
+
+      // Not claimed: nothing is cancelled, and the blocker still blocks.
+      const proposed = await call<{ outcome: string; closed: null }>('close_ticket', {
+        ticket: x,
+        resolution: 'Nobody exports',
+        outcome: 'out_of_scope',
+      });
+      expect(proposed).toMatchObject({ outcome: 'proposed', closed: null });
+      expect((await ticketOf(m.trail.id, x)).state).toBe('open');
+      const [r1] = listReroutes(root, m.trail.id);
+      expect(r1).toMatchObject({ status: 'pending', changes: [{ op: 'cancel_ticket' }] });
+      // The proposal freezes it: nobody rules it out (or claims it) meanwhile.
+      await expect(lead('close_ticket', { ticket: x, resolution: 'x', outcome: 'out_of_scope' })).rejects.toThrow(
+        /frozen by reroute proposal R-1/,
+      );
+
+      // Held, but no answer: still only a proposal.
+      await call('claim_ticket', { ticket: z });
+      const held = await call<{ outcome: string }>('close_ticket', { resolution: 'Drop CSV', outcome: 'out_of_scope' });
+      expect(held.outcome).toBe('proposed');
+      expect((await ticketOf(m.trail.id, z)).state).toBe('open');
+      await call('release_ticket', { ticket: z });
+
+      // Its dependant still waits on it.
+      await expect(call('claim_ticket', { ticket: y })).rejects.toThrow(/not on the frontier/);
+
+      // The human answered a question asked on the held ticket: now it is theirs, and it goes.
+      const free = await chart(lead);
+      const w = keyOf(free, 'z');
+      await call('claim_ticket', { trail: free.trail.id, ticket: w });
+      await ask(call, 'Shall I drop the legacy CSV export?');
+      const ruled = await call<{ closed: string; ruledOutWith: string }>('close_ticket', {
+        trail: free.trail.id,
+        resolution: 'Legacy CSV is dropped',
+        outcome: 'out_of_scope',
+      });
+      expect(ruled).toMatchObject({ closed: w, ruledOutWith: 'trail lead' });
+      const gone = await ticketOf(free.trail.id, w);
+      expect(gone).toMatchObject({ state: 'closed', closeReason: 'not_planned' });
+    });
+});
+
+describe('agent A vs agent B: nobody changes another agent’s claim', () => {
+  const others = [
+    { label: 'another local agent', who: { name: 'codex-01' } },
+    { label: 'a remote agent', who: { token: 'sandbox' } },
+    { label: 'another connection with the same trail name', who: { name: 'claude-01' } },
+  ];
+  for (const o of others)
+    it(`${o.label} cannot release, close, complete, set criteria on, take over or rule out A's claim`, async () => {
+      const a = await hub.connect({ name: 'claude-01' });
+      const m = await chart(a);
+      const x = keyOf(m, 'x');
+      await a('claim_ticket', { ticket: x });
+      const b = await hub.connect(o.who);
+      const refused = /not claimed by you|claimed by claude-01|held by another connection|not yours to take over/;
+      await expect(b('release_ticket', { ticket: x })).rejects.toThrow(refused);
+      await expect(b('close_ticket', { ticket: x, resolution: 'done' })).rejects.toThrow(refused);
+      await expect(b('report_completion', { ticket: x, resolution: 'done', paths: ['a.ts'] })).rejects.toThrow(refused);
+      await expect(
+        b('set_criteria', { ticket: x, criteria: [{ text: 'Nothing at all', kind: 'unit' }] }),
+      ).rejects.toThrow(/not claimed by you|held by another connection/);
+      await expect(b('claim_ticket', { ticket: x })).rejects.toThrow(/not on the frontier|not yours to take over/);
+      // Ruling it out: a proposal for the human, or (same name, other connection) refused outright.
+      await b<{ outcome: string }>('close_ticket', { ticket: x, resolution: 'no', outcome: 'out_of_scope' }).then(
+        (r) => expect(r.outcome).toBe('proposed'),
+        (e: Error) => expect(e.message).toMatch(/held by another connection/),
+      );
+      const t = await ticketOf(m.trail.id, x);
+      expect(t).toMatchObject({ state: 'open', assignee: 'claude-01' });
+      expect(readCriteria(root, m.trail.id)).toEqual([]);
+      // A still holds it and finishes it.
+      expect(await a('close_ticket', { ticket: x, resolution: 'Built it' })).toMatchObject({ closed: x });
+    });
+});
+
+describe('acceptance criteria: who writes them, and what counts as proof', () => {
+  const config = (level: string) =>
+    fs.writeFileSync(
+      path.join(root, 'verification.json'),
+      JSON.stringify({ v: 1, default: level, checks: { check: { run: [process.execPath, '-e', '0'] } }, run: ['check'] }),
+    );
+
+  it('the assignee, or the charting agent before anyone claims; confirmed criteria only take a proposal', async () => {
+    config('checks');
+    const a = await hub.connect({ name: 'claude-01' });
+    const m = await a<Started>('start_trail', {
+      discovery: false,
+      title: 'Exports',
+      destination: 'D',
+      tickets: [{ ref: 'x', title: 'Build the export', type: 'execute' }],
+    });
+    const x = keyOf(m, 'x');
+    const b = await hub.connect({ name: 'codex-01' });
+    const one = [{ text: 'Trivially true', kind: 'unit' }];
+    await expect(b('set_criteria', { ticket: x, criteria: one })).rejects.toThrow(/Claim .* first/);
+    await a('set_criteria', {
+      ticket: x,
+      criteria: [
+        { text: 'Exports every row', kind: 'unit' },
+        { text: 'Only the owner can export', kind: 'security' },
+      ],
+    });
+    // The human confirms them.
+    writeTicketCriteria(root, { id: m.trail.id, title: 'Exports' }, { id: x.slice(1), key: x }, { confirmed: true });
+    await b('claim_ticket', { ticket: x });
+    await expect(a('set_criteria', { ticket: x, criteria: one })).rejects.toThrow(/not claimed by you/);
+    const proposal = await b<{ proposed: unknown[]; note: string }>('set_criteria', { ticket: x, criteria: one });
+    expect(proposal.note).toMatch(/confirmed ones stay in force/);
+    const inForce = readCriteria(root, m.trail.id)[0];
+    expect(inForce).toMatchObject({ confirmed: true });
+    expect(inForce.criteria.map((c) => c.text)).toEqual(['Exports every row', 'Only the owner can export']);
+    expect(readCriteriaProposals(root, m.trail.id)).toHaveLength(1);
+
+    // Completion is checked against the confirmed set: evidence for the proposed AC-1 alone leaves AC-2 missing.
+    const short = await b<{ status: string }>('report_completion', {
+      resolution: 'Done',
+      criteria: [{ id: 'AC-1', evidence: 'command:true' }],
+    });
+    expect(short.status).toBe('rework');
+    await b('claim_ticket', { ticket: x });
+    // The agent's word (a command, a test name) is claimed, not verified; on a security criterion the human signs.
+    const claimed = await b<{ status: string }>('report_completion', {
+      resolution: 'Done',
+      criteria: [
+        { id: 'AC-1', evidence: 'command:true' },
+        { id: 'AC-2', evidence: 'test:owner only' },
+      ],
+    });
+    expect(claimed.status).toBe('verifying');
+    const last = readAttempts(root, m.trail.id, x.slice(1)).at(-1)!;
+    expect(last.criteria).toMatchObject({ claimed: ['AC-1', 'AC-2'], manual: ['AC-2'], confirmed: true });
+    expect(last.criteria!.lines.join('\n')).not.toMatch(/✓/);
+    expect(last.criteria!.lines[0]).toMatch(/^AC-1 \? claimed, not verified: command:true/);
+  });
+
+  it('at level checks, claimed evidence on an ordinary criterion does not make the ticket wait for a person', async () => {
+    config('checks');
+    const a = await hub.connect({ name: 'claude-01' });
+    const m = await a<Started>('start_trail', {
+      discovery: false,
+      title: 'Exports',
+      destination: 'D',
+      tickets: [{ ref: 'x', title: 'Build', type: 'execute', criteria: [{ text: 'Exports rows', kind: 'unit' }] }],
+    });
+    await a('claim_ticket', { ticket: keyOf(m, 'x') });
+    fs.writeFileSync(path.join(repo, 'export.ts'), 'x');
+    const done = await a<{ closed?: string; status?: string }>('report_completion', {
+      resolution: 'Built',
+      criteria: [{ id: 'AC-1', evidence: 'test:exports rows' }],
+      noCodeReason: 'test',
+    });
+    expect(done.closed).toBe(keyOf(m, 'x'));
+    const comment = (await ticketOf(m.trail.id, keyOf(m, 'x'))).comments.map((c) => c.body).join('\n');
+    expect(comment).toMatch(/AC-1 \? claimed, not verified/);
+    expect(comment).toMatch(/rest on claude-01's word/);
+  });
+
+  it('a criterion source is a knowledge id, nothing else', async () => {
+    const a = await hub.connect({ name: 'claude-01' });
+    const m = await chart(a);
+    await expect(
+      a('set_criteria', {
+        ticket: keyOf(m, 'x'),
+        criteria: [{ text: 'Rows', kind: 'unit', source: '../../etc/passwd' }],
+      }),
+    ).rejects.toThrow(/knowledge entry id like K-3/);
+  });
+});
