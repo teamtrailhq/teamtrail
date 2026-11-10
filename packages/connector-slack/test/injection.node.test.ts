@@ -230,7 +230,10 @@ test('end to end: nothing Scout posts, updates, opens, publishes or replies carr
       assertInert(m, 'message');
     }
     assert.equal(replies().length, 5, 'three trip reports, the inbox and the saved decision');
-    for (const r of replies()) assertInert(r, 'response_url');
+    for (const r of replies()) {
+      assertInert(r, 'response_url');
+      assert.deepEqual([r.parse, r.link_names, r.unfurl_links, r.unfurl_media], ['none', false, false, false]);
+    }
     for (const v of [...calls('views.open'), ...calls('views.update'), ...calls('views.publish')])
       assertInert(v.view, 'view');
     assert.ok(

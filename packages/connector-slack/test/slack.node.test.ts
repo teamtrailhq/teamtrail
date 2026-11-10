@@ -447,7 +447,7 @@ test('env tokens work like GITHUB_TOKEN: reported by source, never stored', asyn
   }
 });
 
-test('a git email that matches a member puts that account forward; nothing is sent until the trail lead confirms it', async () => {
+test('a git email alone puts nobody forward; it only tells the trail lead that the account entering the code matches it', async () => {
   const fake = fakeSlack();
   const hub = socketHub();
   const w = world('record', 'unused.json');
@@ -459,26 +459,20 @@ test('a git email that matches a member puts that account forward; nothing is se
     });
     await svc.pasteToken(TOKENS.app);
     const r = await svc.pasteToken(TOKENS.bot);
-    assert.equal(r.ok, true);
-    const pending = { id: ANA, name: 'ana', realName: 'Ana Silva', via: 'git-email' };
-    assert.deepEqual([r.status.step, r.status.owners, r.status.pendingOwner], [5, [], pending]);
+    assert.deepEqual([r.ok, r.status.step, r.status.owners, r.status.pendingOwner], [true, 5, [], undefined]);
     await until(() => svc.status().state === 'online');
-    await svc.tick();
+    const enter = async (user: string) => {
+      const { code } = svc.startOwnerCode();
+      await hub.envelope(fake.payload.clickHome(user, 'claim_owner'));
+      await svc.idle();
+      await hub.envelope(fake.payload.submit(user, [...fake.views.keys()].at(-1)!, { code }));
+      await svc.idle();
+      return svc.status().pendingOwner;
+    };
+    assert.deepEqual(await enter(RAJ), { id: RAJ, name: 'raj', realName: 'Raj Patel', via: 'code', gitEmail: false });
+    svc.resetOwner();
+    assert.deepEqual(await enter(ANA), { id: ANA, name: 'ana', realName: 'Ana Silva', via: 'code', gitEmail: true });
     assert.deepEqual(fake.channels.get(fake.im(ANA))?.messages ?? [], [], 'not a word before the confirmation');
-    await assert.rejects(
-      svc.confirmOwner(RAJ),
-      /no longer waiting/,
-      'only the account that was shown can be confirmed',
-    );
-    const done = await svc.confirmOwner(ANA);
-    assert.deepEqual(
-      [done.step, done.owners.map((o) => [o.id, o.via]), done.pendingOwner],
-      ['done', [[ANA, 'git-email']], undefined],
-    );
-    assert.deepEqual(
-      fake.channels.get(fake.im(ANA))!.messages.map((m) => m.text),
-      ['Connected. Decisions and questions will reach you here.'],
-    );
     svc.close();
   } finally {
     w.cleanup();

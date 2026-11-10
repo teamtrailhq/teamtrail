@@ -137,8 +137,8 @@ test('the code: wrong guesses run out per account and then for everyone; it expi
     for (let i = 0; i < 5; i++) assert.match(await submit(EVE, 'AAAA-AAAA'), /doesn't match/);
     assert.match(await submit(EVE, CODE), /Too many tries/, 'a sixth try is refused even with the right code');
     for (let i = 0; i < 5; i++) await submit(RAJ, 'BBBB-BBBB');
-    for (const u of ['U0X000001', 'U0X000002']) for (let i = 0; i < 5; i++) fakeTry(u);
-    assert.equal(svc.status().ownerCode, undefined, 'twenty wrong tries in all drop the code');
+    for (let n = 1; n <= 8; n++) for (let i = 0; i < 5; i++) fakeTry(`U0X00000${n}`);
+    assert.equal(svc.status().ownerCode, undefined, 'fifty wrong tries in all drop the code');
     assert.match(await submitAfterDrop(), /No code is waiting/);
 
     const second = svc.startOwnerCode();
@@ -287,8 +287,8 @@ test('journal: transitions from the first versions, Slack owner changes and kind
 
 /* ---------- installs from before the code ---------- */
 
-test('existing install, owner set by "This is me": put forward again, nothing sent and nothing accepted until confirmed once', async () => {
-  for (const legacy of ['home', 'unmarked'] as const) {
+test('existing install, owner set by "This is me", by git email, or unmarked: dropped, never offered for one-click confirmation', async () => {
+  for (const legacy of ['home', 'unmarked', 'git-email'] as const) {
     const { w, calls, replies } = liveWorld();
     try {
       const { a, map, api } = await approvalTrail(w);
@@ -296,53 +296,46 @@ test('existing install, owner set by "This is me": put forward again, nothing se
       const svc = w.service(a);
       await until(() => svc.status().state === 'online');
       const s = svc.status();
-      assert.deepEqual([s.step, s.owners, s.pendingOwner], [5, [], { id: ANA, name: 'ana', via: 'home' }], legacy);
+      assert.deepEqual([s.step, s.owners, s.pendingOwner], [5, [], undefined], legacy);
+      assert.deepEqual(s.ownerRedo, { was: { id: ANA, name: 'ana' }, via: legacy === 'unmarked' ? 'home' : legacy });
+      await assert.rejects(svc.confirmOwner(ANA), /no longer waiting/, `${legacy}: no one-click confirm`);
       await svc.tick();
-      assert.equal(calls('chat.postMessage').length, 0, 'no approval is sent to the unconfirmed account');
-
-      const done = await svc.confirmOwner(ANA);
-      assert.deepEqual([done.step, done.owners[0].id, done.allow], ['done', ANA, [{ id: RAJ }]], 'settings are kept');
-      await svc.tick();
-      assert.equal(calls('chat.postMessage').length, 3, 'the greeting, then the two approvals that waited');
-      await w.send(svc, 'ana approves', (f) => f.payload.click(ANA, ...posted(f, 'Approve'), 'verify_approve'));
+      assert.equal(calls('chat.postMessage').length, 0, 'nothing is sent to the old owner');
+      await w.send(svc, 'ana approves on an old message', (f) => f.payload.homeOpened(ANA));
+      assert.equal((await a.loadMap(map.id)).tickets.find((t) => t.id === api.id)!.state, 'open');
       assert.equal(replies().length, 0);
-      assert.equal((await a.loadMap(map.id)).tickets.find((t) => t.id === api.id)!.state, 'closed');
+
+      // The way back: a code shown here, entered by the account, confirmed here.
+      const { code } = svc.startOwnerCode();
+      await w.send(svc, 'ana clicks Enter code', (f) => f.payload.clickHome(ANA, 'claim_owner'));
+      await w.send(svc, 'ana enters it', (f) => f.payload.submit(ANA, [...f.views.keys()].at(-1)!, { code }));
+      const done = await svc.confirmOwner(ANA);
+      assert.deepEqual([done.step, done.owners[0].via, done.allow, done.ownerRedo], ['done', 'code', [{ id: RAJ }], undefined]);
     } finally {
       w.cleanup();
     }
   }
 });
 
-test('existing install, owner matched by git email: stays the owner, nothing to confirm', async () => {
-  const { w, calls } = liveWorld();
-  try {
-    const { a } = await approvalTrail(w);
-    connected(w, { legacy: 'git-email' });
-    const svc = w.service(a);
-    await until(() => svc.status().state === 'online');
-    const s = svc.status();
-    assert.deepEqual(
-      [s.step, s.owners, s.pendingOwner],
-      ['done', [{ id: ANA, name: 'ana', via: 'git-email' }], undefined],
-    );
-    await svc.tick();
-    assert.equal(calls('chat.postMessage').length, 2);
-  } finally {
-    w.cleanup();
-  }
-});
-
-test('settleOwners: confirmed and git-email owners stay; anything else waits; a confirmed owner wins over a claimant', () => {
+test('settleOwners: only an owner confirmed here stays; anything else, or anyone put forward without the code, is dropped', () => {
   const home = { id: ANA, name: 'ana', via: 'home' as const };
-  assert.deepEqual(settleOwners({ owners: [home] }), { owners: [], pendingOwner: home });
-  assert.deepEqual(settleOwners({ owners: [{ id: ANA }] }), { owners: [], pendingOwner: { id: ANA, via: 'home' } });
+  assert.deepEqual(settleOwners({ owners: [home] }), {
+    owners: [],
+    pendingOwner: undefined,
+    ownerRedo: { was: { id: ANA, name: 'ana' }, via: 'home' },
+  });
+  assert.deepEqual(settleOwners({ owners: [{ id: ANA, via: 'git-email' }] }).ownerRedo?.via, 'git-email');
   const confirmed = { id: ANA, via: 'code' as const, confirmedAt: 5 };
-  assert.deepEqual(settleOwners({ owners: [confirmed], pendingOwner: { id: EVE } }), {
+  assert.deepEqual(settleOwners({ owners: [confirmed], pendingOwner: { id: EVE, via: 'code' } }), {
     owners: [confirmed],
     pendingOwner: undefined,
+    ownerRedo: undefined,
   });
   assert.deepEqual(settleOwners({ owners: [{ id: EVE, via: 'code' }] }).owners, [], 'via alone confirms nothing');
-  assert.deepEqual(settleOwners({}), { owners: [], pendingOwner: undefined });
+  for (const via of ['home', 'git-email', undefined] as const)
+    assert.equal(settleOwners({ pendingOwner: { id: EVE, via } }).pendingOwner, undefined, `pending via ${via}`);
+  assert.deepEqual(settleOwners({ pendingOwner: { id: EVE, via: 'code' } }).pendingOwner, { id: EVE, via: 'code' });
+  assert.deepEqual(settleOwners({}), { owners: [], pendingOwner: undefined, ownerRedo: undefined });
 });
 
 /* ---------- the Home tab ---------- */

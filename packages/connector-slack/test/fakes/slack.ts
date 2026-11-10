@@ -44,7 +44,13 @@ export function fakeSlack(opts: { start?: number } = {}) {
     bot: 'xoxb-1001-2002-fakebottokenscout',
     user: 'xoxp-1001-2002-fakeusertoken',
   };
-  const state = { scopes: [...BOT_SCOPES, ...OPTIONAL_SCOPES] as string[], socketMode: true, installed: true };
+  const state = {
+    scopes: [...BOT_SCOPES, ...OPTIONAL_SCOPES] as string[],
+    socketMode: true,
+    installed: true,
+    /** A test's way to make one call fail: return an error code for it. */
+    reject: undefined as ((method: string, args: Record<string, unknown>) => string | undefined) | undefined,
+  };
   let clock = Math.floor((opts.start ?? Date.UTC(2026, 9, 31, 12, 0, 0)) / 1000);
   let seq = 0;
   let viewSeq = 0;
@@ -123,6 +129,12 @@ export function fakeSlack(opts: { start?: number } = {}) {
     }
     if (token === tokens.app) return err('not_allowed_token_type');
     if (token !== tokens.bot || !state.installed) return err('invalid_auth');
+    const rejected = state.reject?.(method, args);
+    if (rejected) return err(rejected);
+    const tooLong = /^(chat\.(postMessage|update)|views\.(open|update|publish))$/.test(method)
+      ? overLimit(args.blocks ?? args.view?.blocks)
+      : undefined;
+    if (tooLong) return err('invalid_blocks', { errors: [tooLong] });
     const channel = (id: string) => channels.get(id);
     switch (method) {
       case 'auth.test':
@@ -237,6 +249,28 @@ export function fakeSlack(opts: { start?: number } = {}) {
       default:
         return err('unknown_method');
     }
+  }
+
+  /** Slack's Block Kit limits: a text object holds at most 3000 characters, a button label 75. */
+  function overLimit(blocks: unknown, at = 'blocks'): string | undefined {
+    if (Array.isArray(blocks)) {
+      for (let i = 0; i < blocks.length; i++) {
+        const found = overLimit(blocks[i], `${at}[${i}]`);
+        if (found) return found;
+      }
+      return undefined;
+    }
+    if (!blocks || typeof blocks !== 'object') return undefined;
+    const o = blocks as Record<string, unknown>;
+    if ((o.type === 'mrkdwn' || o.type === 'plain_text') && String(o.text).length > 3000)
+      return `must be less than 3001 characters [json-pointer:/${at}/text]`;
+    if (o.type === 'button' && String((o.text as { text?: string })?.text ?? '').length > 75)
+      return `must be less than 76 characters [json-pointer:/${at}/text]`;
+    for (const [k, v] of Object.entries(o)) {
+      const found = overLimit(v, `${at}/${k}`);
+      if (found) return found;
+    }
+    return undefined;
   }
 
   const fetchFn = async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {
