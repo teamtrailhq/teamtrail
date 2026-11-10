@@ -9,7 +9,7 @@ const criteriaInput = z.array(
   z.object({
     text: z.string().min(1),
     kind: z.enum(CRITERION_KINDS as [CriterionKind, ...CriterionKind[]]),
-    source: z.string().optional().describe('The knowledge entry it comes from, e.g. K-3.'),
+    source: z.string().optional().describe('The knowledge entry it comes from: its id, e.g. K-3.'),
   }),
 );
 
@@ -95,7 +95,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Set acceptance criteria',
       description:
-        "What must be true for a ticket to be done, agreed before the work starts. Replaces the ticket's criteria (numbered AC-1, AC-2, …). Cover the business rules suggested with the claim. When completing, give evidence for each.",
+        "What must be true for a ticket to be done, agreed before the work starts. Replaces the ticket's criteria (numbered AC-1, AC-2, …); only its assignee may, or the agent that charted it before anyone claims it. Once the human confirmed them, this only proposes a change: the confirmed ones stay in force until the human takes yours. Cover the business rules suggested with the claim. When completing, give evidence for each.",
     },
     { trail, ticket, criteria: criteriaInput },
     (a) => agent.setCriteria(a),

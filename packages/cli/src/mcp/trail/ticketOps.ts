@@ -1,5 +1,6 @@
 import {
   allowedTypes,
+  attention,
   OperationError,
   promoteToTicket,
   release,
@@ -7,7 +8,7 @@ import {
   type Ticket,
   type TicketType,
 } from '@teamtrail/core';
-import { levelFor, listGuides } from '@teamtrail/core/agents';
+import { levelFor, listGuides, recordCharted } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaView, saveCriteria, type CriterionInput } from './criteria';
 import { briefView, claimable } from './discovery';
@@ -15,6 +16,7 @@ import { assertGuide, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
 import { heldReason, pickNext, tierFields } from './models';
 import { noTicketReason } from './noTicketReason';
+import { assertOwnClaim } from './ownClaim';
 import { recoverStalled } from './recoverStalled';
 import { frozenOn } from './reroutes';
 import { ownReviews } from './reviews';
@@ -53,13 +55,23 @@ export async function releaseTicket(ctx: AgentContext, input: { ticket?: string;
   const ref = input.ticket ?? ctx.sessions.running()?.info.ticketId;
   if (!ref) throw new OperationError('Which ticket? Pass `ticket`.');
   const t = ctx.findTicket(snap, ref);
-  if (t.assignee !== (await ctx.agentId()))
-    throw new OperationError(`${t.key} is not claimed by you${t.assignee ? ` (assignee: ${t.assignee})` : ''}`);
+  assertOwnClaim(ctx, { mapId: snap.map.id, ticket: t, agent: await ctx.agentId() });
   await release(ctx.adapter, snap.map.id, t.id, { ...ctx.actor(), reason: input.reason });
   ctx.leases.drop(snap.map.id, t.id);
   if (ctx.sessions.running()?.info.ticketId === t.id)
     ctx.sessions.end(true, `Released ${t.key}${input.reason ? ` · ${input.reason}` : ''}`);
   return { released: t.key };
+}
+
+/**
+ * Who added a ticket after the trail was charted, and while working on what. A new ticket can do work another one
+ * holds back (a task beside a junction waiting on the human), so where it came from stays on the ticket.
+ */
+function addedLine(ctx: AgentContext, hitl?: boolean) {
+  const working = ctx.sessions.running()?.info.ticketId;
+  const during = working ? ` while working ${ctx.keyOf(working)}` : '';
+  const who = hitl ? 'for the human to decide' : 'for agents, without the human';
+  return `Added by ${ctx.sessions.running()?.info.agent ?? 'an agent'}${during}, ${who}.`;
 }
 
 export async function addTicket(
@@ -101,6 +113,8 @@ export async function addTicket(
     });
     for (const b of blockers) await ctx.adapter.addBlocking(snap.map.id, b, t.id);
   }
+  recordCharted(ctx.root, snap.map.id, [t.id], { agent: await ctx.agentId(), origin: ctx.origin });
+  await ctx.adapter.comment(snap.map.id, t.id, await ctx.agentId(), addedLine(ctx, attention(t) === 'hitl'));
   if (input.guide) await setTicketGuide(ctx.adapter, { mapId: snap.map.id, ticketId: t.id }, input.guide, 'agent');
   if (input.criteria?.length) saveCriteria(ctx.root, snap.map, t, input.criteria);
   const fresh = await ctx.load(snap.map.id);

@@ -1,6 +1,7 @@
 import type { TrackerAdapter } from '../../adapters/adapter';
 import type { Journal } from '../../model/lifecycle';
 import type { RerouteChange, RerouteProposal } from '../../model/reroute';
+import { oneLine } from '../../model/safeText';
 import type { MapSnapshot } from '../../model/types';
 import { transition } from '../lifecycle/transition';
 import { supersedeDecision } from '../operations/decisionOps';
@@ -118,12 +119,21 @@ async function reopen(s: Step, snap: MapSnapshot, c: Extract<RerouteChange, { op
 async function supersede(s: Step, c: Extract<RerouteChange, { op: 'supersede_decision' }>) {
   const old = (await s.env.adapter.listDecisions(s.p.mapId)).find((d) => d.id === c.decision);
   if (!old || old.supersededBy) return;
+  // The words are the agent's; the trail lead's part is approving them. The record says both, apart.
   await supersedeDecision(s.env.adapter, s.p.mapId, old.id, {
     answer: c.answer,
-    rationale: c.rationale,
+    summary: `${oneLine(c.answer).slice(0, 100)} (proposed by ${s.p.by}, approved by ${s.env.actor})`,
+    rationale: [
+      `Proposed by ${s.p.by} in reroute ${s.p.id}; approved by ${s.env.actor}. The answer and rationale are ${s.p.by}'s words.`,
+      `${s.p.by}'s rationale: ${c.rationale}`,
+    ].join('\n\n'),
     decidedBy: s.env.actor,
     participants: [{ id: s.p.by }, { id: s.env.actor }],
-    source: { kind: 'lookout', label: `reroute ${s.p.id}`, ref: `${s.p.mapId}/${s.p.id}/${s.index}` },
+    source: {
+      kind: 'lookout',
+      label: `reroute ${s.p.id} by ${s.p.by}, approved by ${s.env.actor}`,
+      ref: `${s.p.mapId}/${s.p.id}/${s.index}`,
+    },
   });
 }
 

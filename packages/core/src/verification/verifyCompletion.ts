@@ -19,7 +19,7 @@ import { nextAttemptId, readAttempts, writeAttempt } from './evidenceStore';
 import { gradeAttempt } from './gradeAttempt';
 import { attemptComment, outcomeOf } from './outcome';
 import { verificationFor, type LevelInfo } from './policy';
-import { remoteOutcome } from './remoteCompletion';
+import { remoteGraded } from './remoteCompletion';
 import { submissionOf } from './resubmit';
 import { requestReview } from './reviewRequest';
 import { acquireRunLock, releaseRunLock } from './runLock';
@@ -67,6 +67,10 @@ export interface Submission {
   criteria?: CriterionEvidence[];
   /** The agent is on another machine: this checkout doesn't hold its work, so no check runs here. */
   remote?: boolean;
+  /** Who is behind the agent (see `VerificationAttempt.origin`). */
+  origin?: string;
+  /** The repo-relative files the agent said it changed. */
+  declaredPaths?: string[];
 }
 
 /** One ticket's completion to verify: its level, and what the agent submitted. */
@@ -112,6 +116,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
     ticketKey: t.key,
     agent: sub.agent,
     ...(sub.sessionId ? { sessionId: sub.sessionId } : {}),
+    ...(sub.origin ? { origin: sub.origin } : {}),
     level: info.level,
     configHash: config.hash ?? 'none',
     submittedAt: Date.now(),
@@ -122,6 +127,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
     ...(sub.noCodeReason ? { noCodeReason: sub.noCodeReason } : {}),
     ...(sub.pr ? { pr: sub.pr } : {}),
     ...(sub.remote ? { remote: true } : {}),
+    ...(sub.declaredPaths ? { declaredPaths: sub.declaredPaths } : {}),
   };
   const id = nextAttemptId(env.root, mapId, t.id);
   const lock = acquireRunLock(env.root, { ...base, id });
@@ -135,7 +141,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
   const done = (async (): Promise<Settled> => {
     let attempt: VerificationAttempt;
     try {
-      const graded = sub.remote ? remoteOutcome() : await gradeHere(env, job, { id, config });
+      const graded = sub.remote ? remoteGraded(env, job) : await gradeHere(env, job, { id, config });
       attempt = { ...base, id, finishedAt: Date.now(), ...graded };
       writeAttempt(env.root, attempt);
     } finally {

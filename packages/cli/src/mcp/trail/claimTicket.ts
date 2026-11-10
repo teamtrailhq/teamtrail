@@ -4,6 +4,7 @@ import {
   deriveStates,
   leaseSpan,
   OperationError,
+  repoPaths,
   type MapSnapshot,
   type SessionHandle,
   type SessionMode,
@@ -16,7 +17,9 @@ import { assertClaimable, briefView, claimable } from './discovery';
 import { assertInGuides, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
 import { pickNext, stampModel, tierFields } from './models';
+import { heldElsewhere } from './ownClaim';
 import { claimParallel } from './parallel';
+import { pathRoots } from './pathRoots';
 import { recoverStalled } from './recoverStalled';
 import { sessionView } from './reporting';
 import { frozenOn } from './reroutes';
@@ -38,6 +41,7 @@ export async function claimTicket(
   ctx: AgentContext,
   input: { ticket?: string; trail?: string; touches?: string[]; workspace?: boolean; guides?: string[] } = {},
 ) {
+  repoPaths(input.touches, pathRoots(ctx)); // refuses a path outside the repo before anything is claimed
   const recovered = await recoverStalled(ctx);
   const snap = await ctx.resolveTrail(input.trail);
   ctx.trail = snap.map.id;
@@ -106,6 +110,8 @@ async function pickTarget(
     const r = await nextTicket(ctx, { trail: snap.map.id, guides: at.guides });
     throw new OperationError(('reason' in r ? r.reason : undefined) ?? 'No ready ticket');
   }
+  const elsewhere = target.assignee === agent ? heldElsewhere(ctx, snap.map.id, target) : undefined;
+  if (elsewhere) throw new OperationError(`${elsewhere}: it is not yours to take over.`);
   const proposal = frozen.get(target.id);
   if (proposal && target.assignee !== agent)
     throw new OperationError(`${target.key} is frozen by reroute proposal ${proposal}, waiting on the human`);

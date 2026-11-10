@@ -49,6 +49,13 @@ export class AgentContext {
   readonly waits = new Map<string, Promise<{ text: string; author: string }>>();
   /** The human's answers to this agent's questions, by question id: what a decision of theirs rests on. */
   readonly answers = new Map<string, HumanAnswer>();
+  /** Knowledge entries this connection proposed: its own words, which it may read back before they are reviewed. */
+  readonly proposed = new Set<string>();
+  /**
+   * Who is behind this agent, beyond its trail name: the token for a remote agent (one token may hold several
+   * sessions under different names), this connection for a local one. Kept on its leases, attempts and verdicts.
+   */
+  readonly origin: string;
   private trailName?: string;
   /** Set for an agent that shares its process with others (HTTP): what holds its trail name instead of the pid. */
   private nameHolder?: string;
@@ -60,7 +67,8 @@ export class AgentContext {
     this.writer = new AgentDocWriter(opts.root, this.activity, { client: opts.client, pollMs: opts.pollMs });
     this.sessions = new AgentSessions(this.activity, opts.usage, opts.usagePollMs);
     this.journal = journalFile(opts.root);
-    this.leases = new AgentLeases(opts.root, opts.leaseMs ?? leaseMs(process.env[LEASE_MINUTES_ENV]));
+    this.origin = opts.remote ? `token:${opts.remote.tokenId ?? opts.remote.tokenName}` : `local:${randomUUID()}`;
+    this.leases = new AgentLeases(opts.root, opts.leaseMs ?? leaseMs(process.env[LEASE_MINUTES_ENV]), this.origin);
     this.offTracker = this.adapter.subscribe((e) => {
       const line = describeTrackerEvent(e, (id) => this.tickets.get(id) ?? ({ key: this.keyOf(id) } as Ticket));
       if (line && this.sessions.current) this.activity.push({ ...line, sessionId: this.sessions.current.id });

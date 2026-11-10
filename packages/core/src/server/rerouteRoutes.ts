@@ -70,12 +70,13 @@ async function getReroutes(ctx: RouteContext, res: ServerResponse, url: URL) {
   sendJson(res, 200, { reroutes, pending: reroutes.filter((p) => p.status === 'pending').length });
 }
 
-/** POST `/assumptions/confirm` (`mapId`, `id`): the trail lead confirms an assumption holds. */
+/** POST `/assumptions/confirm` (`mapId`, `id`, `text` as shown): the trail lead confirms an assumption holds. */
 async function confirm(ctx: RouteContext, req: IncomingMessage, res: ServerResponse) {
-  const b = await readJson<{ mapId?: unknown; id?: unknown }>(req, '{}');
+  const b = await readJson<{ mapId?: unknown; id?: unknown; text?: unknown }>(req, '{}');
   if (!text(b.mapId) || !text(b.id)) throw new BadRequest('"mapId" and "id" are required');
+  if (typeof b.text !== 'string') throw new BadRequest('"text": the assumption as you were shown it, is required');
   try {
-    const input = { mapId: b.mapId as string, id: b.id as string, by: 'trail lead' };
+    const input = { mapId: b.mapId as string, id: b.id as string, by: 'trail lead', shown: b.text };
     sendJson(res, 200, { assumption: await confirmAssumption(await ctx.active(), input) });
   } catch (e) {
     sendDecisionError(res, e);

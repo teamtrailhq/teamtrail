@@ -9,11 +9,14 @@ import {
 import { readAgentDocs, readAttempts, reviewConflict, submitReview } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { checkedAnswers, keepAnswers } from './guides';
+import { assertOwnClaim } from './ownClaim';
 
 /** Why this agent may not take review ticket `r`, or undefined. */
 function conflictOf(ctx: AgentContext, snap: MapSnapshot, r: Ticket, agent: string) {
   const t = snap.tickets.find((x) => x.id === r.reviewOf);
-  return t ? reviewConflict(ctx.root, snap.map.id, t, { agent, sessionIds: ctx.sessionIds }) : undefined;
+  return t
+    ? reviewConflict(ctx.root, snap.map.id, t, { agent, sessionIds: ctx.sessionIds, origin: ctx.origin })
+    : undefined;
 }
 
 /** Review tickets of work this agent did: never offered to it. */
@@ -71,12 +74,14 @@ export async function submitReviewTool(
   if (!ref) throw new OperationError('Which review? Pass `ticket`, or claim a review ticket first.');
   const review = ctx.findTicket(snap, ref);
   const agent = await ctx.agentId();
+  assertOwnClaim(ctx, { mapId: snap.map.id, ticket: review, agent });
   const checked = checkedAnswers(ctx, { snap, ticket: review, given: input.checklist });
   const r = await submitReview(ctx.verifyEnv(), {
     mapId: snap.map.id,
     reviewId: review.id,
     agent,
     sessionIds: ctx.sessionIds,
+    origin: ctx.origin,
     sessionId: s?.id,
     verdict: input.verdict,
     summary: input.summary,

@@ -9,6 +9,7 @@ import { JOURNAL_DIR } from '../history/journalFile';
 import { parseDecision } from '../planning/decisions/decisionFile';
 import { REROUTES_DIR } from '../planning/reroute/rerouteStore';
 import type { DecisionEvent } from './bridgeTypes';
+import { criteriaProposalEvent } from './criteriaProposalEvent';
 import { verificationEvents } from './verificationEvents';
 
 type SeenDecision = { text: string; supersededBy?: string };
@@ -23,7 +24,8 @@ function decisionChange(prev: SeenDecision | undefined, now: { supersededBy?: st
  * Turns changes in the tracker folder into SSE messages for `send`: `{ path }`
  * per changed file, named `decision` events for decision records and named
  * `agent` events for agent session docs, and named `verification` events for
- * attempts, verdicts, check logs and run locks, and named `reroute` events (`{ mapId, id }`) for reroute proposals.
+ * attempts, verdicts, check logs and run locks, named `reroute` events (`{ mapId, id }`) for reroute proposals, and `criteria-proposals` events (`{ mapId }`) for
+ * proposed criteria.
  * Returns the function that stops watching.
  */
 export function watchTrackerFolder(abs: string, fs: MarkdownFs, send: (text: string) => void): () => void {
@@ -95,6 +97,8 @@ export function watchTrackerFolder(abs: string, fs: MarkdownFs, send: (text: str
   const verification = verificationEvents(send);
   const unwatch = fs.watch!((rel) => {
     if (verification(rel)) return;
+    const proposals = criteriaProposalEvent(rel);
+    if (proposals) return send(proposals);
     if (isAgentPath(rel)) return onAgentFile(rel);
     if (rel.startsWith(`${REROUTES_DIR}/`)) return onRerouteFile(rel);
     if (isOutboxPath(rel) || rel === JOURNAL_DIR || rel.startsWith(`${JOURNAL_DIR}/`)) return;
