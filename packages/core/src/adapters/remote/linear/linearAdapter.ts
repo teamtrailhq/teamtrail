@@ -191,8 +191,9 @@ export class LinearAdapter extends SyncedAdapter {
     await this.mutations.update(t.id, { stateId: m.open });
   }
 
-  protected async remoteSetMeta(_map: MapDoc, t: Ticket) {
-    await this.ledger.writeTicket(t, () => this.mutations.update(t.id, { description: ticketBody(t) }));
+  protected async remoteSetMeta(_map: MapDoc, t: Ticket, o?: { confirm?: boolean }) {
+    const send = () => this.mutations.update(t.id, { description: ticketBody(t) });
+    await this.ledger.writeTicket(t, send, o?.confirm);
   }
 
   protected async remoteComment(_map: MapDoc, t: Ticket, c: RemoteComment) {
@@ -210,8 +211,9 @@ export class LinearAdapter extends SyncedAdapter {
     await this.mutations.update(t.id, { stateId });
   }
 
-  protected async remoteUpdateMap(map: MapDoc) {
-    await this.ledger.writeMap(map, () => this.mutations.update(map.id, { description: mapBody(map) }));
+  protected async remoteUpdateMap(map: MapDoc, o?: { confirm?: boolean }) {
+    const send = () => this.mutations.update(map.id, { description: mapBody(map) });
+    await this.ledger.writeMap(map, send, o?.confirm);
   }
 
   protected async remoteSetMode(map: MapDoc, mode: MapMode) {

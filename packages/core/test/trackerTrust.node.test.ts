@@ -170,7 +170,11 @@ test('GitHub: a teammate can claim and move a ticket, but a verification level t
   await other.editTicket(map.id, t.id, { title: 'Rewrite the auth module' });
   assert.match(fake.issues.get(n)!.body!, /"verification":"checks\+review\+human"/);
   assert.equal((await make().loadMap(map.id)).tickets[0].verification, 'checks+review+human');
-  assert.equal(store.read()[t.id].waiting, undefined, 'nothing left to look at');
+  assert.equal(
+    store.read()[t.id].waiting?.by,
+    '@mona',
+    'her change still waits for this human: an edit never settles it',
+  );
 });
 
 test('GitHub: settings this account wrote from another machine are taken as they are', async () => {

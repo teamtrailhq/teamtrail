@@ -20,5 +20,6 @@ export async function setTicketGuide(
     const fresh = t.state === 'open' && !t.assignee && !t.guide;
     if (!fresh || guide === null) throw new OperationError(`only the trail lead can change the guide of ${t.key}`);
   }
-  await adapter.setMeta(target.mapId, target.ticketId, { guide });
+  const confirm = actorKind === 'trail lead' ? { confirm: true as const } : {};
+  await adapter.setMeta(target.mapId, target.ticketId, { guide, ...confirm });
 }

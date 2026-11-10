@@ -135,7 +135,10 @@ test('N5: a failed write undoes only its own mark, never another process’s ent
     await theirs.update(() => ({ '7': other })); // another process records the issue meanwhile
     throw new Error('offline');
   };
-  await assert.rejects(ledger.write('7', { verification: 'off' }, send), /offline/);
+  await assert.rejects(
+    ledger.write({ issueId: '7', settings: { verification: 'off' }, send: send, confirm: true }),
+    /offline/,
+  );
   assert.deepEqual(mine.read()['7'], other);
 });
 

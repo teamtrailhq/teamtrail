@@ -10,5 +10,7 @@ export function withMapMeta(m: MapDoc, patch: MapMetaPatch): MapDoc {
   else if (patch.guides) next.guides = patch.guides;
   if (patch.modelMatching === null) delete next.modelMatching;
   else if (patch.modelMatching) next.modelMatching = patch.modelMatching;
+  // The trail lead set them: what is on the trail now is accepted here.
+  if (patch.confirm) delete next.settingsUnconfirmed;
   return next;
 }

@@ -27,11 +27,12 @@ export abstract class SyncedWriter extends SyncedStore {
   protected abstract remoteEditTicket(map: MapDoc, t: Ticket): Promise<void>;
   protected abstract remoteReopen(map: MapDoc, t: Ticket): Promise<void>;
   /** Persist the claim and status (`ticketMeta`) of an already-updated ticket. */
-  protected abstract remoteSetMeta(map: MapDoc, t: Ticket): Promise<void>;
+  /** `confirm`: the trail lead set this ticket's settings (TicketMetaPatch.confirm); any other write never accepts them. */
+  protected abstract remoteSetMeta(map: MapDoc, t: Ticket, o?: { confirm?: boolean }): Promise<void>;
   /** `c.writeId` must be readable back as the comment's `writeId`. */
   protected abstract remoteComment(map: MapDoc, t: Ticket, c: RemoteComment): Promise<void>;
   protected abstract remoteClose(map: MapDoc, t: Ticket, reason: 'completed' | 'not_planned'): Promise<void>;
-  protected abstract remoteUpdateMap(map: MapDoc): Promise<void>;
+  protected abstract remoteUpdateMap(map: MapDoc, o?: { confirm?: boolean }): Promise<void>;
   protected abstract remoteSetMode(map: MapDoc, mode: MapMode): Promise<void>;
   /** Post a decision record on its ticket, or on the trail when it has none. */
   protected abstract remotePostDecision(map: MapDoc, d: DecisionRecord, ticket?: Ticket): Promise<void>;
@@ -49,7 +50,7 @@ export abstract class SyncedWriter extends SyncedStore {
       case 'sections':
         return this.remoteUpdateMap({ ...map, sections: c.sections });
       case 'mapMeta':
-        return this.remoteUpdateMap(withMapMeta(map, c.patch));
+        return this.remoteUpdateMap(withMapMeta(map, c.patch), { confirm: !!c.patch.confirm });
       case 'blocking':
         return this.remoteAddBlocking(map, ticketOf(e, c.blockerId), ticketOf(e, c.blockedId));
       case 'unblocking':
@@ -61,7 +62,7 @@ export abstract class SyncedWriter extends SyncedStore {
       case 'claim':
         return this.remoteSetMeta(map, { ...ticketOf(e, c.ticketId), assignee: c.assignee });
       case 'meta':
-        return this.remoteSetMeta(map, withMeta(ticketOf(e, c.ticketId), c.patch));
+        return this.remoteSetMeta(map, withMeta(ticketOf(e, c.ticketId), c.patch), { confirm: !!c.patch.confirm });
       case 'comment':
         return this.remoteComment(map, ticketOf(e, c.ticketId), { author: c.author, body: c.body, writeId: w.id });
       case 'close':

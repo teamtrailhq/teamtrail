@@ -19,6 +19,6 @@ export async function setVerification(
   actorKind: ActorKind,
 ) {
   if (actorKind !== 'trail lead') throw new OperationError('only the trail lead can change a verification level');
-  if (target.ticketId) await adapter.setMeta(target.mapId, target.ticketId, { verification: level });
-  else await adapter.setMapMeta(target.mapId, { verification: level });
+  if (target.ticketId) await adapter.setMeta(target.mapId, target.ticketId, { verification: level, confirm: true });
+  else await adapter.setMapMeta(target.mapId, { verification: level, confirm: true });
 }

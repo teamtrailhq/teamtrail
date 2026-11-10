@@ -1,6 +1,7 @@
 import type { MapDoc, Ticket } from '../../model/types';
 import { settingsKey, type BodySettings } from './bodySettings';
 import { mapSettings, ticketSettings } from './format';
+import { TrackerError } from './http';
 import { settingsInForce, type AcceptedEntry, type Settled, type UnacceptedSettings } from './settingsInForce';
 import type { Writer } from './writer';
 
@@ -14,7 +15,8 @@ export interface AcceptedStore {
    * Under the store's lock: `change` gets the entries as they are now and returns the ones to replace (`undefined`
    * removes one); the others are left. Never blocks the event loop; a change that can't get the lock is dropped.
    */
-  update(change: (now: Record<string, AcceptedEntry>) => Record<string, AcceptedEntry | undefined>): Promise<void>;
+  /** Resolves false when the change couldn't be made (the record is locked): nothing was written. */
+  update(change: (now: Record<string, AcceptedEntry>) => Record<string, AcceptedEntry | undefined>): Promise<boolean>;
 }
 
 function memoryStore(): AcceptedStore {
@@ -26,9 +28,13 @@ function memoryStore(): AcceptedStore {
         if (e) all[id] = e;
         else delete all[id];
       }
+      return true;
     },
   };
 }
+
+/** Why a confirmed write failed loudly. */
+const UNRECORDED = 'Teamtrail could not record the settings you set (its record on this machine is locked)';
 
 const same = (a: AcceptedEntry | undefined, b: AcceptedEntry | undefined) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -50,6 +56,8 @@ export const reportsSettings = (a: object): a is SettingsReporter =>
 export class SettingsLedger {
   /** The account the token belongs to, from the last read or asked of the tracker; entries are kept under it. */
   private viewer?: string;
+  /** When a read last couldn't record what it found (the record was locked), for the attention queue. */
+  skipped?: number;
 
   constructor(
     /** Asks the tracker who the token is, for writes made before any read. */
@@ -73,7 +81,9 @@ export class SettingsLedger {
         return { use: r.use, ...(r.unconfirmed ? { unconfirmed: r.unconfirmed } : {}) };
       },
       save: async () => {
-        if (Object.keys(changed).length) await this.store.update(() => changed);
+        if (!Object.keys(changed).length) return;
+        if (await this.store.update(() => changed)) return;
+        this.skipped = o.now;
       },
     };
   }
@@ -88,14 +98,19 @@ export class SettingsLedger {
   }
 
   /**
-   * This machine writes `settings` into an issue with `send`; they are in force here from then on. While it is
-   * on its way, reading them back counts as ours; a write that fails takes that back, unless another process
-   * changed the entry meanwhile.
+   * This machine writes an issue with `send`. Only the trail lead's own settings actions `confirm`: then the
+   * settings it carries are in force here from now on; while it is on its way, reading them back counts as ours,
+   * and a write that fails takes that back, unless another process changed the entry meanwhile. Any other write
+   * (a claim, a status, an edit) leaves the record alone, so it can never make someone else's settings ours.
    */
-  async write(issueId: string, settings: BodySettings, send: () => Promise<unknown>) {
+  async write(o: { issueId: string; settings: BodySettings; send: () => Promise<unknown>; confirm: boolean }) {
+    const { issueId, settings, send } = o;
+    if (!o.confirm) return void (await send());
     const viewer = await this.me();
     const sending = settingsKey(settings);
-    await this.store.update((now) => ({ [issueId]: { ...now[issueId], viewer, sending } }));
+    if (!viewer) throw new TrackerError('auth', 'the tracker did not say who this token is; settings not changed');
+    const marked = await this.store.update((now) => ({ [issueId]: { ...now[issueId], viewer, sending } }));
+    if (!marked) throw new TrackerError('invalid', `${UNRECORDED}; settings not changed`);
     try {
       await send();
     } catch (err) {
@@ -107,23 +122,25 @@ export class SettingsLedger {
       });
       throw err;
     }
-    await this.wrote(issueId, settings);
+    if (!(await this.wrote(issueId, settings))) throw new TrackerError('invalid', `${UNRECORDED} after sending them`);
   }
 
-  writeTicket(t: Ticket, send: () => Promise<unknown>) {
-    return this.write(t.id, ticketSettings(t), send);
+  writeTicket(t: Ticket, send: () => Promise<unknown>, confirm = false) {
+    return this.write({ issueId: t.id, settings: ticketSettings(t), send, confirm });
   }
 
-  writeMap(m: MapDoc, send: () => Promise<unknown>) {
-    return this.write(m.id, mapSettings(m), send);
+  writeMap(m: MapDoc, send: () => Promise<unknown>, confirm = false) {
+    return this.write({ issueId: m.id, settings: mapSettings(m), send, confirm });
   }
 
   /**
    * The issue now holds `settings`, written by this machine. When the tracker can't say who the token is, nothing
    * is recorded: the issue's settings then wait for the human like anyone else's, rather than count unchecked.
    */
-  async wrote(issueId: string, settings: BodySettings) {
+  async wrote(issueId: string, settings: BodySettings): Promise<boolean> {
     const viewer = await this.me();
-    if (viewer) await this.store.update(() => ({ [issueId]: { viewer, ok: settingsKey(settings) } }));
+    if (!viewer) return false;
+    return this.store.update(() => ({ [issueId]: { viewer, ok: settingsKey(settings) } }));
   }
+
 }

@@ -17,5 +17,6 @@ export async function setTrailTeam(
     if (map.guides?.length || !guides?.length)
       throw new OperationError("only the trail lead can change a trail's team");
   }
-  await adapter.setMapMeta(mapId, { guides: guides?.length ? [...new Set(guides)] : null });
+  const confirm = actorKind === 'trail lead' ? { confirm: true as const } : {};
+  await adapter.setMapMeta(mapId, { guides: guides?.length ? [...new Set(guides)] : null, ...confirm });
 }

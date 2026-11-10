@@ -67,9 +67,16 @@ export function settingsInForce(i: Input): Settled & { entry: AcceptedEntry | un
   const entry = ownEntry(i.entry, viewer);
   const accepted = settingsFromKey(entry?.ok);
   const key = settingsKey(i.found);
-  if (writer.kind === 'self') return { use: i.found, entry: { viewer, ok: key } };
+  // Our own write (a claim, a status) of a ticket whose settings are still pending carries them as read: they stay
+  // pending. Nothing but the trail lead's confirming write (settingsLedger.ts) accepts them.
+  const pending = entry?.waiting && !entry.ok && key === entry.waiting.found;
+  if (writer.kind === 'self' && pending) return { use: i.found, unconfirmed: true, entry: i.entry };
+  // A read never clears a change that waits for the human, unless the issue no longer holds it.
+  const still = entry?.waiting && entry.waiting.found !== key ? { waiting: entry.waiting } : {};
+  if (writer.kind === 'self') return { use: i.found, entry: { viewer, ok: key, ...still } };
   if (writer.kind === 'outsider') return { use: accepted, entry: i.entry };
-  if (entry && (key === entry.ok || key === entry.sending)) return { use: i.found, entry: { viewer, ok: key } };
+  if (entry && (key === entry.ok || key === entry.sending))
+    return { use: i.found, entry: { viewer, ok: key, ...still } };
   const at = entry?.waiting?.found === key ? entry.waiting.at : i.now;
   const waiting: WaitingSettings = { mapId: i.mapId, found: key, at, ...(writer.name ? { by: writer.name } : {}) };
   // No settings of its own: nothing to weaken, nothing to confirm.

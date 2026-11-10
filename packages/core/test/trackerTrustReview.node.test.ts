@@ -270,10 +270,16 @@ test('8: a write that fails leaves nothing that later counts as ours', async () 
   const store = acceptedSettingsFile(tmpRoot(), 'github-test');
   const ledger = new SettingsLedger(async () => 'octo-dev', store);
   const fail = () => Promise.reject(new Error('offline'));
-  await assert.rejects(ledger.write('7', { verification: 'off' }, fail), /offline/);
+  await assert.rejects(
+    ledger.write({ issueId: '7', settings: { verification: 'off' }, send: fail, confirm: true }),
+    /offline/,
+  );
   assert.equal(store.read()['7'], undefined);
   await ledger.wrote('7', { verification: 'checks' });
-  await assert.rejects(ledger.write('7', { verification: 'off' }, fail), /offline/);
+  await assert.rejects(
+    ledger.write({ issueId: '7', settings: { verification: 'off' }, send: fail, confirm: true }),
+    /offline/,
+  );
   assert.deepEqual(store.read()['7'], { viewer: 'octo-dev', ok: '{"verification":"checks"}' });
 });
 

@@ -201,8 +201,9 @@ export class GitHubAdapter extends SyncedAdapter {
     await this.gh.repo('PATCH', `/issues/${t.id}`, { state: 'open', state_reason: 'reopened' });
   }
 
-  protected async remoteSetMeta(_map: MapDoc, t: Ticket) {
-    await this.ledger.writeTicket(t, () => this.gh.repo('PATCH', `/issues/${t.id}`, { body: ticketBody(t) }));
+  protected async remoteSetMeta(_map: MapDoc, t: Ticket, o?: { confirm?: boolean }) {
+    const send = () => this.gh.repo('PATCH', `/issues/${t.id}`, { body: ticketBody(t) });
+    await this.ledger.writeTicket(t, send, o?.confirm);
   }
 
   protected async remoteComment(_map: MapDoc, t: Ticket, c: RemoteComment) {
@@ -213,8 +214,9 @@ export class GitHubAdapter extends SyncedAdapter {
     await this.gh.repo('PATCH', `/issues/${t.id}`, { state: 'closed', state_reason: reason });
   }
 
-  protected async remoteUpdateMap(map: MapDoc) {
-    await this.ledger.writeMap(map, () => this.gh.repo('PATCH', `/issues/${map.id}`, { body: mapBody(map) }));
+  protected async remoteUpdateMap(map: MapDoc, o?: { confirm?: boolean }) {
+    const send = () => this.gh.repo('PATCH', `/issues/${map.id}`, { body: mapBody(map) });
+    await this.ledger.writeMap(map, send, o?.confirm);
   }
 
   protected async remoteSetMode(map: MapDoc, mode: MapMode) {

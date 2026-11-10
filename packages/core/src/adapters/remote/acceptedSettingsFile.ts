@@ -93,6 +93,7 @@ export function acceptedSettingsFile(root: string, target: string): AcceptedStor
         writeJsonAtomic(file, { v: 1, target, issues } satisfies Doc);
       });
       if (!done) console.warn(`teamtrail: ${path.basename(file)} is locked; settings not recorded this time`);
+      return done;
     },
   };
 }
