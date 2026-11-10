@@ -1,4 +1,4 @@
-import { remoteTokenLive, touchRemoteToken, verifyRemoteToken } from '@teamtrail/core/agents';
+import { remoteTokenViews, touchRemoteToken, verifyRemoteToken } from '@teamtrail/core/agents';
 import type { McpHttpAuth } from './types';
 
 /**
@@ -11,7 +11,10 @@ export function tokenFileAuth(root: string): McpHttpAuth {
       const record = verifyRemoteToken(root, token);
       return record && { id: record.id, name: record.name };
     },
-    live: (principal) => remoteTokenLive(root, principal.id),
+    snapshot() {
+      const live = new Set(remoteTokenViews(root).map((t) => t.id));
+      return (principal) => live.has(principal.id);
+    },
     used(principal) {
       try {
         touchRemoteToken(root, principal.id);

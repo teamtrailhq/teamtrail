@@ -13,6 +13,7 @@ import { projectsView } from '../projects/projectsView';
 import type { TrackerBridge } from './bridgeTypes';
 import { BadRequest, sendJson } from './http';
 import { handleProjects } from './projectRoutes';
+import { requestRefusal } from './requestGuard';
 import { configDir as defaultConfigDir } from './trackerConfig';
 import { watchProjects } from './watchProjects';
 
@@ -109,6 +110,8 @@ export function createProjectsHub(o: ProjectsHubOptions) {
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? '/', 'http://x');
+    const refusal = requestRefusal(req);
+    if (refusal) return sendJson(res, 403, { error: refusal });
     try {
       const m = /^\/p\/([^/]+)(\/.*)?$/.exec(url.pathname);
       if (m) return await forward(req, res, { id: m[1], rest: m[2] ?? '/', url });

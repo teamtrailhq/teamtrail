@@ -148,14 +148,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'record_decision',
     {
-      human: {
-        kind: 'inputs',
-        inputs: {
-          decidedBy: {
-            why: "Who decided is you. The human's own decisions are the answers they give in the Lookout or Slack: ask with ask_human.",
-          },
-        },
-      },
+      human: 'none',
       title: 'Record a decision',
       description:
         'Keep a DecisionRecord (question, answer, rationale, alternatives, who decided) and add it to the Logbook, without closing a ticket.',
@@ -168,7 +161,13 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
       summary: z.string().optional(),
       rationale: z.string().optional(),
       alternatives: z.array(z.string()).optional(),
-      decidedBy: z.string().optional().describe('Actor id; default you. Use "operator" when the human made the call.'),
+      decidedBy: z
+        .string()
+        .optional()
+        .describe(
+          'Leave out for a decision of yours. "trail lead" when the human decided: accepted only after they answered a question you asked (ask_human); the record then carries their name and that conversation.',
+        ),
+
       appendToTrail: z.boolean().optional(),
       category: riskCategory.optional(),
       paths: riskPaths.optional(),

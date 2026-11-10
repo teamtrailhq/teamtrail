@@ -61,6 +61,20 @@ export class AgentSessions {
     return this.transcripts.get(sessionId);
   }
 
+  /**
+   * The human's latest answer to a question this agent asked, with the conversation it was given in. Answers only
+   * get here through the question's own channel (the Lookout, Slack, or a local agent's answer_question), so this
+   * is what makes a decision the human's; nothing an agent passes can.
+   */
+  lastHumanAnswer(): { author: string; transcript: TranscriptEntry[] } | undefined {
+    let latest: { entry: TranscriptEntry; transcript: TranscriptEntry[] } | undefined;
+    for (const transcript of this.transcripts.values()) {
+      const entry = transcript.filter((e) => e.from === 'human').at(-1);
+      if (entry && (!latest || entry.at >= latest.entry.at)) latest = { entry, transcript };
+    }
+    return latest && { author: latest.entry.author, transcript: latest.transcript };
+  }
+
   note(s: SessionHandle, from: TranscriptEntry['from'], author: string, text: string) {
     this.transcripts.get(s.id)?.push({ from, author, text, at: Date.now() });
   }

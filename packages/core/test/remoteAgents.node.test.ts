@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { claimTrailName, releaseTrailName } from '../src/agents/trailNameClaim';
-import { createTrackerBridge, type TrackerBridge } from '../src/bridge';
+import { createTrackerBridge, fromThisMachine, type TrackerBridge } from '../src/bridge';
 import { journalFile, journalPath } from '../src/history/journalFile';
 import { blobHash } from '../src/knowledge/knowledgeStore';
 import { REMOTE_AGENTS_JOURNAL } from '../src/model/lifecycle';
@@ -159,22 +159,170 @@ test('routes: the token is shown once, lists never carry it, and both actions ar
   assert.ok(existsSync(path.join(root, '.events', '.gitignore')));
 });
 
-test('routes: an agent token opens nothing here, and another site cannot create or revoke', async () => {
-  const made = await call('POST', '/remote-agents/tokens', { name: 'laptop' });
-  // The bridge does not look at agent tokens at all: holding one changes no answer.
-  const withToken = await call('GET', '/remote-agents', undefined, { Authorization: `Bearer ${made.json.token}` });
-  assert.ok(!withToken.text.includes(made.json.token!));
+/** A raw request: the headers a browser page under an attacker's control would arrive with. */
+function raw(o: { method?: string; path: string; headers?: Record<string, string>; body?: string; port?: number }) {
+  return new Promise<{ status: number; text: string }>((resolve, reject) => {
+    const req = http.request(
+      {
+        host: '127.0.0.1',
+        port: o.port ?? Number(new URL(base).port),
+        path: o.path,
+        method: o.method ?? 'GET',
+        headers: { 'Content-Type': 'application/json', ...o.headers },
+      },
+      (res) => {
+        let text = '';
+        res.setEncoding('utf8');
+        res.on('data', (c) => (text += c));
+        res.on('end', () => resolve({ status: res.statusCode ?? 0, text }));
+      },
+    );
+    req.on('error', reject);
+    req.end(o.body);
+  });
+}
 
+const REBINDING: [string, Record<string, string>][] = [
+  ['a name that resolves here', { Host: 'trail.example.com' }],
+  ['a rebinding page, same-origin to itself', { Host: 'evil.example:7420', Origin: 'http://evil.example:7420' }],
+  ['a host disguised as credentials', { Host: 'evil.example@127.0.0.1' }],
+];
+
+test('bridge: a request for another host never gets in, whatever route it asks for', async () => {
+  mkdirSync(path.join(root, 'trail'), { recursive: true });
+  writeFileSync(path.join(root, 'trail', 'map.md'), '# map');
+  const tokensBefore = remoteTokenViews(root).length;
+  for (const [what, headers] of REBINDING) {
+    const attempts = [
+      await raw({ method: 'POST', path: '/remote-agents/tokens', headers, body: '{"name":"evil"}' }),
+      await raw({ method: 'PUT', path: '/file?path=verification.json', headers, body: '{"v":1}' }),
+      await raw({ method: 'PUT', path: '/file?path=.agents/remote-tokens.json', headers, body: '{}' }),
+      await raw({ path: '/file?path=trail/map.md', headers }),
+      await raw({ path: '/list', headers }),
+      await raw({ path: '/agents', headers }),
+      await raw({ path: '/events', headers }),
+    ];
+    assert.deepEqual(
+      attempts.map((r) => r.status),
+      attempts.map(() => 403),
+      what,
+    );
+  }
+  assert.equal(remoteTokenViews(root).length, tokensBefore);
+  assert.equal(existsSync(path.join(root, 'verification.json')), false);
+});
+
+test('bridge: an Origin must be the server\'s own, scheme included; "null" is refused, not a crash', async () => {
+  const own = new URL(base).host;
+  const status = async (origin: string) =>
+    (await raw({ method: 'POST', path: '/remote-agents/tokens', headers: { Origin: origin }, body: '{}' })).status;
+  assert.equal(await status('null'), 403);
+  assert.equal(await status('http://evil.example'), 403);
+  assert.equal(await status(`https://${own}`), 403, 'same host, other scheme');
+  assert.equal(await status(`http://${own.replace('127.0.0.1', 'localhost')}`), 403, 'same machine, other origin');
+  assert.equal(await status(`http://${own}`), 400, 'the Lookout itself gets through to the route (which wants a name)');
+  // By IP or localhost, with no Origin (a GET from the page), everything works as before.
+  assert.equal((await raw({ path: '/agents', headers: { Host: `localhost:${new URL(base).port}` } })).status, 200);
+});
+
+test('bridge: the raw file route only touches tracker markdown', async () => {
+  const token = createRemoteToken(root, 'file route').token;
+  const refused = [
+    '.agents/remote-tokens.json',
+    '.agents/sessions/x.json',
+    '.agents/x.md',
+    '.events/_remote-agents.jsonl',
+    '.evidence/x.md',
+    'verification.json',
+    'policy.json',
+    'trail/.hidden/x.md',
+    '../outside.md',
+    '',
+  ];
+  for (const p of refused) {
+    const q = `/file?path=${encodeURIComponent(p)}`;
+    assert.equal((await raw({ path: q })).status, 400, `read ${p}`);
+    assert.equal((await raw({ method: 'PUT', path: q, body: 'x' })).status, 400, `write ${p}`);
+  }
+  assert.ok(verifyRemoteToken(root, token), 'the token file was not overwritten');
+  assert.equal(existsSync(path.join(root, 'verification.json')), false);
+  assert.equal((await raw({ method: 'PUT', path: '/file?path=trail/notes.md', body: '# ok' })).status, 200);
+  assert.equal((await raw({ path: '/file?path=trail/notes.md' })).text, '# ok');
+});
+
+test('bridge: tokens are managed from this machine only; another device on the network still gets the rest', async () => {
+  const r = tmp('remote-peer');
+  mkdirSync(r, { recursive: true });
+  // The peer is the socket's address; here a header stands in for a phone on the LAN.
+  const lan = createTrackerBridge(r, {
+    env: {},
+    cwd: path.dirname(r),
+    peer: (req) => (req.headers['x-test-peer'] as string | undefined) ?? req.socket.remoteAddress,
+  });
+  const srv = http.createServer((req, res) => void lan.handle(req, res));
+  await new Promise<void>((done) => srv.listen(0, '127.0.0.1', done));
+  const port = (srv.address() as { port: number }).port;
+  const phone = { 'x-test-peer': '192.168.1.20', Host: `192.168.1.5:${port}` };
+  try {
+    const list = await raw({ port, path: '/remote-agents', headers: phone });
+    assert.equal(list.status, 403);
+    assert.equal(JSON.parse(list.text).elsewhere, true);
+    const make = await raw({
+      port,
+      method: 'POST',
+      path: '/remote-agents/tokens',
+      headers: phone,
+      body: '{"name":"x"}',
+    });
+    assert.equal(make.status, 403);
+    assert.deepEqual(remoteTokenViews(r), []);
+    assert.equal((await raw({ port, path: '/agents', headers: phone })).status, 200, 'the Lookout by IP keeps working');
+    const here = await raw({ port, method: 'POST', path: '/remote-agents/tokens', body: '{"name":"x"}' });
+    assert.equal(here.status, 200);
+    const revoke = await raw({
+      port,
+      method: 'POST',
+      path: '/remote-agents/tokens/revoke',
+      headers: phone,
+      body: JSON.stringify({ id: JSON.parse(here.text).created.id }),
+    });
+    assert.equal(revoke.status, 403);
+    assert.equal(remoteTokenViews(r).length, 1);
+  } finally {
+    lan.close();
+    srv.close();
+  }
+});
+
+test('where a request comes from is read from the socket: loopback in every spelling, nothing else', () => {
+  const from = (remoteAddress?: string) => fromThisMachine({ socket: { remoteAddress } } as http.IncomingMessage);
+  for (const a of ['127.0.0.1', '127.0.0.53', '::1', '::ffff:127.0.0.1']) assert.equal(from(a), true, a);
+  for (const a of ['192.168.1.20', '10.0.0.1', '::ffff:192.168.1.20', '2001:db8::1', '', undefined, '1127.0.0.1'])
+    assert.equal(from(a), false, String(a));
+});
+
+test('routes: no other site can create or revoke, and an agent token is not a key to them', async () => {
+  const made = await call('POST', '/remote-agents/tokens', { name: 'laptop' });
   const before = (await call('GET', '/remote-agents')).json.tokens.length;
-  const crossSite = await call('POST', '/remote-agents/tokens', { name: 'evil' }, { Origin: 'http://evil.example' });
+  const bearer = { Authorization: `Bearer ${made.json.token}` };
+  const crossSite = await call(
+    'POST',
+    '/remote-agents/tokens',
+    { name: 'evil' },
+    { ...bearer, Origin: 'http://evil.example' },
+  );
   assert.equal(crossSite.status, 403);
-  const form = await fetch(`${base}/remote-agents/tokens`, { method: 'POST', body: '{"name":"evil"}' });
+  const form = await fetch(`${base}/remote-agents/tokens`, {
+    method: 'POST',
+    body: '{"name":"evil"}',
+    headers: bearer,
+  });
   assert.equal(form.status, 403, 'a form post (no JSON content type) is refused');
   const crossRevoke = await call(
     'POST',
     '/remote-agents/tokens/revoke',
     { id: made.json.created!.id },
-    { Origin: 'http://evil.example' },
+    { ...bearer, Origin: 'http://evil.example' },
   );
   assert.equal(crossRevoke.status, 403);
   assert.equal((await call('GET', '/remote-agents')).json.tokens.length, before);

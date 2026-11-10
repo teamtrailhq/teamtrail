@@ -82,8 +82,7 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
   const asked = running ? (ctx.sessions.transcript(running.id) ?? []) : [];
   const human = lastHumanIn(asked);
   assertHumanDecided({ remote: ctx.remote, ticket, humanAnswered: !!human });
-  const who = { decidedBy: human ?? agent, remote: ctx.remote };
-  const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, ...who });
+  const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, decidedBy: human ?? agent });
   if (!ticket.assignee && input.outcome !== 'out_of_scope') {
     await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });
     const id = ticket.id;

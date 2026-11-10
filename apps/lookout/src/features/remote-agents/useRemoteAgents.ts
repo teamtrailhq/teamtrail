@@ -30,14 +30,19 @@ async function post(path: string, body: unknown): Promise<{ ok: boolean; reply: 
 
 /**
  * Settings → Remote agents: the tokens and the endpoints, kept current by the server's `remote-agents` event.
- * undefined while loading, null without a server. `create` and `revoke` resolve to an error message, if any.
+ * undefined while loading, null without a server, `elsewhere` when this page is open on another device than the
+ * one Teamtrail runs on (tokens are only managed there). `create` and `revoke` resolve to an error message, if any.
  */
 export function useRemoteAgents() {
-  const [view, setView] = useState<RemoteAgentsView | null>();
+  const [view, setView] = useState<RemoteAgentsView | 'elsewhere' | null>();
   const [created, setCreated] = useState<CreatedToken>();
   const load = useCallback(() => {
     fetch(url)
-      .then(async (r) => (r.ok ? ((await r.json()) as RemoteAgentsView) : null))
+      .then(async (r) => {
+        if (r.ok) return (await r.json()) as RemoteAgentsView;
+        const refused = (await r.json().catch(() => ({}))) as { elsewhere?: boolean };
+        return refused.elsewhere ? 'elsewhere' : null;
+      })
       .then(setView, () => setView(null));
   }, []);
   useEffect(() => {

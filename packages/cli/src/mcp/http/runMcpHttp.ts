@@ -38,6 +38,11 @@ export async function runMcpHttp(opts: McpHttpServeOptions) {
     if (pathname === MCP_PATH) return void mcp.handle(req, res);
     refuse(res, 404, `Not found. The MCP endpoint is ${MCP_PATH}.`);
   });
+  // A small server with one job: slow or hoarded connections are cut early. Long tool waits are responses,
+  // which these don't limit.
+  server.maxConnections = 256;
+  server.headersTimeout = 10_000;
+  server.requestTimeout = 30_000;
   let port: number;
   try {
     port = await listen(server, opts.port, opts.host, opts.portExplicit ? 0 : 20);

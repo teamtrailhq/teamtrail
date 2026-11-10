@@ -132,7 +132,12 @@ export async function verifyRemote({ browser, cli, log, shots }) {
     await section.getByText('No tokens, so the endpoint is closed').waitFor({ timeout: 15_000 });
     await section.getByText(endpoint).waitFor();
     const { token, command } = await createToken({ page, section, name: 'cloud sandbox', shots });
-    const commandOk = command.includes(`connect claude --url ${endpoint} --token ${token}`);
+    // The command never carries the token, and is never built from the Lookout's own port.
+    const commandOk =
+      !command.includes(token) &&
+      !command.includes(endpoint) &&
+      command.includes('read -rs TEAMTRAIL_TOKEN && export TEAMTRAIL_TOKEN') &&
+      command.includes('connect claude --url <endpoint>');
     const onDisk = fs.readFileSync(path.join(root, '.agents', 'remote-tokens.json'), 'utf8');
 
     // `teamtrail mcp --http`: the same tools on a port of their own, announced in Settings, and nothing else on it.

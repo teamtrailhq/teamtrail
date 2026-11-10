@@ -26,8 +26,12 @@ afterEach(() => {
 });
 
 /** Runs connect with a fake client CLI and endpoint check; returns what was printed and what the CLI was given. */
-async function connect(target: 'claude' | 'codex', o: { token?: string; status?: number; out?: string; url?: string }) {
+async function connect(
+  target: 'claude' | 'codex',
+  o: { token?: string; status?: number; out?: string; url?: string; allowHttp?: boolean },
+) {
   const printed: string[] = [];
+  const probed: string[] = [];
   const calls: { bin: string; args: string[] }[] = [];
   await connectRemote(target, {
     cwd,
@@ -38,9 +42,13 @@ async function connect(target: 'claude' | 'codex', o: { token?: string; status?:
       calls.push({ bin, args });
       return { status: o.status ?? 0, out: o.out ?? '', missing: false };
     },
-    probe: async () => 'ok',
+    allowHttp: o.allowHttp,
+    probe: async (url) => {
+      probed.push(url);
+      return 'ok';
+    },
   });
-  return { text: printed.join('\n'), calls };
+  return { text: printed.join('\n'), calls, probed };
 }
 
 describe('connect --url', () => {
@@ -97,9 +105,20 @@ describe('connect --url', () => {
 
   it('warns when the token would cross a network unencrypted, not for this machine', async () => {
     const far = await connect('codex', { url: 'http://10.0.0.5:7421/mcp' });
-    expect(far.text).toMatch(/plain HTTP: the token crosses the network unencrypted/);
+    expect(far.text).toMatch(/plain HTTP: every request the agent makes sends the token unencrypted/);
     const near = await connect('codex', { url: 'http://localhost:7421/mcp' });
     expect(near.text).not.toMatch(/plain HTTP/);
+  });
+
+  it('does not send the token over plain HTTP to another machine just to check it, unless told to', async () => {
+    const far = await connect('claude', { token: TOKEN, url: 'http://10.0.0.5:7421/mcp' });
+    expect(far.probed).toEqual([]);
+    expect(far.text).toMatch(/not checked: that would send the token unencrypted. Use https, or pass --allow-http/);
+    expect(far.text).not.toContain(TOKEN);
+    const told = await connect('claude', { token: TOKEN, url: 'http://10.0.0.5:7421/mcp', allowHttp: true });
+    expect(told.probed).toEqual(['http://10.0.0.5:7421/mcp']);
+    for (const url of ['http://localhost:7421/mcp', 'http://127.0.0.1:7421/mcp', 'https://trail.example.com/mcp'])
+      expect((await connect('claude', { token: TOKEN, url })).probed).toEqual([url]);
   });
 
   it('reads the token from the environment, and --token wins over it', async () => {

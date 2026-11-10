@@ -17,6 +17,7 @@ import { handleLeases } from './leaseRoutes';
 import { handleModels } from './modelRoutes';
 import { handlePolicy } from './policyRoutes';
 import { handleRemoteAgents } from './remoteAgentRoutes';
+import { fromThisMachine, requestRefusal } from './requestGuard';
 import { handleReroutes } from './rerouteRoutes';
 import { sendTrackerError } from './trackerErrors';
 import { createTrackerRoutes } from './trackerRoutes';
@@ -41,6 +42,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     leases: leaseTiming,
     reconciler: reconcilerTiming,
     integration: integrationTiming,
+    peer,
     ...trackers
   } = options;
   const abs = path.resolve(root);
@@ -86,7 +88,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
-    (req, res, url) => handleRemoteAgents(ctx, req, res, url),
+    (req, res, url) => handleRemoteAgents({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
   ];
 
   /** The live event stream and raw file access to the tracker folder. */
@@ -104,6 +106,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     }
     if (url.pathname !== '/file') return false;
     const p = url.searchParams.get('path') ?? '';
+    if (!isTrackerFile(p)) throw new BadRequest('not a tracker file');
     if (req.method === 'PUT') {
       await fs.write(p, await readText(req));
       res.end('ok');
@@ -116,6 +119,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? '/', 'http://x');
+    const refusal = requestRefusal(req);
+    if (refusal) return sendJson(res, 403, { error: refusal });
     try {
       for (const route of api) if (await route(req, res, url)) return;
       res.statusCode = 404;
@@ -142,6 +147,17 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       clients.clear();
     },
   };
+}
+
+/**
+ * What the raw file route may touch: the tracker's markdown (trails, tickets, decisions, briefs, criteria,
+ * knowledge, guides). Never a dot folder (`.agents/` holds tokens, leases and answers; `.events/`, `.evidence/`),
+ * and never a config file such as verification.json, whose commands run on this machine: those have their own
+ * routes, which validate what they write.
+ */
+function isTrackerFile(rel: string) {
+  const parts = rel.split(/[\\/]/);
+  return rel.endsWith('.md') && parts.every((part) => part !== '' && !part.startsWith('.'));
 }
 
 function sendError(res: ServerResponse, err: unknown) {

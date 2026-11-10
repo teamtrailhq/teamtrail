@@ -459,6 +459,44 @@ describe('MCP over HTTP: long waits and endings', () => {
     await until('the goodbye', () => mcp.sessionCount() === 0);
   });
 
+  it('an open notification stream keeps nothing alive: a client that only listens is closed too', async () => {
+    await serve({ idleMs: 300 });
+    const a = await connectHttp(newToken('sandbox'));
+    await a.call('status').catch(() => undefined);
+    expect(mcp.sessionCount()).toBe(1);
+    await until('the listening session to be closed', () => mcp.sessionCount() === 0);
+  });
+
+  it('one token holds a few sessions at most: a new one displaces its own longest-idle one, never another token\u2019s', async () => {
+    await serve({ maxSessionsPerToken: 2, keepAliveMs: 100 });
+    const greedy = newToken('greedy');
+    const other = await connectHttp(newToken('other'));
+    const init = () => raw({ body: initialize, headers: { Authorization: `Bearer ${greedy}` } });
+    const first = await init();
+    const second = await init();
+    expect(mcp.sessionCount()).toBe(3);
+    for (let i = 0; i < 10; i++) expect((await init()).status).toBe(200);
+    expect(mcp.sessionCount()).toBe(3);
+    const tools = { jsonrpc: '2.0', id: 2, method: 'tools/list' };
+    const old = (id: unknown) =>
+      raw({ body: tools, headers: { Authorization: `Bearer ${greedy}`, 'Mcp-Session-Id': String(id) } });
+    expect((await old(first.headers['mcp-session-id'])).status).toBe(404);
+    expect((await old(second.headers['mcp-session-id'])).status).toBe(404);
+    expect((await other.client.listTools()).tools.length).toBeGreaterThan(0);
+
+    // Both of its sessions at work (waiting on the human): nothing idle to displace, so the next one is refused.
+    const busy = await Promise.all([connectHttp(greedy), connectHttp(greedy)]);
+    const waits = busy.map((b, i) =>
+      b.impatient('ask_human', { question: `Busy ${i}?`, framing: true, waitSeconds: 20 }).catch(() => undefined),
+    );
+    await until('both questions', async () => (await readAgentDocs(root)).flatMap((d) => d.pending).length === 2);
+    const refused = await init();
+    expect(refused.status).toBe(503);
+    expect(refused.text).toMatch(/already has 2 sessions at work/);
+    expect((await other.client.listTools()).tools.length).toBeGreaterThan(0);
+    await Promise.all(waits);
+  });
+
   it('ends a session that went quiet without one: a sandbox that was switched off', async () => {
     await serve({ idleMs: 200 });
     const quiet = await raw({ body: initialize, headers: { Authorization: `Bearer ${newToken('sandbox')}` } });
@@ -489,7 +527,6 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
     expect(Object.fromEntries(inputs)).toEqual({
       start_trail: ['discovery'],
       update_trail: ['mode', 'destination'],
-      record_decision: ['decidedBy'],
     });
   });
 
@@ -537,7 +574,8 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
       answer: 'This',
       decidedBy: 'operator',
     });
-    expect(d.decision.decidedBy).toBe('operator');
+    // The local agent passed on the human's answer with answer_question, so the decision is theirs by that answer.
+    expect(d.decision.decidedBy).toBe('trail lead');
   });
 
   it('a remote agent cannot answer its own question, nor anyone else\u2019s', async () => {
@@ -573,15 +611,17 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
     await expect(call('update_trail', { destination: 'Somewhere else' })).rejects.toThrow(/propose_reroute/);
     await call('update_trail', { notes: 'Notes are the agent\u2019s to write' });
     const decision = { question: 'Which?', answer: 'This' };
-    await expect(call('record_decision', { ...decision, decidedBy: 'operator' })).rejects.toThrow(
-      /`decidedBy` is not available/,
-    );
-    await expect(call('record_decision', { ...decision, decidedBy: 'trail lead' })).rejects.toThrow(/decidedBy/);
+    // Naming the human in an argument is not the human deciding, high risk or not.
+    for (const decidedBy of ['operator', 'trail lead', 'slack:U123'])
+      for (const extra of [{}, { category: 'data-deletion' }])
+        await expect(call('record_decision', { ...decision, ...extra, decidedBy })).rejects.toThrow(
+          /only their answer can/,
+        );
     const own = await call<{ decision: { decidedBy: string } }>('record_decision', decision);
     expect(own.decision.decidedBy).toBe('claude-01');
     // A high-risk call is the human's: recording it is refused, and the way out is asking, not "operator".
     const risky = call('record_decision', { ...decision, category: 'data-deletion' });
-    await expect(risky).rejects.toThrow(/once they answer in the Lookout/);
+    await expect(risky).rejects.toThrow(/High-risk call.*Once they answer/);
   });
 
   it('a remote agent closes a HITL ticket only after the human answered in the Lookout', async () => {
@@ -613,5 +653,14 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
       resolution: 'JSON',
     });
     expect(done).toMatchObject({ closed: m.tickets[0].key, decision: { decidedBy: 'trail lead' } });
+    // With that answer on record, a decision of theirs can be recorded, and carries the conversation.
+    const theirs = await call<{ decision: { decidedBy: string; transcript: { text: string }[] } }>('record_decision', {
+      question: 'Which format?',
+      answer: 'JSON',
+      decidedBy: 'operator',
+      category: 'data-deletion',
+    });
+    expect(theirs.decision.decidedBy).toBe('trail lead');
+    expect(theirs.decision.transcript.map((e) => e.text)).toEqual(['JSON or YAML?', 'JSON']);
   });
 });

@@ -9,13 +9,13 @@ import { createProjectsHub, createTrackerBridge, type ProjectsHub } from '@teamt
 import { fail } from '../args/help';
 import type { ServeOptions } from '../args/parseArgs';
 import { createMcpHttp } from '../mcp/http/createMcpHttp';
-import { endpointUrl, isLoopback, MCP_PATH } from '../mcp/http/endpointUrl';
+import { endpointUrl } from '../mcp/http/endpointUrl';
 import { remoteAgentOpener } from '../mcp/http/remoteAgentOpener';
 import { tokenFileAuth } from '../mcp/http/tokenFileAuth';
 import { printGreeting } from '../printGreeting';
 import { listen } from './listen';
+import { lookoutHandler } from './lookoutHandler';
 import { openBrowser } from './openBrowser';
-import { serveStatic } from './staticFiles';
 
 /** The default command: one process serving the lookout bundle and the tracker API, until Ctrl+C. */
 export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
@@ -23,32 +23,16 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
   if (!existsSync(path.join(appDir, 'index.html'))) fail(`Lookout bundle missing at ${appDir}; reinstall the package`);
 
   const root = path.resolve(process.cwd(), opts.dir);
-  // Remote agents: the same MCP tools over HTTP, for tokens created in Settings. Closed until one exists; a
-  // token never opens the bridge below.
+  // Remote agents' tools over HTTP, for tokens created in Settings: closed until one exists, and on this port
+  // for this machine only. The same port serves the bridge, which has no sign-in, so it is never the one to
+  // share: agents elsewhere connect to `teamtrail mcp --http`.
   const mcp = createMcpHttp({
     auth: tokenFileAuth(root),
     open: remoteAgentOpener({ root, version: __VERSION__ }),
-    allowedHosts: opts.allowHosts,
+    thisMachineOnly: true,
   });
   let hub: ProjectsHub | undefined;
-  const server = http.createServer((req, res) => {
-    const url = new URL(req.url ?? '/', 'http://x');
-    if (url.pathname === MCP_PATH) return void mcp.handle(req, res);
-    if (hub && (url.pathname === BRAND.apiPrefix || url.pathname.startsWith(`${BRAND.apiPrefix}/`))) {
-      req.url = req.url!.slice(BRAND.apiPrefix.length) || '/';
-      void hub.handle(req, res);
-      return;
-    }
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-    serveStatic(appDir, url.pathname, res).catch((err) => {
-      res.statusCode = 500;
-      res.end(String(err));
-    });
-  });
+  const server = http.createServer(lookoutHandler({ appDir, mcp, hub: () => hub }));
 
   let port: number;
   try {
@@ -80,9 +64,9 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
   if (opts.open) openBrowser(slackSetup ? `${url}?settings=slack` : url);
   const unlock = writeLookoutLock(bridge.root, url);
   const unlist = writeMcpEndpoint(bridge.root, {
-    url: endpointUrl(opts.host, port),
+    url: endpointUrl('127.0.0.1', port),
     kind: 'lookout',
-    network: !isLoopback(opts.host),
+    network: false,
   });
 
   const stop = () => {

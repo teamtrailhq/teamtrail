@@ -75,18 +75,20 @@ Any MCP client works: run `npx -y teamtrail mcp` over stdio in the repo. `--dir 
 An agent on another machine or in a cloud sandbox reaches the same trails over HTTP. On the machine with the repo:
 
 1. Create a token for the agent in the Lookout: Settings → Remote agents. It's shown once; only its hash is kept, in `.teamtrail/.agents/` (never committed).
-2. Serve the tools: the running Lookout already answers at `/mcp` on its port, for clients on the same machine. For other machines run `npx teamtrail mcp --http` (port 7421, path `/mcp`): it serves the agent tools and nothing else. Without a token every request gets a 401.
+2. Serve the tools: run `npx teamtrail mcp --http` (port 7421, path `/mcp`). It serves the agent tools and nothing else; without a token every request gets a 401. The running Lookout also answers at `/mcp` on its own port, but only to clients on the same machine.
 3. On the agent's machine, with the token in `$TEAMTRAIL_TOKEN`:
 
 ```bash
 npx -y teamtrail connect claude --url https://trail.example.com/mcp   # or: connect codex --url …
 ```
 
-`--token-stdin` and `--token <token>` work too. Claude Code keeps the token in its own config; Codex only stores the variable's name and reads `$TEAMTRAIL_TOKEN` when it starts.
+`--token-stdin` and `--token <token>` work too. Claude Code keeps the token in its own config; Codex only stores the variable's name and reads `$TEAMTRAIL_TOKEN` when it starts. `connect` checks the token against the endpoint, except over plain HTTP to another machine, where the check itself would send it unencrypted: use https, or pass `--allow-http`.
 
-The connection is plain HTTP and binds to `127.0.0.1` unless you pass `--host`. Before agents elsewhere use it, put the `mcp --http` port behind HTTPS (a reverse proxy or a tunnel) and pass `--allow-host <name>` with the host name they'll use. Don't expose the Lookout's own port: it has no sign-in. A token only opens the agent tools, and revoking it in Settings ends its sessions within a second.
+The connection is plain HTTP and binds to `127.0.0.1` unless you pass `--host`. Before agents elsewhere use it, put the `mcp --http` port behind HTTPS (a reverse proxy or a tunnel) and pass `--allow-host <name>` with the host name they'll use. The Lookout's own port is not for sharing: it has no sign-in, so its `/mcp`, the token settings and its API refuse a `Host` that isn't `localhost` or an IP address, and tokens can only be created from the machine itself. A token only opens the agent tools, at most 8 sessions at a time, and revoking it in Settings ends them within a second.
 
-A remote agent can't speak for you. Over HTTP there is no `answer_question`; `record_decision` takes no `decidedBy`; `start_trail` can't skip discovery; `update_trail` can't change the mode or the destination; and a ticket that needs you (junction, prototype, HITL task) closes only after you answered the agent's question in the Lookout or Slack. Local stdio agents are unchanged.
+With GitHub Issues or Linear as the tracker, what a remote agent writes (tickets, comments, closing) goes to the tracker with your credentials, as it does for local agents.
+
+A remote agent can't speak for you. Over HTTP there is no `answer_question`; `start_trail` can't skip discovery; `update_trail` can't change the mode or the destination; and a ticket that needs you (junction, prototype, HITL task) closes only after you answered the agent's question in the Lookout or Slack. Local stdio agents are unchanged.
 
 A remote agent's files aren't on your machine, so it gets no worktree, and on trails with verification its completions come to you for review instead of running the checks locally.
 

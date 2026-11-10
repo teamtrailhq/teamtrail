@@ -16,6 +16,8 @@ export interface ConnectRemoteOptions {
   url: string;
   /** The agent's token. Claude Code needs it now; Codex reads it from the environment each time it starts. */
   token?: string;
+  /** Check the token even where that sends it unencrypted across a network (`--allow-http`). */
+  allowHttp?: boolean;
   print?: Print;
   /** Test seams: the client CLI and the endpoint check. */
   run?: Run;
@@ -58,11 +60,16 @@ export async function connectRemote(target: ConnectTarget, o: ConnectRemoteOptio
   const print = o.print ?? ((s: string) => process.stdout.write(`${s}\n`));
   const url = checkedUrl(o.url);
   if (o.token && !o.token.startsWith('tt_')) fail('that is not a Teamtrail token (they start with tt_)');
-  if (url.protocol === 'http:' && !isLocal(url.hostname))
+  const exposed = url.protocol === 'http:' && !isLocal(url.hostname);
+  if (exposed)
     print(
-      `  Heads up        ${url.host} is plain HTTP: the token crosses the network unencrypted. Use https for anything but a trusted network.`,
+      `  Heads up        ${url.host} is plain HTTP: every request the agent makes sends the token unencrypted. Use https for anything but a network you trust.`,
     );
-  if (o.token) print(`  Endpoint        ${PROBE_LINE[await (o.probe ?? probeEndpoint)(url.href, o.token)]}`);
+  const check = o.probe ?? probeEndpoint;
+  // Checking means sending the token. Over plain HTTP to another machine that is the user's call, not ours.
+  if (o.token && exposed && !o.allowHttp)
+    print('  Endpoint        not checked: that would send the token unencrypted. Use https, or pass --allow-http.');
+  else if (o.token) print(`  Endpoint        ${PROBE_LINE[await check(url.href, o.token)]}`);
   if (target === 'claude') connectClaude({ ...o, url: url.href, print });
   else connectCodex({ ...o, url: url.href, print });
 }

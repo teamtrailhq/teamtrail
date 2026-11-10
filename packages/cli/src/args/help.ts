@@ -6,7 +6,7 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} mcp [--dir <path>] [--agent <trailName>] [--lease-minutes <n>] [--no-register]
        ${BRAND.slug} mcp --http [--port <n>] [--host <addr>] [--allow-host <name>] [--dir <path>]
        ${BRAND.slug} connect claude|codex [--dir <path>] [--no-register]
-       ${BRAND.slug} connect claude|codex --url <http(s)://host:port/mcp> [--token-stdin | --token <token>]
+       ${BRAND.slug} connect claude|codex --url <http(s)://host:port/mcp> [--token-stdin | --token <token>] [--allow-http]
        ${BRAND.slug} projects add [path] | list | remove <id|path>
        ${BRAND.slug} connect slack [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
@@ -30,7 +30,9 @@ Commands:
   connect <agent> --url <endpoint>
                  Point the agent at a ${BRAND.name} MCP server over HTTP instead of starting one.
                  The token comes from --token-stdin, $${BRAND.tokenEnv} or --token (which lands in
-                 your shell history). Codex only stores the variable's name
+                 your shell history). Codex only stores the variable's name. The token is checked against
+                 the endpoint, except over plain HTTP to another machine, where the check would send
+                 it unencrypted: use https, or pass --allow-http to check anyway
   projects       The repos one Lookout supervises in All projects: add [path] registers a repo
                  (default: this one), list shows them, remove <id|path> forgets one. The list is
                  kept in your config dir, never in a repo. mcp and connect add their repo on start
@@ -63,8 +65,6 @@ Options:
   --dir <path>   Tracker folder (default: ./${BRAND.dataDir}, or $${BRAND.dataDirEnv})
   --port <n>     Port to listen on (default: 7420; the next free port is used if taken)
   --host <addr>  Interface to bind (default: 127.0.0.1)
-  --allow-host <name>  A host name the MCP endpoint (/mcp) answers to, besides localhost and
-                 IP addresses
   --no-open      Don't open the browser
   -v, --version  Print the version
   -h, --help     Show this help

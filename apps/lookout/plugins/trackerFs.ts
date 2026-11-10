@@ -9,7 +9,7 @@ import { createProjectsHub, createTrackerBridge } from '../../../packages/core/s
 /**
  * Mounts the tracker file API (shared with the `teamtrail` CLI) on the Vite dev server, with the projects hub
  * in front: `/projects` and `/p/<id>/…` for the projects in `projectsConfigDir` (default: the user config dir).
- * Like the CLI, it also serves the MCP endpoint for remote agents at `/mcp` (closed until a token is created).
+ * Like the CLI, it also serves the MCP endpoint for remote agents at `/mcp` (this machine only, closed until a token is created).
  */
 export function trackerFs(opts: { root: string; prefix: string; projectsConfigDir?: string }): Plugin {
   return {
@@ -29,12 +29,17 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
       const mcp = createMcpHttp({
         auth: tokenFileAuth(bridge.root),
         open: remoteAgentOpener({ root: bridge.root, version: 'dev' }),
+        thisMachineOnly: true,
       });
       let unlist = () => {};
       server.httpServer?.once('listening', () => {
         const { port } = server.httpServer!.address() as { port: number };
-        // The dev server listens on every interface (vite.config.ts `host: true`).
-        unlist = writeMcpEndpoint(bridge.root, { url: `http://localhost:${port}/mcp`, kind: 'lookout', network: true });
+        // Like the Lookout's own port: this machine only, whatever interfaces the dev server listens on.
+        unlist = writeMcpEndpoint(bridge.root, {
+          url: `http://localhost:${port}/mcp`,
+          kind: 'lookout',
+          network: false,
+        });
       });
       server.httpServer?.on('close', () => {
         unlist();

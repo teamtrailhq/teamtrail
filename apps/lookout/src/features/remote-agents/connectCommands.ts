@@ -2,15 +2,16 @@ import { BRAND } from '@teamtrail/core';
 
 export type RemoteClient = 'claude' | 'codex';
 
-/** Where to connect when no endpoint is running yet: the default of `teamtrail mcp --http`. */
-export const PLACEHOLDER_ENDPOINT = 'http://<this-machine>:7421/mcp';
+/** Stands in for the endpoint while no `teamtrail mcp --http` is running. */
+export const ENDPOINT_PLACEHOLDER = '<endpoint>';
+
+/** The server remote agents connect to: the agent tools on a port of their own. */
+export const START_COMMAND = `npx ${BRAND.npm} mcp --http`;
 
 /**
- * What to run on the agent's machine. Claude Code keeps the token in its own config, so connect takes it;
- * Codex reads it from the environment every time it starts, so it is exported and never written down.
+ * What to run on the agent's machine. The token is never part of the command: the first line waits for it to be
+ * pasted, without showing it, so it stays out of the screen, the shell history and the process list.
  */
-export function connectCommand(client: RemoteClient, at: { url: string; token: string }) {
-  const connect = `npx -y ${BRAND.npm} connect ${client} --url ${at.url}`;
-  if (client === 'claude') return `${connect} --token ${at.token}`;
-  return `export ${BRAND.tokenEnv}=${at.token}\n${connect}`;
+export function connectCommand(client: RemoteClient, url: string) {
+  return `read -rs ${BRAND.tokenEnv} && export ${BRAND.tokenEnv}\nnpx -y ${BRAND.npm} connect ${client} --url ${url}`;
 }

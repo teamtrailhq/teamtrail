@@ -65,6 +65,20 @@ function usageSource(measured: boolean, usage?: { source?: string }): string {
   return 'none';
 }
 
+/**
+ * Who a decision is by is never taken from the caller's word. Naming anyone but yourself in `decidedBy` says
+ * "the human decided this": that holds only when they answered a question of this agent's, and then the record
+ * carries their name from that answer and the conversation itself, so they can see what they were asked.
+ */
+function decidedByHuman(ctx: AgentContext, claimed: string | undefined, agent: string) {
+  if (claimed === undefined || claimed === agent) return undefined;
+  const answered = ctx.sessions.lastHumanAnswer();
+  if (answered) return answered;
+  throw new OperationError(
+    "decidedBy can't make a decision the human's: only their answer can. Ask with ask_human and record the decision once they've answered; without decidedBy it is recorded as yours.",
+  );
+}
+
 export async function recordDecision(
   ctx: AgentContext,
   input: {
@@ -86,14 +100,9 @@ export async function recordDecision(
   const snap = await ctx.resolveTrail(input.trail ?? (s?.info.mapId || undefined));
   const agent = await ctx.agentId();
   const t = input.ticket ? ctx.findTicket(snap, input.ticket) : undefined;
-  const decidedBy = input.decidedBy ?? agent;
-  const risk = checkRisk({
-    root: ctx.root,
-    category: input.category,
-    paths: input.paths,
-    decidedBy,
-    remote: ctx.remote,
-  });
+  const human = decidedByHuman(ctx, input.decidedBy, agent);
+  const decidedBy = human?.author ?? agent;
+  const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, decidedBy });
   assertAssumes(snap, input.assumes);
   const rec = await saveDecision(
     ctx.adapter,
@@ -115,6 +124,7 @@ export async function recordDecision(
       },
       ...(risk ? { risk } : {}),
       ...(input.assumes?.length ? { assumes: input.assumes } : {}),
+      ...(human ? { transcript: human.transcript } : {}),
     },
     { appendToTrail: input.appendToTrail },
   );

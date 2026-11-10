@@ -7,8 +7,6 @@ export interface ServeOptions {
   portExplicit: boolean;
   host: string;
   open: boolean;
-  /** Host names the MCP endpoint answers to besides localhost and IP addresses (`--allow-host`, repeatable). */
-  allowHosts: string[];
 }
 
 interface Flag {
@@ -44,7 +42,6 @@ export function parseArgs(argv: string[]): ServeOptions {
     portExplicit: false,
     host: '127.0.0.1',
     open: true,
-    allowHosts: [],
   };
   eachFlag(argv, ({ flag, value, arg }) => {
     switch (flag) {
@@ -64,9 +61,6 @@ export function parseArgs(argv: string[]): ServeOptions {
         break;
       case '--host':
         o.host = value();
-        break;
-      case '--allow-host':
-        o.allowHosts.push(value());
         break;
       case '--port':
         o.port = portOf(value(), arg);
@@ -93,6 +87,8 @@ export interface SubOptions {
   url?: string;
   token?: string;
   tokenStdin?: boolean;
+  /** `connect --url`: check the token against a plain-HTTP endpoint on another machine anyway. */
+  allowHttp?: boolean;
   rest: string[];
 }
 
@@ -112,6 +108,7 @@ const SUB_FLAGS: Record<string, (o: SubOptions, f: Flag) => void> = {
   '--url': (o, f) => void (o.url = f.value()),
   '--token': (o, f) => void (o.token = f.value()),
   '--token-stdin': (o) => void (o.tokenStdin = true),
+  '--allow-http': (o) => void (o.allowHttp = true),
 };
 
 /** Options of the `mcp` and `connect` subcommands; `allowed` lists the flags the subcommand takes. */

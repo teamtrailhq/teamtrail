@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { DecisionRecord } from '../model/types';
+import type { PeerAddress } from './requestGuard';
 import type { TrackerRoutesOptions } from './trackerContext';
 
 export interface TrackerBridge {
@@ -59,6 +60,8 @@ export type BridgePluginFactory = (ctx: BridgeContext) => BridgePlugin;
 
 export interface BridgeOptions extends Omit<TrackerRoutesOptions, 'root' | 'markdown'> {
   plugins?: BridgePluginFactory[];
+  /** Who is on the other end of a connection; default the socket's remote address. Tests stand in another device. */
+  peer?: PeerAddress;
   url?: () => string | undefined;
   /** How often lease files are polled and expired leases returned to the queue. */
   leases?: { pollMs?: number; reapMs?: number };
