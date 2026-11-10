@@ -34,8 +34,10 @@ export function writeKnowledge(root: string, e: KnowledgeEntry) {
  */
 export function createKnowledge(root: string, draft: Omit<KnowledgeEntry, 'id'>): KnowledgeEntry {
   mkdirSync(dir(root), { recursive: true });
-  for (let attempt = 0; attempt < 50; attempt++) {
-    const entry = { ...draft, id: nextKnowledgeId(root) };
+  // A file another process is still writing doesn't parse yet, so the next free number may be taken: step past it.
+  const first = Number(nextKnowledgeId(root).slice(2));
+  for (let n = first; n < first + 50; n++) {
+    const entry = { ...draft, id: `K-${n}` };
     try {
       writeFileSync(path.join(dir(root), `${entry.id}.md`), serializeKnowledge(entry), { flag: 'wx' });
       return entry;
