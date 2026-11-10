@@ -13,7 +13,7 @@
 }
 .node .card {
   fill: var(--map-card);
-  stroke: var(--line2);
+  stroke: var(--map-card-line);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
   transition:
@@ -115,7 +115,7 @@
   fill: var(--dim);
 }
 .node.st-decided .meta {
-  fill: var(--faint);
+  fill: var(--map-card-quiet);
 }
 .node.st-out-of-scope {
   opacity: 0.6;
