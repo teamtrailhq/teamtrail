@@ -10,11 +10,20 @@ export function useBrief(snap?: MapSnapshot) {
   const mapId = snap?.map.id;
   const [brief, setBrief] = useState<DiscoveryBrief | null>(null);
   const [error, setError] = useState<string>();
+  /** The hash of the brief as shown: accepting names it, so a brief resubmitted meanwhile is not accepted. */
+  const [hash, setHash] = useState<string>();
   const load = useCallback(() => {
     if (!mapId) return setBrief(null);
     void fetch(`${api}?mapId=${encodeURIComponent(mapId)}`)
-      .then((r) => (r.ok ? (r.json() as Promise<{ brief: DiscoveryBrief | null }>) : { brief: null }))
-      .then((b) => setBrief(b.brief))
+      .then((r) =>
+        r.ok
+          ? (r.json() as Promise<{ brief: DiscoveryBrief | null; hash?: string }>)
+          : { brief: null, hash: undefined },
+      )
+      .then((b) => {
+        setBrief(b.brief);
+        setHash(b.hash);
+      })
       .catch(() => setBrief(null));
   }, [mapId]);
   const version = snap?.tickets.reduce((n, t) => Math.max(n, t.updatedAt), snap.map.updatedAt);
@@ -24,7 +33,7 @@ export function useBrief(snap?: MapSnapshot) {
     fetch(`${api}/${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mapId, note }),
+      body: JSON.stringify({ mapId, note, hash }),
     }).then(async (r) => {
       const b = (await r.json().catch(() => ({}))) as { brief?: DiscoveryBrief; error?: string };
       if (!r.ok || !b.brief) throw new Error(b.error ?? `HTTP ${r.status}`);
@@ -35,7 +44,7 @@ export function useBrief(snap?: MapSnapshot) {
   const act = (action: 'accept' | 'request-changes', note?: string) =>
     post(action, note).then(
       () => true,
-      (e: Error) => (setError(e.message), false),
+      (e: Error) => (setError(e.message), load(), false),
     );
   return {
     brief,

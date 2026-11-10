@@ -11,7 +11,7 @@ export function CriteriaSection({ snap, t }: { snap: MapSnapshot; t: Ticket }) {
   const changes = useCriteriaProposals(snap.map.id);
   const proposal = changes.proposals.find((p) => p.ticketId === t.id);
   const decide = (action: 'accept' | 'dismiss') =>
-    void changes.decide(action, { title: snap.map.title, ticketId: t.id });
+    void changes.decide(action, { title: snap.map.title, ticketId: t.id, hash: proposal?.hash });
   const k = useKnowledge();
   const entry = tickets.find((x) => x.ticketId === t.id);
   const criteria = entry?.criteria ?? [];
@@ -67,7 +67,13 @@ export function CriteriaSection({ snap, t }: { snap: MapSnapshot; t: Ticket }) {
             entry?.confirmed ? 'Take your confirmation back' : 'Agree that these criteria define done for this ticket'
           }
           onClick={() =>
-            void confirm({ title: snap.map.title, ticketId: t.id, ticketKey: t.key, confirmed: !entry?.confirmed })
+            void confirm({
+              title: snap.map.title,
+              ticketId: t.id,
+              ticketKey: t.key,
+              confirmed: !entry?.confirmed,
+              hash: entry?.hash,
+            })
           }
         >
           {entry?.confirmed ? 'Unconfirm' : 'Confirm criteria'}

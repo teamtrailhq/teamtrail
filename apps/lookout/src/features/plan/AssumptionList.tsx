@@ -24,7 +24,7 @@ export function AssumptionList({ snap, onSelect }: { snap: MapSnapshot; onSelect
               a={a}
               snap={snap}
               onSelect={onSelect}
-              onConfirm={open ? () => void confirm(a.id) : undefined}
+              onConfirm={open ? () => void confirm(a.id, a.text) : undefined}
               busy={busy === a.id}
             />
           );

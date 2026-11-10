@@ -16,6 +16,7 @@ import {
   type TrackerAdapter,
 } from '../src';
 import { readBrief, writeBrief } from '../src/discovery/briefStore';
+import { contentHash } from '../src/lib/contentHash';
 import { handleBriefs } from '../src/server/briefRoutes';
 
 const now = Date.UTC(2026, 10, 4, 12);
@@ -158,7 +159,8 @@ describe('accepting a brief', () => {
       loadMap: () => Promise.reject(new Error('tracker unreachable')),
     } as unknown as TrackerAdapter;
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const req = Object.assign(Readable.from([Buffer.from(JSON.stringify({ mapId: 'm1' }))]), { method: 'POST' });
+    const hash = contentHash(readBrief(root, 'm1')!.sections);
+    const req = Object.assign(Readable.from([Buffer.from(JSON.stringify({ mapId: 'm1', hash }))]), { method: 'POST' });
     const res = {
       statusCode: 0,
       body: '',

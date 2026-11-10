@@ -21,17 +21,26 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 export function useKnowledgeStore(briefText: string): KnowledgeStore {
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [stale, setStale] = useState<Record<string, string[]>>({});
+  /** Per entry, the hash of the content shown: a confirm names it, so an entry changed since is not confirmed. */
+  const [hashes, setHashes] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string>();
   const load = useCallback(() => {
     void fetch(api)
       .then((r) =>
-        r.ok ? (r.json() as Promise<{ entries: KnowledgeEntry[]; stale: Record<string, string[]> }>) : null,
+        r.ok
+          ? (r.json() as Promise<{
+              entries: KnowledgeEntry[];
+              stale: Record<string, string[]>;
+              hashes?: Record<string, string>;
+            }>)
+          : null,
       )
       .then((b) => {
         if (!b) return;
         setEntries(b.entries);
         setStale(b.stale);
+        setHashes(b.hashes ?? {});
       })
       .catch(() => {});
   }, []);
@@ -52,9 +61,9 @@ export function useKnowledgeStore(briefText: string): KnowledgeStore {
     setOpen,
     error,
     call: (id: string, call: KnowledgeCall) =>
-      post('/call', { id, call }).then(
+      post('/call', { id, call, hash: hashes[id] }).then(
         () => (setError(undefined), load(), true),
-        (e: Error) => (setError(e.message), false),
+        (e: Error) => (setError(e.message), load(), false),
       ),
     propose: (draft: KnowledgeDraft) =>
       post<{ entry: KnowledgeEntry }>('/propose', draft).then(

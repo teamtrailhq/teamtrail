@@ -10,6 +10,8 @@ export interface CriteriaProposalView {
   criteria: Criterion[];
   by: string;
   at: number;
+  /** The hash of the criteria as shown: taking the proposal names it, so one swapped meanwhile isn't taken. */
+  hash?: string;
 }
 
 const api = `${apiBase()}/criteria-proposals`;
@@ -28,7 +30,7 @@ export function useCriteriaProposals(mapId?: string) {
     load();
     return onTrackerChange((path) => path.startsWith('criteria/') && load());
   }, [load]);
-  const decide = (action: 'accept' | 'dismiss', body: { title: string; ticketId: string }) =>
+  const decide = (action: 'accept' | 'dismiss', body: { title: string; ticketId: string; hash?: string }) =>
     fetch(`${api}/${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

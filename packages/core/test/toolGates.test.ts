@@ -16,6 +16,7 @@ import {
 import { writeLease } from '../src/agents/leaseStore';
 import { readCriteriaProposals, writeCriteriaProposal } from '../src/criteria/criteriaProposals';
 import { readCriteria, writeTicketCriteria } from '../src/criteria/criteriaStore';
+import { contentHash } from '../src/lib/contentHash';
 import { handleCriteriaProposals } from '../src/server/criteriaProposalRoutes';
 import { writeAttempt } from '../src/verification/evidenceStore';
 import { reviewConflict } from '../src/verification/reviewIndependence';
@@ -168,7 +169,7 @@ describe('proposed criteria', () => {
     expect(readCriteriaProposals(root, 'm1')).toEqual([]);
     expect(readCriteria(root, 'm1')[0].criteria[0].text).toBe('Real');
     writeCriteriaProposal(root, 'm1', { ticketId: '1', ticketKey: '#1', criteria, by: 'claude-01', at: 2 });
-    await post('/criteria-proposals/accept', { mapId: 'm1', ticketId: '1', title: 'M' });
+    await post('/criteria-proposals/accept', { mapId: 'm1', ticketId: '1', title: 'M', hash: contentHash(criteria) });
     expect(readCriteria(root, 'm1')[0]).toMatchObject({ confirmed: true, criteria: [{ text: 'Trivial' }] });
   });
 });
