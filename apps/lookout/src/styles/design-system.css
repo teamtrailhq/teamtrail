@@ -325,6 +325,14 @@
   padding: 0 var(--sp-8);
   font-size: var(--fs-sm);
 }
+/* A row of buttons is one size: a small button beside regular ones takes their height and type, so a row never
+ * mixes two sizes. */
+.actions .btn.sm,
+.form-actions .btn.sm {
+  height: var(--h-md);
+  padding: 0 var(--sp-12);
+  font-size: var(--fs-body);
+}
 .btn.primary {
   background: var(--primary);
   border-color: var(--primary);
