@@ -1,8 +1,8 @@
 import type { ActivityState } from '@teamtrail/core';
-import { EmptyState, ScoutBadge } from '../../components/ui';
+import { EmptyState } from '../../components/ui';
 import { clock } from '../../lib';
 
-/** Dense activity log: time, source, message. */
+/** Dense activity log: time, source, message. One line per event; the full message shows on hover. */
 export function ActivityLog({ activity, onTicket }: { activity: ActivityState; onTicket: (id: string) => void }) {
   const rows = activity.feed.slice(-120).reverse();
   if (!rows.length)
@@ -21,11 +21,8 @@ export function ActivityLog({ activity, onTicket }: { activity: ActivityState; o
           onClick={() => e.ticketId && onTicket(e.ticketId)}
         >
           <span className="t t-meta">{clock(e.at)}</span>
-          <span className="src t-meta">
-            {e.source === 'system' && <ScoutBadge className="voice-badge" />}
-            {e.agent ?? e.source}
-          </span>
-          <span className="msg">
+          <span className="src t-meta">{e.agent ?? e.source}</span>
+          <span className="msg" title={e.tag ? `${e.tag} · ${e.text}` : e.text}>
             {e.tag && <span className="tag t-meta">{e.tag} · </span>}
             {e.text}
           </span>

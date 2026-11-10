@@ -2,10 +2,14 @@ import type { ActivityState, MapSnapshot } from '@teamtrail/core';
 import { Empty, MetaLine, Row } from '../../components/ui';
 import type { Selection } from '../../lib';
 import { AssumptionList } from './AssumptionList';
+import { splitPlanItem } from './splitPlanItem';
 import { TrailReport } from './TrailReport';
 import type { Tab } from './types';
 
-/** The open tab of the trail plan: one list per map section, or the report. */
+/**
+ * The open section of the trail plan, or the report. Every section is the same list of rows: a title and, when
+ * there is something to add, one quiet context line.
+ */
 export function PlanTabBody({
   tab,
   snap,
@@ -62,9 +66,18 @@ export function PlanTabBody({
       if (!s.outOfScope.length) return <Empty>None</Empty>;
       return (
         <ul className="row-list oos">
-          {s.outOfScope.map((o) => (
-            <Row key={o} as="li" title={o} titleText={o} />
-          ))}
+          {s.outOfScope.map((o) => {
+            const item = splitPlanItem(o);
+            return (
+              <Row
+                key={o}
+                as="li"
+                title={item.title}
+                titleText={o}
+                context={<MetaLine parts={[item.key && { text: item.key, code: true }, item.reason]} />}
+              />
+            );
+          })}
         </ul>
       );
     case 'notes':

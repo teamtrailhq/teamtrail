@@ -164,9 +164,7 @@ export function MapGraph(props: {
         <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
           <g transform={`translate(${PAD} ${PAD})`}>
             <TerrainLayer seed={snap.map.id} width={W} height={H} nodes={L.nodes} />
-            {L.nodes.some((n) => n.state === 'out-of-scope') && (
-              <OutOfScopeStrip y={L.quarantineY} width={L.width} height={L.quarantineH} />
-            )}
+            <OutOfScopeStrip y={L.quarantineY} width={L.width} height={L.quarantineH} nodes={L.nodes} />
 
             <GraphEdges
               snap={snap}
@@ -178,7 +176,9 @@ export function MapGraph(props: {
             />
 
             <DestinationTrail trails={destinationTrail(L, destination)} />
-            {L.nodes.length > 0 && <DestinationMark x={destination.x} y={destination.y} />}
+            {L.nodes.length > 0 && (
+              <DestinationMark x={destination.x} y={destination.y} text={snap.map.sections.destination} />
+            )}
 
             {L.nodes.map((n) => (
               <GraphNode

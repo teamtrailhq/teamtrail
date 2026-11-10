@@ -1,4 +1,8 @@
-/** Single source for the in-app Changelog tab. Newest first; move items from `next` into a release when they ship. */
+/**
+ * Single source for the in-app Changelog tab, newest first. The newest release's version is the product version: it
+ * must equal packages/cli/package.json (a test checks). A feature PR adds a release with a minor bump and 1–4 short,
+ * user-facing lines; a fix PR bumps the patch. `NEXT` only teases what's coming.
+ */
 import { OLDER_RELEASES } from './olderReleases';
 
 export interface Release {
@@ -8,42 +12,21 @@ export interface Release {
 }
 
 export const NEXT: { area: string; items: string[] }[] = [
-  {
-    area: 'Polish',
-    items: [
-      'Settings → Guides shows whether a guide you added from the catalog was Verified or Not reviewed, saved when you added it, so no network is needed',
-      'Settings is now its own page instead of a big dialog: pick This trail, Project, Attention & alerts, You, All projects or About on the left, and each says whether it is committed to the repo or kept on this machine. The address shows where you are, so you can link to a section, and Back or Esc returns to the Lookout',
-      "A ticket's guide now sits in its map sign's quiet line, next to the type and state, instead of floating above the sign; hover it for the full name and version",
-      'Onboarding opens calmer: a small logo and one question, "Where should your trails live?"',
-      'Tickets on the trail map are flat cards: a status dot, the title and one quiet line with the key, type, guide and who is on it. Thin elbow lines join them, and the landscape underneath is quieter',
-      'Working looks the same everywhere: green, as on the map, in Up next, the ticket pill, the activity steps and the legend. Ready is grey and done steps back; red still only means it needs you now',
-      'The header always shows whether focus is on: "Focus on · until 12:00" or "Focus off". Click it to see what it holds back, focus for an hour, or end focus now, even during your quiet hours, which then pause until they would have ended. It stays on this machine',
-      'Settings → Slack says plainly that you create your own Scout app in your Slack workspace, running from this machine with nothing going through Teamtrail, and each step says what you do in Slack and why. One-click Add to Slack is coming with Teamtrail Cloud',
-      'Info icons are square, like the panels and their tooltips',
-    ],
-  },
-  {
-    area: 'Guides',
-    items: [
-      "Write your own guide: `teamtrail guides new <id>` starts one from a template that passes the safety lint. Settings → Guides → Write your own lists your team's guides as Local, Not approved yet or Approved; agents can use one once you approve it, and again after every edit",
-      'Share a guide you wrote with everyone: `teamtrail guides lint` checks it, and Write your own links to how to send it to the public catalog',
-      '`teamtrail guides add <id>` now looks in every catalog in guides.json, in order, and says which one the guide came from. An id in more than one catalog is refused until you name it, like `ours/perf`',
-      'Catalogs you list in guides.json now add to the official one instead of replacing it; `"official": false` leaves it out',
-    ],
-  },
-  {
-    area: 'Trackers',
-    items: [
-      'Sign in with GitHub: no gh login or token needed. GitHub Issues setup shows a code, Open GitHub takes you to enter it, and once you approve, the picker shows your repos as you. The token stays in your own config folder (never the repo), and Sign out forgets it',
-      'Tracker setup shows a calm loading state while it looks up your account, repos, Linear teams and projects: placeholder rows and a quiet line instead of an empty list. Connect waits until they arrive, and a lookup that fails says why with a Retry',
-      'GitHub Issues no longer connects the moment you choose it. Onboarding and Settings → Tracker show the account and repo first ("Will use owner/name as you (your gh login)"), let you pick any repo you can push or triage in, or type owner/name, and connect only when you press Connect. Each project in All projects keeps its own repo, and the overview row says where its issues live',
-      'Linear works the same way: once a Linear API key is found or pasted, onboarding and Settings → Tracker say whose it is ("Will use Engineering in Octo Inc as you"), list the teams it can access with a search box and how recently each was active, and offer an optional project. The team saved for this project is picked again, or the only team; otherwise you pick one. Nothing connects until you press Connect, a team the key can\'t read is refused without switching, and All projects shows "Linear: ENG in Octo Inc"',
-    ],
-  },
   { area: 'Teamtrail Cloud', items: ['Agents that run in the cloud, steered from the same Lookout'] },
 ];
 
 export const RELEASES: Release[] = [
+  {
+    version: '0.24.0',
+    date: '2026-11-10',
+    items: [
+      'Focus in the header: see at a glance whether it is on, and start or end it in one click',
+      'Sign in with GitHub, and pick your repo or Linear team from a searchable list',
+      'Write your own guides with `teamtrail guides new`, approve them in Settings and share them with the catalog',
+      'Settings is its own page, and the trail map has a cleaner, flatter look',
+      'Smaller polish: one colour for work in progress everywhere, a calmer first run and clearer Slack setup',
+    ],
+  },
   {
     version: '0.23.0',
     date: '2026-11-08',

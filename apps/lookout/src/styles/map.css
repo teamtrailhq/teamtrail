@@ -198,7 +198,7 @@
   border-top: 1px solid var(--line);
   background: var(--panel);
   display: grid;
-  grid-template-columns: minmax(0, 2.4fr) minmax(230px, 1fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
   gap: var(--sp-14);
   overflow: hidden;
 }
@@ -296,21 +296,25 @@
 }
 .mix li {
   display: grid;
-  grid-template-columns: max-content minmax(24px, 1fr) max-content;
+  grid-template-columns: 5em minmax(24px, 1fr) 1.2em;
   align-items: center;
-  gap: var(--sp-4);
+  gap: var(--sp-6);
 }
+/* One flat bar per type on a shared scale: the closed part solid green, the open part a quiet grey. */
 .mix-bar {
   display: flex;
   height: 6px;
-  background: rgba(var(--accent-rgb), 0.05);
+  background: rgba(var(--line-rgb), 0.12);
+}
+.mix-bar i {
+  display: block;
+  height: 100%;
 }
 .mix-bar .closed {
   background: var(--st-decided);
 }
 .mix-bar .open {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--accent);
+  background: rgba(var(--line-rgb), 0.45);
 }
 .mix b {
   font: var(--type-meta);
@@ -362,22 +366,18 @@
 .destination .x-stroke {
   fill: none;
   stroke: var(--mark);
-  stroke-width: 5;
-  opacity: 0.75;
+  stroke-width: 7;
   stroke-linecap: round;
 }
-.destination .x-sketch {
-  fill: none;
-  stroke: var(--text-hi);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  opacity: 0.45;
+.destination {
+  cursor: help;
+  outline: none;
 }
-.destination text {
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 600;
-  fill: var(--text-hi);
+.destination .x-hit {
+  fill: transparent;
+}
+.destination:focus-visible .x-stroke {
+  stroke-width: 9;
 }
 .quarantine text {
   font-family: var(--label);
@@ -385,7 +385,12 @@
   font-weight: 500;
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
-  fill: var(--dim);
+  fill: var(--text);
+}
+.quarantine line {
+  stroke: var(--line2);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
 /* ---------- Real trails: agents work from their chat, so the UI hands over agent commands ---------- */
