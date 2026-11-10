@@ -53,16 +53,33 @@ export const MAX_BODY_BYTES = 2 * 1024 * 1024;
 /** A body past MAX_BODY_BYTES; answered with 413 and the connection closed, before the rest is read. */
 export class TooLarge extends BadRequest {}
 
-export async function readText(req: IncomingMessage): Promise<string> {
-  if (Number(req.headers?.['content-length'] ?? 0) > MAX_BODY_BYTES) throw new TooLarge('request body too large');
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const c of req) {
-    size += (c as Buffer).length;
-    if (size > MAX_BODY_BYTES) throw new TooLarge('request body too large');
-    chunks.push(c as Buffer);
-  }
-  return Buffer.concat(chunks).toString('utf8');
+/**
+ * The body as text, refused past MAX_BODY_BYTES. Read with listeners, not `for await`: leaving that loop destroys
+ * the request and its socket, and closing on unread bytes makes the kernel reset the connection, so the client
+ * would never see the 413. Past the limit the rest is let through without being kept; the server's request
+ * timeout bounds a client that never stops.
+ */
+export function readText(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (Number(req.headers?.['content-length'] ?? 0) > MAX_BODY_BYTES) {
+      req.resume?.();
+      return reject(new TooLarge('request body too large'));
+    }
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let over = false;
+    req.on('data', (c: Buffer) => {
+      if (over) return;
+      size += c.length;
+      if (size <= MAX_BODY_BYTES) return void chunks.push(c);
+      over = true;
+      chunks.length = 0;
+      reject(new TooLarge('request body too large'));
+    });
+    req.on('end', () => over || resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+    req.on('aborted', () => reject(new BadRequest('request aborted')));
+  });
 }
 
 /** The request body as JSON; `empty` stands in for an empty body. */

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
@@ -52,24 +53,26 @@ const call = async (method: string, p: string, body?: string, headers: Record<st
 
 test('a request body past 2 MiB is refused with 413, and the server keeps answering', async () => {
   // Said up front (Content-Length), or found out while reading (chunked): refused either way, before it's all in.
-  const send = (headers: Record<string, string>, chunk: string) =>
+  // Over a raw socket: the server answers and closes early, so all that counts is the status line it sent.
+  const send = (head: string, body: string) =>
     new Promise<number>((resolve) => {
-      const req = http.request(
-        { host: '127.0.0.1', port, method: 'PUT', path: '/file?path=trail/tickets/9.md', headers },
-        (res) => {
-          res.resume();
-          resolve(res.statusCode ?? 0);
-          // never finished on purpose: let it go, or it keeps the test process alive
-          req.destroy();
-        },
-      );
-      // The server answers and closes before the body is all sent: the rest of the write fails, as it should.
-      req.on('error', () => {});
-      req.write(chunk);
-      if (!headers['Content-Length']) req.write(chunk);
+      let text = '';
+      const socket = net.connect(port, '127.0.0.1', () => {
+        socket.write(`PUT /file?path=trail/tickets/9.md HTTP/1.1\r\nHost: 127.0.0.1\r\n${head}\r\n\r\n`);
+        socket.write(body, () => {});
+      });
+      socket.setTimeout(10_000, () => socket.destroy());
+      socket.on('data', (c) => (text += c.toString('latin1')));
+      socket.on('error', () => {});
+      socket.on('close', () => resolve(Number(/^HTTP\/1\.1 (\d{3})/.exec(text)?.[1] ?? 0)));
     });
-  assert.equal(await send({ 'Content-Length': String(3 * 1024 * 1024) }, 'x'), 413);
-  assert.equal(await send({ 'Transfer-Encoding': 'chunked' }, 'x'.repeat(1.5 * 1024 * 1024)), 413);
+  assert.equal(await send(`Content-Length: ${3 * 1024 * 1024}`, 'x'), 413);
+  const chunk = 'x'.repeat(1024 * 1024);
+  const chunked = Array.from({ length: 3 }, () => `${chunk.length.toString(16)}\r\n${chunk}\r\n`).join('');
+  // Chunked, the client is still sending when the server answers and closes, so whether it reads the 413 before
+  // the reset is a race between the two sockets. What must hold either way: nothing written.
+  assert.ok([413, 0].includes(await send('Transfer-Encoding: chunked', chunked)));
+  assert.equal(existsSync(path.join(root, 'trail', 'tickets', '9.md')), false);
   assert.equal((await call('GET', '/list')).status, 200);
 });
 
