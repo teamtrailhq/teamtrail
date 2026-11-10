@@ -8,7 +8,13 @@ import {
   type MapSnapshot,
   type Ticket,
 } from '@teamtrail/core';
-import { readBrief, readCriteria, readCriteriaProposals, writeCriteriaProposal, writeTicketCriteria } from '@teamtrail/core/agents';
+import {
+  readBrief,
+  readCriteria,
+  readCriteriaProposals,
+  writeCriteriaProposal,
+  writeTicketCriteria,
+} from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { knowledgeFor } from './knowledge';
 import { assertOwnClaim } from './ownClaim';
@@ -57,7 +63,7 @@ export function criteriaView(root: string, snap: MapSnapshot, t: Ticket, level: 
         }
       : {}),
     evidence:
-      'When completing, give evidence per criterion. Only check:<name> (from verification.json, run by Teamtrail) counts as verified. test:<name>, command:<cmd>, pr or a note are recorded as claimed, not verified, and the human sees them so; on security and business-rule criteria they need the human\'s sign-off. manual: the human signs off.',
+      "When completing, give evidence per criterion. Only check:<name> (from verification.json, run by Teamtrail) counts as verified. test:<name>, command:<cmd>, pr or a note are recorded as claimed, not verified, and the human sees them so; on security and business-rule criteria they need the human's sign-off. manual: the human signs off.",
   };
 }
 
@@ -81,7 +87,13 @@ export async function setCriteria(
   const criteria = checkedCriteria(input.criteria);
   const current = readCriteria(ctx.root, snap.map.id).find((x) => x.ticketId === t.id);
   if (current?.confirmed) {
-    writeCriteriaProposal(ctx.root, snap.map.id, { ticketId: t.id, ticketKey: t.key, criteria, by: agent, at: Date.now() });
+    writeCriteriaProposal(ctx.root, snap.map.id, {
+      ticketId: t.id,
+      ticketKey: t.key,
+      criteria,
+      by: agent,
+      at: Date.now(),
+    });
     ctx.sessions.current?.log(`${t.key}: proposed new acceptance criteria for the human`, 'warn');
     return {
       ticket: t.key,

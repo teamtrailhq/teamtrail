@@ -17,6 +17,7 @@ import { assertClaimable, briefView, claimable } from './discovery';
 import { assertInGuides, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
 import { pickNext, stampModel, tierFields } from './models';
+import { heldElsewhere } from './ownClaim';
 import { claimParallel } from './parallel';
 import { recoverStalled } from './recoverStalled';
 import { sessionView } from './reporting';
@@ -24,7 +25,6 @@ import { frozenOn } from './reroutes';
 import { assertMayReview, ownReviews } from './reviews';
 import { ticketInfo } from './ticketInfo';
 import { nextTicket } from './ticketOps';
-import { heldElsewhere } from './ownClaim';
 import { baselineView } from './verificationView';
 
 /** A remote agent's checkout isn't this machine's: the baseline recorded here says nothing about its files. */

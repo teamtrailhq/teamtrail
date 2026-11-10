@@ -38,6 +38,11 @@ export function writeCriteriaProposal(root: string, mapId: string, p: CriteriaPr
 export function dropCriteriaProposal(root: string, mapId: string, ticketId: string) {
   const all = readCriteriaProposals(root, mapId);
   const found = all.find((x) => x.ticketId === ticketId);
-  if (found) save(root, mapId, all.filter((x) => x !== found));
+  if (found)
+    save(
+      root,
+      mapId,
+      all.filter((x) => x !== found),
+    );
   return found;
 }

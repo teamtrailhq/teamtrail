@@ -125,7 +125,11 @@ describe('acceptance criteria over MCP', () => {
     const snap = await new MarkdownAdapter(nodeMarkdownFs(root), root).loadMap(m.trail.id);
     // AC-2 is a business rule backed only by the agent's word: the human signs it off with AC-3.
     expect(approvalItems(root, snap)).toEqual([
-      expect.objectContaining({ kind: 'approve', ticketKey: build, reason: expect.stringMatching(/^Sign off AC-2, AC-3/) }),
+      expect.objectContaining({
+        kind: 'approve',
+        ticketKey: build,
+        reason: expect.stringMatching(/^Sign off AC-2, AC-3/),
+      }),
     ]);
   });
 

@@ -33,7 +33,10 @@ export interface AgentOptions {
    * Set when the agent connects over HTTP with a token: it may be on another machine, so nothing may assume it
    * shares this filesystem (no worktree is prepared, no check or git evidence is taken as its work).
    */
-  remote?: { tokenName: string; /** The token's id: what tells this agent from another, whatever trail names it takes. */ tokenId?: string };
+  remote?: {
+    tokenName: string;
+    /** The token's id: what tells this agent from another, whatever trail names it takes. */ tokenId?: string;
+  };
 }
 
 export interface TicketPlanInput {

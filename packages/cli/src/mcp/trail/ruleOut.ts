@@ -22,7 +22,8 @@ export async function ruleOut(ctx: AgentContext, input: CloseInput) {
   const agent = await ctx.agentId();
   if (ticket.state === 'closed') throw new OperationError(`${ticket.key} is already closed`);
   const frozenBy = frozenOn(ctx, snap.map.id).get(ticket.id);
-  if (frozenBy) throw new OperationError(`${ticket.key} is frozen by reroute proposal ${frozenBy}, waiting on the human`);
+  if (frozenBy)
+    throw new OperationError(`${ticket.key} is frozen by reroute proposal ${frozenBy}, waiting on the human`);
   const mine = ticket.assignee === agent;
   if (mine) assertOwnClaim(ctx, { mapId: snap.map.id, ticket, agent });
   const human = mine ? humanAnswerFor(ctx, { questionId: input.questionId, ticket, hitl: true }) : undefined;

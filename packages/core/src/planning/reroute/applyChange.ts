@@ -1,9 +1,9 @@
 import type { TrackerAdapter } from '../../adapters/adapter';
 import type { Journal } from '../../model/lifecycle';
 import type { RerouteChange, RerouteProposal } from '../../model/reroute';
+import { oneLine } from '../../model/safeText';
 import type { MapSnapshot } from '../../model/types';
 import { transition } from '../lifecycle/transition';
-import { oneLine } from '../../model/safeText';
 import { supersedeDecision } from '../operations/decisionOps';
 import { ruleOutOfScope } from '../operations/scope';
 

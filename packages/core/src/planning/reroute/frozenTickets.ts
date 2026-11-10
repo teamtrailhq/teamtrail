@@ -5,7 +5,9 @@ import type { RerouteProposal } from '../../model/reroute';
  * the trail lead decides, so nobody works on something that may be about to change. A `wide` proposal (most of the
  * trail's open work) freezes nothing: one proposal must not stop the trail; the trail lead is asked instead.
  */
-export function frozenTickets(proposals: Pick<RerouteProposal, 'id' | 'status' | 'changes' | 'wide'>[]): Map<string, string> {
+export function frozenTickets(
+  proposals: Pick<RerouteProposal, 'id' | 'status' | 'changes' | 'wide'>[],
+): Map<string, string> {
   const frozen = new Map<string, string>();
   for (const p of proposals.filter((x) => x.status === 'pending' && !x.wide)) {
     for (const c of p.changes) {

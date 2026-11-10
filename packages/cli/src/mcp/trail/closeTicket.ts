@@ -4,7 +4,6 @@ import {
   deriveStates,
   OperationError,
   resolve,
-  ruleOutOfScope,
   type DecisionMeta,
   type DecisionRecord,
   type DecisionRisk,
@@ -18,13 +17,13 @@ import type { AgentContext } from './agentContext';
 import { assertAssumes } from './assumptions';
 import { claimTicket } from './claimTicket';
 import { closeDecisionMeta } from './closeDecision';
-import { submitVerified } from './completion';
 import { declaredPaths, unverifiedChanges } from './closeEvidence';
+import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
 import { checkedAnswers, keepAnswers } from './guides';
 import { humanAnswerFor, release, spend, type HumanAnswer } from './humanAnswer';
-import { withReview } from './parallel';
 import { assertOwnClaim } from './ownClaim';
+import { withReview } from './parallel';
 import { checkRisk, riskOf } from './riskCheck';
 import { ruleOut } from './ruleOut';
 import type { CloseInput, WaitControl } from './types';
@@ -68,27 +67,14 @@ export async function closeTicket(ctx: AgentContext, input: CloseInput, wait: Wa
 }
 
 async function closeWith(c: Closing, wait: Wait) {
-  const { ctx, input } = c;
   const before = frontier(c.snap);
-  const ruledOut = input.outcome === 'out_of_scope';
-  let verified: object = {};
-  if (ruledOut) {
-    await ruleOutOfScope(
-      ctx.adapter,
-      c.snap.map.id,
-      { ticketId: c.ticket.id },
-      { ...ctx.actor(), reason: input.resolution, author: c.agent, source: c.source },
-    );
-  } else {
-    const done = await complete(c, wait);
-    // A completion that waits on checks or a review has still used the human's answer.
-    if (done.kind === 'stopped') spend(c.human, `the completion of ${c.ticket.key}`);
-    if (done.kind === 'stopped') return withReview(c, done.result);
-    verified = done.verified;
-  }
+  const done = await complete(c, wait);
+  // A completion that waits on checks or a review has still used the human's answer.
+  if (done.kind === 'stopped') spend(c.human, `the completion of ${c.ticket.key}`);
+  if (done.kind === 'stopped') return withReview(c, done.result);
   spend(c.human, `the close of ${c.ticket.key}`);
   const decision = await findDecision(c);
-  return withReview(c, await finish(c, { before, verified, decision }));
+  return withReview(c, await finish(c, { before, verified: done.verified, decision }));
 }
 
 /** Finds the ticket, checks this agent may close it, claims it if nobody has, and picks the session. */
@@ -111,7 +97,7 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
   try {
     assertHumanDecided({ remote: ctx.remote, ticket, humanAnswered: !!human });
     const risk = checkRisk({ ...input, root: ctx.root, decidedBy: human?.author ?? agent });
-    if (!ticket.assignee && input.outcome !== 'out_of_scope') {
+    if (!ticket.assignee) {
       await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });
       const id = ticket.id;
       ticket = (await ctx.load(snap.map.id)).tickets.find((x) => x.id === id)!;
@@ -145,7 +131,12 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   const transcript = wantsTranscript ? log.map((e) => `**${e.author}:** ${e.text}`).join('\n\n') : undefined;
   const { info } = levelFor(ctx.root, snap, t);
   const verified = info.level !== 'off';
-  const declared = declaredPaths({ remote: ctx.remote, verified, paths: input.paths, noCodeReason: input.noCodeReason });
+  const declared = declaredPaths({
+    remote: ctx.remote,
+    verified,
+    paths: input.paths,
+    noCodeReason: input.noCodeReason,
+  });
   assertCriteria(ctx.root, snap, t, info.level);
   await keepAnswers(ctx, {
     snap,
@@ -217,19 +208,18 @@ function frontier(snap: MapSnapshot): Set<string> {
 
 /** Releases the lease, ends the session, and reports what opened up and what comes next. */
 async function finish(c: Closing, done: { before: Set<string>; verified: object; decision?: DecisionRecord }) {
-  const { ctx, input, ticket: t, session: s } = c;
+  const { ctx, ticket: t, session: s } = c;
   ctx.leases.drop(c.snap.map.id, t.id);
   const after = await ctx.load(c.snap.map.id);
   const nowOpen = frontier(after);
   const unblocked = after.tickets.filter((x) => nowOpen.has(x.id) && !done.before.has(x.id));
-  const verb = input.outcome === 'out_of_scope' ? 'ruled out' : 'decided';
-  if (s.info.ticketId === t.id) ctx.sessions.end(true, `${t.key} ${verb} · session closed`);
+  if (s.info.ticketId === t.id) ctx.sessions.end(true, `${t.key} decided · session closed`);
   const next = chooseNext(after);
   const open = after.tickets.filter((x) => x.state === 'open').length;
   const d = done.decision;
   return {
     closed: t.key,
-    outcome: input.outcome ?? 'completed',
+    outcome: 'completed',
     ...done.verified,
     decision: d ? { id: d.id, summary: d.summary, decidedBy: d.decidedBy } : null,
     unblocked: unblocked.map((x) => ({ key: x.key, title: x.title, type: x.type })),

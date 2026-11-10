@@ -9,11 +9,7 @@ export { LEASE_REAPER, reclaimExpired, returnToQueue, type ReturnOutcome } from 
 export { journalFile, journalPath, JOURNAL_DIR } from './history/journalFile';
 export { briefPath, readBrief, writeBrief } from './discovery/briefStore';
 export { criteriaOf, readCriteria, writeTicketCriteria } from './criteria/criteriaStore';
-export {
-  dropCriteriaProposal,
-  readCriteriaProposals,
-  writeCriteriaProposal,
-} from './criteria/criteriaProposals';
+export { dropCriteriaProposal, readCriteriaProposals, writeCriteriaProposal } from './criteria/criteriaProposals';
 export { caseInsensitiveFs } from './policy/caseInsensitiveFs';
 export { POLICY_FILE, policyPath, readPolicy, writePolicy, type PolicyRead } from './policy/policyStore';
 export {

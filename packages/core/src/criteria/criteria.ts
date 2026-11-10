@@ -111,7 +111,8 @@ function grade(c: Criterion, e: CriterionEvidence | undefined, checks: CheckResu
   if (!ev) return { kind: 'missing' };
   const name = ev.startsWith('check:') ? ev.slice(6).trim() : undefined;
   const run = name === undefined ? undefined : checks.find((x) => x.name === name);
-  if (name !== undefined && !(run && passed(run))) return { kind: 'failed', why: `${ev} ${run ? 'failed' : "didn't run"}` };
+  if (name !== undefined && !(run && passed(run)))
+    return { kind: 'failed', why: `${ev} ${run ? 'failed' : "didn't run"}` };
   // A criterion the trail lead signs off stays theirs whatever evidence comes with it.
   if (ev === 'manual' || c.kind === 'manual') return { kind: 'manual' };
   if (name !== undefined) return { kind: 'verified', evidence: ev };

@@ -156,7 +156,12 @@ describe('acceptance criteria: who writes them, and what counts as proof', () =>
   const config = (level: string) =>
     fs.writeFileSync(
       path.join(root, 'verification.json'),
-      JSON.stringify({ v: 1, default: level, checks: { check: { run: [process.execPath, '-e', '0'] } }, run: ['check'] }),
+      JSON.stringify({
+        v: 1,
+        default: level,
+        checks: { check: { run: [process.execPath, '-e', '0'] } },
+        run: ['check'],
+      }),
     );
 
   it('the assignee, or the charting agent before anyone claims; confirmed criteria only take a proposal', async () => {

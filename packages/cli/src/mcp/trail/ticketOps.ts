@@ -16,11 +16,11 @@ import { assertGuide, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
 import { heldReason, pickNext, tierFields } from './models';
 import { noTicketReason } from './noTicketReason';
+import { assertOwnClaim } from './ownClaim';
 import { recoverStalled } from './recoverStalled';
 import { frozenOn } from './reroutes';
 import { ownReviews } from './reviews';
 import { ticketInfo } from './ticketInfo';
-import { assertOwnClaim } from './ownClaim';
 
 export async function nextTicket(
   ctx: AgentContext,

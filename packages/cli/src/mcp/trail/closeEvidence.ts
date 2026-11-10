@@ -41,6 +41,11 @@ export async function unverifiedChanges(
   checkRisk({ root: ctx.root, paths: [...new Set([...at.declared, ...changed])], decidedBy: at.decidedBy });
   const listed = changed.slice(0, 10).join(', ') + (changed.length > 10 ? ` and ${changed.length - 10} more` : '');
   const warning = `${at.ticket.key} is a ${at.ticket.type} ticket closed without verification, yet ${changed.length} file${changed.length === 1 ? '' : 's'} changed since the claim: ${listed}. Code changes belong on an implementation ticket, where they are checked.`;
-  await ctx.adapter.comment(at.snap.map.id, at.ticket.id, CHECK_RUNNER, `**Closed without verification, with changes**\n\n${warning}`);
+  await ctx.adapter.comment(
+    at.snap.map.id,
+    at.ticket.id,
+    CHECK_RUNNER,
+    `**Closed without verification, with changes**\n\n${warning}`,
+  );
   return { changed, warning };
 }
