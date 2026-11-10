@@ -789,3 +789,12 @@ button.card.urgent:hover,
   border-bottom: 1px solid rgba(var(--accent-rgb), 0.5);
   transform: rotate(45deg);
 }
+
+/* An item that changed while the human read it: approvals wait for "Review again". */
+.changed-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  margin: var(--sp-6) 0;
+}

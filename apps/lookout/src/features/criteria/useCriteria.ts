@@ -1,6 +1,7 @@
 import { type TicketCriteria } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
 import { apiBase } from '../../lib/apiBase';
+import { responseError } from '../../lib/responseError';
 import { onTrackerChange } from '../../lib/trackerChanges';
 
 const api = `${apiBase()}/criteria`;
@@ -27,6 +28,12 @@ export function useCriteria(mapId?: string) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mapId, ...body }),
-    }).then(load);
+    })
+      .catch(() => undefined)
+      .then(async (r) => {
+        const error = await responseError(r);
+        load();
+        return error;
+      });
   return { tickets, confirm };
 }

@@ -1,6 +1,7 @@
 import type { Criterion } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
 import { apiBase } from '../../lib/apiBase';
+import { responseError } from '../../lib/responseError';
 import { onTrackerEvent } from '../../lib/trackerChanges';
 
 /** A change an agent proposed to criteria the trail lead confirmed (core criteria/criteriaProposals.ts). */
@@ -38,6 +39,12 @@ export function useCriteriaProposals(mapId?: string) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mapId, ...body }),
-    }).then(load);
+    })
+      .catch(() => undefined)
+      .then(async (r) => {
+        const error = await responseError(r);
+        load();
+        return error;
+      });
   return { proposals, decide };
 }

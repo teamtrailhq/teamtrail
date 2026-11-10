@@ -21,7 +21,10 @@ export interface KnowledgeStore {
   attention: number;
   open: boolean;
   setOpen: (open: boolean) => void;
-  call: (id: string, call: KnowledgeCall) => Promise<boolean>;
+  /** Per entry, the hash of its content as the server has it now (an approval sends the one the human opened). */
+  hashes: Record<string, string>;
+  /** `shown`: the hash of the entry as the trail lead opened it, sent with confirm and keep-as-assumption. */
+  call: (id: string, call: KnowledgeCall, shown?: string) => Promise<boolean>;
   propose: (draft: KnowledgeDraft) => Promise<KnowledgeEntry | undefined>;
   error?: string;
 }

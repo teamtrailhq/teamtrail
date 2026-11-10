@@ -7,6 +7,8 @@ import type { CriteriaProposalView } from './useCriteriaProposals';
  */
 export function CriteriaProposal(props: {
   proposal: CriteriaProposalView;
+  /** False while the proposal changed since the human opened it. */
+  canAccept: boolean;
   onAccept: () => void;
   onDismiss: () => void;
 }) {
@@ -26,7 +28,7 @@ export function CriteriaProposal(props: {
         <Button size="sm" variant="ghost" onClick={props.onDismiss}>
           Keep mine
         </Button>
-        <Button size="sm" onClick={props.onAccept}>
+        <Button size="sm" disabled={!props.canAccept} onClick={props.onAccept}>
           Take these
         </Button>
       </div>

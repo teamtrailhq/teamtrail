@@ -29,11 +29,12 @@ export function useBrief(snap?: MapSnapshot) {
   const version = snap?.tickets.reduce((n, t) => Math.max(n, t.updatedAt), snap.map.updatedAt);
   useEffect(load, [load, version]);
   useEffect(() => onTrackerChange((path) => path.startsWith('briefs/') && load()), [load]);
-  const post = (action: 'accept' | 'request-changes', note?: string) =>
+  /** `shown`: the hash of the brief as the trail lead opened it (useShown), sent with accept. */
+  const post = (action: 'accept' | 'request-changes', note?: string, shown?: string) =>
     fetch(`${api}/${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mapId, note, hash }),
+      body: JSON.stringify({ mapId, note, hash: shown }),
     }).then(async (r) => {
       const b = (await r.json().catch(() => ({}))) as { brief?: DiscoveryBrief; error?: string };
       if (!r.ok || !b.brief) throw new Error(b.error ?? `HTTP ${r.status}`);
@@ -41,15 +42,16 @@ export function useBrief(snap?: MapSnapshot) {
       setBrief(b.brief);
     });
   /** Resolves true when the call went through; on failure the error is shown and the dialog stays open. */
-  const act = (action: 'accept' | 'request-changes', note?: string) =>
-    post(action, note).then(
+  const act = (action: 'accept' | 'request-changes', note?: string, shown?: string) =>
+    post(action, note, shown).then(
       () => true,
       (e: Error) => (setError(e.message), load(), false),
     );
   return {
     brief,
     error,
-    accept: () => act('accept'),
+    hash,
+    accept: (shown?: string) => act('accept', undefined, shown),
     requestChanges: (note: string) => act('request-changes', note),
   };
 }

@@ -60,8 +60,9 @@ export function useKnowledgeStore(briefText: string): KnowledgeStore {
     open,
     setOpen,
     error,
-    call: (id: string, call: KnowledgeCall) =>
-      post('/call', { id, call, hash: hashes[id] }).then(
+    hashes,
+    call: (id: string, call: KnowledgeCall, shown?: string) =>
+      post('/call', { id, call, hash: shown ?? hashes[id] }).then(
         () => (setError(undefined), load(), true),
         (e: Error) => (setError(e.message), load(), false),
       ),
