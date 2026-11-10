@@ -31,8 +31,8 @@ export function Header(props: {
   onToggleMode: () => void;
   onSettings: () => void;
   onToggleTheme: (night: boolean) => void;
-  /** Set when the Slack connection needs attention (revoked token, app uninstalled). */
-  slackAlert?: string;
+  /** Set when Slack needs the trail lead: the connection broke, or the owner waits to be confirmed. */
+  slackAlert?: { label: string; why: string };
   onSlack: () => void;
   /** Focus mode and what interrupts now; replaces the plain waiting count when given. */
   attention?: ReactNode;
@@ -100,8 +100,8 @@ export function Header(props: {
           </span>
         )}
         {props.slackAlert && (
-          <Button size="sm" variant="urgent" onClick={props.onSlack} title={props.slackAlert}>
-            Slack disconnected
+          <Button size="sm" variant="urgent" onClick={props.onSlack} title={props.slackAlert.why}>
+            {props.slackAlert.label}
           </Button>
         )}
         {map && (

@@ -1,5 +1,5 @@
 import { BRAND, deriveStates, frontier, type AgentSessionDoc, type MapSnapshot } from '@teamtrail/core';
-import { escape, md, plain } from './blocks';
+import { label, md, plain } from './blocks';
 
 export interface TrailBrief {
   id: string;
@@ -66,19 +66,21 @@ const since = (at: number, now: number) => {
   return m < 60 ? `${m}m` : `${Math.round(m / 60)}h`;
 };
 const list = (xs: string[], n = 3) => (xs.length > n ? [...xs.slice(0, n), '…'] : xs).join(', ');
+/** Text for the trip report's code block: escaped like everywhere, and unable to end the block early. */
+const code = (s: string) => label(s);
 
 export function statusBlocks(b: TrailBrief, o: { now: number; url?: string }) {
   const rows = [
-    `*${escape(b.title.toUpperCase())}* · ${b.mode} · ${b.resolved}/${b.total} resolved`,
+    `*${code(b.title.toUpperCase())}* · ${label(b.mode)} · ${b.resolved}/${b.total} resolved`,
     '```',
-    `Awaiting you  ${b.awaiting.length}${b.awaiting.length ? `  (${list(b.awaiting.map((a) => `${a.key ?? a.agent}, ${since(a.at, o.now)}`))})` : ''}`,
-    `Blocked       ${b.blocked.length}${b.blocked.length ? `  (${list(b.blocked.map((x) => (x.by.length ? `${x.key} by ${x.by.join('+')}` : x.key)))})` : ''}`,
-    `Frontier      ${b.frontier.length}${b.frontier.length ? `  (${list(b.frontier.map((f) => `${f.key} ${f.title}`))})` : ''}`,
-    `Sessions      ${b.sessions.length ? b.sessions.map((s) => `${s.agent} ${s.status}`).join(', ') : 'none'} · $${b.costUsd.toFixed(2)} · ${formatTokens(b.tokens)} tok`,
+    `Awaiting you  ${b.awaiting.length}${b.awaiting.length ? `  (${code(list(b.awaiting.map((a) => `${a.key ?? a.agent}, ${since(a.at, o.now)}`)))})` : ''}`,
+    `Blocked       ${b.blocked.length}${b.blocked.length ? `  (${code(list(b.blocked.map((x) => (x.by.length ? `${x.key} by ${x.by.join('+')}` : x.key))))})` : ''}`,
+    `Frontier      ${b.frontier.length}${b.frontier.length ? `  (${code(list(b.frontier.map((f) => `${f.key} ${f.title}`)))})` : ''}`,
+    `Sessions      ${b.sessions.length ? code(b.sessions.map((s) => `${s.agent} ${s.status}`).join(', ')) : 'none'} · $${b.costUsd.toFixed(2)} · ${formatTokens(b.tokens)} tok`,
     '```',
   ];
   return {
-    text: `${b.title}: ${b.resolved}/${b.total} resolved, ${b.awaiting.length} awaiting you, ${b.blocked.length} blocked`,
+    text: `${label(b.title)}: ${b.resolved}/${b.total} resolved, ${b.awaiting.length} awaiting you, ${b.blocked.length} blocked`,
     blocks: [
       { type: 'section', text: md(rows.join('\n')) },
       ...(o.url
@@ -103,13 +105,13 @@ export function trailListBlocks(briefs: TrailBrief[], command: string) {
     };
   const lines = briefs.map(
     (b) =>
-      `*${escape(b.key)}* ${escape(b.title)} · ${b.resolved}/${b.total} · ${b.awaiting.length} awaiting · ${b.blocked.length} blocked`,
+      `*${label(b.key)}* ${label(b.title)} · ${b.resolved}/${b.total} · ${b.awaiting.length} awaiting · ${b.blocked.length} blocked`,
   );
   return {
     text: `${briefs.length} trails`,
     blocks: [
       { type: 'section', text: md(lines.join('\n')) },
-      { type: 'context', elements: [md(`\`${command} status <trail>\` for one trail`)] },
+      { type: 'context', elements: [md(`\`${command} status &lt;trail&gt;\` for one trail`)] },
     ],
   };
 }

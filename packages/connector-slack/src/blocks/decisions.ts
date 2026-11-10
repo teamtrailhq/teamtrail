@@ -1,4 +1,4 @@
-import { ACTIONS, VIEWS, clip, escape, md, plain, type Block } from './kit';
+import { ACTIONS, VIEWS, clip, label, md, plain, type Block } from './kit';
 
 export type SaveMode = 'resolve' | 'trail' | 'new';
 
@@ -111,14 +111,14 @@ export function decisionModal(f: DecisionForm, meta: string) {
   const facts = [
     th &&
       [
-        th.channel ? `#${escape(th.channel)}` : undefined,
+        th.channel ? `#${label(th.channel)}` : undefined,
         th.count ? `${th.count} msg${th.count === 1 ? '' : 's'}` : undefined,
-        th.participants.length ? th.participants.map((p) => `@${escape(p)}`).join(' ') : undefined,
+        th.participants.length ? th.participants.map((p) => `@${label(p)}`).join(' ') : undefined,
         th.permalink ? `<${th.permalink}|thread>` : undefined,
       ]
         .filter(Boolean)
         .join(' · '),
-    f.postsTo && `Posts to ${escape(f.postsTo)}`,
+    f.postsTo && `Posts to ${label(f.postsTo)}`,
   ].filter(Boolean) as string[];
   if (facts.length) blocks.push({ type: 'context', elements: facts.map(md) });
   return {

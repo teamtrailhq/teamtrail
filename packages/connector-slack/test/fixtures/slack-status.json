@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T17:18:19.954Z",
+  "recordedAt": "2026-11-10T19:54:54.101Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). /scout help, status (all and one trail), inbox, unknown subcommand, refusal.",
   "exchanges": [
     {
@@ -32,7 +32,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "*#1* Event store · 0/4 · 1 awaiting · 1 blocked\n*#6* Mobile sync · 0/1 · 0 awaiting · 0 blocked"
+                "text": "*#1* Event store · 0/4 · 1 awaiting · 1 blocked\n*#6* Mobile sync · 0/1 · 0 awaiting · 0 blocked",
+                "verbatim": true
               }
             },
             {
@@ -40,11 +41,16 @@
               "elements": [
                 {
                   "type": "mrkdwn",
-                  "text": "`/scout status <trail>` for one trail"
+                  "text": "`/scout status &lt;trail&gt;` for one trail",
+                  "verbatim": true
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -69,7 +75,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "*EVENT STORE* · plan+execute · 0/4 resolved\n```\nAwaiting you  1  (#3, 12m)\nBlocked       1  (#5 by #3)\nFrontier      2  (#2 Bench write paths, #4 Retention policy)\nSessions      claude-07 waiting · $4.12 · 1.8M tok\n```"
+                "text": "*EVENT STORE* · plan+execute · 0/4 resolved\n```\nAwaiting you  1  (#3, 12m)\nBlocked       1  (#5 by #3)\nFrontier      2  (#2 Bench write paths, #4 Retention policy)\nSessions      claude-07 waiting · $4.12 · 1.8M tok\n```",
+                "verbatim": true
               }
             },
             {
@@ -87,7 +94,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -106,7 +117,11 @@
         "url": "/actions/T0EFIKA01/5/fakeresponse5",
         "body": {
           "response_type": "ephemeral",
-          "text": "No trail matches “nope”."
+          "text": "No trail matches “nope”.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -131,7 +146,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite?"
+                "text": "◆ *AWAITING YOU* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite?",
+                "verbatim": true
               }
             },
             {
@@ -160,7 +176,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {

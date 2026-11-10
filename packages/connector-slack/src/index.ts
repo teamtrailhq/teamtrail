@@ -1,4 +1,4 @@
-import type { SlackSettingsPatch, SlackStatus, SlackTokenResult, SlackUser } from './types';
+import type { SlackOwnerCode, SlackSettingsPatch, SlackStatus, SlackTokenResult, SlackUser } from './types';
 
 export * from './types';
 export {
@@ -31,6 +31,8 @@ export function slackSettingsApi(prefix: string) {
     created: () => req<SlackStatus>(`${base}/created`, 'POST', {}),
     token: (token: string) => req<SlackTokenResult>(`${base}/token`, 'POST', { token }),
     update: (patch: SlackSettingsPatch) => req<SlackStatus>(`${base}/settings`, 'PUT', patch),
+    ownerCode: () => req<SlackOwnerCode>(`${base}/owner/code`, 'POST', {}),
+    confirmOwner: (id: string) => req<SlackStatus>(`${base}/owner/confirm`, 'POST', { id }),
     resetOwner: () => req<SlackStatus>(`${base}/owner/reset`, 'POST', {}),
     members: () => req<{ members: SlackUser[] }>(`${base}/members`).then((r) => r.members),
     remove: () => req<SlackStatus>(base, 'DELETE'),

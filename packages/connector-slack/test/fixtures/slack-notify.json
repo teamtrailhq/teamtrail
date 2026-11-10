@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T17:18:19.957Z",
+  "recordedAt": "2026-11-10T19:54:54.106Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). Blocked and trail-done notifications in the owner DM, threaded per trail per day.",
   "exchanges": [
     {
@@ -48,7 +48,11 @@
         "url": "/api/chat.postMessage",
         "body": {
           "channel": "D00ANA0001",
-          "text": "⛔ *BLOCKED* · Event store · #2 Bench write paths is blocked by #4 Retention policy"
+          "text": "⛔ *BLOCKED* · Event store · #2 Bench write paths is blocked by #4 Retention policy",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -77,7 +81,11 @@
         "body": {
           "channel": "D00ANA0001",
           "text": "✓ *RESOLVED* · Event store · #2 Bench write paths\n✓ *RESOLVED* · Event store · #3 Pick DB\n✓ *RESOLVED* · Event store · #4 Retention policy\n✓ *RESOLVED* · Event store · #5 Migrate schema\n◉ *TRAIL DONE* · Event store · 4 tickets · $0.00 · 0 tokens",
-          "thread_ts": "1793448000.000001"
+          "thread_ts": "1793448000.000001",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {

@@ -2,10 +2,11 @@ import { BRAND } from '@teamtrail/core';
 import { SlackApiError } from '../api';
 import { BOT_SCOPES, appIdFromToken, tokenKind } from '../manifest';
 import { probeSocket } from '../socket';
+import { socketUrl } from '../socketUrl';
 import type { SlackTokenResult } from '../types';
-import { ownerByEmail } from './owner';
 import { statusOf } from './setupStatus';
 import type { SlackContext } from './slackContext';
+import { journalSlack } from './slackJournal';
 
 /**
  * Tokens from $TEAMTRAIL_SLACK_APP_TOKEN / $TEAMTRAIL_SLACK_BOT_TOKEN are verified like pasted ones
@@ -74,6 +75,11 @@ async function verifyAppToken(ctx: SlackContext, token: string, save: boolean): 
     return { error, code };
   }
   if (!ctx.WS) return { error: 'Slack needs Node.js 22 or newer.', code: 'unsupported' };
+  try {
+    url = socketUrl(url, ctx.apiUrl);
+  } catch (e) {
+    return { error: `${(e as Error).message}.`, code: 'bad_socket_url' };
+  }
   let hello: { appId?: string };
   try {
     hello = await probeSocket(url, ctx.WS);
@@ -89,7 +95,10 @@ async function verifyAppToken(ctx: SlackContext, token: string, save: boolean): 
     // A different app: its bot token, workspace and owner no longer apply.
     ctx.stop();
     if (save) ctx.store.saveToken('bot', '');
-    ctx.store.update({ workspace: undefined, bot: undefined, owners: [], enabled: false });
+    const was = prev.owners[0] ?? prev.pendingOwner;
+    ctx.store.update({ workspace: undefined, bot: undefined, owners: [], pendingOwner: undefined, enabled: false });
+    ctx.ownerCode = undefined;
+    journalSlack(ctx, { action: 'app-changed', who: was, by: 'lead' });
   }
   if (save) ctx.store.saveToken('app', token);
   ctx.store.update({ appId, created: true });
@@ -127,7 +136,6 @@ async function verifyBotToken(ctx: SlackContext, token: string, save: boolean): 
     workspace: { id: who.team_id, name: who.team, url: who.url },
     bot: { userId: who.user_id, name: who.user },
   });
-  if (!ctx.store.read().owners.length && api.scopes?.includes('users:read.email')) await ownerByEmail(ctx, api);
   return undefined;
 }
 

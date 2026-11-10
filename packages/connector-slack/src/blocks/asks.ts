@@ -1,4 +1,4 @@
-import { ACTIONS, VIEWS, clip, escape, md, openButton, plain, quote } from './kit';
+import { ACTIONS, VIEWS, clip, label, md, openButton, plain, quote } from './kit';
 
 export interface AskView {
   sessionId: string;
@@ -17,7 +17,7 @@ export interface AskRef {
 }
 
 const askHeader = (a: AskView) =>
-  ['◆ *AWAITING YOU*', a.trail && escape(a.trail), a.ticket && escape(a.ticket), escape(a.agent)]
+  ['◆ *AWAITING YOU*', a.trail && label(a.trail), a.ticket && label(a.ticket), label(a.agent)]
     .filter(Boolean)
     .join(' · ');
 
@@ -29,7 +29,7 @@ export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'tit
     .slice(0, 4)
     .map((s, i) => ({ type: 'button', action_id: `${ACTIONS.option}:${i}`, text: plain(clip(s, 75)), value: ref(i) }));
   return {
-    text: `Awaiting you · ${a.agent}: ${clip(a.text, 140)}`,
+    text: `Awaiting you · ${label(a.agent)}: ${label(clip(a.text, 140))}`,
     blocks: [
       { type: 'section', text: md(body) },
       {
@@ -70,7 +70,7 @@ export function replyModal(a: AskView, meta: string) {
     submit: plain('Send'),
     close: plain('Cancel'),
     blocks: [
-      { type: 'context', elements: [md(`${escape(a.agent)}${a.ticket ? ` · ${escape(a.ticket)}` : ''}`)] },
+      { type: 'context', elements: [md(`${label(a.agent)}${a.ticket ? ` · ${label(a.ticket)}` : ''}`)] },
       { type: 'section', text: md(quote(clip(a.text, 2800))) },
       {
         type: 'input',

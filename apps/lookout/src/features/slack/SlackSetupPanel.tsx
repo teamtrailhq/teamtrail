@@ -3,16 +3,16 @@ import { BRAND, webUrl } from '@teamtrail/core';
 import { useState, type ReactNode } from 'react';
 import { Meta, Card } from '../../components/ui';
 import { ExtLink } from './ExtLink';
+import { OwnerStep } from './OwnerStep';
 import { PasteToken } from './PasteToken';
 import { slackApi } from './slackApi';
-import { SlackStateLine } from './SlackStateLine';
 import { StepFact } from './StepFact';
 import { STEPS, isDone, isCurrent, stepClass } from './steps';
 import { useTokenPickup, PASTE_KEY } from './useTokenPickup';
 
 /**
- * The five-step guided setup. Each step turns green once the local server verifies it; the
- * state lives in the user's config folder, so closing the browser resumes at the same step.
+ * The five-step guided setup. Each step turns green once the local server verifies it; the last one once the
+ * trail lead confirms which Slack account is theirs. The state lives in the user's config folder, so closing the browser resumes at the same step.
  */
 export function SlackSetupPanel(props: { s: SlackStatus; set: (s: SlackStatus) => void }) {
   const { s, set } = props;
@@ -110,22 +110,7 @@ export function SlackSetupPanel(props: { s: SlackStatus; set: (s: SlackStatus) =
         {line(4)}
       </>
     ),
-    5: (
-      <>
-        <p>
-          Your git email doesn't match a member of {s.workspace?.name ?? 'the workspace'}, so tell Scout who you are:
-          open its Home tab in Slack and click <b>This is me</b>. Scout sends you a DM, and questions from agents arrive
-          there.
-        </p>
-        <div className="sl-actions">
-          <ExtLink primary href={s.links.home}>
-            Open Scout in Slack
-          </ExtLink>
-          {s.links.homeWeb && <ExtLink href={s.links.homeWeb}>Open in browser</ExtLink>}
-        </div>
-        <SlackStateLine s={s} />
-      </>
-    ),
+    5: <OwnerStep s={s} set={set} />,
   };
   return (
     <Card tone="inset" className="slack-setup">

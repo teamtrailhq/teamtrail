@@ -1,10 +1,14 @@
 import { slackLinks } from '../manifest';
-import type { SlackStatus } from '../types';
+import type { PendingOwner } from '../owners';
+import type { SlackStatus, SlackUser } from '../types';
+import { activeCode, wrongTries } from './ownerCode';
 import type { SlackContext } from './slackContext';
 
 export function statusOf(ctx: SlackContext): SlackStatus {
   const c = ctx.store.read();
   const t = ctx.store.tokens();
+  const code = activeCode(ctx);
+  const delivery = ctx.delivery.get();
   const step = setupStep({ created: c.created, app: !!t.app, bot: !!t.bot, owners: c.owners.length });
   return {
     state: ctx.state,
@@ -20,6 +24,10 @@ export function statusOf(ctx: SlackContext): SlackStatus {
     workspace: c.workspace,
     bot: c.bot,
     owners: c.owners,
+    ...(c.pendingOwner ? { pendingOwner: pendingView(c.pendingOwner) } : {}),
+    ...(code ? { ownerCode: { expiresAt: code.expiresAt, wrongTries: wrongTries(ctx, code.tries) } } : {}),
+    ...(ctx.ownerCodeDropped ? { ownerCodeDropped: { by: wrongTries(ctx, ctx.ownerCodeDropped) } } : {}),
+    ...(c.ownerRedo ? { ownerRedo: c.ownerRedo } : {}),
     allow: c.allow,
     notify: c.notify,
     command: c.command,
@@ -31,10 +39,23 @@ export function statusOf(ctx: SlackContext): SlackStatus {
         : {}),
     },
     ...(ctx.heldBy ? { heldBy: ctx.heldBy } : {}),
+    ...(delivery ? { delivery } : {}),
   };
 }
 
-/** The setup step to show: create the app, paste the app token, paste the bot token, pick an owner, done. */
+/** The account put forward, as the Lookout shows it. */
+function pendingView(p: PendingOwner): SlackUser {
+  return {
+    id: p.id,
+    ...(p.name ? { name: p.name } : {}),
+    ...(p.realName ? { realName: p.realName } : {}),
+    ...(p.displayName ? { displayName: p.displayName } : {}),
+    via: p.via,
+    ...(p.gitEmail === undefined ? {} : { gitEmail: p.gitEmail }),
+  };
+}
+
+/** The setup step to show: create the app, paste the app token, paste the bot token, confirm the owner, done. */
 function setupStep(s: { created: boolean; app: boolean; bot: boolean; owners: number }): SlackStatus['step'] {
   if (!s.app) return s.created ? 2 : 1;
   if (!s.bot) return 4;

@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T17:18:19.938Z",
+  "recordedAt": "2026-11-10T19:54:54.083Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). Agent questions as DMs: refused click, button answer, late click, answer in the Lookout, Reply… modal, agent gone.",
   "exchanges": [
     {
@@ -54,7 +54,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite for the event store? Postgres needs a container in CI."
+                "text": "◆ *AWAITING YOU* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite for the event store? Postgres needs a container in CI.",
+                "verbatim": true
               }
             },
             {
@@ -103,7 +104,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -132,7 +137,11 @@
         "body": {
           "response_type": "ephemeral",
           "replace_original": false,
-          "text": "Only the Teamtrail owner and allowed users can do that. Ask the owner to add you in Teamtrail Settings → Slack."
+          "text": "Only the Teamtrail owner and allowed users can do that. Ask the owner to add you in Teamtrail Settings → Slack.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -158,7 +167,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *ANSWERED* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite for the event store? Postgres needs a container in CI."
+                "text": "◇ *ANSWERED* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite for the event store? Postgres needs a container in CI.",
+                "verbatim": true
               }
             },
             {
@@ -166,11 +176,16 @@
               "elements": [
                 {
                   "type": "mrkdwn",
-                  "text": "✓ Answered by <@U0ANA0001> via Slack: “Postgres”. claude-07 resumed."
+                  "text": "✓ Answered by <@U0ANA0001> via Slack: “Postgres”. claude-07 resumed.",
+                  "verbatim": true
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -194,7 +209,11 @@
         "body": {
           "response_type": "ephemeral",
           "replace_original": false,
-          "text": "Already answered in Teamtrail."
+          "text": "Already answered in Teamtrail.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -219,7 +238,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · #4 Retention policy · codex-02\n>Keep events for 30 or 90 days?"
+                "text": "◆ *AWAITING YOU* · Event store · #4 Retention policy · codex-02\n>Keep events for 30 or 90 days?",
+                "verbatim": true
               }
             },
             {
@@ -248,7 +268,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -283,7 +307,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *ANSWERED* · Event store · #4 Retention policy · codex-02\n>Keep events for 30 or 90 days?"
+                "text": "◇ *ANSWERED* · Event store · #4 Retention policy · codex-02\n>Keep events for 30 or 90 days?",
+                "verbatim": true
               }
             },
             {
@@ -291,11 +316,16 @@
               "elements": [
                 {
                   "type": "mrkdwn",
-                  "text": "✓ Answered in Teamtrail by trail lead: “90 days”."
+                  "text": "✓ Answered in Teamtrail by trail lead: “90 days”.",
+                  "verbatim": true
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -324,7 +354,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · claude-09\n>Name for the events table?"
+                "text": "◆ *AWAITING YOU* · Event store · claude-09\n>Name for the events table?",
+                "verbatim": true
               }
             },
             {
@@ -353,7 +384,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -406,7 +441,8 @@
                 "elements": [
                   {
                     "type": "mrkdwn",
-                    "text": "claude-09"
+                    "text": "claude-09",
+                    "verbatim": true
                   }
                 ]
               },
@@ -414,7 +450,8 @@
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": ">Name for the events table?"
+                  "text": ">Name for the events table?",
+                  "verbatim": true
                 }
               },
               {
@@ -470,7 +507,8 @@
                 "elements": [
                   {
                     "type": "mrkdwn",
-                    "text": "claude-09"
+                    "text": "claude-09",
+                    "verbatim": true
                   }
                 ]
               },
@@ -478,7 +516,8 @@
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": ">Name for the events table?"
+                  "text": ">Name for the events table?",
+                  "verbatim": true
                 }
               },
               {
@@ -513,7 +552,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *ANSWERED* · Event store · claude-09\n>Name for the events table?"
+                "text": "◇ *ANSWERED* · Event store · claude-09\n>Name for the events table?",
+                "verbatim": true
               }
             },
             {
@@ -521,11 +561,16 @@
               "elements": [
                 {
                   "type": "mrkdwn",
-                  "text": "✓ Answered by <@U0ANA0001> via Slack: “event_log”. claude-09 resumed."
+                  "text": "✓ Answered by <@U0ANA0001> via Slack: “event_log”. claude-09 resumed.",
+                  "verbatim": true
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -554,7 +599,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · claude-07\n>Ship behind a flag?"
+                "text": "◆ *AWAITING YOU* · Event store · claude-07\n>Ship behind a flag?",
+                "verbatim": true
               }
             },
             {
@@ -583,7 +629,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -618,7 +668,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *CLOSED* · Event store · claude-07\n>Ship behind a flag?"
+                "text": "◇ *CLOSED* · Event store · claude-07\n>Ship behind a flag?",
+                "verbatim": true
               }
             },
             {
@@ -626,11 +677,16 @@
               "elements": [
                 {
                   "type": "mrkdwn",
-                  "text": "No longer waiting: claude-07 session ended."
+                  "text": "No longer waiting: claude-07 session ended.",
+                  "verbatim": true
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -653,7 +709,11 @@
         "url": "/actions/T0EFIKA01/5/fakeresponse5",
         "body": {
           "response_type": "ephemeral",
-          "text": "Nothing is waiting on you."
+          "text": "Nothing is waiting on you.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
