@@ -33,6 +33,8 @@ const ownAddresses = () =>
  * its URL is a plain `http://<this machine>:<port>/mcp` (endpointUrl.ts). Anything else in `.agents/` an agent
  * could have written, and the URL goes into a command the human copies. This does not prove the process is a
  * Teamtrail: that needs the per-machine key the trust-state work brings.
+ * TODO(#60): once the machine store lands, sign announcements with the per-machine key and check the signature
+ * here, so another local process can't announce an endpoint at all.
  */
 function believed(name: string, e: McpEndpoint | undefined, addresses: string[]): McpEndpoint | undefined {
   if (!e || !Number.isInteger(e.pid) || name !== `${e.pid}.json` || !processAlive(e.pid)) return undefined;

@@ -36,6 +36,8 @@ async function answersFor(url: string, root: string, fetcher: typeof fetch) {
  * can write: the project stays closed here either way (one root, one reconciler), but the link to "the Lookout
  * that serves it" is offered only for a loopback URL that answers as a Teamtrail for this very folder. Answers
  * are remembered for half a minute, so the overview's polling doesn't ask every time.
+ * TODO(#60): with the per-machine key, check that the lock was written by a Teamtrail of this machine, not only
+ * that its URL answers as one.
  */
 export async function verifiedElsewhere(
   root: string,
