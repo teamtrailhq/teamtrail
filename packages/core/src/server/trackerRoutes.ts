@@ -6,7 +6,7 @@ import { githubLookups } from './githubLookups';
 import { handleGitHubRepos } from './githubRepoRoutes';
 import { githubSignIn } from './githubSignIn';
 import { GITHUB_SIGN_IN, handleGitHubSignIn } from './githubSignInRoutes';
-import { BadRequest, readJson, sendJson } from './http';
+import { BadRequest, readJson, sendFailure, sendJson } from './http';
 import { linearLookups } from './linearLookups';
 import { handleLinearTeams, LINEAR_PROJECTS, LINEAR_TEAMS } from './linearTeamRoutes';
 import { isKind, remoteAdapters } from './remoteAdapters';
@@ -60,7 +60,7 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
       if (!handled) sendJson(res, 405, { error: 'method not allowed' });
     } catch (err) {
       if (err instanceof BadRequest) sendJson(res, 400, { error: err.message });
-      else if (!sendTrackerError(res, err)) sendJson(res, 500, { error: String((err as Error)?.message ?? err) });
+      else if (!sendTrackerError(res, err)) sendFailure(res, err);
     }
     return true;
   }

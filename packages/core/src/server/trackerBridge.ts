@@ -2,26 +2,27 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { MarkdownAdapter } from '../adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../adapters/markdown/nodeMarkdownFs';
-import { AnswerError } from '../agents/agentDocs';
 import { handleAgents } from './agentRoutes';
 import { handleAttention } from './attentionRoutes';
+import { sendBridgeError } from './bridgeErrors';
 import type { BridgeOptions, TrackerBridge } from './bridgeTypes';
 import { handleBriefs } from './briefRoutes';
 import { handleCriteria } from './criteriaRoutes';
 import { handleDecisions } from './decisionRoutes';
 import { handleGuides } from './guideRoutes';
-import { BadRequest, openEventStream, readText, refuseEarly, sendJson } from './http';
+import { BadRequest, openEventStream, readText, refuseEarly, requestUrl, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
 import { handleKnowledge } from './knowledgeRoutes';
+import { lanPlaces } from './lanPlaces';
 import { handleLeases } from './leaseRoutes';
 import { handleModels } from './modelRoutes';
+import { neverCrash } from './neverCrash';
 import { handlePolicy } from './policyRoutes';
-import { redactResponse } from './redactForLan';
+import { redactResponse } from './redactResponse';
 import { handleRemoteAgents } from './remoteAgentRoutes';
 import { fromThisMachine, requestRefusal } from './requestGuard';
 import { handleReroutes } from './rerouteRoutes';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
-import { sendTrackerError } from './trackerErrors';
 import { createTrackerRoutes } from './trackerRoutes';
 import { handleVerification } from './verificationRoutes';
 import { handleVerificationSync } from './verificationSyncRoutes';
@@ -59,6 +60,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const unwatch = watchTrackerFolder(abs, fs, send);
   const unwatchLeases = watchLeases(abs, () => routes.active(), send, leaseTiming);
   const ctx = { root: abs, active: () => routes.active() };
+  const places = lanPlaces(abs, trackers.configDir);
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send }, reconcilerTiming);
   const unwatchAttention = watchAttention(ctx, send, { configDir: trackers.configDir });
   const unwatchIntegration = watchIntegration(abs, integrationTiming);
@@ -114,32 +116,38 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       res.end('ok');
       return true;
     }
+    const text = await fs.read(p).catch((e: NodeJS.ErrnoException) => {
+      // A missing file is a plain 404: the error's own text names the absolute path.
+      if (e.code === 'ENOENT' || e.code === 'EISDIR') return undefined;
+      throw e;
+    });
+    if (text === undefined) return (sendJson(res, 404, { error: 'not found' }), true);
     res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
-    res.end(await fs.read(p));
+    res.end(text);
     return true;
   }
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
-    const url = new URL(req.url ?? '/', 'http://x');
+    const url = requestUrl(req);
     const refusal = requestRefusal(req);
     if (refusal) return refuseEarly(res, { error: refusal });
     const local = fromThisMachine(req, peer);
     if (url.pathname === '/machine') return sendJson(res, 200, { local });
     if (!local && thisMachineOnly(req.method, url.pathname))
       return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
-    if (!local) redactResponse(res);
+    if (!local) redactResponse(res, places);
     try {
       for (const route of api) if (await route(req, res, url)) return;
       res.statusCode = 404;
       res.end('not found');
     } catch (err) {
-      sendError(res, err);
+      sendBridgeError(res, err);
     }
   }
 
   return {
     root: abs,
-    handle,
+    handle: neverCrash(handle),
     active: () => routes.active(),
     close() {
       for (const p of plugins) p.close();
@@ -165,12 +173,4 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
 function isTrackerFile(rel: string) {
   const parts = rel.split(/[\\/]/);
   return rel.endsWith('.md') && parts.every((part) => part !== '' && !part.startsWith('.'));
-}
-
-function sendError(res: ServerResponse, err: unknown) {
-  if (err instanceof BadRequest) return sendJson(res, 400, { error: err.message });
-  if (err instanceof AnswerError) return sendJson(res, 409, { error: err.message });
-  if (sendTrackerError(res, err)) return;
-  res.statusCode = 500;
-  res.end(String(err));
 }

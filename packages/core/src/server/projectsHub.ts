@@ -1,6 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
-import { AnswerError } from '../agents/agentDocs';
 import { writeLookoutLock } from '../agents/lookoutLock';
 import type { ProjectEntry, ProjectState } from '../model/project';
 import { insideRoot } from '../projects/confinePath';
@@ -10,10 +9,13 @@ import { projectEntries } from '../projects/projectEntries';
 import { projectId } from '../projects/projectId';
 import { projectState } from '../projects/projectState';
 import { projectsView } from '../projects/projectsView';
+import { sendBridgeError } from './bridgeErrors';
 import type { TrackerBridge } from './bridgeTypes';
-import { BadRequest, refuseEarly, sendJson } from './http';
+import { BadRequest, refuseEarly, requestUrl, sendJson } from './http';
+import { neverCrash } from './neverCrash';
+import { lanPlaces } from './lanPlaces';
 import { handleProjects } from './projectRoutes';
-import { redactResponse } from './redactForLan';
+import { redactResponse } from './redactResponse';
 import { fromThisMachine, requestRefusal, type PeerAddress } from './requestGuard';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { configDir as defaultConfigDir } from './trackerConfig';
@@ -52,6 +54,7 @@ function checkPath(root: string, url: URL) {
 export function createProjectsHub(o: ProjectsHubOptions) {
   const configDir = o.configDir ?? defaultConfigDir();
   const homeId = projectId(o.home.root);
+  const places = lanPlaces(o.home.root, configDir);
   const bridges = new ProjectBridges({
     ...o.bridges,
     open(entry) {
@@ -98,7 +101,7 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     const entry = entries().find((e) => e.id === id);
     if (!entry) return sendJson(res, 404, { error: `unknown project "${id}"` });
     const state = stateOf(entry);
-    if (state.kind === 'missing') return sendJson(res, 404, { error: `project folder not found: ${entry.root}` });
+    if (state.kind === 'missing') return sendJson(res, 404, { error: 'project folder not found' });
     if (state.kind === 'elsewhere')
       return sendJson(res, 409, { error: 'another Lookout serves this project', url: state.url });
     checkPath(entry.root, url);
@@ -113,7 +116,7 @@ export function createProjectsHub(o: ProjectsHubOptions) {
   }
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
-    const url = new URL(req.url ?? '/', 'http://x');
+    const url = requestUrl(req);
     const refusal = requestRefusal(req);
     if (refusal) return refuseEarly(res, { error: refusal });
     // The same list for every project: `/p/<id>/policy` is `/policy` of that project.
@@ -121,7 +124,7 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     const route = inProject ? (inProject[1] ?? '/') : url.pathname;
     const local = fromThisMachine(req, o.peer);
     if (!local && thisMachineOnly(req.method, route)) return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
-    if (!local) redactResponse(res);
+    if (!local) redactResponse(res, places);
     try {
       const m = /^\/p\/([^/]+)(\/.*)?$/.exec(url.pathname);
       if (m) return await forward(req, res, { id: m[1], rest: m[2] ?? '/', url });
@@ -129,17 +132,14 @@ export function createProjectsHub(o: ProjectsHubOptions) {
       if (url.pathname === '/events') watcher.listen(req, res);
       await o.home.handle(req, res);
     } catch (err) {
-      if (err instanceof BadRequest) return sendJson(res, 400, { error: err.message });
-      if (err instanceof AnswerError) return sendJson(res, 409, { error: err.message });
-      res.statusCode = 500;
-      res.end(String(err));
+      sendBridgeError(res, err);
     }
   }
 
   return {
     homeId,
     bridges,
-    handle,
+    handle: neverCrash(handle),
     close() {
       watcher.stop();
       bridges.close();

@@ -6,9 +6,9 @@ import { autoRegister } from '@teamtrail/core/node';
 import { fail } from '../../args/help';
 import { listen } from '../../serve/listen';
 import { createMcpHttp } from './createMcpHttp';
-import { endpointUrl, isLoopback, MCP_PATH } from './endpointUrl';
+import { endpointUrl, isLoopback } from './endpointUrl';
+import { mcpHttpListener } from './mcpHttpListener';
 import { remoteAgentOpener } from './remoteAgentOpener';
-import { refuse } from './respond';
 import { tokenFileAuth } from './tokenFileAuth';
 
 export interface McpHttpServeOptions {
@@ -33,11 +33,7 @@ export async function runMcpHttp(opts: McpHttpServeOptions) {
     open: remoteAgentOpener({ root: opts.root, version: opts.version, leaseMinutes: opts.leaseMinutes }),
     allowedHosts: opts.allowHosts,
   });
-  const server = http.createServer((req, res) => {
-    const { pathname } = new URL(req.url ?? '/', 'http://x');
-    if (pathname === MCP_PATH) return void mcp.handle(req, res);
-    refuse(res, 404, `Not found. The MCP endpoint is ${MCP_PATH}.`);
-  });
+  const server = http.createServer(mcpHttpListener(mcp));
   // A small server with one job: slow or hoarded connections are cut early. Long tool waits are responses,
   // which these don't limit.
   server.maxConnections = 256;

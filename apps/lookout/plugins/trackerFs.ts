@@ -4,7 +4,7 @@ import { remoteAgentOpener } from '../../../packages/cli/src/mcp/http/remoteAgen
 import { tokenFileAuth } from '../../../packages/cli/src/mcp/http/tokenFileAuth';
 import { slackPlugin } from '../../../packages/connector-slack/src/node';
 import { writeMcpEndpoint } from '../../../packages/core/src/agentHost';
-import { createProjectsHub, createTrackerBridge } from '../../../packages/core/src/bridge';
+import { createProjectsHub, createTrackerBridge, neverCrash, requestUrl } from '../../../packages/core/src/bridge';
 
 /**
  * Mounts the tracker file API (shared with the `teamtrail` CLI) on the Vite dev server, with the projects hub
@@ -47,11 +47,14 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
         hub.close();
         bridge.close();
       });
+      // Like the CLI's servers: nothing a request carries may end the dev server.
       server.middlewares.use(opts.prefix, (req, res) => void hub.handle(req, res));
       server.middlewares.use('/mcp', (req, res, next) => {
-        const exact = new URL(req.url ?? '/', 'http://x').pathname === '/';
-        if (exact) void mcp.handle(req, res);
-        else next();
+        const guarded = neverCrash((rq, rs) => {
+          const exact = requestUrl(rq).pathname === '/';
+          return exact ? mcp.handle(rq, rs) : next();
+        });
+        void guarded(req, res);
       });
     },
   };

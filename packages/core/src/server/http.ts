@@ -18,6 +18,31 @@ export function refuseEarly(res: ServerResponse, v: unknown) {
   sendJson(res, 403, v);
 }
 
+/**
+ * The request's URL. A request line no URL parser accepts (`GET //`) is refused with 400 like any other bad
+ * request; it must never throw past the listener, where it would end the process.
+ */
+export function requestUrl(req: IncomingMessage): URL {
+  try {
+    return new URL(req.url ?? '/', 'http://x');
+  } catch {
+    throw new BadRequest('malformed request');
+  }
+}
+
+/**
+ * The answer to a failure no route expected: 400 for a malformed request, else a plain 500. Never the error's
+ * text, which can carry an absolute path (`ENOENT … open '/Users/…'`); that goes to this process's stderr.
+ */
+export function sendFailure(res: ServerResponse, err: unknown) {
+  const bad = err instanceof BadRequest || err instanceof URIError;
+  if (!bad) console.error(err);
+  if (res.headersSent || res.writableEnded) return void res.destroy();
+  res.setHeader('Connection', 'close');
+  if (err instanceof BadRequest) return sendJson(res, 400, { error: err.message });
+  sendJson(res, bad ? 400 : 500, { error: bad ? 'malformed request' : 'Internal error' });
+}
+
 export async function readText(req: IncomingMessage): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const c of req) chunks.push(c as Buffer);
@@ -27,15 +52,23 @@ export async function readText(req: IncomingMessage): Promise<string> {
 /** The request body as JSON; `empty` stands in for an empty body. */
 export async function readJson<T>(req: IncomingMessage, empty?: string): Promise<T> {
   const text = await readText(req);
+  let body: unknown;
   try {
-    return JSON.parse(empty === undefined ? text : text || empty) as T;
+    body = JSON.parse(empty === undefined ? text : text || empty);
   } catch {
     throw new BadRequest('body must be JSON');
   }
+  // Routes read fields off the body; `null` would throw in every one of them.
+  if (body === null) throw new BadRequest('body must be JSON');
+  return body as T;
 }
 
 /** Starts a server-sent events response. */
 export function openEventStream(res: ServerResponse) {
-  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+  // Set one by one, so a wrapper of this response (redactResponse) can read the type back.
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.writeHead(200);
   res.write(': ok\n\n');
 }

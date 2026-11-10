@@ -19,3 +19,5 @@ export { readLookoutLock } from './agents/lookoutLock';
 export { writeJsonAtomic } from './lib/jsonFile';
 export { outboxFile, outboxKey } from './adapters/remote/outboxFile';
 export { createProjectsHub, type ProjectsHub, type ProjectsHubOptions } from './server/projectsHub';
+export { BadRequest, requestUrl, sendFailure } from './server/http';
+export { neverCrash } from './server/neverCrash';
