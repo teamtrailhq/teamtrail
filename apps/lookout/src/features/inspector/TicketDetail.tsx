@@ -46,6 +46,12 @@ export function TicketDetail(props: {
   return (
     <div className="detail">
       <TicketFacts t={t} state={state} tickets={snap.tickets} />
+      {t.body.trim() && (
+        <section className="d-section ticket-body">
+          <span className="t-label">Description</span>
+          <p className="body">{t.body}</p>
+        </section>
+      )}
       <ModelWaitNote mapId={snap.map.id} ticketId={t.id} />
 
       <PrFlagBadges mapId={snap.map.id} ticketId={t.id} />
@@ -152,7 +158,6 @@ export function TicketDetail(props: {
       {resolution && (
         <ResolutionNote resolution={resolution} decisions={decisions} onOpenDecision={props.onOpenDecision} />
       )}
-      <p className="body">{t.body}</p>
       <OtherComments comments={others} />
     </div>
   );

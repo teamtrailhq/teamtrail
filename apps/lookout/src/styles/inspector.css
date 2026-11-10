@@ -38,6 +38,7 @@
 }
 .facts dt {
   color: var(--dim);
+  white-space: nowrap;
 }
 .facts dd {
   margin: 0;
@@ -97,6 +98,32 @@
   gap: var(--sp-10);
 }
 .inspector .facts {
-  grid-template-columns: 76px minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 2px var(--sp-8);
+}
+
+/* Sections: after the title and facts, every block starts with a rule and a label, so a ticket scans top to bottom
+ * instead of reading as one run of text. Boxed notes (a claim, a resolution, a form) keep their own frame. */
+.detail > .facts,
+.detail > .d-section,
+.detail > .actions,
+.detail > .comments {
+  padding-top: var(--sp-10);
+  border-top: 1px solid var(--line);
+}
+.detail > .d-section > .t-label,
+.detail > .d-section > header .t-label,
+.detail > .d-section .guide-head > .t-label {
+  color: var(--text-hi);
+}
+/* The ticket title is a card title here, not a zone hero; each section keeps a little air before the next rule. */
+.detail > .t-heading {
+  font-size: var(--fs-title);
+}
+.detail > .facts,
+.detail > .d-section {
+  padding-bottom: var(--sp-4);
+}
+.detail > .actions:empty {
+  display: none;
 }

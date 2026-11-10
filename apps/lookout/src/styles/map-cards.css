@@ -129,11 +129,12 @@
 .node.st-decided .meta {
   fill: var(--map-card-quiet);
 }
-.node.st-out-of-scope {
-  opacity: 0.6;
+/* Ruled out: a dashed card with its title struck through, at full strength so it isn't missed. */
+.node.st-out-of-scope .card {
+  stroke-dasharray: 3 3;
 }
 .node.st-out-of-scope .title {
-  fill: var(--dim);
+  fill: var(--map-card-meta);
   text-decoration: line-through;
 }
 

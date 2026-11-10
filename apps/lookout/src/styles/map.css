@@ -381,7 +381,12 @@
   font-weight: 500;
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
-  fill: var(--dim);
+  fill: var(--text);
+}
+.quarantine line {
+  stroke: var(--line2);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
 /* ---------- Real trails: agents work from their chat, so the UI hands over agent commands ---------- */
