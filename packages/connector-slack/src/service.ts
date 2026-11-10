@@ -1,15 +1,17 @@
 import { onEnvelope } from './service/interactions';
 import { tick } from './service/notifications';
-import { markCreated, members, remove, resetOwner, updateSettings } from './service/settings';
+import { confirmOwner, resetOwner, startOwnerCode } from './service/owner';
+import { markCreated, members, remove, updateSettings } from './service/settings';
 import { adoptEnvTokens, verifyToken } from './service/setup';
 import { statusOf } from './service/setupStatus';
 import { SlackContext } from './service/slackContext';
 import type { SlackServiceOptions } from './service/types';
 import type { Envelope, EnvelopeResult } from './socket';
-import type { SlackSettingsPatch, SlackStatus, SlackTokenResult, SlackUser } from './types';
+import type { SlackOwnerCode, SlackSettingsPatch, SlackStatus, SlackTokenResult, SlackUser } from './types';
 
 export type { AskRecord } from './store';
 export type { SlackServiceOptions } from './service/types';
+export { OwnerError } from './service/owner';
 
 /**
  * Slack for one tracker over Socket Mode: setup and settings, decisions saved from threads and
@@ -51,6 +53,16 @@ export class SlackService {
 
   updateSettings(patch: SlackSettingsPatch) {
     return updateSettings(this.ctx, patch);
+  }
+
+  /** A one-time code for the trail lead to enter in Slack. The code is in this answer only. */
+  startOwnerCode(): SlackOwnerCode {
+    return startOwnerCode(this.ctx);
+  }
+
+  /** The trail lead confirms the Slack account that was put forward (`id`, as the Lookout showed it). */
+  confirmOwner(id: string): Promise<SlackStatus> {
+    return confirmOwner(this.ctx, id);
   }
 
   resetOwner() {

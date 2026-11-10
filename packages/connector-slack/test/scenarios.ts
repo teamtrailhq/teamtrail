@@ -13,7 +13,7 @@ const SECTIONS: MapSections = {
   outOfScope: [],
 };
 
-async function eventStore() {
+export async function eventStore() {
   const a = new MemoryAdapter({ latency: [0, 0], label: 'GitHub Issues', location: 'octo-org/launchpad' });
   const { map, tickets } = await chartMap(a, {
     title: 'Event store',
@@ -48,10 +48,23 @@ export async function setupFlow(w: World) {
   const bot = await svc.pasteToken(TOKENS.bot);
   await until(() => svc.status().state === 'online', 'socket online');
   const beforeClaim = svc.status();
-  await w.send(svc, 'owner opens the Home tab', (f) => f.payload.homeOpened(ANA));
-  await w.send(svc, 'owner clicks This is me', (f) => f.payload.clickHome(ANA, 'claim_owner'));
-  await w.send(svc, 'someone else clicks This is me later', (f) => f.payload.clickHome(RAJ, 'claim_owner'));
-  const after = svc.status();
+  const lastView = (f: { views: Map<string, unknown> }) => [...f.views.keys()].at(-1)!;
+  await w.send(svc, 'ana opens the Home tab before a code exists', (f) => f.payload.homeOpened(ANA));
+  await w.send(svc, 'raj clicks the old claim button with no code waiting', (f) =>
+    f.payload.clickHome(RAJ, 'claim_owner'),
+  );
+  const noCode = svc.status();
+  const code = svc.startOwnerCode();
+  await w.send(svc, 'eve opens the Home tab while a code waits', (f) => f.payload.homeOpened(EVE));
+  await w.send(svc, 'eve clicks Enter code', (f) => f.payload.clickHome(EVE, 'claim_owner'));
+  const wrong = await w.send(svc, 'eve guesses a code', (f) =>
+    f.payload.submit(EVE, lastView(f), { code: 'AAAA-AAAA' }),
+  );
+  await w.send(svc, 'ana clicks Enter code', (f) => f.payload.clickHome(ANA, 'claim_owner'));
+  await w.send(svc, 'ana enters the code', (f) => f.payload.submit(ANA, lastView(f), { code: code.code }));
+  await w.send(svc, 'raj clicks Enter code after it was used', (f) => f.payload.clickHome(RAJ, 'claim_owner'));
+  const pending = svc.status();
+  const after = await svc.confirmOwner(ANA);
   const creds = readJson(path.join(w.configDir, 'credentials.json'));
   const settings = readJson(path.join(w.configDir, 'slack.json'));
   return {
@@ -62,6 +75,10 @@ export async function setupFlow(w: World) {
     missingScope,
     bot,
     beforeClaim,
+    noCode,
+    code,
+    wrong,
+    pending,
     after,
     creds,
     settings,
@@ -241,7 +258,7 @@ export async function notifyFlow(w: World) {
 }
 
 /** The channel and ts of the message Scout posted whose text starts with `prefix`. */
-function posted(f: FakeSlack, prefix: string): [string, string] {
+export function posted(f: FakeSlack, prefix: string): [string, string] {
   for (const [id, c] of f.channels) {
     const m = c.messages.find((x) => x.text.startsWith(prefix));
     if (m) return [id, m.ts];
@@ -250,7 +267,7 @@ function posted(f: FakeSlack, prefix: string): [string, string] {
 }
 
 /** A trail at checks+review+human: #2 is a reviewed pass to approve, #3 failed its checks and is held. */
-async function approvalTrail(w: World) {
+export async function approvalTrail(w: World) {
   const a = new MemoryAdapter({ latency: [0, 0] });
   writeFileSync(
     path.join(w.root, 'verification.json'),

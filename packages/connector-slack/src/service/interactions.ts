@@ -1,28 +1,36 @@
 import { postResponse } from '../api';
 import {
   ACTIONS,
-  VIEWS,
+  label,
   helpText,
+  ownerCodeModal,
   replyModal,
   reworkModal,
   type ApprovalRef,
   type AskRef,
-  type SaveMode,
 } from '../blocks';
 import { SAVE_DECISION_CALLBACK } from '../manifest';
 import type { Envelope, EnvelopeResult } from '../socket';
 import { plainText } from '../summary';
 import { decideApproval, waitingApproval } from './approvals';
-import { answer, closeAsk, pendingAsk, writeAnswer } from './asks';
+import { answer, pendingAsk } from './asks';
+import { authentic } from './authentic';
 import { inboxMessage, statusMessage } from './commands';
 import { REFUSED, ALREADY } from './constants';
 import { changeTrail, openDecision } from './decisionModal';
-import { claim, publishHome } from './owner';
-import { saveDecision } from './saveDecision';
+import { publishHome } from './owner';
+import { activeCode } from './ownerCode';
 import type { SlackContext } from './slackContext';
+import { onSubmit } from './submissions';
 import type { Payload, DecisionMeta } from './types';
 
+/**
+ * Everything people do in Slack arrives here, over Socket Mode. Each handler below takes the acting user from the
+ * payload Slack built (`user.id`, `user_id`), checks `ctx.allowed` before it reads or changes anything, and records
+ * that same id as the author. Messages people write in channels and DMs are not subscribed to and do nothing.
+ */
 export async function onEnvelope(ctx: SlackContext, e: Envelope): Promise<EnvelopeResult | void> {
+  if (!authentic(ctx, e)) return;
   const p = e.payload as Payload;
   if (e.type === 'events_api') {
     const ev = p.event as Payload | undefined;
@@ -62,7 +70,7 @@ export function onCommand(ctx: SlackContext, p: Payload): EnvelopeResult {
       after: async () =>
         postResponse(p.response_url, { response_type: 'ephemeral', ...(await inboxMessage(ctx)) }, ctx.o.fetch),
     };
-  return reply(`Unknown command \`${sub}\`.\n${helpText(command)}`);
+  return reply(`Unknown command \`${label(sub)}\`.\n${helpText(command)}`);
 }
 
 export function onShortcut(ctx: SlackContext, p: Payload): EnvelopeResult | void {
@@ -85,8 +93,11 @@ export function onAction(ctx: SlackContext, p: Payload): EnvelopeResult | void {
   const a = (p.actions as Payload[])[0];
   const id = String(a?.action_id ?? '');
   const user = p.user.id as string;
-  if (id === ACTIONS.claim) return { after: () => claim(ctx, user) };
-  if (id === ACTIONS.trailPick && p.view) return { after: () => changeTrail(ctx, p.view, a.selected_option.value) };
+  if (id === ACTIONS.claim) return { after: () => enterCode(ctx, user, p.trigger_id) };
+  if (id === ACTIONS.trailPick && p.view) {
+    if (!ctx.allowed(user)) return;
+    return { after: () => changeTrail(ctx, p.view, a.selected_option.value) };
+  }
   if (id === ACTIONS.approve || id === ACTIONS.rework) return onApproval(ctx, p, id, String(a.value));
   if (id !== ACTIONS.reply && !id.startsWith(`${ACTIONS.option}:`)) return;
   const ephemeral = (text: string) =>
@@ -109,6 +120,17 @@ export function onAction(ctx: SlackContext, p: Payload): EnvelopeResult | void {
       if (!(await answer(ctx, ref, text, user))) await ephemeral(ALREADY);
     },
   };
+}
+
+/**
+ * "Enter code" on the Home tab. The modal opens only while the trail lead has a code waiting and nobody is put
+ * forward yet; a click on a Home tab that is out of date just brings it up to date. Clicking claims nothing.
+ */
+async function enterCode(ctx: SlackContext, user: string, trigger: string) {
+  const c = ctx.store.read();
+  const open = !c.owners.length && !c.pendingOwner && !!activeCode(ctx);
+  if (open) await ctx.call('views.open', { trigger_id: trigger, view: ownerCodeModal() });
+  else await publishHome(ctx, user);
 }
 
 function onApproval(ctx: SlackContext, p: Payload, id: string, value: string): EnvelopeResult {
@@ -136,57 +158,4 @@ function onApproval(ctx: SlackContext, p: Payload, id: string, value: string): E
         });
     },
   };
-}
-
-type Values = Record<string, Record<string, Payload>>;
-
-/** A modal field's error, shown under that field. */
-const fieldError = (field: string, message: string): EnvelopeResult => ({
-  ack: { response_action: 'errors', errors: { [field]: message } },
-});
-const textOf = (values: Values, block: string) => String(values[block]?.value?.value ?? '').trim();
-
-export function onSubmit(ctx: SlackContext, p: Payload): EnvelopeResult | void {
-  const view = p.view as Payload;
-  const values = (view.state?.values ?? {}) as Values;
-  const user = p.user.id as string;
-  if (view.callback_id === VIEWS.rework) return submitRework(ctx, { view, values, user });
-  if (view.callback_id === VIEWS.reply) return submitReply(ctx, { view, values, user });
-  if (view.callback_id === VIEWS.decision) return submitDecision(ctx, { view, values, user });
-}
-
-type Submitted = { view: Payload; values: Values; user: string };
-
-function submitRework(ctx: SlackContext, { view, values, user }: Submitted): EnvelopeResult {
-  const meta = JSON.parse(view.private_metadata) as ApprovalRef & { r?: string };
-  const reason = textOf(values, 'reason');
-  if (!reason) return fieldError('reason', 'Say what has to change');
-  if (!ctx.allowed(user)) return fieldError('reason', REFUSED);
-  return { after: () => decideApproval(ctx, { ref: meta, user, responseUrl: meta.r }, { action: 'rework', reason }) };
-}
-
-function submitReply(ctx: SlackContext, { view, values, user }: Submitted): EnvelopeResult {
-  const ref = JSON.parse(view.private_metadata) as AskRef;
-  const text = textOf(values, 'answer');
-  if (!text) return fieldError('answer', 'Enter an answer');
-  if (!ctx.allowed(user)) return fieldError('answer', REFUSED);
-  const ok = writeAnswer(ctx, ref, text, user);
-  if (!ok) return fieldError('answer', ALREADY);
-  return { after: () => closeAsk(ctx, ref.q) };
-}
-
-function submitDecision(ctx: SlackContext, { view, values, user }: Submitted): EnvelopeResult {
-  const meta = JSON.parse(view.private_metadata) as DecisionMeta;
-  const decision = textOf(values, 'decision');
-  if (!decision) return fieldError('decision', 'Enter the decision');
-  if (!ctx.allowed(user)) return fieldError('decision', REFUSED);
-  const picked = (block: string, action = 'value') =>
-    values[block]?.[action]?.selected_option?.value as string | undefined;
-  const mode = (picked('mode') ?? 'trail') as SaveMode;
-  const ticketId = picked('ticket');
-  if (mode === 'resolve' && !ticketId) return fieldError('ticket', 'Pick the ticket to resolve');
-  const mapId = meta.mid ?? picked('trail', ACTIONS.trailPick);
-  if (!mapId) return fieldError('decision', 'Pick a trail');
-  const summary = textOf(values, 'summary');
-  return { after: () => saveDecision(ctx, { meta, user, mapId, mode, ticketId, decision, summary }) };
 }

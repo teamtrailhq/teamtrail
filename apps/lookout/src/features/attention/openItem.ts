@@ -11,6 +11,8 @@ export interface AttentionHandlers {
   selectTrail: (mapId: string) => void;
   /** Guides and the checks they propose: Settings → Guides. */
   openGuides: () => void;
+  /** A connector whose messages are refused (`slack`): its Settings section. */
+  openConnector: (channel: string) => void;
 }
 
 function openTicketOrTrail(item: AttentionItem, h: AttentionHandlers) {
@@ -43,6 +45,8 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
     case 'guide':
     case 'guide-checks':
       return h.openGuides();
+    case 'delivery':
+      return h.openConnector(item.ref);
     default: {
       const never: never = item.kind;
       return never;

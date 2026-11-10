@@ -12,7 +12,19 @@ import { SocketMode } from '../src/socket';
 import { deterministicSummary, plainText } from '../src/summary';
 import { fakeSlack } from './fakes/slack';
 import { socketHub } from './fakes/socket';
-import { ALL_SCOPES, ANA, RAJ, TOKENS, URL_, connected, freezeTime, until, world, type SlackFixture } from './harness';
+import {
+  ALL_SCOPES,
+  ANA,
+  FROZEN,
+  RAJ,
+  TOKENS,
+  URL_,
+  connected,
+  freezeTime,
+  until,
+  world,
+  type SlackFixture,
+} from './harness';
 import {
   approvalFlow,
   approvalRestartFlow,
@@ -44,7 +56,7 @@ async function replayed<T>(name: string, flow: (w: ReturnType<typeof world>) => 
   }
 }
 
-test('setup: tokens are routed by prefix, checked live, stored only in the local credential store; the Home tab claims the owner', async () => {
+test('setup: tokens are routed by prefix, checked live, stored only in the local credential store; the owner enters a one-time code and is confirmed here', async () => {
   const r = await replayed('slack-setup.json', setupFlow);
   assert.equal(r.s0.step, 1);
   assert.equal(r.s1.step, 2);
@@ -60,9 +72,26 @@ test('setup: tokens are routed by prefix, checked live, stored only in the local
   assert.deepEqual([r.beforeClaim.state, r.beforeClaim.step], ['online', 5]);
   assert.equal(r.beforeClaim.links.home, 'slack://app?team=T0EFIKA01&id=A0Scout0001&tab=home');
   assert.deepEqual(
-    [r.after.step, r.after.owners],
-    ['done', [{ id: ANA, name: 'ana', via: 'home' }]],
-    'the first click wins; a later click does not take over',
+    [r.noCode.step, r.noCode.owners, r.noCode.pendingOwner],
+    [5, [], undefined],
+    'a click claims nothing',
+  );
+  assert.deepEqual(r.wrong, {
+    response_action: 'errors',
+    errors: { code: "That code doesn't match. Check it in Teamtrail → Settings → Slack." },
+  });
+  assert.deepEqual(
+    [r.pending.step, r.pending.owners, r.pending.pendingOwner, r.pending.ownerCode],
+    [5, [], { id: ANA, name: 'ana', displayName: 'ana', realName: 'Ana Silva', via: 'code' }, undefined],
+    'the account that entered the code waits for the trail lead; the code is used up',
+  );
+  assert.deepEqual(
+    [r.after.step, r.after.owners, r.after.pendingOwner],
+    [
+      'done',
+      [{ id: ANA, name: 'ana', displayName: 'ana', realName: 'Ana Silva', via: 'code', confirmedAt: FROZEN }],
+      undefined,
+    ],
   );
   assert.deepEqual(r.creds, { slack: { appToken: TOKENS.app, botToken: TOKENS.bot } });
   assert.ok(
@@ -75,7 +104,12 @@ test('setup: tokens are routed by prefix, checked live, stored only in the local
   );
   assert.equal(r.socketConnections, 2, 'one probe socket on paste, then the live one');
   const fx = fixture('slack-setup.json');
-  assert.equal(posts(fx, 'chat.postMessage')[0].text, 'Connected. Decisions and questions will reach you here.');
+  assert.deepEqual(
+    posts(fx, 'chat.postMessage').map((m) => [m.channel, m.text]),
+    [['D00ANA0001', 'Connected. Decisions and questions will reach you here.']],
+    'one message, to the confirmed owner, after the confirmation',
+  );
+  assert.equal(posts(fx, 'views.open').length, 2, 'the code modal opens only while a code waits and nobody used it');
   assert.ok(!JSON.stringify(fx).includes(TOKENS.bot), 'fixtures never contain tokens');
 });
 
@@ -377,7 +411,7 @@ test('a revoked bot token turns Slack off and asks to reconnect', async () => {
     const r = await svc.onEnvelope({
       envelope_id: 'x',
       type: 'events_api',
-      payload: { event: { type: 'app_home_opened', user: ANA } },
+      payload: { team_id: fake.team.id, api_app_id: fake.app.id, event: { type: 'app_home_opened', user: ANA } },
     });
     await r?.after?.().catch(() => {});
     assert.equal(svc.status().state, 'auth-error');
@@ -417,7 +451,7 @@ test('env tokens work like GITHUB_TOKEN: reported by source, never stored', asyn
   }
 });
 
-test('the owner is recognised by git email, so setup ends without the Home-tab claim', async () => {
+test('a git email alone puts nobody forward; it only tells the trail lead that the account entering the code matches it', async () => {
   const fake = fakeSlack();
   const hub = socketHub();
   const w = world('record', 'unused.json');
@@ -429,19 +463,41 @@ test('the owner is recognised by git email, so setup ends without the Home-tab c
     });
     await svc.pasteToken(TOKENS.app);
     const r = await svc.pasteToken(TOKENS.bot);
-    assert.equal(r.ok, true);
-    assert.deepEqual([r.status.step, r.status.owners], ['done', [{ id: ANA, name: 'ana', via: 'git-email' }]]);
-    assert.deepEqual(
-      fake.channels.get(fake.im(ANA))!.messages.map((m) => m.text),
-      ['Connected. Decisions and questions will reach you here.'],
-    );
+    assert.deepEqual([r.ok, r.status.step, r.status.owners, r.status.pendingOwner], [true, 5, [], undefined]);
+    await until(() => svc.status().state === 'online');
+    const enter = async (user: string) => {
+      const { code } = svc.startOwnerCode();
+      await hub.envelope(fake.payload.clickHome(user, 'claim_owner'));
+      await svc.idle();
+      await hub.envelope(fake.payload.submit(user, [...fake.views.keys()].at(-1)!, { code }));
+      await svc.idle();
+      return svc.status().pendingOwner;
+    };
+    assert.deepEqual(await enter(RAJ), {
+      id: RAJ,
+      name: 'raj',
+      displayName: 'raj',
+      realName: 'Raj Patel',
+      via: 'code',
+      gitEmail: false,
+    });
+    svc.resetOwner();
+    assert.deepEqual(await enter(ANA), {
+      id: ANA,
+      name: 'ana',
+      displayName: 'ana',
+      realName: 'Ana Silva',
+      via: 'code',
+      gitEmail: true,
+    });
+    assert.deepEqual(fake.channels.get(fake.im(ANA))?.messages ?? [], [], 'not a word before the confirmation');
     svc.close();
   } finally {
     w.cleanup();
   }
 });
 
-test('no email match, or an app without users:read.email, falls back to the Home-tab claim', async () => {
+test('no email match, or an app without users:read.email, leaves nobody put forward: the code is the way', async () => {
   for (const [email, scopes] of [
     ['nobody@efika.test', ALL_SCOPES],
     ['ana@efika.test', [...BOT_SCOPES]],
@@ -457,7 +513,7 @@ test('no email match, or an app without users:read.email, falls back to the Home
       });
       await svc.pasteToken(TOKENS.app);
       const r = await svc.pasteToken(TOKENS.bot);
-      assert.deepEqual([r.ok, r.status.step, r.status.owners], [true, 5, []], email);
+      assert.deepEqual([r.ok, r.status.step, r.status.owners, r.status.pendingOwner], [true, 5, [], undefined], email);
       svc.close();
     } finally {
       w.cleanup();

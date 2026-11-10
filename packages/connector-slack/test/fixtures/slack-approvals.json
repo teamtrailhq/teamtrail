@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T23:07:56.896Z",
+  "recordedAt": "2026-11-10T19:54:54.118Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). A reviewed pass to approve and a held ticket in the owner DM: refused click, Approve, Rework… modal with a reason.",
   "exchanges": [
     {
@@ -54,7 +54,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *APPROVE* · Event store · #2 Write API\n>claude-02 reviewed: The write path is covered by tests"
+                "text": "◆ *APPROVE* · Event store · #2 Write API\n>claude-02 reviewed: The write path is covered by tests",
+                "verbatim": true
               }
             },
             {
@@ -94,7 +95,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -128,7 +133,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "⛔ *HELD* · Event store · #3 Migrate schema\n>A-1 failed its checks too many times"
+                "text": "⛔ *HELD* · Event store · #3 Migrate schema\n>A-1 failed its checks too many times",
+                "verbatim": true
               }
             },
             {
@@ -157,7 +163,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -186,7 +196,11 @@
         "body": {
           "response_type": "ephemeral",
           "replace_original": false,
-          "text": "Only the Teamtrail owner and allowed users can do that. Ask the owner to add you in Teamtrail Settings → Slack."
+          "text": "Only the Teamtrail owner and allowed users can do that. Ask the owner to add you in Teamtrail Settings → Slack.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -212,7 +226,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *DECIDED* · Event store · #2 Write API"
+                "text": "◇ *DECIDED* · Event store · #2 Write API",
+                "verbatim": true
               }
             },
             {
@@ -220,11 +235,16 @@
               "elements": [
                 {
                   "type": "mrkdwn",
-                  "text": "✓ Approved by <@U0ANA0001> via Slack."
+                  "text": "✓ Approved by <@U0ANA0001> via Slack.",
+                  "verbatim": true
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -272,7 +292,8 @@
                 "elements": [
                   {
                     "type": "mrkdwn",
-                    "text": "#3 Migrate schema"
+                    "text": "#3 Migrate schema",
+                    "verbatim": true
                   }
                 ]
               },
@@ -329,7 +350,8 @@
                 "elements": [
                   {
                     "type": "mrkdwn",
-                    "text": "#3 Migrate schema"
+                    "text": "#3 Migrate schema",
+                    "verbatim": true
                   }
                 ]
               },
@@ -365,7 +387,8 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *DECIDED* · Event store · #3 Migrate schema"
+                "text": "◇ *DECIDED* · Event store · #3 Migrate schema",
+                "verbatim": true
               }
             },
             {
@@ -373,11 +396,16 @@
               "elements": [
                 {
                   "type": "mrkdwn",
-                  "text": "↺ Sent back to rework by <@U0ANA0001> via Slack."
+                  "text": "↺ Sent back to rework by <@U0ANA0001> via Slack.",
+                  "verbatim": true
                 }
               ]
             }
-          ]
+          ],
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {

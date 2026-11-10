@@ -22,6 +22,8 @@ export function useAttentionUi(input: {
   reviewBrief: () => void;
   openReroute?: (item: AttentionItem) => void;
   openGuides: () => void;
+  /** A connector's Settings section (Slack), for its delivery problems. */
+  openConnector: (channel: string) => void;
   /** Settings → Attention, where the quiet hours are set. */
   openFocusSettings: () => void;
 }) {
@@ -38,6 +40,7 @@ export function useAttentionUi(input: {
       ((item) => (item.ticketId ? nav.openTicket(item.mapId, item.ticketId) : selectTrail(item.mapId))),
     selectTrail,
     openGuides: input.openGuides,
+    openConnector: input.openConnector,
   };
   const view = attention.view;
   const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers, showChat: nav.showChat });

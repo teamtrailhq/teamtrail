@@ -1,11 +1,18 @@
 import { BRAND } from '@teamtrail/core';
-import { SlackApi, SlackApiError } from '../api';
+import { AS_WRITTEN, SlackApi, SlackApiError } from '../api';
 import { SocketMode, type WebSocketCtor } from '../socket';
+import { socketUrl } from '../socketUrl';
 import { approvalStore, askStore, slackLock, slackStore } from '../store';
 import type { SlackState } from '../types';
 import { AUTH_CODES } from './constants';
+import { deliveryLog } from './deliveryLog';
 import { onEnvelope } from './interactions';
+import type { OwnerCode } from './ownerCode';
+import { refusedForGood } from './refusedForGood';
 import type { Batch, Env, TrailNotes, Payload, SlackServiceOptions } from './types';
+
+/** Every message Scout posts or edits goes out as written (`AS_WRITTEN`). */
+const POSTS = new Set(['chat.postMessage', 'chat.update']);
 
 /** State of the Slack connection shared by the service modules: config, socket, bot client and caches. */
 export class SlackContext {
@@ -22,6 +29,7 @@ export class SlackContext {
   bot?: SlackApi;
   readonly dms = new Map<string, string>();
   readonly names = new Map<string, string>();
+  readonly handles = new Map<string, string>();
   /** Questions an answer was already delivered for. */
   readonly answering = new Set<string>();
   readonly trails = new Map<string, TrailNotes>();
@@ -30,8 +38,18 @@ export class SlackContext {
   readonly digested = new Set<string>();
   /** Approval messages with live buttons, kept across restarts. */
   readonly approvals;
+  /** Messages Slack refused for good, until one gets through. */
+  readonly delivery;
   /** Approval messages already brought up to date by this process. */
   readonly refreshed = new Set<string>();
+  /** Questions that went over the per-agent limit: they stay in the digest and never get their own message. */
+  readonly capped = new Set<string>();
+  /** When each agent's questions were posted as their own message, for the limit (askLimit.ts). */
+  readonly askLog: { agent: string; at: number }[] = [];
+  /** The one-time code the trail lead reads in the Lookout, while it can be entered. Never written to disk. */
+  ownerCode?: OwnerCode;
+  /** The wrong tries that dropped the last code, for the Lookout, until a new code is made. */
+  ownerCodeDropped?: Map<string, number>;
   ticks = 0;
   ticking?: Promise<void>;
 
@@ -41,6 +59,7 @@ export class SlackContext {
     this.lock = slackLock(o.configDir, o.lockOwner ?? `${process.pid}:${o.root}`);
     this.asks = askStore(o.root);
     this.approvals = approvalStore(o.root);
+    this.delivery = deliveryLog(o.root, () => o.now?.() ?? Date.now());
     this.apiUrl = o.apiUrl ?? this.env[`${BRAND.slug.toUpperCase()}_SLACK_API`];
     this.WS = o.WebSocket ?? (globalThis as { WebSocket?: WebSocketCtor }).WebSocket;
   }
@@ -72,7 +91,7 @@ export class SlackContext {
     this.bot = this.api(t.bot.token);
     const app = this.api(t.app.token);
     this.socket = new SocketMode({
-      open: async () => (await app.call<{ url: string }>('apps.connections.open')).url,
+      open: async () => socketUrl((await app.call<{ url: string }>('apps.connections.open')).url, this.apiUrl),
       WebSocket: this.WS,
       onEnvelope: (e) => onEnvelope(this, e),
       onState: (s, err) => {
@@ -107,15 +126,23 @@ export class SlackContext {
   async call<T = Payload>(method: string, args: Record<string, unknown> = {}): Promise<T> {
     if (!this.bot) throw new SlackApiError('not_connected', method);
     try {
-      return await this.bot.call<T>(method, args);
+      const r = await this.bot.call<T>(method, POSTS.has(method) ? { ...args, ...AS_WRITTEN } : args);
+      if (method === 'chat.postMessage') this.delivery.delivered();
+      return r;
     } catch (e) {
+      if (method === 'chat.postMessage' && refusedForGood(e)) this.delivery.refused((e as SlackApiError).code);
       if (e instanceof SlackApiError && AUTH_CODES.has(e.code)) this.authFailed();
       throw e;
     }
   }
 
+  /**
+   * Who may act in Slack: the owner the trail lead confirmed in the Lookout, and the members the trail lead allowed
+   * there. Nobody before an owner is confirmed. `user` is the id Slack put on the payload, never one from its text.
+   */
   allowed(user: string) {
     const c = this.store.read();
+    if (!c.owners.length) return false;
     return c.owners.some((o) => o.id === user) || c.allow.some((o) => o.id === user);
   }
 
@@ -126,6 +153,15 @@ export class SlackContext {
       this.names.set(user, (u?.profile?.display_name || u?.real_name || u?.name || user) as string);
     }
     return this.names.get(user)!;
+  }
+
+  /** The unique Slack username, for showing who did something security-relevant (display names can be copied). */
+  async handleOf(user: string) {
+    if (!this.handles.has(user)) {
+      const r = await this.call<{ user: Payload }>('users.info', { user }).catch(() => undefined);
+      this.handles.set(user, (r?.user?.name as string | undefined) ?? user);
+    }
+    return this.handles.get(user)!;
   }
 
   async dmOf(user: string) {

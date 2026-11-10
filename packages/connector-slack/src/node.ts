@@ -6,7 +6,7 @@ import {
   type BridgePlugin,
   type BridgePluginFactory,
 } from '@teamtrail/core/bridge';
-import { SlackService, type SlackServiceOptions } from './service';
+import { OwnerError, SlackService, type SlackServiceOptions } from './service';
 import type { SlackSettingsPatch } from './types';
 
 export { SlackService, type SlackServiceOptions } from './service';
@@ -25,9 +25,13 @@ type Reply = { status: number; body: unknown };
  *   POST   /slack/created    step 1 done (Slack's create-from-manifest page was opened)
  *   POST   /slack/token      `{ token }` → SlackTokenResult (xapp- or xoxb-, routed by prefix, checked live)
  *   PUT    /slack/settings   SlackSettingsPatch → SlackStatus
- *   POST   /slack/owner/reset
+ *   POST   /slack/owner/code     → SlackOwnerCode: a one-time code to enter in Slack; the only answer that holds it
+ *   POST   /slack/owner/confirm  `{ id }` → SlackStatus: the Slack account put forward is the trail lead's
+ *   POST   /slack/owner/reset    no owner, nobody put forward, no code
  *   GET    /slack/members    `{ members: SlackUser[] }` for the allowlist picker
  *   DELETE /slack            Remove: disconnect and forget tokens and settings
+ * Everything but `GET /slack` answers this machine only (core's thisMachineRoutes.ts); owner changes are journaled.
+ * There is no route for Slack to call: what happens in Slack arrives over Socket Mode.
  */
 export function slackRoutes(service: SlackService) {
   const json = (res: ServerResponse, status: number, v: unknown) => {
@@ -56,6 +60,12 @@ export function slackRoutes(service: SlackService) {
       return { status: r.ok ? 200 : 400, body: r };
     },
     'PUT /slack/settings': async (req) => ok(service.updateSettings(await body<SlackSettingsPatch>(req))),
+    'POST /slack/owner/code': () => ok(service.startOwnerCode()),
+    'POST /slack/owner/confirm': async (req) => {
+      const b = await body<{ id?: unknown }>(req);
+      if (typeof b.id !== 'string' || !b.id) throw new BadRequest('"id" is required');
+      return ok(await service.confirmOwner(b.id));
+    },
     'POST /slack/owner/reset': () => ok(service.resetOwner()),
     'GET /slack/members': async () => ok({ members: await service.members() }),
   };
@@ -69,7 +79,8 @@ export function slackRoutes(service: SlackService) {
       const r = await route(req);
       json(res, r.status, r.body);
     } catch (err) {
-      json(res, err instanceof BadRequest ? 400 : 500, { error: String((err as Error)?.message ?? err) });
+      const bad = err instanceof BadRequest || err instanceof OwnerError;
+      json(res, bad ? 400 : 500, { error: String((err as Error)?.message ?? err) });
     }
     return true;
   };
