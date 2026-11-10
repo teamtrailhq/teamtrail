@@ -106,7 +106,8 @@ async function rerouteFlow({ call, page, shot, shots, repo, mapId, discoveryKey 
     proposed.status === 'pending' &&
     /frozen/.test(frozen) &&
     ['proposed', 'approved', 'applied'].every((a) => journal.includes(a)) &&
-    next.claimed.title === 'Build a search index at deploy time';
+    // The revised ticket is the oldest ready one, under the title the human approved.
+    next.claimed.title === 'Polish the result list';
   return { ok, shown, dismissed, frozen, journal, next: next.claimed.title };
 }
 
