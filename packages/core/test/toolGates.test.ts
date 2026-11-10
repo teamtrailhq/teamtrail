@@ -96,6 +96,18 @@ describe('declared paths', () => {
   });
 });
 
+describe('what covers a high-risk change', () => {
+  const rules: RiskPolicy = { ...policy, paths: [{ glob: 'infra/**', level: 'high', category: 'schema' }] };
+  const a = attempt({ git: changed(['infra/x.tf']) });
+  const found = (covered: { mapId: string; ticketId: string; category?: 'schema' | 'billing' }[]) =>
+    policyViolations({ attempts: [a], decisions: [], policy: rules, covered }).length;
+  it('an answer counts only when it was asked with the rule’s category', () => {
+    expect(found([{ mapId: 'm1', ticketId: '1' }])).toBe(1);
+    expect(found([{ mapId: 'm1', ticketId: '1', category: 'billing' }])).toBe(1);
+    expect(found([{ mapId: 'm1', ticketId: '1', category: 'schema' }])).toBe(0);
+  });
+});
+
 describe('review independence', () => {
   const t = { id: '1', key: '#1' } as Ticket;
   it('is per token, not per trail name: another session of the worker’s token may not review it', () => {

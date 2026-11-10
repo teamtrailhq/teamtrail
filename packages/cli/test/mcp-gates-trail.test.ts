@@ -10,9 +10,11 @@ import {
   listKnowledge,
   listReroutes,
   readAttempts,
+  readAgentDocs,
   readBrief,
   readLeases,
   rejectReroute,
+  writeAgentAnswer,
   writeBrief,
 } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
@@ -101,6 +103,42 @@ describe('declared paths are judged as the files they are', () => {
     );
     const t = (await adapter().loadMap(m.trail.id)).tickets.find((x) => x.key === keyOf(m, 's'))!;
     expect(t.comments.some((c) => c.body.startsWith('**Closed without verification, with changes**'))).toBe(true);
+  });
+});
+
+describe('an answer covers only the risk it was asked about, judged on every file that changed', () => {
+  it('an fyi answer with no category does not make high-risk files git saw change the human’s call', async () => {
+    highRiskInfra();
+    git('init', '-q');
+    fs.writeFileSync(path.join(repo, 'README.md'), 'x');
+    git('add', 'README.md');
+    git('commit', '-qm', 'init');
+    const call = await hub.connect({ name: 'claude-01' });
+    const m = await call<Started>('start_trail', {
+      discovery: false,
+      title: 'Infra',
+      destination: 'D',
+      tickets: [{ ref: 'r', title: 'Look at the deploy', type: 'research' }],
+    });
+    await call('claim_ticket', { ticket: keyOf(m, 'r') });
+    fs.mkdirSync(path.join(repo, 'infra'));
+    fs.writeFileSync(path.join(repo, 'infra', 'main.tf'), 'resource {}');
+    const asked = call('ask_human', { question: 'Looks fine?', urgency: 'fyi', waitSeconds: 30 });
+    for (;;) {
+      const doc = (await readAgentDocs(root)).find((d) => d.pending.length);
+      if (doc) {
+        writeAgentAnswer(root, {
+          sessionId: doc.session.id,
+          questionId: doc.pending[0].id,
+          text: 'ok',
+          author: 'trail lead',
+        });
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    await asked;
+    await expect(call('close_ticket', { resolution: 'Found it' })).rejects.toThrow(/infra\/main\.tf/);
   });
 });
 

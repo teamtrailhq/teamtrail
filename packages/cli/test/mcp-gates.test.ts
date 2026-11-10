@@ -138,7 +138,8 @@ describe('rule-out proposals have their own lane; pending proposals never freeze
     const m = await wide(a, 8);
     const k = m.tickets.map((t) => t.key);
     const mine = await propose(a, [{ op: 'add_unspecified', text: 'own plan' }]);
-    for (const name of ['codex-01', 'codex-02']) await propose(await hub.connect({ name }), [{ op: 'add_unspecified', text: name }]);
+    for (const name of ['codex-01', 'codex-02'])
+      await propose(await hub.connect({ name }), [{ op: 'add_unspecified', text: name }]);
     const out = await a<{ outcome: string; proposal: { id: string } }>('close_ticket', {
       ticket: k[0],
       resolution: 'not needed',
@@ -185,7 +186,12 @@ describe('ruling out never touches a review or a ticket being verified', () => {
   it('refuses them as close_ticket does', async () => {
     fs.writeFileSync(
       path.join(root, 'verification.json'),
-      JSON.stringify({ v: 1, default: 'checks+review', checks: { c: { run: [process.execPath, '-e', '0'] } }, run: ['c'] }),
+      JSON.stringify({
+        v: 1,
+        default: 'checks+review',
+        checks: { c: { run: [process.execPath, '-e', '0'] } },
+        run: ['c'],
+      }),
     );
     const a = await hub.connect({ name: 'claude-01' });
     const m = await a<Started>('start_trail', {

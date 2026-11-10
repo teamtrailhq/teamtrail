@@ -14,10 +14,11 @@ import {
 import { levelFor } from '@teamtrail/core/agents';
 import { assertHumanDecided } from '../remoteGate';
 import type { AgentContext } from './agentContext';
+import { assertCloseable } from './assertCloseable';
 import { assertAssumes } from './assumptions';
 import { claimTicket } from './claimTicket';
 import { closeDecisionMeta } from './closeDecision';
-import { declaredPaths, unverifiedChanges } from './closeEvidence';
+import { changedSinceClaim, declaredPaths, flagUnverified, type SeenChanges } from './closeEvidence';
 import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
 import { checkedAnswers, keepAnswers } from './guides';
@@ -43,6 +44,8 @@ interface Closing {
   risk?: DecisionRisk;
   /** The human's answer this close rests on, when it is their decision. */
   human?: HumanAnswer;
+  /** What git saw change since the claim, for a close without verification (closeEvidence.ts). */
+  seen: SeenChanges;
 }
 
 /** A completion either finished (with any verification fields to report) or stopped early with a result. */
@@ -86,17 +89,20 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
   const agent = await ctx.agentId();
   let ticket = ctx.findTicket(snap, ref);
   assertCloseable(ticket, agent);
+  // The risk is the files declared and the files git saw change, judged before any answer is matched to it.
+  const seen = await changedSinceClaim(ctx, snap, ticket);
+  const judged = { ...input, root: ctx.root, paths: [...(input.paths ?? []), ...seen.changed] };
   // The human's decision only by their answer to a question asked on this ticket (humanAnswer.ts).
   const human = humanAnswerFor(ctx, {
     questionId: input.questionId,
     ticket,
     category: input.category,
-    risk: riskOf({ ...input, root: ctx.root }),
+    risk: riskOf(judged),
     hitl: attention(ticket) === 'hitl',
   });
   try {
     assertHumanDecided({ remote: ctx.remote, ticket, humanAnswered: !!human });
-    const risk = checkRisk({ ...input, root: ctx.root, decidedBy: human?.author ?? agent });
+    const risk = checkRisk({ ...judged, decidedBy: human?.author ?? agent });
     if (!ticket.assignee) {
       await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });
       const id = ticket.id;
@@ -106,19 +112,11 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
     const current = ctx.sessions.running();
     const session = current?.info.ticketId === ticket.id ? current : await ctx.ensureSession();
     const source = { kind: 'agent' as const, ref: `${session.id}/${ticket.id}`, label: `${agent} session` };
-    return { ctx, input, snap, ticket, agent, session, source, risk, human };
+    return { ctx, input, snap, ticket, agent, session, source, risk, human, seen };
   } catch (e) {
     release(human);
     throw e;
   }
-}
-
-export function assertCloseable(t: Ticket, agent: string) {
-  if (t.state === 'closed') throw new OperationError(`${t.key} is already closed`);
-  if (t.type === 'review') throw new OperationError(`${t.key} is a review: answer it with submit_review`);
-  if (t.assignee && t.assignee !== agent) throw new OperationError(`${t.key} is claimed by ${t.assignee}`);
-  if (t.status === 'verifying')
-    throw new OperationError(`${t.key} is being verified: call verification_status ${t.key} for the result`);
 }
 
 /** Resolves the ticket: through verification when its level asks for checks, directly otherwise. */
@@ -145,7 +143,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   });
   let unverified: { warning?: string } = {};
   if (!verified) {
-    unverified = await unverifiedChanges(ctx, { snap, ticket: t, declared, decidedBy: c.human?.author ?? c.agent });
+    unverified = { warning: await flagUnverified(ctx, { snap, ticket: t, seen: c.seen }) };
     await resolveDirectly(c, { meta, transcript });
   } else {
     s.step(4, `checks: ${info.checks.join(', ') || 'none configured'}`);

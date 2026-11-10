@@ -1,7 +1,7 @@
 import { OperationError, type MapSnapshot, type Ticket } from '@teamtrail/core';
 import { listReroutes } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
-import { assertCloseable } from './closeTicket';
+import { assertCloseable } from './assertCloseable';
 import { frozenOn, proposeRerouteOp } from './reroutes';
 import type { CloseInput } from './types';
 
@@ -28,7 +28,8 @@ export async function ruleOut(ctx: AgentContext, input: CloseInput) {
 
 const isRuleOutOf = (ctx: AgentContext, mapId: string, id: string, ticketId: string) =>
   listReroutes(ctx.root, mapId).some(
-    (p) => p.id === id && p.lane === 'rule-out' && p.changes.some((c) => c.op === 'cancel_ticket' && c.ticket === ticketId),
+    (p) =>
+      p.id === id && p.lane === 'rule-out' && p.changes.some((c) => c.op === 'cancel_ticket' && c.ticket === ticketId),
   );
 
 async function proposeRuleOut(ctx: AgentContext, at: { snap: MapSnapshot; ticket: Ticket; reason: string }) {

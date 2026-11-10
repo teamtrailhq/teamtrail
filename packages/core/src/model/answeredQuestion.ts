@@ -1,0 +1,15 @@
+import type { RiskCategory } from './risk';
+
+/** A question the human answered: who asked it, and on what, with what (what the answer can cover). */
+export interface AnsweredQuestion {
+  id: string;
+  mapId: string;
+  sessionId: string;
+  agent: string;
+  askedAt: number;
+  answeredAt: number;
+  /** What the question was asked on and with: what the answer can cover (policy/policyViolations.ts). */
+  ticketId?: string;
+  category?: RiskCategory;
+  urgency?: 'blocking' | 'soon' | 'fyi';
+}
