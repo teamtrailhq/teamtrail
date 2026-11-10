@@ -54,7 +54,7 @@ export const MAX_BODY_BYTES = 2 * 1024 * 1024;
 export class TooLarge extends BadRequest {}
 
 export async function readText(req: IncomingMessage): Promise<string> {
-  if (Number(req.headers['content-length'] ?? 0) > MAX_BODY_BYTES) throw new TooLarge('request body too large');
+  if (Number(req.headers?.['content-length'] ?? 0) > MAX_BODY_BYTES) throw new TooLarge('request body too large');
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const c of req) {
