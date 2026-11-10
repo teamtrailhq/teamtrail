@@ -1,5 +1,5 @@
 import { madeBy, OperationError, riskLevelFor, type DecisionRisk, type RiskCategory } from '@teamtrail/core';
-import { readPolicy } from '@teamtrail/core/agents';
+import { caseInsensitiveFs, readPolicy } from '@teamtrail/core/agents';
 
 export interface RiskQuery {
   root: string;
@@ -24,9 +24,13 @@ export function checkRisk(q: RiskQuery): DecisionRisk | undefined {
   return risk;
 }
 
-/** What the policy makes of a call, from its category and its files; nothing about who makes it. */
+/**
+ * What the policy makes of a call, from its category and its files; nothing about who makes it. Paths are brought
+ * to repo-relative form first (absolute or escaping ones are refused), and matched ignoring case where the disk does.
+ */
 export function riskOf(q: Pick<RiskQuery, 'root' | 'category' | 'paths'>): DecisionRisk | undefined {
-  return riskLevelFor({ category: q.category, paths: q.paths }, readPolicy(q.root).policy);
+  const caseInsensitive = caseInsensitiveFs(q.root);
+  return riskLevelFor({ category: q.category, paths: q.paths, caseInsensitive }, readPolicy(q.root).policy);
 }
 
 function askInstead(risk: DecisionRisk) {

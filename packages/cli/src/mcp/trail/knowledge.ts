@@ -1,6 +1,8 @@
 import {
+  flaggedNote,
   isKind,
   OperationError,
+  repoPaths,
   pathsIn,
   searchKnowledge,
   selectKnowledge,
@@ -11,8 +13,8 @@ import {
 } from '@teamtrail/core';
 import {
   blobHash,
+  createKnowledge,
   listKnowledge,
-  nextKnowledgeId,
   readBrief,
   readKnowledge,
   repoRootFor,
@@ -57,8 +59,8 @@ export async function proposeKnowledge(
   const snap = await ctx.resolveTrail(input.trail).catch(() => undefined);
   const ticketId = ctx.sessions.current?.info.ticketId;
   const now = Date.now();
-  const entry = {
-    id: nextKnowledgeId(ctx.root),
+  const anchors = repoPaths(input.files).map((path) => ({ path }));
+  const draft = {
     title: input.title.trim(),
     body: input.body.trim(),
     kind: input.kind as KnowledgeKind,
@@ -70,44 +72,54 @@ export async function proposeKnowledge(
       ...(snap && ticketId ? [`ticket:${ctx.keyOf(ticketId)}`] : []),
       ...(ctx.sessions.current ? [`session:${ctx.sessions.current.id}`] : []),
     ],
-    anchors: (input.files ?? []).map((path) => ({ path })),
+    anchors,
     createdBy: agent,
     createdAt: now,
     updatedAt: now,
   };
-  writeKnowledge(ctx.root, entry);
+  const entry = createKnowledge(ctx.root, draft);
+  ctx.proposed.add(entry.id);
   ctx.sessions.current?.log(`proposed knowledge ${entry.id}: ${entry.title}`);
   return {
     proposed: { id: entry.id, status: entry.status },
-    note: 'The human reviews it in the Lookout; only confirmed entries reach agents.',
+    note: 'The human reviews it in the Lookout. Until they confirm it (or keep it as an assumption), no other agent gets it: not with claims, not in search_knowledge.',
   };
 }
 
+/**
+ * `search_knowledge`. Only reviewed entries reach agents: confirmed ones, assumptions the human kept, and outdated
+ * ones when asked for. A suggestion is one agent's words that nobody has read yet, so other agents get none of it,
+ * only how many wait for review; the agent that proposed one still sees its own.
+ */
 export async function searchKnowledgeOp(
   ctx: AgentContext,
   input: { query?: string; paths?: string[]; tags?: string[]; kind?: string; includeOutdated?: boolean },
 ) {
   const repo = repoRootFor(ctx.root);
-  const hits = searchKnowledge(listKnowledge(ctx.root), {
+  const all = searchKnowledge(listKnowledge(ctx.root), {
     ...input,
     kind: isKind(input.kind) ? input.kind : undefined,
-  }).slice(0, 20);
+  });
+  const shown = all.filter((e) => e.status !== 'suggested' || ctx.proposed.has(e.id)).slice(0, 20);
+  const unreviewed = all.filter((e) => e.status === 'suggested' && !ctx.proposed.has(e.id)).length;
   return {
-    entries: hits.map((e) => {
+    entries: shown.map((e) => {
       const stale = staleAnchors(e, (p) => blobHash(repo, p));
       return {
         id: e.id,
         kind: e.kind,
         status: e.status,
+        ...(e.status === 'suggested' ? { reviewed: false } : {}),
         title: e.title,
         body: e.body,
         scope: e.scope,
         tags: e.tags,
         ...(stale.length ? { mayBeOutdated: stale } : {}),
-        ...(e.flag ? { flagged: e.flag.reason } : {}),
+        ...(e.flag ? { flagged: flaggedNote(e.flag.by) } : {}),
       };
     }),
-    note: 'Only confirmed entries are facts; assumptions are unverified; suggestions are not reviewed yet.',
+    ...(unreviewed ? { awaitingReview: unreviewed } : {}),
+    note: 'Confirmed entries are facts; assumptions are unverified. Suggestions from other agents are not shown until the human reviews them; yours are marked reviewed: false.',
   };
 }
 

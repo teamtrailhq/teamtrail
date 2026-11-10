@@ -19,11 +19,14 @@ import { assertAssumes } from './assumptions';
 import { claimTicket } from './claimTicket';
 import { closeDecisionMeta } from './closeDecision';
 import { submitVerified } from './completion';
+import { declaredPaths, unverifiedChanges } from './closeEvidence';
 import { assertCriteria } from './criteria';
 import { checkedAnswers, keepAnswers } from './guides';
 import { humanAnswerFor, release, spend, type HumanAnswer } from './humanAnswer';
 import { withReview } from './parallel';
+import { assertOwnClaim } from './ownClaim';
 import { checkRisk, riskOf } from './riskCheck';
+import { ruleOut } from './ruleOut';
 import type { CloseInput, WaitControl } from './types';
 
 type Wait = { seconds: number; ctl?: WaitControl };
@@ -53,6 +56,8 @@ type Completion = { kind: 'closed'; verified: object } | { kind: 'stopped'; resu
  * checks pass.
  */
 export async function closeTicket(ctx: AgentContext, input: CloseInput, wait: Wait) {
+  // Ruling out is the human's call (ruleOut.ts): never the completion path below.
+  if (input.outcome === 'out_of_scope') return ruleOut(ctx, input);
   const c = await startClosing(ctx, input);
   try {
     return await closeWith(c, wait);
@@ -111,6 +116,7 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
       const id = ticket.id;
       ticket = (await ctx.load(snap.map.id)).tickets.find((x) => x.id === id)!;
     }
+    assertOwnClaim(ctx, { mapId: snap.map.id, ticket, agent });
     const current = ctx.sessions.running();
     const session = current?.info.ticketId === ticket.id ? current : await ctx.ensureSession();
     const source = { kind: 'agent' as const, ref: `${session.id}/${ticket.id}`, label: `${agent} session` };
@@ -138,13 +144,17 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   const wantsTranscript = input.postTranscript && log.length > 0;
   const transcript = wantsTranscript ? log.map((e) => `**${e.author}:** ${e.text}`).join('\n\n') : undefined;
   const { info } = levelFor(ctx.root, snap, t);
+  const verified = info.level !== 'off';
+  const declared = declaredPaths({ remote: ctx.remote, verified, paths: input.paths, noCodeReason: input.noCodeReason });
   assertCriteria(ctx.root, snap, t, info.level);
   await keepAnswers(ctx, {
     snap,
     ticket: t,
     checked: checkedAnswers(ctx, { snap, ticket: t, given: input.checklist }),
   });
-  if (info.level === 'off') {
+  let unverified: { warning?: string } = {};
+  if (!verified) {
+    unverified = await unverifiedChanges(ctx, { snap, ticket: t, declared, decidedBy: c.human?.author ?? c.agent });
     await resolveDirectly(c, { meta, transcript });
   } else {
     s.step(4, `checks: ${info.checks.join(', ') || 'none configured'}`);
@@ -161,6 +171,8 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
       decision: meta,
       transcript,
       remote: ctx.remote,
+      origin: ctx.origin,
+      declaredPaths: declared,
     };
     const r = await submitVerified(
       ctx,
@@ -176,7 +188,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
     return { kind: 'closed', verified: r };
   }
   if (s.info.mode === 'work') s.step(5);
-  return { kind: 'closed', verified: {} };
+  return { kind: 'closed', verified: unverified.warning ? { warning: unverified.warning } : {} };
 }
 
 async function resolveDirectly(c: Closing, parts: { meta: DecisionMeta; transcript?: string }) {

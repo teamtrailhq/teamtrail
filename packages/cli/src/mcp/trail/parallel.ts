@@ -1,4 +1,4 @@
-import { pairsLabel, touchOverlaps, type MapSnapshot, type Ticket, type Workspace } from '@teamtrail/core';
+import { pairsLabel, repoPaths, touchOverlaps, type MapSnapshot, type Ticket, type Workspace } from '@teamtrail/core';
 import {
   prepareWorktree,
   readIntegrationScan,
@@ -21,7 +21,8 @@ export interface ClaimParallel {
 const REMOTE_WORKSPACE_NOTE =
   "No worktree: you're connected remotely, and Teamtrail prepares worktrees only on the machine it runs on. Work on a branch of your own in your checkout, push it, and name the branch (and pull request) when you complete.";
 
-const clean = (globs?: string[]) => (globs ?? []).map((g) => g.trim()).filter(Boolean);
+/** The globs a claim touches, repo-relative like every declared path (absolute or escaping ones are refused). */
+const clean = (globs?: string[]) => repoPaths((globs ?? []).filter((g) => g.trim()));
 
 /**
  * The parallel-work part of a claim: the ticket's worktree (when the project or the agent asks for one), the files

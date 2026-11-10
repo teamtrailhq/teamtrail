@@ -13,7 +13,6 @@ export {
   dropCriteriaProposal,
   readCriteriaProposals,
   writeCriteriaProposal,
-  type CriteriaProposal,
 } from './criteria/criteriaProposals';
 export { caseInsensitiveFs } from './policy/caseInsensitiveFs';
 export { POLICY_FILE, policyPath, readPolicy, writePolicy, type PolicyRead } from './policy/policyStore';
@@ -36,6 +35,7 @@ export { approveReroute, rejectReroute, type RerouteDecision } from './planning/
 export {
   blobHash,
   listKnowledge,
+  createKnowledge,
   nextKnowledgeId,
   readKnowledge,
   repoRootFor,

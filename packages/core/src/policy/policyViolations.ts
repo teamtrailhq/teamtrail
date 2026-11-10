@@ -24,6 +24,8 @@ export interface ViolationInput {
   policy: RiskPolicy;
   /** Tickets the human already weighed in on another way: an answered question, an approval. */
   covered?: { mapId: string; ticketId: string }[];
+  /** The repo is on a filesystem that ignores case: the path rules do too. */
+  caseInsensitive?: boolean;
 }
 
 const keyOf = (mapId: string, ticketId: string) => `${mapId}/${ticketId}`;
@@ -38,7 +40,7 @@ export function policyViolations(input: ViolationInput): PolicyViolation[] {
   const highRules = input.policy.paths.filter((r) => r.level === 'high');
   return latestPerTicket(input.attempts)
     .filter((a) => !covered.has(keyOf(a.mapId, a.ticketId)))
-    .flatMap((a) => violationOf(a, highRules))
+    .flatMap((a) => violationOf(a, highRules, !!input.caseInsensitive))
     .sort((x, y) => y.at - x.at || x.ticketKey.localeCompare(y.ticketKey));
 }
 
@@ -52,12 +54,27 @@ function latestPerTicket(attempts: VerificationAttempt[]): VerificationAttempt[]
   return [...latest.values()];
 }
 
-function violationOf(a: VerificationAttempt, rules: RiskPolicy['paths']): PolicyViolation[] {
+/**
+ * The files an attempt touched, as far as anyone can tell: what git saw change (local completions) and what the
+ * agent declared (the only thing a remote completion has). `undeclared` are files git saw that the agent left out.
+ */
+function touchedBy(a: VerificationAttempt) {
   const changed = (a.git?.changed ?? []).map((f) => f.path);
-  const globs = rules.filter((r) => changed.some((p) => globMatch(r.glob, p))).map((r) => r.glob);
-  if (!globs.length) return [];
-  const paths = changed.filter((p) => globs.some((g) => globMatch(g, p)));
+  const declared = a.declaredPaths ?? [];
+  const undeclared = a.declaredPaths ? changed.filter((p) => !declared.includes(p)) : [];
+  return { all: [...new Set([...changed, ...declared])], undeclared };
+}
+
+function violationOf(a: VerificationAttempt, rules: RiskPolicy['paths'], fold: boolean): PolicyViolation[] {
+  const { all, undeclared } = touchedBy(a);
+  const hits = (p: string) => rules.filter((r) => ruleMatches(r.glob, p, fold)).map((r) => r.glob);
+  const paths = all.filter((p) => hits(p).length);
+  if (!paths.length) return [];
+  const globs = [...new Set(paths.flatMap(hits))];
   const files = paths.length === 1 ? paths[0] : `${paths.length} files`;
+  const hidden = paths.filter((p) => undeclared.includes(p));
+  const how = a.remote ? 'says it changed' : 'changed';
+  const extra = hidden.length ? ` (${hidden.length === 1 ? hidden[0] : `${hidden.length} of them`} not declared)` : '';
   return [
     {
       mapId: a.mapId,
@@ -68,7 +85,7 @@ function violationOf(a: VerificationAttempt, rules: RiskPolicy['paths']): Policy
       at: a.submittedAt,
       paths,
       globs,
-      reason: `${a.agent} changed ${files} matching ${globs.join(', ')} without asking you`,
+      reason: `${a.agent} ${how} ${files} matching ${globs.join(', ')} without asking you${extra}`,
     },
   ];
 }

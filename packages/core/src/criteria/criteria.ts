@@ -101,7 +101,10 @@ type Graded =
   | { kind: 'failed'; why: string }
   | { kind: 'manual' }
   | { kind: 'verified'; evidence: string }
-  | { kind: 'claimed'; evidence: string };
+  | { kind: 'claimed'; evidence: string; signOff: boolean };
+
+/** Criteria whose claimed evidence the human signs off: an agent's word is not enough for these. */
+const SIGN_OFF_WHEN_CLAIMED: CriterionKind[] = ['security', 'business-rule'];
 
 function grade(c: Criterion, e: CriterionEvidence | undefined, checks: CheckResult[]): Graded {
   const ev = e?.evidence.trim();
@@ -111,14 +114,16 @@ function grade(c: Criterion, e: CriterionEvidence | undefined, checks: CheckResu
   if (name !== undefined && !(run && passed(run))) return { kind: 'failed', why: `${ev} ${run ? 'failed' : "didn't run"}` };
   // A criterion the trail lead signs off stays theirs whatever evidence comes with it.
   if (ev === 'manual' || c.kind === 'manual') return { kind: 'manual' };
-  return name === undefined ? { kind: 'claimed', evidence: ev } : { kind: 'verified', evidence: ev };
+  if (name !== undefined) return { kind: 'verified', evidence: ev };
+  return { kind: 'claimed', evidence: ev, signOff: SIGN_OFF_WHEN_CLAIMED.includes(c.kind) };
 }
 
 /**
  * Matches the agent's evidence to the criteria. Deterministic: a criterion with no evidence is missing; a `check:`
  * that didn't run or didn't pass fails it, and one that passed here verifies it; `manual` (the evidence, or the
  * criterion's kind) waits for the trail lead. Everything else (a named test, a command, the PR, free text) is the
- * agent's word: it is kept and marked "claimed, not verified", never as verified.
+ * agent's word: it is kept and marked "claimed, not verified", never as verified; on a security or business-rule
+ * criterion it also waits for the trail lead's sign-off.
  */
 export function checkCriteria(
   criteria: Criterion[],
@@ -148,10 +153,13 @@ export function checkCriteria(
       case 'verified':
         out.lines.push(`${c.id} ✓ ${g.evidence}${note} · ${c.text}`);
         break;
-      case 'claimed':
+      case 'claimed': {
         out.claimed!.push(c.id);
-        out.lines.push(`${c.id} ? claimed, not verified: ${g.evidence}${note} · ${c.text}`);
+        if (g.signOff) out.manual.push(c.id);
+        const tail = g.signOff ? ' · needs your sign-off' : '';
+        out.lines.push(`${c.id} ? claimed, not verified: ${g.evidence}${note}${tail} · ${c.text}`);
         break;
+      }
       default: {
         const unknown: never = g;
         throw new Error(`unknown grade ${(unknown as { kind?: string }).kind}`);

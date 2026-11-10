@@ -67,6 +67,7 @@ export async function startTrail(ctx: AgentContext, input: StartInput) {
     },
   });
   ctx.trail = map.id;
+  for (const t of tickets) ctx.charted.add(`${map.id}/${t.id}`);
   saveAllCriteria(ctx, { map, tickets, planned });
   await saveGuides(ctx, { map, tickets, planned, team: input.team });
   await saveAssumptions(ctx, { map, tickets, planned, items: input.assumptions ?? [] });

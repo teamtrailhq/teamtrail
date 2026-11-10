@@ -37,6 +37,12 @@ const WEIGHT: Partial<Record<KnowledgeKind, number>> = {
 const ALWAYS: KnowledgeKind[] = ['business-rule', 'ux-principle', 'convention'];
 const MAX_BODY = 600;
 
+/**
+ * A flag's reason is an agent's words, not reviewed by anyone: other agents learn that an entry was flagged and by
+ * whom, never what the flag says.
+ */
+export const flaggedNote = (by: string) => `flagged as possibly outdated by ${by}; the human is reviewing it`;
+
 /** Filler words never count as a match. */
 const STOP = new Set(
   'the and for with from into onto that this these those than then through use uses using via all any are was were will can should must not only also each when what where which who how per our your their its'.split(
@@ -110,7 +116,7 @@ export function selectKnowledge(
       body,
       why,
       ...(stale.length ? { mayBeOutdated: stale } : {}),
-      ...(e.flag ? { flagged: e.flag.reason } : {}),
+      ...(e.flag ? { flagged: flaggedNote(e.flag.by) } : {}),
     });
   }
   return out;

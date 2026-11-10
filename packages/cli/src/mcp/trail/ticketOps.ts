@@ -19,6 +19,7 @@ import { recoverStalled } from './recoverStalled';
 import { frozenOn } from './reroutes';
 import { ownReviews } from './reviews';
 import { ticketInfo } from './ticketInfo';
+import { assertOwnClaim } from './ownClaim';
 
 export async function nextTicket(
   ctx: AgentContext,
@@ -53,8 +54,7 @@ export async function releaseTicket(ctx: AgentContext, input: { ticket?: string;
   const ref = input.ticket ?? ctx.sessions.running()?.info.ticketId;
   if (!ref) throw new OperationError('Which ticket? Pass `ticket`.');
   const t = ctx.findTicket(snap, ref);
-  if (t.assignee !== (await ctx.agentId()))
-    throw new OperationError(`${t.key} is not claimed by you${t.assignee ? ` (assignee: ${t.assignee})` : ''}`);
+  assertOwnClaim(ctx, { mapId: snap.map.id, ticket: t, agent: await ctx.agentId() });
   await release(ctx.adapter, snap.map.id, t.id, { ...ctx.actor(), reason: input.reason });
   ctx.leases.drop(snap.map.id, t.id);
   if (ctx.sessions.running()?.info.ticketId === t.id)
@@ -101,6 +101,7 @@ export async function addTicket(
     });
     for (const b of blockers) await ctx.adapter.addBlocking(snap.map.id, b, t.id);
   }
+  ctx.charted.add(`${snap.map.id}/${t.id}`);
   if (input.guide) await setTicketGuide(ctx.adapter, { mapId: snap.map.id, ticketId: t.id }, input.guide, 'agent');
   if (input.criteria?.length) saveCriteria(ctx.root, snap.map, t, input.criteria);
   const fresh = await ctx.load(snap.map.id);
