@@ -37,7 +37,7 @@ function byHash(input: ApproveInput, items: TrustItem[]): number {
  * `--hash` names the exact content to approve. Returns the exit code.
  */
 export async function runApprove(input: ApproveInput): Promise<number> {
-  const items = withCommitted(input.root, pendingTrust(input.root, input.snaps));
+  const items = await withCommitted(input.root, pendingTrust(input.root, input.snaps));
   if (!items.length)
     return (input.io.out('\n  Nothing waiting: everything the repo asks for is approved here.\n\n'), 0);
   for (const item of items) input.io.out(showItem(item));

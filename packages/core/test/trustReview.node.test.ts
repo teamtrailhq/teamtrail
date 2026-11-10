@@ -17,7 +17,7 @@ import { writeKnowledge } from '../src/knowledge/knowledgeStore';
 import { ensureLocalDir } from '../src/lib/ensureLocalDir';
 import { machineStore } from '../src/machine/machineStore';
 import { chartMap } from '../src/planning/operations/chart';
-import { approveTrust } from '../src/trust/approveTrust';
+import { approveTogether } from '../src/trust/approveTogether';
 import { pendingTrust } from '../src/trust/pendingTrust';
 import { trustKey, trustLedger } from '../src/trust/trustLedger';
 import { operatorAction } from '../src/verification/operatorActions';
@@ -130,7 +130,7 @@ test('F1: accepting a brief, confirming criteria or knowledge needs the hash of 
 
 // F3 ---------------------------------------------------------------------------------------------------------------
 
-test('F3: bulk approval adopts only content committed to git; what an agent just staged needs its own look', () => {
+test('F3: bulk approval adopts only content committed to git; what an agent just staged needs its own look', async () => {
   const root = tmpRoot();
   const repo = path.dirname(root);
   const git = (...a: string[]) =>
@@ -147,12 +147,13 @@ test('F3: bulk approval adopts only content committed to git; what an agent just
   writeKnowledge(root, entry('K-9', 'confirmed'));
   const items = pendingTrust(root);
   assert.equal(items.length, 3);
-  const r = approveTrust({ root, items: items.map((i) => ({ key: i.key, hash: i.hash })), by: 'trail lead' });
+  const r = await approveTogether({ root, items: items.map((i) => ({ key: i.key, hash: i.hash })), by: 'trail lead' });
   assert.deepEqual(r.approved.sort(), ['brief:m1', 'checks']);
   assert.deepEqual(r.refused, ['knowledge:K-9'], 'uncommitted content is never adopted in bulk');
   const one = pendingTrust(root);
   assert.equal(
-    approveTrust({ root, items: one.map((i) => ({ key: i.key, hash: i.hash })), by: 'trail lead' }).approved.length,
+    (await approveTogether({ root, items: one.map((i) => ({ key: i.key, hash: i.hash })), by: 'trail lead' })).approved
+      .length,
     1,
     'one at a time it can be',
   );
@@ -290,7 +291,7 @@ test('an answer signed for another project is not delivered here', async () => {
   assert.equal(answered, undefined);
 });
 
-test('the local-only ignore rule comes back when an agent edits it out', () => {
+test('the local-only ignore rule comes back when an agent edits it out', async () => {
   const root = tmpRoot();
   const dir = path.join(root, '.agents');
   ensureLocalDir(dir);
@@ -302,7 +303,7 @@ test('the local-only ignore rule comes back when an agent edits it out', () => {
 test(
   'a differently cased path to the same folder is the same project here',
   { skip: process.platform !== 'darwin' },
-  () => {
+  async () => {
     const top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-case-'));
     mkdirSync(path.join(top, 'Repo', '.teamtrail'), { recursive: true });
     const a = machineStore(path.join(top, 'Repo', '.teamtrail'));

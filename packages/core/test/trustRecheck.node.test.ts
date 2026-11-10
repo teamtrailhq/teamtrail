@@ -10,6 +10,7 @@ import { writeBrief } from '../src/discovery/briefStore';
 import { writeKnowledge } from '../src/knowledge/knowledgeStore';
 import { ensureLocalDir } from '../src/lib/ensureLocalDir';
 import { chartMap } from '../src/planning/operations/chart';
+import { approveTogether } from '../src/trust/approveTogether';
 import { approveTrust } from '../src/trust/approveTrust';
 import { pendingTrust } from '../src/trust/pendingTrust';
 import { operatorAction } from '../src/verification/operatorActions';
@@ -39,7 +40,7 @@ const want = (root: string) => pendingTrust(root).map((i) => ({ key: i.key, hash
 const git = (root: string, ...a: string[]) =>
   execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd: path.dirname(root) });
 
-test('N2: once anything was approved here, committed content is approved one at a time, never in bulk', () => {
+test('N2: once anything was approved here, committed content is approved one at a time, never in bulk', async () => {
   const root = tmpRoot();
   writeFileSync(
     path.join(root, 'verification.json'),
@@ -48,7 +49,7 @@ test('N2: once anything was approved here, committed content is approved one at 
   git(root, 'init', '-q');
   git(root, 'add', '.');
   git(root, 'commit', '-qm', 'team');
-  approveTrust({ root, items: want(root), by: 'trail lead' });
+  await approveTogether({ root, items: want(root), by: 'trail lead' });
   // later, an agent with a shell commits what it staged: committing must not be enough to be adopted in bulk
   writeBrief(root, { mapId: 'm1', status: 'accepted', sections: SECTIONS });
   const now = Date.now();
@@ -68,7 +69,7 @@ test('N2: once anything was approved here, committed content is approved one at 
   });
   git(root, 'add', '.');
   git(root, 'commit', '-qm', 'agent');
-  const r = approveTrust({ root, items: want(root), by: 'trail lead' });
+  const r = await approveTogether({ root, items: want(root), by: 'trail lead' });
   assert.deepEqual(r.approved, []);
   assert.deepEqual(r.refused.sort(), ['brief:m1', 'knowledge:K-1']);
 });
@@ -117,7 +118,7 @@ test('N3: a trail whose level was never recorded here is held at the approved de
   assert.equal(levelFor(root, snap, t).info.level, 'off', 'adopted in one click');
 });
 
-test('nit: the local-only ignore file is exactly the rule, so nothing can be un-ignored', () => {
+test('nit: the local-only ignore file is exactly the rule, so nothing can be un-ignored', async () => {
   const root = tmpRoot();
   const dir = path.join(root, '.agents');
   ensureLocalDir(dir);

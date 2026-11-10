@@ -15,6 +15,8 @@ export type ConfigPair = [key: string, value: string];
  */
 export const SAFE_CONFIG: ConfigPair[] = [
   ['core.fsmonitor', 'false'],
+  // the untracked cache's settings live in the repo's config and index; reading it is never needed here
+  ['core.untrackedCache', 'false'],
   ['core.hooksPath', NOWHERE],
   ['core.sshCommand', 'ssh'],
   ['core.gitProxy', ''],

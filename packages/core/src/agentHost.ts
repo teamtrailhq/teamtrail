@@ -14,6 +14,8 @@ export { approveTrust } from './trust/approveTrust';
 export { recordWorktree, trustedWorkspace } from './workspaces/trustedWorkspace';
 export { pendingTrust } from './trust/pendingTrust';
 export { withCommitted } from './trust/withCommitted';
+export { approveTogether } from './trust/approveTogether';
+export { committedFiles } from './trust/committedFiles';
 export type { TrustItem, TrustKind } from './trust/trustItem';
 export { contentHash, trustKey, trustLedger, type TrustRecord } from './trust/trustLedger';
 export { machineStore } from './machine/machineStore';

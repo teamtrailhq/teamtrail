@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { MapSnapshot } from '../model/types';
-import { approveTrust } from '../trust/approveTrust';
+import { approveTogether } from '../trust/approveTogether';
 import { firstRun } from '../trust/firstRun';
 import { pendingTrust } from '../trust/pendingTrust';
 import { withCommitted } from '../trust/withCommitted';
@@ -30,7 +30,7 @@ async function snapsOf(ctx: RouteContext): Promise<MapSnapshot[]> {
  */
 export async function handleTrust(ctx: RouteContext, req: IncomingMessage, res: ServerResponse, url: URL) {
   if (url.pathname === '/trust' && req.method === 'GET') {
-    const items = withCommitted(ctx.root, pendingTrust(ctx.root, await snapsOf(ctx)));
+    const items = await withCommitted(ctx.root, pendingTrust(ctx.root, await snapsOf(ctx)));
     // `firstRun`: whether committed items may be adopted together (approveTrust.ts)
     sendJson(res, 200, { items, firstRun: firstRun(ctx.root) });
     return true;
@@ -39,6 +39,6 @@ export async function handleTrust(ctx: RouteContext, req: IncomingMessage, res: 
   const b = await readJson<{ items?: unknown }>(req, '{}');
   if (!Array.isArray(b.items) || !b.items.every(isWant)) throw new BadRequest('"items" must list { key, hash }');
   const snaps = await snapsOf(ctx);
-  sendJson(res, 200, approveTrust({ root: ctx.root, items: b.items, by: 'trail lead', snaps }));
+  sendJson(res, 200, await approveTogether({ root: ctx.root, items: b.items, by: 'trail lead', snaps }));
   return true;
 }

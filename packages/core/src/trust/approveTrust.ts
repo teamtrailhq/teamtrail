@@ -5,7 +5,6 @@ import { firstRun } from './firstRun';
 import { pendingTrust } from './pendingTrust';
 import { recordShown } from './recordShown';
 import type { TrustItem } from './trustItem';
-import { withCommitted } from './withCommitted';
 
 export interface ApproveTrustInput {
   root: string;
@@ -14,6 +13,8 @@ export interface ApproveTrustInput {
   by: string;
   /** The trails, for their verification levels (levelItems.ts). */
   snaps?: MapSnapshot[];
+  /** The pending files committed to git as they are (committedFiles.ts); needed to approve several at once. */
+  committed?: Set<string>;
 }
 
 /** Why an item can't be approved in this request, or undefined when it can. */
@@ -38,7 +39,8 @@ export function approveTrust(input: ApproveTrustInput) {
   const { root, by } = input;
   const bulk = { on: input.items.length > 1, first: firstRun(root) };
   const all = pendingTrust(root, input.snaps);
-  const shown = bulk.on ? withCommitted(root, all) : all;
+  const committed = (i: TrustItem) => (i.file ? !!input.committed?.has(i.file) : true);
+  const shown = bulk.on ? all.map((i) => ({ ...i, committed: committed(i) })) : all;
   const pending = new Map(shown.map((i) => [i.key, i]));
   const out = { approved: [] as TrustItem[], changed: [] as string[], refused: [] as string[] };
   for (const want of input.items) {
