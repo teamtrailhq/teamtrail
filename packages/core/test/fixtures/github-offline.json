@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T13:24:09.600Z",
+  "recordedAt": "2026-11-10T19:47:14.126Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). status 0 = network failure.",
   "exchanges": [
     {
@@ -231,9 +231,7 @@
         "body": {
           "title": "Ship offline sync",
           "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-          "labels": [
-            "teamtrail:map"
-          ]
+          "labels": ["teamtrail:map"]
         }
       },
       "res": {
@@ -268,13 +266,34 @@
     {
       "req": {
         "method": "POST",
+        "url": "/graphql",
+        "operation": "Me"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4990",
+          "x-ratelimit-reset": "1793451601"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "login": "octo-dev"
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
         "url": "/repos/octo-org/launchpad/issues",
         "body": {
           "title": "Survey CRDT libraries",
           "body": "Compare.\n\nPart of trail #1.",
-          "labels": [
-            "teamtrail:research"
-          ]
+          "labels": ["teamtrail:research"]
         }
       },
       "res": {
@@ -362,9 +381,7 @@
         "body": {
           "title": "More",
           "body": "",
-          "labels": [
-            "teamtrail:task"
-          ]
+          "labels": ["teamtrail:task"]
         }
       },
       "res": {
@@ -426,6 +443,7 @@
                   "login": "octo-dev"
                 },
                 "editor": null,
+                "lastEditedAt": null,
                 "authorAssociation": "COLLABORATOR",
                 "labels": {
                   "nodes": [
@@ -457,6 +475,7 @@
                         "login": "octo-dev"
                       },
                       "editor": null,
+                      "lastEditedAt": null,
                       "authorAssociation": "COLLABORATOR",
                       "labels": {
                         "nodes": [
@@ -524,7 +543,7 @@
           "content-type": "application/json; charset=utf-8",
           "x-ratelimit-limit": "5000",
           "x-ratelimit-remaining": "4990",
-          "x-ratelimit-reset": "1793451605"
+          "x-ratelimit-reset": "1793451606"
         },
         "body": {
           "id": 3100000002,
@@ -541,7 +560,7 @@
           ],
           "assignees": [],
           "created_at": "2026-10-31T12:00:02Z",
-          "updated_at": "2026-10-31T12:00:05Z",
+          "updated_at": "2026-10-31T12:00:06Z",
           "closed_at": null,
           "html_url": "https://github.com/octo-org/launchpad/issues/2"
         }
@@ -564,7 +583,7 @@
           "content-type": "application/json; charset=utf-8",
           "x-ratelimit-limit": "5000",
           "x-ratelimit-remaining": "4990",
-          "x-ratelimit-reset": "1793451605"
+          "x-ratelimit-reset": "1793451606"
         },
         "body": {
           "data": {
@@ -587,6 +606,7 @@
                   "login": "octo-dev"
                 },
                 "editor": null,
+                "lastEditedAt": null,
                 "authorAssociation": "COLLABORATOR",
                 "labels": {
                   "nodes": [
@@ -612,7 +632,7 @@
                       "state": "OPEN",
                       "stateReason": null,
                       "createdAt": "2026-10-31T12:00:02Z",
-                      "updatedAt": "2026-10-31T12:00:05Z",
+                      "updatedAt": "2026-10-31T12:00:06Z",
                       "closedAt": null,
                       "author": {
                         "login": "octo-dev"
@@ -620,6 +640,7 @@
                       "editor": {
                         "login": "octo-dev"
                       },
+                      "lastEditedAt": "2026-10-31T12:00:05Z",
                       "authorAssociation": "COLLABORATOR",
                       "labels": {
                         "nodes": [
@@ -641,6 +662,7 @@
                               "login": "octo-dev"
                             },
                             "editor": null,
+                            "lastEditedAt": null,
                             "authorAssociation": "COLLABORATOR"
                           }
                         ]

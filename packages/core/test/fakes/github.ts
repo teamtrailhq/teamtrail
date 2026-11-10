@@ -19,10 +19,19 @@ export interface FakeIssue {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
-  comments: { id: number; body: string; created_at: string; user: string; editor?: string }[];
+  comments: {
+    id: number;
+    body: string;
+    created_at: string;
+    user: string | null;
+    /** Who edited it last (null: a deleted account), and when; never edited when `edited_at` is unset. */
+    editor?: string | null;
+    edited_at?: string;
+  }[];
   /** Who opened the issue, and who last edited its body (null: never edited). */
   author: string;
   editor: string | null;
+  edited_at?: string;
   subIssues: number[];
   blockedBy: number[];
 }
@@ -50,8 +59,12 @@ export function fakeGitHub(
     repos?: FakeRepo[];
     /** When set, any other bearer token is refused with 401. */
     token?: string;
-    /** Other logins that belong to the repo: their `authorAssociation` is `COLLABORATOR`, everyone else's `NONE`. */
+    /** Collaborators with write access (`COLLABORATOR`, permission write). */
     team?: string[];
+    /** Read-only collaborators (`COLLABORATOR`, permission read). */
+    readers?: string[];
+    /** Members of the owning org with no access to this repo (`MEMBER`, not a collaborator). */
+    members?: string[];
   } = {},
 ) {
   const repo = opts.repo ?? 'octo-org/launchpad';
@@ -78,7 +91,17 @@ export function fakeGitHub(
   });
   const byId = (id: number) => [...issues.values()].find((i) => i.id === id);
   const team = new Set(opts.team ?? []);
-  const association = (user: string) => (user === login || team.has(user) ? 'COLLABORATOR' : 'NONE');
+  const readers = new Set(opts.readers ?? []);
+  const members = new Set(opts.members ?? []);
+  const association = (user: string | null) => {
+    if (user === login || (user && (team.has(user) || readers.has(user)))) return 'COLLABORATOR';
+    return user && members.has(user) ? 'MEMBER' : 'NONE';
+  };
+  const permissionOf = (user: string) => {
+    if (user === login || team.has(user)) return { permission: 'write', role_name: 'write' };
+    return readers.has(user) ? { permission: 'read', role_name: 'read' } : undefined;
+  };
+  const permissionChecks: string[] = [];
   const actor = (user: string | null | undefined) => (user ? { login: user } : null);
 
   const rest = (i: FakeIssue) => ({
@@ -109,7 +132,8 @@ export function fakeGitHub(
     updatedAt: i.updated_at,
     closedAt: i.closed_at,
     author: actor(i.author),
-    editor: actor(i.editor),
+    editor: i.edited_at ? actor(i.editor) : null,
+    lastEditedAt: i.edited_at ?? null,
     authorAssociation: association(i.author),
     labels: { nodes: i.labels.map((name) => ({ name })) },
     assignees: { nodes: i.assignees.map((l) => ({ login: l })) },
@@ -119,7 +143,8 @@ export function fakeGitHub(
         body: c.body,
         createdAt: c.created_at,
         author: actor(c.user),
-        editor: actor(c.editor),
+        editor: c.edited_at ? actor(c.editor) : null,
+        lastEditedAt: c.edited_at ?? null,
         authorAssociation: association(c.user),
       })),
     },
@@ -171,6 +196,7 @@ export function fakeGitHub(
 
     if (p === '/graphql' || p === '/api/graphql') {
       const { query, variables } = body as { query: string; variables: { number: number } };
+      if (/query Me\b/.test(query)) return ok({ data: { viewer: { login } } });
       if (!/query Trail\b/.test(query))
         return { status: 200, body: { errors: [{ type: 'INTERNAL', message: 'fake: unsupported query' }] } };
       const root = issues.get(variables.number);
@@ -185,6 +211,13 @@ export function fakeGitHub(
     if (method === 'GET' && p === '/user/repos') return userRepos(url);
     const other = allRepos.find((r) => r.full_name !== repo && p === `/repos/${r.full_name}`);
     if (method === 'GET' && other) return ok(repoJson(other));
+    const perm = p.match(new RegExp(`^${base}/collaborators/([^/]+)/permission$`));
+    if (method === 'GET' && perm) {
+      const user = decodeURIComponent(perm[1]);
+      permissionChecks.push(user);
+      const found = permissionOf(user);
+      return found ? ok({ ...found, user: { login: user } }) : notFound;
+    }
     if (!p.startsWith(base)) return notFound;
     const rest_ = p.slice(base.length);
 
@@ -222,7 +255,7 @@ export function fakeGitHub(
         const c = i.comments.find((x) => x.id === Number(cm[1]));
         if (c) {
           c.body = (body as { body: string }).body;
-          c.editor = login;
+          Object.assign(c, { editor: login, edited_at: tick() });
           return ok({ id: c.id, body: c.body });
         }
       }
@@ -238,7 +271,7 @@ export function fakeGitHub(
       if (b.title !== undefined) issue.title = b.title;
       if (b.body !== undefined) {
         issue.body = b.body;
-        issue.editor = login;
+        Object.assign(issue, { editor: login, edited_at: tick() });
       }
       if (b.state) {
         issue.state = b.state;
@@ -331,6 +364,8 @@ export function fakeGitHub(
     issues,
     fetch: fetch as typeof globalThis.fetch,
     handle,
+    /** Logins whose repo permission the adapter asked about, in order. */
+    permissionChecks,
     /** What a teammate does in the GitHub UI. */
     human: {
       close(number: number, reason: 'completed' | 'not_planned' = 'completed') {
@@ -346,13 +381,13 @@ export function fakeGitHub(
       /** Someone edits an issue body in the GitHub UI (its author, or a person with write access). */
       editBody(number: number, user: string, body: string) {
         const i = issues.get(number)!;
-        Object.assign(i, { body, editor: user, updated_at: tick() });
+        Object.assign(i, { body, editor: user, edited_at: tick(), updated_at: tick() });
       },
-      /** Someone with write access edits another person's comment. */
-      editComment(commentId: number, user: string, body: string) {
+      /** Someone with write access edits another person's comment; `null`: an account since deleted. */
+      editComment(commentId: number, user: string | null, body: string) {
         for (const i of issues.values()) {
           const c = i.comments.find((x) => x.id === commentId);
-          if (c) Object.assign(c, { body, editor: user });
+          if (c) Object.assign(c, { body, editor: user, edited_at: tick() });
           if (c) i.updated_at = tick();
         }
       },

@@ -59,7 +59,7 @@ test('decision comments survive text that would close an HTML comment', () => {
     ticketKey: '#12',
   });
   const body = decisionComment(d);
-  const shown = readIssueComments('m', [{ id: 'x', body, writer: SELF, createdAt: '' }], () => {});
+  const shown = readIssueComments('m', [{ id: 'x', body, writer: SELF, createdAt: '' }], 'GitHub', () => {});
   assert.deepEqual(shown, [], 'not shown as conversation');
   assert.deepEqual(parseDecisionComment(body), d);
 });

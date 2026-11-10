@@ -180,18 +180,16 @@ export interface DecisionRecord {
   transcript: TranscriptEntry[];
   /** The risk level the policy gave this call, when the agent named a category or the files it touches. */
   risk?: DecisionRisk;
-  /**
-   * Remote trackers: the tracker account that posted this record, when it isn't the one this machine writes as
-   * (a teammate's Teamtrail). Read from the tracker, never stored: such a record is that person's decision, and
-   * doesn't count as this machine's human having had a say.
-   */
+  /** Remote trackers: the other account that posted it, read from the tracker, and where ("GitHub"); that person's call. */
   postedBy?: string;
+  postedIn?: string;
 }
 
 export type DecisionStatus = 'active' | 'superseded';
 
 type DecisionDefaults = 'decidedAt' | 'summary' | 'alternatives' | 'rationale' | 'participants' | 'transcript';
-export type DecisionInput = Omit<DecisionRecord, 'id' | 'mapId' | 'supersededBy' | 'postedBy' | DecisionDefaults> &
+type DecisionReadOnly = 'id' | 'mapId' | 'supersededBy' | 'postedBy' | 'postedIn';
+export type DecisionInput = Omit<DecisionRecord, DecisionReadOnly | DecisionDefaults> &
   Partial<Pick<DecisionRecord, DecisionDefaults>>;
 
 export type TrackerEvent =

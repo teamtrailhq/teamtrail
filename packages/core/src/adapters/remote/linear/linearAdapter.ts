@@ -65,7 +65,10 @@ export class LinearAdapter extends SyncedAdapter {
     super({ pollMs: 12_000, ...o });
     this.http = new HttpClient(linear, o);
     this.gql = linearGql(this.http, o.apiKey, o.apiUrl);
-    this.ledger = new SettingsLedger(o.accepted);
+    this.ledger = new SettingsLedger(async () => {
+      const d = await this.gql<{ viewer?: { id: string } | null }>('query Me { viewer { id } }');
+      return d.viewer?.id;
+    }, o.accepted);
     this.mutations = linearWrites(this.gql, o);
     this.location = o.display ?? o.teamId;
   }
@@ -110,7 +113,7 @@ export class LinearAdapter extends SyncedAdapter {
     const root = d.issue;
     if (!root || !root.labels.nodes.some((l) => l.name === MAP_LABEL))
       throw new TrackerError('not_found', `Linear: ${mapId} is not a trail`);
-    const gate = this.ledger.gate(mapId, this.now());
+    const gate = this.ledger.gate({ mapId, now: this.now(), viewer: d.viewer?.id });
     return readTrail(mapId, root, { viewer: d.viewer?.id, gate, found: this.found });
   }
 
@@ -135,7 +138,7 @@ export class LinearAdapter extends SyncedAdapter {
       description: mapBody(input),
       labelIds: await this.labelIds(mapLabels(input.mode)),
     });
-    this.ledger.wrote(i.id, mapSettings(input));
+    await this.ledger.wrote(i.id, mapSettings(input));
     return {
       id: i.id,
       key: i.identifier,
@@ -158,7 +161,7 @@ export class LinearAdapter extends SyncedAdapter {
       parentId: map.id,
       labelIds: await this.labelIds(ticketLabels(input.type, input.hitl)),
     });
-    this.ledger.wrote(i.id, {});
+    await this.ledger.wrote(i.id, {});
     return linearTicket(map.id, i, new Set(), { viewer: undefined, found: this.found });
   }
 

@@ -4,6 +4,7 @@ import type { TrackerChoice } from '../../lib';
 import { connectedAs } from './githubText';
 import { isRemote } from './labels';
 import { connectedToLinear } from './linearText';
+import { trustParts } from './trustText';
 
 /**
  * Where a tracker card points. Active GitHub and Linear say who and where ("Connected to owner/name as login, using
@@ -19,6 +20,13 @@ export function ConnectorWhere(props: {
   const { id, active, s } = props;
   const remote = isRemote(id);
   const who = active && s ? connectedLine(id, s) : undefined;
+  if (who && remote)
+    return (
+      <>
+        <MetaLine className="c-who" parts={[who]} />
+        <MetaLine className="c-trust" parts={trustParts(id)} />
+      </>
+    );
   if (who) return <MetaLine className="c-who" parts={[who]} />;
   if (active && (id === 'markdown' || remote)) return <div className="c-loc">{props.location}</div>;
   if (remote && props.configured && s) return <div className="c-loc">{savedTarget(id, s)}</div>;

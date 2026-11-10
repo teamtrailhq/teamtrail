@@ -46,6 +46,9 @@ export function fakeLinear(
     org?: string;
     /** Other teams the key can access, listed after the main one. */
     teams?: FakeLinearTeam[];
+    /** Display names of guests of the workspace; `inactive`: deactivated users. */
+    guests?: string[];
+    inactive?: string[];
   } = {},
 ) {
   let clock = opts.start ?? Date.UTC(2026, 9, 31, 12, 0, 0);
@@ -57,9 +60,10 @@ export function fakeLinear(
   /** A comment's `user`: the key's own user, another member of the workspace, or null for an integration. */
   const userOf = (name: string | null) => {
     if (name === null) return null;
-    return name === viewer.name
-      ? { id: viewer.id, displayName: name }
-      : { id: `usr-${name.toLowerCase()}`, displayName: name };
+    const guest = (opts.guests ?? []).includes(name);
+    const active = !(opts.inactive ?? []).includes(name);
+    const id = name === viewer.name ? viewer.id : `usr-${name.toLowerCase()}`;
+    return { id, displayName: name, guest, active };
   };
   const org = { name: opts.org ?? 'Octo Inc' };
   const mainProjects = [{ id: 'proj-mobile', name: 'Mobile', state: 'started' }];
@@ -162,6 +166,8 @@ export function fakeLinear(
         };
       case 'Viewer':
         return { viewer, organization: org };
+      case 'Me':
+        return { viewer: { id: viewer.id } };
       case 'Teams': {
         const page = paged(allTeams(), v.first, v.after);
         const nodes = page.nodes.map((t) => {

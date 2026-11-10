@@ -14,8 +14,9 @@ export async function recordDecision(
   opts: { appendToTrail?: boolean; trailLine?: string } = {},
 ) {
   if (input.source.ref) {
+    // Only this machine's own records: a teammate's can't pre-empt one by posting its source first.
     const dup = (await adapter.listDecisions(mapId)).find(
-      (d) => d.source.kind === input.source.kind && d.source.ref === input.source.ref,
+      (d) => !d.postedBy && d.source.kind === input.source.kind && d.source.ref === input.source.ref,
     );
     if (dup) return dup;
   }
@@ -42,6 +43,7 @@ export async function supersedeDecision(
   const all = await adapter.listDecisions(mapId);
   const old = all.find((d) => d.id === decisionId);
   if (!old) throw new OperationError(`decision ${decisionId} not found`);
+  if (old.postedBy) throw new OperationError(`${old.id} is ${old.postedBy}'s decision; record your own instead`);
   if (old.supersededBy) throw new OperationError(`${old.id} is already superseded by ${old.supersededBy}`);
   const rec = await adapter.createDecision(mapId, {
     ticketId: old.ticketId,

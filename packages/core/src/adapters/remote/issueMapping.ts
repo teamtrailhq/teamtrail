@@ -2,8 +2,9 @@ import { PLAN_ONLY_LABEL } from '../../model/brand';
 import { parseMapBody } from '../../model/mapBody';
 import { DEFAULT_MAP_MODE, type Comment, type DecisionRecord, type MapDoc } from '../../model/types';
 import { settingsOf, type BodySettings } from './bodySettings';
-import { isDecisionComment, parseDecisionComment, teammateDecision } from './decisionComment';
+import { parseDecisionComment } from './decisionComment';
 import { readBody, readComment, splitBody } from './format';
+import { teammateDecision } from './teammateDecision';
 import type { Writer } from './writer';
 
 export interface TrailIssueParts {
@@ -50,11 +51,13 @@ export interface IssueComment<Id> {
 
 /**
  * An issue's comments in order; decision records among them go to `onDecision` instead. A record counts when
- * this account posted it, or a teammate did (as that person's decision); an outsider's is an ordinary comment.
+ * this account posted it, or a teammate did (as that person's decision, in `tracker`); an outsider's, or one that
+ * doesn't read as a record, is an ordinary comment: nothing is dropped.
  */
 export function readIssueComments<Id>(
   mapId: string,
   comments: IssueComment<Id>[],
+  tracker: string,
   onDecision: (d: DecisionRecord, commentId: Id) => void,
 ): Comment[] {
   const out: Comment[] = [];
@@ -62,12 +65,10 @@ export function readIssueComments<Id>(
     const trusted = c.writer.kind !== 'outsider';
     const d = trusted ? parseDecisionComment(c.body) : undefined;
     if (d) {
-      const record = c.writer.kind === 'teammate' ? teammateDecision(d, c.writer.name || 'unknown') : d;
+      const record = c.writer.kind === 'teammate' ? teammateDecision(d, { name: c.writer.name, tracker }) : d;
       onDecision({ ...record, mapId }, c.id);
       continue;
     }
-    // A record of ours too broken to read is not conversation either.
-    if (trusted && isDecisionComment(c.body)) continue;
     out.push(readComment({ id: String(c.id), body: c.body, writer: c.writer, createdAt: c.createdAt }));
   }
   return out;

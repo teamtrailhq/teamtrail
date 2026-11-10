@@ -17,9 +17,13 @@ import { TrackerError, type HttpOptions } from '../http';
 import { SettingsLedger, type AcceptedStore } from '../settingsLedger';
 import { SyncedAdapter } from '../sync/syncedAdapter';
 import type { RemoteComment, SyncOptions } from '../sync/types';
+import { authoredIn } from './authoredIn';
 import { createdTicket } from './createdTicket';
 import { ensureGitHubLabels } from './ensureGitHubLabels';
 import { GitHubClient } from './githubClient';
+import { GitHubPermissions } from './githubPermissions';
+import { githubViewer } from './githubViewer';
+import { loginsToCheck } from './githubWriter';
 import { readTrail } from './readTrail';
 import { labelNames, TRAIL_QUERY, type GqlIssue, type RestIssue } from './schema';
 
@@ -57,11 +61,13 @@ export class GitHubAdapter extends SyncedAdapter {
   private etag?: string;
   private cursor?: string;
   private ledger: SettingsLedger;
+  private permissions: GitHubPermissions;
 
   constructor(o: GitHubOptions) {
     super({ pollMs: 8000, ...o });
     this.gh = new GitHubClient(o);
-    this.ledger = new SettingsLedger(o.accepted);
+    this.ledger = new SettingsLedger(() => githubViewer(this.gh), o.accepted);
+    this.permissions = new GitHubPermissions(this.gh, this.now);
     this.location = `${this.gh.owner}/${this.gh.name}`;
   }
 
@@ -93,7 +99,10 @@ export class GitHubAdapter extends SyncedAdapter {
     const root = data.repository?.issue;
     if (!root || !root.labels.nodes.some((l) => l.name === MAP_LABEL))
       throw new TrackerError('not_found', `GitHub: #${mapId} is not a trail in ${this.location}`);
-    const m = readTrail(mapId, root, { viewer: data.viewer?.login, gate: this.ledger.gate(mapId, this.now()) });
+    const viewer = data.viewer?.login;
+    const canWrite = await this.permissions.resolve(loginsToCheck(viewer, authoredIn(root)));
+    const gate = this.ledger.gate({ mapId, now: this.now(), viewer });
+    const m = readTrail(mapId, root, { who: { viewer, canWrite }, gate });
     for (const [n, id] of m.issueIds) this.issueIds.set(n, id);
     for (const [key, id] of m.decisionComments) this.decisionComments.set(key, id);
     return { snap: m.snap, decisions: m.decisions };
@@ -140,7 +149,7 @@ export class GitHubAdapter extends SyncedAdapter {
       labels: mapLabels(input.mode),
     });
     this.issueIds.set(String(i.number), i.id);
-    this.ledger.wrote(String(i.number), mapSettings(input));
+    await this.ledger.wrote(String(i.number), mapSettings(input));
     return {
       id: String(i.number),
       key: `#${i.number}`,
@@ -165,7 +174,7 @@ export class GitHubAdapter extends SyncedAdapter {
     });
     this.issueIds.set(String(i.number), i.id);
     await this.gh.repo('POST', `/issues/${map.id}/sub_issues`, { sub_issue_id: i.id });
-    this.ledger.wrote(String(i.number), {});
+    await this.ledger.wrote(String(i.number), {});
     return createdTicket(i);
   }
 

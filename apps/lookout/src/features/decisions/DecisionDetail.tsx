@@ -4,6 +4,7 @@ import {
   supersessionChain,
   decisionStatus,
   DECISION_SOURCES,
+  postedNote,
   webUrl,
 } from '@teamtrail/core';
 import { useState, useEffect, type FormEvent } from 'react';
@@ -66,7 +67,7 @@ export function DecisionDetail(props: {
           )}
         </dd>
         <dt>Decided by</dt>
-        <dd>{d.decidedBy}</dd>
+        <dd>{[d.decidedBy, postedNote(d)].filter(Boolean).join(', ')}</dd>
         {d.participants.length > 1 && (
           <>
             <dt>Participants</dt>
@@ -133,7 +134,7 @@ export function DecisionDetail(props: {
             sources: [`decision:${d.id}`, ...(d.ticketKey ? [`ticket:${d.ticketKey}`] : [])],
           })}
         />
-        {status === 'active' && (
+        {status === 'active' && !d.postedBy && (
           <Button
             on={form}
             onClick={() => setForm((f) => !f)}

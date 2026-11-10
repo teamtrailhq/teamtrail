@@ -3,38 +3,32 @@ import { guardMarkers, oneLine } from '../../model/safeText';
 import type { DecisionRecord } from '../../model/types';
 import { webUrl } from '../../model/webUrl';
 import { DECISION_SOURCES, isSourceKind } from '../../planning/decisions/decisionRecord';
-import { teammatePerson } from './writer';
+import { fitDecision } from './fitDecision';
 
 /** A decision record rides on a comment that ends in `<!-- teamtrail:decision {json} -->`. */
 const NAME = 'decision';
-/** GitHub caps comments at 65 536 characters. */
-const MAX_COMMENT = 60_000;
-const ID = /^D-\d{1,9}$/;
+/** A record's id as Teamtrail allocates it (syncedAdapter.ts nextDecisionId stays within it). */
+export const DECISION_ID = /^D-\d{1,9}$/;
 
 /** Readable record for people in the tracker, plus the full record for Teamtrail. */
 export function decisionComment(d: DecisionRecord): string {
-  // Who posted a record is read from the tracker, never from the record.
-  const { postedBy: _postedBy, ...own } = d;
-  let rec: Omit<DecisionRecord, 'postedBy'> = own;
-  let json = markerJson(rec);
-  while (json.length > MAX_COMMENT - 4000 && rec.transcript.length) {
-    rec = { ...rec, transcript: rec.transcript.slice(0, -Math.ceil(rec.transcript.length / 4)) };
-    json = markerJson(rec);
-  }
+  // Who posted a record is read from the tracker, never from the record; every field is capped to fit a comment.
+  const { record: rec, readable: r } = fitDecision(d);
+  const json = markerJson(rec);
   // The readable part is text for people; only the marker at the end is the record.
   const text = guardMarkers;
-  const superseded = d.supersededBy ? ` · ~~superseded by ${d.supersededBy}~~` : '';
+  const superseded = rec.supersededBy ? ` · ~~superseded by ${rec.supersededBy}~~` : '';
   const source = DECISION_SOURCES[d.source.kind]?.label ?? d.source.kind;
   const lines = [
-    `**Decision ${d.id}**${superseded} · ${d.decidedBy} · ${source}${sourceLink(d)}`,
+    `**Decision ${rec.id}**${superseded} · ${oneLine(rec.decidedBy)} · ${source}${sourceLink(rec)}`,
     '',
-    `> ${text(d.summary).replace(/\n/g, '\n> ')}`,
-    ...(d.answer.trim() !== d.summary.trim() ? ['', text(d.answer.trim())] : []),
+    `> ${text(r.summary).replace(/\n/g, '\n> ')}`,
+    ...(r.answer.trim() !== r.summary.trim() ? ['', text(r.answer.trim())] : []),
     '',
-    `**Question:** ${text(d.question)}`,
-    ...(d.alternatives.length ? [`**Alternatives:** ${text(d.alternatives.join('; '))}`] : []),
-    ...(d.rationale ? [`**Rationale:** ${text(d.rationale)}`] : []),
-    ...(d.supersedes ? [`**Supersedes:** ${d.supersedes}`] : []),
+    `**Question:** ${text(r.question)}`,
+    ...(r.alternatives ? [`**Alternatives:** ${text(r.alternatives)}`] : []),
+    ...(r.rationale ? [`**Rationale:** ${text(r.rationale)}`] : []),
+    ...(rec.supersedes ? [`**Supersedes:** ${rec.supersedes}`] : []),
     '',
     marker(NAME, json),
   ];
@@ -42,22 +36,21 @@ export function decisionComment(d: DecisionRecord): string {
 }
 
 /** The source as a markdown link, only for a web URL; its label can't close the link or break the line. */
-function sourceLink(d: DecisionRecord) {
+function sourceLink(d: Pick<DecisionRecord, 'source'>) {
   const url = webUrl(d.source.url);
   if (!url) return '';
   const label = oneLine(d.source.label ?? 'source').replace(/[[\]()]/g, '');
   return ` · [${label || 'source'}](${encodeURI(decodeURI(url)).replace(/[()]/g, encodeURIComponent)})`;
 }
 
-/** Whether a comment ends in a decision marker (a record, or one too broken to read). */
-export const isDecisionComment = (body: string) => !!trailingMarker(body.replace(/\r\n/g, '\n'), NAME);
-
 const list = <T>(v: T[] | undefined): T[] => (Array.isArray(v) ? v : []);
+
+const isId = (v: unknown): v is string => typeof v === 'string' && DECISION_ID.test(v);
 
 const isRecord = (d: DecisionRecord | null) =>
   !!d &&
   typeof d.id === 'string' &&
-  ID.test(d.id) &&
+  DECISION_ID.test(d.id) &&
   typeof d.decidedBy === 'string' &&
   typeof d.question === 'string' &&
   typeof d.answer === 'string' &&
@@ -71,9 +64,11 @@ export function parseDecisionComment(body: string): DecisionRecord | undefined {
   try {
     const d = JSON.parse(found.payload) as DecisionRecord;
     if (!isRecord(d)) return undefined;
-    const { postedBy: _postedBy, ...rec } = d;
+    const { postedBy: _postedBy, postedIn: _postedIn, supersedes, supersededBy, ...rec } = d;
     return {
       ...rec,
+      ...(isId(supersedes) ? { supersedes } : {}),
+      ...(isId(supersededBy) ? { supersededBy } : {}),
       summary: typeof d.summary === 'string' ? d.summary : d.answer,
       rationale: typeof d.rationale === 'string' ? d.rationale : '',
       alternatives: list(d.alternatives).filter((a) => typeof a === 'string'),
@@ -83,18 +78,4 @@ export function parseDecisionComment(body: string): DecisionRecord | undefined {
   } catch {
     return undefined;
   }
-}
-
-/**
- * A record another account posted: still a decision, but that person's. Their "trail lead" is shown under their
- * tracker name, and `postedBy` keeps it from standing in for this machine's human (policy checks).
- */
-export function teammateDecision(d: DecisionRecord, name: string): DecisionRecord {
-  return {
-    ...d,
-    decidedBy: teammatePerson(d.decidedBy, name),
-    participants: d.participants.map((p) => ({ ...p, id: teammatePerson(p.id, name) })),
-    transcript: d.transcript.map((e) => ({ ...e, author: teammatePerson(e.author, name) })),
-    postedBy: name,
-  };
 }

@@ -1,3 +1,5 @@
+import { oneLine } from '../../model/safeText';
+
 /*
  * Who wrote a comment or an issue body, as far as its Teamtrail markers go. A tracker shows every comment and
  * body to everyone it lets in, so a marker alone says nothing: what counts is the account that posted it.
@@ -15,8 +17,9 @@ export interface Writer {
 /** What this machine calls its own human; another account's is shown under that account's name instead. */
 const TRAIL_LEAD = 'trail lead';
 
-/** An actor id from a teammate's marker, as shown here: their human is `mona`, their agent `claude-09 (mona)`. */
-export const teammateActor = (id: string, name: string) => (id.trim() === TRAIL_LEAD ? name : `${id} (${name})`);
-
-/** The same for a decision's people: only "trail lead" is renamed, so agent names stay comparable. */
-export const teammatePerson = (id: string, name: string) => (id.trim() === TRAIL_LEAD ? name : id);
+/**
+ * An actor id from a teammate's author marker, as shown here: always under their tracker name. Their human is
+ * `mona`; anything else they name (an agent, or a made-up "Trail Lead") is `claude-09 (mona)`.
+ */
+export const teammateActor = (id: string, name: string) =>
+  id.trim().toLowerCase() === TRAIL_LEAD ? name : `${oneLine(id)} (${name})`;

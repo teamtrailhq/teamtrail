@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T13:24:09.610Z",
+  "recordedAt": "2026-11-10T19:47:14.136Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). A second adapter (another process) charts a trail between the first list and the first poll.",
   "exchanges": [
     {
@@ -422,9 +422,7 @@
             "teamId": "team-eng",
             "title": "Charted by an agent",
             "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-            "labelIds": [
-              "lbl-0001-fake"
-            ]
+            "labelIds": ["lbl-0001-fake"]
           }
         }
       },
@@ -473,6 +471,29 @@
       "req": {
         "method": "POST",
         "url": "/graphql",
+        "operation": "Me"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451601000"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "id": "usr-ada"
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
         "operation": "Create",
         "variables": {
           "input": {
@@ -480,9 +501,7 @@
             "title": "Survey CRDT libraries",
             "description": "Compare.\n\nPart of trail ENG-1.",
             "parentId": "iss-0010-fake",
-            "labelIds": [
-              "lbl-0004-fake"
-            ]
+            "labelIds": ["lbl-0004-fake"]
           }
         }
       },
@@ -719,9 +738,7 @@
             "teamId": "team-eng",
             "title": "Charted after the first poll",
             "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-            "labelIds": [
-              "lbl-0001-fake"
-            ]
+            "labelIds": ["lbl-0001-fake"]
           }
         }
       },
@@ -761,6 +778,29 @@
                   "nodes": []
                 }
               }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
+        "operation": "Me"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451603000"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "id": "usr-ada"
             }
           }
         }

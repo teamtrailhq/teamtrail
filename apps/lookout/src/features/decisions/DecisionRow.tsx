@@ -1,4 +1,4 @@
-import { type AuditDecision, decisionStatus, DECISION_SOURCES } from '@teamtrail/core';
+import { type AuditDecision, decisionStatus, DECISION_SOURCES, postedNote } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
 import { day, hm } from '../../lib';
 
@@ -38,7 +38,7 @@ export function DecisionRow(props: {
               d.ticketKey && { text: d.ticketKey, code: true },
               props.showTrail && props.trail,
               d.decidedBy,
-              DECISION_SOURCES[d.source.kind].label,
+              postedNote(d) ?? DECISION_SOURCES[d.source.kind].label,
               chainNote(d),
             ]}
           />

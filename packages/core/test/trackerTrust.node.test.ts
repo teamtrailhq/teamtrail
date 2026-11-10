@@ -184,11 +184,16 @@ test('GitHub: settings this account wrote from another machine are taken as they
   assert.equal((await a.loadMap(map.id)).tickets[0].verification, 'checks');
 });
 
-test('a tracker this machine sees for the first time is taken as it stands', async () => {
-  const { fake, map, t, n } = await github(['mona']);
-  fake.human.editBody(n, 'mona', 'Body text\n\n<!-- teamtrail:meta {"verification":"checks+review"} -->');
+test('a tracker this machine sees for the first time: its own settings are taken, a teammate’s wait', async () => {
+  const { fake, a, map, t } = await github(['mona']);
+  await setVerification(a, { mapId: map.id, ticketId: t.id }, 'checks', 'trail lead');
+  const other = await a.createTicket(map.id, { title: 'Other', type: 'task', body: 'B' });
+  fake.human.editBody(Number(other.id), 'mona', 'B\n\n<!-- teamtrail:meta {"verification":"checks+review"} -->');
   const joined = new GitHubAdapter({ repo: fake.repo, token: 'x', fetch: fake.fetch, manual: true, ...noSleep });
-  assert.equal((await joined.loadMap(map.id)).tickets.find((x) => x.id === t.id)!.verification, 'checks+review');
+  const tickets = (await joined.loadMap(map.id)).tickets;
+  assert.equal(tickets.find((x) => x.id === t.id)!.verification, 'checks', 'written by this account');
+  assert.equal(tickets.find((x) => x.id === other.id)!.verification, undefined, 'written by mona: waits');
+  assert.equal(joined.unacceptedSettings()[0].issueId, other.id);
 });
 
 test('Linear: a workspace member cannot lower a verification level by editing the description', async () => {

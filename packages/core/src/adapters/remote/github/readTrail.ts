@@ -2,7 +2,7 @@ import type { Comment, DecisionRecord, MapSnapshot, Ticket } from '../../../mode
 import { ticketFromIssue } from '../format';
 import { mapFromIssue, readIssueComments } from '../issueMapping';
 import type { SettingsGate } from '../settingsLedger';
-import { bodyWriter, commentWriter } from './githubWriter';
+import { bodyWriter, commentWriter, type GitHubReader } from './githubWriter';
 import type { GqlIssue } from './schema';
 
 export interface GitHubTrail {
@@ -15,15 +15,15 @@ export interface GitHubTrail {
 }
 
 export interface TrailReader {
-  /** The login behind the token: only its comments and bodies are this machine's own. */
-  viewer: string | undefined;
+  /** The login behind the token and who else can write: only the first's comments and bodies are this machine's. */
+  who: GitHubReader;
   gate: SettingsGate;
 }
 
 const isNumber = (n: unknown): n is number => Number.isSafeInteger(n) && (n as number) > 0;
 
 /** A trail issue (with its sub-issues, as `TRAIL_QUERY` returns it) as a map snapshot. */
-export function readTrail(mapId: string, root: GqlIssue, { viewer, gate }: TrailReader): GitHubTrail {
+export function readTrail(mapId: string, root: GqlIssue, { who, gate }: TrailReader): GitHubTrail {
   const decisions: DecisionRecord[] = [];
   const decisionComments: [string, number][] = [];
   const issueIds: [string, number][] = [[mapId, root.databaseId]];
@@ -33,9 +33,10 @@ export function readTrail(mapId: string, root: GqlIssue, { viewer, gate }: Trail
       issue.comments.nodes.map((c) => ({
         id: c.databaseId,
         body: c.body,
-        writer: commentWriter(viewer, c),
+        writer: commentWriter(who, c),
         createdAt: c.createdAt,
       })),
+      'GitHub',
       (d, commentId) => {
         decisions.push(d);
         decisionComments.push([`${mapId}/${d.id}`, commentId]);
@@ -47,7 +48,7 @@ export function readTrail(mapId: string, root: GqlIssue, { viewer, gate }: Trail
   const siblings = new Set(subs.map((s) => String(s.number)));
   const tickets: Ticket[] = subs.map((s) => {
     issueIds.push([String(s.number), s.databaseId]);
-    const writer = bodyWriter(viewer, s);
+    const writer = bodyWriter(who, s);
     return ticketFromIssue({
       id: String(s.number),
       key: `#${s.number}`,
@@ -66,7 +67,7 @@ export function readTrail(mapId: string, root: GqlIssue, { viewer, gate }: Trail
       closedAt: s.closedAt,
     });
   });
-  const writer = bodyWriter(viewer, root);
+  const writer = bodyWriter(who, root);
   const map = mapFromIssue({
     id: mapId,
     key: `#${root.number}`,

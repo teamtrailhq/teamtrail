@@ -22,12 +22,15 @@ const isId = (id: unknown): id is string => typeof id === 'string' && ID.test(id
 
 /**
  * Who a comment's markers belong to. Only its author can edit a Linear comment, so the user is enough: the key's
- * own user, another member of the workspace (a teammate), or nobody (an integration: an outsider).
+ * own user, another active member of the workspace (a teammate), or anyone else: a guest, a deactivated user, or
+ * nobody (an integration or app), whose markers are text.
  */
 function commentWriter(viewer: string | undefined, c: LComment): Writer {
-  if (!c.user) return { kind: 'outsider', name: '' };
-  const self = !!viewer && c.user.id === viewer;
-  return { kind: self ? 'self' : 'teammate', name: c.user.displayName };
+  const u = c.user;
+  if (!u) return { kind: 'outsider', name: '' };
+  if (viewer && u.id === viewer) return { kind: 'self', name: u.displayName };
+  const member = u.guest === false && u.active === true;
+  return { kind: member ? 'teammate' : 'outsider', name: u.displayName };
 }
 
 /**
@@ -43,6 +46,7 @@ const comments = (mapId: string, issue: LIssue, r: TrailReader) =>
     [...issue.comments.nodes]
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       .map((c) => ({ id: c.id, body: c.body, writer: commentWriter(r.viewer, c), createdAt: c.createdAt })),
+    'Linear',
     r.found,
   );
 

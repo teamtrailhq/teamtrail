@@ -21,8 +21,10 @@ export interface RestIssue {
 /** Who wrote a comment or an issue body: its author, whoever edited it last, and how the author relates to the repo. */
 export interface GqlAuthored {
   author: { login: string } | null;
-  /** The last person to edit it; null when it was never edited. */
+  /** The person who edited it; null when it was never edited, or when GitHub can't name them (a deleted account). */
   editor?: { login: string } | null;
+  /** When it was last edited; null when never. */
+  lastEditedAt?: string | null;
   /** `OWNER`, `MEMBER`, `COLLABORATOR`, `CONTRIBUTOR`, `NONE`, …: of the author. */
   authorAssociation?: string;
 }
@@ -51,7 +53,7 @@ export interface GqlIssue extends GqlAuthored {
   subIssues?: { nodes: GqlIssue[] };
 }
 
-const AUTHORED = `author { login } editor { login } authorAssociation`;
+const AUTHORED = `author { login } editor { login } lastEditedAt authorAssociation`;
 
 const ISSUE_FIELDS = `id databaseId number title body state stateReason createdAt updatedAt closedAt ${AUTHORED}
   labels(first: 30) { nodes { name } }
