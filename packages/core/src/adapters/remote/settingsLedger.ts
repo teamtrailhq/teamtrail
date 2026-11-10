@@ -47,6 +47,8 @@ export interface SettingsGate {
 /** A remote adapter, as the attention queue asks it for settings that wait for the human. */
 export interface SettingsReporter {
   unacceptedSettings(): UnacceptedSettings[];
+  /** When a read last couldn't record what it found (the record was locked); undefined when it never failed. */
+  settingsSkipped(): number | undefined;
 }
 
 export const reportsSettings = (a: object): a is SettingsReporter =>
@@ -82,7 +84,7 @@ export class SettingsLedger {
       },
       save: async () => {
         if (!Object.keys(changed).length) return;
-        if (await this.store.update(() => changed)) return;
+        if (await this.store.update(() => changed)) return void (this.skipped = undefined);
         this.skipped = o.now;
       },
     };
@@ -142,5 +144,4 @@ export class SettingsLedger {
     if (!viewer) return false;
     return this.store.update(() => ({ [issueId]: { viewer, ok: settingsKey(settings) } }));
   }
-
 }

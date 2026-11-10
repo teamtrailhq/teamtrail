@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T20:10:17.386Z",
+  "recordedAt": "2026-11-10T22:37:12.759Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). A second adapter (another process) charts a trail between the first list and the first poll.",
   "exchanges": [
     {

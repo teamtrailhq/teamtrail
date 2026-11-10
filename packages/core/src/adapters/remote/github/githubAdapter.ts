@@ -74,6 +74,7 @@ export class GitHubAdapter extends SyncedAdapter {
   protected rate = () => this.gh.rate;
 
   unacceptedSettings = () => this.ledger.unaccepted();
+  settingsSkipped = () => this.ledger.skipped;
 
   private ensureLabels = cachedUntilFailure(() => ensureGitHubLabels(this.gh));
 

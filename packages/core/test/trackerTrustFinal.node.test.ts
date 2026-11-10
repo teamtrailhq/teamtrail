@@ -1,17 +1,20 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { acceptedSettingsFile } from '../src/adapters/remote/acceptedSettingsFile';
+import { ACCEPTED_DIR, acceptedSettingsFile } from '../src/adapters/remote/acceptedSettingsFile';
 import { GitHubAdapter } from '../src/adapters/remote/github';
 import { LinearAdapter } from '../src/adapters/remote/linear';
 import type { SyncedAdapter } from '../src/adapters/remote/sync/syncedAdapter';
 import { buildAttention } from '../src/attention/buildAttention';
+import { confirmTrackerSettings } from '../src/planning/lifecycle/confirmTrackerSettings';
 import { setVerification } from '../src/planning/lifecycle/setVerification';
+import { tierOfTicket } from '../src/planning/matching/tierOfTicket';
 import { claim } from '../src/planning/operations/claims';
 import { DEFAULT_CONFIG } from '../src/verification/config';
 import { verificationFor } from '../src/verification/policy';
+import { assertConfirmed } from '../src/verification/verifyCompletion';
 import { fakeGitHub } from './fakes/github';
 import { fakeLinear } from './fakes/linear';
 import { noSleep } from './scenarios';
@@ -121,4 +124,77 @@ test('N1-a: a history longer than one page makes a comment nobody’s', async ()
   for (let i = 0; i < 101; i++) fake.human.editComment(c.id, fake.login, `<!-- teamtrail:author trail lead -->\n${i}`);
   const [read] = (await new GitHubAdapter(opts).loadMap(map.id)).tickets[0].comments;
   assert.notEqual(read.author, 'trail lead');
+});
+
+test('Accept as is / Keep stricter settle what waits, and only that', async () => {
+  for (const [choice, level] of [
+    ['as-is', 'off'],
+    ['stricter', 'checks+review+human'],
+  ] as const) {
+    const { map, t, make } = await githubCase();
+    const a = make();
+    await a.loadMap(map.id);
+    await confirmTrackerSettings(a, { root: tmpRoot(), mapId: map.id, issueId: t.id, choice });
+    const after = await state(make(), map.id, t.id);
+    assert.deepEqual([after.level, after.unconfirmed, after.items], [level, false, 0], choice);
+  }
+});
+
+test('a solo Linear user on a fresh clone has one way out: confirm, and completions go through', async () => {
+  const fake = fakeLinear();
+  const opts = { apiKey: 'lin_api_x', teamId: fake.team.id, fetch: fake.fetch, manual: true, ...noSleep };
+  const first = new LinearAdapter({ ...opts, accepted: acceptedSettingsFile(tmpRoot(), 'linear-test') });
+  const map = await first.createMap({ title: 'Trail', sections: SECTIONS, verification: 'checks' });
+  const t = await first.createTicket(map.id, { title: 'T', type: 'task', body: 'Body' });
+  await setVerification(first, { mapId: map.id, ticketId: t.id }, 'checks+review', 'trail lead');
+  const accepted = acceptedSettingsFile(tmpRoot(), 'linear-test'); // the fresh clone
+  const make = () => new LinearAdapter({ ...opts, accepted });
+  const a = make();
+  const snap = await a.loadMap(map.id);
+  const blocked = verificationFor(DEFAULT_CONFIG, snap.map, snap.tickets[0]);
+  assert.throws(() => assertConfirmed(snap.tickets[0], blocked), /can't be completed yet/);
+  for (const issueId of [map.id, t.id])
+    await confirmTrackerSettings(a, { root: tmpRoot(), mapId: map.id, issueId, choice: 'as-is' });
+  const fresh = await make().loadMap(map.id);
+  const info = verificationFor(DEFAULT_CONFIG, fresh.map, fresh.tickets[0]);
+  assert.equal(info.level, 'checks+review');
+  assert.doesNotThrow(() => assertConfirmed(fresh.tickets[0], info));
+});
+
+test('N5-a: a record that can’t be written shows in the queue, and the trail lead’s setting fails loudly', async () => {
+  const fake = fakeLinear();
+  const root = tmpRoot();
+  const opts = { apiKey: 'lin_api_x', teamId: fake.team.id, fetch: fake.fetch, manual: true, ...noSleep };
+  const first = new LinearAdapter({ ...opts, accepted: acceptedSettingsFile(tmpRoot(), 'linear-test') });
+  const map = await first.createMap({ title: 'Trail', sections: SECTIONS, verification: 'checks' });
+  mkdirSync(path.join(root, ACCEPTED_DIR), { recursive: true });
+  writeFileSync(path.join(root, ACCEPTED_DIR, 'linear-test.json.lock'), ''); // an agent keeps it fresh
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const a = new LinearAdapter({ ...opts, accepted: acceptedSettingsFile(root, 'linear-test') });
+    const snap = await a.loadMap(map.id);
+    const items = buildAttention({
+      ...QUEUE,
+      snaps: [snap],
+      trackerSettings: a.unacceptedSettings(),
+      trackerSettingsSkipped: a.settingsSkipped(),
+    }).items;
+    assert.ok(
+      items.some((i) => i.ref === 'record' && i.urgency === 'soon'),
+      items.map((i) => i.title).join(' | '),
+    );
+    await assert.rejects(
+      setVerification(a, { mapId: map.id }, 'checks+review+human', 'trail lead'),
+      /could not record the settings you set/,
+    );
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test('unconfirmed model matching never asks for a weaker model than the default', () => {
+  const lowered = { modelMatching: { enabled: true, tiers: { junction: 'fast' as const } } };
+  assert.equal(tierOfTicket({ type: 'junction' }, lowered), 'fast', 'confirmed: as set');
+  assert.equal(tierOfTicket({ type: 'junction' }, { ...lowered, settingsUnconfirmed: true }), 'strongest');
 });

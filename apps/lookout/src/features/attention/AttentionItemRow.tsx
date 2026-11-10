@@ -1,7 +1,7 @@
 import { isDismissable, type AttentionItem, type MapSnapshot } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
 import { ago } from '../../lib';
-import { IntegrationAction } from './IntegrationAction';
+import { ItemAction } from './ItemAction';
 import { ReasonLine } from './ReasonLine';
 import { contextParts, detailReasons, edgeFor } from './rowText';
 import { SnoozeMenu } from './SnoozeMenu';
@@ -50,7 +50,7 @@ export function AttentionItemRow(props: {
           onDismiss={props.onDismiss}
         />
       }
-      below={item.kind === 'integration' && <IntegrationAction item={item} />}
+      below={<ItemAction item={item} />}
     />
   );
 }

@@ -41,6 +41,8 @@ export interface AttentionInput {
   deliveries?: DeliveryProblem[];
   /** Settings someone else wrote into a tracked issue that this machine hasn't accepted. Missing: none. */
   trackerSettings?: UnacceptedSettings[];
+  /** When the record of accepted tracker settings last couldn't be written (it was locked). Missing: never. */
+  trackerSettingsSkipped?: number;
   /** Agents connected now, with their model tier (model matching). Missing: none. */
   agents?: ConnectedAgent[];
   /** Missing: the defaults. */

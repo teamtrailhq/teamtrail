@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T20:10:17.384Z",
+  "recordedAt": "2026-11-10T22:37:12.756Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). Between polls, user \"mona\" comments on and closes the ticket in GitHub.",
   "exchanges": [
     {
@@ -495,6 +495,7 @@
                   "login": "octo-dev"
                 },
                 "userContentEdits": {
+                  "totalCount": 0,
                   "nodes": []
                 },
                 "lastEditedAt": null,
@@ -529,6 +530,7 @@
                         "login": "octo-dev"
                       },
                       "userContentEdits": {
+                        "totalCount": 0,
                         "nodes": []
                       },
                       "lastEditedAt": null,
@@ -655,6 +657,7 @@
                   "login": "octo-dev"
                 },
                 "userContentEdits": {
+                  "totalCount": 0,
                   "nodes": []
                 },
                 "lastEditedAt": null,
@@ -689,6 +692,7 @@
                         "login": "octo-dev"
                       },
                       "userContentEdits": {
+                        "totalCount": 0,
                         "nodes": []
                       },
                       "lastEditedAt": null,
@@ -713,6 +717,7 @@
                               "login": "mona"
                             },
                             "userContentEdits": {
+                              "totalCount": 0,
                               "nodes": []
                             },
                             "lastEditedAt": null,

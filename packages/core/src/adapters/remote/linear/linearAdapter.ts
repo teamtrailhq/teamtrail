@@ -78,6 +78,7 @@ export class LinearAdapter extends SyncedAdapter {
   }
 
   unacceptedSettings = () => this.ledger.unaccepted();
+  settingsSkipped = () => this.ledger.skipped;
 
   /** Team states and Teamtrail labels, creating missing labels once. */
   private meta = cachedUntilFailure(async () => {

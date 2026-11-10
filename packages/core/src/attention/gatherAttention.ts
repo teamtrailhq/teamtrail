@@ -42,7 +42,9 @@ export async function gatherAttention(input: {
     violations: await readViolations({ root, adapter, snaps, docs }),
     integrations: integrationsOf(root),
     guides: listGuides(root).filter((r) => r.origin === 'local'),
-    trackerSettings: reportsSettings(adapter) ? adapter.unacceptedSettings() : [],
+    ...(reportsSettings(adapter)
+      ? { trackerSettings: adapter.unacceptedSettings(), trackerSettingsSkipped: adapter.settingsSkipped() }
+      : {}),
     agents: connectedAgents(docs),
     deliveries: readDeliveryProblems(root),
     policy,

@@ -10,6 +10,6 @@ export function trustParts(id: RemoteKind): string[] {
   return [
     'Anything this account writes counts as you, including agents signed in as you',
     `${who} can claim, move and close tickets; their decisions show under their name`,
-    'settings they change wait for you',
+    'settings they change wait for you in the queue, to accept or keep stricter',
   ];
 }
