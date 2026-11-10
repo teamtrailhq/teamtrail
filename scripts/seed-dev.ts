@@ -102,7 +102,7 @@ await adapter.addBlocking(second.id, prior.id, roles.id);
 await setMapMode(adapter, second.id, 'plan-only');
 
 // 3. Discovery: the mid-flight trail's brief is accepted; the plan-only one has a brief waiting for review.
-const day = 86_400_000;
+const hour = 3_600_000;
 const now = Date.now();
 const mainBrief = {
   mapId: main.id,
@@ -168,8 +168,9 @@ const entry = (
   sources: [`trail:${main.key}`],
   anchors: [],
   createdBy: 'claude-01',
-  createdAt: now - 3 * day,
-  updatedAt: now - 2 * day,
+  // Learned on the main trail, which was charted 20 hours ago (seedTimeline).
+  createdAt: now - 18 * hour,
+  updatedAt: now - 17 * hour,
   ...e,
 });
 for (const e of [
@@ -209,6 +210,8 @@ for (const e of [
     tags: ['merge'],
     createdBy: 'claude-02',
     sources: [`trail:${main.key}`, 'ticket:#6'],
+    createdAt: now - 3 * hour,
+    updatedAt: now - 3 * hour,
   }),
   entry(6, {
     kind: 'business-rule',
@@ -218,6 +221,8 @@ for (const e of [
     tags: ['workspaces', 'permissions'],
     createdBy: 'claude-02',
     sources: [`trail:${second.key}`],
+    createdAt: now - 30 * hour,
+    updatedAt: now - 30 * hour,
   }),
 ])
   writeKnowledge(root, e);
