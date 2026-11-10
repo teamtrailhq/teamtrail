@@ -1,4 +1,4 @@
-import { BRAND } from '@teamtrail/core';
+import { BRAND, overrideUrl } from '@teamtrail/core';
 import { AS_WRITTEN, SlackApi, SlackApiError } from '../api';
 import { SocketMode, type WebSocketCtor } from '../socket';
 import { socketUrl } from '../socketUrl';
@@ -60,7 +60,7 @@ export class SlackContext {
     this.asks = askStore(o.root);
     this.approvals = approvalStore(o.root);
     this.delivery = deliveryLog(o.root, () => o.now?.() ?? Date.now());
-    this.apiUrl = o.apiUrl ?? this.env[`${BRAND.slug.toUpperCase()}_SLACK_API`];
+    this.apiUrl = o.apiUrl ?? overrideUrl(this.env, `${BRAND.slug.toUpperCase()}_SLACK_API`);
     this.WS = o.WebSocket ?? (globalThis as { WebSocket?: WebSocketCtor }).WebSocket;
   }
 

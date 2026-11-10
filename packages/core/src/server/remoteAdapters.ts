@@ -1,3 +1,4 @@
+import { acceptedSettingsFile } from '../adapters/remote/acceptedSettingsFile';
 import { GitHubAdapter } from '../adapters/remote/github';
 import { TrackerError } from '../adapters/remote/http';
 import { LinearAdapter } from '../adapters/remote/linear';
@@ -37,6 +38,7 @@ export function remoteAdapters(ctx: TrackerContext) {
         apiUrl: apiUrl.github,
         fetch: o.fetch,
         outbox: outboxFile(o.root, queueKey(cfg, 'github')),
+        accepted: acceptedSettingsFile(o.root, queueKey(cfg, 'github')),
       });
     }
     if (!cfg.linear?.teamId) throw new TrackerError('invalid', 'Linear is not connected; connect it in Settings');
@@ -51,6 +53,7 @@ export function remoteAdapters(ctx: TrackerContext) {
       apiUrl: apiUrl.linear,
       fetch: o.fetch,
       outbox: outboxFile(o.root, queueKey(cfg, 'linear')),
+      accepted: acceptedSettingsFile(o.root, queueKey(cfg, 'linear')),
     });
   }
 

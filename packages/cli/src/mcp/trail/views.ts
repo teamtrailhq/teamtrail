@@ -3,6 +3,7 @@ import {
   deriveStates,
   isHandoff,
   PHASE_OF,
+  postedNote,
   type AgentSessionDoc,
   type Attention,
   type DecisionRecord,
@@ -11,6 +12,9 @@ import {
   type Ticket,
   type TicketType,
 } from '@teamtrail/core';
+
+/** A teammate's record says so: it is that person's decision, not the human's you work for. */
+const posted = (d: DecisionRecord) => (d.postedBy ? { postedBy: postedNote(d) } : {});
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 const round = (n: number) => Math.round(n * 1e4) / 1e4;
@@ -38,10 +42,10 @@ export function ticketView(snap: MapSnapshot, t: Ticket, records: DecisionRecord
     })),
     decisionsFromBlockers: records
       .filter((d) => d.ticketId && t.blockedBy.includes(d.ticketId) && !d.supersededBy)
-      .map((d) => ({ id: d.id, ticket: d.ticketKey, decision: d.answer })),
+      .map((d) => ({ id: d.id, ticket: d.ticketKey, decision: d.answer, ...posted(d) })),
     decisionsSoFar: records
       .filter((d) => d.ticketId === t.id && !d.supersededBy)
-      .map((d) => ({ id: d.id, summary: d.summary })),
+      .map((d) => ({ id: d.id, summary: d.summary, ...posted(d) })),
     comments: t.comments.slice(-5).map((c) => ({ author: c.author, body: c.body })),
     ...(handoff && t.state === 'open'
       ? {
@@ -112,7 +116,7 @@ export function trailView(
     decisions: records
       .filter((d) => !d.supersededBy)
       .slice(-10)
-      .map((d) => ({ id: d.id, ticket: d.ticketKey, summary: d.summary })),
+      .map((d) => ({ id: d.id, ticket: d.ticketKey, summary: d.summary, ...posted(d) })),
     notYetSpecified: snap.map.sections.unspecified,
     spend: {
       inputTokens: sum(usage.map((u) => u.inputTokens)),

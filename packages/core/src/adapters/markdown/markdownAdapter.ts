@@ -23,7 +23,7 @@ import { ExternalChanges } from './externalChanges';
 import { parseMapFile, serializeMapFile } from './mapFile';
 import type { MarkdownFs } from './markdownFs';
 import { nextNumber } from './nextNumber';
-import { trailSlug } from './paths';
+import { isTicketFile, segment, trailSlug } from './paths';
 import { parseTicket, serializeTicket } from './ticketFile';
 
 /*
@@ -66,19 +66,19 @@ export class MarkdownAdapter implements TrackerAdapter {
   }
 
   private async readMap(mapId: string): Promise<MapDoc> {
-    return parseMapFile(mapId, await this.fs.read(`${mapId}/map.md`));
+    return parseMapFile(mapId, await this.fs.read(`${segment(mapId)}/map.md`));
   }
 
   private async writeMap(m: MapDoc) {
-    await this.put(`${m.id}/map.md`, serializeMapFile(m));
+    await this.put(`${segment(m.id)}/map.md`, serializeMapFile(m));
   }
 
   private async readTicket(mapId: string, id: string) {
-    return parseTicket(await this.fs.read(`${mapId}/tickets/${id}.md`));
+    return parseTicket(await this.fs.read(`${segment(mapId)}/tickets/${segment(id)}.md`));
   }
 
   private async writeTicket(mapId: string, t: Ticket) {
-    await this.put(`${mapId}/tickets/${t.id}.md`, serializeTicket({ ...t, updatedAt: Date.now() }));
+    await this.put(`${segment(mapId)}/tickets/${segment(t.id)}.md`, serializeTicket({ ...t, updatedAt: Date.now() }));
   }
 
   async listMaps() {
@@ -95,7 +95,7 @@ export class MarkdownAdapter implements TrackerAdapter {
   async loadMap(mapId: string): Promise<MapSnapshot> {
     const files = await this.fs.list();
     const map = await this.readMap(mapId);
-    const ticketFiles = files.filter((f) => f.startsWith(`${mapId}/tickets/`));
+    const ticketFiles = files.filter((f) => f.startsWith(`${mapId}/tickets/`) && isTicketFile(f));
     const tickets = await Promise.all(ticketFiles.map(async (f) => parseTicket(await this.fs.read(f))));
     return { map, tickets: tickets.sort((a, b) => a.createdAt - b.createdAt) };
   }
@@ -223,7 +223,7 @@ export class MarkdownAdapter implements TrackerAdapter {
   }
 
   async markSuperseded(mapId: string, decisionId: string, supersededBy: string) {
-    const path = `${mapId}/decisions/${decisionId}.md`;
+    const path = `${segment(mapId)}/decisions/${segment(decisionId)}.md`;
     const d = parseDecision(await this.fs.read(path));
     const text = serializeDecision({ ...d, mapId, supersededBy });
     this.external.remember(path, text, supersededBy);

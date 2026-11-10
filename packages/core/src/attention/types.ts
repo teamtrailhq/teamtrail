@@ -1,3 +1,4 @@
+import type { UnacceptedSettings } from '../adapters/remote/settingsInForce';
 import type { TicketLease } from '../agents/ticketLease';
 import type { DiscoveryBrief } from '../discovery/brief';
 import type { KnowledgeEntry } from '../knowledge/knowledge';
@@ -38,6 +39,10 @@ export interface AttentionInput {
   guides?: InstalledGuide[];
   /** Connectors whose messages are being refused (delivery/deliveryStore.ts). Missing: none. */
   deliveries?: DeliveryProblem[];
+  /** Settings someone else wrote into a tracked issue that this machine hasn't accepted. Missing: none. */
+  trackerSettings?: UnacceptedSettings[];
+  /** When the record of accepted tracker settings last couldn't be written (it was locked). Missing: never. */
+  trackerSettingsSkipped?: number;
   /** Agents connected now, with their model tier (model matching). Missing: none. */
   agents?: ConnectedAgent[];
   /** Missing: the defaults. */

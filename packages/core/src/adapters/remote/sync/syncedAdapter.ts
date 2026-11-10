@@ -11,10 +11,14 @@ import type {
 import { buildDecision, decisionNumber } from '../../../planning/decisions/decisionRecord';
 import { OperationError } from '../../../planning/operations/operationError';
 import type { MapInput, TrackerAdapter } from '../../adapter';
+import { DECISION_ID } from '../decisionComment';
 import { roundtrip } from './fingerprint';
 import { ticketOf } from './queuedWrites';
 import { SyncedEdits } from './syncedEdits';
 import type { EventInit } from './types';
+
+/** The largest id `DECISION_ID` allows. */
+const MAX_DECISION = 999_999_999;
 
 /**
  * Shared engine of the GitHub and Linear adapters. It implements the whole
@@ -152,7 +156,10 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
     );
   }
 
-  /** `D-<n>` unique across every trail in the tracker, as with local markdown. */
+  /**
+   * `D-<n>` unique across every trail in the tracker, as with local markdown, counted from this account's own
+   * records only: a teammate's are kept apart (`D-9@mona`), so no id they post can move or block ours.
+   */
   private async nextDecisionId() {
     const ids = await this.listMaps()
       .then((l) => l.map((m) => m.id))
@@ -164,7 +171,9 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
           .catch(() => [] as DecisionRecord[]),
       ),
     );
-    this.lastDecision = Math.max(this.lastDecision, ...all.flat().map((d) => decisionNumber(d.id)));
+    const own = all.flat().filter((d) => !d.postedBy && DECISION_ID.test(d.id));
+    this.lastDecision = Math.max(this.lastDecision, ...own.map((d) => decisionNumber(d.id)));
+    if (this.lastDecision >= MAX_DECISION) throw new OperationError('this tracker has run out of decision ids');
     return `D-${++this.lastDecision}`;
   }
 
@@ -182,8 +191,9 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
 
   async markSuperseded(mapId: string, decisionId: string, supersededBy: string) {
     const e = await this.entry(mapId);
-    if (!e.decisions.some((x) => x.id === decisionId))
-      throw new OperationError(`decision ${decisionId} not found in ${mapId}`);
+    const d = e.decisions.find((x) => x.id === decisionId);
+    if (!d) throw new OperationError(`decision ${decisionId} not found in ${mapId}`);
+    if (d.postedBy) throw new OperationError(`${decisionId} is ${d.postedBy}'s decision; record your own instead`);
     await this.change(
       mapId,
       `supersede ${decisionId}`,

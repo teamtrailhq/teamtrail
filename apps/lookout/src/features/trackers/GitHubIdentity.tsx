@@ -22,7 +22,12 @@ export function GitHubIdentity(props: {
           Use another token
         </button>
         {gh.auth === 'signed-in' && (
-          <button type="button" className="btn ghost sm" onClick={props.onSignOut}>
+          <button
+            type="button"
+            className="btn ghost sm"
+            onClick={props.onSignOut}
+            title="Forgets the token on this machine. To revoke it, remove Teamtrail under GitHub → Settings → Applications."
+          >
             Sign out
           </button>
         )}

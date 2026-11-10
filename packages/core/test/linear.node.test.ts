@@ -72,7 +72,7 @@ test('sync: a teammate completing and commenting in Linear reaches subscribers',
   );
   assert.equal(r.idle, 0);
   assert.equal(r.after.tickets[0].state, 'closed');
-  assert.equal(r.after.tickets[0].comments.at(-1)?.author, 'Grace');
+  assert.equal(r.after.tickets[0].comments.at(-1)?.author, 'Grace (@grace)');
 });
 
 test('live recording (api.linear.app): an invalid key is reported as an auth problem', async () => {

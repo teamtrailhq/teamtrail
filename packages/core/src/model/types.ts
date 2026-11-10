@@ -50,6 +50,8 @@ export interface Ticket {
   reviewOf?: string;
   /** The guide (model/guide.ts) an agent takes on when it claims this ticket, e.g. `qa`. */
   guide?: string;
+  /** Remote trackers: settings someone else wrote that this machine never confirmed (remote/settingsInForce.ts). */
+  settingsUnconfirmed?: true;
   /** Ids of tickets that block this one (native blocking edges). */
   blockedBy: string[];
   comments: Comment[];
@@ -94,16 +96,15 @@ export interface MapDoc {
   guides?: string[];
   /** Match work to the model each agent session runs on. Unset means off: claiming works as it always has. */
   modelMatching?: ModelMatching;
+  /** Remote trackers: settings someone else wrote that this machine never confirmed (remote/settingsInForce.ts). */
+  settingsUnconfirmed?: true;
   sections: MapSections;
   createdAt: number;
   updatedAt: number;
 }
 
 /** A trail's model matching: off unless `enabled`; `tiers` overrides the default tier of a ticket type. */
-export interface ModelMatching {
-  enabled: boolean;
-  tiers?: Partial<Record<TicketType, ModelTier>>;
-}
+export type ModelMatching = { enabled: boolean; tiers?: Partial<Record<TicketType, ModelTier>> };
 
 export interface MapSnapshot {
   map: MapDoc;
@@ -139,10 +140,7 @@ export interface DecisionSource {
  * Actor ids are plain strings namespaced by where the actor lives:
  * `trail lead` (Lookout), agent trail names (`claude-07`), `slack:U123`.
  */
-export interface Participant {
-  id: string;
-  name?: string;
-}
+export type Participant = { id: string; name?: string };
 
 export interface TranscriptEntry {
   from: 'agent' | 'human' | 'system';
@@ -183,12 +181,16 @@ export interface DecisionRecord {
   transcript: TranscriptEntry[];
   /** The risk level the policy gave this call, when the agent named a category or the files it touches. */
   risk?: DecisionRisk;
+  /** Remote trackers: the other account that posted it, read from the tracker, and where ("GitHub"); that person's call. */
+  postedBy?: string;
+  postedIn?: string;
 }
 
 export type DecisionStatus = 'active' | 'superseded';
 
 type DecisionDefaults = 'decidedAt' | 'summary' | 'alternatives' | 'rationale' | 'participants' | 'transcript';
-export type DecisionInput = Omit<DecisionRecord, 'id' | 'mapId' | 'supersededBy' | DecisionDefaults> &
+type DecisionReadOnly = 'id' | 'mapId' | 'supersededBy' | 'postedBy' | 'postedIn';
+export type DecisionInput = Omit<DecisionRecord, DecisionReadOnly | DecisionDefaults> &
   Partial<Pick<DecisionRecord, DecisionDefaults>>;
 
 export type TrackerEvent =

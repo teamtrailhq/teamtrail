@@ -1,15 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import {
-  authoredBody,
-  decisionComment,
-  joinBody,
-  parseDecisionComment,
-  readComment,
-  splitBody,
-  typeFromLabels,
-} from '../src/adapters/remote/format';
+import { decisionComment, parseDecisionComment } from '../src/adapters/remote/decisionComment';
+import { authoredBody, joinBody, readComment, splitBody, typeFromLabels } from '../src/adapters/remote/format';
+import { readIssueComments } from '../src/adapters/remote/issueMapping';
+import type { Writer } from '../src/adapters/remote/writer';
 import { buildDecision } from '../src/planning/decisions/decisionRecord';
+
+const SELF: Writer = { kind: 'self', name: 'octo-dev' };
 
 test('claim marker round-trips and disappears when released', () => {
   const body = joinBody('Compare libraries.', { assignee: 'claude-07' });
@@ -23,12 +20,19 @@ test('claim marker round-trips and disappears when released', () => {
 });
 
 test('comment author marker is read back; plain tracker comments keep the tracker user', () => {
-  assert.deepEqual(
-    readComment({ id: '1', body: authoredBody('claude-07', 'Found it.'), author: 'octo-dev', createdAt: 0 }),
-    { id: '1', author: 'claude-07', body: 'Found it.', createdAt: 0 },
-  );
+  assert.deepEqual(readComment({ id: '1', body: authoredBody('claude-07', 'Found it.'), writer: SELF, createdAt: 0 }), {
+    id: '1',
+    author: 'claude-07',
+    body: 'Found it.',
+    createdAt: 0,
+  });
   assert.equal(
-    readComment({ id: '2', body: 'LGTM', author: 'mona', createdAt: '2026-10-31T12:00:00Z' })!.author,
+    readComment({
+      id: '2',
+      body: 'LGTM',
+      writer: { kind: 'outsider', name: 'mona' },
+      createdAt: '2026-10-31T12:00:00Z',
+    }).author,
     'mona',
   );
 });
@@ -36,7 +40,7 @@ test('comment author marker is read back; plain tracker comments keep the tracke
 test('the write id of a queued comment is hidden from its body and read back', () => {
   const body = authoredBody('claude-07', 'Found it.', 'mvwc1a2b');
   assert.match(body, /^<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwc1a2b -->\nFound it\.$/);
-  assert.deepEqual(readComment({ id: '3', body, createdAt: 0 }), {
+  assert.deepEqual(readComment({ id: '3', body, writer: SELF, createdAt: 0 }), {
     id: '3',
     author: 'claude-07',
     body: 'Found it.',
@@ -55,7 +59,8 @@ test('decision comments survive text that would close an HTML comment', () => {
     ticketKey: '#12',
   });
   const body = decisionComment(d);
-  assert.equal(readComment({ id: 'x', body, createdAt: 0 }), undefined, 'not shown as conversation');
+  const shown = readIssueComments('m', [{ id: 'x', body, writer: SELF, createdAt: '' }], 'GitHub', () => {});
+  assert.deepEqual(shown, [], 'not shown as conversation');
   assert.deepEqual(parseDecisionComment(body), d);
 });
 

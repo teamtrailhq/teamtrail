@@ -11,5 +11,7 @@ export function withMeta(t: Ticket, patch: TicketMetaPatch): Ticket {
     if (patch[k] === null) delete next[k];
     else next[k] = patch[k];
   }
+  // The trail lead set them: what is on the ticket now is accepted here.
+  if (patch.confirm) delete next.settingsUnconfirmed;
   return next as unknown as Ticket;
 }

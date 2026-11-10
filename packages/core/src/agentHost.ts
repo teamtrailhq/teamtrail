@@ -72,6 +72,7 @@ export {
   type Submission,
   type VerifyEnv,
 } from './verification/verifyCompletion';
+export { assertConfirmed } from './verification/assertConfirmed';
 export { operatorAction, type OperatorAction, type OperatorRequest } from './verification/operatorActions';
 export { approvalItems, type ApprovalItem } from './verification/approvals';
 export { rerunChecks } from './verification/operatorRerun';

@@ -22,6 +22,7 @@ export const DEFAULT_WEIGHTS: Record<AttentionKind, number> = {
   guide: 45,
   'guide-checks': 30,
   delivery: 10,
+  'tracker-settings': 40,
 };
 
 export const ATTENTION_KINDS = Object.keys(DEFAULT_WEIGHTS) as AttentionKind[];

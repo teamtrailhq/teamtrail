@@ -13,7 +13,12 @@ interface DeviceCodeBody {
   error_description?: string;
 }
 
-/** Starts GitHub's device flow: `POST /login/device/code` with the client id and the `repo` scope. Throws on failure. */
+/**
+ * Starts GitHub's device flow: `POST /login/device/code` with the client id and the `repo` scope. Throws on failure.
+ * OAuth apps have no issues-only scope: `public_repo` reaches public repos only, so `repo` is the narrowest one that
+ * works for issues in private repos. (A GitHub App could ask for issues alone; that needs a server, which local
+ * Teamtrail doesn't have.)
+ */
 export async function requestDeviceCode(o: { clientId: string; webUrl?: string } & HttpOptions): Promise<DeviceCode> {
   const http = new HttpClient(github, { retries: 0, ...o });
   const params = { client_id: o.clientId, scope: 'repo' };

@@ -34,6 +34,7 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
     case 'overlap':
     case 'integration':
     case 'model':
+    case 'tracker-settings':
       return openTicketOrTrail(item, h);
     case 'knowledge':
       return h.openKnowledge();

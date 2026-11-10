@@ -59,7 +59,10 @@ function coverage(input: ViolationInput) {
     out.set(key, (out.get(key) ?? new Set()).add(category));
   };
   for (const c of input.covered ?? []) add(c.mapId, c.ticketId, c.category);
-  for (const d of input.decisions) if (d.ticketId && madeBy(d) === 'human') add(d.mapId, d.ticketId, d.risk?.category);
+  // `madeBy` is 'teammate' for a record another tracker account posted (`postedBy`): that person's call, never
+  // this machine's human's, so it covers nothing here.
+  for (const d of input.decisions)
+    if (d.ticketId && !d.postedBy && madeBy(d) === 'human') add(d.mapId, d.ticketId, d.risk?.category);
   return out;
 }
 

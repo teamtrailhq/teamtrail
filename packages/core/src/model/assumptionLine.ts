@@ -1,5 +1,5 @@
 import { isAssumptionStatus, type Assumption } from './assumption';
-import { BRAND } from './brand';
+import { marker as markerText, markerJson, trailingMarker } from './markerText';
 import { guardMarkers, oneLine, unguardMarkers } from './safeText';
 
 /*
@@ -8,14 +8,12 @@ import { guardMarkers, oneLine, unguardMarkers } from './safeText';
  * People read the status and text; the marker keeps the id, links and challenge. A hand-written line without a
  * marker (or without a status) still parses: it holds, and gets the next free id.
  */
-const P = BRAND.labelPrefix;
-const LINE_RE = new RegExp(`^-\\s+(?:\\[([a-z]+)\\]\\s+)?(.*?)\\s*(?:<!-- ${P}:asm (\\{.*\\}) -->)?\\s*$`);
+const NAME = 'asm';
+/** `- [status] ` at the start of a line; the rest is the text and, at the very end, the marker. */
+const HEAD_RE = /^-\s+(?:\[([a-z]+)\]\s+)?/;
 const MAX_EVIDENCE = 1000;
 
 type Marker = Pick<Assumption, 'id' | 'tickets' | 'source' | 'challenge' | 'decidedBy'>;
-
-/** JSON inside an HTML comment must never contain `--`. */
-const escapeJson = (s: string) => s.replace(/--/g, '-\\u002d');
 
 export function assumptionLine(a: Assumption): string {
   const marker: Marker = {
@@ -25,7 +23,7 @@ export function assumptionLine(a: Assumption): string {
     ...(a.challenge ? { challenge: { ...a.challenge, evidence: a.challenge.evidence.slice(0, MAX_EVIDENCE) } } : {}),
     ...(a.decidedBy ? { decidedBy: a.decidedBy } : {}),
   };
-  return `- [${a.status}] ${guardMarkers(oneLine(a.text))} <!-- ${P}:asm ${escapeJson(JSON.stringify(marker))} -->`;
+  return `- [${a.status}] ${guardMarkers(oneLine(a.text))} ${markerText(NAME, markerJson(marker))}`;
 }
 
 /** Parses the section's lines; ids missing from hand-written lines are filled in after the highest one. */
@@ -36,10 +34,12 @@ export function parseAssumptionLines(lines: string[]): Assumption[] {
 }
 
 function parseLine(line: string): Assumption {
-  const m = line.match(LINE_RE);
-  const status = m?.[1];
-  const text = unguardMarkers(m?.[2] ?? line.replace(/^-\s+/, ''));
-  const marker = readMarker(m?.[3]);
+  const found = trailingMarker(line, NAME);
+  const rest = found ? found.before : line;
+  const head = rest.match(HEAD_RE);
+  const status = head?.[1];
+  const text = unguardMarkers(rest.slice(head ? head[0].length : 0).trim());
+  const marker = readMarker(found?.payload);
   return {
     id: marker.id ?? '',
     text,
