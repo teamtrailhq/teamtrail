@@ -1,7 +1,7 @@
 import type { AttentionItem } from '@teamtrail/core';
 import { describe, expect, it, vi } from 'vitest';
-import { openItem, type AttentionHandlers } from '../src/features/attention/openItem';
 import { KIND_LABEL } from '../src/features/attention/attentionLabels';
+import { openItem, type AttentionHandlers } from '../src/features/attention/openItem';
 
 describe('a delivery item: messages a connector could not deliver', () => {
   it("opens that connector's settings and is labelled", () => {
