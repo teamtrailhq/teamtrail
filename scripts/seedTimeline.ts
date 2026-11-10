@@ -38,7 +38,9 @@ interface SeedInput {
 }
 
 export async function seedTimeline({ root, adapter, main, second, history, now }: SeedInput) {
-  backdate(path.join(root, main.id, 'map.md'), { created: now - CHARTED_MIN_AGO.main * MIN });
+  const charted = now - CHARTED_MIN_AGO.main * MIN;
+  backdate(path.join(root, main.id, 'map.md'), { created: charted });
+  closeWhenDecided({ root, mapId: main.id, charted });
   backdate(path.join(root, second.id, 'map.md'), { created: now - CHARTED_MIN_AGO.second * MIN });
   const ended = now - HISTORY_FINISHED_MIN_AGO * MIN;
   const started = ended - HISTORY_RAN_MIN * MIN;
@@ -49,6 +51,29 @@ export async function seedTimeline({ root, adapter, main, second, history, now }
   await journalFinishedWork({ root, adapter, main, now });
 }
 
+/**
+ * The main trail's tickets were created and closed at seed time, while their decisions date from the trail's first
+ * hours (sampleSnapshot). Each ticket is dated from the charting, and a closed one closes when its last decision was
+ * made, so the map, the Logbook and Trail stats tell the same story.
+ */
+function closeWhenDecided({ root, mapId, charted }: { root: string; mapId: string; charted: number }) {
+  const decided = new Map<string, number>();
+  const dir = path.join(root, mapId, 'decisions');
+  for (const f of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
+    const text = fs.readFileSync(path.join(dir, f), 'utf8');
+    const id = text.match(/^ticket: "?([^"\n]+)"?$/m)?.[1];
+    const at = Date.parse(text.match(/^decided_at: (.+)$/m)?.[1] ?? '');
+    if (id && at) decided.set(id, Math.max(decided.get(id) ?? 0, at));
+  }
+  const tickets = path.join(root, mapId, 'tickets');
+  for (const f of fs.readdirSync(tickets)) {
+    const at = decided.get(f.replace(/\.md$/, ''));
+    const times: Record<string, number> = { created: charted + 10 * MIN };
+    if (at) Object.assign(times, { updated: at, closed: at });
+    backdate(path.join(tickets, f), times);
+  }
+}
+
 /** Rewrites the timestamps in a tracker file's frontmatter (`created` is what the trail clock counts from). */
 function backdate(file: string, times: Record<string, number>) {
   let text = fs.readFileSync(file, 'utf8');
@@ -57,7 +82,7 @@ function backdate(file: string, times: Record<string, number>) {
   fs.writeFileSync(file, text);
 }
 
-/** A claim for every ticket the seed closed as done, dated so the work took a believable time. */
+/** A claim for every ticket the seed closed as done, dated before it closed so the work took a believable time. */
 async function journalFinishedWork({ root, adapter, main, now }: Omit<SeedInput, 'second' | 'history'>) {
   const journal = journalFile(root);
   const used: Record<string, number> = {};
@@ -71,7 +96,7 @@ async function journalFinishedWork({ root, adapter, main, now }: Omit<SeedInput,
     const entry: TransitionEntry = {
       v: 1,
       kind: 'transition',
-      at: now - leads[i % leads.length] * MIN,
+      at: (t.closedAt ?? now) - leads[i % leads.length] * MIN,
       mapId: main.id,
       ticketId: t.id,
       ticketKey: t.key,
