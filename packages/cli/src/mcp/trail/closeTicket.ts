@@ -77,8 +77,6 @@ async function closeWith(c: Closing, wait: Wait) {
     );
   } else {
     const done = await complete(c, wait);
-    // A completion that waits on checks or a review has still used the human's answer.
-    if (done.kind === 'stopped') spend(c.human, `the completion of ${c.ticket.key}`);
     if (done.kind === 'stopped') return withReview(c, done.result);
     verified = done.verified;
   }
