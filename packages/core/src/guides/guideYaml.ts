@@ -1,4 +1,5 @@
 import { splitList, unquote } from '../model/frontmatter';
+import { isSafeKey } from '../model/safeKey';
 
 /** A value of the YAML subset guide files use: a scalar, a list of scalars, or a map. */
 export type YamlNode = string | string[] | { [key: string]: YamlNode };
@@ -49,6 +50,10 @@ function readMap(s: State, scope: Scope): YamlMap {
       continue;
     }
     const key = l.text.slice(0, colon).trim();
+    if (!isSafeKey(key)) {
+      s.errors.push({ line: l.n, message: `"${key}" is not a key a guide can have` });
+      continue;
+    }
     const path = scope.path ? `${scope.path}.${key}` : key;
     if (key in out) s.errors.push({ line: l.n, message: `"${key}" appears twice` });
     s.at[path] = l.n;

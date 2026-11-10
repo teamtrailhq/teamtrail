@@ -6,6 +6,7 @@ import type { ActiveTracker, CredentialSource, LinearTarget } from '../adapters/
 import { withFileLock } from '../lib/fileLock';
 import { ensurePrivateDir } from '../lib/privateDir';
 import { BRAND } from '../model/brand';
+import { parseJsonSafe } from '../model/safeKey';
 
 /*
  * Two files, both on the user's machine only:
@@ -41,7 +42,7 @@ export function configDir(env: Env = process.env) {
 
 function readJson<T>(file: string, fallback: T): T {
   try {
-    return { ...fallback, ...JSON.parse(readFileSync(file, 'utf8')) };
+    return { ...fallback, ...(parseJsonSafe(readFileSync(file, 'utf8')) as object) };
   } catch {
     return fallback;
   }

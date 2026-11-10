@@ -1,5 +1,6 @@
 import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { parseJsonSafe } from '../model/safeKey';
 import { configDir } from '../server/trackerConfig';
 import { ensurePrivateDir, isPrivateDir } from './privateDir';
 
@@ -27,7 +28,7 @@ export function writeJsonAtomic(file: string, value: unknown, opts: { private?: 
 /** The parsed file, or undefined when it is missing or not JSON. */
 export function readJsonFile<T>(file: string): T | undefined {
   try {
-    return JSON.parse(readFileSync(file, 'utf8')) as T;
+    return parseJsonSafe(readFileSync(file, 'utf8')) as T;
   } catch {
     return undefined;
   }

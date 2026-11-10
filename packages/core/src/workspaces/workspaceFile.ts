@@ -1,5 +1,6 @@
-import { DEFAULT_WORKSPACE_SETTINGS, type WorkspaceSettings } from './workspace';
+import { parseJsonSafe } from '../model/safeKey';
 import { dirProblem } from './dirProblem';
+import { DEFAULT_WORKSPACE_SETTINGS, type WorkspaceSettings } from './workspace';
 
 const KEYS = new Set(['v', 'worktrees', 'dir']);
 
@@ -7,7 +8,7 @@ const KEYS = new Set(['v', 'worktrees', 'dir']);
 export function parseWorkspaceSettings(text: string): { settings?: WorkspaceSettings; errors: string[] } {
   let raw: unknown;
   try {
-    raw = JSON.parse(text);
+    raw = parseJsonSafe(text);
   } catch (e) {
     return { errors: [`not valid JSON: ${(e as Error).message}`] };
   }
