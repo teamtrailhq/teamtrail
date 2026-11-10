@@ -208,6 +208,24 @@ describe('risk policy over MCP', () => {
     ).rejects.toThrow(/"schema"/);
   });
 
+  it('a close that fails after the ticket is resolved has still used the answer', async () => {
+    const call = await connect();
+    const m = await junctions(call);
+    const trailId = fs.readdirSync(root).find((n) => fs.existsSync(path.join(root, n, 'map.md')))!;
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const tabs = await askAndAnswer(call, { question: 'Tabs or spaces?' }, 'tabs');
+    // The ticket closes, then recording the decision fails: its folder can't be written.
+    const decisions = path.join(root, trailId, 'decisions');
+    fs.rmSync(decisions, { recursive: true, force: true });
+    fs.writeFileSync(decisions, 'not a folder');
+    await expect(call('close_ticket', { resolution: 'Tabs', questionId: tabs })).rejects.toThrow();
+    fs.rmSync(decisions);
+    // The human answered once; that answer has gone into a close and can't back another decision.
+    await expect(
+      call('record_decision', { question: 'Tabs or spaces?', answer: 'tabs', questionId: tabs }),
+    ).rejects.toThrow(/already backs/);
+  });
+
   it('an fyi question is not a decision: it cannot close a ticket that is the human’s to decide', async () => {
     const call = await connect();
     const m = await junctions(call);

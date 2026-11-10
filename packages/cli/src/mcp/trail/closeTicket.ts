@@ -68,6 +68,7 @@ async function closeWith(c: Closing, wait: Wait) {
   const ruledOut = input.outcome === 'out_of_scope';
   let verified: object = {};
   if (ruledOut) {
+    spend(c.human, `the close of ${c.ticket.key}`);
     await ruleOutOfScope(
       ctx.adapter,
       c.snap.map.id,
@@ -144,6 +145,9 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
     ticket: t,
     checked: checkedAnswers(ctx, { snap, ticket: t, given: input.checklist }),
   });
+  // Spent before the first write that resolves the ticket: those writes are several (comment, close, decision),
+  // and a failure part way must not hand the answer back for another decision.
+  spend(c.human, `the close of ${t.key}`);
   if (info.level === 'off') {
     await resolveDirectly(c, { meta, transcript });
   } else {
