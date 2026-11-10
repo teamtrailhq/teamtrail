@@ -171,12 +171,14 @@ export interface RemoteAgentEntry {
 /** The journal "trail" that holds remote agents' token changes. */
 export const REMOTE_AGENTS_JOURNAL = '_remote-agents';
 
-export type SlackOwnerAction = 'owner-claimed' | 'owner-confirmed' | 'owner-reset';
+export type SlackOwnerAction =
+  'owner-claimed' | 'owner-confirmed' | 'owner-reset' | 'allow-added' | 'allow-removed' | 'app-changed' | 'removed';
 
 /**
- * A change to who Teamtrail talks to in Slack (Settings → Slack), in the project-wide `SLACK_JOURNAL` file: a Slack
- * account claimed the owner's place (by the one-time code or the git email), the trail lead confirmed it on this
- * machine, or reset it. Never holds a token or the code.
+ * A change to who Teamtrail talks to, and who may act, in Slack (Settings → Slack), in the project-wide
+ * `SLACK_JOURNAL` file: an account entered the one-time code, the trail lead confirmed or reset it, allowed a member
+ * or stopped allowing one, connected a different Slack app (which drops the owner), or removed Slack. Never holds a
+ * token or the code.
  */
 export interface SlackOwnerEntry {
   v: 1;
@@ -184,8 +186,8 @@ export interface SlackOwnerEntry {
   at: number;
   mapId: string;
   action: SlackOwnerAction;
-  /** The Slack user id the change is about, and the name Slack gave for it. */
-  user: string;
+  /** The Slack user id the change is about, and the name Slack gave for it; none for Slack removed as a whole. */
+  user?: string;
   name?: string;
   /** How the account was put forward: the one-time code, the git email, or "This is me" in an older version. */
   via?: string;

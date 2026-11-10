@@ -1,5 +1,5 @@
 import { BRAND } from '@teamtrail/core';
-import { SlackApi, SlackApiError } from '../api';
+import { AS_WRITTEN, SlackApi, SlackApiError } from '../api';
 import { SocketMode, type WebSocketCtor } from '../socket';
 import { socketUrl } from '../socketUrl';
 import { approvalStore, askStore, slackLock, slackStore } from '../store';
@@ -9,9 +9,8 @@ import { onEnvelope } from './interactions';
 import type { OwnerCode } from './ownerCode';
 import type { Batch, Env, TrailNotes, Payload, SlackServiceOptions } from './types';
 
-/** Every message Scout posts or edits goes out as written: Slack parses no names or links into it, and unfurls none. */
+/** Every message Scout posts or edits goes out as written (`AS_WRITTEN`). */
 const POSTS = new Set(['chat.postMessage', 'chat.update']);
-const AS_WRITTEN = { parse: 'none', link_names: false, unfurl_links: false, unfurl_media: false };
 
 /** State of the Slack connection shared by the service modules: config, socket, bot client and caches. */
 export class SlackContext {
@@ -44,6 +43,8 @@ export class SlackContext {
   readonly askLog: { agent: string; at: number }[] = [];
   /** The one-time code the trail lead reads in the Lookout, while it can be entered. Never written to disk. */
   ownerCode?: OwnerCode;
+  /** The wrong tries that dropped the last code, for the Lookout, until a new code is made. */
+  ownerCodeDropped?: Map<string, number>;
   ticks = 0;
   ticking?: Promise<void>;
 

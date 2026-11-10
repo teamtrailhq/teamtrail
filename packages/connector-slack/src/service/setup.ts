@@ -4,8 +4,8 @@ import { BOT_SCOPES, appIdFromToken, tokenKind } from '../manifest';
 import { probeSocket } from '../socket';
 import { socketUrl } from '../socketUrl';
 import type { SlackTokenResult } from '../types';
-import { ownerByEmail } from './owner';
 import { statusOf } from './setupStatus';
+import { journalSlack } from './slackJournal';
 import type { SlackContext } from './slackContext';
 
 /**
@@ -95,8 +95,10 @@ async function verifyAppToken(ctx: SlackContext, token: string, save: boolean): 
     // A different app: its bot token, workspace and owner no longer apply.
     ctx.stop();
     if (save) ctx.store.saveToken('bot', '');
+    const was = prev.owners[0] ?? prev.pendingOwner;
     ctx.store.update({ workspace: undefined, bot: undefined, owners: [], pendingOwner: undefined, enabled: false });
     ctx.ownerCode = undefined;
+    journalSlack(ctx, { action: 'app-changed', who: was, by: 'lead' });
   }
   if (save) ctx.store.saveToken('app', token);
   ctx.store.update({ appId, created: true });
@@ -134,7 +136,6 @@ async function verifyBotToken(ctx: SlackContext, token: string, save: boolean): 
     workspace: { id: who.team_id, name: who.team, url: who.url },
     bot: { userId: who.user_id, name: who.user },
   });
-  if (api.scopes?.includes('users:read.email')) await ownerByEmail(ctx, api);
   return undefined;
 }
 

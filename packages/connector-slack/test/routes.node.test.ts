@@ -167,7 +167,7 @@ test('on this machine: no GET returns a token or the code; the code is in the an
       );
     }
     const status = JSON.parse((await s.request('GET', '/slack')).body);
-    assert.deepEqual([status.step, status.ownerCode], [5, { expiresAt: Date.now() + 10 * 60_000 }]);
+    assert.deepEqual([status.step, status.ownerCode], [5, { expiresAt: Date.now() + 10 * 60_000, wrongTries: [] }]);
     assert.equal(holdsSecret(JSON.stringify(s.config())), undefined, 'slack.json holds neither tokens nor the code');
     const none = await s.request('POST', '/slack/owner/confirm', { body: { id: EVE } });
     assert.deepEqual([none.status, s.config().owners], [400, []], 'nobody can be confirmed who did not enter the code');

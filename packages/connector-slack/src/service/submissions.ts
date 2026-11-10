@@ -38,6 +38,9 @@ const CODE_ERRORS: Record<Exclude<Redeemed, 'ok'>, string> = {
 /** The one-time code: anyone in the workspace may try, only the one who has it gets through, and only once. */
 function submitOwnerCode(ctx: SlackContext, { values, user }: Submitted): EnvelopeResult {
   const result = claimWithCode(ctx, user, textOf(values, 'code'));
+  // A wrong try is shown in the Lookout with the name Slack has for the account.
+  if (result === 'wrong')
+    return { ...fieldError('code', CODE_ERRORS.wrong), after: () => ctx.nameOf(user).then(() => {}) };
   if (result !== 'ok') return fieldError('code', CODE_ERRORS[result]);
   return { after: () => afterClaim(ctx, user) };
 }

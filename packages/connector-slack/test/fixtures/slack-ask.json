@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T13:22:05.707Z",
+  "recordedAt": "2026-11-10T19:38:02.679Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). Agent questions as DMs: refused click, button answer, late click, answer in the Lookout, Reply… modal, agent gone.",
   "exchanges": [
     {
@@ -137,7 +137,11 @@
         "body": {
           "response_type": "ephemeral",
           "replace_original": false,
-          "text": "Only the Teamtrail owner and allowed users can do that. Ask the owner to add you in Teamtrail Settings → Slack."
+          "text": "Only the Teamtrail owner and allowed users can do that. Ask the owner to add you in Teamtrail Settings → Slack.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -205,7 +209,11 @@
         "body": {
           "response_type": "ephemeral",
           "replace_original": false,
-          "text": "Already answered in Teamtrail."
+          "text": "Already answered in Teamtrail.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -701,7 +709,11 @@
         "url": "/actions/T0EFIKA01/5/fakeresponse5",
         "body": {
           "response_type": "ephemeral",
-          "text": "Nothing is waiting on you."
+          "text": "Nothing is waiting on you.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {

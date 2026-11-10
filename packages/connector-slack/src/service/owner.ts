@@ -1,39 +1,18 @@
-import { BRAND, SLACK_JOURNAL, type SlackOwnerAction } from '@teamtrail/core';
-import { journalFile } from '@teamtrail/core/agents';
-import { type SlackApi } from '../api';
+import { BRAND } from '@teamtrail/core';
+import { SlackApiError } from '../api';
 import { homeView, type HomeState } from '../blocks';
 import type { PendingOwner } from '../owners';
 import type { SlackOwnerCode, SlackUser } from '../types';
 import { gitEmail } from './gitEmail';
+import { journalSlack } from './slackJournal';
 import { activeCode, newCode, redeemCode, type Redeemed } from './ownerCode';
 import { statusOf } from './setupStatus';
 import type { SlackContext } from './slackContext';
 
 const CONNECTED = 'Connected. Decisions and questions will reach you here.';
-const TRAIL_LEAD = 'trail lead';
 
 /** Thrown for an owner change that can't be made as asked; the route answers 400 with the message. */
 export class OwnerError extends Error {}
-
-/** Owner changes go to the project's history: who, how, and whether the trail lead or Slack did it. */
-function journal(ctx: SlackContext, action: SlackOwnerAction, who: SlackUser, by: 'slack' | 'lead') {
-  try {
-    journalFile(ctx.o.root).append({
-      v: 1,
-      kind: 'slack',
-      at: ctx.o.now?.() ?? Date.now(),
-      mapId: SLACK_JOURNAL,
-      action,
-      user: who.id,
-      ...(who.name ? { name: who.name } : {}),
-      ...(who.via ? { via: who.via } : {}),
-      actor: by === 'lead' ? TRAIL_LEAD : BRAND.slug,
-      actorKind: by === 'lead' ? 'trail lead' : 'engine',
-    });
-  } catch {
-    /* the history is a record, not a gate: a tracker folder that can't be written doesn't undo the change */
-  }
-}
 
 function homeState(ctx: SlackContext, user: string): HomeState {
   const c = ctx.store.read();
@@ -60,31 +39,43 @@ const named = (u: Profile) => ({
 });
 
 /**
- * The person running `teamtrail` is the owner, so a workspace member whose email is this machine's git email is
- * put forward right away. It still isn't the owner until the trail lead confirms it in the Lookout: a git email can
- * be a shared address, or someone else's.
+ * Whether the account that entered the code has this machine's git email in Slack: a hint the trail lead sees
+ * next to the account, never a reason to put an account forward on its own (an address can be shared, and a
+ * workspace admin can give any member any email). Undefined when there is no git email or Slack won't say.
  */
-export async function ownerByEmail(ctx: SlackContext, api: SlackApi) {
+async function gitEmailMatches(ctx: SlackContext, user: string): Promise<boolean | undefined> {
   const email = (ctx.o.ownerEmail ?? (() => gitEmail(ctx.o.root)))()?.trim();
-  if (!email) return;
-  const r = await api.call<{ user?: Profile }>('users.lookupByEmail', { email }).catch(() => undefined);
-  const u = r?.user;
-  if (!u || u.deleted || u.is_bot) return;
-  const c = ctx.store.read();
-  if (c.owners.length || c.pendingOwner) return;
-  const pending: PendingOwner = { id: u.id, ...named(u), via: 'git-email', at: Date.now() };
-  ctx.store.update({ pendingOwner: pending });
-  journal(ctx, 'owner-claimed', pending, 'slack');
+  if (!email) return undefined;
+  try {
+    const r = await ctx.call<{ user?: Profile }>('users.lookupByEmail', { email });
+    return r.user?.id === user;
+  } catch (e) {
+    return e instanceof SlackApiError && e.code === 'users_not_found' ? false : undefined;
+  }
+}
+
+/**
+ * Owner changes are made by the process that holds the Slack connection: the code lives in its memory, and only its
+ * socket receives what is typed in Slack. Another `teamtrail` on this machine refuses and says where to go.
+ */
+function mustHoldConnection(ctx: SlackContext) {
+  const other = ctx.lock.elsewhere() ?? (ctx.state === 'elsewhere' ? ctx.heldBy : undefined);
+  if (other)
+    throw new OwnerError(
+      `Slack is connected from another ${BRAND.name} (${other}). Change the Slack owner in that Lookout.`,
+    );
 }
 
 /** `POST /slack/owner/code`: a new one-time code. Whoever was put forward before is dropped: the lead asked again. */
 export function startOwnerCode(ctx: SlackContext): SlackOwnerCode {
+  mustHoldConnection(ctx);
   const c = ctx.store.read();
   if (!c.workspace || !ctx.store.tokens().bot) throw new OwnerError('Connect the Slack app first.');
+  if (!ctx.socket) throw new OwnerError('Turn Slack on first: the code is entered in Slack, while Scout is connected.');
   if (c.owners.length) throw new OwnerError('An owner is already confirmed. Reset the owner first.');
   if (c.pendingOwner) {
     ctx.store.update({ pendingOwner: undefined });
-    journal(ctx, 'owner-reset', c.pendingOwner, 'lead');
+    journalSlack(ctx, { action: 'owner-reset', who: c.pendingOwner, by: 'lead' });
   }
   const code = newCode(ctx);
   return { ...code, status: statusOf(ctx) };
@@ -101,15 +92,22 @@ export function claimWithCode(ctx: SlackContext, user: string, input: string): R
   if (result !== 'ok') return result;
   const pending: PendingOwner = { id: user, via: 'code', at: ctx.o.now?.() ?? Date.now() };
   ctx.store.update({ pendingOwner: pending });
-  journal(ctx, 'owner-claimed', pending, 'slack');
+  journalSlack(ctx, { action: 'owner-claimed', who: pending, by: 'slack' });
   return 'ok';
 }
 
-/** After the ack: the names Slack has for the account, for the trail lead to recognise, and the Home tab. */
+/**
+ * After the ack: what the trail lead needs to recognise the account (its handle and name, and whether its email is
+ * this machine's git email), and the Home tab.
+ */
 export async function afterClaim(ctx: SlackContext, user: string) {
   const r = await ctx.call<{ user: Profile }>('users.info', { user }).catch(() => undefined);
+  const gitEmail = await gitEmailMatches(ctx, user);
   const pending = ctx.store.read().pendingOwner;
-  if (r?.user && pending?.id === user) ctx.store.update({ pendingOwner: { ...pending, ...named(r.user) } });
+  if (pending?.id === user)
+    ctx.store.update({
+      pendingOwner: { ...pending, ...(r?.user ? named(r.user) : {}), ...(gitEmail === undefined ? {} : { gitEmail }) },
+    });
   await publishHome(ctx, user).catch(() => {});
 }
 
@@ -118,13 +116,14 @@ export async function afterClaim(ctx: SlackContext, user: string) {
  * account the Lookout showed, so a different account that got there in between is not confirmed by mistake.
  */
 export async function confirmOwner(ctx: SlackContext, id: string) {
+  mustHoldConnection(ctx);
   const pending = ctx.store.read().pendingOwner;
   if (!pending || pending.id !== id) throw new OwnerError('That Slack account is no longer waiting to be confirmed.');
-  const { at: _at, ...who } = pending;
+  const { at: _at, gitEmail: _hint, ...who } = pending;
   const owner: SlackUser = { ...who, confirmedAt: ctx.o.now?.() ?? Date.now() };
-  ctx.store.update({ owners: [owner], pendingOwner: undefined });
+  ctx.store.update({ owners: [owner], pendingOwner: undefined, ownerRedo: undefined });
   ctx.ownerCode = undefined;
-  journal(ctx, 'owner-confirmed', owner, 'lead');
+  journalSlack(ctx, { action: 'owner-confirmed', who: owner, by: 'lead' });
   await greet(ctx, owner.id);
   return statusOf(ctx);
 }
@@ -142,10 +141,12 @@ async function greet(ctx: SlackContext, user: string) {
 
 /** `POST /slack/owner/reset`: no owner, nobody put forward, no code. Nothing is sent in Slack until a new one. */
 export function resetOwner(ctx: SlackContext) {
+  mustHoldConnection(ctx);
   const c = ctx.store.read();
   const was = c.owners[0] ?? c.pendingOwner;
-  ctx.store.update({ owners: [], pendingOwner: undefined });
+  ctx.store.update({ owners: [], pendingOwner: undefined, ownerRedo: undefined });
   ctx.ownerCode = undefined;
-  if (was) journal(ctx, 'owner-reset', was, 'lead');
+  ctx.ownerCodeDropped = undefined;
+  if (was) journalSlack(ctx, { action: 'owner-reset', who: was, by: 'lead' });
   return statusOf(ctx);
 }

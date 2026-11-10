@@ -1,10 +1,15 @@
 import { randomInt, timingSafeEqual } from 'node:crypto';
+import type { SlackWrongTry } from '../types';
 import type { SlackContext } from './slackContext';
 
-/** How long a code can be entered, and how many wrong tries one Slack account and everyone together get. */
+/**
+ * How long a code can be entered, and how many wrong tries one Slack account and everyone together get. One account
+ * (the lead mistyping) gets five; it takes fifty in all, from ten accounts, to drop the code, and the Lookout names
+ * them. Fifty guesses at 31^8 codes is a chance of about 6 in 10^11.
+ */
 export const CODE_TTL_MS = 10 * 60_000;
 const TRIES_PER_USER = 5;
-const TRIES_PER_CODE = 20;
+const TRIES_PER_CODE = 50;
 /** No 0/O, 1/I/L: the code is read off one screen and typed into another. */
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const LENGTH = 8;
@@ -35,7 +40,16 @@ export function activeCode(ctx: SlackContext): OwnerCode | undefined {
 export function newCode(ctx: SlackContext) {
   const code = ctx.o.ownerCode?.() ?? random();
   ctx.ownerCode = { code, expiresAt: now(ctx) + CODE_TTL_MS, tries: new Map(), wrong: 0 };
+  ctx.ownerCodeDropped = undefined;
   return { code: shown(code), expiresAt: ctx.ownerCode.expiresAt };
+}
+
+/** Who typed a wrong code, with the names Slack has for them once looked up. */
+export function wrongTries(ctx: SlackContext, tries: Map<string, number>): SlackWrongTry[] {
+  return [...tries].map(([id, count]) => {
+    const name = ctx.names.get(id);
+    return { id, ...(name && name !== id ? { name } : {}), count };
+  });
 }
 
 function random() {
@@ -65,6 +79,9 @@ export function redeemCode(ctx: SlackContext, user: string, input: string): Rede
   }
   c.tries.set(user, tried + 1);
   c.wrong++;
-  if (c.wrong >= TRIES_PER_CODE) ctx.ownerCode = undefined;
+  if (c.wrong >= TRIES_PER_CODE) {
+    ctx.ownerCode = undefined;
+    ctx.ownerCodeDropped = c.tries;
+  }
   return 'wrong';
 }

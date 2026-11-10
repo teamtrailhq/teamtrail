@@ -1,7 +1,7 @@
 import { postResponse } from '../api';
 import {
   ACTIONS,
-  escape,
+  label,
   helpText,
   ownerCodeModal,
   replyModal,
@@ -70,7 +70,7 @@ export function onCommand(ctx: SlackContext, p: Payload): EnvelopeResult {
       after: async () =>
         postResponse(p.response_url, { response_type: 'ephemeral', ...(await inboxMessage(ctx)) }, ctx.o.fetch),
     };
-  return reply(`Unknown command \`${escape(sub)}\`.\n${helpText(command)}`);
+  return reply(`Unknown command \`${label(sub)}\`.\n${helpText(command)}`);
 }
 
 export function onShortcut(ctx: SlackContext, p: Payload): EnvelopeResult | void {

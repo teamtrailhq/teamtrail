@@ -1,5 +1,5 @@
 import type { ApprovalItem } from '@teamtrail/core';
-import { ACTIONS, VIEWS, clip, escape, md, openButton, plain, quote } from './kit';
+import { ACTIONS, VIEWS, clip, label, md, openButton, plain, quote } from './kit';
 
 /** Button and modal value: trail, ticket and the attempt the approval is about. */
 export interface ApprovalRef {
@@ -9,7 +9,7 @@ export interface ApprovalRef {
 }
 
 const header = (trail: string, i: ApprovalItem) =>
-  [i.kind === 'approve' ? '◆ *APPROVE*' : '⛔ *HELD*', escape(trail), `${escape(i.ticketKey)} ${escape(i.title)}`].join(
+  [i.kind === 'approve' ? '◆ *APPROVE*' : '⛔ *HELD*', label(trail), `${label(i.ticketKey)} ${label(i.title)}`].join(
     ' · ',
   );
 
@@ -21,7 +21,7 @@ export function approvalMessage(trail: string, i: ApprovalItem, url?: string) {
     ...(i.attemptId ? { a: i.attemptId } : {}),
   } satisfies ApprovalRef);
   return {
-    text: `${i.kind === 'approve' ? 'Approve' : 'Held'} · ${escape(i.ticketKey)} ${escape(clip(i.title, 120))}`,
+    text: `${i.kind === 'approve' ? 'Approve' : 'Held'} · ${label(i.ticketKey)} ${label(clip(i.title, 120))}`,
     blocks: [
       { type: 'section', text: md(`${header(trail, i)}\n${quote(clip(i.reason, 2800))}`) },
       {
@@ -59,7 +59,7 @@ export function reworkModal(ticket: string, meta: string) {
     submit: plain('Send back'),
     close: plain('Cancel'),
     blocks: [
-      { type: 'context', elements: [md(escape(ticket))] },
+      { type: 'context', elements: [md(label(ticket))] },
       {
         type: 'input',
         block_id: 'reason',

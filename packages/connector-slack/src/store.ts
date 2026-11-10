@@ -4,7 +4,7 @@ import { BRAND } from '@teamtrail/core';
 import { credentialStore, writeJsonAtomic } from '@teamtrail/core/bridge';
 import type { AskView } from './blocks';
 import { DEFAULT_COMMAND } from './manifest';
-import { settleOwners, type PendingOwner } from './owners';
+import { settleOwners, type OwnerRedo, type PendingOwner } from './owners';
 import type { PostedApproval } from './service/types';
 import { DEFAULT_NOTIFY_EVENTS, type SlackNotify, type SlackTokenSource, type SlackUser } from './types';
 
@@ -27,6 +27,8 @@ export interface SlackConfig {
   owners: SlackUser[];
   /** A Slack account put forward as the owner, until the trail lead confirms or refuses it. */
   pendingOwner?: PendingOwner;
+  /** Read only: an owner from an earlier version that was dropped (`settleOwners`). */
+  ownerRedo?: OwnerRedo;
   allow: SlackUser[];
   notify: SlackNotify;
   command: string;
@@ -136,6 +138,11 @@ export function slackLock(dir: string, owner: string) {
       if (l && l.owner !== owner) return { ok: false, heldBy: l.root };
       writeJsonAtomic(file, { pid: process.pid, owner, root, at: Date.now() } satisfies Lock);
       return { ok: true };
+    },
+    /** The tracker folder of another live process that holds the connection, if one does. */
+    elsewhere(): string | undefined {
+      const l = current();
+      return l && l.owner !== owner ? l.root : undefined;
     },
     release() {
       if (current()?.owner === owner) rmSync(file, { force: true });

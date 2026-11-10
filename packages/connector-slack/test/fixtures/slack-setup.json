@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T13:22:05.691Z",
+  "recordedAt": "2026-11-10T19:38:02.659Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). Guided setup: wrong token type, app-level token, bot token missing a scope, bot token, Home tab, owner claim.",
   "exchanges": [
     {
@@ -451,6 +451,34 @@
                 ]
               }
             ]
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "GET",
+        "url": "/api/users.info?user=U0EVE0001"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+        },
+        "body": {
+          "ok": true,
+          "user": {
+            "id": "U0EVE0001",
+            "team_id": "T0EFIKA01",
+            "name": "eve",
+            "deleted": false,
+            "real_name": "Eve Moreau",
+            "is_bot": false,
+            "profile": {
+              "display_name": "",
+              "real_name": "Eve Moreau"
+            }
           }
         }
       }

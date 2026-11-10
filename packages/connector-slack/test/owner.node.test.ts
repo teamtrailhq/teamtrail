@@ -62,7 +62,7 @@ test('the code: the account that enters it is only put forward; the trail lead c
     const { code, expiresAt, status } = svc.startOwnerCode();
     assert.match(code, /^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
     assert.equal(expiresAt, Date.now() + 10 * 60_000);
-    assert.deepEqual(status.ownerCode, { expiresAt }, 'status says a code waits, never which');
+    assert.deepEqual(status.ownerCode, { expiresAt, wrongTries: [] }, 'status says a code waits, never which');
     assert.ok(!JSON.stringify(svc.status()).includes(CODE), 'no later status carries the code');
 
     await w.send(svc, 'ana opens Home', (f) => f.payload.homeOpened(ANA));
@@ -310,7 +310,10 @@ test('existing install, owner set by "This is me", by git email, or unmarked: dr
       await w.send(svc, 'ana clicks Enter code', (f) => f.payload.clickHome(ANA, 'claim_owner'));
       await w.send(svc, 'ana enters it', (f) => f.payload.submit(ANA, [...f.views.keys()].at(-1)!, { code }));
       const done = await svc.confirmOwner(ANA);
-      assert.deepEqual([done.step, done.owners[0].via, done.allow, done.ownerRedo], ['done', 'code', [{ id: RAJ }], undefined]);
+      assert.deepEqual(
+        [done.step, done.owners[0].via, done.allow, done.ownerRedo],
+        ['done', 'code', [{ id: RAJ }], undefined],
+      );
     } finally {
       w.cleanup();
     }

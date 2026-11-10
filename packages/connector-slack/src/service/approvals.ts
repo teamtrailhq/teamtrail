@@ -1,8 +1,11 @@
-import { derivePhases, type ApprovalItem, type MapSnapshot } from '@teamtrail/core';
+import { BRAND, derivePhases, type ApprovalItem, type MapSnapshot } from '@teamtrail/core';
 import { approvalItems, journalFile, operatorAction } from '@teamtrail/core/agents';
 import { postResponse } from '../api';
-import { approvalClosedMessage, approvalMessage, escape, mention, type ApprovalRef } from '../blocks';
+import { approvalClosedMessage, approvalMessage, label, mention, type ApprovalRef } from '../blocks';
 import type { SlackConfig } from '../store';
+import { takeAskSlot } from './askLimit';
+import { queueLine } from './queueLine';
+import { refusedForGood } from './refusedForGood';
 import type { SlackContext } from './slackContext';
 import type { PostedApproval } from './types';
 
@@ -24,7 +27,7 @@ const PHASE_LINE: Record<string, string> = {
 function outcome(snap: MapSnapshot | undefined, i: ApprovalItem) {
   const phase = snap && derivePhases(snap.tickets, snap.map.mode).get(i.ticketId);
   return phase
-    ? `No longer waiting on you: ${escape(i.ticketKey)} ${PHASE_LINE[phase] ?? `is ${escape(phase)}`}.`
+    ? `No longer waiting on you: ${label(i.ticketKey)} ${PHASE_LINE[phase] ?? `is ${label(phase)}`}.`
     : 'No longer waiting on you.';
 }
 
@@ -84,12 +87,38 @@ export async function syncApprovals(ctx: SlackContext, snaps: MapSnapshot[], c: 
         continue;
       }
     }
+    if (ctx.capped.has(key)) continue;
     const channel = await ctx.target();
     if (!channel) return;
-    const r = await ctx.call<{ ts: string; channel: string }>('chat.postMessage', { channel, ...message });
+    const r = await postApproval(ctx, { key, item, channel, message });
+    if (!r) continue;
     stored[key] = { channel: r.channel ?? channel, ts: r.ts, item, trail };
     ctx.refreshed.add(key);
     ctx.approvals.write(stored);
+  }
+}
+
+/**
+ * A new approval card, within the same limit as agent questions (three per trail in ten minutes, askLimit.ts). Past
+ * it, or when Slack refuses the card, the ticket is one line in the trail's digest, once, and waits in the Lookout.
+ */
+async function postApproval(
+  ctx: SlackContext,
+  p: { key: string; item: ApprovalItem; channel: string; message: ReturnType<typeof approvalMessage> },
+) {
+  const { key, item } = p;
+  const inDigest = () => {
+    ctx.capped.add(key);
+    const kind = item.kind === 'approve' ? 'Approve' : 'Held';
+    queueLine(ctx, item.mapId, `${kind} · ${label(item.ticketKey)} ${label(item.title)} (decide in ${BRAND.name})`);
+  };
+  if (!takeAskSlot(ctx, `approvals:${item.mapId}`)) return void inDigest();
+  try {
+    return await ctx.call<{ ts: string; channel: string }>('chat.postMessage', { channel: p.channel, ...p.message });
+  } catch (e) {
+    if (!refusedForGood(e)) throw e;
+    inDigest();
+    return undefined;
   }
 }
 
@@ -152,7 +181,7 @@ export async function decideApproval(
         {
           response_type: 'ephemeral',
           replace_original: false,
-          text: `Could not ${d.action}: ${escape((e as Error).message)}`,
+          text: `Could not ${d.action}: ${label((e as Error).message)}`,
         },
         ctx.o.fetch,
       );

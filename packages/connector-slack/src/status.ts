@@ -1,5 +1,5 @@
 import { BRAND, deriveStates, frontier, type AgentSessionDoc, type MapSnapshot } from '@teamtrail/core';
-import { escape, md, plain } from './blocks';
+import { label, md, plain } from './blocks';
 
 export interface TrailBrief {
   id: string;
@@ -67,11 +67,11 @@ const since = (at: number, now: number) => {
 };
 const list = (xs: string[], n = 3) => (xs.length > n ? [...xs.slice(0, n), '…'] : xs).join(', ');
 /** Text for the trip report's code block: escaped like everywhere, and unable to end the block early. */
-const code = (s: string) => escape(s).replace(/`/g, "'");
+const code = (s: string) => label(s);
 
 export function statusBlocks(b: TrailBrief, o: { now: number; url?: string }) {
   const rows = [
-    `*${code(b.title.toUpperCase())}* · ${escape(b.mode)} · ${b.resolved}/${b.total} resolved`,
+    `*${code(b.title.toUpperCase())}* · ${label(b.mode)} · ${b.resolved}/${b.total} resolved`,
     '```',
     `Awaiting you  ${b.awaiting.length}${b.awaiting.length ? `  (${code(list(b.awaiting.map((a) => `${a.key ?? a.agent}, ${since(a.at, o.now)}`)))})` : ''}`,
     `Blocked       ${b.blocked.length}${b.blocked.length ? `  (${code(list(b.blocked.map((x) => (x.by.length ? `${x.key} by ${x.by.join('+')}` : x.key))))})` : ''}`,
@@ -80,7 +80,7 @@ export function statusBlocks(b: TrailBrief, o: { now: number; url?: string }) {
     '```',
   ];
   return {
-    text: `${escape(b.title)}: ${b.resolved}/${b.total} resolved, ${b.awaiting.length} awaiting you, ${b.blocked.length} blocked`,
+    text: `${label(b.title)}: ${b.resolved}/${b.total} resolved, ${b.awaiting.length} awaiting you, ${b.blocked.length} blocked`,
     blocks: [
       { type: 'section', text: md(rows.join('\n')) },
       ...(o.url
@@ -105,7 +105,7 @@ export function trailListBlocks(briefs: TrailBrief[], command: string) {
     };
   const lines = briefs.map(
     (b) =>
-      `*${escape(b.key)}* ${escape(b.title)} · ${b.resolved}/${b.total} · ${b.awaiting.length} awaiting · ${b.blocked.length} blocked`,
+      `*${label(b.key)}* ${label(b.title)} · ${b.resolved}/${b.total} · ${b.awaiting.length} awaiting · ${b.blocked.length} blocked`,
   );
   return {
     text: `${briefs.length} trails`,

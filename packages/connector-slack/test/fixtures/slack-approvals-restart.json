@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T13:22:05.742Z",
+  "recordedAt": "2026-11-10T19:38:02.720Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). Restart with approvals waiting: stored messages updated in place, an approved one closed with its outcome, stale Approve and Rework… refused.",
   "exchanges": [
     {
@@ -325,7 +325,11 @@
         "body": {
           "response_type": "ephemeral",
           "replace_original": false,
-          "text": "Nothing changed: this message is out of date. #2 is done."
+          "text": "Nothing changed: this message is out of date. #2 is done.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -345,7 +349,11 @@
         "body": {
           "response_type": "ephemeral",
           "replace_original": false,
-          "text": "Nothing changed: this message is out of date. #3 went back to rework."
+          "text": "Nothing changed: this message is out of date. #3 went back to rework.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {

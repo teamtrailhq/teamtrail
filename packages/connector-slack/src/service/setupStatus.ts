@@ -1,7 +1,7 @@
 import { slackLinks } from '../manifest';
 import type { PendingOwner } from '../owners';
 import type { SlackStatus, SlackUser } from '../types';
-import { activeCode } from './ownerCode';
+import { activeCode, wrongTries } from './ownerCode';
 import type { SlackContext } from './slackContext';
 
 export function statusOf(ctx: SlackContext): SlackStatus {
@@ -24,7 +24,9 @@ export function statusOf(ctx: SlackContext): SlackStatus {
     bot: c.bot,
     owners: c.owners,
     ...(c.pendingOwner ? { pendingOwner: pendingView(c.pendingOwner) } : {}),
-    ...(code ? { ownerCode: { expiresAt: code.expiresAt } } : {}),
+    ...(code ? { ownerCode: { expiresAt: code.expiresAt, wrongTries: wrongTries(ctx, code.tries) } } : {}),
+    ...(ctx.ownerCodeDropped ? { ownerCodeDropped: { by: wrongTries(ctx, ctx.ownerCodeDropped) } } : {}),
+    ...(c.ownerRedo ? { ownerRedo: c.ownerRedo } : {}),
     allow: c.allow,
     notify: c.notify,
     command: c.command,
@@ -41,7 +43,13 @@ export function statusOf(ctx: SlackContext): SlackStatus {
 
 /** The account put forward, as the Lookout shows it. */
 function pendingView(p: PendingOwner): SlackUser {
-  return { id: p.id, ...(p.name ? { name: p.name } : {}), ...(p.realName ? { realName: p.realName } : {}), via: p.via };
+  return {
+    id: p.id,
+    ...(p.name ? { name: p.name } : {}),
+    ...(p.realName ? { realName: p.realName } : {}),
+    via: p.via,
+    ...(p.gitEmail === undefined ? {} : { gitEmail: p.gitEmail }),
+  };
 }
 
 /** The setup step to show: create the app, paste the app token, paste the bot token, confirm the owner, done. */

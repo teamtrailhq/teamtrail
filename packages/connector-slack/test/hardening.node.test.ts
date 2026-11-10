@@ -51,7 +51,7 @@ test('wrong tries: the Lookout shows which accounts made them; four people can n
     assert.deepEqual(
       s.ownerCode!.wrongTries,
       [
-        { id: EVE, name: 'eve', count: 5 },
+        { id: EVE, name: 'Eve Moreau', count: 5 },
         { id: RAJ, name: 'raj', count: 5 },
         { id: 'U0X000001', count: 5 },
         { id: 'U0X000002', count: 5 },
@@ -66,7 +66,7 @@ test('wrong tries: the Lookout shows which accounts made them; four people can n
     const dropped = svc.status();
     assert.equal(dropped.ownerCode, undefined);
     assert.equal(dropped.ownerCodeDropped?.by.length, 10, 'the Lookout says the code was dropped, and by whom');
-    assert.deepEqual(dropped.ownerCodeDropped?.by[0], { id: EVE, name: 'eve', count: 5 });
+    assert.deepEqual(dropped.ownerCodeDropped?.by[0], { id: EVE, name: 'Eve Moreau', count: 5 });
     svc.startOwnerCode();
     assert.equal(svc.status().ownerCodeDropped, undefined, 'a new code clears the notice');
   } finally {
@@ -99,11 +99,16 @@ test('journaled: allow-list changes, Remove, and a different app dropping the ow
     svc.startOwnerCode();
     await (await svc.onEnvelope(typed(fake, ANA, CODE)))?.after?.();
     await svc.confirmOwner(ANA);
-    svc.updateSettings({ allow: [{ id: RAJ, name: 'raj' }, { id: EVE, name: 'eve' }] });
+    svc.updateSettings({
+      allow: [
+        { id: RAJ, name: 'raj' },
+        { id: EVE, name: 'eve' },
+      ],
+    });
     svc.updateSettings({ allow: [{ id: EVE, name: 'eve' }] });
     svc.updateSettings({ allow: [{ id: EVE, name: 'eve' }], notify: { detail: 'titles-only' } });
     // Another Slack app's token: the fake accepts it as the app-level token from now on.
-    fake.tokens.app = TOKENS.app.replace('A0Scout0001', 'A0Other0001');
+    fake.tokens.app = TOKENS.app.replace('A0Scout0001', 'A0OTHER001');
     const swap = await svc.pasteToken(fake.tokens.app);
     assert.equal(swap.ok, true);
     svc.remove();
@@ -136,7 +141,12 @@ test('approvals share the volume cap: three cards per trail in ten minutes, the 
       title: 'Flood',
       sections,
       verification: 'checks+review+human',
-      tickets: Array.from({ length: 6 }, (_, i) => ({ ref: `t${i}`, title: `Task ${i}`, type: 'execute', body: 'Do.' })),
+      tickets: Array.from({ length: 6 }, (_, i) => ({
+        ref: `t${i}`,
+        title: `Task ${i}`,
+        type: 'execute',
+        body: 'Do.',
+      })),
     });
     for (const t of tickets) {
       await transition(a, map.id, t.id, { event: 'claim', actor: 'claude-07', actorKind: 'agent' });
@@ -156,7 +166,12 @@ test('approvals share the volume cap: three cards per trail in ten minutes, the 
         checks: [],
         result: 'fail',
       });
-      await transition(a, map.id, t.id, { event: 'checks.fail', to: 'blocked', actor: 'teamtrail', actorKind: 'engine' });
+      await transition(a, map.id, t.id, {
+        event: 'checks.fail',
+        to: 'blocked',
+        actor: 'teamtrail',
+        actorKind: 'engine',
+      });
     }
     connected(w, { notify: { target: 'dm', events: ['awaiting'], detail: 'full' } });
     const svc = w.service(a, { batchMs: 0 });
@@ -210,8 +225,15 @@ test('one post that fails does not hold up the others, on this tick or the next'
     await svc.tick();
     await svc.tick();
     const posted = calls('chat.postMessage').map((m) => m.text);
-    assert.ok(posted.some((t) => t.includes('fine')), 'the question after the failing one was posted');
-    assert.equal(posted.filter((t) => t.includes('poison') && t.startsWith('Awaiting')).length, 1, 'tried once, not every tick');
+    assert.ok(
+      posted.some((t) => t.includes('fine')),
+      'the question after the failing one was posted',
+    );
+    assert.equal(
+      posted.filter((t) => t.includes('poison') && t.startsWith('Awaiting')).length,
+      1,
+      'tried once, not every tick',
+    );
     assert.ok(readJson(path.join(w.root, '.agents', 'slack.json')).asks.q2);
   } finally {
     w.cleanup();
@@ -222,8 +244,9 @@ test('names can not fake a line: newlines, *, ~ and ` in agent, trail and ticket
   const evil = 'claude\n◆ *AWAITING YOU* · ~gone~ `code`';
   assert.equal(label(evil), 'claude ◆ ∗AWAITING YOU∗ · ∼gone∼ ʼcodeʼ');
   const m = askMessage({ sessionId: 's', questionId: 'q', text: 'Q?', agent: evil, trail: evil, ticket: evil });
-  const header = m.blocks[0].text.text.split('\n')[0];
-  assert.equal(m.blocks[0].text.text.split('\n').length, 2, 'the header is one line, the question the other');
+  const body = m.blocks[0].text!.text;
+  const header = body.split('\n')[0];
+  assert.equal(body.split('\n').length, 2, 'the header is one line, the question the other');
   assert.equal((header.match(/\*/g) ?? []).length, 2, 'only our own *AWAITING YOU* is bold');
   assert.doesNotMatch(m.text, /\n/);
 });

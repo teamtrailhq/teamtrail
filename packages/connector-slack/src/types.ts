@@ -21,6 +21,18 @@ export interface SlackUser {
   via?: 'git-email' | 'code' | 'home';
   /** When the trail lead confirmed this account in the Lookout, on the machine Teamtrail runs on. */
   confirmedAt?: number;
+  /**
+   * Put forward only: whether this account's Slack email is this machine's git email. A hint for the trail lead,
+   * never a proof (an address can be shared, and a workspace admin can set anyone's email). Unknown when undefined.
+   */
+  gitEmail?: boolean;
+}
+
+/** A Slack account that typed a wrong code, and how many times. */
+export interface SlackWrongTry {
+  id: string;
+  name?: string;
+  count: number;
 }
 
 export interface SlackNotify {
@@ -53,7 +65,14 @@ export interface SlackStatus {
   /** A Slack account put forward as the owner, waiting for the trail lead to confirm or refuse it here. */
   pendingOwner?: SlackUser;
   /** Set while a one-time code can be entered in Slack. The code itself is only in the answer that created it. */
-  ownerCode?: { expiresAt: number };
+  ownerCode?: { expiresAt: number; wrongTries: SlackWrongTry[] };
+  /** The last code was dropped after too many wrong tries, and these accounts made them. */
+  ownerCodeDropped?: { by: SlackWrongTry[] };
+  /**
+   * An owner an earlier version set without a code from this machine ("This is me", or a git-email match). It was
+   * dropped on upgrade; the trail lead sets the owner again with a code.
+   */
+  ownerRedo?: { was: SlackUser; via: 'home' | 'git-email' };
   allow: SlackUser[];
   notify: SlackNotify;
   command: string;

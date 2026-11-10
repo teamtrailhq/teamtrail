@@ -6,7 +6,8 @@ export const ASKS_PER_AGENT = 3;
 export const ASKS_IN_TOTAL = 10;
 
 /**
- * Takes a place for one more question from `agent` as its own Slack message, or says there is none left. An agent
+ * Takes a place for one more message from `agent` (an agent's name, or `approvals:<trail>` for approval cards) as its
+ * own Slack message, or says there is none left. An agent
  * that keeps asking can't fill the owner's DMs: past the limit its questions go to the trail's digest (one batched
  * message per window) and wait in the Lookout like any other. The total keeps many agents, or one agent under many
  * names, to the same.

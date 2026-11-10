@@ -7,6 +7,7 @@ import { syncAsks } from './asks';
 import { day } from './constants';
 import { digestWindowMs } from './digestWindow';
 import { queueLine } from './queueLine';
+import { refusedForGood } from './refusedForGood';
 import type { SlackContext } from './slackContext';
 import { trailChanges, notesOf } from './trailChanges';
 
@@ -73,12 +74,13 @@ export async function flushBatches(ctx: SlackContext) {
     const text = digestText(b.lines);
     const today = day(now);
     const thread = b.root?.day === today ? b.root.ts : undefined;
-    const r = await ctx.call<{ ts: string }>('chat.postMessage', {
-      channel,
-      text,
-      ...(thread ? { thread_ts: thread } : {}),
-    });
-    if (!thread) b.root = { day: today, ts: r.ts };
+    const r = await ctx
+      .call<{ ts: string }>('chat.postMessage', { channel, text, ...(thread ? { thread_ts: thread } : {}) })
+      .catch((e: unknown) => {
+        if (refusedForGood(e)) return undefined; // dropped: the Lookout still has every line
+        throw e;
+      });
+    if (r && !thread) b.root = { day: today, ts: r.ts };
     b.lines = [];
     b.lastAt = now;
   }
