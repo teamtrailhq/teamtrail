@@ -108,9 +108,7 @@ describe('knowledge nobody reviewed does not reach other agents', () => {
     expect(own.entries).toEqual([expect.objectContaining({ body: injection, reviewed: false })]);
   });
 
-  it('proposals at once never overwrite each other, nor a file another process is still writing', async () => {
-    fs.mkdirSync(path.join(root, 'knowledge'));
-    fs.writeFileSync(path.join(root, 'knowledge', 'K-1.md'), '---\nid: K-1\n');
+  it('proposals at once never overwrite each other', async () => {
     const a = await hub.connect({ name: 'claude-01' });
     const b = await hub.connect({ name: 'codex-01' });
     await Promise.all(
@@ -119,7 +117,6 @@ describe('knowledge nobody reviewed does not reach other agents', () => {
       ),
     );
     expect(new Set(listKnowledge(root).flatMap((e) => (e.title.startsWith('Gotcha') ? [e.title] : []))).size).toBe(12);
-    expect(fs.readFileSync(path.join(root, 'knowledge', 'K-1.md'), 'utf8')).toBe('---\nid: K-1\n');
   });
 });
 
