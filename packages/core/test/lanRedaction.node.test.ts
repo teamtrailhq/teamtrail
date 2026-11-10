@@ -95,6 +95,10 @@ test('redaction goes by value: paths under the project, home or temp are shorten
 /** The first `agent` event of /events as `headers` sees it. */
 function agentEvent(headers: Record<string, string>) {
   return new Promise<string>((resolve, reject) => {
+    const deadline = setTimeout(() => {
+      req.destroy();
+      reject(new Error(`no agent event within 10 s for ${JSON.stringify(headers)}`));
+    }, 10_000);
     const req = http.get({ host: '127.0.0.1', port, path: '/events', headers }, (res) => {
       let text = '';
       res.setEncoding('utf8');
@@ -102,6 +106,7 @@ function agentEvent(headers: Record<string, string>) {
         text += c;
         const m = /event: agent\ndata: (.*)\n\n/.exec(text);
         if (!m) return;
+        clearTimeout(deadline);
         req.destroy();
         resolve(m[1]);
       });

@@ -33,7 +33,10 @@ await build({
 });
 
 const files = entries.map((f) => path.join(out, f.replace(/\.ts$/, '.mjs')));
-const args = script ? [files[0], ...rest] : ['--test', '--enable-source-maps', ...files];
+// A test that hangs fails by name after two minutes instead of stalling CI, and a file whose tests are done
+// exits even if a socket or watcher is still closing.
+const TEST_FLAGS = ['--test', '--enable-source-maps', '--test-timeout=120000', '--test-force-exit'];
+const args = script ? [files[0], ...rest] : [...TEST_FLAGS, ...files];
 // Tests never use the credentials of whoever runs them: no `gh` login, no token from the shell.
 const env = { ...process.env, TEAMTRAIL_NO_GH_CLI: '1' };
 for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) delete env[k];
