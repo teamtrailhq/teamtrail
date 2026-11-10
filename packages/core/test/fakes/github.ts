@@ -119,8 +119,12 @@ export function fakeGitHub(
       createdAt: e.at,
       editor: actor(e.editor),
     }));
-    const nodes = opts.editsOrder === 'oldest-first' ? all : all.reverse();
-    return { userContentEdits: { totalCount: nodes.length, nodes }, lastEditedAt: edits.at(-1)!.at };
+    const ordered = opts.editsOrder === 'oldest-first' ? all : all.reverse();
+    // `first: 100`, like the query: a longer history is cut, and `totalCount` says so.
+    return {
+      userContentEdits: { totalCount: all.length, nodes: ordered.slice(0, 100) },
+      lastEditedAt: edits.at(-1)!.at,
+    };
   };
   const edited = (x: { edits?: Edit[] }, editor: string | null) =>
     (x.edits = [...(x.edits ?? []), { editor, at: tick() }]);
@@ -381,6 +385,7 @@ export function fakeGitHub(
 
   return {
     repo,
+    login,
     issues,
     fetch: fetch as typeof globalThis.fetch,
     handle,

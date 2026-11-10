@@ -62,25 +62,40 @@ const ownEntry = (entry: AcceptedEntry | undefined, viewer: string | undefined) 
  * could weaken a trail: theirs are used, marked `unconfirmed`, so verification takes the stricter of them and the
  * project's (verification/policy.ts) and completions wait for the human. An outsider's are never taken.
  */
-export function settingsInForce(i: Input): Settled & { entry: AcceptedEntry | undefined } {
-  const { writer, viewer } = i;
-  const entry = ownEntry(i.entry, viewer);
-  const accepted = settingsFromKey(entry?.ok);
+export function settingsInForce(i: Input): Result {
+  const entry = ownEntry(i.entry, i.viewer);
   const key = settingsKey(i.found);
-  // Our own write (a claim, a status) of a ticket whose settings are still pending carries them as read: they stay
-  // pending. Nothing but the trail lead's confirming write (settingsLedger.ts) accepts them.
+  if (i.writer.kind === 'outsider') return { use: settingsFromKey(entry?.ok), entry: i.entry };
+  if (i.writer.kind === 'self') return ours(i, entry, key);
+  return theirs(i, entry, key);
+}
+
+type Result = Settled & { entry: AcceptedEntry | undefined };
+
+/** A read never clears a change that waits for the human, unless the issue no longer holds it. */
+const stillWaiting = (entry: AcceptedEntry | undefined, key: string) =>
+  entry?.waiting && entry.waiting.found !== key ? { waiting: entry.waiting } : {};
+
+/**
+ * Written by this account. Our own write (a claim, a status) of an issue whose settings are still pending carries
+ * them as read: they stay pending, since only the trail lead's confirming write (settingsLedger.ts) accepts them.
+ */
+function ours(i: Input, entry: AcceptedEntry | undefined, key: string): Result {
   const pending = entry?.waiting && !entry.ok && key === entry.waiting.found;
-  if (writer.kind === 'self' && pending) return { use: i.found, unconfirmed: true, entry: i.entry };
-  // A read never clears a change that waits for the human, unless the issue no longer holds it.
-  const still = entry?.waiting && entry.waiting.found !== key ? { waiting: entry.waiting } : {};
-  if (writer.kind === 'self') return { use: i.found, entry: { viewer, ok: key, ...still } };
-  if (writer.kind === 'outsider') return { use: accepted, entry: i.entry };
+  if (pending) return { use: i.found, unconfirmed: true, entry: i.entry };
+  return { use: i.found, entry: { viewer: i.viewer, ok: key, ...stillWaiting(entry, key) } };
+}
+
+/** Written by a teammate: theirs when they are what this machine put or accepted, else they wait. */
+function theirs(i: Input, entry: AcceptedEntry | undefined, key: string): Result {
+  const { viewer } = i;
   if (entry && (key === entry.ok || key === entry.sending))
-    return { use: i.found, entry: { viewer, ok: key, ...still } };
+    return { use: i.found, entry: { viewer, ok: key, ...stillWaiting(entry, key) } };
   const at = entry?.waiting?.found === key ? entry.waiting.at : i.now;
-  const waiting: WaitingSettings = { mapId: i.mapId, found: key, at, ...(writer.name ? { by: writer.name } : {}) };
+  const by = i.writer.name ? { by: i.writer.name } : {};
+  const waiting: WaitingSettings = { mapId: i.mapId, found: key, at, ...by };
   // No settings of its own: nothing to weaken, nothing to confirm.
   if (!entry?.ok && key === EMPTY) return { use: i.found, entry: entry && { viewer } };
   if (!entry?.ok) return { use: i.found, unconfirmed: true, entry: { viewer, waiting } };
-  return { use: accepted, entry: { viewer, ok: entry.ok, waiting } };
+  return { use: settingsFromKey(entry.ok), entry: { viewer, ok: entry.ok, waiting } };
 }

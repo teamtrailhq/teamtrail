@@ -71,9 +71,7 @@ export class GitHubAdapter extends SyncedAdapter {
     this.location = `${this.gh.owner}/${this.gh.name}`;
   }
 
-  protected rate() {
-    return this.gh.rate;
-  }
+  protected rate = () => this.gh.rate;
 
   unacceptedSettings = () => this.ledger.unaccepted();
 
