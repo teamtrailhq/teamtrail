@@ -62,6 +62,17 @@ export async function releaseTicket(ctx: AgentContext, input: { ticket?: string;
   return { released: t.key };
 }
 
+/**
+ * Who added a ticket after the trail was charted, and while working on what. A new ticket can do work another one
+ * holds back (a task beside a junction waiting on the human), so where it came from stays on the ticket.
+ */
+function addedLine(ctx: AgentContext, hitl?: boolean) {
+  const working = ctx.sessions.running()?.info.ticketId;
+  const during = working ? ` while working ${ctx.keyOf(working)}` : '';
+  const who = hitl ? 'for the human to decide' : 'for agents, without the human';
+  return `Added by ${ctx.sessions.running()?.info.agent ?? 'an agent'}${during}, ${who}.`;
+}
+
 export async function addTicket(
   ctx: AgentContext,
   input: {
@@ -102,6 +113,7 @@ export async function addTicket(
     for (const b of blockers) await ctx.adapter.addBlocking(snap.map.id, b, t.id);
   }
   ctx.charted.add(`${snap.map.id}/${t.id}`);
+  await ctx.adapter.comment(snap.map.id, t.id, await ctx.agentId(), addedLine(ctx, input.hitl));
   if (input.guide) await setTicketGuide(ctx.adapter, { mapId: snap.map.id, ticketId: t.id }, input.guide, 'agent');
   if (input.criteria?.length) saveCriteria(ctx.root, snap.map, t, input.criteria);
   const fresh = await ctx.load(snap.map.id);

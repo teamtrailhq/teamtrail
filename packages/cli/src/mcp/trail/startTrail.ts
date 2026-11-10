@@ -59,7 +59,8 @@ export async function startTrail(ctx: AgentContext, input: StartInput) {
   assertKnownRefs(planned, input.assumptions ?? []);
   assertGuides(ctx, input);
   s.step(3, input.title);
-  const { map, tickets } = await chartMap(ctx.adapter, chartInput(ctx, input), {
+  const agent = await ctx.agentId();
+  const { map, tickets } = await chartMap(ctx.adapter, chartInput(ctx, input, agent), {
     onMapCreated: (m) => {
       s.bindMap(m.id);
       s.log(`trail ${m.key} online`, 'ok');
@@ -114,8 +115,14 @@ function assertKnownRefs(planned: TicketPlanInput[], assumptions: AssumptionPlan
   }
 }
 
+/**
+ * A decision passed to start_trail is the charting agent's account of something settled, not a record anyone
+ * made: no question, no answer, no author. Its line says so, so it is never read as the human's.
+ */
+const statedBy = (agent: string) => (text: string) => `${text.trim()} (stated by ${agent} when charting)`;
+
 /** The map to chart: sections from the input, the repo's default verification level, discovery first. */
-function chartInput(ctx: AgentContext, input: StartInput) {
+function chartInput(ctx: AgentContext, input: StartInput, agent: string) {
   const level = readVerificationConfig(ctx.root).config?.default;
   const verifies = level !== undefined && level !== 'off';
   const discovery = input.discovery === false ? [] : [{ ref: '__discovery', ...DISCOVERY_TICKET }];
@@ -126,7 +133,7 @@ function chartInput(ctx: AgentContext, input: StartInput) {
     sections: {
       destination: input.destination,
       notes: input.notes ?? '',
-      decisions: (input.decided ?? []).map((text) => ({ text })),
+      decisions: (input.decided ?? []).map(statedBy(agent)).map((text) => ({ text })),
       unspecified: input.unspecified ?? [],
       outOfScope: input.outOfScope ?? [],
     },

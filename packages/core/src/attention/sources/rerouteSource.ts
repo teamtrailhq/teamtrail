@@ -17,6 +17,7 @@ export const rerouteSource: AttentionSource = {
       const notes = [p.kind === 'challenge-destination' ? 'wrong mountain?' : 'proposes a new plan'];
       if (p.destinationReason) notes.push(DESTINATION_REASON[p.destinationReason]);
       if (frozen.length) notes.push(`closes ${frozen.length} ticket${frozen.length === 1 ? '' : 's'}`);
+      if (p.wide) notes.push(`touches ${p.wide.touched} of ${p.wide.open} open tickets, so nothing is frozen`);
       return {
         kind: 'reroute',
         mapId: p.mapId,
