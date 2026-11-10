@@ -1,6 +1,6 @@
 import type { TrackerAdapter } from '../adapters/adapter';
-import { reportsSettings } from '../adapters/remote/settingsLedger';
 import { legacyOutbox } from '../adapters/remote/legacyOutbox';
+import { reportsSettings } from '../adapters/remote/settingsLedger';
 import { readAgentDocs } from '../agents/agentDocs';
 import { connectedAgents } from '../agents/connectedAgents';
 import { readLeases } from '../agents/leaseStore';

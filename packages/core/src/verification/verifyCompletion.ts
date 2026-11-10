@@ -22,7 +22,6 @@ import { gradeAttempt } from './gradeAttempt';
 import { attemptComment, outcomeOf } from './outcome';
 import { verificationFor, type LevelInfo } from './policy';
 import { remoteGraded } from './remoteCompletion';
-import { submissionOf } from './resubmit';
 import { requestReview } from './reviewRequest';
 import { acquireRunLock, releaseRunLock } from './runLock';
 
@@ -235,17 +234,4 @@ async function settle(env: VerifyEnv, a: VerificationAttempt, sub: Submission, m
     await transition(env.adapter, a.mapId, a.ticketId, { ...engine, event: o.event, to: o.to, expect: 'verifying' });
   if (o.to === 'verifying') await requestReview(env, a);
   return { attempt: a, phase: o.to, failures, maxAttempts };
-}
-
-/** Starts a fresh attempt for a run whose process died, from the submission its lock kept. */
-export async function rerun(env: VerifyEnv, snap: MapSnapshot, interrupted: VerificationAttempt) {
-  const t = snap.tickets.find((x) => x.id === interrupted.ticketId);
-  if (!t || t.state !== 'open' || t.status !== 'verifying') return undefined;
-  const { info } = levelFor(env.root, snap, t);
-  return verify(env, {
-    mapId: snap.map.id,
-    ticket: t,
-    info,
-    sub: { ...submissionOf(interrupted), remote: interrupted.remote },
-  });
 }

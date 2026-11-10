@@ -14,8 +14,8 @@ import { approveReroute } from '../src/planning/reroute/decideReroute';
 import { proposeReroute } from '../src/planning/reroute/rerouteFlow';
 import { readReroute, writeReroute } from '../src/planning/reroute/rerouteStore';
 import { readPolicy } from '../src/policy/policyStore';
+import { rerun } from '../src/verification/rerunInterrupted';
 import { recoverInterrupted, RUNS_DIR } from '../src/verification/runLock';
-import { rerun } from '../src/verification/verifyCompletion';
 
 /*
  * Finding 7 of the trust audit: approvals the trail lead gives that live in committed files an agent can edit.
