@@ -1,5 +1,6 @@
 import { isAssumptionStatus, type Assumption } from './assumption';
 import { BRAND } from './brand';
+import { guardMarkers, oneLine, unguardMarkers } from './safeText';
 
 /*
  * One assumption as a line of the map body's Assumptions section:
@@ -15,7 +16,6 @@ type Marker = Pick<Assumption, 'id' | 'tickets' | 'source' | 'challenge' | 'deci
 
 /** JSON inside an HTML comment must never contain `--`. */
 const escapeJson = (s: string) => s.replace(/--/g, '-\\u002d');
-const oneLine = (s: string) => s.replace(/\s*\n\s*/g, ' ').trim();
 
 export function assumptionLine(a: Assumption): string {
   const marker: Marker = {
@@ -25,7 +25,7 @@ export function assumptionLine(a: Assumption): string {
     ...(a.challenge ? { challenge: { ...a.challenge, evidence: a.challenge.evidence.slice(0, MAX_EVIDENCE) } } : {}),
     ...(a.decidedBy ? { decidedBy: a.decidedBy } : {}),
   };
-  return `- [${a.status}] ${oneLine(a.text)} <!-- ${P}:asm ${escapeJson(JSON.stringify(marker))} -->`;
+  return `- [${a.status}] ${guardMarkers(oneLine(a.text))} <!-- ${P}:asm ${escapeJson(JSON.stringify(marker))} -->`;
 }
 
 /** Parses the section's lines; ids missing from hand-written lines are filled in after the highest one. */
@@ -38,7 +38,7 @@ export function parseAssumptionLines(lines: string[]): Assumption[] {
 function parseLine(line: string): Assumption {
   const m = line.match(LINE_RE);
   const status = m?.[1];
-  const text = m?.[2] ?? line.replace(/^-\s+/, '');
+  const text = unguardMarkers(m?.[2] ?? line.replace(/^-\s+/, ''));
   const marker = readMarker(m?.[3]);
   return {
     id: marker.id ?? '',

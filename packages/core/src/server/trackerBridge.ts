@@ -10,13 +10,17 @@ import { handleBriefs } from './briefRoutes';
 import { handleCriteria } from './criteriaRoutes';
 import { handleDecisions } from './decisionRoutes';
 import { handleGuides } from './guideRoutes';
-import { BadRequest, openEventStream, readText, sendJson } from './http';
+import { BadRequest, openEventStream, readText, refuseEarly, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
 import { handleKnowledge } from './knowledgeRoutes';
 import { handleLeases } from './leaseRoutes';
 import { handleModels } from './modelRoutes';
 import { handlePolicy } from './policyRoutes';
+import { redactResponse } from './redactForLan';
+import { handleRemoteAgents } from './remoteAgentRoutes';
+import { fromThisMachine, requestRefusal } from './requestGuard';
 import { handleReroutes } from './rerouteRoutes';
+import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { sendTrackerError } from './trackerErrors';
 import { createTrackerRoutes } from './trackerRoutes';
 import { handleVerification } from './verificationRoutes';
@@ -24,6 +28,7 @@ import { handleVerificationSync } from './verificationSyncRoutes';
 import { watchAttention } from './watchAttention';
 import { watchIntegration } from './watchIntegration';
 import { watchLeases } from './watchLeases';
+import { watchRemoteAgents } from './watchRemoteAgents';
 import { watchTrackerFolder } from './watchTrackerFolder';
 import { watchVerification } from './watchVerification';
 import { handleWorkspaces } from './workspaceRoutes';
@@ -39,6 +44,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     leases: leaseTiming,
     reconciler: reconcilerTiming,
     integration: integrationTiming,
+    peer,
     ...trackers
   } = options;
   const abs = path.resolve(root);
@@ -56,6 +62,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send }, reconcilerTiming);
   const unwatchAttention = watchAttention(ctx, send, { configDir: trackers.configDir });
   const unwatchIntegration = watchIntegration(abs, integrationTiming);
+  const unwatchRemoteAgents = watchRemoteAgents(abs, send);
 
   type Route = (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<boolean>;
   /** Tried in order; the first that handles the request answers it. */
@@ -71,7 +78,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       url.pathname.startsWith('/decisions') && handleDecisions(await routes.active(), req, res, url),
     (req, res, url) => handleLeases(ctx, req, res, url),
     (req, res, url) => handleJournal(abs, req, res, url),
-    (req, res, url) => handleVerification(ctx, req, res, url),
+    (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
     (req, res, url) => handleAgents(abs, req, res, url),
     (req, res, url) => handleBriefs(ctx, req, res, url),
@@ -83,6 +90,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
+    (req, res, url) => handleRemoteAgents({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
   ];
 
   /** The live event stream and raw file access to the tracker folder. */
@@ -100,6 +108,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     }
     if (url.pathname !== '/file') return false;
     const p = url.searchParams.get('path') ?? '';
+    if (!isTrackerFile(p)) throw new BadRequest('not a tracker file');
     if (req.method === 'PUT') {
       await fs.write(p, await readText(req));
       res.end('ok');
@@ -112,6 +121,13 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? '/', 'http://x');
+    const refusal = requestRefusal(req);
+    if (refusal) return refuseEarly(res, { error: refusal });
+    const local = fromThisMachine(req, peer);
+    if (url.pathname === '/machine') return sendJson(res, 200, { local });
+    if (!local && thisMachineOnly(req.method, url.pathname))
+      return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
+    if (!local) redactResponse(res);
     try {
       for (const route of api) if (await route(req, res, url)) return;
       res.statusCode = 404;
@@ -132,11 +148,23 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       unwatchLeases();
       unwatchAttention();
       unwatchIntegration();
+      unwatchRemoteAgents();
       reconciler.stop();
       for (const c of clients) c.end();
       clients.clear();
     },
   };
+}
+
+/**
+ * What the raw file route may touch: the tracker's markdown (trails, tickets, decisions, briefs, criteria,
+ * knowledge, guides). Never a dot folder (`.agents/` holds tokens, leases and answers; `.events/`, `.evidence/`),
+ * and never a config file such as verification.json, whose commands run on this machine: those have their own
+ * routes, which validate what they write.
+ */
+function isTrackerFile(rel: string) {
+  const parts = rel.split(/[\\/]/);
+  return rel.endsWith('.md') && parts.every((part) => part !== '' && !part.startsWith('.'));
 }
 
 function sendError(res: ServerResponse, err: unknown) {

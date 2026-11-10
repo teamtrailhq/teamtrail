@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { DecisionRecord } from '../model/types';
+import type { PeerAddress } from './requestGuard';
 import type { TrackerRoutesOptions } from './trackerContext';
 
 export interface TrackerBridge {
@@ -20,6 +21,10 @@ export interface TrackerBridge {
    *   GET  /decisions[?trail=<id>]         `{ decisions: DecisionRecord[] }`
    *   POST /decisions                        body `{ trail, appendToTrail?, ...DecisionInput }` → DecisionRecord (idempotent per source.kind + source.ref)
    *   POST /decisions/<id>/supersede         body `{ trail, ...DecisionInput }` → the new DecisionRecord
+   *   GET  /remote-agents                    `{ tokens: RemoteTokenView[], endpoints: McpEndpoint[] }` who may reach the MCP
+   *                                          endpoint over HTTP; SSE `remote-agents` when that changes (remoteAgentRoutes.ts)
+   *   POST /remote-agents/tokens             body `{ name }` → `{ token, created, … }`: the token's value, this once
+   *   POST /remote-agents/tokens/revoke      body `{ id }`; the token's sessions end
    *   /trackers*, /tracker/<kind>/*          GitHub / Linear settings and API (trackerRoutes.ts)
    * Decision routes use the project's active tracker (local markdown, GitHub or Linear).
    */
@@ -55,6 +60,8 @@ export type BridgePluginFactory = (ctx: BridgeContext) => BridgePlugin;
 
 export interface BridgeOptions extends Omit<TrackerRoutesOptions, 'root' | 'markdown'> {
   plugins?: BridgePluginFactory[];
+  /** Who is on the other end of a connection; default the socket's remote address. Tests stand in another device. */
+  peer?: PeerAddress;
   url?: () => string | undefined;
   /** How often lease files are polled and expired leases returned to the queue. */
   leases?: { pollMs?: number; reapMs?: number };

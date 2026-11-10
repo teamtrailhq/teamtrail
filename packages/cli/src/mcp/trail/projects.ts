@@ -1,3 +1,4 @@
+import { OperationError } from '@teamtrail/core';
 import { configDir } from '@teamtrail/core/bridge';
 import { fileAdapter, projectEntries, projectState, projectSummary } from '@teamtrail/core/node';
 
@@ -5,7 +6,11 @@ import { fileAdapter, projectEntries, projectState, projectSummary } from '@team
  * `projects_status`: the other registered projects at a glance, read from their files, so an agent can tell
  * the human "the other repo has 2 questions waiting". Read-only: nothing here writes to any project.
  */
-export async function projectsStatus(input: { root: string; configDir?: string }) {
+export async function projectsStatus(input: { root: string; configDir?: string; remote?: boolean }) {
+  if (input.remote)
+    throw new OperationError(
+      "projects_status reads the human's other repos on their machine. A remote connection is for this repo only.",
+    );
   const dir = input.configDir ?? configDir();
   const { entries } = projectEntries(dir, input.root);
   const [, ...others] = entries;

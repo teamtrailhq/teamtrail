@@ -14,11 +14,11 @@ import {
   type TrackerEvent,
 } from '../../model/types';
 import { parseDecision, serializeDecision } from '../../planning/decisions/decisionFile';
-import { buildDecision, decisionNumber } from '../../planning/decisions/decisionRecord';
 import type { MapInput, TicketEdit, TrackerAdapter } from '../adapter';
 import { withMapMeta } from '../mapMeta';
-import { newTicket, reopened, withEdit, withoutBlocker } from '../ticketEdits';
+import { reopened, withEdit, withoutBlocker } from '../ticketEdits';
 import { withMeta } from '../ticketMeta';
+import { createNumbered, newDecisionFile, newTicketFile, type NumberedFile } from './createNumbered';
 import { ExternalChanges } from './externalChanges';
 import { parseMapFile, serializeMapFile } from './mapFile';
 import type { MarkdownFs } from './markdownFs';
@@ -58,6 +58,11 @@ export class MarkdownAdapter implements TrackerAdapter {
   private async put(path: string, text: string) {
     this.selfWrites.set(path, Date.now());
     await this.fs.write(path, text);
+  }
+
+  /** A new numbered file under a number nobody else has (createNumbered.ts). */
+  private putNew<T>(make: () => Promise<NumberedFile<T>>): Promise<T> {
+    return createNumbered(this.fs, make, (path) => this.selfWrites.set(path, Date.now()));
   }
 
   private async readMap(mapId: string): Promise<MapDoc> {
@@ -137,9 +142,7 @@ export class MarkdownAdapter implements TrackerAdapter {
   }
 
   async createTicket(mapId: string, input: { title: string; type: TicketType; body: string; hitl?: boolean }) {
-    const n = await nextNumber(this.fs);
-    const t = newTicket(String(n), `#${n}`, input);
-    await this.writeTicket(mapId, t);
+    const t = await this.putNew(() => newTicketFile(this.fs, mapId, input));
     this.events.emit({ kind: 'ticket.created', mapId, ticketId: t.id, at: Date.now() });
     return t;
   }
@@ -210,12 +213,11 @@ export class MarkdownAdapter implements TrackerAdapter {
   }
 
   async createDecision(mapId: string, input: DecisionInput) {
-    const files = (await this.fs.list()).filter((f) => f.includes('/decisions/'));
-    const n = Math.max(0, ...files.map((f) => decisionNumber(f.split('/').pop()!))) + 1;
-    const d = buildDecision(`D-${n}`, mapId, input);
-    const text = serializeDecision(d);
-    this.external.remember(`${mapId}/decisions/${d.id}.md`, text);
-    await this.put(`${mapId}/decisions/${d.id}.md`, text);
+    const d = await this.putNew(async () => {
+      const file = await newDecisionFile(this.fs, mapId, input);
+      this.external.remember(file.path, file.text);
+      return file;
+    });
     this.events.emit({ kind: 'decision.recorded', mapId, decisionId: d.id, ticketId: d.ticketId, at: Date.now() });
     return d;
   }

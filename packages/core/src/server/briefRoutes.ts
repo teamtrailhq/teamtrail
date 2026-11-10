@@ -8,6 +8,9 @@ import type { RouteContext } from './routeContext';
 
 const text = (v: unknown, max = 300) => typeof v === 'string' && v.length > 0 && v.length <= max;
 
+/** A trail's id is a slug, an issue number or a tracker's uuid: it names a file here, so nothing else passes. */
+const trailId = (v: unknown) => typeof v === 'string' && /^[\w.-]{1,200}$/.test(v) && !v.includes('..');
+
 /**
  * `/briefs` routes over the discovery briefs under `root`; false when none matches.
  * GET `?mapId=` reads a trail's brief; POST `/briefs/accept`, `/briefs/request-changes` (`note`) are the trail lead's
@@ -28,17 +31,20 @@ export async function handleBriefs(
   if (!url.pathname.startsWith('/briefs')) return false;
   if (url.pathname === '/briefs' && req.method === 'GET') {
     const mapId = url.searchParams.get('mapId');
-    if (!text(mapId)) throw new BadRequest('"mapId" is required');
+    if (!trailId(mapId)) throw new BadRequest('"mapId" is required');
     sendJson(res, 200, { brief: readBrief(root, mapId!) ?? null });
     return true;
   }
   if (req.method !== 'POST') return false;
   const b = await readJson<{ mapId?: unknown; note?: unknown; ticketId?: unknown }>(req, '{}');
-  if (!text(b.mapId)) throw new BadRequest('"mapId" is required');
+  if (!trailId(b.mapId)) throw new BadRequest('"mapId" is required');
   const mapId = b.mapId as string;
   const brief = readBrief(root, mapId);
   if (url.pathname === '/briefs/create') {
     if (brief) return (sendJson(res, 200, { brief }), true);
+    // A brief belongs to a trail: no file is written for an id that isn't one.
+    const trails = await (await active()).listMaps();
+    if (!trails.some((m) => m.id === mapId)) return (sendJson(res, 404, { error: 'no such trail' }), true);
     const created = {
       mapId,
       status: 'draft' as const,

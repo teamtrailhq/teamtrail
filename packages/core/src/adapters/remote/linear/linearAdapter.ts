@@ -1,5 +1,6 @@
 import { cachedUntilFailure } from '../../../lib/cachedUntilFailure';
 import { MAP_LABEL, PLAN_ONLY_LABEL } from '../../../model/brand';
+import { guardMarkers } from '../../../model/safeText';
 import type {
   DecisionRecord,
   MapDoc,
@@ -10,7 +11,7 @@ import type {
   TicketType,
 } from '../../../model/types';
 import type { MapInput } from '../../adapter';
-import { authoredBody, decisionComment, joinBody, mapLabels, mapBody, ticketLabels, ticketMeta } from '../format';
+import { authoredBody, decisionComment, mapLabels, mapBody, ticketBody, ticketLabels } from '../format';
 import { HttpClient, TrackerError, linear, type HttpOptions } from '../http';
 import { SyncedAdapter } from '../sync/syncedAdapter';
 import type { RemoteComment, SyncOptions } from '../sync/types';
@@ -162,7 +163,7 @@ export class LinearAdapter extends SyncedAdapter {
   ): Promise<Ticket> {
     const i = await this.create({
       title: input.title,
-      description: input.body,
+      description: guardMarkers(input.body),
       parentId: map.id,
       labelIds: await this.labelIds(ticketLabels(input.type, input.hitl)),
     });
@@ -183,7 +184,7 @@ export class LinearAdapter extends SyncedAdapter {
   }
 
   protected async remoteEditTicket(_map: MapDoc, t: Ticket) {
-    await this.update(t.id, { title: t.title, description: joinBody(t.body, ticketMeta(t)) });
+    await this.update(t.id, { title: t.title, description: ticketBody(t) });
   }
 
   protected async remoteReopen(_map: MapDoc, t: Ticket) {
@@ -193,7 +194,7 @@ export class LinearAdapter extends SyncedAdapter {
   }
 
   protected async remoteSetMeta(_map: MapDoc, t: Ticket) {
-    await this.update(t.id, { description: joinBody(t.body, ticketMeta(t)) });
+    await this.update(t.id, { description: ticketBody(t) });
   }
 
   protected async remoteComment(_map: MapDoc, t: Ticket, c: RemoteComment) {

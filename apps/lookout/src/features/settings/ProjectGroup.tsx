@@ -1,5 +1,6 @@
 import { MAP_LABEL, BRAND, HITL_LABEL, PLAN_ONLY_LABEL } from '@teamtrail/core';
 import { GuidesSection } from '../guides';
+import { RemoteAgentsSection } from '../remote-agents';
 import { TrackerConnectors } from '../trackers';
 import { RiskPolicySection } from './RiskPolicySection';
 import { SettingsSection } from './SettingsSection';
@@ -7,7 +8,7 @@ import { SettingsSlot } from './SettingsSlot';
 import type { SettingsData, SettingsRoute } from './types';
 import { WorkspacesSection } from './WorkspacesSection';
 
-/** Settings → Project: the tracker, workspaces, risk policy, guides and the labels Teamtrail uses. */
+/** Settings → Project: the tracker, workspaces, remote agents, risk policy, guides and the labels Teamtrail uses. */
 export function ProjectGroup({ data, route }: { data: SettingsData; route: SettingsRoute }) {
   return (
     <>
@@ -18,6 +19,9 @@ export function ProjectGroup({ data, route }: { data: SettingsData; route: Setti
       </SettingsSlot>
       <SettingsSlot id="workspaces" storage="repo">
         <WorkspacesSection />
+      </SettingsSlot>
+      <SettingsSlot id="remote-agents" storage="machine">
+        <RemoteAgentsSection />
       </SettingsSlot>
       <SettingsSlot id="policy" storage="repo">
         <RiskPolicySection />

@@ -17,6 +17,10 @@ export interface ClaimParallel {
   warnings: { kind: 'overlap'; ticket: string; agent: string; paths: [string, string][]; message: string }[];
 }
 
+/** Worktrees are folders on the machine Teamtrail runs on; an agent elsewhere can't edit files in one. */
+const REMOTE_WORKSPACE_NOTE =
+  "No worktree: you're connected remotely, and Teamtrail prepares worktrees only on the machine it runs on. Work on a branch of your own in your checkout, push it, and name the branch (and pull request) when you complete.";
+
 const clean = (globs?: string[]) => (globs ?? []).map((g) => g.trim()).filter(Boolean);
 
 /**
@@ -29,16 +33,17 @@ export async function claimParallel(
 ): Promise<ClaimParallel> {
   const { settings } = readWorkspaceSettings(ctx.root);
   const wanted = at.workspace ?? settings.worktrees;
-  const prepared = wanted
-    ? await prepareWorktree({
-        root: ctx.root,
-        repoRoot: repoRootOf(ctx.verifyEnv()),
-        settings,
-        mapId: at.mapId,
-        ticket: at.ticket,
-        agent: at.agent,
-      })
-    : undefined;
+  const prepared =
+    wanted && !ctx.remote
+      ? await prepareWorktree({
+          root: ctx.root,
+          repoRoot: repoRootOf(ctx.verifyEnv()),
+          settings,
+          mapId: at.mapId,
+          ticket: at.ticket,
+          agent: at.agent,
+        })
+      : undefined;
   const workspace = prepared && 'workspace' in prepared ? prepared.workspace : undefined;
   const touches = clean(at.touches);
   const lease = readLease(ctx.root, at.mapId, at.ticket.id);
@@ -49,6 +54,7 @@ export async function claimParallel(
   return {
     ...(workspace ? { workspace } : {}),
     ...(prepared && 'note' in prepared ? { workspaceNote: prepared.note } : {}),
+    ...(wanted && ctx.remote ? { workspaceNote: REMOTE_WORKSPACE_NOTE } : {}),
     warnings: overlaps.map((o) => ({
       kind: 'overlap',
       ticket: o.ticketKey,

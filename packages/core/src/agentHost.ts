@@ -1,6 +1,6 @@
 /** Node side of the agent link (agentLink.ts): session docs, answers and the lookout lock under a tracker root. */
 export { AgentDocWriter } from './agents/agentDocWriter';
-export { TRAIL_NAMES_DIR, claimTrailName } from './agents/trailNameClaim';
+export { TRAIL_NAMES_DIR, claimTrailName, releaseTrailName } from './agents/trailNameClaim';
 export { AnswerError, readAgentDoc, readAgentDocs, writeAgentAnswer } from './agents/agentDocs';
 export { readLookoutLock, writeLookoutLock } from './agents/lookoutLock';
 export { writeJsonAtomic } from './lib/jsonFile';
@@ -118,3 +118,13 @@ export { findCatalogGuide, parseGuideRef, type CatalogHit } from './guides/findC
 export { guideTemplate, newGuide } from './guides/newGuide';
 export { readChecklist, writeChecklist } from './guides/checklistStore';
 export { readModelsConfig, type ModelsRead } from './planning/matching/modelsStore';
+export { readMcpEndpoints, writeMcpEndpoint } from './remoteAgents/mcpEndpoints';
+export {
+  createRemoteToken,
+  REMOTE_TOKEN_PREFIX,
+  remoteTokenLive,
+  remoteTokenViews,
+  revokeRemoteToken,
+  touchRemoteToken,
+  verifyRemoteToken,
+} from './remoteAgents/remoteTokens';

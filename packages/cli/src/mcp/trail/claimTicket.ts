@@ -25,6 +25,11 @@ import { ticketInfo } from './ticketInfo';
 import { nextTicket } from './ticketOps';
 import { baselineView } from './verificationView';
 
+/** A remote agent's checkout isn't this machine's: the baseline recorded here says nothing about its files. */
+const REMOTE_GIT_NOTE = {
+  note: "Remote connection: Teamtrail can't see your checkout, so your changes are not tracked. A verified completion goes to the human with your branch or pull request instead of local checks.",
+};
+
 /**
  * `claim_ticket`: claims the given ticket (or the best ready one), opens a session for it,
  * holds the lease and records the git baseline. Returns what the agent needs to start.
@@ -73,7 +78,7 @@ export async function claimTicket(
     discovery: briefView(ctx.root, fresh),
     knowledge: delivered,
     criteria: criteriaView(ctx.root, fresh, current, levelFor(ctx.root, fresh, t).info.level),
-    git: baselineView(baseline),
+    git: ctx.remote ? REMOTE_GIT_NOTE : baselineView(baseline),
     lease: {
       expiresAt: new Date(lease.expiresAt).toISOString(),
       length: leaseSpan(lease.ttlMs),

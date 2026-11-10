@@ -9,6 +9,7 @@ import { readEvidenceLog, ticketEvidence } from '../verification/ticketEvidence'
 import { levelFor } from '../verification/verifyCompletion';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
+import { ELSEWHERE } from './thisMachineRoutes';
 import { crossSite } from './trackerErrors';
 
 const ACTIONS = new Set<OperatorAction>(['rerun', 'approve', 'accept', 'rework', 'unblock', 'level']);
@@ -42,7 +43,7 @@ function request(b: Record<string, unknown>): OperatorRequest {
  * with API access cannot change what verifies its own work.
  */
 export async function handleVerification(
-  { root, active }: RouteContext,
+  { root, active, local }: RouteContext & { local?: boolean },
   req: IncomingMessage,
   res: ServerResponse,
   url: URL,
@@ -79,6 +80,9 @@ export async function handleVerification(
   if (p === '/verification/action' && req.method === 'POST') {
     if (crossSite(req)) return (sendJson(res, 403, { error: 'cross-site request refused' }), true);
     const r = request(await readJson<Record<string, unknown>>(req, '{}'));
+    // Approving, rejecting and re-running are steering. How much proof a trail or ticket needs is a trust setting.
+    if (r.action === 'level' && local === false)
+      return (sendJson(res, 403, { error: ELSEWHERE, elsewhere: true }), true);
     try {
       sendJson(res, 200, await operatorAction({ adapter: await active(), root, journal: journalFile(root) }, r));
     } catch (e) {

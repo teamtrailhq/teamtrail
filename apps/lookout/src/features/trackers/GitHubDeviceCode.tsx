@@ -1,3 +1,4 @@
+import { webUrl } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button, Loading } from '../../components/ui';
 
@@ -21,7 +22,7 @@ export function GitHubDeviceCode(props: { code: string; href: string; onCancel: 
         </Button>
       </div>
       <div className="gh-device-row">
-        <a className="btn primary" href={props.href} target="_blank" rel="noreferrer" onClick={copy}>
+        <a className="btn primary" href={webUrl(props.href)} target="_blank" rel="noreferrer" onClick={copy}>
           Open GitHub
         </a>
         <Button size="sm" variant="ghost" onClick={props.onCancel}>

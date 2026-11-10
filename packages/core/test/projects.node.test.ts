@@ -338,3 +338,20 @@ test('summary: a Linear project names its team and organization', async () => {
   const { summary } = await projectSummary({ entry, home: false, state: { kind: 'ok' }, configDir, now });
   assert.deepEqual(summary.tracker, { kind: 'linear', cached: false, team: 'ENG', org: 'Octo Inc' });
 });
+
+test('the hub refuses a request for another host before any project route', async () => {
+  const port = (server.address() as { port: number }).port;
+  const status = (pathname: string, headers: Record<string, string>) =>
+    new Promise<number>((resolve, reject) => {
+      const req = http.request({ host: '127.0.0.1', port, path: pathname, headers }, (res) => {
+        res.resume();
+        resolve(res.statusCode ?? 0);
+      });
+      req.on('error', reject);
+      req.end();
+    });
+  const evil = { Host: 'evil.example:7420', Origin: 'http://evil.example:7420' };
+  for (const p of ['/projects', '/projects/overview', `/p/${hub.homeId}/list`, '/events', '/list'])
+    assert.equal(await status(p, evil), 403, p);
+  assert.equal(await status('/projects', { Host: `localhost:${port}` }), 200);
+});

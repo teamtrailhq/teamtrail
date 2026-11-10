@@ -8,6 +8,11 @@ export interface MarkdownFs {
   list(): Promise<string[]>;
   read(path: string): Promise<string>;
   write(path: string, text: string): Promise<void>;
+  /**
+   * Optional: write a file only if none is there, atomically; false when one is. With it, two writers that pick
+   * the same next number (several agent processes share the folder) can't both keep it.
+   */
+  create?(path: string, text: string): Promise<boolean>;
   /** Optional: notify on external changes so other sessions' edits stream in. */
   watch?(cb: (path: string) => void): () => void;
 }

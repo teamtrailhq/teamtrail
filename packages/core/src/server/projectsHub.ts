@@ -11,8 +11,11 @@ import { projectId } from '../projects/projectId';
 import { projectState } from '../projects/projectState';
 import { projectsView } from '../projects/projectsView';
 import type { TrackerBridge } from './bridgeTypes';
-import { BadRequest, sendJson } from './http';
+import { BadRequest, refuseEarly, sendJson } from './http';
 import { handleProjects } from './projectRoutes';
+import { redactResponse } from './redactForLan';
+import { fromThisMachine, requestRefusal, type PeerAddress } from './requestGuard';
+import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { configDir as defaultConfigDir } from './trackerConfig';
 import { watchProjects } from './watchProjects';
 
@@ -25,6 +28,8 @@ export interface ProjectsHubOptions {
   /** The Lookout's URL, once it is serving; written into the lock of each project it opens. */
   url?: () => string | undefined;
   bridges?: Omit<ProjectBridgesOptions, 'open'>;
+  /** Who is on the other end of a connection; default the socket's remote address. Tests stand in another device. */
+  peer?: PeerAddress;
   /** How often project summaries are recomputed while a Lookout listens. */
   pollMs?: number;
 }
@@ -109,6 +114,14 @@ export function createProjectsHub(o: ProjectsHubOptions) {
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? '/', 'http://x');
+    const refusal = requestRefusal(req);
+    if (refusal) return refuseEarly(res, { error: refusal });
+    // The same list for every project: `/p/<id>/policy` is `/policy` of that project.
+    const inProject = /^\/p\/[^/]+(\/.*)?$/.exec(url.pathname);
+    const route = inProject ? (inProject[1] ?? '/') : url.pathname;
+    const local = fromThisMachine(req, o.peer);
+    if (!local && thisMachineOnly(req.method, route)) return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
+    if (!local) redactResponse(res);
     try {
       const m = /^\/p\/([^/]+)(\/.*)?$/.exec(url.pathname);
       if (m) return await forward(req, res, { id: m[1], rest: m[2] ?? '/', url });

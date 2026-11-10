@@ -10,6 +10,7 @@ export type {
 export type { VerificationEvidenceEvent } from './server/verificationEvents';
 export { activeTracker } from './server/activeTracker';
 export { crossSite } from './server/trackerErrors';
+export { fromThisMachine, requestRefusal, type PeerAddress } from './server/requestGuard';
 export { configDir, credentialStore, type Credentials } from './server/trackerConfig';
 export { AnswerError, readAgentDocs, writeAgentAnswer } from './agents/agentDocs';
 export { attentionView } from './attention/attentionView';

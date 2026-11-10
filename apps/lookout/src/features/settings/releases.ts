@@ -17,6 +17,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.25.0',
+    date: '2026-11-10',
+    items: [
+      'Agents on other machines or in cloud sandboxes can join your trails: `teamtrail mcp --http` serves the same tools over HTTP',
+      'One token per remote agent, created and revoked in Settings → Remote agents; without a token nothing is reachable',
+      '`teamtrail connect claude|codex --url` points an agent at a remote Teamtrail',
+    ],
+  },
+  {
     version: '0.24.2',
     date: '2026-11-10',
     items: ['A ticket’s description no longer repeats which trail it is part of'],

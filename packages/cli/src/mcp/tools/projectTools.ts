@@ -7,12 +7,13 @@ export function registerProjectTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'projects_status',
     {
+      human: 'none',
       title: 'Other projects at a glance',
       description:
         "Read-only summaries of the human's other registered repos: agents running, questions waiting, what needs the human, blocked work. Use it to tell the human where else they are needed. You can't claim, close or change anything in another project.",
       readOnly: true,
     },
     {},
-    () => projectsStatus({ root: agent.root }),
+    () => projectsStatus({ root: agent.root, remote: agent.remote }),
   );
 }

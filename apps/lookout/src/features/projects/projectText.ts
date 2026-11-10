@@ -1,4 +1,4 @@
-import type { ProjectSummary } from '@teamtrail/core';
+import { webUrl, type ProjectSummary } from '@teamtrail/core';
 import type { EdgeTone, MetaPart } from '../../components/ui';
 import { ITEM_PARAM, projectHref } from '../../lib/apiBase';
 
@@ -59,7 +59,9 @@ export function projectDetail(p: ProjectSummary): string {
 export function openProject(p: ProjectSummary, home: string, item?: string) {
   if (p.state.kind === 'missing') return;
   if (p.state.kind === 'elsewhere') {
-    const there = new URL(p.state.url);
+    const url = webUrl(p.state.url);
+    if (!url) return;
+    const there = new URL(url);
     if (item) there.searchParams.set(ITEM_PARAM, item);
     window.open(there.toString(), '_blank', 'noopener');
     return;

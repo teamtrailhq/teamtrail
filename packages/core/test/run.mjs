@@ -34,5 +34,8 @@ await build({
 
 const files = entries.map((f) => path.join(out, f.replace(/\.ts$/, '.mjs')));
 const args = script ? [files[0], ...rest] : ['--test', '--enable-source-maps', ...files];
-const r = spawnSync(process.execPath, args, { stdio: 'inherit' });
+// Tests never use the credentials of whoever runs them: no `gh` login, no token from the shell.
+const env = { ...process.env, TEAMTRAIL_NO_GH_CLI: '1' };
+for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) delete env[k];
+const r = spawnSync(process.execPath, args, { stdio: 'inherit', env });
 process.exit(r.status ?? 1);

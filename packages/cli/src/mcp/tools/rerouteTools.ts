@@ -1,21 +1,25 @@
 import { DESTINATION_REASONS, type DestinationReason } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
+import { text as multiline } from '../lineSafety';
 import { type DefineTool, trail, ticket, ticketType, waitControl } from '../toolKit';
 import { challengeAssumptionOp, listAssumptions } from '../trail/assumptions';
 import { proposeRerouteOp, rerouteStatus } from '../trail/reroutes';
 
 const ref = z.string().min(1);
-const text = z.string().min(1);
+/** One line: a title, a list item. */
+const line = z.string().min(1);
+/** Free text: reasons, evidence, bodies. */
+const text = multiline().min(1);
 
 /** One typed change to the map. Tickets by key (#12) or id; tickets this proposal adds by their `ref`. */
 const change = z.discriminatedUnion('op', [
   z.object({
     op: z.literal('add_ticket'),
     ref: ref.describe('Local name other changes can use, e.g. "batch-fallback".'),
-    title: text,
+    title: line,
     type: ticketType,
-    body: z.string().optional(),
+    body: multiline().optional(),
     hitl: z.boolean().optional(),
     blockedBy: z.array(ref).optional(),
   }),
@@ -24,7 +28,7 @@ const change = z.discriminatedUnion('op', [
     op: z.literal('edit_ticket'),
     ticket: ref,
     title: z.string().optional().describe('The new title.'),
-    body: z.string().optional().describe('The new description; it replaces the old one.'),
+    body: multiline().optional().describe('The new description; it replaces the old one.'),
   }),
   z.object({
     op: z.literal('rewire'),
@@ -34,8 +38,8 @@ const change = z.discriminatedUnion('op', [
   }),
   z.object({ op: z.literal('supersede_decision'), decision: ref.describe('D-<n>'), answer: text, rationale: text }),
   z.object({ op: z.literal('update_destination'), text }),
-  z.object({ op: z.literal('add_unspecified'), text }),
-  z.object({ op: z.literal('add_out_of_scope'), text }),
+  z.object({ op: z.literal('add_unspecified'), text: line }),
+  z.object({ op: z.literal('add_out_of_scope'), text: line }),
   z.object({ op: z.literal('reopen'), ticket: ref, reason: text }),
 ]);
 
@@ -44,6 +48,7 @@ export function registerRerouteTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'list_assumptions',
     {
+      human: 'none',
       title: 'List assumptions',
       description:
         "The trail's assumptions (S-<n>), their status (holding, challenged, invalidated, confirmed), and the tickets and decisions that depend on each.",
@@ -56,6 +61,7 @@ export function registerRerouteTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'challenge_assumption',
     {
+      human: 'none',
       title: 'Challenge an assumption',
       description:
         'You found evidence that an assumption does not hold. Marks it challenged and returns what depends on it. Then propose_reroute; do not silently work around it.',
@@ -72,6 +78,7 @@ export function registerRerouteTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'propose_reroute',
     {
+      human: 'none',
       title: 'Propose a reroute',
       description:
         'Propose typed changes to the map for the human to approve. Nothing changes until they do; the tickets it cancels, edits or rewires are frozen meanwhile. kind "challenge-destination" says the destination itself is wrong (the work exists already, it targets the wrong problem, or it should be rescoped) and needs an update_destination change. A newer proposal of yours replaces your pending one.',
@@ -94,6 +101,7 @@ export function registerRerouteTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'reroute_status',
     {
+      human: 'none',
       title: 'Reroute status',
       description:
         "A proposal's decision: pending, approved (applied), rejected (with the human's note) or superseded. Default: your latest proposal on the trail. wait: true blocks until the human decides.",

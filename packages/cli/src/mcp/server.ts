@@ -6,6 +6,7 @@ import { autoRegister, nodeMarkdownFs } from '@teamtrail/core/node';
 import { UsageMeter } from '../usage/meter';
 import { TrailAgent } from './agent';
 import { INSTRUCTIONS } from './instructions';
+import { refuseHumanTools } from './remoteGate';
 import { toolDefiner } from './toolKit';
 import { registerGuideTools } from './tools/guideTools';
 import { registerHitlTools } from './tools/hitlTools';
@@ -27,6 +28,7 @@ export function createMcpServer(agent: TrailAgent, version: string) {
   registerRerouteTools(tool, agent);
   registerGuideTools(tool, agent);
   registerProjectTools(tool, agent);
+  if (agent.remote) refuseHumanTools(server);
   return server;
 }
 

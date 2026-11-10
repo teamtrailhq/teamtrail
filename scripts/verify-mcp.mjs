@@ -15,6 +15,7 @@ import { verifyLinear } from './verifyLinear.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
+import { verifyRemote } from './verifyRemote.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -28,6 +29,10 @@ const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-'));
 // one repo. verifyProjects.mjs uses its own config dir with auto-registration on.
 process.env.TEAMTRAIL_CONFIG_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-config-'));
 process.env.TEAMTRAIL_NO_REGISTER = '1';
+// Nor the credentials of whoever runs this: no `gh` login, no token from the shell. Steps that need a token set
+// their own, for a fake tracker.
+process.env.TEAMTRAIL_NO_GH_CLI = '1';
+for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) delete process.env[k];
 const log = (...a) => console.log('·', ...a);
 
 // The repo's own check, which passes once fixed.txt exists. With verification.json present, new trails
@@ -473,6 +478,8 @@ const guidesOk = await verifyGuides({ browser, cli, log, shots });
 const githubOk = await verifyGitHub({ browser, cli, log, shots });
 // Linear: whose key and which team before connecting, the team picker, and a team the key can't read.
 const linearOk = await verifyLinear({ browser, cli, log, shots });
+// Remote agents: a token created in Settings, an MCP client over HTTP next to a stdio one, and Revoke cutting it off.
+const remoteOk = await verifyRemote({ browser, cli, log, shots });
 
 await client.close();
 await page.waitForTimeout(1500);
@@ -515,7 +522,8 @@ if (
   !projectsOk ||
   !guidesOk ||
   !githubOk ||
-  !linearOk
+  !linearOk ||
+  !remoteOk
 )
   process.exit(1);
 console.log('\nOK');

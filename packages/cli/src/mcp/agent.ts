@@ -41,6 +41,11 @@ export class TrailAgent {
     return this.ctx.root;
   }
 
+  /** Connected over HTTP with a token, possibly from another machine. */
+  get remote() {
+    return this.ctx.remote;
+  }
+
   /** This agent's trail name, picked on first use so the client name is known. */
   agentId() {
     return this.ctx.agentId();

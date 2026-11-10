@@ -1,4 +1,5 @@
 import { assumptionLine, parseAssumptionLines } from './assumptionLine';
+import { guardLines, guardMarkers, oneLine, unguardLines, unguardMarkers } from './safeText';
 import type { Decision, MapSections } from './types';
 
 /**
@@ -18,16 +19,24 @@ const HEADINGS: [keyof MapSections, string][] = [
 /** Display name of each map section, as used in headings and UI copy. */
 export const SECTION_LABEL = Object.fromEntries(HEADINGS) as Record<keyof MapSections, string>;
 
+/** Any `## ` line starts a section for the reader, so free text may not hold one; nor a marker of ours. */
+const HEADING = '##\\s';
+const block = (text: string) => guardMarkers(guardLines(text.trim(), HEADING));
+const unblock = (text: string) => unguardLines(unguardMarkers(text), HEADING);
+const item = (text: string) => guardMarkers(oneLine(text));
+
 const DECISION_RE = /^-\s+(?:\[?([#A-Z0-9-]+)\]?:?\s+)?(.*)$/;
 
 export function serializeMapBody(s: MapSections): string {
-  const list = (xs: string[]) => (xs.length ? xs.map((x) => `- ${x}`).join('\n') : '_None yet._');
+  const list = (xs: string[]) => (xs.length ? xs.map((x) => `- ${item(x)}`).join('\n') : '_None yet._');
   const decisions = (ds: Decision[]) =>
-    ds.length ? ds.map((d) => `- ${d.ticketKey ? `${d.ticketKey}: ` : ''}${d.text}`).join('\n') : '_None yet._';
+    ds.length
+      ? ds.map((d) => `- ${d.ticketKey ? `${oneLine(d.ticketKey)}: ` : ''}${item(d.text)}`).join('\n')
+      : '_None yet._';
   return (
     [
-      `## Destination\n\n${s.destination.trim()}`,
-      `## Notes\n\n${s.notes.trim() || '_None yet._'}`,
+      `## Destination\n\n${block(s.destination)}`,
+      `## Notes\n\n${block(s.notes) || '_None yet._'}`,
       // Only trails that list assumptions get the section, so older maps keep their exact body.
       ...(s.assumptions?.length ? [`## Assumptions\n\n${s.assumptions.map(assumptionLine).join('\n')}`] : []),
       `## Decisions so far\n\n${decisions(s.decisions)}`,
@@ -56,15 +65,17 @@ export function parseMapBody(md: string): MapSections {
           .split('\n')
           .map((l) => l.trim())
           .filter((l) => l.startsWith('- '));
-    if (key === 'destination') out.destination = body;
-    else if (key === 'notes') out.notes = empty ? '' : body;
+    if (key === 'destination') out.destination = unblock(body);
+    else if (key === 'notes') out.notes = empty ? '' : unblock(body);
     else if (key === 'assumptions') out.assumptions = parseAssumptionLines(items);
     else if (key === 'decisions')
       out.decisions = items.map((l) => {
         const m = l.match(DECISION_RE);
-        return m && m[1] && /\d/.test(m[1]) ? { ticketKey: m[1], text: m[2] } : { text: l.slice(2) };
+        return m && m[1] && /\d/.test(m[1])
+          ? { ticketKey: m[1], text: unguardMarkers(m[2]) }
+          : { text: unguardMarkers(l.slice(2)) };
       });
-    else out[key] = items.map((l) => l.slice(2));
+    else out[key] = items.map((l) => unguardMarkers(l.slice(2)));
   }
   return out;
 }

@@ -34,10 +34,12 @@ export function nextKnowledgeId(root: string) {
   return `K-${n + 1}`;
 }
 
-/** Git's blob hash of a file in the repo (no git needed); undefined when the file is missing. */
+/** Git's blob hash of a file in the repo (no git needed); undefined when the file is missing or outside the repo. */
 export function blobHash(repo: string, file: string) {
-  const abs = path.resolve(repo, file);
-  if (!existsSync(abs)) return undefined;
+  const top = path.resolve(repo);
+  const abs = path.resolve(top, file);
+  // Anchors come from agents: one that points outside the repo is never read.
+  if (!abs.startsWith(top + path.sep) || !existsSync(abs)) return undefined;
   const content = readFileSync(abs);
   return createHash('sha1').update(`blob ${content.length}\0`).update(content).digest('hex');
 }

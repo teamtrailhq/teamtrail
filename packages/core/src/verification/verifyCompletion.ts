@@ -19,6 +19,7 @@ import { nextAttemptId, readAttempts, writeAttempt } from './evidenceStore';
 import { gradeAttempt } from './gradeAttempt';
 import { attemptComment, outcomeOf } from './outcome';
 import { verificationFor, type LevelInfo } from './policy';
+import { remoteOutcome } from './remoteCompletion';
 import { submissionOf } from './resubmit';
 import { requestReview } from './reviewRequest';
 import { acquireRunLock, releaseRunLock } from './runLock';
@@ -64,6 +65,8 @@ export interface Submission {
   reverified?: boolean;
   /** Evidence for each acceptance criterion of the ticket. */
   criteria?: CriterionEvidence[];
+  /** The agent is on another machine: this checkout doesn't hold its work, so no check runs here. */
+  remote?: boolean;
 }
 
 /** One ticket's completion to verify: its level, and what the agent submitted. */
@@ -118,6 +121,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
     ...(sub.alternatives?.length ? { alternatives: sub.alternatives } : {}),
     ...(sub.noCodeReason ? { noCodeReason: sub.noCodeReason } : {}),
     ...(sub.pr ? { pr: sub.pr } : {}),
+    ...(sub.remote ? { remote: true } : {}),
   };
   const id = nextAttemptId(env.root, mapId, t.id);
   const lock = acquireRunLock(env.root, { ...base, id });
@@ -131,28 +135,8 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
   const done = (async (): Promise<Settled> => {
     let attempt: VerificationAttempt;
     try {
-      const repoRoot = checkoutOf(env, mapId, t.id);
-      const git = await completionEvidence({
-        ...env,
-        repoRoot,
-        mapId,
-        ticket: t,
-        config,
-        noCodeReason: sub.noCodeReason,
-      });
-      const { outcome, criteria } = await gradeAttempt({
-        root: env.root,
-        repoRoot,
-        mapId,
-        ticketId: t.id,
-        attemptId: id,
-        config,
-        info,
-        git,
-        evidence: sub.criteria,
-        signal: env.signal,
-      });
-      attempt = { ...base, id, finishedAt: Date.now(), ...outcome, git, ...(criteria ? { criteria } : {}) };
+      const graded = sub.remote ? remoteOutcome() : await gradeHere(env, job, { id, config });
+      attempt = { ...base, id, finishedAt: Date.now(), ...graded };
       writeAttempt(env.root, attempt);
     } finally {
       releaseRunLock(env.root, mapId, t.id);
@@ -161,6 +145,33 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
     return settle(env, attempt, sub, (config.config ?? DEFAULT_CONFIG).maxAttempts);
   })();
   return { attemptId: id, done };
+}
+
+/** Git evidence, checks and criteria for work that is in this checkout (or the ticket's worktree). */
+async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead }) {
+  const { mapId, ticket: t, info, sub } = job;
+  const repoRoot = checkoutOf(env, mapId, t.id);
+  const git = await completionEvidence({
+    ...env,
+    repoRoot,
+    mapId,
+    ticket: t,
+    config: run.config,
+    noCodeReason: sub.noCodeReason,
+  });
+  const { outcome, criteria } = await gradeAttempt({
+    root: env.root,
+    repoRoot,
+    mapId,
+    ticketId: t.id,
+    attemptId: run.id,
+    config: run.config,
+    info,
+    git,
+    evidence: sub.criteria,
+    signal: env.signal,
+  });
+  return { ...outcome, git, ...(criteria ? { criteria } : {}) };
 }
 
 /** Records that a pass went stale while its checks ran, and runs the checks again on the code as it is now. */
@@ -198,7 +209,7 @@ async function settle(env: VerifyEnv, a: VerificationAttempt, sub: Submission, m
       summary: a.summary,
       author: a.agent,
       transcript: sub.transcript,
-      decision: { ...d, rationale: a.rationale ?? d.rationale, alternatives: a.alternatives ?? d.alternatives },
+      decision: { ...d, rationale: d.rationale ?? a.rationale, alternatives: a.alternatives ?? d.alternatives },
     });
   } else
     await transition(env.adapter, a.mapId, a.ticketId, { ...engine, event: o.event, to: o.to, expect: 'verifying' });
@@ -211,5 +222,10 @@ export async function rerun(env: VerifyEnv, snap: MapSnapshot, interrupted: Veri
   const t = snap.tickets.find((x) => x.id === interrupted.ticketId);
   if (!t || t.state !== 'open' || t.status !== 'verifying') return undefined;
   const { info } = levelFor(env.root, snap, t);
-  return verify(env, { mapId: snap.map.id, ticket: t, info, sub: submissionOf(interrupted) });
+  return verify(env, {
+    mapId: snap.map.id,
+    ticket: t,
+    info,
+    sub: { ...submissionOf(interrupted), remote: interrupted.remote },
+  });
 }

@@ -10,6 +10,12 @@ import { OperationError } from './operationError';
 /** Audit fields a caller can attach when resolving; everything defaults from the ticket and author. */
 export interface DecisionMeta {
   question?: string;
+  /**
+   * The record's answer and summary when they are not the resolution: a human's decision keeps their own words
+   * (the resolution is still posted as the author's comment).
+   */
+  answer?: string;
+  summary?: string;
   alternatives?: string[];
   rationale?: string;
   /** Actor id of who made the call; defaults to the resolving author. */
@@ -72,8 +78,8 @@ export async function resolve(
       ticketId: t.id,
       ticketKey: t.key,
       question: d.question ?? t.title,
-      answer: input.answer,
-      summary: input.summary ?? firstSentence(input.answer),
+      answer: d.answer ?? input.answer,
+      summary: d.summary ?? input.summary ?? firstSentence(input.answer),
       alternatives: d.alternatives,
       rationale: d.rationale,
       decidedBy: d.decidedBy ?? input.author,

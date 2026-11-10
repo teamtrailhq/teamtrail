@@ -13,18 +13,20 @@ import {
   type Ticket,
 } from '@teamtrail/core';
 import { levelFor } from '@teamtrail/core/agents';
+import { assertHumanDecided } from '../remoteGate';
 import type { AgentContext } from './agentContext';
 import { assertAssumes } from './assumptions';
 import { claimTicket } from './claimTicket';
+import { closeDecisionMeta } from './closeDecision';
 import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
 import { checkedAnswers, keepAnswers } from './guides';
+import { humanAnswerFor, release, spend, type HumanAnswer } from './humanAnswer';
 import { withReview } from './parallel';
-import { checkRisk } from './riskCheck';
+import { checkRisk, riskOf } from './riskCheck';
 import type { CloseInput, WaitControl } from './types';
 
 type Wait = { seconds: number; ctl?: WaitControl };
-type Transcript = NonNullable<ReturnType<AgentContext['sessions']['transcript']>>;
 
 /** What one close call works on: the trail, the ticket, the closing agent and its session. */
 interface Closing {
@@ -37,6 +39,8 @@ interface Closing {
   source: { kind: 'agent'; ref: string; label: string };
   /** The policy level of this resolution; a high one only gets here when the human made the call. */
   risk?: DecisionRisk;
+  /** The human's answer this close rests on, when it is their decision. */
+  human?: HumanAnswer;
 }
 
 /** A completion either finished (with any verification fields to report) or stopped early with a result. */
@@ -50,6 +54,16 @@ type Completion = { kind: 'closed'; verified: object } | { kind: 'stopped'; resu
  */
 export async function closeTicket(ctx: AgentContext, input: CloseInput, wait: Wait) {
   const c = await startClosing(ctx, input);
+  try {
+    return await closeWith(c, wait);
+  } catch (e) {
+    release(c.human);
+    throw e;
+  }
+}
+
+async function closeWith(c: Closing, wait: Wait) {
+  const { ctx, input } = c;
   const before = frontier(c.snap);
   const ruledOut = input.outcome === 'out_of_scope';
   let verified: object = {};
@@ -62,9 +76,12 @@ export async function closeTicket(ctx: AgentContext, input: CloseInput, wait: Wa
     );
   } else {
     const done = await complete(c, wait);
+    // A completion that waits on checks or a review has still used the human's answer.
+    if (done.kind === 'stopped') spend(c.human, `the completion of ${c.ticket.key}`);
     if (done.kind === 'stopped') return withReview(c, done.result);
     verified = done.verified;
   }
+  spend(c.human, `the close of ${c.ticket.key}`);
   const decision = await findDecision(c);
   return withReview(c, await finish(c, { before, verified, decision }));
 }
@@ -78,18 +95,30 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
   const agent = await ctx.agentId();
   let ticket = ctx.findTicket(snap, ref);
   assertCloseable(ticket, agent);
-  const asked = running ? (ctx.sessions.transcript(running.id) ?? []) : [];
-  const decidedBy = lastHumanIn(asked) ?? agent;
-  const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, decidedBy });
-  if (!ticket.assignee && input.outcome !== 'out_of_scope') {
-    await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });
-    const id = ticket.id;
-    ticket = (await ctx.load(snap.map.id)).tickets.find((x) => x.id === id)!;
+  // The human's decision only by their answer to a question asked on this ticket (humanAnswer.ts).
+  const human = humanAnswerFor(ctx, {
+    questionId: input.questionId,
+    ticket,
+    category: input.category,
+    risk: riskOf({ ...input, root: ctx.root }),
+    hitl: attention(ticket) === 'hitl',
+  });
+  try {
+    assertHumanDecided({ remote: ctx.remote, ticket, humanAnswered: !!human });
+    const risk = checkRisk({ ...input, root: ctx.root, decidedBy: human?.author ?? agent });
+    if (!ticket.assignee && input.outcome !== 'out_of_scope') {
+      await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });
+      const id = ticket.id;
+      ticket = (await ctx.load(snap.map.id)).tickets.find((x) => x.id === id)!;
+    }
+    const current = ctx.sessions.running();
+    const session = current?.info.ticketId === ticket.id ? current : await ctx.ensureSession();
+    const source = { kind: 'agent' as const, ref: `${session.id}/${ticket.id}`, label: `${agent} session` };
+    return { ctx, input, snap, ticket, agent, session, source, risk, human };
+  } catch (e) {
+    release(human);
+    throw e;
   }
-  const current = ctx.sessions.running();
-  const session = current?.info.ticketId === ticket.id ? current : await ctx.ensureSession();
-  const source = { kind: 'agent' as const, ref: `${session.id}/${ticket.id}`, label: `${agent} session` };
-  return { ctx, input, snap, ticket, agent, session, source, risk };
 }
 
 function assertCloseable(t: Ticket, agent: string) {
@@ -105,7 +134,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   const { ctx, input, snap, ticket: t, session: s } = c;
   const log = ctx.sessions.transcript(s.id) ?? [];
   assertAssumes(snap, input.assumes);
-  const meta = decisionMeta(c, log);
+  const meta = closeDecisionMeta({ ...c, ...input }, log);
   const wantsTranscript = input.postTranscript && log.length > 0;
   const transcript = wantsTranscript ? log.map((e) => `**${e.author}:** ${e.text}`).join('\n\n') : undefined;
   const { info } = levelFor(ctx.root, snap, t);
@@ -131,6 +160,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
       criteria: input.criteria,
       decision: meta,
       transcript,
+      remote: ctx.remote,
     };
     const r = await submitVerified(
       ctx,
@@ -148,23 +178,6 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   if (s.info.mode === 'work') s.step(5);
   return { kind: 'closed', verified: {} };
 }
-
-/** Who decided and who took part: the last human who answered, or the agent itself. */
-function decisionMeta(c: Closing, log: Transcript): DecisionMeta {
-  const human = log.filter((e) => e.from === 'human');
-  return {
-    rationale: c.input.rationale,
-    alternatives: c.input.alternatives,
-    decidedBy: lastHumanIn(log) ?? c.agent,
-    participants: [...new Set([c.agent, ...human.map((e) => e.author)])].map((id) => ({ id })),
-    source: c.source,
-    transcript: log,
-    ...(c.risk ? { risk: c.risk } : {}),
-    ...(c.input.assumes?.length ? { assumes: c.input.assumes } : {}),
-  };
-}
-
-const lastHumanIn = (log: Transcript) => log.filter((e) => e.from === 'human').at(-1)?.author;
 
 async function resolveDirectly(c: Closing, parts: { meta: DecisionMeta; transcript?: string }) {
   const { ctx, input, snap, ticket: t, session: s } = c;

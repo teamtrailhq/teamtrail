@@ -16,13 +16,28 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   if (input.category) q.category = input.category;
   ctx.writer.flush();
   const sid = s.id;
+  // The ticket the question is about: the one this session holds as it asks.
+  const askedOn = s.info.ticketId;
   ctx.waits.set(
     q.id,
     answer.then((text) => {
       const author =
         [...ctx.activity.snapshot.chats].reverse().find((c) => c.sessionId === sid && c.from === 'human')?.author ??
         TRAIL_LEAD;
-      ctx.sessions.transcript(sid)?.push({ from: 'human', author, text, at: Date.now() });
+      const at = Date.now();
+      ctx.sessions.transcript(sid)?.push({ from: 'human', author, text, at });
+      ctx.answers.set(q.id, {
+        questionId: q.id,
+        question: input.question,
+        answer: text,
+        author,
+        at,
+        mapId: s.info.mapId,
+        ticketId: askedOn,
+        category: input.category,
+        urgency: input.urgency ?? 'soon',
+        transcript: ctx.sessions.transcript(sid) ?? [],
+      });
       return { text, author };
     }),
   );

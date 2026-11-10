@@ -18,6 +18,9 @@ export async function handleAgents(
     const b = await readJson<Partial<AgentAnswer>>(req);
     for (const k of ['sessionId', 'questionId', 'text'] as const)
       if (typeof b[k] !== 'string' || !b[k]!.trim()) throw new BadRequest(`"${k}" is required`);
+    // Both ids become file names under .agents/: only what Teamtrail itself hands out.
+    for (const k of ['sessionId', 'questionId'] as const)
+      if (!/^[\w.-]{1,120}$/.test(b[k]!) || b[k]!.includes('..')) throw new BadRequest(`"${k}" is not an id`);
     sendJson(
       res,
       201,

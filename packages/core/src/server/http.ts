@@ -9,6 +9,15 @@ export function sendJson(res: ServerResponse, status: number, v: unknown) {
   res.end(JSON.stringify(v));
 }
 
+/**
+ * Refuses a request before its body is read (a guard said no). The connection is closed with it, so an unread
+ * body can never be taken for the start of the next request.
+ */
+export function refuseEarly(res: ServerResponse, v: unknown) {
+  res.setHeader('Connection', 'close');
+  sendJson(res, 403, v);
+}
+
 export async function readText(req: IncomingMessage): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const c of req) chunks.push(c as Buffer);

@@ -1,0 +1,36 @@
+import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import path from 'node:path';
+import { AGENTS_DIR } from '../agents/agentLink';
+import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
+import { processAlive } from '../lib/processAlive';
+import type { McpEndpoint } from '../model/remoteToken';
+
+/*
+ * Where remote agents can connect right now, one file per serving process:
+ *   <tracker dir>/.agents/mcp-endpoints/<pid>.json   McpEndpoint
+ * Local only. A file whose process is gone is ignored, so a crash leaves nothing stale on screen.
+ */
+const DIR = `${AGENTS_DIR}/mcp-endpoints`;
+
+/** Announces this process's MCP endpoint; returns the function that takes the announcement back. */
+export function writeMcpEndpoint(root: string, e: Pick<McpEndpoint, 'url' | 'kind' | 'network'>) {
+  const file = path.join(root, DIR, `${process.pid}.json`);
+  mkdirSync(path.dirname(file), { recursive: true });
+  const endpoint: McpEndpoint = { ...e, pid: process.pid, startedAt: Date.now() };
+  writeJsonAtomic(file, endpoint);
+  return () => rmSync(file, { force: true });
+}
+
+/** The endpoints being served now: the one made to be shared (`standalone`) first, then by start time. */
+export function readMcpEndpoints(root: string): McpEndpoint[] {
+  let names: string[] = [];
+  try {
+    names = readdirSync(path.join(root, DIR)).filter((n) => n.endsWith('.json'));
+  } catch {
+    return [];
+  }
+  return names
+    .map((n) => readJsonFile<McpEndpoint>(path.join(root, DIR, n)))
+    .filter((e): e is McpEndpoint => !!e && typeof e.url === 'string' && processAlive(e.pid))
+    .sort((a, b) => Number(b.kind === 'standalone') - Number(a.kind === 'standalone') || a.startedAt - b.startedAt);
+}

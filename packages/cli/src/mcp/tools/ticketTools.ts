@@ -1,6 +1,7 @@
 import { CRITERION_KINDS, type CriterionKind } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
+import { text } from '../lineSafety';
 import { type DefineTool, guideId, guidesFilter, trail, ticket, ticketType } from '../toolKit';
 
 /** Ticket tools: pick, claim, release and add tickets. */
@@ -16,6 +17,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'next_ticket',
     {
+      human: 'none',
       title: 'Next ready ticket',
       description:
         'The oldest open, unblocked, unclaimed ticket, with its body, blockers and the decisions they produced. Does not claim it.',
@@ -28,6 +30,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'claim_ticket',
     {
+      human: 'none',
       title: 'Claim a ticket',
       description:
         'Assign a ticket to you (default: the next ready one) and start working it. Fails if another agent got it first. When the ticket has a guide, the result has `guide` (instructions and a checklist): take on the role it describes.',
@@ -55,7 +58,11 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
 
   tool(
     'release_ticket',
-    { title: 'Release a ticket', description: 'Give a claimed ticket back to the frontier without closing it.' },
+    {
+      human: 'none',
+      title: 'Release a ticket',
+      description: 'Give a claimed ticket back to the frontier without closing it.',
+    },
     { trail, ticket: ticket.optional(), reason: z.string().optional() },
     (a) => agent.releaseTicket(a),
   );
@@ -63,6 +70,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'add_ticket',
     {
+      human: 'none',
       title: 'Add a ticket',
       description:
         'Add a ticket to the trail, optionally blocked by existing tickets, or promote a Not yet specified line (fromUnspecified).',
@@ -71,7 +79,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
       trail,
       title: z.string().min(1),
       type: ticketType,
-      body: z.string().optional(),
+      body: text().optional(),
       hitl: z.boolean().optional(),
       blockedBy: z.array(z.string()).optional(),
       fromUnspecified: z.string().optional(),
@@ -84,6 +92,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'set_criteria',
     {
+      human: 'none',
       title: 'Set acceptance criteria',
       description:
         "What must be true for a ticket to be done, agreed before the work starts. Replaces the ticket's criteria (numbered AC-1, AC-2, …). Cover the business rules suggested with the claim. When completing, give evidence for each.",
