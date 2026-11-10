@@ -142,7 +142,7 @@ export function readComment(c: TrackerComment): Comment {
   const write = leadingMarker(afterAuthor, WRITE);
   const body = unguardMarkers((write ? write.rest : afterAuthor).trim());
   if (writer.kind === 'teammate') {
-    return { id, author: author ? teammateActor(author.payload, name) : name, body, createdAt };
+    return { id, author: author ? teammateActor(author.payload, { ...writer, name }) : name, body, createdAt };
   }
   // Only this account's comments can be one of this machine's queued writes.
   const writeId = write && !/\s/.test(write.payload) ? { writeId: write.payload } : {};

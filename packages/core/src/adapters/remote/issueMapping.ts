@@ -65,7 +65,7 @@ export function readIssueComments<Id>(
     const trusted = c.writer.kind !== 'outsider';
     const d = trusted ? parseDecisionComment(c.body) : undefined;
     if (d) {
-      const record = c.writer.kind === 'teammate' ? teammateDecision(d, { name: c.writer.name, tracker }) : d;
+      const record = c.writer.kind === 'teammate' ? teammateDecision(d, { writer: c.writer, tracker }) : d;
       onDecision({ ...record, mapId }, c.id);
       continue;
     }

@@ -2,7 +2,7 @@ import type { DecisionRecord, MapSnapshot, Ticket } from '../../../model/types';
 import { ticketFromIssue } from '../format';
 import { mapFromIssue, readIssueComments } from '../issueMapping';
 import type { SettingsGate } from '../settingsLedger';
-import type { Writer } from '../writer';
+import { linearAccount, type Writer } from '../writer';
 import { isClosed, type LComment, type LIssue } from './schema';
 
 /** Receives each decision record found in comments, with the id of its comment. */
@@ -28,9 +28,9 @@ const isId = (id: unknown): id is string => typeof id === 'string' && ID.test(id
 function commentWriter(viewer: string | undefined, c: LComment): Writer {
   const u = c.user;
   if (!u) return { kind: 'outsider', name: '' };
-  if (viewer && u.id === viewer) return { kind: 'self', name: u.displayName };
+  if (viewer && u.id === viewer) return { kind: 'self', ...linearAccount(u) };
   const member = u.guest === false && u.active === true;
-  return { kind: member ? 'teammate' : 'outsider', name: u.displayName };
+  return { kind: member ? 'teammate' : 'outsider', ...linearAccount(u) };
 }
 
 /**

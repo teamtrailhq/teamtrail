@@ -22,14 +22,14 @@ export interface LComment {
   body: string;
   createdAt: string;
   /** Null for a comment an integration or app posted. `guest`: a guest of the workspace; `active` false: deactivated. */
-  user: { id?: string; displayName: string; guest?: boolean; active?: boolean } | null;
+  user: { id?: string; displayName: string; email?: string | null; guest?: boolean; active?: boolean } | null;
 }
 
 export const ISSUE_FIELDS = `id identifier title description createdAt updatedAt completedAt canceledAt
   state { type }
   labels { nodes { id name } }
   assignee { displayName }
-  comments(first: 100) { nodes { id body createdAt user { id displayName guest active } } }`;
+  comments(first: 100) { nodes { id body createdAt user { id displayName email guest active } } }`;
 
 /** One trail with its tickets, and `viewer`: the user behind the key, whose comments are this machine's own. */
 export const TRAIL_QUERY = `query Trail($id: String!) {
