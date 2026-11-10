@@ -1,5 +1,6 @@
 import {
   allowedTypes,
+  attention,
   OperationError,
   promoteToTicket,
   release,
@@ -113,7 +114,7 @@ export async function addTicket(
     for (const b of blockers) await ctx.adapter.addBlocking(snap.map.id, b, t.id);
   }
   ctx.charted.add(`${snap.map.id}/${t.id}`);
-  await ctx.adapter.comment(snap.map.id, t.id, await ctx.agentId(), addedLine(ctx, input.hitl));
+  await ctx.adapter.comment(snap.map.id, t.id, await ctx.agentId(), addedLine(ctx, attention(t) === 'hitl'));
   if (input.guide) await setTicketGuide(ctx.adapter, { mapId: snap.map.id, ticketId: t.id }, input.guide, 'agent');
   if (input.criteria?.length) saveCriteria(ctx.root, snap.map, t, input.criteria);
   const fresh = await ctx.load(snap.map.id);

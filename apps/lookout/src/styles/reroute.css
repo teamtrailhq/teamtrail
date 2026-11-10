@@ -73,3 +73,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* What a change writes, word for word, under its row in the review. */
+.reroute-parts {
+  margin: var(--sp-4) 0 0;
+  display: grid;
+  gap: var(--sp-6);
+}
+.reroute-parts dt {
+  margin: 0;
+}
+.reroute-parts dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}

@@ -4,6 +4,7 @@ import { Button, Empty, Field, MetaLine, Panel } from '../../components/ui';
 import { ago } from '../../lib';
 import { RerouteChangeRow } from './RerouteChangeRow';
 import { RerouteDestination } from './RerouteDestination';
+import { DISMISS_NOTE } from './rerouteText';
 import { ticketNamer } from './ticketNamer';
 import type { RerouteView } from './types';
 
@@ -67,12 +68,18 @@ export function RerouteDialog(props: {
             <h3 className="mono-label">Changes · {p.changes.length}</h3>
             <ul className="reroute-changes row-list">
               {p.changes.map((c, i) => (
-                <RerouteChangeRow key={i} change={c} name={name} />
+                <RerouteChangeRow key={i} change={c} by={p.by} name={name} />
               ))}
             </ul>
           </section>
           <section>
             <h3 className="mono-label">Closed until you decide</h3>
+            {p.wide && (
+              <p className="t-meta">
+                It touches {p.wide.touched} of {p.wide.open} open tickets, so it freezes none: the current plan stands
+                until you decide.
+              </p>
+            )}
             {p.frozen?.length ? (
               <ul className="item-list">
                 {p.frozen.map((id) => (
@@ -101,6 +108,14 @@ export function RerouteDialog(props: {
         <div className="actions">
           {pending && (
             <>
+              <Button
+                className="reroute-dismiss"
+                variant="ghost"
+                data-tip="Reject it without a note of your own"
+                onClick={() => props.onReject(DISMISS_NOTE)}
+              >
+                Dismiss
+              </Button>
               <Button className="reroute-reject" disabled={!note.trim()} onClick={() => props.onReject(note.trim())}>
                 Reject
               </Button>
