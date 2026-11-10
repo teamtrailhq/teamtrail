@@ -1,6 +1,6 @@
 import { BRAND, firstSentence, recordDecision, resolve, type DecisionSource, type Ticket } from '@teamtrail/core';
 import { postResponse } from '../api';
-import { ACTIONS, clip, escape, md, type SaveMode } from '../blocks';
+import { ACTIONS, clip, label, md, type SaveMode } from '../blocks';
 import { day } from './constants';
 import type { SlackContext } from './slackContext';
 import type { DecisionMeta } from './types';
@@ -76,12 +76,12 @@ export async function saveDecision(
       });
     }
   } catch (e) {
-    await tell(ctx, meta, `Couldn't save the decision: ${(e as Error).message}`);
+    await tell(ctx, meta, `Couldn't save the decision: ${label((e as Error).message)}`);
     return;
   }
   ctx.store.update({ channelTrail: { ...ctx.store.read().channelTrail, [meta.c]: s.mapId } });
   const url = ctx.o.url();
-  const text = `Saved to *${escape(title)}*${resolved ? `, resolved ${escape(resolved.key)} ${escape(resolved.title)}` : ''}`;
+  const text = `Saved to *${label(title)}*${resolved ? `, resolved ${label(resolved.key)} ${label(resolved.title)}` : ''}`;
   await tell(
     ctx,
     meta,

@@ -1,5 +1,5 @@
 import { deriveStates, type AgentSessionDoc, type MapSnapshot, type Ticket } from '@teamtrail/core';
-import { escape } from '../blocks';
+import { label } from '../blocks';
 import { briefTrail, formatTokens } from '../status';
 import type { TrailNotes } from './types';
 
@@ -25,7 +25,7 @@ interface Change {
 /** The Slack lines for what changed since the last tick: newly blocked, resolved, trail done. */
 export function trailChanges(c: Change): string[] {
   const byId = new Map(c.snap.tickets.map((t) => [t.id, t]));
-  const title = escape(c.snap.map.title);
+  const title = label(c.snap.map.title);
   const lines: string[] = [];
   if (c.events.has('blocked')) lines.push(...newlyBlocked(c, byId).map((t) => blockedLine(title, t, byId)));
   if (c.events.has('resolved')) lines.push(...newlyResolved(c, byId).map((t) => resolvedLine(c, title, t, byId)));
@@ -51,8 +51,8 @@ function blockedLine(title: string, t: Ticket, byId: Map<string, Ticket>): strin
     .map((b) => byId.get(b))
     .filter((b): b is Ticket => b?.state === 'open')
     .map((b) => `${b.key} ${b.title}`);
-  const blockers = by.length ? ` is blocked by ${escape(by.join(', '))}` : '';
-  return `⛔ *BLOCKED* · ${title} · ${escape(t.key)} ${escape(t.title)}${blockers}`;
+  const blockers = by.length ? ` is blocked by ${label(by.join(', '))}` : '';
+  return `⛔ *BLOCKED* · ${title} · ${label(t.key)} ${label(t.title)}${blockers}`;
 }
 
 function resolvedLine(c: Change, title: string, t: Ticket, byId: Map<string, Ticket>): string {
@@ -62,5 +62,5 @@ function resolvedLine(c: Change, title: string, t: Ticket, byId: Map<string, Tic
   }).length;
   const plural = unblocked === 1 ? '' : 's';
   const opened = unblocked ? ` → ${unblocked} ticket${plural} unblocked` : '';
-  return `✓ *RESOLVED* · ${title} · ${escape(t.key)} ${escape(t.title)}${opened}`;
+  return `✓ *RESOLVED* · ${title} · ${label(t.key)} ${label(t.title)}${opened}`;
 }

@@ -1,4 +1,4 @@
-import { pairsLabel, touchOverlaps, type MapSnapshot, type Ticket, type Workspace } from '@teamtrail/core';
+import { pairsLabel, repoPaths, touchOverlaps, type MapSnapshot, type Ticket, type Workspace } from '@teamtrail/core';
 import {
   prepareWorktree,
   readIntegrationScan,
@@ -7,9 +7,11 @@ import {
   readWorkspace,
   readWorkspaceSettings,
   repoRootOf,
+  repoRootSpellings,
   writeLease,
 } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
+import { pathRoots } from './pathRoots';
 
 export interface ClaimParallel {
   workspace?: Workspace;
@@ -21,7 +23,12 @@ export interface ClaimParallel {
 const REMOTE_WORKSPACE_NOTE =
   "No worktree: you're connected remotely, and Teamtrail prepares worktrees only on the machine it runs on. Work on a branch of your own in your checkout, push it, and name the branch (and pull request) when you complete.";
 
-const clean = (globs?: string[]) => (globs ?? []).map((g) => g.trim()).filter(Boolean);
+/** The globs a claim touches, repo-relative like every declared path (absolute or escaping ones are refused). */
+const clean = (globs: string[] | undefined, repoRoot: string[]) =>
+  repoPaths(
+    (globs ?? []).filter((g) => g.trim()),
+    repoRoot,
+  );
 
 /**
  * The parallel-work part of a claim: the ticket's worktree (when the project or the agent asks for one), the files
@@ -45,7 +52,7 @@ export async function claimParallel(
         })
       : undefined;
   const workspace = prepared && 'workspace' in prepared ? prepared.workspace : undefined;
-  const touches = clean(at.touches);
+  const touches = clean(at.touches, [...pathRoots(ctx), ...(workspace ? repoRootSpellings(workspace.path) : [])]);
   const lease = readLease(ctx.root, at.mapId, at.ticket.id);
   if (lease && (touches.length || workspace)) writeLease(ctx.root, { ...lease, touches, workspace });
   const overlaps = touches.length

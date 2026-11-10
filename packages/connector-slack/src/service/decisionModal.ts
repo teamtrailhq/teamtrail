@@ -1,7 +1,7 @@
 import { BRAND, type AgentSessionDoc, type MapSnapshot, type Ticket, type TrackerAdapter } from '@teamtrail/core';
 import { readAgentDocs } from '@teamtrail/core/bridge';
 import { SlackApiError } from '../api';
-import { clip, decisionModal, escape, loadingModal, noticeModal, type DecisionForm } from '../blocks';
+import { clip, decisionModal, label, loadingModal, noticeModal, type DecisionForm } from '../blocks';
 import { deterministicSummary, plainText, type ThreadMessage } from '../summary';
 import { isDecisionTicket } from './constants';
 import type { SlackContext } from './slackContext';
@@ -31,8 +31,8 @@ export async function openDecision(ctx: SlackContext, trigger: string, meta: Dec
       const code = e instanceof SlackApiError ? e.code : '';
       const text =
         code === 'not_in_channel' || code === 'channel_not_found'
-          ? `Invite @${BRAND.assistant.name} to ${meta.cn ? `#${escape(meta.cn)}` : 'this conversation'} to save threads here: \`/invite @${BRAND.assistant.name}\``
-          : `Couldn't read the thread (${escape(code || 'error')}).`;
+          ? `Invite @${BRAND.assistant.name} to ${meta.cn ? `#${label(meta.cn)}` : 'this conversation'} to save threads here: \`/invite @${BRAND.assistant.name}\``
+          : `Couldn't read the thread (${label(code || 'error')}).`;
       await ctx.call('views.update', { view_id: viewId, view: noticeModal(JSON.stringify(meta), text) });
       return;
     }

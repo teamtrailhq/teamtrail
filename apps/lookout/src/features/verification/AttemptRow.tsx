@@ -36,9 +36,13 @@ export function AttemptRow({ attempt: a, latest }: { attempt: VerificationAttemp
   );
 }
 
-/** A criteria line reads `AC-1 ✓ …` when proven, `AC-1 ✗ …` when not, anything else is still waiting. */
+/**
+ * A criteria line reads `AC-1 ✓ …` when a check here proved it, `AC-1 ✗ …` when not, `AC-1 ? …` when it rests on
+ * the agent's word (claimed, not verified); anything else is still waiting.
+ */
 function criterionClass(line: string) {
   if (line.includes(' ✓ ')) return 'ok';
   if (line.includes(' ✗ ')) return 'bad';
+  if (line.includes(' ? ')) return 'claimed';
   return 'wait';
 }

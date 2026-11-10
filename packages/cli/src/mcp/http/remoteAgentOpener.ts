@@ -31,7 +31,7 @@ export function remoteAgentOpener(o: {
       tracker: activeTracker({ root: o.root, markdown }),
       leaseMs: leaseMs(o.leaseMinutes ?? process.env[LEASE_MINUTES_ENV]),
       ...o.agent,
-      remote: { tokenName: principal.name },
+      remote: { tokenName: principal.name, tokenId: principal.id },
     });
     server = createMcpServer(agent, o.version);
     return { server, close: (reason) => agent.close(reason) };

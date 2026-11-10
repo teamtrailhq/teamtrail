@@ -3,9 +3,6 @@ import {
   chooseNext,
   deriveStates,
   OperationError,
-  resolve,
-  ruleOutOfScope,
-  type DecisionMeta,
   type DecisionRecord,
   type DecisionRisk,
   type MapSnapshot,
@@ -15,15 +12,27 @@ import {
 import { levelFor } from '@teamtrail/core/agents';
 import { assertHumanDecided } from '../remoteGate';
 import type { AgentContext } from './agentContext';
+import { assertCloseable } from './assertCloseable';
 import { assertAssumes } from './assumptions';
 import { claimTicket } from './claimTicket';
 import { closeDecisionMeta } from './closeDecision';
+import {
+  assertHeldForUnverified,
+  changedSinceClaim,
+  declaredPaths,
+  flagUnverified,
+  type SeenChanges,
+} from './closeEvidence';
 import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
 import { checkedAnswers, keepAnswers } from './guides';
 import { humanAnswerFor, release, spend, type HumanAnswer } from './humanAnswer';
+import { assertOwnClaim } from './ownClaim';
 import { withReview } from './parallel';
+import { pathRoots } from './pathRoots';
+import { resolveDirectly } from './resolveDirectly';
 import { checkRisk, riskOf } from './riskCheck';
+import { ruleOut } from './ruleOut';
 import type { CloseInput, WaitControl } from './types';
 
 type Wait = { seconds: number; ctl?: WaitControl };
@@ -41,6 +50,8 @@ interface Closing {
   risk?: DecisionRisk;
   /** The human's answer this close rests on, when it is their decision. */
   human?: HumanAnswer;
+  /** What git saw change since the claim, for a close without verification (closeEvidence.ts). */
+  seen: SeenChanges;
 }
 
 /** A completion either finished (with any verification fields to report) or stopped early with a result. */
@@ -53,6 +64,8 @@ type Completion = { kind: 'closed'; verified: object } | { kind: 'stopped'; resu
  * checks pass.
  */
 export async function closeTicket(ctx: AgentContext, input: CloseInput, wait: Wait) {
+  // Ruling out is the human's call (ruleOut.ts): never the completion path below.
+  if (input.outcome === 'out_of_scope') return ruleOut(ctx, input);
   const c = await startClosing(ctx, input);
   try {
     return await closeWith(c, wait);
@@ -63,26 +76,14 @@ export async function closeTicket(ctx: AgentContext, input: CloseInput, wait: Wa
 }
 
 async function closeWith(c: Closing, wait: Wait) {
-  const { ctx, input } = c;
   const before = frontier(c.snap);
-  const ruledOut = input.outcome === 'out_of_scope';
-  let verified: object = {};
-  if (ruledOut) {
-    spend(c.human, `the close of ${c.ticket.key}`);
-    await ruleOutOfScope(
-      ctx.adapter,
-      c.snap.map.id,
-      { ticketId: c.ticket.id },
-      { ...ctx.actor(), reason: input.resolution, author: c.agent, source: c.source },
-    );
-  } else {
-    const done = await complete(c, wait);
-    if (done.kind === 'stopped') return withReview(c, done.result);
-    verified = done.verified;
-  }
+  const done = await complete(c, wait);
+  // A completion that waits on checks or a review has still used the human's answer.
+  if (done.kind === 'stopped') spend(c.human, `the completion of ${c.ticket.key}`);
+  if (done.kind === 'stopped') return withReview(c, done.result);
   spend(c.human, `the close of ${c.ticket.key}`);
   const decision = await findDecision(c);
-  return withReview(c, await finish(c, { before, verified, decision }));
+  return withReview(c, await finish(c, { before, verified: done.verified, decision }));
 }
 
 /** Finds the ticket, checks this agent may close it, claims it if nobody has, and picks the session. */
@@ -94,38 +95,35 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
   const agent = await ctx.agentId();
   let ticket = ctx.findTicket(snap, ref);
   assertCloseable(ticket, agent);
+  // The risk is the files declared and the files git saw change, judged before any answer is matched to it.
+  assertHeldForUnverified(ctx, snap, ticket);
+  const seen = await changedSinceClaim(ctx, snap, ticket);
+  const judged = { ...input, root: ctx.root, roots: pathRoots(ctx), paths: [...(input.paths ?? []), ...seen.changed] };
   // The human's decision only by their answer to a question asked on this ticket (humanAnswer.ts).
   const human = humanAnswerFor(ctx, {
     questionId: input.questionId,
     ticket,
     category: input.category,
-    risk: riskOf({ ...input, root: ctx.root }),
+    risk: riskOf(judged),
     hitl: attention(ticket) === 'hitl',
   });
   try {
     assertHumanDecided({ remote: ctx.remote, ticket, humanAnswered: !!human });
-    const risk = checkRisk({ ...input, root: ctx.root, decidedBy: human?.author ?? agent });
-    if (!ticket.assignee && input.outcome !== 'out_of_scope') {
+    const risk = checkRisk({ ...judged, decidedBy: human?.author ?? agent });
+    if (!ticket.assignee) {
       await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });
       const id = ticket.id;
       ticket = (await ctx.load(snap.map.id)).tickets.find((x) => x.id === id)!;
     }
+    assertOwnClaim(ctx, { mapId: snap.map.id, ticket, agent });
     const current = ctx.sessions.running();
     const session = current?.info.ticketId === ticket.id ? current : await ctx.ensureSession();
     const source = { kind: 'agent' as const, ref: `${session.id}/${ticket.id}`, label: `${agent} session` };
-    return { ctx, input, snap, ticket, agent, session, source, risk, human };
+    return { ctx, input, snap, ticket, agent, session, source, risk, human, seen };
   } catch (e) {
     release(human);
     throw e;
   }
-}
-
-function assertCloseable(t: Ticket, agent: string) {
-  if (t.state === 'closed') throw new OperationError(`${t.key} is already closed`);
-  if (t.type === 'review') throw new OperationError(`${t.key} is a review: answer it with submit_review`);
-  if (t.assignee && t.assignee !== agent) throw new OperationError(`${t.key} is claimed by ${t.assignee}`);
-  if (t.status === 'verifying')
-    throw new OperationError(`${t.key} is being verified: call verification_status ${t.key} for the result`);
 }
 
 /** Resolves the ticket: through verification when its level asks for checks, directly otherwise. */
@@ -137,6 +135,14 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   const wantsTranscript = input.postTranscript && log.length > 0;
   const transcript = wantsTranscript ? log.map((e) => `**${e.author}:** ${e.text}`).join('\n\n') : undefined;
   const { info } = levelFor(ctx.root, snap, t);
+  const verified = info.level !== 'off';
+  const declared = declaredPaths({
+    remote: ctx.remote,
+    verified,
+    paths: input.paths,
+    noCodeReason: input.noCodeReason,
+    repoRoot: pathRoots(ctx),
+  });
   assertCriteria(ctx.root, snap, t, info.level);
   await keepAnswers(ctx, {
     snap,
@@ -145,7 +151,9 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   });
   // Spent before the resolving writes (comment, close, decision): one failing part way can't free it again.
   spend(c.human, `the close of ${t.key}`);
-  if (info.level === 'off') {
+  let unverified: { warning?: string } = {};
+  if (!verified) {
+    unverified = { warning: await flagUnverified(ctx, { snap, ticket: t, seen: c.seen }) };
     await resolveDirectly(c, { meta, transcript });
   } else {
     s.step(4, `checks: ${info.checks.join(', ') || 'none configured'}`);
@@ -162,6 +170,8 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
       decision: meta,
       transcript,
       remote: ctx.remote,
+      origin: ctx.origin,
+      declaredPaths: declared,
     };
     const r = await submitVerified(
       ctx,
@@ -177,20 +187,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
     return { kind: 'closed', verified: r };
   }
   if (s.info.mode === 'work') s.step(5);
-  return { kind: 'closed', verified: {} };
-}
-
-async function resolveDirectly(c: Closing, parts: { meta: DecisionMeta; transcript?: string }) {
-  const { ctx, input, snap, ticket: t, session: s } = c;
-  if (s.info.mode === 'research') s.step(3, `${t.key} decided`);
-  else s.step(4, `${parts.transcript ? 'transcript + ' : ''}comment + close + record decision`);
-  const answer = { answer: input.resolution, summary: input.summary, author: c.agent };
-  await resolve(ctx.adapter, snap.map.id, t.id, {
-    ...ctx.actor(),
-    ...answer,
-    transcript: parts.transcript,
-    decision: parts.meta,
-  });
+  return { kind: 'closed', verified: unverified.warning ? { warning: unverified.warning } : {} };
 }
 
 async function findDecision(c: Closing): Promise<DecisionRecord | undefined> {
@@ -206,19 +203,18 @@ function frontier(snap: MapSnapshot): Set<string> {
 
 /** Releases the lease, ends the session, and reports what opened up and what comes next. */
 async function finish(c: Closing, done: { before: Set<string>; verified: object; decision?: DecisionRecord }) {
-  const { ctx, input, ticket: t, session: s } = c;
+  const { ctx, ticket: t, session: s } = c;
   ctx.leases.drop(c.snap.map.id, t.id);
   const after = await ctx.load(c.snap.map.id);
   const nowOpen = frontier(after);
   const unblocked = after.tickets.filter((x) => nowOpen.has(x.id) && !done.before.has(x.id));
-  const verb = input.outcome === 'out_of_scope' ? 'ruled out' : 'decided';
-  if (s.info.ticketId === t.id) ctx.sessions.end(true, `${t.key} ${verb} · session closed`);
+  if (s.info.ticketId === t.id) ctx.sessions.end(true, `${t.key} decided · session closed`);
   const next = chooseNext(after);
   const open = after.tickets.filter((x) => x.state === 'open').length;
   const d = done.decision;
   return {
     closed: t.key,
-    outcome: input.outcome ?? 'completed',
+    outcome: 'completed',
     ...done.verified,
     decision: d ? { id: d.id, summary: d.summary, decidedBy: d.decidedBy } : null,
     unblocked: unblocked.map((x) => ({ key: x.key, title: x.title, type: x.type })),

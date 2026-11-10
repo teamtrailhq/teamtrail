@@ -4,6 +4,7 @@ import type { RerouteError, RerouteProposal } from '../../model/reroute';
 import { OperationError } from '../operations/operationError';
 import { frozenTickets } from './frozenTickets';
 import { rerouteDiff } from './rerouteDiff';
+import { assertRoom, replacedBy, sameRuleOut, wideness } from './rerouteLimits';
 import { createReroute, listReroutes, writeReroute } from './rerouteStore';
 import { validateReroute, type RerouteDraft } from './validateReroute';
 
@@ -30,12 +31,18 @@ export interface ProposeInput extends RerouteDraft {
   mapId: string;
   by: string;
   sessionId?: string;
+  /** Who is behind the agent (`token:<id>`, `local:<id>`): one origin has one pending proposal per trail. */
+  origin?: string;
+  /** `rule-out`: an agent's ruling a ticket out, kept apart from its plan proposals. */
+  lane?: RerouteProposal['lane'];
   at?: number;
 }
 
 /**
  * Validates and stores a proposal, which freezes the tickets it touches until the trail lead decides. The same agent's
- * earlier pending proposal on the trail is superseded. Returns it with the dry-run diff and the frozen tickets.
+ * (or the same token's) earlier pending proposal on the trail is superseded; a rule-out has its own lane and asking
+ * again for the same ticket returns the pending one. The limits (rerouteLimits.ts): room per trail and per lane, a
+ * cool-down after the trail lead turns one down, and no freezing past most of the open work (`wide`). Returns it with the dry-run diff and the frozen tickets.
  */
 export async function proposeReroute(env: RerouteEnv, input: ProposeInput) {
   const snap = await env.adapter.loadMap(input.mapId);
@@ -43,6 +50,12 @@ export async function proposeReroute(env: RerouteEnv, input: ProposeInput) {
   const errors = validateReroute(snap, decisions, input);
   if (errors.length) throw new RerouteInvalid(errors);
   const at = input.at ?? Date.now();
+  const all = listReroutes(env.root, input.mapId);
+  const again = sameRuleOut(all, input);
+  if (again) return { proposal: again, ...rerouteView(env.root, snap, again) };
+  assertRoom(all, input, at);
+  const wide = wideness(snap, all, input);
+  const replaced = replacedBy(all, input);
   const proposal = createReroute(env.root, {
     v: 1,
     mapId: input.mapId,
@@ -50,6 +63,9 @@ export async function proposeReroute(env: RerouteEnv, input: ProposeInput) {
     ...(input.kind === 'challenge-destination' ? { destinationReason: input.destinationReason } : {}),
     by: input.by,
     sessionId: input.sessionId,
+    ...(input.origin ? { origin: input.origin } : {}),
+    ...(input.lane ? { lane: input.lane } : {}),
+    ...(wide ? { wide } : {}),
     at,
     reason: input.reason.trim(),
     evidence: input.evidence.trim(),
@@ -60,8 +76,7 @@ export async function proposeReroute(env: RerouteEnv, input: ProposeInput) {
     created: {},
   });
   journal(env, proposal, { action: 'proposed', actor: input.by, actorKind: 'agent', reason: proposal.reason });
-  for (const old of listReroutes(env.root, input.mapId)) {
-    if (old.id === proposal.id || old.by !== input.by || old.status !== 'pending') continue;
+  for (const old of replaced) {
     writeReroute(env.root, { ...old, status: 'superseded', supersededBy: proposal.id, decidedAt: at });
     journal(env, old, { action: 'superseded', actor: input.by, actorKind: 'agent', reason: `by ${proposal.id}` });
   }

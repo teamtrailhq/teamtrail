@@ -191,9 +191,11 @@ describe('adaptive trails over MCP', () => {
       existing: '- src/notify/service.ts',
       assumptions: ['Push is the default channel', 'Jobs run every minute'],
     });
-    const r = await post('/briefs/accept', { mapId: started.trail.id });
+    // The trail lead accepts the brief they were shown (its hash, from GET).
+    const { hash } = await get(`/briefs?mapId=${started.trail.id}`);
+    const r = await post('/briefs/accept', { mapId: started.trail.id, hash });
     expect(r.body.assumptions).toHaveLength(2);
-    await post('/briefs/accept', { mapId: started.trail.id });
+    await post('/briefs/accept', { mapId: started.trail.id, hash });
     const listed = await call<{ assumptions: { id: string; source: string }[] }>('list_assumptions');
     expect(listed.assumptions.map((a) => `${a.id} ${a.source}`)).toEqual(['S-1 brief:A-1', 'S-2 brief:A-2']);
   });

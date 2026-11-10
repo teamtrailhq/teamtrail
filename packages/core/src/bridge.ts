@@ -15,6 +15,7 @@ export { configDir, credentialStore, type Credentials } from './server/trackerCo
 export { AnswerError, readAgentDocs, writeAgentAnswer } from './agents/agentDocs';
 export { attentionView } from './attention/attentionView';
 export { readAttentionPolicy } from './attention/attentionStore';
+export { readDeliveryProblems, writeDeliveryProblem } from './delivery/deliveryStore';
 export { readLookoutLock } from './agents/lookoutLock';
 export { writeJsonAtomic } from './lib/jsonFile';
 export { outboxFile, outboxKey } from './adapters/remote/outboxFile';

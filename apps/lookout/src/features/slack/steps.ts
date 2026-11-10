@@ -5,7 +5,7 @@ export const STEPS: { n: 1 | 2 | 3 | 4 | 5; title: string }[] = [
   { n: 2, title: 'Workspace' },
   { n: 3, title: 'App token' },
   { n: 4, title: 'Install' },
-  { n: 5, title: 'Claim' },
+  { n: 5, title: 'Owner' },
 ];
 
 /** Steps 2 and 3 are one stretch in Slack: nothing is verifiable until the app-level token is pasted. */

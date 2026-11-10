@@ -1,4 +1,4 @@
-import { listKnowledge, nextKnowledgeId, writeKnowledge } from '../../knowledge/knowledgeStore';
+import { createKnowledge, listKnowledge } from '../../knowledge/knowledgeStore';
 import type { Assumption } from '../../model/assumption';
 import type { RerouteProposal } from '../../model/reroute';
 import { settleAssumptions } from '../assumptions/assumptionOps';
@@ -81,8 +81,7 @@ function keepAsKnowledge(env: RerouteEnv, p: RerouteProposal, invalidated: Assum
     const source = `reroute:${p.mapId}/${p.id}/${a.id}`;
     if (existing.has(source)) continue;
     const now = Date.now();
-    writeKnowledge(env.root, {
-      id: nextKnowledgeId(env.root),
+    createKnowledge(env.root, {
       title: `Didn't hold: ${a.text}`.slice(0, 160),
       body: [`The trail assumed: ${a.text}`, `Why it doesn't hold: ${p.reason}`, `Evidence: ${p.evidence}`].join(
         '\n\n',

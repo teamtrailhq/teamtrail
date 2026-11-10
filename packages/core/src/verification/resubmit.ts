@@ -5,6 +5,8 @@ import type { Submission } from './verifyCompletion';
 export const submissionOf = (a: VerificationAttempt): Submission => ({
   agent: a.agent,
   sessionId: a.sessionId,
+  origin: a.origin,
+  declaredPaths: a.declaredPaths,
   resolution: a.resolution,
   summary: a.summary,
   rationale: a.rationale,

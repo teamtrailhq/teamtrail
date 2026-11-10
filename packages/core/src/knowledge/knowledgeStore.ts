@@ -28,6 +28,26 @@ export function writeKnowledge(root: string, e: KnowledgeEntry) {
   writeFileSync(path.join(dir(root), `${e.id}.md`), serializeKnowledge(e));
 }
 
+/**
+ * Writes a new entry under the next free `K-<n>`, with an exclusive create: two agents proposing at once never
+ * overwrite each other, the second takes the number after. Returns the entry with its id.
+ */
+export function createKnowledge(root: string, draft: Omit<KnowledgeEntry, 'id'>): KnowledgeEntry {
+  mkdirSync(dir(root), { recursive: true });
+  // A file another process is still writing doesn't parse yet, so the next free number may be taken: step past it.
+  const first = Number(nextKnowledgeId(root).slice(2));
+  for (let n = first; n < first + 50; n++) {
+    const entry = { ...draft, id: `K-${n}` };
+    try {
+      writeFileSync(path.join(dir(root), `${entry.id}.md`), serializeKnowledge(entry), { flag: 'wx' });
+      return entry;
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+    }
+  }
+  throw new Error('could not allocate a knowledge id');
+}
+
 /** The next free `K-<n>`. */
 export function nextKnowledgeId(root: string) {
   const n = Math.max(0, ...listKnowledge(root).map((e) => Number(e.id.slice(2)) || 0));

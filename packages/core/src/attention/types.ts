@@ -2,6 +2,7 @@ import type { TicketLease } from '../agents/ticketLease';
 import type { DiscoveryBrief } from '../discovery/brief';
 import type { KnowledgeEntry } from '../knowledge/knowledge';
 import type { AttentionItem, AttentionKind, AttentionPolicy, AttentionState } from '../model/attention';
+import type { DeliveryProblem } from '../model/delivery';
 import type { InstalledGuide } from '../model/guide';
 import type { TicketSync } from '../model/prEvidence';
 import type { RerouteProposal } from '../model/reroute';
@@ -35,6 +36,8 @@ export interface AttentionInput {
   integrations?: IntegrationOverlap[];
   /** Installed guides, checked against the lock (guides/guideStore.ts). Missing: none. */
   guides?: InstalledGuide[];
+  /** Connectors whose messages are being refused (delivery/deliveryStore.ts). Missing: none. */
+  deliveries?: DeliveryProblem[];
   /** Agents connected now, with their model tier (model matching). Missing: none. */
   agents?: ConnectedAgent[];
   /** Missing: the defaults. */

@@ -464,7 +464,16 @@ log(
 
 // Less supervision: the ranked queue, the risk policy and a reroute approved in the Lookout.
 const discoveryKey = disc.tickets.find((t) => t.title.startsWith('Discovery brief')).key;
-const supervisionOk = await verifySupervision({ call, page, shot, log, repo, mapId: disc.trail.id, discoveryKey });
+const supervisionOk = await verifySupervision({
+  call,
+  page,
+  shot,
+  shots,
+  log,
+  repo,
+  mapId: disc.trail.id,
+  discoveryKey,
+});
 
 // Safe parallel work: worktrees, overlapping claims and an integration ticket, on a scratch git repo.
 const parallelOk = await verifyParallel({ browser, cli, log, shots });

@@ -9,6 +9,7 @@ import { handleAttention } from './attentionRoutes';
 import { sendBridgeError } from './bridgeErrors';
 import type { BridgeOptions, TrackerBridge } from './bridgeTypes';
 import { handleBriefs } from './briefRoutes';
+import { handleCriteriaProposals } from './criteriaProposalRoutes';
 import { handleCriteria } from './criteriaRoutes';
 import { handleDecisions } from './decisionRoutes';
 import { handleGuides } from './guideRoutes';
@@ -94,6 +95,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleBriefs(ctx, req, res, url),
     (req, res, url) => handleReroutes(ctx, req, res, url),
     (req, res, url) => handleKnowledge(abs, req, res, url),
+    (req, res, url) => handleCriteriaProposals(abs, req, res, url),
     (req, res, url) => handleCriteria(abs, req, res, url),
     (req, res, url) => handlePolicy(ctx, req, res, url),
     (req, res, url) => handleAttention({ ...ctx, configDir: trackers.configDir }, req, res, url),

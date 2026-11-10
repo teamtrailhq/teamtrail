@@ -60,6 +60,11 @@ export interface VerificationAttempt {
   ticketKey: string;
   agent: string;
   sessionId?: string;
+  /**
+   * Who was behind the agent, beyond its trail name: `token:<id>` for a remote agent (one token may hold several
+   * sessions under different names), `local:<id>` for a connection on this machine. A review must come from another.
+   */
+  origin?: string;
   level: VerificationLevel;
   configHash: string;
   submittedAt: number;
@@ -74,6 +79,11 @@ export interface VerificationAttempt {
   pr?: number;
   /** Submitted over HTTP from another machine: no check ran here and no git evidence was read. */
   remote?: boolean;
+  /**
+   * The repo-relative files the agent said it changed. For a remote completion they are all there is, and nothing
+   * here verified them; for a local one the git evidence says what actually changed.
+   */
+  declaredPaths?: string[];
   checks: CheckResult[];
   result: AttemptResult;
   /** Why the result is `error` or `interrupted`. */
@@ -96,6 +106,8 @@ export interface VerificationVerdict {
   by: string;
   byKind: 'agent' | 'trail lead';
   sessionId?: string;
+  /** The reviewer's origin (see `VerificationAttempt.origin`), for an agent's verdict. */
+  origin?: string;
   verdict: VerdictKind;
   summary: string;
   findings: { path?: string; line?: number; severity: 'info' | 'warn' | 'error'; text: string }[];

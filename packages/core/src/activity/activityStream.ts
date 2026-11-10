@@ -106,7 +106,17 @@ export class ActivityStream {
       pending: this.state.pending.filter((p) => p.id !== questionId),
       answered: [
         ...this.state.answered,
-        { id: q.id, mapId: q.mapId, sessionId: q.sessionId, agent: q.agent, askedAt: q.at, answeredAt: Date.now() },
+        {
+          id: q.id,
+          mapId: q.mapId,
+          sessionId: q.sessionId,
+          agent: q.agent,
+          askedAt: q.at,
+          answeredAt: Date.now(),
+          ...(q.ticketId ? { ticketId: q.ticketId } : {}),
+          ...(q.category ? { category: q.category } : {}),
+          ...(q.urgency ? { urgency: q.urgency } : {}),
+        },
       ].slice(-200),
     });
     this.patchSession(q.sessionId, { waitingOn: undefined });

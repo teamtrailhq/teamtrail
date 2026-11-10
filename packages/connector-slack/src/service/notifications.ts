@@ -1,11 +1,13 @@
-import type { AgentSessionDoc, MapSnapshot } from '@teamtrail/core';
+import { BRAND, type AgentSessionDoc, type MapSnapshot } from '@teamtrail/core';
 import { readAgentDocs } from '@teamtrail/core/bridge';
+import { clipEscaped } from '../blocks';
 import type { SlackConfig } from '../store';
 import { syncApprovals } from './approvals';
 import { syncAsks } from './asks';
 import { day } from './constants';
 import { digestWindowMs } from './digestWindow';
 import { queueLine } from './queueLine';
+import { refusedForGood } from './refusedForGood';
 import type { SlackContext } from './slackContext';
 import { trailChanges, notesOf } from './trailChanges';
 
@@ -43,6 +45,16 @@ export async function syncTrails(ctx: SlackContext, docs: AgentSessionDoc[], c: 
   await syncApprovals(ctx, snaps, c);
 }
 
+/** How much one digest message carries; the rest is in the Lookout. */
+const DIGEST_LINES = 15;
+
+function digestText(lines: string[]) {
+  const more = lines.length - DIGEST_LINES;
+  const shown = lines.slice(0, DIGEST_LINES).map((l) => clipEscaped(l, 300));
+  if (more > 0) shown.push(`…and ${more} more in ${BRAND.name}.`);
+  return shown.join('\n');
+}
+
 /**
  * One digest message per trail per window (the team's digest cadence); later ones thread under that day's first
  * message for the trail. With the digest off, queued lines are dropped: Waiting on you still has everything.
@@ -59,15 +71,16 @@ export async function flushBatches(ctx: SlackContext) {
     if (now - b.lastAt < window) continue;
     const channel = await ctx.target();
     if (!channel) return;
-    const text = b.lines.join('\n');
+    const text = digestText(b.lines);
     const today = day(now);
     const thread = b.root?.day === today ? b.root.ts : undefined;
-    const r = await ctx.call<{ ts: string }>('chat.postMessage', {
-      channel,
-      text,
-      ...(thread ? { thread_ts: thread } : {}),
-    });
-    if (!thread) b.root = { day: today, ts: r.ts };
+    const r = await ctx
+      .call<{ ts: string }>('chat.postMessage', { channel, text, ...(thread ? { thread_ts: thread } : {}) })
+      .catch((e: unknown) => {
+        if (refusedForGood(e)) return undefined; // dropped: the Lookout still has every line
+        throw e;
+      });
+    if (r && !thread) b.root = { day: today, ts: r.ts };
     b.lines = [];
     b.lastAt = now;
   }

@@ -329,8 +329,13 @@ describe('MCP over HTTP: the same engine', () => {
     expect(claimed.workspaceNote).toMatch(/connected remotely/);
     expect(readLeases(root)[0].touches).toEqual(['src/changelog/**']);
 
+    // Nothing here sees its checkout, so it names the files it changed: shown to the human as its word.
+    await expect(call('close_ticket', { resolution: 'Built it on branch feat/changelog' })).rejects.toThrow(
+      /pass paths with the files you changed/,
+    );
     const done = await call<{ status: string; closed?: string; note: string; checks: unknown[] }>('close_ticket', {
       resolution: 'Built it on branch feat/changelog',
+      paths: ['src/changelog/page.ts'],
     });
     expect(done).toMatchObject({ status: 'blocked', checks: [] });
     expect(done.closed).toBeUndefined();
@@ -340,6 +345,8 @@ describe('MCP over HTTP: the same engine', () => {
     expect(attempt).toMatchObject({ result: 'error', remote: true, checks: [] });
     expect(attempt.git).toBeUndefined();
     expect(attempt.note).toMatch(/Completed by a remote agent/);
+    expect(attempt.note).toMatch(/Files it says it changed \(not verified\): src\/changelog\/page\.ts/);
+    expect(attempt.declaredPaths).toEqual(['src/changelog/page.ts']);
   });
 });
 
@@ -639,9 +646,12 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
     const { call } = await connectHttp(newToken('sandbox'));
     await call('claim_ticket', { ticket: m.tickets[0].key });
     await expect(call('close_ticket', { resolution: 'JSON, I decided' })).rejects.toThrow(/the human's to decide/);
-    await expect(call('close_ticket', { resolution: 'Not needed', outcome: 'out_of_scope' })).rejects.toThrow(
-      /the human's to decide/,
-    );
+    // Ruling it out without the human's answer only proposes it to them.
+    const ruled = await call<{ outcome: string; closed: null }>('close_ticket', {
+      resolution: 'Not needed',
+      outcome: 'out_of_scope',
+    });
+    expect(ruled).toMatchObject({ outcome: 'proposed', closed: null });
     const ask = async (question: string, answer: string, extra: Record<string, unknown> = {}) => {
       const waiting = call<{ answered: boolean; questionId: string }>('ask_human', {
         question,

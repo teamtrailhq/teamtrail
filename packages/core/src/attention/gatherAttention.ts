@@ -2,6 +2,7 @@ import type { TrackerAdapter } from '../adapters/adapter';
 import { readAgentDocs } from '../agents/agentDocs';
 import { connectedAgents } from '../agents/connectedAgents';
 import { readLeases } from '../agents/leaseStore';
+import { readDeliveryProblems } from '../delivery/deliveryStore';
 import { readBrief } from '../discovery/briefStore';
 import { readTicketSyncs } from '../evidence/syncStore';
 import { listGuides } from '../guides/guideStore';
@@ -41,6 +42,7 @@ export async function gatherAttention(input: {
     integrations: integrationsOf(root),
     guides: listGuides(root).filter((r) => r.origin === 'local'),
     agents: connectedAgents(docs),
+    deliveries: readDeliveryProblems(root),
     policy,
     state: readAttentionState(root),
     now,

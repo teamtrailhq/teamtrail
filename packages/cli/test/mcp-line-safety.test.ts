@@ -323,7 +323,11 @@ describe('text that gets past the tools still writes no field', () => {
       );
     const load = async () => (await adapter().loadMap(started.trail.id)).tickets;
     for (const t of await load()) {
-      expect(t.comments, t.key).toEqual([]);
+      // The only comment is Teamtrail's own note of who added the ticket.
+      expect(
+        t.comments.filter((c) => !c.body.startsWith('Added by ')),
+        t.key,
+      ).toEqual([]);
       expect(t.body, t.key).toContain(forged);
     }
     expect((await load()).length).toBe(leads.length * 2);

@@ -36,7 +36,9 @@ export const checklistAnswers = z
 export const riskPaths = z
   .array(z.string())
   .max(200)
-  .describe('Repo-relative files the decision changes; checked against the risk policy path rules.');
+  .describe(
+    'Repo-relative files the decision changes (an absolute path inside the repo counts as relative; nothing outside it); checked against the risk policy path rules. Required for a remote completion of verified work.',
+  );
 
 type Extra = {
   signal: AbortSignal;

@@ -2,6 +2,7 @@ export { Badge } from './Badge';
 export { Bars } from './Bars';
 export { Button } from './Button';
 export { Card } from './Card';
+export { ChangedNotice } from './ChangedNotice';
 export { Choice } from './Choice';
 export { Empty } from './Empty';
 export { EmptyState } from './EmptyState';

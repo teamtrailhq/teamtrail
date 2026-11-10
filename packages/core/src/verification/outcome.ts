@@ -52,6 +52,23 @@ export function outcomeOf(a: VerificationAttempt, failures: number, maxAttempts:
   return { event: 'checks.error', to: 'blocked', reason: `${a.id} could not verify: ${a.note ?? ran}` };
 }
 
+/**
+ * The criteria part of an attempt, for the ticket comment and the reviewer: each line, then what the marks
+ * don't say: how many rest on the agent's word, and whether the trail lead ever confirmed the list.
+ */
+export function criteriaLines(a: Pick<VerificationAttempt, 'criteria' | 'agent'>): string[] {
+  const c = a.criteria;
+  if (!c) return [];
+  const claimed = c.claimed?.length ?? 0;
+  const notes = [
+    ...(claimed
+      ? [`${claimed} of ${c.lines.length} rest on ${a.agent}'s word (marked ?): claimed, not verified here.`]
+      : []),
+    ...(c.confirmed === false ? [`These criteria were written by an agent and not confirmed by the trail lead.`] : []),
+  ];
+  return ['', '**Acceptance criteria**', '', ...c.lines.map((l) => `- ${l}`), ...(notes.length ? ['', ...notes] : [])];
+}
+
 /** The ticket comment for a finished attempt: result, checks, and the output of the first failing one. */
 export function attemptComment(a: VerificationAttempt, o: Outcome) {
   const head = {
@@ -67,7 +84,7 @@ export function attemptComment(a: VerificationAttempt, o: Outcome) {
     '',
     ...a.checks.map((c) => `- ${checkLine(c)} · ${(c.durationMs / 1000).toFixed(1)} s`),
     ...(a.note ? ['', a.note] : []),
-    ...(a.criteria ? ['', '**Acceptance criteria**', '', ...a.criteria.lines.map((l) => `- ${l}`)] : []),
+    ...criteriaLines(a),
     ...(a.git ? ['', ...evidenceLines(a.git)] : []),
     ...(failed && tail
       ? ['', `\`${failed.name}\` output (last lines):`, '', '```', tail.replace(/```/g, "'''"), '```']

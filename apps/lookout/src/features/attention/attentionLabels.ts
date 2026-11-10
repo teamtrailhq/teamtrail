@@ -18,6 +18,7 @@ export const KIND_LABEL: Record<AttentionKind, string> = {
   guide: 'Guide',
   'guide-checks': 'Approve',
   model: 'Model',
+  delivery: 'Delivery',
 };
 
 /** What a batch of one kind is called: "3 questions from Reminders, answer together". */
@@ -38,6 +39,7 @@ export const KIND_PLURAL: Record<AttentionKind, string> = {
   guide: 'guides to approve',
   'guide-checks': 'guide checks to approve',
   model: 'tickets waiting for a model',
+  delivery: 'connectors not delivering',
 };
 
 /** Snooze choices, in minutes. */
