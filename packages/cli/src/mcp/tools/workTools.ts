@@ -46,6 +46,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'report_progress',
     {
+      human: 'none',
       title: 'Report progress',
       description:
         'Show progress live in the Lookout: a step of the session procedure (work: Load trail, Claim, Resolve, Record, Update plan; research: Claim, Investigate, Record), a log line, a chat message to the human. Token and cost usage is read from Claude Code and Codex session logs; pass inputTokens/outputTokens/costUsd only when your client has no such log and you actually know them (since your last report).',
@@ -65,6 +66,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'close_ticket',
     {
+      human: 'none',
       title: 'Close a ticket',
       description:
         'Resolve a ticket (default: the one you claimed): posts the resolution, closes it, records a DecisionRecord (with the HITL transcript of this session) and unblocks dependants. When the ticket lists `verification` checks, completing is a claim: the checks run first, and the result says done, rework (with the failing output to fix) or verifying (still running). outcome "out_of_scope" rules it out instead.',
@@ -76,6 +78,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'report_completion',
     {
+      human: 'none',
       title: 'Report completion',
       description:
         "Claim a ticket is done (default: the one you claimed). Without verification it closes like close_ticket. With verification, the repo's checks run and the result is done, rework (fix the `feedback`, then claim and complete again), blocked (a human decides) or verifying with pending=true (call verification_status with wait=true).",
@@ -97,6 +100,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'verification_status',
     {
+      human: 'none',
       title: 'Verification status',
       description:
         "A ticket's verification attempts, check results and verdicts (default: your current ticket). wait=true waits for running checks to finish, up to waitSeconds.",
@@ -114,6 +118,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'submit_review',
     {
+      human: 'none',
       title: 'Submit a review',
       description:
         'Answer a review ticket (type review; default: the one you claimed) after reading the work it names. PASS finishes the reviewed ticket (or hands it to the human at checks+review+human), FAIL sends it back for rework with your findings, NEEDS_HUMAN asks the human. You cannot review a ticket you worked on.',
@@ -143,6 +148,14 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'record_decision',
     {
+      human: {
+        kind: 'inputs',
+        inputs: {
+          decidedBy: {
+            why: "Who decided is you. The human's own decisions are the answers they give in the Lookout or Slack: ask with ask_human.",
+          },
+        },
+      },
       title: 'Record a decision',
       description:
         'Keep a DecisionRecord (question, answer, rationale, alternatives, who decided) and add it to the Logbook, without closing a ticket.',

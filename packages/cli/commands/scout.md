@@ -18,14 +18,14 @@ Take the subcommand from the first word of the arguments. With no arguments, run
    - what is out of scope,
    - what is already decided.
 
-   Each question also appears in the Lookout inbox, and the human can answer in either place. If they interrupt the wait and answer here in chat, call `list_inbox`, then `answer_question` with their exact words so the Lookout shows the answer too.
+   Each question also appears in the Lookout inbox, and the human can answer in either place. If they interrupt the wait and answer here in chat, call `list_inbox`, then `answer_question` with their exact words so the Lookout shows the answer too. (Over a remote connection there is no `answer_question`: the human answers in the Lookout or Slack.)
 2. Look around the repo as much as you need, then draft the trail map:
    - `destination`: what "done" looks like, in one or two sentences.
    - `decided`, `unspecified` (known unknowns) and `outOfScope`, from the answers.
    - `assumptions`: what the plan relies on that could turn out wrong, each with the ticket refs that depend on it.
    - `team` (optional): the installed guides the trail uses (`list_guides`), and a `guide` on tickets that need one, e.g. `qa` on a testing task or `security` on an auth change. With `reviewer` in the team, review tickets get the reviewer guide.
    - `tickets`: `research` for what you can find out alone, `junction` for decisions the human must make, `prototype` for things to try before deciding, `task` for checks and chores (`hitl: true` if the human must do or approve them), `execute` for implementation once its decisions are made. Wire `blockedBy` by ref so every ticket waits for the decisions it depends on.
-3. Call `start_trail`. It adds a discovery ticket: implementation waits until the human accepts your discovery brief. Pass `discovery: false` only if the human says to skip it. Tell the human the trail key.
+3. Call `start_trail`. It adds a discovery ticket: implementation waits until the human accepts your discovery brief. Pass `discovery: false` only if the human says to skip it (not possible over a remote connection). Tell the human the trail key.
 4. Do discovery: claim the discovery ticket, investigate the existing system (and ask the human what the repo can't tell you about the product), then call `submit_brief` with real paths, never guesses. The human reviews it in the Lookout; `get_brief` shows the status and any requested changes. Once it's accepted, revise the planned tickets if the brief changed the picture (`add_ticket`, `update_trail`).
 5. Continue with **resume**.
 
@@ -60,4 +60,4 @@ Call `status` and summarize it in a few lines: progress, running sessions, what 
 
 ## inbox
 
-Call `list_inbox`. List its `attention` items in their ranked order, each with a number, what it is, its trail and ticket, and its `reasons`; keep items with the same `batch` together. For questions (`questionId`), let the human answer here, then pass their exact words to `answer_question`. Other items (approvals, held tickets, flags, briefs, knowledge) are decided in the Lookout: say where. Never answer or approve on their behalf.
+Call `list_inbox`. List its `attention` items in their ranked order, each with a number, what it is, its trail and ticket, and its `reasons`; keep items with the same `batch` together. For questions (`questionId`), let the human answer here, then pass their exact words to `answer_question` (over a remote connection, point them to the Lookout instead: you can't answer for them). Other items (approvals, held tickets, flags, briefs, knowledge) are decided in the Lookout: say where. Never answer or approve on their behalf.

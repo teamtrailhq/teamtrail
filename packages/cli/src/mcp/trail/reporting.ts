@@ -87,7 +87,13 @@ export async function recordDecision(
   const agent = await ctx.agentId();
   const t = input.ticket ? ctx.findTicket(snap, input.ticket) : undefined;
   const decidedBy = input.decidedBy ?? agent;
-  const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, decidedBy });
+  const risk = checkRisk({
+    root: ctx.root,
+    category: input.category,
+    paths: input.paths,
+    decidedBy,
+    remote: ctx.remote,
+  });
   assertAssumes(snap, input.assumes);
   const rec = await saveDecision(
     ctx.adapter,

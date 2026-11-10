@@ -37,8 +37,10 @@ export function RemoteAgentsSection() {
           behind HTTPS with a reverse proxy or a tunnel. A token only ever opens the agent tools.
         </p>
         <p className="t-meta ra-note">
-          <b>What a remote agent can't do.</b> Its files aren't on this machine, so it gets no worktree, and on trails
-          with verification its finished work comes to you to review instead of running the checks here.
+          <b>What a remote agent can't do.</b> Speak for you: it can't answer a question, record a decision as yours,
+          skip discovery, change the trail's mode or destination, or close a ticket that needs you before you've
+          answered here or in Slack. And its files aren't on this machine, so it gets no worktree, and on trails with
+          verification its finished work comes to you to review instead of running the checks here.
         </p>
       </div>
     </SettingsSection>

@@ -13,6 +13,7 @@ import {
   type Ticket,
 } from '@teamtrail/core';
 import { levelFor } from '@teamtrail/core/agents';
+import { assertHumanDecided } from '../remoteGate';
 import type { AgentContext } from './agentContext';
 import { assertAssumes } from './assumptions';
 import { claimTicket } from './claimTicket';
@@ -79,8 +80,10 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
   let ticket = ctx.findTicket(snap, ref);
   assertCloseable(ticket, agent);
   const asked = running ? (ctx.sessions.transcript(running.id) ?? []) : [];
-  const decidedBy = lastHumanIn(asked) ?? agent;
-  const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, decidedBy });
+  const human = lastHumanIn(asked);
+  assertHumanDecided({ remote: ctx.remote, ticket, humanAnswered: !!human });
+  const who = { decidedBy: human ?? agent, remote: ctx.remote };
+  const risk = checkRisk({ root: ctx.root, category: input.category, paths: input.paths, ...who });
   if (!ticket.assignee && input.outcome !== 'out_of_scope') {
     await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });
     const id = ticket.id;

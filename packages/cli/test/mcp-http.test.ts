@@ -20,6 +20,7 @@ import { createMcpHttp } from '../src/mcp/http/createMcpHttp';
 import { remoteAgentOpener } from '../src/mcp/http/remoteAgentOpener';
 import { tokenFileAuth } from '../src/mcp/http/tokenFileAuth';
 import type { McpHttp, McpHttpOptions } from '../src/mcp/http/types';
+import { humanRoles } from '../src/mcp/remoteGate';
 import { createMcpServer } from '../src/mcp/server';
 
 let repo: string;
@@ -249,9 +250,10 @@ describe('MCP over HTTP: the same engine', () => {
     await serve();
     const { call, client } = await connectHttp(newToken('sandbox'));
     expect((await client.listTools()).tools.map((t) => t.name)).toContain('claim_ticket');
-    const m = await startTrail(call);
+    // A trail without discovery is the human's call, so a local agent (at their terminal) starts this one.
+    const m = await startTrail(await connectLocal());
     const claimed = await call<{ claimed: { key: string; assignee: string }; git: { note: string } }>('claim_ticket');
-    expect(claimed.claimed).toMatchObject({ key: m.tickets[0].key, assignee: 'claude-01' });
+    expect(claimed.claimed).toMatchObject({ key: m.tickets[0].key, assignee: 'claude-02' });
     expect(claimed.git.note).toMatch(/can't see your checkout/);
     await call('report_progress', { step: 'Investigate', message: 'Yjs fits' });
     const closed = await call<{ closed: string; next: { key: string } }>('close_ticket', { resolution: 'Use Yjs' });
@@ -310,7 +312,8 @@ describe('MCP over HTTP: the same engine', () => {
     );
     fs.writeFileSync(path.join(root, 'workspaces.json'), JSON.stringify({ v: 1, worktrees: true }));
     const { call } = await connectHttp(newToken('sandbox'));
-    const m = await call<{ trail: { id: string }; tickets: { key: string; id?: string }[] }>('start_trail', {
+    const local = await connectLocal();
+    const m = await local<{ trail: { id: string }; tickets: { key: string; id?: string }[] }>('start_trail', {
       discovery: false,
       title: 'Changelog',
       destination: 'A changelog page',
@@ -422,7 +425,7 @@ describe('MCP over HTTP: long waits and endings', () => {
     const keep = await connectHttp(newToken('stays'));
     const token = newToken('goes');
     const gone = await connectHttp(token);
-    await startTrail(keep.call);
+    await startTrail(await connectLocal());
     await gone.call('claim_ticket');
     const waiting = gone.impatient('ask_human', { question: 'Still there?', waitSeconds: 30 }).then(
       () => 'answered',
@@ -436,7 +439,8 @@ describe('MCP over HTTP: long waits and endings', () => {
     await until('the session to end', () => mcp.sessionCount() === 1);
     expect(await waiting).toBe('cut off');
     const docs = await readAgentDocs(root);
-    const ended = docs.filter((d) => d.session.agent === 'claude-02');
+    const ended = docs.filter((d) => d.feed.some((f) => f.text.includes('token "goes"')));
+    expect(ended.length).toBe(1);
     expect(ended.map((d) => d.session.status)).not.toContain('running');
     expect(ended.some((d) => d.feed.some((f) => f.text.includes('Token revoked')))).toBe(true);
     expect(docs.flatMap((d) => d.pending)).toEqual([]);
@@ -461,5 +465,153 @@ describe('MCP over HTTP: long waits and endings', () => {
     expect(quiet.status).toBe(200);
     expect(mcp.sessionCount()).toBe(1);
     await until('the quiet one to be closed', () => mcp.sessionCount() === 0);
+  });
+});
+
+describe('MCP over HTTP: never the human\u2019s voice', () => {
+  type Result = { isError?: boolean; content: { text: string }[] };
+  const names = async (client: Client) => (await client.listTools()).tools.map((t) => t.name);
+
+  /** What every tool declared, read from a local server: the declarations are the same for both kinds. */
+  function declared() {
+    const agent = new TrailAgent({ root, pollMs: 20, client: () => 'claude-code 1.0.0' });
+    open.push({ close: () => agent.close() });
+    return [...humanRoles(createMcpServer(agent, '0.0.0-test'))];
+  }
+
+  it('every tool says whether it speaks for the human, and the ones that do are exactly these', () => {
+    const roles = declared();
+    expect(roles.length).toBe(30);
+    const acts = roles.filter(([, r]) => r !== 'none' && r.kind === 'acts').map(([n]) => n);
+    const inputs = roles.flatMap(([n, r]) => (r !== 'none' && r.kind === 'inputs' ? [[n, Object.keys(r.inputs)]] : []));
+    // Changing either list is a security decision: a tool that acts for the human must never reach remote agents.
+    expect(acts).toEqual(['answer_question']);
+    expect(Object.fromEntries(inputs)).toEqual({
+      start_trail: ['discovery'],
+      update_trail: ['mode', 'destination'],
+      record_decision: ['decidedBy'],
+    });
+  });
+
+  it('a remote session is not offered a tool that acts for the human, and is refused if it calls one', async () => {
+    await serve();
+    const remote = await connectHttp(newToken('sandbox'));
+    const listed = await names(remote.client);
+    const acting = declared().filter(([, r]) => r !== 'none' && r.kind === 'acts');
+    expect(acting.length).toBeGreaterThan(0);
+    for (const [name] of acting) {
+      expect(listed).not.toContain(name);
+      const r = (await remote.client.callTool({ name, arguments: { questionId: 'q', answer: 'yes' } })) as Result;
+      expect(r.isError).toBe(true);
+      expect(r.content[0].text).toMatch(/not available over a remote connection/);
+    }
+    expect(listed.length).toBe(declared().length - acting.length);
+    const refused = (await remote.client.callTool({
+      name: 'answer_question',
+      arguments: { questionId: 'q', answer: 'yes' },
+    })) as Result;
+    expect(refused.content[0].text).toMatch(/Answering is the trail lead's: they answer in the Lookout or Slack/);
+  });
+
+  it('a local agent keeps every tool, answer_question included', async () => {
+    const agent = new TrailAgent({ root, pollMs: 20, client: () => 'claude-code 1.0.0' });
+    const local = createMcpServer(agent, '0.0.0-test');
+    const [a, b] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: 'claude-code', version: '1.0.0' });
+    await Promise.all([local.connect(a), client.connect(b)]);
+    open.push({ close: () => agent.close() }, client);
+    expect((await names(client)).sort()).toEqual(
+      declared()
+        .map(([n]) => n)
+        .sort(),
+    );
+    const call = caller(client);
+    const asked = await call<{ questionId: string }>('ask_human', { question: 'Go?', framing: true, waitSeconds: 0 });
+    expect(await call('answer_question', { questionId: asked.questionId, answer: 'Go' })).toMatchObject({
+      delivered: true,
+    });
+    await call('start_trail', { discovery: false, title: 'Local', destination: 'Works as before' });
+    await call('update_trail', { mode: 'plan-only', destination: 'Still the local agent\u2019s to edit' });
+    const d = await call<{ decision: { decidedBy: string } }>('record_decision', {
+      question: 'Which?',
+      answer: 'This',
+      decidedBy: 'operator',
+    });
+    expect(d.decision.decidedBy).toBe('operator');
+  });
+
+  it('a remote agent cannot answer its own question, nor anyone else\u2019s', async () => {
+    await serve();
+    const remote = await connectHttp(newToken('sandbox'));
+    const local = await connectLocal();
+    const mine = await remote.call<{ questionId: string }>('ask_human', {
+      question: 'Mine?',
+      framing: true,
+      waitSeconds: 0,
+    });
+    const theirs = await local<{ questionId: string }>('ask_human', {
+      question: 'Theirs?',
+      framing: true,
+      waitSeconds: 0,
+    });
+    for (const questionId of [mine.questionId, theirs.questionId])
+      await expect(remote.call('answer_question', { questionId, answer: 'yes' })).rejects.toThrow(
+        /not available over a remote connection/,
+      );
+    const inbox = await remote.call<{ questions: { questionId: string }[] }>('list_inbox');
+    expect(inbox.questions.map((q) => q.questionId).sort()).toEqual([mine.questionId, theirs.questionId].sort());
+  });
+
+  it('a remote agent cannot pass an input that claims the human decided', async () => {
+    await serve();
+    const { call } = await connectHttp(newToken('sandbox'));
+    const start = { title: 'Remote trail', destination: 'Charted from a sandbox' };
+    await expect(call('start_trail', { ...start, discovery: false })).rejects.toThrow(/`discovery` is not available/);
+    const made = await call<{ tickets: { title: string }[] }>('start_trail', { ...start, discovery: true });
+    expect(made.tickets.length).toBe(1);
+    await expect(call('update_trail', { mode: 'plan-only' })).rejects.toThrow(/`mode` is not available/);
+    await expect(call('update_trail', { destination: 'Somewhere else' })).rejects.toThrow(/propose_reroute/);
+    await call('update_trail', { notes: 'Notes are the agent\u2019s to write' });
+    const decision = { question: 'Which?', answer: 'This' };
+    await expect(call('record_decision', { ...decision, decidedBy: 'operator' })).rejects.toThrow(
+      /`decidedBy` is not available/,
+    );
+    await expect(call('record_decision', { ...decision, decidedBy: 'trail lead' })).rejects.toThrow(/decidedBy/);
+    const own = await call<{ decision: { decidedBy: string } }>('record_decision', decision);
+    expect(own.decision.decidedBy).toBe('claude-01');
+    // A high-risk call is the human's: recording it is refused, and the way out is asking, not "operator".
+    const risky = call('record_decision', { ...decision, category: 'data-deletion' });
+    await expect(risky).rejects.toThrow(/once they answer in the Lookout/);
+  });
+
+  it('a remote agent closes a HITL ticket only after the human answered in the Lookout', async () => {
+    await serve();
+    const local = await connectLocal();
+    const m = await local<{ tickets: { key: string }[] }>('start_trail', {
+      discovery: false,
+      title: 'Pick a format',
+      destination: 'A format is chosen',
+      tickets: [{ ref: 'j', title: 'Which format?', type: 'junction' }],
+    });
+    const { call } = await connectHttp(newToken('sandbox'));
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    await expect(call('close_ticket', { resolution: 'JSON, I decided' })).rejects.toThrow(/the human's to decide/);
+    await expect(call('close_ticket', { resolution: 'Not needed', outcome: 'out_of_scope' })).rejects.toThrow(
+      /the human's to decide/,
+    );
+    const waiting = call<{ answered: boolean }>('ask_human', { question: 'JSON or YAML?', waitSeconds: 30 });
+    await until('the question', async () => (await readAgentDocs(root)).some((d) => d.pending.length > 0));
+    const doc = (await readAgentDocs(root)).find((d) => d.pending.length)!;
+    writeAgentAnswer(root, {
+      sessionId: doc.session.id,
+      questionId: doc.pending[0].id,
+      text: 'JSON',
+      author: 'trail lead',
+    });
+    expect((await waiting).answered).toBe(true);
+    const done = await call<{ closed: string; decision: { decidedBy: string } }>('close_ticket', {
+      resolution: 'JSON',
+    });
+    expect(done).toMatchObject({ closed: m.tickets[0].key, decision: { decidedBy: 'trail lead' } });
   });
 });

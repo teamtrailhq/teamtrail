@@ -10,6 +10,7 @@ export function registerKnowledgeTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'propose_knowledge',
     {
+      human: 'none',
       title: 'Propose project knowledge',
       description:
         'Something the next agent should know about this codebase or product: an architecture fact, a convention, a gotcha, a dead end (an approach that failed and why), a business rule, a product decision, a persona, a UX principle, pricing. It is a suggestion until the human confirms it.',
@@ -32,6 +33,7 @@ export function registerKnowledgeTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'search_knowledge',
     {
+      human: 'none',
       title: 'Search project knowledge',
       description:
         'Find knowledge by words, paths or tags. Each hit has its status: confirmed, assumption or suggested.',
@@ -50,6 +52,7 @@ export function registerKnowledgeTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'flag_knowledge',
     {
+      human: 'none',
       title: 'Flag knowledge as possibly outdated',
       description:
         'When an entry contradicts the code or the product, flag it with the evidence instead of ignoring it.',

@@ -44,6 +44,7 @@ export function registerRerouteTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'list_assumptions',
     {
+      human: 'none',
       title: 'List assumptions',
       description:
         "The trail's assumptions (S-<n>), their status (holding, challenged, invalidated, confirmed), and the tickets and decisions that depend on each.",
@@ -56,6 +57,7 @@ export function registerRerouteTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'challenge_assumption',
     {
+      human: 'none',
       title: 'Challenge an assumption',
       description:
         'You found evidence that an assumption does not hold. Marks it challenged and returns what depends on it. Then propose_reroute; do not silently work around it.',
@@ -72,6 +74,7 @@ export function registerRerouteTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'propose_reroute',
     {
+      human: 'none',
       title: 'Propose a reroute',
       description:
         'Propose typed changes to the map for the human to approve. Nothing changes until they do; the tickets it cancels, edits or rewires are frozen meanwhile. kind "challenge-destination" says the destination itself is wrong (the work exists already, it targets the wrong problem, or it should be rescoped) and needs an update_destination change. A newer proposal of yours replaces your pending one.',
@@ -94,6 +97,7 @@ export function registerRerouteTools(tool: DefineTool, agent: TrailAgent) {
   tool(
     'reroute_status',
     {
+      human: 'none',
       title: 'Reroute status',
       description:
         "A proposal's decision: pending, approved (applied), rejected (with the human's note) or superseded. Default: your latest proposal on the trail. wait: true blocks until the human decides.",

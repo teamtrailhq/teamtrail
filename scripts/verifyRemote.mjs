@@ -160,7 +160,22 @@ export async function verifyRemote({ browser, cli, log, shots }) {
       .first()
       .waitFor({ timeout: 20_000 });
     if (shots) await page.screenshot({ path: path.join(shots, '31-remote-agent-working.png') });
+    // The remote agent can't be the human's voice: no answer_question in its tools, and its own question stays open.
+    const remoteTools = (await remote.client.listTools()).tools.map((t) => t.name);
+    const localTools = (await stdio.listTools()).tools.map((t) => t.name);
+    const asked = await remote.call('ask_human', { question: 'Docusaurus or MkDocs?', waitSeconds: 0 });
+    const selfAnswer = await remote
+      .call('answer_question', { questionId: asked.questionId, answer: 'Docusaurus' })
+      .then(
+        () => '',
+        (e) => e.message,
+      );
     const inbox = await second.call('list_inbox');
+    const cannotAnswer =
+      !remoteTools.includes('answer_question') &&
+      localTools.includes('answer_question') &&
+      /trail lead's: they answer in the Lookout or Slack/.test(selfAnswer) &&
+      inbox.questions.some((q) => q.questionId === asked.questionId);
     const done = await remote.call('close_ticket', { resolution: 'Docusaurus, built in CI' });
     await page.locator('.node.st-decided', { hasText: 'List the pages' }).waitFor({ timeout: 20_000 });
 
@@ -193,7 +208,7 @@ export async function verifyRemote({ browser, cli, log, shots }) {
       taken.claimed.key === trail.tickets[1].key &&
       taken.claimed.assignee !== mine.claimed.assignee &&
       /is claimed/.test(stolen) &&
-      Array.isArray(inbox.questions) &&
+      cannotAnswer &&
       done.closed === taken.claimed.key &&
       afterRevoke.every((s) => s === 401) &&
       refused &&
@@ -203,7 +218,7 @@ export async function verifyRemote({ browser, cli, log, shots }) {
       `remote agents ${ok ? 'ok' : 'WRONG'}: closed before a token (${closed.join(', ')}); token created in Settings, ` +
         `only its hash on disk (${!onDisk.includes(token)}), command shown (${commandOk}); ${taken.claimed.assignee} over HTTP took ` +
         `${taken.claimed.key} next to ${mine.claimed.assignee} on stdio (its ticket refused: "${stolen}"); closed ${done.closed}, shown in the Lookout; ` +
-        `mcp --http served ${alone.url} and nothing else (${elsewhere.status}); after Revoke: ${afterRevoke.join(', ')}, ` +
+        `its own question could not be answered by it (${cannotAnswer}); mcp --http served ${alone.url} and nothing else (${elsewhere.status}); after Revoke: ${afterRevoke.join(', ')}, ` +
         `client refused (${refused}); journal ${journal.join(' → ')}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;

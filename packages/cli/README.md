@@ -86,6 +86,8 @@ npx -y teamtrail connect claude --url https://trail.example.com/mcp   # or: conn
 
 The connection is plain HTTP and binds to `127.0.0.1` unless you pass `--host`. Before agents elsewhere use it, put the `mcp --http` port behind HTTPS (a reverse proxy or a tunnel) and pass `--allow-host <name>` with the host name they'll use. Don't expose the Lookout's own port: it has no sign-in. A token only opens the agent tools, and revoking it in Settings ends its sessions within a second.
 
+A remote agent can't speak for you. Over HTTP there is no `answer_question`; `record_decision` takes no `decidedBy`; `start_trail` can't skip discovery; `update_trail` can't change the mode or the destination; and a ticket that needs you (junction, prototype, HITL task) closes only after you answered the agent's question in the Lookout or Slack. Local stdio agents are unchanged.
+
 A remote agent's files aren't on your machine, so it gets no worktree, and on trails with verification its completions come to you for review instead of running the checks locally.
 
 ### Tools

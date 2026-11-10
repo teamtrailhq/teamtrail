@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { RISK_CATEGORIES, TICKET_TYPES, type TicketType } from '@teamtrail/core';
 import { z } from 'zod';
 import { OperationError, type TrailAgent, type WaitControl } from './agent';
+import { assertNoHumanInputs, humanRoles, markHumanInputs, type HumanRole } from './remoteGate';
 
 export const ticketType = z.enum(TICKET_TYPES as [TicketType, ...TicketType[]]);
 export const trail = z
@@ -83,20 +84,27 @@ export function waitControl(extra: Extra, message = 'Waiting on the human in the
   };
 }
 
-/** Registers one tool: its result is JSON text, errors become tool errors, and agent state is flushed after every call. */
+/**
+ * Registers one tool: its result is JSON text, errors become tool errors, and agent state is flushed after every
+ * call. `human` says whether the tool speaks for the human (remoteGate.ts): a remote session doesn't get a tool
+ * that does, and can't pass the inputs that claim the human's word.
+ */
 export function toolDefiner(server: McpServer, agent: TrailAgent) {
   return <S extends z.ZodRawShape>(
     name: string,
-    meta: { title: string; description: string; readOnly?: boolean },
+    meta: { title: string; description: string; human: HumanRole; readOnly?: boolean },
     shape: S,
     fn: (args: z.infer<z.ZodObject<S>>, extra: Extra) => Promise<unknown>,
-  ) =>
-    server.registerTool(
+  ) => {
+    humanRoles(server).set(name, meta.human);
+    const actsForHuman = meta.human !== 'none' && meta.human.kind === 'acts';
+    if (agent.remote && actsForHuman) return undefined;
+    return server.registerTool(
       name,
       {
         title: meta.title,
         description: meta.description,
-        inputSchema: shape,
+        inputSchema: agent.remote ? markHumanInputs(shape, meta.human) : shape,
         annotations: { readOnlyHint: !!meta.readOnly, openWorldHint: false },
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,6 +112,7 @@ export function toolDefiner(server: McpServer, agent: TrailAgent) {
         try {
           agent.noteCall(extra?._meta);
           agent.heartbeat();
+          if (agent.remote) assertNoHumanInputs(name, meta.human, args);
           return result(withLostLeases(await fn(args, extra), agent.takeLostLeases()));
         } catch (e) {
           return failure(e);
@@ -112,6 +121,7 @@ export function toolDefiner(server: McpServer, agent: TrailAgent) {
         }
       }) as never,
     );
+  };
 }
 
 export type DefineTool = ReturnType<typeof toolDefiner>;

@@ -21,14 +21,14 @@ Take the subcommand from the first word of the arguments. With no arguments, run
    - what is out of scope,
    - what is already decided.
 
-   Each question also appears in the Lookout inbox, and the human can answer in either place. If they interrupt the wait and answer here in chat, call \`list_inbox\`, then \`answer_question\` with their exact words so the Lookout shows the answer too.
+   Each question also appears in the Lookout inbox, and the human can answer in either place. If they interrupt the wait and answer here in chat, call \`list_inbox\`, then \`answer_question\` with their exact words so the Lookout shows the answer too. (Over a remote connection there is no \`answer_question\`: the human answers in the Lookout or Slack.)
 2. Look around the repo as much as you need, then draft the trail map:
    - \`destination\`: what "done" looks like, in one or two sentences.
    - \`decided\`, \`unspecified\` (known unknowns) and \`outOfScope\`, from the answers.
    - \`assumptions\`: what the plan relies on that could turn out wrong, each with the ticket refs that depend on it.
    - \`team\` (optional): the installed guides the trail uses (\`list_guides\`), and a \`guide\` on tickets that need one, e.g. \`qa\` on a testing task or \`security\` on an auth change. With \`reviewer\` in the team, review tickets get the reviewer guide.
    - \`tickets\`: \`research\` for what you can find out alone, \`junction\` for decisions the human must make, \`prototype\` for things to try before deciding, \`task\` for checks and chores (\`hitl: true\` if the human must do or approve them), \`execute\` for implementation once its decisions are made. Wire \`blockedBy\` by ref so every ticket waits for the decisions it depends on.
-3. Call \`start_trail\`. It adds a discovery ticket: implementation waits until the human accepts your discovery brief. Pass \`discovery: false\` only if the human says to skip it. Tell the human the trail key.
+3. Call \`start_trail\`. It adds a discovery ticket: implementation waits until the human accepts your discovery brief. Pass \`discovery: false\` only if the human says to skip it (not possible over a remote connection). Tell the human the trail key.
 4. Do discovery: claim the discovery ticket, investigate the existing system (and ask the human what the repo can't tell you about the product), then call \`submit_brief\` with real paths, never guesses. The human reviews it in the Lookout; \`get_brief\` shows the status and any requested changes. Once it's accepted, revise the planned tickets if the brief changed the picture (\`add_ticket\`, \`update_trail\`).
 5. Continue with **resume**.
 
@@ -63,7 +63,7 @@ Call \`status\` and summarize it in a few lines: progress, running sessions, wha
 
 ## inbox
 
-Call \`list_inbox\`. List its \`attention\` items in their ranked order, each with a number, what it is, its trail and ticket, and its \`reasons\`; keep items with the same \`batch\` together. For questions (\`questionId\`), let the human answer here, then pass their exact words to \`answer_question\`. Other items (approvals, held tickets, flags, briefs, knowledge) are decided in the Lookout: say where. Never answer or approve on their behalf.
+Call \`list_inbox\`. List its \`attention\` items in their ranked order, each with a number, what it is, its trail and ticket, and its \`reasons\`; keep items with the same \`batch\` together. For questions (\`questionId\`), let the human answer here, then pass their exact words to \`answer_question\` (over a remote connection, point them to the Lookout instead: you can't answer for them). Other items (approvals, held tickets, flags, briefs, knowledge) are decided in the Lookout: say where. Never answer or approve on their behalf.
 "
 `;
 
@@ -84,7 +84,7 @@ Trails are for work that spans several layers or needs investigation. For a bug 
 Ask the human only when the call changes product behaviour, data, security, billing, a public API or the schema, or when you're genuinely blocked; keep each question to one decision with 2–3 suggestions. Otherwise decide yourself, following the project's conventions, and keep it with record_decision (rationale and alternatives): the human sees it in the briefing as decided by an agent and can reverse it. Never decide HITL tickets (junction, prototype, HITL tasks) alone: ask.
 The project's risk policy says which calls are yours: pass category (schema, breaking-api, auth-permissions, billing, data-deletion, product-behaviour, dependencies) and paths to record_decision and close_ticket. High-risk calls are the human's: ask_human with the category instead; recording one yourself is rejected.
 When you ask, set urgency honestly: blocking only when you can do no useful work until it's answered; soon (the default) or fyi when you can keep going, and then work on other tickets while it waits (ask with a short waitSeconds). Ask related questions together, not one by one, and pass blocks with the tickets that can't move until it's answered: everything that needs the human is ranked in one queue, and fewer, batched questions rank better.
-If you connect over HTTP from another machine (claim_ticket's git then says "Remote connection"), Teamtrail can't see your files: no worktree is prepared, so work on a branch of your own and push it; and on a trail with verification no check runs on your completion: it goes to the human as blocked, so name your branch or pull request in the resolution (or pass pr) and move on to another ticket. projects_status is not available remotely.
+If you connect over HTTP from another machine (claim_ticket's git then says "Remote connection"), Teamtrail can't see your files: no worktree is prepared, so work on a branch of your own and push it; and on a trail with verification no check runs on your completion: it goes to the human as blocked, so name your branch or pull request in the resolution (or pass pr) and move on to another ticket. Remotely you can never speak for the human: there is no answer_question, record_decision takes no decidedBy, start_trail can't skip discovery, update_trail can't change the mode or the destination (propose_reroute instead), and a HITL ticket closes only after the human answered your ask_human in the Lookout or Slack. projects_status is not available remotely.
 The human may supervise other repos too: projects_status lists them read-only (questions waiting, what needs them), so you can say where else they're needed. You only ever work in this repo.
 If ask_human returns answered=false, call wait_for_answer with the questionId, or tell the user the question is waiting in the Lookout."
 `;
