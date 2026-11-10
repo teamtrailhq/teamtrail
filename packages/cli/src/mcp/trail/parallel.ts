@@ -7,6 +7,7 @@ import {
   readWorkspace,
   readWorkspaceSettings,
   repoRootOf,
+  repoRootSpellings,
   writeLease,
 } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
@@ -22,7 +23,7 @@ const REMOTE_WORKSPACE_NOTE =
   "No worktree: you're connected remotely, and Teamtrail prepares worktrees only on the machine it runs on. Work on a branch of your own in your checkout, push it, and name the branch (and pull request) when you complete.";
 
 /** The globs a claim touches, repo-relative like every declared path (absolute or escaping ones are refused). */
-const clean = (globs: string[] | undefined, repoRoot: string) =>
+const clean = (globs: string[] | undefined, repoRoot: string[]) =>
   repoPaths(
     (globs ?? []).filter((g) => g.trim()),
     repoRoot,
@@ -50,7 +51,7 @@ export async function claimParallel(
         })
       : undefined;
   const workspace = prepared && 'workspace' in prepared ? prepared.workspace : undefined;
-  const touches = clean(at.touches, repoRootOf(ctx.verifyEnv()));
+  const touches = clean(at.touches, repoRootSpellings(repoRootOf(ctx.verifyEnv())));
   const lease = readLease(ctx.root, at.mapId, at.ticket.id);
   if (lease && (touches.length || workspace)) writeLease(ctx.root, { ...lease, touches, workspace });
   const overlaps = touches.length

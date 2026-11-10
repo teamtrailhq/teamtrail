@@ -11,7 +11,7 @@ import {
   type SessionHandle,
   type Ticket,
 } from '@teamtrail/core';
-import { levelFor, repoRootOf } from '@teamtrail/core/agents';
+import { levelFor, repoRootOf, repoRootSpellings } from '@teamtrail/core/agents';
 import { assertHumanDecided } from '../remoteGate';
 import type { AgentContext } from './agentContext';
 import { assertCloseable } from './assertCloseable';
@@ -134,7 +134,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
     verified,
     paths: input.paths,
     noCodeReason: input.noCodeReason,
-    repoRoot: repoRootOf(ctx.verifyEnv()),
+    repoRoot: repoRootSpellings(repoRootOf(ctx.verifyEnv())),
   });
   assertCriteria(ctx.root, snap, t, info.level);
   await keepAnswers(ctx, {

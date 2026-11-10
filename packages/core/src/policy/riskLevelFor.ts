@@ -9,8 +9,8 @@ export interface RiskSubject {
   paths?: string[];
   /** The repo is on a filesystem that ignores case, so the path rules do too. */
   caseInsensitive?: boolean;
-  /** Where the repo is: an absolute path inside it counts as repo-relative. */
-  repoRoot?: string;
+  /** Where the repo is (every spelling): an absolute path inside it counts as repo-relative. */
+  repoRoot?: string | string[];
 }
 
 const rank = (r: DecisionRisk) => RISK_LEVELS.indexOf(r.level);

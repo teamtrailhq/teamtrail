@@ -18,6 +18,7 @@ import {
   readBrief,
   readKnowledge,
   repoRootFor,
+  repoRootSpellings,
   writeKnowledge,
 } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
@@ -59,7 +60,7 @@ export async function proposeKnowledge(
   const snap = await ctx.resolveTrail(input.trail).catch(() => undefined);
   const ticketId = ctx.sessions.current?.info.ticketId;
   const now = Date.now();
-  const anchors = repoPaths(input.files, repoRootFor(ctx.root)).map((path) => ({ path }));
+  const anchors = repoPaths(input.files, repoRootSpellings(repoRootFor(ctx.root))).map((path) => ({ path }));
   const draft = {
     title: input.title.trim(),
     body: input.body.trim(),

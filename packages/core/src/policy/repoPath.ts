@@ -1,4 +1,3 @@
-import { realpathSync } from 'node:fs';
 import { OperationError } from '../planning/operations/operationError';
 
 /*
@@ -11,27 +10,17 @@ import { OperationError } from '../planning/operations/operationError';
 
 const DRIVE = /^[A-Za-z]:\//;
 
-/** The repo root as it may be spelled: as given, and through symlinks (`/var` and `/private/var` on macOS). */
-function rootSpellings(repoRoot: string): string[] {
-  const clean = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '');
-  let real = repoRoot;
-  try {
-    real = realpathSync(repoRoot);
-  } catch {
-    // a root that doesn't exist here is only ever matched as given
-  }
-  return [...new Set([clean(repoRoot), clean(real)])];
-}
-
 /** An absolute path, relative to the repo when it is inside it; throws when it isn't. */
-function insideRepo(path: string, declared: string, repoRoot?: string) {
-  const root = repoRoot ? rootSpellings(repoRoot).find((r) => path.startsWith(`${r}/`)) : undefined;
+function insideRepo(path: string, declared: string, repoRoot?: string | string[]) {
+  const spellings = [repoRoot ?? []].flat().map((r) => r.replace(/\\/g, '/').replace(/\/+$/, ''));
+  const root = spellings.find((r) => path.startsWith(`${r}/`));
   if (root) return path.slice(root.length + 1);
   throw new OperationError(`"${declared}" is an absolute path outside the repo: give paths relative to the repo root`);
 }
 
 /** One declared path (or glob) in its repo-relative form. Throws when it is outside the repo. */
-export function repoPath(declared: string, repoRoot?: string): string {
+/** `repoRoot`: where the repo is, in every spelling it may have (see repoRootSpellings). */
+export function repoPath(declared: string, repoRoot?: string | string[]): string {
   let raw = declared.normalize('NFC').trim().replace(/\\/g, '/');
   if (!raw) throw new OperationError('a path is empty');
   if (raw.startsWith('~'))
@@ -50,6 +39,6 @@ export function repoPath(declared: string, repoRoot?: string): string {
 }
 
 /** Declared paths in their repo-relative form, each once, in the order given. */
-export function repoPaths(declared: string[] | undefined, repoRoot?: string): string[] {
+export function repoPaths(declared: string[] | undefined, repoRoot?: string | string[]): string[] {
   return [...new Set((declared ?? []).map((p) => repoPath(p, repoRoot)))];
 }

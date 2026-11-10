@@ -12,7 +12,7 @@ export function declaredPaths(at: {
   verified: boolean;
   paths?: string[];
   noCodeReason?: string;
-  repoRoot: string;
+  repoRoot: string[];
 }) {
   const paths = repoPaths(at.paths, at.remote ? undefined : at.repoRoot);
   if (at.remote && at.verified && !paths.length && !at.noCodeReason?.trim())

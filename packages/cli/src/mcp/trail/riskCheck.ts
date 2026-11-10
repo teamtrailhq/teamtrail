@@ -1,5 +1,5 @@
 import { madeBy, OperationError, riskLevelFor, type DecisionRisk, type RiskCategory } from '@teamtrail/core';
-import { caseInsensitiveFs, readPolicy, repoRootFor } from '@teamtrail/core/agents';
+import { caseInsensitiveFs, readPolicy, repoRootFor, repoRootSpellings } from '@teamtrail/core/agents';
 
 export interface RiskQuery {
   root: string;
@@ -30,7 +30,12 @@ export function checkRisk(q: RiskQuery): DecisionRisk | undefined {
  */
 export function riskOf(q: Pick<RiskQuery, 'root' | 'category' | 'paths'>): DecisionRisk | undefined {
   const caseInsensitive = caseInsensitiveFs(q.root);
-  const subject = { category: q.category, paths: q.paths, caseInsensitive, repoRoot: repoRootFor(q.root) };
+  const subject = {
+    category: q.category,
+    paths: q.paths,
+    caseInsensitive,
+    repoRoot: repoRootSpellings(repoRootFor(q.root)),
+  };
   return riskLevelFor(subject, readPolicy(q.root).policy);
 }
 
