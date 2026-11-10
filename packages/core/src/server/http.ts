@@ -19,12 +19,15 @@ export function refuseEarly(res: ServerResponse, v: unknown) {
 }
 
 /**
- * The request's URL. A request line no URL parser accepts (`GET //`) is refused with 400 like any other bad
- * request; it must never throw past the listener, where it would end the process.
+ * The request's URL: the one parser every server uses. Only an origin-form target is a request (`/path?query`):
+ * `//` (which no URL parser accepts), `///x`, an absolute-form `http://other/x` and `*` are refused with 400
+ * like any other bad request. It must never throw past the listener, where it would end the process.
  */
 export function requestUrl(req: IncomingMessage): URL {
+  const target = req.url ?? '/';
+  if (!target.startsWith('/') || target.startsWith('//')) throw new BadRequest('malformed request');
   try {
-    return new URL(req.url ?? '/', 'http://x');
+    return new URL(target, 'http://x');
   } catch {
     throw new BadRequest('malformed request');
   }

@@ -12,6 +12,7 @@ import { createMcpHttp } from '../src/mcp/http/createMcpHttp';
 import { mcpHttpListener } from '../src/mcp/http/mcpHttpListener';
 import { remoteAgentOpener } from '../src/mcp/http/remoteAgentOpener';
 import { tokenFileAuth } from '../src/mcp/http/tokenFileAuth';
+import { keepServing } from '../src/serve/keepServing';
 import { lookoutHandler } from '../src/serve/lookoutHandler';
 
 /*
@@ -64,6 +65,9 @@ const line = (requestLine: string, headers: string[] = [], body = '') =>
 const malformed = (api: string) => [
   'GET //',
   'GET ///',
+  'GET ///x',
+  'GET http://evil.example/x',
+  'GET https://evil.example/',
   `GET ${api}//`,
   `GET ${api}/p//`,
   'GET http://[::1',
@@ -172,7 +176,12 @@ describe('malformed requests never end the process', () => {
       expect(status, `${name}: ${requestLine}`).toBeGreaterThanOrEqual(200);
       expect(status, `${name}: ${requestLine}`).toBeLessThan(500);
     }
-    expect(await send(port, line('GET //')), `${name}: GET //`).toBeGreaterThanOrEqual(400);
+    // Outside its two mounts the dev server is Vite's; inside them the same parser answers.
+    const own =
+      name === 'the dev plugin'
+        ? [`GET ${entry.api}//`, `GET ${entry.api}///x`]
+        : ['GET //', 'GET ///x', 'GET http://evil.example/x'];
+    for (const exact of own) expect([await send(port, line(exact)), exact]).toEqual([400, exact]);
     expect(await send(port, line(entry.sane[0]))).toBe(entry.sane[1]);
     expect(uncaught).toEqual([]);
   });
@@ -208,5 +217,26 @@ describe('malformed requests never end the process', () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(await send(port, line(entry.sane[0]))).toBe(entry.sane[1]);
     expect(uncaught).toEqual([]);
+  });
+
+  it('an error nothing caught is logged and the process keeps serving', async () => {
+    const before = { e: process.listeners('uncaughtException'), r: process.listeners('unhandledRejection') };
+    process.removeAllListeners('uncaughtException');
+    process.removeAllListeners('unhandledRejection');
+    const lines: string[] = [];
+    const stop = keepServing((l) => lines.push(l));
+    try {
+      setTimeout(() => {
+        throw new Error('thrown in a timer');
+      }, 0);
+      void Promise.reject(new Error('rejected nowhere'));
+      await new Promise((r) => setTimeout(r, 50));
+    } finally {
+      stop();
+      for (const l of before.e) process.on('uncaughtException', l);
+      for (const l of before.r) process.on('unhandledRejection', l);
+    }
+    expect(lines.join('')).toMatch(/Uncaught error \(still serving\): Error: thrown in a timer/);
+    expect(lines.join('')).toMatch(/Unhandled rejection \(still serving\): Error: rejected nowhere/);
   });
 });

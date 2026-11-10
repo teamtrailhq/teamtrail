@@ -4,6 +4,7 @@ import { remoteTokenViews, writeMcpEndpoint } from '@teamtrail/core/agents';
 import { configDir } from '@teamtrail/core/bridge';
 import { autoRegister } from '@teamtrail/core/node';
 import { fail } from '../../args/help';
+import { keepServing } from '../../serve/keepServing';
 import { listen } from '../../serve/listen';
 import { createMcpHttp } from './createMcpHttp';
 import { endpointUrl, isLoopback } from './endpointUrl';
@@ -46,6 +47,7 @@ export async function runMcpHttp(opts: McpHttpServeOptions) {
     const e = err as NodeJS.ErrnoException;
     fail(e.code === 'EADDRINUSE' ? `port ${opts.port} is already in use; pick another with --port <n>` : e.message);
   }
+  keepServing();
   const url = endpointUrl(opts.host, port);
   const network = !isLoopback(opts.host);
   const release = writeMcpEndpoint(opts.root, { url, kind: 'standalone', network });

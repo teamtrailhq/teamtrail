@@ -13,6 +13,7 @@ import { endpointUrl } from '../mcp/http/endpointUrl';
 import { remoteAgentOpener } from '../mcp/http/remoteAgentOpener';
 import { tokenFileAuth } from '../mcp/http/tokenFileAuth';
 import { printGreeting } from '../printGreeting';
+import { keepServing } from './keepServing';
 import { listen } from './listen';
 import { lookoutHandler } from './lookoutHandler';
 import { openBrowser } from './openBrowser';
@@ -53,6 +54,7 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
     openBridge: (p) => createTrackerBridge(p.root, { cwd: p.path, url: () => url }),
     url: () => url,
   });
+  keepServing();
   printGreeting();
   process.stdout.write(
     `\n  ${BRAND.name} ${__VERSION__} · ${BRAND.assistant.name} online\n\n` +
