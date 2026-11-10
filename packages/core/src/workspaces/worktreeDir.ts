@@ -1,5 +1,6 @@
 import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
+import { dirProblem } from './dirProblem';
 
 export type WorktreeDir = { dir: string } | { refused: string };
 
@@ -11,13 +12,6 @@ function realish(p: string): string {
 }
 
 const inside = (parent: string, p: string) => p === parent || p.startsWith(parent + path.sep);
-
-/** Why a `dir` from workspaces.json can't be used as written, before the disk is looked at. */
-export function dirProblem(dir: string): string | undefined {
-  if (path.posix.isAbsolute(dir) || path.win32.isAbsolute(dir) || dir.startsWith('~') || dir.includes('\\'))
-    return 'must be a relative path with "/" (for example "../worktrees")';
-  return undefined;
-}
 
 /**
  * Where worktrees go: `dir` from workspaces.json (committed, so a teammate's push can change it) resolved from

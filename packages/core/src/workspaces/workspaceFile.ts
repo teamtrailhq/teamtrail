@@ -1,5 +1,5 @@
 import { DEFAULT_WORKSPACE_SETTINGS, type WorkspaceSettings } from './workspace';
-import { dirProblem } from './worktreeDir';
+import { dirProblem } from './dirProblem';
 
 const KEYS = new Set(['v', 'worktrees', 'dir']);
 
