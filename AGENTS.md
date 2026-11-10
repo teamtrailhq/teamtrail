@@ -126,7 +126,7 @@ Follow `CONTRIBUTING.md`: one export per file, 200 lines max, the layout rules, 
 2. Settings sections go in `features/settings/` (see `SettingsSection.tsx`): add the section to its group in `settingsGroups.ts`, render it in that group's component inside a `SettingsSlot` (which notes whether it's committed to the repo or only on this machine), and it gets its own `?settings=<section>` link. Full views opened from the header follow `features/decisions/`.
 3. Check the wide, laptop and phone layouts (`app/LaptopSide.tsx`, `app/PhoneView.tsx`). Zone titles carry an info tip (`components/ui/InfoTip.tsx`).
 
-**Add a changelog entry.** Add a plain-language line to `NEXT` or the current release in `apps/lookout/src/features/settings/releases.ts`.
+**Version and release notes.** Every feature PR raises the product version: bump the minor in `packages/cli/package.json` and add a release at the top of `RELEASES` in `apps/lookout/src/features/settings/releases.ts` with that version, the date and 1–4 short, user-facing lines (what changed for the user, not how). A fix PR bumps the patch; add a line only if users would notice. `NEXT` only teases what's coming. `apps/lookout/test/productVersion.test.ts` fails if the two versions differ, and `next` builds publish as `<version>-next.<run>`.
 
 **Extend the end-to-end check.** `scripts/verify-mcp.mjs` drives a real trail through the built CLI and a browser. Add steps for new tools or UI, assert on what the user sees, and avoid timing races: wait on state, not sleeps.
 
