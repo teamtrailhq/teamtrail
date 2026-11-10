@@ -145,8 +145,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
     ticket: t,
     checked: checkedAnswers(ctx, { snap, ticket: t, given: input.checklist }),
   });
-  // Spent before the first write that resolves the ticket: those writes are several (comment, close, decision),
-  // and a failure part way must not hand the answer back for another decision.
+  // Spent before the resolving writes (comment, close, decision): one failing part way can't free it again.
   spend(c.human, `the close of ${t.key}`);
   if (info.level === 'off') {
     await resolveDirectly(c, { meta, transcript });
