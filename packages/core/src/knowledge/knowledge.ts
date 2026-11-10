@@ -1,3 +1,5 @@
+import { wildcardMatch } from '../model/wildcard';
+
 /**
  * Project knowledge: what agents need to know about this codebase and product, kept as reviewed entries.
  * Agents propose (always `suggested`); only the trail lead confirms, keeps as an assumption, edits or retires.
@@ -106,17 +108,11 @@ const words = (s: string) => s.toLowerCase().match(/[a-z0-9][a-z0-9_-]{1,}/g) ??
 
 /**
  * `src/notify/**` style globs: `**` followed by a slash matches whole folders (or none), so `**` + `/migrations/**`
- * never matches `foomigrations/`; a bare `**` matches anything; `*` stays within one segment.
+ * never matches `foomigrations/`; a bare `**` matches anything; `*` stays within one segment; `?` is one
+ * character of a segment. Linear time in the glob and the path (model/wildcard.ts): globs come from agents.
  */
 export function globMatch(glob: string, path: string) {
-  const re = glob
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*\//g, '§DIRS§')
-    .replace(/\*\*/g, '§DEEP§')
-    .replace(/\*/g, '[^/]*')
-    .replace(/§DIRS§/g, '(?:.*/)?')
-    .replace(/§DEEP§/g, '.*');
-  return new RegExp(`^${re}$`).test(path.replace(/^\.\//, ''));
+  return wildcardMatch(glob, path.replace(/^\.\//, ''), { segments: true });
 }
 
 /** Search for agents: tokens in title/body/tags, path globs, tags. Deterministic; ties break by id. */
