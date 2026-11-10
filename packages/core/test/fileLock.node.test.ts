@@ -17,7 +17,10 @@ test('a stale lock is taken over; a live one is waited for', () => {
   writeFileSync(`${file}.lock`, 'someone-gone');
   const old = new Date(Date.now() - 60_000);
   utimesSync(`${file}.lock`, old, old);
-  assert.equal(withFileLock(file, () => 'ran'), 'ran');
+  assert.equal(
+    withFileLock(file, () => 'ran'),
+    'ran',
+  );
   assert.equal(existsSync(`${file}.lock`), false);
   assert.deepEqual(readdirSync(path.dirname(file)), []);
 });
