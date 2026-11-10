@@ -10,10 +10,7 @@ function stepFact(s: SlackStatus, n: number) {
   if (n === 3) return s.setup.appId && `app ${s.setup.appId}`;
   if (n === 4) return s.workspace && `${s.workspace.name} · @${s.bot?.name ?? 'scout'}`;
   const owner = s.owners[0];
-  if (n === 5 && owner) {
-    const via = owner.via === 'git-email' ? ' · git email' : '';
-    return `owner ${owner.name ?? owner.id}${via}`;
-  }
+  if (n === 5 && owner) return `owner ${owner.name ?? owner.id}`;
   if (n === 5 && s.pendingOwner) return 'waiting for you to confirm';
   if (n === 5 && s.ownerRedo) return 'set it again';
   return undefined;

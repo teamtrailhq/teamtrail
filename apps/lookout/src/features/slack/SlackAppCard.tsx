@@ -1,5 +1,6 @@
 import type { SlackStatus } from '@teamtrail/connector-slack';
 import { Card, Pill, Button } from '../../components/ui';
+import { DeliveryLine } from './DeliveryLine';
 import { SlackRemove } from './SlackRemove';
 import { SlackStateLine } from './SlackStateLine';
 
@@ -21,6 +22,7 @@ export function SlackAppCard(props: {
       </div>
       {connected && <div className="c-loc">{workspaceLine(s)}</div>}
       {connected && <SlackStateLine s={s} />}
+      {s.delivery && <DeliveryLine problem={s.delivery} />}
       {!connected && s.step === 1 && !setup && (
         <p className="sl-lead">
           Answer agents and save threads as decisions from Slack. You create your own Scout app in your workspace; it

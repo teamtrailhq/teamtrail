@@ -3,6 +3,10 @@ import { useState } from 'react';
 import { Button, Meta, MetaLine } from '../../components/ui';
 import { slackApi } from './slackApi';
 
+/** The display name, when it says something the handle doesn't. */
+const displayed = (who: SlackUser) =>
+  who.displayName && who.displayName !== who.name ? `shown as “${who.displayName}”` : undefined;
+
 /** What Slack's email says about the account: a hint only, never a reason on its own. */
 const EMAIL_HINT: Record<'true' | 'false', string> = {
   true: 'Its Slack email is your git email',
@@ -11,7 +15,7 @@ const EMAIL_HINT: Record<'true' | 'false', string> = {
 
 /**
  * The Slack account that entered the code shown on this machine, for the trail lead to recognise and confirm. The
- * handle and the workspace lead, because a display name can be set to anyone's. Until the lead confirms, Scout
+ * unique username is the handle and leads; the display name, which anyone can set to anyone's, only follows it. Until the lead confirms, Scout
  * sends nothing in Slack and takes nothing from it.
  */
 export function OwnerConfirm(props: { s: SlackStatus; who: SlackUser; set: (s: SlackStatus) => void }) {
@@ -29,7 +33,7 @@ export function OwnerConfirm(props: { s: SlackStatus; who: SlackUser; set: (s: S
       </p>
       <div className="sl-who">
         <b className="t-row-title">{handle}</b>
-        <MetaLine parts={[who.realName, s.workspace && `${s.workspace.name} workspace`, host]} />
+        <MetaLine parts={[displayed(who), who.realName, s.workspace && `${s.workspace.name} workspace`, host]} />
         <MetaLine parts={[{ text: who.id, code: true }, hint]} />
       </div>
       <div className="sl-actions">
