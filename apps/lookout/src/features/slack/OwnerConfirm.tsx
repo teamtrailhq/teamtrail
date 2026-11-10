@@ -1,6 +1,6 @@
 import type { SlackStatus, SlackUser } from '@teamtrail/connector-slack';
 import { useState } from 'react';
-import { Button, Meta } from '../../components/ui';
+import { Button, Meta, MetaLine } from '../../components/ui';
 import { slackApi } from './slackApi';
 
 /** What Slack's email says about the account: a hint only, never a reason on its own. */
@@ -29,8 +29,8 @@ export function OwnerConfirm(props: { s: SlackStatus; who: SlackUser; set: (s: S
       </p>
       <div className="sl-who">
         <b className="t-row-title">{handle}</b>
-        <Meta parts={[who.realName, s.workspace?.name, host]} />
-        <Meta className="dim" parts={[<code key="id">{who.id}</code>, hint]} />
+        <MetaLine parts={[who.realName, s.workspace && `${s.workspace.name} workspace`, host]} />
+        <MetaLine parts={[{ text: who.id, code: true }, hint]} />
       </div>
       <div className="sl-actions">
         <Button variant="primary" onClick={() => void slackApi.confirmOwner(who.id).then(set, fail)}>

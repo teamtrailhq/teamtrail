@@ -15,6 +15,8 @@ const minutesLeft = (expiresAt: number) => Math.max(1, Math.ceil((expiresAt - Da
  */
 export function OwnerCode(props: { s: SlackStatus; set: (s: SlackStatus) => void }) {
   const { s, set } = props;
+  // After an upgrade the note above already says why and how; this one would say it again.
+  const intro = !s.ownerRedo;
   const [made, setMade] = useState<SlackOwnerCode>();
   const [error, setError] = useState<string>();
   const get = () =>
@@ -30,10 +32,12 @@ export function OwnerCode(props: { s: SlackStatus; set: (s: SlackStatus) => void
   if (!waiting)
     return (
       <>
-        <p>
-          Show Scout which Slack account is yours. Get a code here, then enter it in Scout's Home tab in Slack. Until
-          then Scout sends nothing to anyone.
-        </p>
+        {intro && (
+          <p>
+            Show Scout which Slack account is yours. Get a code here, then enter it in Scout's Home tab in Slack. Until
+            then Scout sends nothing to anyone.
+          </p>
+        )}
         <div className="sl-actions">
           <Button variant="primary" onClick={get}>
             Get a code
