@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T23:06:27.064Z",
+  "recordedAt": "2026-11-10T22:37:12.759Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). A second adapter (another process) charts a trail between the first list and the first poll.",
   "exchanges": [
     {
@@ -283,6 +283,29 @@
     {
       "req": {
         "method": "POST",
+        "url": "/graphql",
+        "operation": "Me"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4990",
+          "x-ratelimit-reset": "1793451601"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "login": "octo-dev"
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
         "url": "/repos/octo-org/launchpad/issues",
         "body": {
           "title": "Survey CRDT libraries",
@@ -365,7 +388,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "etag": "\"f1ef6cb77d9ef2076bc2b55e1173ed511b419d06\"",
+          "etag": "\"89d0717262476ef1764e748eeb5e0bd58fc6dfd9\"",
           "x-ratelimit-limit": "5000",
           "x-ratelimit-remaining": "4990",
           "x-ratelimit-reset": "1793451603"
@@ -421,7 +444,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "etag": "\"f593a9079041ac67ecd27676ab3aec03c2d94bb0\"",
+          "etag": "\"69ecb1ea856e0ddbf0ae17d6dbe0decd7a62a46c\"",
           "x-ratelimit-limit": "5000",
           "x-ratelimit-remaining": "4990",
           "x-ratelimit-reset": "1793451603"
@@ -540,15 +563,38 @@
     },
     {
       "req": {
-        "method": "GET",
-        "url": "/repos/octo-org/launchpad/issues?state=all&sort=updated&direction=desc&per_page=50",
-        "ifNoneMatch": "\"f1ef6cb77d9ef2076bc2b55e1173ed511b419d06\""
+        "method": "POST",
+        "url": "/graphql",
+        "operation": "Me"
       },
       "res": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "etag": "\"e6f6886d4c1445629146a54a046f6eb728d84d22\"",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4990",
+          "x-ratelimit-reset": "1793451604"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "login": "octo-dev"
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "GET",
+        "url": "/repos/octo-org/launchpad/issues?state=all&sort=updated&direction=desc&per_page=50",
+        "ifNoneMatch": "\"89d0717262476ef1764e748eeb5e0bd58fc6dfd9\""
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "etag": "\"8455f28c5523d676fcc97c0ba78f3a740301e25b\"",
           "x-ratelimit-limit": "5000",
           "x-ratelimit-remaining": "4990",
           "x-ratelimit-reset": "1793451604"
@@ -623,7 +669,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "etag": "\"57d485c79fb77e458e160495e2b65b3682615e0a\"",
+          "etag": "\"bba200a6d1130819008e099860725a6b3e8018e1\"",
           "x-ratelimit-limit": "5000",
           "x-ratelimit-remaining": "4990",
           "x-ratelimit-reset": "1793451604"

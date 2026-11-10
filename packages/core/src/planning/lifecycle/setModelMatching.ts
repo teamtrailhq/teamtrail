@@ -16,7 +16,7 @@ export async function setModelMatching(
 ) {
   if (actorKind !== 'trail lead') throw new OperationError('only the trail lead can change model matching');
   if (value) assertValid(value);
-  await adapter.setMapMeta(mapId, { modelMatching: value && clean(value) });
+  await adapter.setMapMeta(mapId, { modelMatching: value && clean(value), confirm: true });
 }
 
 function assertValid(value: ModelMatching) {

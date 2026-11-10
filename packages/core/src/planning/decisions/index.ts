@@ -14,6 +14,7 @@ export {
   decisionStatus,
   firstSentence,
   madeBy,
+  postedNote,
   supersessionChain,
 } from './decisionRecord';
 export { decisionsToMarkdown } from './decisionsToMarkdown';

@@ -74,6 +74,11 @@ export interface TicketMetaPatch {
   reviewOf?: string | null;
   /** The ticket's guide; set at creation, or by the trail lead (`setTicketGuide`). */
   guide?: string | null;
+  /**
+   * Set by the trail lead's own settings actions only: on a remote tracker the settings this write carries count as
+   * accepted on this machine (remote/settingsInForce.ts). Every other write leaves what was accepted alone.
+   */
+  confirm?: true;
 }
 
 /** Teamtrail fields stored with a trail. `null` clears a field. */
@@ -84,6 +89,11 @@ export interface MapMetaPatch {
   guides?: string[] | null;
   /** Trail lead only (`setModelMatching`). */
   modelMatching?: ModelMatching | null;
+  /**
+   * Set by the trail lead's own settings actions only: on a remote tracker the settings this write carries count as
+   * accepted on this machine (remote/settingsInForce.ts). Every other write leaves what was accepted alone.
+   */
+  confirm?: true;
 }
 
 /** One line of a trail's history (`.events/<mapId>.jsonl`). History and UI only; the tracker holds the state. */

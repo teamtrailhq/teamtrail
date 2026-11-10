@@ -102,7 +102,7 @@ test('sync: a teammate closing and commenting in GitHub reaches subscribers; an 
   assert.equal(t.state, 'closed');
   assert.deepEqual(t.comments.at(-1), {
     id: t.comments.at(-1)!.id,
-    author: 'mona',
+    author: '@mona',
     body: 'Closing: Yjs it is.',
     createdAt: t.comments.at(-1)!.createdAt,
   });

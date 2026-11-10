@@ -87,6 +87,7 @@ export { globsOverlap, touchOverlaps, pairsLabel, type TouchOverlap } from './wo
 export { findIntegrations } from './workspaces/findIntegrations';
 export { addIntegrationTicket, integrationTicketFor, INTEGRATION_TITLE } from './workspaces/integrationTicket';
 export { Emitter, sleep, uid } from './lib/emitter';
+export { overrideUrl } from './lib/overrideUrl';
 
 export { MemoryAdapter, type MemoryAdapterOptions } from './adapters/memoryAdapter';
 export { MarkdownAdapter } from './adapters/markdown/markdownAdapter';

@@ -46,6 +46,9 @@ export function fakeLinear(
     org?: string;
     /** Other teams the key can access, listed after the main one. */
     teams?: FakeLinearTeam[];
+    /** Display names of guests of the workspace; `inactive`: deactivated users. */
+    guests?: string[];
+    inactive?: string[];
   } = {},
 ) {
   let clock = opts.start ?? Date.UTC(2026, 9, 31, 12, 0, 0);
@@ -53,7 +56,16 @@ export function fakeLinear(
   let n = 0;
   const uid = (p: string) => `${p}-${String(++n).padStart(4, '0')}-fake`;
   const team = { id: 'team-eng', key: 'ENG', name: 'Engineering' };
-  const viewer = { name: opts.viewer?.name ?? 'Ada Ops', email: opts.viewer?.email ?? 'ada@octo.dev' };
+  const viewer = { id: 'usr-ada', name: opts.viewer?.name ?? 'Ada Ops', email: opts.viewer?.email ?? 'ada@octo.dev' };
+  /** A comment's `user`: the key's own user, another member of the workspace, or null for an integration. */
+  const userOf = (name: string | null) => {
+    if (name === null) return null;
+    const guest = (opts.guests ?? []).includes(name);
+    const active = !(opts.inactive ?? []).includes(name);
+    const id = name === viewer.name ? viewer.id : `usr-${name.toLowerCase()}`;
+    const email = name === viewer.name ? viewer.email : `${name.toLowerCase().replace(/\s+/g, '.')}@octo.dev`;
+    return { id, displayName: name, email, guest, active };
+  };
   const org = { name: opts.org ?? 'Octo Inc' };
   const mainProjects = [{ id: 'proj-mobile', name: 'Mobile', state: 'started' }];
   const allTeams = (): FakeLinearTeam[] => [{ ...team, projects: mainProjects }, ...(opts.teams ?? [])];
@@ -84,8 +96,14 @@ export function fakeLinear(
     ['lbl-bug', { id: 'lbl-bug', name: 'Bug', teamId: null }],
   ]);
   const issues = new Map<string, LIssue>();
-  const comments: { id: string; issueId: string; body: string; createdAt: string; updatedAt: string; user: string }[] =
-    [];
+  const comments: {
+    id: string;
+    issueId: string;
+    body: string;
+    createdAt: string;
+    updatedAt: string;
+    user: string | null;
+  }[] = [];
   let relations: { id: string; issueId: string; relatedIssueId: string; type: string }[] = [];
   let seq = 0;
 
@@ -105,7 +123,7 @@ export function fakeLinear(
     comments: {
       nodes: comments
         .filter((c) => c.issueId === i.id)
-        .map((c) => ({ id: c.id, body: c.body, createdAt: c.createdAt, user: { displayName: c.user } })),
+        .map((c) => ({ id: c.id, body: c.body, createdAt: c.createdAt, user: userOf(c.user) })),
     },
     ...(withRel
       ? {
@@ -149,6 +167,8 @@ export function fakeLinear(
         };
       case 'Viewer':
         return { viewer, organization: org };
+      case 'Me':
+        return { viewer: { id: viewer.id } };
       case 'Teams': {
         const page = paged(allTeams(), v.first, v.after);
         const nodes = page.nodes.map((t) => {
@@ -195,7 +215,10 @@ export function fakeLinear(
         const root = issues.get(v.id);
         if (!root) return { issue: null };
         const kids = [...issues.values()].filter((i) => i.parentId === root.id);
-        return { issue: { ...view(root, false), children: { nodes: kids.map((k) => view(k, true)) } } };
+        return {
+          viewer: { id: viewer.id },
+          issue: { ...view(root, false), children: { nodes: kids.map((k) => view(k, true)) } },
+        };
       }
       case 'Changes': {
         const since = v.issues.updatedAt.gt;
@@ -266,7 +289,7 @@ export function fakeLinear(
           body: v.input.body,
           createdAt: now,
           updatedAt: now,
-          user: 'Ada Ops',
+          user: viewer.name,
         };
         comments.push(c);
         return { commentCreate: { comment: { id: c.id } } };
@@ -314,9 +337,14 @@ export function fakeLinear(
         i.completedAt = tick();
         i.updatedAt = tick();
       },
-      comment(issueId: string, user: string, body: string) {
+      /** A member of the workspace comments; `null` is an integration (no user). */
+      comment(issueId: string, user: string | null, body: string) {
         const now = tick();
         comments.push({ id: uid('cmt'), issueId, body, createdAt: now, updatedAt: now, user });
+      },
+      /** Anyone in the workspace edits an issue's description; Linear doesn't say who. */
+      editDescription(id: string, description: string) {
+        Object.assign(issues.get(id)!, { description, updatedAt: tick() });
       },
     },
   };

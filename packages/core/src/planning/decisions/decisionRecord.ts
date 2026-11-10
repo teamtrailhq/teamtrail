@@ -14,10 +14,19 @@ export const isSourceKind = (v: string): v is DecisionSourceKind => v in DECISIO
 
 /**
  * Who made the call. Agents also record the human's HITL answers (`decidedBy: trail lead`), so the source alone
- * isn't enough: an agent decision is one an agent recorded and made itself.
+ * isn't enough: an agent decision is one an agent recorded and made itself. A record another tracker account
+ * posted (`postedBy`) is that person's, whatever it says: never this machine's human, nor one of its agents.
  */
-export const madeBy = (d: Pick<DecisionRecord, 'decidedBy' | 'source'>): 'agent' | 'human' =>
-  d.source.kind === 'agent' && d.decidedBy !== 'trail lead' && !d.decidedBy.startsWith('slack:') ? 'agent' : 'human';
+export function madeBy(d: Pick<DecisionRecord, 'decidedBy' | 'source' | 'postedBy'>): 'agent' | 'human' | 'teammate' {
+  if (d.postedBy) return 'teammate';
+  return d.source.kind === 'agent' && d.decidedBy !== 'trail lead' && !d.decidedBy.startsWith('slack:')
+    ? 'agent'
+    : 'human';
+}
+
+/** "posted by mona in GitHub", for a record another tracker account posted. */
+export const postedNote = (d: Pick<DecisionRecord, 'postedBy' | 'postedIn'>) =>
+  d.postedBy ? `posted by ${d.postedBy} in ${d.postedIn ?? 'the tracker'}` : undefined;
 
 export const decisionStatus = (d: Pick<DecisionRecord, 'supersededBy'>): DecisionStatus =>
   d.supersededBy ? 'superseded' : 'active';

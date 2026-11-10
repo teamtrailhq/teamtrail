@@ -29,6 +29,7 @@ import { handleReroutes } from './rerouteRoutes';
 import { setSecurityHeaders } from './securityHeaders';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { createTrackerRoutes } from './trackerRoutes';
+import { handleTrackerSettings } from './trackerSettingsRoutes';
 import { handleVerification } from './verificationRoutes';
 import { handleVerificationSync } from './verificationSyncRoutes';
 import { watchAttention } from './watchAttention';
@@ -79,6 +80,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   /** Tried in order; the first that handles the request answers it. */
   const api: Route[] = [
     fileRoute,
+    // before the tracker routes, which answer everything else under /trackers
+    (req, res, url) => handleTrackerSettings(ctx, req, res, url),
     (req, res, url) => routes.handle(req, res, url),
     ...plugins.map(
       (p): Route =>

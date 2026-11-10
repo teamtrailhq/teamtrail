@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T23:06:27.082Z",
+  "recordedAt": "2026-11-10T22:37:12.771Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). A second adapter (another process) charts a trail between the first list and the first poll.",
   "exchanges": [
     {
@@ -66,6 +66,13 @@
               "id": "team-eng",
               "key": "ENG",
               "name": "Engineering",
+              "projects": [
+                {
+                  "id": "proj-mobile",
+                  "name": "Mobile",
+                  "state": "started"
+                }
+              ],
               "states": {
                 "nodes": [
                   {
@@ -464,6 +471,29 @@
       "req": {
         "method": "POST",
         "url": "/graphql",
+        "operation": "Me"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451601000"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "id": "usr-ada"
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
         "operation": "Create",
         "variables": {
           "input": {
@@ -585,6 +615,13 @@
               "id": "team-eng",
               "key": "ENG",
               "name": "Engineering",
+              "projects": [
+                {
+                  "id": "proj-mobile",
+                  "name": "Mobile",
+                  "state": "started"
+                }
+              ],
               "states": {
                 "nodes": [
                   {
@@ -741,6 +778,29 @@
                   "nodes": []
                 }
               }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
+        "operation": "Me"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451603000"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "id": "usr-ada"
             }
           }
         }

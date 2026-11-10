@@ -9,7 +9,9 @@ export const GITHUB_SIGN_IN = '/trackers/github/sign-in';
  *   POST   /trackers/github/sign-in/start    GitHubSignInStart: the user code and where to enter it
  *   POST   /trackers/github/sign-in/poll     GitHubSignInPoll: waiting, signed in (with the login), expired, denied
  *   POST   /trackers/github/sign-in/cancel   stop waiting for the code
- *   DELETE /trackers/github/sign-in          sign out: forget the signed-in token on this machine
+ *   DELETE /trackers/github/sign-in          sign out: forget the signed-in token on this machine. GitHub revokes
+ *                                            an OAuth token only with the app's client secret, which the device flow
+ *                                            doesn't have; people revoke it in GitHub → Settings → Applications
  * Neither the device code nor the token is ever sent to the page.
  */
 export async function handleGitHubSignIn(

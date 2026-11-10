@@ -19,9 +19,25 @@ export interface FakeIssue {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
-  comments: { id: number; body: string; created_at: string; user: string }[];
+  comments: {
+    id: number;
+    body: string;
+    created_at: string;
+    user: string | null;
+    /** Its edits, oldest first (editor null: an account since deleted). */
+    edits?: Edit[];
+  }[];
+  /** Who opened the issue, and the edits of its body, oldest first. */
+  author: string;
+  edits?: Edit[];
   subIssues: number[];
   blockedBy: number[];
+}
+
+/** One saved version of a body or comment. */
+interface Edit {
+  editor: string | null;
+  at: string;
 }
 
 type Res = { status: number; headers?: Record<string, string>; body?: unknown };
@@ -47,6 +63,14 @@ export function fakeGitHub(
     repos?: FakeRepo[];
     /** When set, any other bearer token is refused with 401. */
     token?: string;
+    /** Collaborators with write access (`COLLABORATOR`, permission write). */
+    team?: string[];
+    /** Read-only collaborators (`COLLABORATOR`, permission read). */
+    readers?: string[];
+    /** Members of the owning org with no access to this repo (`MEMBER`, not a collaborator). */
+    members?: string[];
+    /** The order `userContentEdits` lists edits in; GitHub's own is not documented, so tests try both. */
+    editsOrder?: 'newest-first' | 'oldest-first';
   } = {},
 ) {
   const repo = opts.repo ?? 'octo-org/launchpad';
@@ -72,6 +96,38 @@ export function fakeGitHub(
     'x-ratelimit-reset': String(Math.floor(clock / 1000) + 3600),
   });
   const byId = (id: number) => [...issues.values()].find((i) => i.id === id);
+  const team = new Set(opts.team ?? []);
+  const readers = new Set(opts.readers ?? []);
+  const members = new Set(opts.members ?? []);
+  const former = new Set<string>();
+  const association = (user: string | null) => {
+    if (user === login || (user && (team.has(user) || readers.has(user) || former.has(user)))) return 'COLLABORATOR';
+    return user && members.has(user) ? 'MEMBER' : 'NONE';
+  };
+  const permissionOf = (user: string) => {
+    if (user === login || team.has(user)) return { permission: 'write', role_name: 'write' };
+    return readers.has(user) ? { permission: 'read', role_name: 'read' } : undefined;
+  };
+  const permissionChecks: string[] = [];
+  /** Set `status` to make permission lookups fail (a 5xx outage). */
+  const permissionFault: { status?: number } = {};
+  const actor = (user: string | null | undefined) => (user ? { login: user } : null);
+  /** The edit history as GitHub's GraphQL shows it: the original version by its author, then each edit. */
+  const history = (author: string | null, createdAt: string, edits: Edit[] = []) => {
+    if (!edits.length) return { userContentEdits: { totalCount: 0, nodes: [] }, lastEditedAt: null };
+    const all = [{ editor: author, at: createdAt }, ...edits].map((e) => ({
+      createdAt: e.at,
+      editor: actor(e.editor),
+    }));
+    const ordered = opts.editsOrder === 'oldest-first' ? all : all.reverse();
+    // `first: 100`, like the query: a longer history is cut, and `totalCount` says so.
+    return {
+      userContentEdits: { totalCount: all.length, nodes: ordered.slice(0, 100) },
+      lastEditedAt: edits.at(-1)!.at,
+    };
+  };
+  const edited = (x: { edits?: Edit[] }, editor: string | null) =>
+    (x.edits = [...(x.edits ?? []), { editor, at: tick() }]);
 
   const rest = (i: FakeIssue) => ({
     id: i.id,
@@ -100,6 +156,9 @@ export function fakeGitHub(
     createdAt: i.created_at,
     updatedAt: i.updated_at,
     closedAt: i.closed_at,
+    author: actor(i.author),
+    ...history(i.author, i.created_at, i.edits),
+    authorAssociation: association(i.author),
     labels: { nodes: i.labels.map((name) => ({ name })) },
     assignees: { nodes: i.assignees.map((l) => ({ login: l })) },
     comments: {
@@ -107,7 +166,9 @@ export function fakeGitHub(
         databaseId: c.id,
         body: c.body,
         createdAt: c.created_at,
-        author: { login: c.user },
+        author: actor(c.user),
+        ...history(c.user, c.created_at, c.edits),
+        authorAssociation: association(c.user),
       })),
     },
     ...(withBlocked ? { blockedBy: { nodes: i.blockedBy.map((id) => ({ number: byId(id)!.number })) } } : {}),
@@ -115,7 +176,7 @@ export function fakeGitHub(
 
   const etagOf = (v: unknown) => `"${createHash('sha1').update(JSON.stringify(v)).digest('hex')}"`;
 
-  function createIssue(b: { title: string; body?: string; labels?: string[] }): FakeIssue {
+  function createIssue(b: { title: string; body?: string; labels?: string[]; author?: string }): FakeIssue {
     const n = nextNumber++;
     const now = tick();
     const i: FakeIssue = {
@@ -132,6 +193,7 @@ export function fakeGitHub(
       updated_at: now,
       closed_at: null,
       comments: [],
+      author: b.author ?? login,
       subIssues: [],
       blockedBy: [],
     };
@@ -156,13 +218,14 @@ export function fakeGitHub(
 
     if (p === '/graphql' || p === '/api/graphql') {
       const { query, variables } = body as { query: string; variables: { number: number } };
+      if (/query Me\b/.test(query)) return ok({ data: { viewer: { login } } });
       if (!/query Trail\b/.test(query))
         return { status: 200, body: { errors: [{ type: 'INTERNAL', message: 'fake: unsupported query' }] } };
       const root = issues.get(variables.number);
       const issue = root
         ? { ...gql(root, false), subIssues: { nodes: root.subIssues.map((n) => gql(issues.get(n)!, true)) } }
         : null;
-      return ok({ data: { repository: { issue } } });
+      return ok({ data: { viewer: { login }, repository: { issue } } });
     }
     if (opts.token && headers.get('authorization') !== `Bearer ${opts.token}`)
       return { status: 401, headers: rate(), body: { message: 'Bad credentials' } };
@@ -170,6 +233,15 @@ export function fakeGitHub(
     if (method === 'GET' && p === '/user/repos') return userRepos(url);
     const other = allRepos.find((r) => r.full_name !== repo && p === `/repos/${r.full_name}`);
     if (method === 'GET' && other) return ok(repoJson(other));
+    const perm = p.match(new RegExp(`^${base}/collaborators/([^/]+)/permission$`));
+    if (method === 'GET' && perm) {
+      const user = decodeURIComponent(perm[1]);
+      permissionChecks.push(user);
+      if (permissionFault.status)
+        return { status: permissionFault.status, headers: rate(), body: { message: 'Server Error' } };
+      const found = permissionOf(user);
+      return found ? ok({ ...found, user: { login: user } }) : notFound;
+    }
     if (!p.startsWith(base)) return notFound;
     const rest_ = p.slice(base.length);
 
@@ -207,6 +279,7 @@ export function fakeGitHub(
         const c = i.comments.find((x) => x.id === Number(cm[1]));
         if (c) {
           c.body = (body as { body: string }).body;
+          edited(c, login);
           return ok({ id: c.id, body: c.body });
         }
       }
@@ -220,7 +293,10 @@ export function fakeGitHub(
     if (method === 'PATCH' && !sub) {
       const b = body as Partial<{ title: string; body: string; state: 'open' | 'closed'; state_reason: string }>;
       if (b.title !== undefined) issue.title = b.title;
-      if (b.body !== undefined) issue.body = b.body;
+      if (b.body !== undefined) {
+        issue.body = b.body;
+        edited(issue, login);
+      }
       if (b.state) {
         issue.state = b.state;
         issue.state_reason = b.state === 'closed' ? (b.state_reason ?? 'completed') : null;
@@ -309,9 +385,13 @@ export function fakeGitHub(
 
   return {
     repo,
+    login,
     issues,
     fetch: fetch as typeof globalThis.fetch,
     handle,
+    /** Logins whose repo permission the adapter asked about, in order. */
+    permissionChecks,
+    permissionFault,
     /** What a teammate does in the GitHub UI. */
     human: {
       close(number: number, reason: 'completed' | 'not_planned' = 'completed') {
@@ -324,13 +404,34 @@ export function fakeGitHub(
         i.comments.push({ id: nextComment++, body, created_at: tick(), user });
         i.updated_at = tick();
       },
-      createSubIssue(parent: number, title: string, labelNames: string[] = []) {
-        const i = createIssue({ title, body: '', labels: labelNames });
+      /** Someone edits an issue body in the GitHub UI (its author, or a person with write access). */
+      editBody(number: number, user: string, body: string) {
+        const i = issues.get(number)!;
+        edited(i, user);
+        Object.assign(i, { body, updated_at: tick() });
+      },
+      /** Someone with write access edits another person's comment; `null`: an account since deleted. */
+      editComment(commentId: number, user: string | null, body: string) {
+        for (const i of issues.values()) {
+          const c = i.comments.find((x) => x.id === commentId);
+          if (c) c.body = body;
+          if (c) edited(c, user);
+          if (c) i.updated_at = tick();
+        }
+      },
+      createSubIssue(parent: number, title: string, labelNames: string[] = [], author?: string) {
+        const i = createIssue({ title, body: '', labels: labelNames, author });
         issues.get(parent)!.subIssues.push(i.number);
         issues.get(parent)!.updated_at = tick();
         return i;
       },
       seed: createIssue,
+      /** The repo's admin removes a collaborator; GitHub may still describe their old comments as a collaborator's. */
+      revoke(user: string) {
+        team.delete(user);
+        readers.delete(user);
+        former.add(user);
+      },
     },
   };
 }

@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T23:06:27.077Z",
+  "recordedAt": "2026-11-10T22:37:12.768Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema).",
   "exchanges": [
     {
@@ -66,6 +66,13 @@
               "id": "team-eng",
               "key": "ENG",
               "name": "Engineering",
+              "projects": [
+                {
+                  "id": "proj-mobile",
+                  "name": "Mobile",
+                  "state": "started"
+                }
+              ],
               "states": {
                 "nodes": [
                   {
@@ -464,6 +471,29 @@
       "req": {
         "method": "POST",
         "url": "/graphql",
+        "operation": "Me"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451601000"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "id": "usr-ada"
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
         "operation": "Create",
         "variables": {
           "input": {
@@ -655,7 +685,7 @@
           "data": {
             "commentCreate": {
               "comment": {
-                "id": "cmt-0013-fake"
+                "id": "cmt-0014-fake"
               }
             }
           }
@@ -686,7 +716,7 @@
           "data": {
             "commentCreate": {
               "comment": {
-                "id": "cmt-0014-fake"
+                "id": "cmt-0015-fake"
               }
             }
           }
@@ -746,7 +776,7 @@
           "data": {
             "commentCreate": {
               "comment": {
-                "id": "cmt-0015-fake"
+                "id": "cmt-0016-fake"
               }
             }
           }
@@ -806,7 +836,7 @@
           "data": {
             "commentCreate": {
               "comment": {
-                "id": "cmt-0016-fake"
+                "id": "cmt-0017-fake"
               }
             }
           }
@@ -819,7 +849,7 @@
         "url": "/graphql",
         "operation": "EditComment",
         "variables": {
-          "id": "cmt-0015-fake",
+          "id": "cmt-0016-fake",
           "input": {
             "body": "**Decision D-1** · ~~superseded by D-2~~ · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0011-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0010-fake\",\"decidedAt\":1793448000000,\"supersededBy\":\"D-2\"} -->"
           }
@@ -964,6 +994,9 @@
         },
         "body": {
           "data": {
+            "viewer": {
+              "id": "usr-ada"
+            },
             "issue": {
               "id": "iss-0010-fake",
               "identifier": "ENG-1",
@@ -1018,35 +1051,51 @@
                     "comments": {
                       "nodes": [
                         {
-                          "id": "cmt-0013-fake",
+                          "id": "cmt-0014-fake",
                           "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0dxwaoj -->\nYjs has the smaller bundle.",
                           "createdAt": "2026-10-31T12:00:05.000Z",
                           "user": {
-                            "displayName": "Ada Ops"
-                          }
-                        },
-                        {
-                          "id": "cmt-0014-fake",
-                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc01f3b0if -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support.",
-                          "createdAt": "2026-10-31T12:00:06.000Z",
-                          "user": {
-                            "displayName": "Ada Ops"
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
                           }
                         },
                         {
                           "id": "cmt-0015-fake",
-                          "body": "**Decision D-1** · ~~superseded by D-2~~ · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0011-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0010-fake\",\"decidedAt\":1793448000000,\"supersededBy\":\"D-2\"} -->",
-                          "createdAt": "2026-10-31T12:00:09.000Z",
+                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc01f3b0if -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support.",
+                          "createdAt": "2026-10-31T12:00:06.000Z",
                           "user": {
-                            "displayName": "Ada Ops"
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
                           }
                         },
                         {
                           "id": "cmt-0016-fake",
+                          "body": "**Decision D-1** · ~~superseded by D-2~~ · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0011-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0010-fake\",\"decidedAt\":1793448000000,\"supersededBy\":\"D-2\"} -->",
+                          "createdAt": "2026-10-31T12:00:09.000Z",
+                          "user": {
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
+                          }
+                        },
+                        {
+                          "id": "cmt-0017-fake",
                           "body": "**Decision D-2** · trail lead · Lookout\n\n> Use Automerge. Its history model fits the audit trail.\n\n**Question:** Survey CRDT libraries\n**Supersedes:** D-1\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0011-fake\",\"ticketKey\":\"ENG-2\",\"answer\":\"Use Automerge. Its history model fits the audit trail.\",\"decidedBy\":\"trail lead\",\"source\":{\"kind\":\"lookout\"},\"question\":\"Survey CRDT libraries\",\"supersedes\":\"D-1\",\"id\":\"D-2\",\"mapId\":\"iss-0010-fake\",\"decidedAt\":1793448000000,\"summary\":\"Use Automerge. Its history model fits the audit trail.\",\"alternatives\":[],\"rationale\":\"\",\"participants\":[{\"id\":\"trail lead\"}],\"transcript\":[]} -->",
                           "createdAt": "2026-10-31T12:00:11.000Z",
                           "user": {
-                            "displayName": "Ada Ops"
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
                           }
                         }
                       ]

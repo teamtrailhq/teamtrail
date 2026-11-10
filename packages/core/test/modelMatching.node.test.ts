@@ -220,7 +220,16 @@ test('model matching round-trips through map.md frontmatter and the trail issue 
 
   // GitHub and Linear share the body format: the meta marker on the trail issue.
   const issue = (m: MapDoc) =>
-    mapFromIssue({ id: '1', key: '#1', title: 'T', labels: [], body: mapBody(m), createdAt: '', updatedAt: '' });
+    mapFromIssue({
+      id: '1',
+      key: '#1',
+      title: 'T',
+      labels: [],
+      body: mapBody(m),
+      writer: { kind: 'self', name: 'octo-dev' } as const,
+      createdAt: '',
+      updatedAt: '',
+    });
   assert.deepEqual(issue(on).modelMatching, on.modelMatching);
   assert.deepEqual(issue({ ...on, verification: 'checks' }).verification, 'checks');
   assert.equal(issue(base).modelMatching, undefined);

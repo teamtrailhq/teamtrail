@@ -13,6 +13,7 @@ import { transition } from '../planning/lifecycle/transition';
 import { OperationError } from '../planning/operations/operationError';
 import { resolve, type DecisionMeta } from '../planning/operations/resolve';
 import { readWorkspace } from '../workspaces/workspaceStore';
+import { assertConfirmed } from './assertConfirmed';
 import { DEFAULT_CONFIG } from './config';
 import { readVerificationConfig, type ConfigRead } from './configFile';
 import { nextAttemptId, readAttempts, writeAttempt } from './evidenceStore';
@@ -108,6 +109,7 @@ export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: Le
  */
 export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptId: string; done: Promise<Settled> }> {
   const { mapId, ticket: t, info, sub } = job;
+  assertConfirmed(t, info);
   const config = readVerificationConfig(env.root);
   const base = {
     v: 1 as const,

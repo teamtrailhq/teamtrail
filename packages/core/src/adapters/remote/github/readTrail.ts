@@ -1,6 +1,8 @@
 import type { Comment, DecisionRecord, MapSnapshot, Ticket } from '../../../model/types';
 import { ticketFromIssue } from '../format';
 import { mapFromIssue, readIssueComments } from '../issueMapping';
+import type { SettingsGate } from '../settingsLedger';
+import { bodyWriter, commentWriter, type GitHubReader } from './githubWriter';
 import type { GqlIssue } from './schema';
 
 export interface GitHubTrail {
@@ -12,8 +14,16 @@ export interface GitHubTrail {
   decisionComments: [string, number][];
 }
 
+export interface TrailReader {
+  /** The login behind the token and who else can write: only the first's comments and bodies are this machine's. */
+  who: GitHubReader;
+  gate: SettingsGate;
+}
+
+const isNumber = (n: unknown): n is number => Number.isSafeInteger(n) && (n as number) > 0;
+
 /** A trail issue (with its sub-issues, as `TRAIL_QUERY` returns it) as a map snapshot. */
-export function readTrail(mapId: string, root: GqlIssue): GitHubTrail {
+export function readTrail(mapId: string, root: GqlIssue, { who, gate }: TrailReader): GitHubTrail {
   const decisions: DecisionRecord[] = [];
   const decisionComments: [string, number][] = [];
   const issueIds: [string, number][] = [[mapId, root.databaseId]];
@@ -23,25 +33,30 @@ export function readTrail(mapId: string, root: GqlIssue): GitHubTrail {
       issue.comments.nodes.map((c) => ({
         id: c.databaseId,
         body: c.body,
-        author: c.author?.login,
+        writer: commentWriter(who, c),
         createdAt: c.createdAt,
       })),
+      'GitHub',
       (d, commentId) => {
         decisions.push(d);
         decisionComments.push([`${mapId}/${d.id}`, commentId]);
       },
     );
   comments(root);
-  const subs = root.subIssues?.nodes ?? [];
+  // An issue number is the ticket's id everywhere after this (paths, branches): anything else is dropped.
+  const subs = (root.subIssues?.nodes ?? []).filter((s) => isNumber(s.number));
   const siblings = new Set(subs.map((s) => String(s.number)));
   const tickets: Ticket[] = subs.map((s) => {
     issueIds.push([String(s.number), s.databaseId]);
+    const writer = bodyWriter(who, s);
     return ticketFromIssue({
       id: String(s.number),
       key: `#${s.number}`,
       title: s.title,
       labels: s.labels.nodes.map((l) => l.name),
       body: s.body,
+      writer,
+      settle: gate.settle(String(s.number), writer),
       closed: s.state === 'CLOSED',
       closeReason: s.stateReason === 'NOT_PLANNED' || s.stateReason === 'DUPLICATE' ? 'not_planned' : 'completed',
       trackerAssignee: s.assignees.nodes[0]?.login,
@@ -52,12 +67,15 @@ export function readTrail(mapId: string, root: GqlIssue): GitHubTrail {
       closedAt: s.closedAt,
     });
   });
+  const writer = bodyWriter(who, root);
   const map = mapFromIssue({
     id: mapId,
     key: `#${root.number}`,
     title: root.title,
     labels: root.labels.nodes.map((l) => l.name),
     body: root.body,
+    writer,
+    settle: gate.settle(mapId, writer),
     createdAt: root.createdAt,
     updatedAt: root.updatedAt,
   });

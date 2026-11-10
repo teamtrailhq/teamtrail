@@ -1,4 +1,5 @@
 import type { TrackerAdapter } from '../adapters/adapter';
+import { overrideUrl } from '../lib/overrideUrl';
 import { BRAND } from '../model/brand';
 import type { PeerAddress } from './requestGuard';
 import {
@@ -41,10 +42,10 @@ export function trackerContext(o: TrackerRoutesOptions) {
     project,
     creds,
     apiUrl: {
-      github: env[`${BRAND.slug.toUpperCase()}_GITHUB_API`],
-      linear: env[`${BRAND.slug.toUpperCase()}_LINEAR_API`],
+      github: overrideUrl(env, `${BRAND.slug.toUpperCase()}_GITHUB_API`),
+      linear: overrideUrl(env, `${BRAND.slug.toUpperCase()}_LINEAR_API`),
       /** github.com's OAuth endpoints (device flow); the fake GitHub's base in the end-to-end check. */
-      githubWeb: env[`${BRAND.slug.toUpperCase()}_GITHUB_WEB`],
+      githubWeb: overrideUrl(env, `${BRAND.slug.toUpperCase()}_GITHUB_WEB`),
     },
     /** Resolved at most every 30 s: `gh auth token` spawns a process. */
     githubToken() {

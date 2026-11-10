@@ -18,14 +18,27 @@ export interface RestIssue {
   pull_request?: unknown;
 }
 
-export interface GqlComment {
+/** Who wrote a comment or an issue body: its author, whoever edited it last, and how the author relates to the repo. */
+export interface GqlAuthored {
+  author: { login: string } | null;
+  /**
+   * Its edit history, in whatever order GitHub returns it (the original version may be one of them), up to 100;
+   * an editor GitHub can't name (a deleted account) is null.
+   */
+  userContentEdits?: { totalCount: number; nodes: { createdAt: string; editor: { login: string } | null }[] } | null;
+  /** When it was last edited; null when never. */
+  lastEditedAt?: string | null;
+  /** `OWNER`, `MEMBER`, `COLLABORATOR`, `CONTRIBUTOR`, `NONE`, …: of the author. */
+  authorAssociation?: string;
+}
+
+export interface GqlComment extends GqlAuthored {
   databaseId: number;
   body: string;
   createdAt: string;
-  author: { login: string } | null;
 }
 
-export interface GqlIssue {
+export interface GqlIssue extends GqlAuthored {
   id: string;
   databaseId: number;
   number: number;
@@ -43,12 +56,16 @@ export interface GqlIssue {
   subIssues?: { nodes: GqlIssue[] };
 }
 
-const ISSUE_FIELDS = `id databaseId number title body state stateReason createdAt updatedAt closedAt
+const AUTHORED = `author { login } lastEditedAt authorAssociation userContentEdits(first: 100) { totalCount nodes { createdAt editor { login } } }`;
+
+const ISSUE_FIELDS = `id databaseId number title body state stateReason createdAt updatedAt closedAt ${AUTHORED}
   labels(first: 30) { nodes { name } }
   assignees(first: 5) { nodes { login } }
-  comments(first: 100) { nodes { databaseId body createdAt author { login } } }`;
+  comments(first: 100) { nodes { databaseId body createdAt ${AUTHORED} } }`;
 
+/** One trail with its tickets, and `viewer`: the account behind the token, whose markers are this machine's own. */
 export const TRAIL_QUERY = `query Trail($owner: String!, $name: String!, $number: Int!) {
+  viewer { login }
   repository(owner: $owner, name: $name) {
     issue(number: $number) {
       ${ISSUE_FIELDS}

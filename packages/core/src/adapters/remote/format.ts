@@ -1,18 +1,19 @@
-import { BRAND, HITL_LABEL, MAP_LABEL, PLAN_ONLY_LABEL, label, takesHitlLabel } from '../../model/brand';
-import { levelOf, TICKET_STATUSES } from '../../model/lifecycle';
+import { HITL_LABEL, MAP_LABEL, PLAN_ONLY_LABEL, label, takesHitlLabel } from '../../model/brand';
+import { TICKET_STATUSES } from '../../model/lifecycle';
 import { serializeMapBody } from '../../model/mapBody';
+import { leadingMarker, marker, markerJson, trailingMarker } from '../../model/markerText';
 import { guardMarkers, oneLine, unguardMarkers } from '../../model/safeText';
 import {
   ALL_TICKET_TYPES,
   type Comment,
-  type DecisionRecord,
   type MapDoc,
   type MapMode,
   type Ticket,
   type TicketType,
 } from '../../model/types';
-import { webUrl } from '../../model/webUrl';
-import { DECISION_SOURCES } from '../../planning/decisions/decisionRecord';
+import { settingsOf, type BodySettings } from './bodySettings';
+import type { Settled } from './settingsInForce';
+import { teammateActor, type Writer } from './writer';
 
 /*
  * How Teamtrail state rides on a plain issue tracker, shared by GitHub and Linear:
@@ -23,26 +24,17 @@ import { DECISION_SOURCES } from '../../planning/decisions/decisionRecord';
  *   comment author                  `<!-- teamtrail:author <id> -->` first line (the API user posts every comment)
  *   comment write id                `<!-- teamtrail:write <id> -->` next line, so a replayed queued write can tell it already landed
  *   decision record                 a comment on its ticket (or the trail) ending in `<!-- teamtrail:decision {json} -->`
+ *                                   (decisionComment.ts)
+ * A marker counts only where Teamtrail writes it, and only from an account trusted to write it (writer.ts).
  */
-const P = BRAND.labelPrefix;
-const META_RE = new RegExp(`\\s*<!-- ${P}:meta (\\{.*?\\}) -->\\s*$`, 's');
-const AUTHOR_RE = new RegExp(`^<!-- ${P}:author (.+?) -->\\n?`);
-const WRITE_RE = new RegExp(`^<!-- ${P}:write (\\S+) -->\\n?`);
-const DECISION_RE = new RegExp(`<!-- ${P}:decision (\\{.*\\}) -->\\s*$`, 's');
-/** GitHub caps comments at 65 536 characters. */
-const MAX_COMMENT = 60_000;
+const META = 'meta';
+const AUTHOR = 'author';
+const WRITE = 'write';
 
-export interface BodyMeta {
+export interface BodyMeta extends BodySettings {
   assignee?: string;
   status?: string;
-  verification?: string;
-  checks?: string[];
   reviewOf?: string;
-  guide?: string;
-  /** Trail issue: the team's guide ids. */
-  guides?: string[];
-  /** Trail issue only: its model matching. */
-  modelMatching?: unknown;
 }
 
 /** The trail issue body: its sections, plus a meta marker only when the trail has a verification level, model matching or a team. */
@@ -54,6 +46,14 @@ export const mapBody = (m: Pick<MapDoc, 'sections' | 'verification' | 'modelMatc
         guides: m.guides?.length ? m.guides : undefined,
       })
     : serializeMapBody(m.sections);
+
+/** The settings a trail issue's marker holds. */
+export const mapSettings = (m: Pick<MapDoc, 'verification' | 'modelMatching' | 'guides'>): BodySettings =>
+  settingsOf({ verification: m.verification, modelMatching: m.modelMatching, guides: m.guides });
+
+/** The settings a ticket's marker holds. */
+export const ticketSettings = (t: Pick<Ticket, 'verification' | 'checks' | 'guide'>): BodySettings =>
+  settingsOf({ verification: t.verification, checks: t.checks, guide: t.guide });
 
 /** Everything Teamtrail keeps in a ticket's meta marker, so one write never drops another's field. */
 export const ticketMeta = (
@@ -67,22 +67,39 @@ export const ticketMeta = (
   guide: t.guide,
 });
 
+/**
+ * A body as its text and the meta marker that ends it. Only that position counts: a marker further up is text,
+ * and so is one whose JSON doesn't parse (a hand-edited marker is ignored rather than fatal).
+ */
 export function splitBody(raw: string | null | undefined): { text: string; meta: BodyMeta } {
   const body = (raw ?? '').replace(/\r\n/g, '\n');
-  const m = body.match(META_RE);
-  if (!m) return { text: body.trim(), meta: {} };
-  let meta: BodyMeta = {};
+  const found = trailingMarker(body, META);
+  const meta = found ? parseMeta(found.payload) : undefined;
+  return found && meta ? { text: found.before.trim(), meta } : { text: body.trim(), meta: {} };
+}
+
+function parseMeta(json: string): BodyMeta | undefined {
   try {
-    meta = JSON.parse(m[1]);
+    const v: unknown = JSON.parse(json);
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as BodyMeta) : undefined;
   } catch {
-    // a hand-edited marker is ignored rather than fatal
+    return undefined;
   }
-  return { text: body.slice(0, m.index).trim(), meta };
+}
+
+/**
+ * A body as `writer` is trusted to have written it: an outsider's meta marker is part of the text, shown but
+ * inert. Text Teamtrail guarded on the way in (ours, a teammate's) is unguarded on the way out.
+ */
+export function readBody(raw: string | null | undefined, writer: Writer): { text: string; meta: BodyMeta } {
+  if (writer.kind === 'outsider') return { text: guardMarkers((raw ?? '').replace(/\r\n/g, '\n').trim()), meta: {} };
+  const { text, meta } = splitBody(raw);
+  return { text: unguardMarkers(text), meta };
 }
 
 export function joinBody(text: string, meta: BodyMeta): string {
   const clean = Object.fromEntries(Object.entries(meta).filter(([, v]) => v !== undefined && v !== ''));
-  return Object.keys(clean).length ? `${text.trim()}\n\n<!-- ${P}:meta ${JSON.stringify(clean)} -->` : text.trim();
+  return Object.keys(clean).length ? `${text.trim()}\n\n${marker(META, markerJson(clean))}` : text.trim();
 }
 
 /**
@@ -93,78 +110,44 @@ export const ticketBody = (
   t: Pick<Ticket, 'body' | 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | 'guide'>,
 ) => joinBody(guardMarkers(t.body), ticketMeta(t));
 
-export const authoredBody = (author: string, body: string, writeId?: string) =>
-  `<!-- ${P}:author ${oneLine(author).replace(/-->/g, '')} -->\n${writeId ? `<!-- ${P}:write ${writeId.replace(/\s|-->/g, '')} -->\n` : ''}${guardMarkers(body)}`;
+const stripped = (s: string) => oneLine(s).replace(/-->/g, '');
 
-/** A tracker comment as a ticket comment; `undefined` for decision-record comments, which are not conversation. */
-export function readComment(c: {
+export function authoredBody(author: string, body: string, writeId?: string) {
+  const write = writeId ? `${marker(WRITE, writeId.replace(/\s|-->/g, ''))}\n` : '';
+  return `${marker(AUTHOR, stripped(author))}\n${write}${guardMarkers(body)}`;
+}
+
+export interface TrackerComment {
   id: string;
   body: string;
-  author?: string;
+  /** Who the tracker says posted it. */
+  writer: Writer;
   createdAt: string | number;
-}): Comment | undefined {
-  let body = c.body.replace(/\r\n/g, '\n');
-  if (DECISION_RE.test(body)) return undefined;
-  const m = body.match(AUTHOR_RE);
-  if (m) body = body.slice(m[0].length);
-  const w = body.match(WRITE_RE);
-  if (w) body = body.slice(w[0].length);
-  return {
-    id: c.id,
-    author: m ? m[1] : (c.author ?? 'unknown'),
-    body: unguardMarkers(body.trim()),
-    createdAt: typeof c.createdAt === 'number' ? c.createdAt : Date.parse(c.createdAt) || 0,
-    ...(w ? { writeId: w[1] } : {}),
-  };
 }
 
-const escapeJson = (s: string) => s.replace(/--/g, '-\\u002d');
+const stamp = (at: string | number) => (typeof at === 'number' ? at : Date.parse(at) || 0);
 
-/** Readable record for people in the tracker, plus the full record for Teamtrail. */
-export function decisionComment(d: DecisionRecord): string {
-  let rec: DecisionRecord = d;
-  let json = escapeJson(JSON.stringify(rec));
-  while (json.length > MAX_COMMENT - 4000 && rec.transcript.length) {
-    rec = { ...rec, transcript: rec.transcript.slice(0, -Math.ceil(rec.transcript.length / 4)) };
-    json = escapeJson(JSON.stringify(rec));
+/**
+ * A tracker comment as a ticket comment. This account's comments carry who wrote them (an agent, the trail
+ * lead) in an author marker; a teammate's marker names their agent or their human, shown with their tracker name;
+ * an outsider's markers are part of what they wrote.
+ */
+export function readComment(c: TrackerComment): Comment {
+  const raw = c.body.replace(/\r\n/g, '\n');
+  const { id, writer } = c;
+  const createdAt = stamp(c.createdAt);
+  const name = writer.name || 'unknown';
+  if (writer.kind === 'outsider') return { id, author: name, body: guardMarkers(raw.trim()), createdAt };
+  const author = leadingMarker(raw, AUTHOR);
+  const afterAuthor = author ? author.rest : raw;
+  const write = leadingMarker(afterAuthor, WRITE);
+  const body = unguardMarkers((write ? write.rest : afterAuthor).trim());
+  if (writer.kind === 'teammate') {
+    return { id, author: author ? teammateActor(author.payload, { ...writer, name }) : name, body, createdAt };
   }
-  // The readable part is text for people; only the marker at the end is the record.
-  const text = guardMarkers;
-  const lines = [
-    `**Decision ${d.id}**${d.supersededBy ? ` · ~~superseded by ${d.supersededBy}~~` : ''} · ${d.decidedBy} · ${DECISION_SOURCES[d.source.kind]?.label ?? d.source.kind}${sourceLink(d)}`,
-    '',
-    `> ${text(d.summary).replace(/\n/g, '\n> ')}`,
-    ...(d.answer.trim() !== d.summary.trim() ? ['', text(d.answer.trim())] : []),
-    '',
-    `**Question:** ${text(d.question)}`,
-    ...(d.alternatives.length ? [`**Alternatives:** ${text(d.alternatives.join('; '))}`] : []),
-    ...(d.rationale ? [`**Rationale:** ${text(d.rationale)}`] : []),
-    ...(d.supersedes ? [`**Supersedes:** ${d.supersedes}`] : []),
-    '',
-    `<!-- ${P}:decision ${json} -->`,
-  ];
-  return lines.join('\n');
-}
-
-/** The source as a markdown link, only for a web URL; its label can't close the link or break the line. */
-function sourceLink(d: DecisionRecord) {
-  const url = webUrl(d.source.url);
-  if (!url) return '';
-  const label = oneLine(d.source.label ?? 'source').replace(/[[\]()]/g, '');
-  return ` · [${label || 'source'}](${encodeURI(decodeURI(url)).replace(/[()]/g, encodeURIComponent)})`;
-}
-
-export function parseDecisionComment(body: string): DecisionRecord | undefined {
-  const m = body.replace(/\r\n/g, '\n').match(DECISION_RE);
-  if (!m) return undefined;
-  try {
-    const d = JSON.parse(m[1]) as DecisionRecord;
-    return d && typeof d.id === 'string'
-      ? { ...d, alternatives: d.alternatives ?? [], participants: d.participants ?? [], transcript: d.transcript ?? [] }
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  // Only this account's comments can be one of this machine's queued writes.
+  const writeId = write && !/\s/.test(write.payload) ? { writeId: write.payload } : {};
+  return { id, author: author ? author.payload : name, body, createdAt, ...writeId };
 }
 
 const TYPE_LABELS = new Map(ALL_TICKET_TYPES.map((t) => [label(t), t]));
@@ -193,6 +176,10 @@ export interface IssueParts {
   title: string;
   labels: string[];
   body: string | null | undefined;
+  /** Who last wrote the body, as far as the tracker says. */
+  writer: Writer;
+  /** The settings in force given the ones the body carries (settingsLedger.ts); missing: the body's own. */
+  settle?: (found: BodySettings) => Settled;
   closed: boolean;
   closeReason?: 'completed' | 'not_planned';
   /** Assignee shown by the tracker itself (a person). */
@@ -204,27 +191,39 @@ export interface IssueParts {
   closedAt?: string | null;
 }
 
+/** A ticket's settings as they apply here (settingsLedger.ts), as Ticket fields. */
+function ticketSettingsIn(
+  p: IssueParts,
+  meta: BodyMeta,
+): Pick<Ticket, 'verification' | 'checks' | 'guide' | 'settingsUnconfirmed'> {
+  const found = settingsOf({ ...meta });
+  const settled = p.settle ? p.settle(found) : { use: found };
+  const { verification, checks, guide } = settled.use;
+  return {
+    ...(verification ? { verification } : {}),
+    ...(checks ? { checks } : {}),
+    ...(guide ? { guide } : {}),
+    ...(settled.unconfirmed ? { settingsUnconfirmed: true as const } : {}),
+  };
+}
+
 export function ticketFromIssue(p: IssueParts): Ticket {
-  const { text, meta } = splitBody(p.body);
+  const { text, meta } = readBody(p.body, p.writer);
   const type = typeFromLabels(p.labels);
   const status = TICKET_STATUSES.find((s) => s === meta.status);
-  const verification = levelOf(meta.verification);
-  const checks = Array.isArray(meta.checks) ? meta.checks.filter((c) => typeof c === 'string') : undefined;
   return {
     id: p.id,
     key: p.key,
     title: p.title,
     type,
     hitl: (takesHitlLabel(type) && p.labels.includes(HITL_LABEL)) || undefined,
-    body: unguardMarkers(text),
+    body: text,
     state: p.closed ? 'closed' : 'open',
     closeReason: p.closed ? (p.closeReason ?? 'completed') : undefined,
-    assignee: meta.assignee ?? p.trackerAssignee,
+    assignee: (typeof meta.assignee === 'string' && meta.assignee) || p.trackerAssignee,
     ...(status ? { status } : {}),
-    ...(verification ? { verification } : {}),
-    ...(checks ? { checks } : {}),
+    ...ticketSettingsIn(p, meta),
     ...(typeof meta.reviewOf === 'string' && meta.reviewOf ? { reviewOf: meta.reviewOf } : {}),
-    ...(typeof meta.guide === 'string' && meta.guide ? { guide: meta.guide } : {}),
     blockedBy: p.blockedBy,
     comments: p.comments,
     createdAt: Date.parse(p.createdAt) || 0,

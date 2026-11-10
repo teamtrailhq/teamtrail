@@ -7,6 +7,7 @@ import type { TrackerAdapter } from '../src/adapters/adapter';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { MemoryAdapter } from '../src/adapters/memoryAdapter';
+import { acceptedSettingsFile } from '../src/adapters/remote/acceptedSettingsFile';
 import { GitHubAdapter } from '../src/adapters/remote/github';
 import { LinearAdapter } from '../src/adapters/remote/linear';
 import { buildAttention } from '../src/attention/buildAttention';
@@ -49,8 +50,10 @@ test('Ticket.guide and MapDoc.guides round-trip on markdown, memory, GitHub and 
   const gh = fakeGitHub();
   const ghAdapter = () => new GitHubAdapter({ repo: gh.repo, token: 'x', fetch: gh.fetch, manual: true, ...noSleep });
   const ln = fakeLinear();
+  // Processes on one machine share what it accepted, as the Lookout and its MCP servers do.
+  const accepted = acceptedSettingsFile(tmpRoot(), 'linear-test');
   const lnAdapter = () =>
-    new LinearAdapter({ apiKey: 'lin_api_x', teamId: ln.team.id, fetch: ln.fetch, manual: true, ...noSleep });
+    new LinearAdapter({ apiKey: 'lin_api_x', teamId: ln.team.id, fetch: ln.fetch, manual: true, accepted, ...noSleep });
   for (const [name, make, fresh] of [
     ['markdown', md, md],
     ['memory', () => mem, () => mem],

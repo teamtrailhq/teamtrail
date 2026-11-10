@@ -11,20 +11,19 @@ import type {
   TicketType,
 } from '../../../model/types';
 import type { MapInput } from '../../adapter';
-import {
-  authoredBody,
-  decisionComment,
-  mapLabels,
-  mapBody,
-  ticketFromIssue,
-  ticketLabels,
-  ticketBody,
-} from '../format';
+import { decisionComment } from '../decisionComment';
+import { authoredBody, mapLabels, mapBody, mapSettings, ticketLabels, ticketBody } from '../format';
 import { TrackerError, type HttpOptions } from '../http';
+import { SettingsLedger, type AcceptedStore } from '../settingsLedger';
 import { SyncedAdapter } from '../sync/syncedAdapter';
 import type { RemoteComment, SyncOptions } from '../sync/types';
+import { authoredIn } from './authoredIn';
+import { createdTicket } from './createdTicket';
 import { ensureGitHubLabels } from './ensureGitHubLabels';
 import { GitHubClient } from './githubClient';
+import { GitHubPermissions } from './githubPermissions';
+import { githubViewer } from './githubViewer';
+import { loginsToCheck } from './githubWriter';
 import { readTrail } from './readTrail';
 import { labelNames, TRAIL_QUERY, type GqlIssue, type RestIssue } from './schema';
 
@@ -34,8 +33,9 @@ import { labelNames, TRAIL_QUERY, type GqlIssue, type RestIssue } from './schema
  *   ticket     sub-issue of the trail issue, labelled teamtrail:<type>
  *   blockedBy  native issue dependency ("blocked by")
  *   close      closed as completed / not planned
- *   decision   comment on the ticket (format.ts)
- * Reads: one GraphQL query per trail. Polling: an ETag-conditional issue
+ *   decision   comment on the ticket (decisionComment.ts)
+ * Reads: one GraphQL query per trail, which also says who the token is: markers count only from that account,
+ * or as a teammate's (githubWriter.ts). Polling: an ETag-conditional issue
  * list, so an idle repo costs nothing against the rate limit (304s are free).
  */
 
@@ -45,6 +45,8 @@ export interface GitHubOptions extends SyncOptions, HttpOptions {
   token: string;
   /** REST base, default https://api.github.com (GitHub Enterprise: https://host/api/v3). */
   apiUrl?: string;
+  /** Where this machine keeps the settings it accepted per issue; in memory without one. */
+  accepted?: AcceptedStore;
 }
 
 export class GitHubAdapter extends SyncedAdapter {
@@ -58,16 +60,21 @@ export class GitHubAdapter extends SyncedAdapter {
   private decisionComments = new Map<string, number>();
   private etag?: string;
   private cursor?: string;
+  private ledger: SettingsLedger;
+  private permissions: GitHubPermissions;
 
   constructor(o: GitHubOptions) {
     super({ pollMs: 8000, ...o });
     this.gh = new GitHubClient(o);
+    this.ledger = new SettingsLedger(() => githubViewer(this.gh), o.accepted);
+    this.permissions = new GitHubPermissions(this.gh, this.now);
     this.location = `${this.gh.owner}/${this.gh.name}`;
   }
 
-  protected rate() {
-    return this.gh.rate;
-  }
+  protected rate = () => this.gh.rate;
+
+  unacceptedSettings = () => this.ledger.unaccepted();
+  settingsSkipped = () => this.ledger.skipped;
 
   private ensureLabels = cachedUntilFailure(() => ensureGitHubLabels(this.gh));
 
@@ -82,7 +89,8 @@ export class GitHubAdapter extends SyncedAdapter {
   }
 
   protected async fetchMap(mapId: string): Promise<{ snap: MapSnapshot; decisions: DecisionRecord[] }> {
-    const data = await this.gh.gql<{ repository: { issue: GqlIssue | null } | null }>(TRAIL_QUERY, {
+    type Trail = { viewer?: { login: string } | null; repository: { issue: GqlIssue | null } | null };
+    const data = await this.gh.gql<Trail>(TRAIL_QUERY, {
       owner: this.gh.owner,
       name: this.gh.name,
       number: Number(mapId),
@@ -90,7 +98,11 @@ export class GitHubAdapter extends SyncedAdapter {
     const root = data.repository?.issue;
     if (!root || !root.labels.nodes.some((l) => l.name === MAP_LABEL))
       throw new TrackerError('not_found', `GitHub: #${mapId} is not a trail in ${this.location}`);
-    const m = readTrail(mapId, root);
+    const viewer = data.viewer?.login;
+    const canWrite = await this.permissions.resolve(loginsToCheck(viewer, authoredIn(root)));
+    const gate = this.ledger.gate({ mapId, now: this.now(), viewer });
+    const m = readTrail(mapId, root, { who: { viewer, canWrite }, gate });
+    await gate.save();
     for (const [n, id] of m.issueIds) this.issueIds.set(n, id);
     for (const [key, id] of m.decisionComments) this.decisionComments.set(key, id);
     return { snap: m.snap, decisions: m.decisions };
@@ -137,6 +149,7 @@ export class GitHubAdapter extends SyncedAdapter {
       labels: mapLabels(input.mode),
     });
     this.issueIds.set(String(i.number), i.id);
+    await this.ledger.wrote(String(i.number), mapSettings(input));
     return {
       id: String(i.number),
       key: `#${i.number}`,
@@ -161,18 +174,8 @@ export class GitHubAdapter extends SyncedAdapter {
     });
     this.issueIds.set(String(i.number), i.id);
     await this.gh.repo('POST', `/issues/${map.id}/sub_issues`, { sub_issue_id: i.id });
-    return ticketFromIssue({
-      id: String(i.number),
-      key: `#${i.number}`,
-      title: i.title,
-      labels: labelNames(i.labels),
-      body: i.body,
-      closed: false,
-      blockedBy: [],
-      comments: [],
-      createdAt: i.created_at,
-      updatedAt: i.updated_at,
-    });
+    await this.ledger.wrote(String(i.number), {});
+    return createdTicket(i);
   }
 
   protected async remoteAddBlocking(_map: MapDoc, blocker: Ticket, blocked: Ticket) {
@@ -189,15 +192,17 @@ export class GitHubAdapter extends SyncedAdapter {
   }
 
   protected async remoteEditTicket(_map: MapDoc, t: Ticket) {
-    await this.gh.repo('PATCH', `/issues/${t.id}`, { title: t.title, body: ticketBody(t) });
+    const edit = { title: t.title, body: ticketBody(t) };
+    await this.ledger.writeTicket(t, () => this.gh.repo('PATCH', `/issues/${t.id}`, edit));
   }
 
   protected async remoteReopen(_map: MapDoc, t: Ticket) {
     await this.gh.repo('PATCH', `/issues/${t.id}`, { state: 'open', state_reason: 'reopened' });
   }
 
-  protected async remoteSetMeta(_map: MapDoc, t: Ticket) {
-    await this.gh.repo('PATCH', `/issues/${t.id}`, { body: ticketBody(t) });
+  protected async remoteSetMeta(_map: MapDoc, t: Ticket, o?: { confirm?: boolean }) {
+    const send = () => this.gh.repo('PATCH', `/issues/${t.id}`, { body: ticketBody(t) });
+    await this.ledger.writeTicket(t, send, o?.confirm);
   }
 
   protected async remoteComment(_map: MapDoc, t: Ticket, c: RemoteComment) {
@@ -208,8 +213,9 @@ export class GitHubAdapter extends SyncedAdapter {
     await this.gh.repo('PATCH', `/issues/${t.id}`, { state: 'closed', state_reason: reason });
   }
 
-  protected async remoteUpdateMap(map: MapDoc) {
-    await this.gh.repo('PATCH', `/issues/${map.id}`, { body: mapBody(map) });
+  protected async remoteUpdateMap(map: MapDoc, o?: { confirm?: boolean }) {
+    const send = () => this.gh.repo('PATCH', `/issues/${map.id}`, { body: mapBody(map) });
+    await this.ledger.writeMap(map, send, o?.confirm);
   }
 
   protected async remoteSetMode(map: MapDoc, mode: MapMode) {
