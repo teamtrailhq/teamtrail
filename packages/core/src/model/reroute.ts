@@ -65,6 +65,13 @@ export interface RerouteProposal {
   /** Actor id (agent trail name) and session that proposed it. */
   by: string;
   sessionId?: string;
+  /** Who was behind the agent: `token:<id>` for a remote agent, `local:<id>` for a connection on this machine. */
+  origin?: string;
+  /**
+   * Set when the proposal touches so much of the trail's open work that freezing it would stop the trail: then
+   * it freezes nothing, and the trail lead is told instead.
+   */
+  wide?: { touched: number; open: number };
   at: number;
   reason: string;
   evidence: string;

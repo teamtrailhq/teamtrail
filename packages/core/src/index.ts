@@ -43,6 +43,8 @@ export * from './model/risk';
 export { DEFAULT_POLICY } from './policy/defaultPolicy';
 export { parsePolicy, serializePolicy } from './policy/policyFile';
 export { riskLevelFor, type RiskSubject } from './policy/riskLevelFor';
+export { repoPath, repoPaths } from './policy/repoPath';
+export { ruleMatches } from './policy/ruleMatches';
 export { policyViolations, type PolicyViolation, type ViolationInput } from './policy/policyViolations';
 export { decisionsByRisk, type RiskGroup, type RiskGroupLevel } from './policy/decisionsByRisk';
 export * from './model/assumption';

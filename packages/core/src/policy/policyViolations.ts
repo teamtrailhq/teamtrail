@@ -1,8 +1,8 @@
-import { globMatch } from '../knowledge/knowledge';
 import type { RiskPolicy } from '../model/risk';
 import type { DecisionRecord } from '../model/types';
 import type { VerificationAttempt } from '../model/verification';
 import { madeBy } from '../planning/decisions/decisionRecord';
+import { ruleMatches } from './ruleMatches';
 
 /** A completion that changed high-risk files without the human having a say on that ticket. */
 export interface PolicyViolation {

@@ -1,10 +1,10 @@
 import path from 'node:path';
-import { checkCriteria, type CriteriaResult, type CriterionEvidence } from '../criteria/criteria';
-import { criteriaOf } from '../criteria/criteriaStore';
+import type { CriteriaResult, CriterionEvidence } from '../criteria/criteria';
 import { flagIfStale, gateOutcome } from '../evidence/completionEvidence';
 import type { GitEvidence } from '../model/evidence';
 import type { ConfigRead } from './configFile';
 import { evidencePaths } from './evidenceStore';
+import { gradeCriteria } from './gradeCriteria';
 import type { LevelInfo } from './policy';
 import { runChecks, type ChecksOutcome } from './runChecks';
 
@@ -29,9 +29,8 @@ export interface GradeInput {
 export async function gradeAttempt(i: GradeInput): Promise<{ outcome: ChecksOutcome; criteria?: CriteriaResult }> {
   const outcome = gateOutcome(i.git) ?? (await checksOrError(i));
   if (outcome.checks.length) await flagIfStale(i.root, i.git);
-  const wanted = criteriaOf(i.root, i.mapId, i.ticketId);
-  if (!wanted.length) return { outcome };
-  const criteria = checkCriteria(wanted, i.evidence ?? [], outcome.checks);
+  const criteria = gradeCriteria(i, outcome.checks);
+  if (!criteria) return { outcome };
   const unmet = [...criteria.missing, ...criteria.failed];
   if (outcome.result !== 'pass' || !unmet.length) return { outcome, criteria };
   const note = `Acceptance criteria without passing evidence: ${unmet.join(', ')}`;

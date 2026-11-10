@@ -35,6 +35,19 @@ export interface TicketCriteria {
   confirmed?: boolean;
 }
 
+/**
+ * A change an agent proposes to criteria the trail lead confirmed. The confirmed set stays in force (it is what
+ * a completion is checked against) until the trail lead takes the proposal; one proposal per ticket, the latest.
+ */
+export interface CriteriaProposal {
+  ticketId: string;
+  ticketKey: string;
+  criteria: Criterion[];
+  /** Trail name of the agent that proposed it. */
+  by: string;
+  at: number;
+}
+
 /** Evidence an agent gives for one criterion: `check:<name>`, `test:<name>`, `command:<cmd>`, `pr`, or `manual`. */
 export interface CriterionEvidence {
   id: string;
@@ -51,6 +64,13 @@ export interface CriteriaResult {
   failed: string[];
   /** Criteria the trail lead must sign off. */
   manual: string[];
+  /**
+   * Criteria whose evidence is the agent's word (a named test, a command, the pull request, free text): recorded
+   * and shown as claimed, never as verified. Absent on attempts from before claims were told apart.
+   */
+  claimed?: string[];
+  /** Whether the trail lead had confirmed the criteria this was checked against. */
+  confirmed?: boolean;
   evidence: CriterionEvidence[];
 }
 
@@ -75,10 +95,30 @@ export function numbered(items: Omit<Criterion, 'id'>[]): Criterion[] {
 
 const passed = (c: CheckResult) => c.exitCode === 0 && !c.timedOut && !c.error;
 
+/** How one criterion comes out of the evidence given for it. */
+type Graded =
+  | { kind: 'missing' }
+  | { kind: 'failed'; why: string }
+  | { kind: 'manual' }
+  | { kind: 'verified'; evidence: string }
+  | { kind: 'claimed'; evidence: string };
+
+function grade(c: Criterion, e: CriterionEvidence | undefined, checks: CheckResult[]): Graded {
+  const ev = e?.evidence.trim();
+  if (!ev) return { kind: 'missing' };
+  const name = ev.startsWith('check:') ? ev.slice(6).trim() : undefined;
+  const run = name === undefined ? undefined : checks.find((x) => x.name === name);
+  if (name !== undefined && !(run && passed(run))) return { kind: 'failed', why: `${ev} ${run ? 'failed' : "didn't run"}` };
+  // A criterion the trail lead signs off stays theirs whatever evidence comes with it.
+  if (ev === 'manual' || c.kind === 'manual') return { kind: 'manual' };
+  return name === undefined ? { kind: 'claimed', evidence: ev } : { kind: 'verified', evidence: ev };
+}
+
 /**
  * Matches the agent's evidence to the criteria. Deterministic: a criterion with no evidence is missing; a `check:`
- * that didn't run or didn't pass fails it; `manual` waits for the trail lead; named tests, commands and the PR count as
- * the agent states them (the checks still have to pass overall).
+ * that didn't run or didn't pass fails it, and one that passed here verifies it; `manual` (the evidence, or the
+ * criterion's kind) waits for the trail lead. Everything else (a named test, a command, the PR, free text) is the
+ * agent's word: it is kept and marked "claimed, not verified", never as verified.
  */
 export function checkCriteria(
   criteria: Criterion[],
@@ -86,31 +126,37 @@ export function checkCriteria(
   checks: CheckResult[],
 ): CriteriaResult {
   const byId = new Map(given.map((e) => [e.id, e]));
-  const out: CriteriaResult = { lines: [], missing: [], failed: [], manual: [], evidence: [] };
+  const out: CriteriaResult = { lines: [], missing: [], failed: [], manual: [], claimed: [], evidence: [] };
   for (const c of criteria) {
     const e = byId.get(c.id);
-    if (!e || !e.evidence.trim()) {
-      out.missing.push(c.id);
-      out.lines.push(`${c.id} ✗ no evidence · ${c.text}`);
-      continue;
-    }
-    out.evidence.push(e);
-    const ev = e.evidence.trim();
-    if (ev.startsWith('check:')) {
-      const name = ev.slice(6);
-      const run = checks.find((x) => x.name === name);
-      if (!run || !passed(run)) {
+    const g = grade(c, e, checks);
+    if (e && g.kind !== 'missing') out.evidence.push(e);
+    const note = e?.note ? ` (${e.note})` : '';
+    switch (g.kind) {
+      case 'missing':
+        out.missing.push(c.id);
+        out.lines.push(`${c.id} ✗ no evidence · ${c.text}`);
+        break;
+      case 'failed':
         out.failed.push(c.id);
-        out.lines.push(`${c.id} ✗ ${ev} ${run ? 'failed' : "didn't run"} · ${c.text}`);
-        continue;
+        out.lines.push(`${c.id} ✗ ${g.why} · ${c.text}`);
+        break;
+      case 'manual':
+        out.manual.push(c.id);
+        out.lines.push(`${c.id} … needs your sign-off · ${c.text}`);
+        break;
+      case 'verified':
+        out.lines.push(`${c.id} ✓ ${g.evidence}${note} · ${c.text}`);
+        break;
+      case 'claimed':
+        out.claimed!.push(c.id);
+        out.lines.push(`${c.id} ? claimed, not verified: ${g.evidence}${note} · ${c.text}`);
+        break;
+      default: {
+        const unknown: never = g;
+        throw new Error(`unknown grade ${(unknown as { kind?: string }).kind}`);
       }
     }
-    if (ev === 'manual') {
-      out.manual.push(c.id);
-      out.lines.push(`${c.id} … needs your sign-off · ${c.text}`);
-      continue;
-    }
-    out.lines.push(`${c.id} ✓ ${ev}${e.note ? ` (${e.note})` : ''} · ${c.text}`);
   }
   return out;
 }
