@@ -92,9 +92,14 @@ test('redaction goes by value: paths under the project, home or temp are shorten
   assert.ok('repo/keyed.ts' in o);
 });
 
-/** The first `agent` event of /events as `headers` sees it. */
-function agentEvent(headers: Record<string, string>) {
-  return new Promise<string>((resolve, reject) => {
+/**
+ * A subscriber to /events as `headers`: `open` once the server has said its first line (the stream is
+ * registered), `event` with the data of the first `agent` event it then sees.
+ */
+function subscribe(headers: Record<string, string>) {
+  let opened!: () => void;
+  const open = new Promise<void>((r) => (opened = r));
+  const event = new Promise<string>((resolve, reject) => {
     const deadline = setTimeout(() => {
       req.destroy();
       reject(new Error(`no agent event within 10 s for ${JSON.stringify(headers)}`));
@@ -104,6 +109,7 @@ function agentEvent(headers: Record<string, string>) {
       res.setEncoding('utf8');
       res.on('data', (c) => {
         text += c;
+        opened();
         const m = /event: agent\ndata: (.*)\n\n/.exec(text);
         if (!m) return;
         clearTimeout(deadline);
@@ -113,11 +119,15 @@ function agentEvent(headers: Record<string, string>) {
     });
     req.on('error', (e) => (req.destroyed ? undefined : reject(e)));
   });
+  return { open, event };
 }
 
 test('the /events stream is redacted for other devices and left whole for this machine', async () => {
   const worktree = path.join(top, 'repo.teamtrail', 'trail-3');
-  const both = Promise.all([agentEvent(LAN), agentEvent({})]);
+  // Both streams are open before the session is written: on Linux the folder watch sends it at once.
+  const subscribers = [subscribe(LAN), subscribe({})];
+  await Promise.all(subscribers.map((sub) => sub.open));
+  const both = Promise.all(subscribers.map((sub) => sub.event));
   const dir = path.join(root, '.agents', 'sessions');
   mkdirSync(dir, { recursive: true });
   const doc = {
