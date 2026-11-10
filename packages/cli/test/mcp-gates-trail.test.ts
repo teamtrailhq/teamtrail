@@ -145,6 +145,53 @@ describe('an answer covers only the risk it was asked about, judged on every fil
   });
 });
 
+describe('a close without verification needs a held claim', () => {
+  it('refuses to auto-claim and close at once, so files changed before the claim are never hidden', async () => {
+    highRiskInfra();
+    git('init', '-q');
+    fs.writeFileSync(path.join(repo, 'README.md'), 'x');
+    git('add', 'README.md');
+    git('commit', '-qm', 'init');
+    const call = await hub.connect({ name: 'claude-01' });
+    const m = await call<Started>('start_trail', {
+      discovery: false,
+      title: 'Infra',
+      destination: 'D',
+      tickets: [{ ref: 'r', title: 'Look at the deploy', type: 'research' }],
+    });
+    fs.mkdirSync(path.join(repo, 'infra'));
+    fs.writeFileSync(path.join(repo, 'infra', 'main.tf'), 'resource {}');
+    await expect(call('close_ticket', { ticket: keyOf(m, 'r'), resolution: 'Found it' })).rejects.toThrow(
+      /Claim .* first/,
+    );
+  });
+});
+
+describe('paths in the agent’s own worktree', () => {
+  it('an absolute path inside the worktree it was given is judged like a repo path', async () => {
+    highRiskInfra();
+    git('init', '-q', '-b', 'main');
+    fs.writeFileSync(path.join(repo, 'README.md'), 'x');
+    git('add', 'README.md');
+    git('commit', '-qm', 'init');
+    fs.writeFileSync(path.join(root, 'workspaces.json'), JSON.stringify({ v: 1, worktrees: true }));
+    const call = await hub.connect({ name: 'claude-01' });
+    const m = await call<Started>('start_trail', {
+      discovery: false,
+      title: 'Infra',
+      destination: 'D',
+      tickets: [{ ref: 't', title: 'Change the deploy', type: 'task' }],
+    });
+    const claimed = await call<{ workspace?: { path: string } }>('claim_ticket', { ticket: keyOf(m, 't') });
+    expect(claimed.workspace?.path).toBeTruthy();
+    const inWorktree = path.join(claimed.workspace!.path, 'infra', 'main.tf');
+    await expect(call('record_decision', { question: 'How?', answer: 'So', paths: [inWorktree] })).rejects.toThrow(
+      /High-risk call/,
+    );
+    fs.rmSync(claimed.workspace!.path, { recursive: true, force: true });
+  });
+});
+
 describe('knowledge nobody reviewed does not reach other agents', () => {
   it('search_knowledge gives others no body of a suggestion; its proposer sees its own', async () => {
     const remote = await hub.connect({ token: 'sandbox' });

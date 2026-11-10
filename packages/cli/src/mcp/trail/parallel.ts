@@ -11,6 +11,7 @@ import {
   writeLease,
 } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
+import { pathRoots } from './pathRoots';
 
 export interface ClaimParallel {
   workspace?: Workspace;
@@ -51,7 +52,7 @@ export async function claimParallel(
         })
       : undefined;
   const workspace = prepared && 'workspace' in prepared ? prepared.workspace : undefined;
-  const touches = clean(at.touches, repoRootSpellings(repoRootOf(ctx.verifyEnv())));
+  const touches = clean(at.touches, [...pathRoots(ctx), ...(workspace ? repoRootSpellings(workspace.path) : [])]);
   const lease = readLease(ctx.root, at.mapId, at.ticket.id);
   if (lease && (touches.length || workspace)) writeLease(ctx.root, { ...lease, touches, workspace });
   const overlaps = touches.length

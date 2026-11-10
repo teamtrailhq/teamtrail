@@ -119,6 +119,8 @@ describe('guides over MCP', () => {
     const rec = readChecklist(root, m.trail.id, m.tickets[0].key.slice(1))!;
     expect(rec.guide).toEqual({ id: 'qa', version: '1.0.0' });
     expect(rec.answers[0]).toEqual({ item: QA_ITEMS[0], done: false, note: 'no suite yet' });
+    // A ticket without a guide closes without a checklist (claimed first: a close without verification needs it).
+    await call('claim_ticket', { ticket: m.tickets[1].key });
     const free = await call('close_ticket', { ticket: m.tickets[1].key, resolution: 'Found it' });
     expect(free).toMatchObject({ closed: m.tickets[1].key });
   });

@@ -112,8 +112,9 @@ function assertMayWriteCriteria(ctx: AgentContext, at: { snap: MapSnapshot; t: T
   const { snap, t, agent } = at;
   if (t.assignee) return assertOwnClaim(ctx, { mapId: snap.map.id, ticket: t, agent });
   const charted = chartedBy(ctx.root, snap.map.id, t.id);
-  // The charting agent, by its token (remote) or its trail name (here), even after it reconnects.
-  if (charted && (charted.origin === ctx.origin || (!ctx.remote && charted.agent === agent))) return;
+  // The charting connection: a remote agent by its token (so it may reconnect), a local one by that connection, as a
+  // trail name is not an identity here. Once a local charting connection is gone, nobody charted it: claim it first.
+  if (charted?.origin === ctx.origin) return;
   throw new OperationError(
     `${t.key}'s criteria are written by the agent that claims it, or by the one that charted it before anyone does. Claim ${t.key} first.`,
   );

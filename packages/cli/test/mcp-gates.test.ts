@@ -337,7 +337,25 @@ describe('acceptance criteria: who writes them, and what counts as proof', () =>
   it('the charting agent may still write criteria after it reconnects, and proposals stay out of git', async () => {
     const lead = await hub.connect({ name: 'claude-01' });
     const m = await chart(lead);
-    for (const who of [{ name: 'claude-02' }, { token: 'sandbox' }]) {
+    // Locally a trail name is not an identity: a later connection under the same name did not chart the ticket.
+    const local = await hub.connect({ name: 'claude-02' });
+    const mine = await local<{ ticket: { key: string } }>('add_ticket', {
+      trail: m.trail.id,
+      title: 'Local',
+      type: 'task',
+    });
+    const sameName = await hub.connect({ name: 'claude-02' });
+    await expect(
+      sameName('set_criteria', { trail: m.trail.id, ticket: mine.ticket.key, criteria: [{ text: 'x', kind: 'unit' }] }),
+    ).rejects.toThrow(/Claim .* first/);
+    expect(
+      await local('set_criteria', {
+        trail: m.trail.id,
+        ticket: mine.ticket.key,
+        criteria: [{ text: 'x', kind: 'unit' }],
+      }),
+    ).toBeTruthy();
+    for (const who of [{ token: 'sandbox' }, { token: 'sandbox-2' }]) {
       const first = await hub.connect(who);
       const added = await first<{ ticket: { key: string; id: string } }>('add_ticket', {
         trail: m.trail.id,
@@ -363,6 +381,7 @@ describe('acceptance criteria: who writes them, and what counts as proof', () =>
     }
     expect(fs.readdirSync(path.join(root, 'criteria')).filter((f) => !f.endsWith('.md'))).toEqual([]);
     expect(readCriteriaProposals(root, m.trail.id)).toHaveLength(2);
+    void mine;
     expect(fs.readFileSync(path.join(root, '.agents', '.gitignore'), 'utf8')).toBe('*\n');
   });
 

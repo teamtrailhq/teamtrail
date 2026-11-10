@@ -10,7 +10,7 @@ import {
   type SessionMode,
   type Ticket,
 } from '@teamtrail/core';
-import { baselineForClaim, levelFor, repoRootOf, repoRootSpellings } from '@teamtrail/core/agents';
+import { baselineForClaim, levelFor, repoRootOf } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaView } from './criteria';
 import { assertClaimable, briefView, claimable } from './discovery';
@@ -19,6 +19,7 @@ import { knowledgeFor } from './knowledge';
 import { pickNext, stampModel, tierFields } from './models';
 import { heldElsewhere } from './ownClaim';
 import { claimParallel } from './parallel';
+import { pathRoots } from './pathRoots';
 import { recoverStalled } from './recoverStalled';
 import { sessionView } from './reporting';
 import { frozenOn } from './reroutes';
@@ -40,7 +41,7 @@ export async function claimTicket(
   ctx: AgentContext,
   input: { ticket?: string; trail?: string; touches?: string[]; workspace?: boolean; guides?: string[] } = {},
 ) {
-  repoPaths(input.touches, repoRootSpellings(repoRootOf(ctx.verifyEnv()))); // refuses a path outside the repo before anything is claimed
+  repoPaths(input.touches, pathRoots(ctx)); // refuses a path outside the repo before anything is claimed
   const recovered = await recoverStalled(ctx);
   const snap = await ctx.resolveTrail(input.trail);
   ctx.trail = snap.map.id;

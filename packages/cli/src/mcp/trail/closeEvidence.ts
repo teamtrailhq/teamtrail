@@ -22,6 +22,17 @@ export function declaredPaths(at: {
   return paths;
 }
 
+/**
+ * A close without verification has no check and no attempt: what changed is only known from the claim's baseline.
+ * Claiming and closing in one call would take that baseline after the work, so such a close needs a held claim.
+ */
+export function assertHeldForUnverified(ctx: AgentContext, snap: MapSnapshot, ticket: Ticket) {
+  if (ticket.assignee || levelFor(ctx.root, snap, ticket).info.level !== 'off') return;
+  throw new OperationError(
+    `Claim ${ticket.key} first: a close without verification needs your claim, so Teamtrail sees what you change from then on.`,
+  );
+}
+
 /** What git saw change since the claim, for a close with no verification; `error` when it could not be read. */
 export interface SeenChanges {
   changed: string[];

@@ -3,28 +3,34 @@ import {
   chooseNext,
   deriveStates,
   OperationError,
-  resolve,
-  type DecisionMeta,
   type DecisionRecord,
   type DecisionRisk,
   type MapSnapshot,
   type SessionHandle,
   type Ticket,
 } from '@teamtrail/core';
-import { levelFor, repoRootOf, repoRootSpellings } from '@teamtrail/core/agents';
+import { levelFor } from '@teamtrail/core/agents';
 import { assertHumanDecided } from '../remoteGate';
 import type { AgentContext } from './agentContext';
 import { assertCloseable } from './assertCloseable';
 import { assertAssumes } from './assumptions';
 import { claimTicket } from './claimTicket';
 import { closeDecisionMeta } from './closeDecision';
-import { changedSinceClaim, declaredPaths, flagUnverified, type SeenChanges } from './closeEvidence';
+import {
+  assertHeldForUnverified,
+  changedSinceClaim,
+  declaredPaths,
+  flagUnverified,
+  type SeenChanges,
+} from './closeEvidence';
 import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
 import { checkedAnswers, keepAnswers } from './guides';
 import { humanAnswerFor, release, spend, type HumanAnswer } from './humanAnswer';
 import { assertOwnClaim } from './ownClaim';
 import { withReview } from './parallel';
+import { pathRoots } from './pathRoots';
+import { resolveDirectly } from './resolveDirectly';
 import { checkRisk, riskOf } from './riskCheck';
 import { ruleOut } from './ruleOut';
 import type { CloseInput, WaitControl } from './types';
@@ -90,8 +96,9 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
   let ticket = ctx.findTicket(snap, ref);
   assertCloseable(ticket, agent);
   // The risk is the files declared and the files git saw change, judged before any answer is matched to it.
+  assertHeldForUnverified(ctx, snap, ticket);
   const seen = await changedSinceClaim(ctx, snap, ticket);
-  const judged = { ...input, root: ctx.root, paths: [...(input.paths ?? []), ...seen.changed] };
+  const judged = { ...input, root: ctx.root, roots: pathRoots(ctx), paths: [...(input.paths ?? []), ...seen.changed] };
   // The human's decision only by their answer to a question asked on this ticket (humanAnswer.ts).
   const human = humanAnswerFor(ctx, {
     questionId: input.questionId,
@@ -134,7 +141,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
     verified,
     paths: input.paths,
     noCodeReason: input.noCodeReason,
-    repoRoot: repoRootSpellings(repoRootOf(ctx.verifyEnv())),
+    repoRoot: pathRoots(ctx),
   });
   assertCriteria(ctx.root, snap, t, info.level);
   await keepAnswers(ctx, {
@@ -179,19 +186,6 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
   }
   if (s.info.mode === 'work') s.step(5);
   return { kind: 'closed', verified: unverified.warning ? { warning: unverified.warning } : {} };
-}
-
-async function resolveDirectly(c: Closing, parts: { meta: DecisionMeta; transcript?: string }) {
-  const { ctx, input, snap, ticket: t, session: s } = c;
-  if (s.info.mode === 'research') s.step(3, `${t.key} decided`);
-  else s.step(4, `${parts.transcript ? 'transcript + ' : ''}comment + close + record decision`);
-  const answer = { answer: input.resolution, summary: input.summary, author: c.agent };
-  await resolve(ctx.adapter, snap.map.id, t.id, {
-    ...ctx.actor(),
-    ...answer,
-    transcript: parts.transcript,
-    decision: parts.meta,
-  });
 }
 
 async function findDecision(c: Closing): Promise<DecisionRecord | undefined> {

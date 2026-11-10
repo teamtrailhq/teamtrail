@@ -1,7 +1,7 @@
 import type { Criterion } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
 import { apiBase } from '../../lib/apiBase';
-import { onTrackerChange } from '../../lib/trackerChanges';
+import { onTrackerEvent } from '../../lib/trackerChanges';
 
 /** A change an agent proposed to criteria the trail lead confirmed (core criteria/criteriaProposals.ts). */
 export interface CriteriaProposalView {
@@ -28,8 +28,11 @@ export function useCriteriaProposals(mapId?: string) {
   }, [mapId]);
   useEffect(() => {
     load();
-    return onTrackerChange((path) => path.startsWith('criteria/') && load());
-  }, [load]);
+    // Proposals live in `.agents/` (local only), which the watcher reports as its own event.
+    return onTrackerEvent('criteria-proposals', (data) => {
+      if ((data as { mapId?: string }).mapId === mapId) load();
+    });
+  }, [load, mapId]);
   const decide = (action: 'accept' | 'dismiss', body: { title: string; ticketId: string; hash?: string }) =>
     fetch(`${api}/${action}`, {
       method: 'POST',

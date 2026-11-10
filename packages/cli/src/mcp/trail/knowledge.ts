@@ -18,10 +18,10 @@ import {
   readBrief,
   readKnowledge,
   repoRootFor,
-  repoRootSpellings,
   writeKnowledge,
 } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
+import { pathRoots } from './pathRoots';
 
 /** The knowledge an agent gets with `t`: picked by paths (ticket and brief), words, trail and kind, with a why. */
 export function knowledgeFor(root: string, snap: MapSnapshot, t: Ticket) {
@@ -60,7 +60,7 @@ export async function proposeKnowledge(
   const snap = await ctx.resolveTrail(input.trail).catch(() => undefined);
   const ticketId = ctx.sessions.current?.info.ticketId;
   const now = Date.now();
-  const anchors = repoPaths(input.files, repoRootSpellings(repoRootFor(ctx.root))).map((path) => ({ path }));
+  const anchors = repoPaths(input.files, pathRoots(ctx)).map((path) => ({ path }));
   const draft = {
     title: input.title.trim(),
     body: input.body.trim(),
