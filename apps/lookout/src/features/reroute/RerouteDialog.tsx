@@ -2,8 +2,10 @@ import type { MapSnapshot } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
 import { Button, Empty, Field, MetaLine, Panel } from '../../components/ui';
 import { ago } from '../../lib';
+import { changedSinceProposed } from './changedSinceProposed';
 import { RerouteChangeRow } from './RerouteChangeRow';
 import { RerouteDestination } from './RerouteDestination';
+import { RerouteDrift } from './RerouteDrift';
 import { DISMISS_NOTE } from './rerouteText';
 import { ticketNamer } from './ticketNamer';
 import type { RerouteView } from './types';
@@ -14,6 +16,8 @@ import type { RerouteView } from './types';
  */
 export function RerouteDialog(props: {
   reroute: RerouteView;
+  /** The proposal the dialog was opened on, when the agent has since replaced it with this one. */
+  replaced?: string;
   snap: MapSnapshot;
   error?: string;
   onApprove: (note: string) => void;
@@ -22,6 +26,7 @@ export function RerouteDialog(props: {
 }) {
   const { reroute: p, snap } = props;
   const [note, setNote] = useState('');
+  const [seen, setSeen] = useState(false);
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && props.onClose();
     window.addEventListener('keydown', k);
@@ -33,6 +38,8 @@ export function RerouteDialog(props: {
   const assumptions = snap.map.sections.assumptions ?? [];
   const invalidated = p.invalidates.map((id) => assumptions.find((a) => a.id === id) ?? { id, text: '' });
   const pending = p.status === 'pending';
+  const changed = pending ? changedSinceProposed(snap, p) : [];
+  const mayApprove = !changed.length || seen;
   const challenge = p.kind === 'challenge-destination';
   return (
     <div className="scrim" onClick={props.onClose}>
@@ -42,6 +49,11 @@ export function RerouteDialog(props: {
           <MetaLine parts={[{ text: p.id, code: true }, p.status, `by ${p.by}`, `${ago(Date.now() - p.at)} ago`]} />
         </header>
         <div className="reroute-body">
+          {props.replaced && (
+            <p className="reroute-replaced t-meta edge-note edge-attention">
+              {p.by} replaced {props.replaced} with this proposal while you were reading: review it again.
+            </p>
+          )}
           {challenge && <RerouteDestination reason={p.destinationReason} destination={p.diff?.destination} />}
           <section>
             <h3 className="mono-label">Why</h3>
@@ -99,6 +111,7 @@ export function RerouteDialog(props: {
             </section>
           )}
         </div>
+        {changed.length > 0 && <RerouteDrift changed={changed} seen={seen} onSeen={setSeen} />}
         {pending && (
           <Field label="Note for the agent (required to reject)">
             <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
@@ -119,7 +132,12 @@ export function RerouteDialog(props: {
               <Button className="reroute-reject" disabled={!note.trim()} onClick={() => props.onReject(note.trim())}>
                 Reject
               </Button>
-              <Button className="reroute-approve" variant="primary" onClick={() => props.onApprove(note.trim())}>
+              <Button
+                className="reroute-approve"
+                variant="primary"
+                disabled={!mayApprove}
+                onClick={() => props.onApprove(note.trim())}
+              >
                 Approve and apply
               </Button>
             </>

@@ -4,8 +4,8 @@ import type { RerouteError, RerouteProposal } from '../../model/reroute';
 import { OperationError } from '../operations/operationError';
 import { frozenTickets } from './frozenTickets';
 import { rerouteDiff } from './rerouteDiff';
-import { createReroute, listReroutes, writeReroute } from './rerouteStore';
 import { assertRoom, replacedBy, sameRuleOut, wideness } from './rerouteLimits';
+import { createReroute, listReroutes, writeReroute } from './rerouteStore';
 import { validateReroute, type RerouteDraft } from './validateReroute';
 
 /** Where reroute steps run: the tracker folder, the active adapter and the trail journal. */

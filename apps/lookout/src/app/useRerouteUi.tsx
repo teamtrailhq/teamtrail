@@ -1,7 +1,7 @@
 import type { MapSnapshot } from '@teamtrail/core';
 import { useState } from 'react';
 import { mapPreview } from '../features/map';
-import { DISMISS_NOTE, RerouteBanner, RerouteDialog, useReroutes } from '../features/reroute';
+import { DISMISS_NOTE, followProposal, RerouteBanner, RerouteDialog, useReroutes } from '../features/reroute';
 
 /**
  * The reroute pieces for the current trail: the map banner while a proposal is pending, the preview drawn over the
@@ -10,7 +10,9 @@ import { DISMISS_NOTE, RerouteBanner, RerouteDialog, useReroutes } from '../feat
 export function useRerouteUi(snap?: MapSnapshot, selectMap?: (mapId: string) => void) {
   const r = useReroutes(snap);
   const [openId, setOpenId] = useState<string>();
-  const shown = r.reroutes.find((p) => p.id === openId);
+  // The agent may replace the proposal while the dialog is open: follow it to the newest, and say so.
+  const followed = followProposal(r.reroutes, openId);
+  const shown = r.reroutes.find((p) => p.id === followed.id);
   const previewed = shown?.diff ? shown : r.pending;
   const close = () => {
     setOpenId(undefined);
@@ -34,7 +36,9 @@ export function useRerouteUi(snap?: MapSnapshot, selectMap?: (mapId: string) => 
     },
     dialog: snap && shown && (
       <RerouteDialog
+        key={shown.id}
         reroute={shown}
+        replaced={followed.replaced}
         snap={snap}
         error={r.error}
         onApprove={(note) => void r.approve(shown.id, note || undefined).then(closeIf)}
