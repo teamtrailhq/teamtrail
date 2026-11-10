@@ -12,6 +12,8 @@ import type { WaitControl } from './types';
 
 export interface ProposeArgs {
   trail?: string;
+  /** `rule-out`: close_ticket out_of_scope, in its own lane (ruleOut.ts). */
+  lane?: 'rule-out';
   kind?: RerouteKind;
   destinationReason?: DestinationReason;
   reason: string;
@@ -42,6 +44,7 @@ export async function proposeRerouteOp(ctx: AgentContext, input: ProposeArgs) {
         by,
         sessionId: s.id,
         origin: ctx.origin,
+        ...(input.lane ? { lane: input.lane } : {}),
       },
     );
     s.log(`proposed ${r.proposal.id} · ${r.proposal.changes.length} changes · waiting on the human`, 'warn');

@@ -113,7 +113,7 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
   }
 }
 
-function assertCloseable(t: Ticket, agent: string) {
+export function assertCloseable(t: Ticket, agent: string) {
   if (t.state === 'closed') throw new OperationError(`${t.key} is already closed`);
   if (t.type === 'review') throw new OperationError(`${t.key} is a review: answer it with submit_review`);
   if (t.assignee && t.assignee !== agent) throw new OperationError(`${t.key} is claimed by ${t.assignee}`);

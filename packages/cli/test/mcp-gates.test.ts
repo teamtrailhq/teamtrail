@@ -3,11 +3,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { MarkdownAdapter } from '@teamtrail/core';
 import {
+  journalFile,
   listReroutes,
   readAgentDocs,
   readAttempts,
   readCriteria,
   readCriteriaProposals,
+  rejectReroute,
   writeAgentAnswer,
   writeTicketCriteria,
 } from '@teamtrail/core/agents';
@@ -47,12 +49,6 @@ async function answer(text: string) {
   }
 }
 
-async function ask(call: Call, question: string) {
-  const asked = call<{ answered: boolean; questionId: string }>('ask_human', { question, waitSeconds: 30 });
-  await answer('Yes, drop it');
-  return asked;
-}
-
 type Started = { trail: { id: string }; tickets: { ref: string; key: string }[] };
 const keyOf = (m: Started, ref: string) => m.tickets.find((t) => t.ref === ref)!.key;
 
@@ -71,7 +67,7 @@ async function chart(call: Call) {
 
 describe('ruling a ticket out is the human’s call (close_ticket out_of_scope)', () => {
   for (const kind of ['local', 'remote'] as const)
-    it(`${kind}: without the human's answer it becomes a reroute proposal; with it, a held claim rules it out`, async () => {
+    it(`${kind}: an agent never cancels a ticket: ruling out is always a proposal, whatever the human answered`, async () => {
       const lead = await hub.connect({ name: 'claude-01' });
       const m = await chart(lead);
       const call = await hub.connect(kind === 'local' ? { name: 'claude-02' } : { token: 'sandbox' });
@@ -87,10 +83,14 @@ describe('ruling a ticket out is the human’s call (close_ticket out_of_scope)'
       expect((await ticketOf(m.trail.id, x)).state).toBe('open');
       const [r1] = listReroutes(root, m.trail.id);
       expect(r1).toMatchObject({ status: 'pending', changes: [{ op: 'cancel_ticket' }] });
-      // The proposal freezes it: nobody rules it out (or claims it) meanwhile.
-      await expect(lead('close_ticket', { ticket: x, resolution: 'x', outcome: 'out_of_scope' })).rejects.toThrow(
-        /frozen by reroute proposal R-1/,
-      );
+      // The proposal freezes it: nobody claims it meanwhile, and ruling it out again is the same proposal.
+      await expect(lead('claim_ticket', { ticket: x })).rejects.toThrow(/frozen by reroute proposal R-1/);
+      const again = await lead<{ proposal: { id: string } }>('close_ticket', {
+        ticket: x,
+        resolution: 'x',
+        outcome: 'out_of_scope',
+      });
+      expect(again.proposal.id).toBe('R-1');
 
       // Held, but no answer: still only a proposal.
       await call('claim_ticket', { ticket: z });
@@ -102,20 +102,109 @@ describe('ruling a ticket out is the human’s call (close_ticket out_of_scope)'
       // Its dependant still waits on it.
       await expect(call('claim_ticket', { ticket: y })).rejects.toThrow(/not on the frontier/);
 
-      // The human answered a question asked on the held ticket: now it is theirs, and it goes.
+      // Even an answered question on a held ticket doesn't let the agent cancel it: the answer may say anything,
+      // even "don't". Ruling out is always a proposal the human approves in one click.
       const free = await chart(lead);
       const w = keyOf(free, 'z');
       await call('claim_ticket', { trail: free.trail.id, ticket: w });
-      await ask(call, 'Shall I drop the legacy CSV export?');
-      const ruled = await call<{ closed: string; ruledOutWith: string }>('close_ticket', {
+      const asked = call('ask_human', { question: 'Which date format?', waitSeconds: 30 });
+      await answer('ISO 8601. And do NOT drop this ticket.');
+      await asked;
+      const ruled = await call<{ outcome: string; closed: null }>('close_ticket', {
         trail: free.trail.id,
         resolution: 'Legacy CSV is dropped',
         outcome: 'out_of_scope',
       });
-      expect(ruled).toMatchObject({ closed: w, ruledOutWith: 'trail lead' });
-      const gone = await ticketOf(free.trail.id, w);
-      expect(gone).toMatchObject({ state: 'closed', closeReason: 'not_planned' });
+      expect(ruled).toMatchObject({ outcome: 'proposed', closed: null });
+      expect(await ticketOf(free.trail.id, w)).toMatchObject({ state: 'open' });
     });
+});
+
+describe('rule-out proposals have their own lane; pending proposals never freeze the whole trail', () => {
+  async function wide(call: Call, n: number) {
+    return call<Started>('start_trail', {
+      discovery: false,
+      title: 'Plan',
+      destination: 'D',
+      tickets: Array.from({ length: n }, (_, i) => ({ ref: `t${i}`, title: `Ticket ${i}`, type: 'task' })),
+    });
+  }
+  const cancel = (ticket: string) => ({ op: 'cancel_ticket', ticket, reason: 'not needed' });
+  const propose = (call: Call, changes: unknown[]) =>
+    call<{ id: string; frozen: string[]; wide?: string }>('propose_reroute', { reason: 'r', evidence: 'e', changes });
+
+  it('a rule-out neither replaces the agent’s own proposal nor waits behind full slots', async () => {
+    const a = await hub.connect({ name: 'claude-01' });
+    const m = await wide(a, 8);
+    const k = m.tickets.map((t) => t.key);
+    const mine = await propose(a, [{ op: 'add_unspecified', text: 'own plan' }]);
+    for (const name of ['codex-01', 'codex-02']) await propose(await hub.connect({ name }), [{ op: 'add_unspecified', text: name }]);
+    const out = await a<{ outcome: string; proposal: { id: string } }>('close_ticket', {
+      ticket: k[0],
+      resolution: 'not needed',
+      outcome: 'out_of_scope',
+    });
+    expect(out.outcome).toBe('proposed');
+    const all = listReroutes(root, m.trail.id);
+    expect(all.find((p) => p.id === mine.id)?.status).toBe('pending');
+    expect(all.filter((p) => p.status === 'pending')).toHaveLength(4);
+    // Asking again for the same ticket gives the same proposal, not a new one.
+    const again = await a<{ proposal: { id: string } }>('close_ticket', {
+      ticket: k[0],
+      resolution: 'still not needed',
+      outcome: 'out_of_scope',
+    });
+    expect(again.proposal.id).toBe(out.proposal.id);
+  });
+
+  it('wideness counts what every pending proposal freezes, not one at a time', async () => {
+    const a = await hub.connect({ name: 'claude-01' });
+    const m = await wide(a, 5);
+    const k = m.tickets.map((t) => t.key);
+    const first = await propose(a, [cancel(k[0]), cancel(k[1])]);
+    expect(first.frozen).toHaveLength(2);
+    const second = await propose(await hub.connect({ name: 'codex-01' }), [cancel(k[2]), cancel(k[3])]);
+    expect(second.frozen).toEqual([]);
+    expect(second.wide).toMatch(/freezes nothing/);
+    expect(await a('claim_ticket', { ticket: k[2] })).toMatchObject({ claimed: { key: k[2] } });
+  });
+
+  it('after the human turns a proposal down, the same agent waits before proposing again', async () => {
+    const a = await hub.connect({ name: 'claude-01' });
+    const m = await wide(a, 3);
+    const p = await propose(a, [{ op: 'add_unspecified', text: 'one' }]);
+    await rejectReroute(
+      { root, adapter: new MarkdownAdapter(nodeMarkdownFs(root), root), journal: journalFile(root) },
+      { mapId: m.trail.id, id: p.id, by: 'trail lead', note: 'No' },
+    );
+    await expect(propose(a, [{ op: 'add_unspecified', text: 'two' }])).rejects.toThrow(/turned down .* wait/);
+  });
+});
+
+describe('ruling out never touches a review or a ticket being verified', () => {
+  it('refuses them as close_ticket does', async () => {
+    fs.writeFileSync(
+      path.join(root, 'verification.json'),
+      JSON.stringify({ v: 1, default: 'checks+review', checks: { c: { run: [process.execPath, '-e', '0'] } }, run: ['c'] }),
+    );
+    const a = await hub.connect({ name: 'claude-01' });
+    const m = await a<Started>('start_trail', {
+      discovery: false,
+      title: 'R',
+      destination: 'D',
+      tickets: [{ ref: 'x', title: 'Build', type: 'execute' }],
+    });
+    const x = keyOf(m, 'x');
+    await a('claim_ticket', { ticket: x });
+    await a('report_completion', { resolution: 'Built', noCodeReason: 'test' });
+    const review = (await load(m.trail.id)).tickets.find((t) => t.type === 'review')!;
+    await expect(a('close_ticket', { ticket: x, resolution: 'no', outcome: 'out_of_scope' })).rejects.toThrow(
+      /being verified/,
+    );
+    await expect(a('close_ticket', { ticket: review.key, resolution: 'no', outcome: 'out_of_scope' })).rejects.toThrow(
+      /is a review/,
+    );
+  });
 });
 
 describe('agent A vs agent B: nobody changes another agent’s claim', () => {
@@ -142,7 +231,7 @@ describe('agent A vs agent B: nobody changes another agent’s claim', () => {
       // Ruling it out: a proposal for the human, or (same name, other connection) refused outright.
       await b<{ outcome: string }>('close_ticket', { ticket: x, resolution: 'no', outcome: 'out_of_scope' }).then(
         (r) => expect(r.outcome).toBe('proposed'),
-        (e: Error) => expect(e.message).toMatch(/held by another connection/),
+        (e: Error) => expect(e.message).toMatch(/held by another connection|claimed by claude-01/),
       );
       const t = await ticketOf(m.trail.id, x);
       expect(t).toMatchObject({ state: 'open', assignee: 'claude-01' });

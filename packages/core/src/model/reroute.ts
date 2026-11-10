@@ -72,6 +72,8 @@ export interface RerouteProposal {
    * it freezes nothing, and the trail lead is told instead.
    */
   wide?: { touched: number; open: number };
+  /** `rule-out`: an agent asking to rule a ticket out (close_ticket out_of_scope), kept apart from plan proposals. */
+  lane?: 'rule-out';
   at: number;
   reason: string;
   evidence: string;
