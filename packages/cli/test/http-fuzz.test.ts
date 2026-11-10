@@ -231,7 +231,7 @@ describe('malformed requests never end the process', () => {
     process.removeAllListeners('uncaughtException');
     process.removeAllListeners('unhandledRejection');
     const lines: string[] = [];
-    const stop = keepServing((l) => lines.push(l));
+    const stop = keepServing({ log: (l) => lines.push(l) });
     try {
       setTimeout(() => {
         throw new Error('thrown in a timer');
@@ -264,6 +264,33 @@ describe('malformed requests never end the process', () => {
       expect(head['x-content-type-options']).toBe('nosniff');
       expect(head['referrer-policy']).toBe('no-referrer');
       expect(head['cache-control']).toBe('no-store');
+    }
+  });
+
+  it('errors that keep coming end the process with a clear message, so a restart recovers', () => {
+    const lines: string[] = [];
+    const exits: number[] = [];
+    let now = 0;
+    const stop = keepServing({
+      log: (l) => lines.push(l),
+      exit: (code) => void exits.push(code),
+      now: () => now,
+      handlers: false,
+    });
+    try {
+      // Spread out, they are logged and the process keeps serving.
+      for (let i = 0; i < 20; i++) {
+        stop.report(new Error(`slow ${i}`));
+        now += 10_000;
+      }
+      expect(exits).toEqual([]);
+      // Ten in a minute: something is wrong for good.
+      for (let i = 0; i < 10; i++) stop.report(new Error(`fast ${i}`));
+      expect(exits).toEqual([1]);
+      expect(lines.join('')).toMatch(/10 errors in a minute.*stopping so a restart recovers/s);
+      expect(lines.join('')).toMatch(/Uncaught error \(still serving\): Error: slow 0/);
+    } finally {
+      stop();
     }
   });
 });
