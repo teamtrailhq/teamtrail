@@ -21,7 +21,7 @@ interface Session {
 
 const METHODS = new Set(['POST', 'GET', 'DELETE']);
 const UNAUTHORIZED =
-  'Unauthorized. This endpoint needs a token: create one in the Lookout (Settings → Remote agents) and send it as "Authorization: Bearer <token>".';
+  'Unauthorized. This endpoint needs a token: create one in the Lookout (Settings → Project → Remote agents) and send it as "Authorization: Bearer <token>".';
 const THIS_MACHINE =
   'This endpoint answers this machine only. For agents on other machines, run `teamtrail mcp --http`.';
 

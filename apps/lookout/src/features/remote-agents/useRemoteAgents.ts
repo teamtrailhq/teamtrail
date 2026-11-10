@@ -29,7 +29,7 @@ async function post(path: string, body: unknown): Promise<{ ok: boolean; reply: 
 }
 
 /**
- * Settings → Remote agents: the tokens and the endpoints, kept current by the server's `remote-agents` event.
+ * Settings → Project → Remote agents: the tokens and the endpoints, kept current by the server's `remote-agents` event.
  * undefined while loading, null without a server, `elsewhere` when this page is open on another device than the
  * one Teamtrail runs on (tokens are only managed there). `create` and `revoke` resolve to an error message, if any.
  */

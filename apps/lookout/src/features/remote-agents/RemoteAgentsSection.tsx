@@ -1,5 +1,5 @@
-import { BRAND } from '@teamtrail/core';
 import { SettingsSection } from '../settings/SettingsSection';
+import { START_COMMAND } from './connectCommands';
 import { EndpointLine } from './EndpointLine';
 import { NewTokenForm } from './NewTokenForm';
 import { RemoteAgentsElsewhere } from './RemoteAgentsElsewhere';
@@ -8,7 +8,7 @@ import { TokenReveal } from './TokenReveal';
 import { useRemoteAgents } from './useRemoteAgents';
 
 /**
- * Settings → Remote agents: tokens for agents that reach this repo's MCP endpoint over HTTP, from another
+ * Settings → Project → Remote agents: tokens for agents that reach this repo's MCP endpoint over HTTP, from another
  * machine or a cloud sandbox. With no token the endpoint is closed.
  */
 export function RemoteAgentsSection() {
@@ -22,7 +22,7 @@ export function RemoteAgentsSection() {
       <p className="vf-intro">
         Agents on another machine or in a cloud sandbox can work this repo's trails too. They connect over HTTP with a
         token and share the tickets, claims and inbox of the agents here. One token per agent; revoke it and that agent
-        is out within a second.
+        is out within about a second.
       </p>
       <EndpointLine endpoints={view.endpoints} />
       {created && <TokenReveal created={created} endpoint={endpoint} onDone={dismissCreated} />}
@@ -33,10 +33,10 @@ export function RemoteAgentsSection() {
       <NewTokenForm onCreate={create} />
       <div className="ra-notes">
         <p className="t-meta ra-note">
-          <b>Before you open it to other machines.</b> The connection is plain HTTP. Run{' '}
-          <code>npx {BRAND.npm} mcp --http</code>, which serves the agent tools and nothing else, and put that port
-          behind HTTPS with a reverse proxy or a tunnel. The Lookout's own port is not for sharing: it has no sign-in,
-          so its agent endpoint and these tokens answer this machine only. A token only ever opens the agent tools.
+          <b>Before you open it to other machines.</b> The connection is plain HTTP. Run <code>{START_COMMAND}</code>,
+          which serves the agent tools and nothing else, and put that port behind HTTPS with a reverse proxy or a
+          tunnel. The Lookout's own port is not for sharing: it has no sign-in, so its agent endpoint and these tokens
+          answer this machine only. A token only ever opens the agent tools.
         </p>
         <p className="t-meta ra-note">
           <b>What a remote agent can't do.</b> Speak for you: it can't answer a question, skip discovery, change the

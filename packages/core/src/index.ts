@@ -1,4 +1,6 @@
 export * from './model/brand';
+export * from './model/packageSpec';
+export * from './model/shellQuote';
 export * from './model/types';
 export * from './model/lifecycle';
 export type * from './model/verification';

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { BRAND } from '@teamtrail/core';
 import { fail } from './args/help';
 import { parseArgs, parseSubArgs } from './args/parseArgs';
@@ -12,6 +13,7 @@ import { runMcpHttp } from './mcp/http/runMcpHttp';
 import { runMcpServer } from './mcp/server';
 import { printGreeting } from './printGreeting';
 import { runProjects } from './projects';
+import { selfCommand } from './selfCommand';
 import { serveLookout } from './serve/serveLookout';
 import { readStdin, recordClaudeSession } from './usage/hook';
 
@@ -50,6 +52,11 @@ async function connectCommand(argv: string[]) {
   const target = o.rest[0];
   if (target !== 'claude' && target !== 'codex') fail('connect needs an agent: claude or codex');
   if (!o.url && (o.token || o.tokenStdin)) fail('--token and --token-stdin need --url <the MCP endpoint>');
+  const local = argv.filter((a) => /^--(dir|no-register)(=|$)/.test(a));
+  if (o.url && local.length)
+    fail(
+      `${local.join(' and ')} can't go with --url: the tracker folder and the projects list are the server's, on its machine`,
+    );
   printGreeting();
   process.stdout.write(`\n  ${BRAND.name} · connect ${target === 'claude' ? 'Claude Code' : 'Codex'}\n\n`);
   if (o.url)
@@ -59,7 +66,10 @@ async function connectCommand(argv: string[]) {
       token: await connectToken(o),
       allowHttp: o.allowHttp,
     });
-  else runConnect(target, { cwd: process.cwd(), dir: o.dir, noRegister: o.noRegister });
+  else {
+    const self = selfCommand({ version: __VERSION__, file: fileURLToPath(import.meta.url) });
+    runConnect(target, { cwd: process.cwd(), dir: o.dir, noRegister: o.noRegister, self });
+  }
   process.stdout.write('\n');
 }
 

@@ -25,8 +25,10 @@ export interface ConnectRemoteOptions {
 }
 
 const PROBE_LINE: Record<ProbeResult, string> = {
+  'host-refused':
+    "reachable, but it doesn't answer to this host name. Start the server with --allow-host <the name in the URL>",
   ok: 'reachable · token accepted',
-  unauthorized: 'reachable, but it refused the token. Check it in the Lookout: Settings → Remote agents',
+  unauthorized: 'reachable, but it refused the token. Check it in the Lookout: Settings → Project → Remote agents',
   unreachable: "not reachable from here right now. The config is written anyway; check the URL and that it's running",
   unexpected: 'answered, but not like a Teamtrail MCP endpoint. Check the URL (it ends in /mcp)',
 };

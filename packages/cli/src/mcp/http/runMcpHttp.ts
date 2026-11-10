@@ -54,7 +54,7 @@ export async function runMcpHttp(opts: McpHttpServeOptions) {
   const tokens = remoteTokenViews(opts.root).length;
   const access = tokens
     ? `${tokens} token${tokens === 1 ? '' : 's'} can connect`
-    : 'closed: no tokens yet. Create one in the Lookout: Settings → Remote agents';
+    : 'closed: no tokens yet. Create one in the Lookout: Settings → Project → Remote agents';
   const exposure = network
     ? '  Open to your network over plain HTTP. Put it behind TLS or a tunnel before agents elsewhere use it.\n'
     : `  This machine only. Other machines: a tunnel to this port, or --host <addr> behind TLS.\n`;

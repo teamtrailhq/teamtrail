@@ -2,12 +2,12 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import {
   ActivityStream,
-  BRAND,
   describeTrackerEvent,
   LEASE_MINUTES_ENV,
   leaseMs,
   MarkdownAdapter,
   OperationError,
+  packageSpec,
   type Journal,
   type MapSnapshot,
   type SessionHandle,
@@ -24,6 +24,7 @@ import {
   type VerifyEnv,
 } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
+import { OWN_VERSION } from '../../ownVersion';
 import { AgentLeases } from './agentLeases';
 import { AgentSessions } from './agentSessions';
 import type { HumanAnswer } from './humanAnswer';
@@ -99,7 +100,7 @@ export class AgentContext {
       ? { running: true, url: lock.url }
       : {
           running: false,
-          hint: `Run \`npx ${BRAND.npm} --dir ${path.relative(process.cwd(), this.root) || '.'}\` in this folder to watch live.`,
+          hint: `Run \`npx ${packageSpec(OWN_VERSION)} --dir ${path.relative(process.cwd(), this.root) || '.'}\` in this folder to watch live.`,
         };
   }
 

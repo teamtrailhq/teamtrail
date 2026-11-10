@@ -1,6 +1,6 @@
 /**
  * A remote agent's access to the MCP endpoint over HTTP (`teamtrail mcp --http`, or `/mcp` on the Lookout).
- * One token per agent, created and revoked by the trail lead in Settings → Remote agents. Only the SHA-256 of the
+ * One token per agent, created and revoked by the trail lead in Settings → Project → Remote agents. Only the SHA-256 of the
  * token is kept; the token itself is shown once, when it's created.
  */
 export interface RemoteToken {

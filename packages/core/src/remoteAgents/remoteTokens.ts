@@ -45,7 +45,7 @@ export function createRemoteToken(root: string, rawName: unknown, now = Date.now
   return { token, view };
 }
 
-/** Removes a token; the removed one, or undefined when the id is unknown. Its live sessions end within a second. */
+/** Removes a token; the removed one, or undefined when the id is unknown. Its live sessions end within about a second. */
 export function revokeRemoteToken(root: string, id: string): RemoteTokenView | undefined {
   const tokens = readRemoteTokens(root);
   const gone = tokens.find((t) => t.id === id);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../../components/ui';
 
-/** "Revoke", asked once more: the agent holding the token is cut off within a second and can't be let back in. */
+/** "Revoke", asked once more: the agent holding the token is cut off within about a second and can't be let back in. */
 export function RevokeTokenButton(props: { name: string; onRevoke: () => Promise<string | undefined> }) {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);

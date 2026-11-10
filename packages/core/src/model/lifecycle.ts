@@ -151,7 +151,7 @@ export const GUIDES_JOURNAL = '_guides';
 export type RemoteAgentAction = 'token-created' | 'token-revoked';
 
 /**
- * The trail lead opening or closing a remote agent's access (Settings → Remote agents), in the project-wide
+ * The trail lead opening or closing a remote agent's access (Settings → Project → Remote agents), in the project-wide
  * `REMOTE_AGENTS_JOURNAL` file. Never holds the token or its hash: only the token's id and name.
  */
 export interface RemoteAgentEntry {

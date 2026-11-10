@@ -123,7 +123,10 @@ function repoWithTraps() {
   const sh = (...args: string[]) => execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
   const marker = path.join(dir, '..', `${path.basename(dir)}.ran`);
   const trap = path.join(dir, '..', `${path.basename(dir)}.sh`);
-  writeFileSync(trap, `#!/bin/sh\necho "$0 $* (parent: $(ps -o args= -p $PPID)) GITHUB_TOKEN=$GITHUB_TOKEN" >> "${marker}"\ncat\n`);
+  writeFileSync(
+    trap,
+    `#!/bin/sh\necho "$0 $* (parent: $(ps -o args= -p $PPID)) GITHUB_TOKEN=$GITHUB_TOKEN" >> "${marker}"\ncat\n`,
+  );
   chmodSync(trap, 0o755);
   sh('init', '-q');
   writeFileSync(path.join(dir, 'a.txt'), 'a\n');
