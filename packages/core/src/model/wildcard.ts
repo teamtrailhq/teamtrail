@@ -90,7 +90,7 @@ function row(t: Token, next: Uint8Array, text: string): Uint8Array {
 export function wildcardMatch(pattern: string, text: string, opts: { segments: boolean }): boolean {
   const tokens = tokenize(pattern, opts.segments);
   if (tokens.filter((t) => t.kind !== 'char').length > MAX_WILDCARDS) return false;
-  let next = new Uint8Array(text.length + 1);
+  let next: Uint8Array = new Uint8Array(text.length + 1);
   next[text.length] = 1;
   for (let i = tokens.length - 1; i >= 0; i--) next = row(tokens[i], next, text);
   return next[0] === 1;

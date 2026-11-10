@@ -84,23 +84,30 @@ const malformed = (api: string) => [
   `GET /${'%2e%2e%2f'.repeat(40)}etc/passwd`,
 ];
 
+type Middleware = (req: http.IncomingMessage, res: http.ServerResponse, next: () => void) => void;
+
 function dev(root: string, configDir: string): Listener {
-  const stack: [string, (req: http.IncomingMessage, res: http.ServerResponse, next: () => void) => void][] = [];
+  const stack: [string, Middleware][] = [];
   const httpServer = new EventEmitter();
-  const fake = {
-    httpServer,
-    middlewares: { use: (prefix: string, fn: (typeof stack)[0][1]) => stack.push([prefix, fn]) },
-  };
+  const use = (prefix: string | Middleware, fn?: Middleware) =>
+    typeof prefix === 'function' ? stack.push(['', prefix]) : stack.push([prefix, fn!]);
+  const fake = { httpServer, middlewares: { use } };
   const plugin = trackerFs({ root, prefix: '/__teamtrail', projectsConfigDir: configDir });
   (plugin.configureServer as (s: unknown) => void)(fake);
   closers.push(() => httpServer.emit('close'));
-  // What connect does with a mounted middleware: match the prefix, strip it, call through.
+  // What connect does: each middleware in order; a mounted one only for its prefix, which it strips.
   return (req, res) => {
-    const notFound = () => void ((res.statusCode = 404), res.end());
-    const hit = stack.find(([prefix]) => req.url === prefix || req.url?.startsWith(`${prefix}/`));
-    if (!hit) return notFound();
-    req.url = req.url!.slice(hit[0].length) || '/';
-    hit[1](req, res, notFound);
+    const original = req.url ?? '/';
+    const run = (i: number): void => {
+      const layer = stack[i];
+      if (!layer) return void ((res.statusCode = 404), res.end());
+      const [prefix, fn] = layer;
+      const mine = !prefix || original === prefix || original.startsWith(`${prefix}/`);
+      if (!mine) return run(i + 1);
+      req.url = original.slice(prefix.length) || '/';
+      fn(req, res, () => run(i + 1));
+    };
+    run(0);
   };
 }
 
@@ -238,5 +245,25 @@ describe('malformed requests never end the process', () => {
     }
     expect(lines.join('')).toMatch(/Uncaught error \(still serving\): Error: thrown in a timer/);
     expect(lines.join('')).toMatch(/Unhandled rejection \(still serving\): Error: rejected nowhere/);
+  });
+
+  it.each(names)('%s never lets another site frame it, and never lets an API answer be cached', async (name) => {
+    const entry = entries.find((e) => e.name === name)!;
+    const { port } = servers.get(name)!;
+    const head = await new Promise<http.IncomingHttpHeaders>((resolve, reject) =>
+      http
+        .get({ host: '127.0.0.1', port, path: entry.sane[0].slice(4) }, (res) => {
+          res.resume();
+          resolve(res.headers);
+        })
+        .on('error', reject),
+    );
+    expect(head['x-frame-options']).toBe('DENY');
+    expect(head['content-security-policy']).toMatch(/frame-ancestors 'none'/);
+    if (name !== 'the dev plugin') {
+      expect(head['x-content-type-options']).toBe('nosniff');
+      expect(head['referrer-policy']).toBe('no-referrer');
+      expect(head['cache-control']).toBe('no-store');
+    }
   });
 });

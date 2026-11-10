@@ -1,6 +1,6 @@
 import type http from 'node:http';
 import { BRAND } from '@teamtrail/core';
-import { neverCrash, requestUrl, type ProjectsHub } from '@teamtrail/core/bridge';
+import { neverCrash, requestUrl, setSecurityHeaders, type ProjectsHub } from '@teamtrail/core/bridge';
 import { MCP_PATH } from '../mcp/http/endpointUrl';
 import type { McpHttp } from '../mcp/http/types';
 import { serveStatic } from './staticFiles';
@@ -19,6 +19,7 @@ export function lookoutHandler(o: { appDir: string; mcp: McpHttp; hub: () => Pro
       req.url = req.url!.slice(BRAND.apiPrefix.length) || '/';
       return hub.handle(req, res);
     }
+    setSecurityHeaders(res, 'page');
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.statusCode = 405;
       res.end();

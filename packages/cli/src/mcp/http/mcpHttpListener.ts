@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { neverCrash, requestUrl } from '@teamtrail/core/bridge';
+import { neverCrash, requestUrl, setSecurityHeaders } from '@teamtrail/core/bridge';
 import { MCP_PATH } from './endpointUrl';
 import { refuse } from './respond';
 import type { McpHttp } from './types';
@@ -8,6 +8,7 @@ import type { McpHttp } from './types';
 export function mcpHttpListener(mcp: McpHttp) {
   return neverCrash(
     (req: IncomingMessage, res: ServerResponse) => {
+      setSecurityHeaders(res, 'api');
       if (requestUrl(req).pathname === MCP_PATH) return mcp.handle(req, res);
       refuse(res, 404, `Not found. The MCP endpoint is ${MCP_PATH}.`);
     },

@@ -47,6 +47,13 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
         hub.close();
         bridge.close();
       });
+      // The dev page can't take the built Lookout's full policy (Vite injects inline scripts), but it is never
+      // framed by another site either.
+      server.middlewares.use((_req, res, next) => {
+        res.setHeader('X-Frame-Options', 'DENY');
+        res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
+        next();
+      });
       // Like the CLI's servers: nothing a request carries may end the dev server.
       server.middlewares.use(opts.prefix, (req, res) => void hub.handle(req, res));
       server.middlewares.use('/mcp', (req, res, next) => {

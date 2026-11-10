@@ -22,6 +22,7 @@ import { redactResponse } from './redactResponse';
 import { handleRemoteAgents } from './remoteAgentRoutes';
 import { fromThisMachine, requestRefusal } from './requestGuard';
 import { handleReroutes } from './rerouteRoutes';
+import { setSecurityHeaders } from './securityHeaders';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { createTrackerRoutes } from './trackerRoutes';
 import { handleVerification } from './verificationRoutes';
@@ -128,6 +129,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   }
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
+    setSecurityHeaders(res, 'api');
     const url = requestUrl(req);
     const refusal = requestRefusal(req);
     if (refusal) return refuseEarly(res, { error: refusal });

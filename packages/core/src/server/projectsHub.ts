@@ -17,6 +17,7 @@ import { neverCrash } from './neverCrash';
 import { handleProjects } from './projectRoutes';
 import { redactResponse } from './redactResponse';
 import { fromThisMachine, requestRefusal, type PeerAddress } from './requestGuard';
+import { setSecurityHeaders } from './securityHeaders';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { configDir as defaultConfigDir } from './trackerConfig';
 import { watchProjects } from './watchProjects';
@@ -116,6 +117,7 @@ export function createProjectsHub(o: ProjectsHubOptions) {
   }
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
+    setSecurityHeaders(res, 'api');
     const url = requestUrl(req);
     const refusal = requestRefusal(req);
     if (refusal) return refuseEarly(res, { error: refusal });
