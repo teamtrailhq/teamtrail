@@ -92,6 +92,40 @@ describe('workspaces.json "dir" stays next to the repo', () => {
   });
 });
 
+describe('workspaces.json "dir" never reaches into another project', () => {
+  it('refuses the parent itself, another repo, and a folder holding anything but this repo’s worktrees', async () => {
+    const r = repo();
+    const code = path.join(r.base, 'code');
+    // A neighbour project, and a folder of somebody's files.
+    fs.mkdirSync(path.join(code, 'other-repo', 'src'), { recursive: true });
+    sh(path.join(code, 'other-repo'), 'init', '-q');
+    fs.mkdirSync(path.join(code, 'notes'));
+    fs.writeFileSync(path.join(code, 'notes', 'todo.md'), 'mine');
+    for (const dir of ['..', '../other-repo', '../other-repo/src', '../other-repo/src/new', '../notes']) {
+      const p = await claim(r, dir);
+      expect('note' in p && p.note, dir).toMatch(/workspaces\.json.*"dir"/);
+    }
+    expect(fs.readdirSync(path.join(code, 'other-repo', 'src'))).toEqual([]);
+    expect(fs.readdirSync(path.join(code, 'notes'))).toEqual(['todo.md']);
+  });
+
+  it('a folder that already holds only this repo’s worktrees is reused; another repo’s worktrees are not', async () => {
+    const r = repo();
+    const first = await claim(r, '../trees', '#1');
+    expect('workspace' in first).toBe(true);
+    const second = await claim(r, '../trees', '#2');
+    expect('workspace' in second && path.relative(r.base, second.workspace.path)).toBe('code/trees/m1-2');
+    // Somebody else's repo puts a worktree of its own there: the folder is no longer this repo's.
+    const other = path.join(r.base, 'code', 'elsewhere');
+    fs.mkdirSync(other);
+    sh(other, 'init', '-q', '-b', 'main');
+    sh(other, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'x');
+    sh(other, 'worktree', 'add', '-q', '-b', 'w', path.join(r.base, 'code', 'trees', 'theirs'));
+    const third = await claim(r, '../trees', '#3');
+    expect('note' in third && third.note).toMatch(/workspaces\.json.*"dir"/);
+  });
+});
+
 describe('ticket ids and records never reach git as options or paths', () => {
   it('a ticket id that is not a plain id gets no worktree: it is refused before git sees it', async () => {
     const r = repo();

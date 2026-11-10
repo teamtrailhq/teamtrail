@@ -1,6 +1,7 @@
 import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { dirProblem } from './dirProblem';
+import { siblingProblem } from './siblingProblem';
 
 export type WorktreeDir = { dir: string } | { refused: string };
 
@@ -39,5 +40,7 @@ export function worktreeDir(top: string, dir?: string): WorktreeDir {
     .relative(parent, target)
     .split(path.sep)
     .some((part) => part.startsWith('.'));
-  return hidden ? refused('is in a hidden folder') : { dir: target };
+  if (hidden) return refused('is in a hidden folder');
+  const sibling = siblingProblem({ repo, parent, target });
+  return sibling ? refused(sibling) : { dir: target };
 }
