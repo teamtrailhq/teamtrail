@@ -24,16 +24,20 @@ export interface FakeIssue {
     body: string;
     created_at: string;
     user: string | null;
-    /** Who edited it last (null: a deleted account), and when; never edited when `edited_at` is unset. */
-    editor?: string | null;
-    edited_at?: string;
+    /** Its edits, oldest first (editor null: an account since deleted). */
+    edits?: Edit[];
   }[];
-  /** Who opened the issue, and who last edited its body (null: never edited). */
+  /** Who opened the issue, and the edits of its body, oldest first. */
   author: string;
-  editor: string | null;
-  edited_at?: string;
+  edits?: Edit[];
   subIssues: number[];
   blockedBy: number[];
+}
+
+/** One saved version of a body or comment. */
+interface Edit {
+  editor: string | null;
+  at: string;
 }
 
 type Res = { status: number; headers?: Record<string, string>; body?: unknown };
@@ -65,6 +69,8 @@ export function fakeGitHub(
     readers?: string[];
     /** Members of the owning org with no access to this repo (`MEMBER`, not a collaborator). */
     members?: string[];
+    /** The order `userContentEdits` lists edits in; GitHub's own is not documented, so tests try both. */
+    editsOrder?: 'newest-first' | 'oldest-first';
   } = {},
 ) {
   const repo = opts.repo ?? 'octo-org/launchpad';
@@ -106,6 +112,18 @@ export function fakeGitHub(
   /** Set `status` to make permission lookups fail (a 5xx outage). */
   const permissionFault: { status?: number } = {};
   const actor = (user: string | null | undefined) => (user ? { login: user } : null);
+  /** The edit history as GitHub's GraphQL shows it: the original version by its author, then each edit. */
+  const history = (author: string | null, createdAt: string, edits: Edit[] = []) => {
+    if (!edits.length) return { userContentEdits: { totalCount: 0, nodes: [] }, lastEditedAt: null };
+    const all = [{ editor: author, at: createdAt }, ...edits].map((e) => ({
+      createdAt: e.at,
+      editor: actor(e.editor),
+    }));
+    const nodes = opts.editsOrder === 'oldest-first' ? all : all.reverse();
+    return { userContentEdits: { totalCount: nodes.length, nodes }, lastEditedAt: edits.at(-1)!.at };
+  };
+  const edited = (x: { edits?: Edit[] }, editor: string | null) =>
+    (x.edits = [...(x.edits ?? []), { editor, at: tick() }]);
 
   const rest = (i: FakeIssue) => ({
     id: i.id,
@@ -135,8 +153,7 @@ export function fakeGitHub(
     updatedAt: i.updated_at,
     closedAt: i.closed_at,
     author: actor(i.author),
-    userContentEdits: { nodes: i.edited_at ? [{ editor: actor(i.editor) }] : [] },
-    lastEditedAt: i.edited_at ?? null,
+    ...history(i.author, i.created_at, i.edits),
     authorAssociation: association(i.author),
     labels: { nodes: i.labels.map((name) => ({ name })) },
     assignees: { nodes: i.assignees.map((l) => ({ login: l })) },
@@ -146,8 +163,7 @@ export function fakeGitHub(
         body: c.body,
         createdAt: c.created_at,
         author: actor(c.user),
-        userContentEdits: { nodes: c.edited_at ? [{ editor: actor(c.editor) }] : [] },
-        lastEditedAt: c.edited_at ?? null,
+        ...history(c.user, c.created_at, c.edits),
         authorAssociation: association(c.user),
       })),
     },
@@ -174,7 +190,6 @@ export function fakeGitHub(
       closed_at: null,
       comments: [],
       author: b.author ?? login,
-      editor: null,
       subIssues: [],
       blockedBy: [],
     };
@@ -260,7 +275,7 @@ export function fakeGitHub(
         const c = i.comments.find((x) => x.id === Number(cm[1]));
         if (c) {
           c.body = (body as { body: string }).body;
-          Object.assign(c, { editor: login, edited_at: tick() });
+          edited(c, login);
           return ok({ id: c.id, body: c.body });
         }
       }
@@ -276,7 +291,7 @@ export function fakeGitHub(
       if (b.title !== undefined) issue.title = b.title;
       if (b.body !== undefined) {
         issue.body = b.body;
-        Object.assign(issue, { editor: login, edited_at: tick() });
+        edited(issue, login);
       }
       if (b.state) {
         issue.state = b.state;
@@ -387,13 +402,15 @@ export function fakeGitHub(
       /** Someone edits an issue body in the GitHub UI (its author, or a person with write access). */
       editBody(number: number, user: string, body: string) {
         const i = issues.get(number)!;
-        Object.assign(i, { body, editor: user, edited_at: tick(), updated_at: tick() });
+        edited(i, user);
+        Object.assign(i, { body, updated_at: tick() });
       },
       /** Someone with write access edits another person's comment; `null`: an account since deleted. */
       editComment(commentId: number, user: string | null, body: string) {
         for (const i of issues.values()) {
           const c = i.comments.find((x) => x.id === commentId);
-          if (c) Object.assign(c, { body, editor: user, edited_at: tick() });
+          if (c) c.body = body;
+          if (c) edited(c, user);
           if (c) i.updated_at = tick();
         }
       },
