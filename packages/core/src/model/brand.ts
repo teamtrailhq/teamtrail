@@ -29,6 +29,8 @@ export const BRAND = {
   dataDirEnv: `${slug.toUpperCase()}_DIR`,
   /** Env var that keeps `mcp` and `connect` from adding their repo to the projects registry. */
   noRegisterEnv: `${slug.toUpperCase()}_NO_REGISTER`,
+  /** Env var `connect --url` reads a remote agent's token from, and the one Codex reads it from at run time. */
+  tokenEnv: `${slug.toUpperCase()}_TOKEN`,
 } as const;
 
 /** UI preference storage key. */

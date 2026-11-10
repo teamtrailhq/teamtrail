@@ -16,6 +16,7 @@ import { handleKnowledge } from './knowledgeRoutes';
 import { handleLeases } from './leaseRoutes';
 import { handleModels } from './modelRoutes';
 import { handlePolicy } from './policyRoutes';
+import { handleRemoteAgents } from './remoteAgentRoutes';
 import { handleReroutes } from './rerouteRoutes';
 import { sendTrackerError } from './trackerErrors';
 import { createTrackerRoutes } from './trackerRoutes';
@@ -24,6 +25,7 @@ import { handleVerificationSync } from './verificationSyncRoutes';
 import { watchAttention } from './watchAttention';
 import { watchIntegration } from './watchIntegration';
 import { watchLeases } from './watchLeases';
+import { watchRemoteAgents } from './watchRemoteAgents';
 import { watchTrackerFolder } from './watchTrackerFolder';
 import { watchVerification } from './watchVerification';
 import { handleWorkspaces } from './workspaceRoutes';
@@ -56,6 +58,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send }, reconcilerTiming);
   const unwatchAttention = watchAttention(ctx, send, { configDir: trackers.configDir });
   const unwatchIntegration = watchIntegration(abs, integrationTiming);
+  const unwatchRemoteAgents = watchRemoteAgents(abs, send);
 
   type Route = (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<boolean>;
   /** Tried in order; the first that handles the request answers it. */
@@ -83,6 +86,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
+    (req, res, url) => handleRemoteAgents(ctx, req, res, url),
   ];
 
   /** The live event stream and raw file access to the tracker folder. */
@@ -132,6 +136,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       unwatchLeases();
       unwatchAttention();
       unwatchIntegration();
+      unwatchRemoteAgents();
       reconciler.stop();
       for (const c of clients) c.end();
       clients.clear();

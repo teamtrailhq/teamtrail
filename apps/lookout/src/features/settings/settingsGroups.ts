@@ -20,6 +20,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     sections: [
       { id: 'tracker', title: 'Tracker' },
       { id: 'workspaces', title: 'Workspaces' },
+      { id: 'remote-agents', title: 'Remote agents' },
       { id: 'policy', title: 'Risk policy' },
       { id: 'guides', title: 'Guides' },
       { id: 'labels', title: 'Labels' },

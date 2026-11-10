@@ -29,6 +29,11 @@ export interface AgentOptions {
   usagePollMs?: number;
   /** Lease length of a claim; renewed by every tool call. Default: $TEAMTRAIL_LEASE_MINUTES, else 15 min. */
   leaseMs?: number;
+  /**
+   * Set when the agent connects over HTTP with a token: it may be on another machine, so nothing may assume it
+   * shares this filesystem (no worktree is prepared, no check or git evidence is taken as its work).
+   */
+  remote?: { tokenName: string };
 }
 
 export interface TicketPlanInput {

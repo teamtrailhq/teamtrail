@@ -15,6 +15,7 @@ import { verifyLinear } from './verifyLinear.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
+import { verifyRemote } from './verifyRemote.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -473,6 +474,8 @@ const guidesOk = await verifyGuides({ browser, cli, log, shots });
 const githubOk = await verifyGitHub({ browser, cli, log, shots });
 // Linear: whose key and which team before connecting, the team picker, and a team the key can't read.
 const linearOk = await verifyLinear({ browser, cli, log, shots });
+// Remote agents: a token created in Settings, an MCP client over HTTP next to a stdio one, and Revoke cutting it off.
+const remoteOk = await verifyRemote({ browser, cli, log, shots });
 
 await client.close();
 await page.waitForTimeout(1500);
@@ -515,7 +518,8 @@ if (
   !projectsOk ||
   !guidesOk ||
   !githubOk ||
-  !linearOk
+  !linearOk ||
+  !remoteOk
 )
   process.exit(1);
 console.log('\nOK');

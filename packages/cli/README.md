@@ -70,6 +70,24 @@ tool_timeout_sec = 900
 
 Any MCP client works: run `npx -y teamtrail mcp` over stdio in the repo. `--dir <path>` (or `$TEAMTRAIL_DIR`) picks another tracker folder; `--agent <trail name>` fixes the session name, which otherwise comes from the client (`claude-01`, `codex-01`).
 
+### Agents on other machines
+
+An agent on another machine or in a cloud sandbox reaches the same trails over HTTP. On the machine with the repo:
+
+1. Create a token for the agent in the Lookout: Settings → Remote agents. It's shown once; only its hash is kept, in `.teamtrail/.agents/` (never committed).
+2. Serve the tools: the running Lookout already answers at `/mcp` on its port, for clients on the same machine. For other machines run `npx teamtrail mcp --http` (port 7421, path `/mcp`): it serves the agent tools and nothing else. Without a token every request gets a 401.
+3. On the agent's machine, with the token in `$TEAMTRAIL_TOKEN`:
+
+```bash
+npx -y teamtrail connect claude --url https://trail.example.com/mcp   # or: connect codex --url …
+```
+
+`--token-stdin` and `--token <token>` work too. Claude Code keeps the token in its own config; Codex only stores the variable's name and reads `$TEAMTRAIL_TOKEN` when it starts.
+
+The connection is plain HTTP and binds to `127.0.0.1` unless you pass `--host`. Before agents elsewhere use it, put the `mcp --http` port behind HTTPS (a reverse proxy or a tunnel) and pass `--allow-host <name>` with the host name they'll use. Don't expose the Lookout's own port: it has no sign-in. A token only opens the agent tools, and revoking it in Settings ends its sessions within a second.
+
+A remote agent's files aren't on your machine, so it gets no worktree, and on trails with verification its completions come to you for review instead of running the checks locally.
+
 ### Tools
 
 | Tool | |

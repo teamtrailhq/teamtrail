@@ -13,7 +13,8 @@ interface UsageWindow {
 export class AgentSessions {
   /** The last session opened; it may have ended. */
   current?: SessionHandle;
-  private seq = 0;
+  /** Shared by every agent of this process: over HTTP one process hosts many agents, and session ids are files. */
+  private static seq = 0;
   private transcripts = new Map<string, TranscriptEntry[]>();
   /**
    * Usage window of each session of this process: from the model call that
@@ -40,7 +41,7 @@ export class AgentSessions {
 
   start(agent: string, mode: SessionMode, mapId: string, ticketId?: string) {
     const s = this.activity.startSession({
-      id: `s_${process.pid.toString(36)}_${(this.seq++).toString(36)}`,
+      id: `s_${process.pid.toString(36)}_${(AgentSessions.seq++).toString(36)}`,
       agent,
       mode,
       mapId,

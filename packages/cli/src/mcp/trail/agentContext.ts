@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import {
   ActivityStream,
@@ -19,6 +20,7 @@ import {
   journalFile,
   readAgentDocs,
   readLookoutLock,
+  releaseTrailName,
   type VerifyEnv,
 } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
@@ -45,6 +47,8 @@ export class AgentContext {
   /** Answers being waited for, by question id. */
   readonly waits = new Map<string, Promise<{ text: string; author: string }>>();
   private trailName?: string;
+  /** Set for an agent that shares its process with others (HTTP): what holds its trail name instead of the pid. */
+  private nameHolder?: string;
   private tickets = new Map<string, Ticket>();
   private offTracker: () => void;
 
@@ -64,6 +68,11 @@ export class AgentContext {
     return this.opts.root;
   }
 
+  /** Connected over HTTP, possibly from another machine: its files are not this machine's. */
+  get remote() {
+    return !!this.opts.remote;
+  }
+
   /** Display key of a ticket seen in this process (`#3`, `ENG-3`). */
   keyOf(ticketId: string) {
     return this.tickets.get(ticketId)?.key ?? `#${ticketId}`;
@@ -77,7 +86,8 @@ export class AgentContext {
     const taken = new Set(
       (await readAgentDocs(this.root)).filter((d) => d.session.status === 'running').map((d) => d.session.agent),
     );
-    return (this.trailName = claimTrailName(this.root, family, taken));
+    this.nameHolder = this.opts.remote ? randomUUID() : undefined;
+    return (this.trailName = claimTrailName(this.root, family, taken, this.nameHolder));
   }
 
   lookout() {
@@ -135,6 +145,7 @@ export class AgentContext {
     const agent = await this.agentId();
     const s = this.sessions.start(agent, mode, mapId, ticketId);
     this.sessionIds.push(s.id);
+    if (this.opts.remote) s.log(`connected over HTTP · token "${this.opts.remote.tokenName}"`);
     stampModel(this);
     return s;
   }
@@ -192,5 +203,6 @@ export class AgentContext {
     this.offTracker();
     this.writer.close();
     this.adapter.dispose?.();
+    if (this.trailName && this.nameHolder) releaseTrailName(this.root, this.trailName, this.nameHolder);
   }
 }

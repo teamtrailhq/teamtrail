@@ -18,6 +18,7 @@
 @import './settings.css';
 @import './policy.css';
 @import './workspaces.css';
+@import './remote-agents.css';
 @import './projects.css';
 @import './verification.css';
 @import './mark-and-voices.css';

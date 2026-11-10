@@ -20,6 +20,10 @@ export interface TrackerBridge {
    *   GET  /decisions[?trail=<id>]         `{ decisions: DecisionRecord[] }`
    *   POST /decisions                        body `{ trail, appendToTrail?, ...DecisionInput }` → DecisionRecord (idempotent per source.kind + source.ref)
    *   POST /decisions/<id>/supersede         body `{ trail, ...DecisionInput }` → the new DecisionRecord
+   *   GET  /remote-agents                    `{ tokens: RemoteTokenView[], endpoints: McpEndpoint[] }` who may reach the MCP
+   *                                          endpoint over HTTP; SSE `remote-agents` when that changes (remoteAgentRoutes.ts)
+   *   POST /remote-agents/tokens             body `{ name }` → `{ token, created, … }`: the token's value, this once
+   *   POST /remote-agents/tokens/revoke      body `{ id }`; the token's sessions end
    *   /trackers*, /tracker/<kind>/*          GitHub / Linear settings and API (trackerRoutes.ts)
    * Decision routes use the project's active tracker (local markdown, GitHub or Linear).
    */

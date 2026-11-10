@@ -12,6 +12,7 @@ export type SettingsSectionId =
   | 'team'
   | 'tracker'
   | 'workspaces'
+  | 'remote-agents'
   | 'policy'
   | 'guides'
   | 'labels'

@@ -13,6 +13,6 @@ export function registerProjectTools(tool: DefineTool, agent: TrailAgent) {
       readOnly: true,
     },
     {},
-    () => projectsStatus({ root: agent.root }),
+    () => projectsStatus({ root: agent.root, remote: agent.remote }),
   );
 }

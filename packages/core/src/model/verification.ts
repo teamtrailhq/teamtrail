@@ -72,6 +72,8 @@ export interface VerificationAttempt {
   noCodeReason?: string;
   /** The pull request the agent named for this work. */
   pr?: number;
+  /** Submitted over HTTP from another machine: no check ran here and no git evidence was read. */
+  remote?: boolean;
   checks: CheckResult[];
   result: AttemptResult;
   /** Why the result is `error` or `interrupted`. */

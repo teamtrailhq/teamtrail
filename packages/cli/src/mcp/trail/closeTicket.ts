@@ -131,6 +131,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
       criteria: input.criteria,
       decision: meta,
       transcript,
+      remote: ctx.remote,
     };
     const r = await submitVerified(
       ctx,

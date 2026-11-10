@@ -1,6 +1,6 @@
 {
   "name": "teamtrail",
-  "version": "0.24.2",
+  "version": "0.25.0",
   "author": "Teamtrail",
   "description": "Teamtrail: the trail map for your AI coding agents. You pick the destination, your agents walk the trail, and you only get the calls that need you.",
   "type": "module",

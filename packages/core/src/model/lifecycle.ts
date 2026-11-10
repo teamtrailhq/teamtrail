@@ -148,6 +148,29 @@ export interface GuideEntry {
 /** The journal "trail" that holds project-wide guide changes. */
 export const GUIDES_JOURNAL = '_guides';
 
+export type RemoteAgentAction = 'token-created' | 'token-revoked';
+
+/**
+ * The trail lead opening or closing a remote agent's access (Settings → Remote agents), in the project-wide
+ * `REMOTE_AGENTS_JOURNAL` file. Never holds the token or its hash: only the token's id and name.
+ */
+export interface RemoteAgentEntry {
+  v: 1;
+  kind: 'remote-agent';
+  at: number;
+  mapId: string;
+  action: RemoteAgentAction;
+  tokenId: string;
+  /** The name the trail lead gave the agent. */
+  name: string;
+  actor: string;
+  actorKind: ActorKind;
+  reason?: string;
+}
+
+/** The journal "trail" that holds remote agents' token changes. */
+export const REMOTE_AGENTS_JOURNAL = '_remote-agents';
+
 export type JournalEntry = TransitionEntry | RerouteEntry;
 
 /** Where transitions are recorded: a JSONL file in node, the lookout server from the browser, nowhere in demos. */

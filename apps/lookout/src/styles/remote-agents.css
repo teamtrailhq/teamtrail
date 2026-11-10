@@ -1,0 +1,96 @@
+/* Settings → Remote agents: tokens for agents that connect over HTTP, and the token shown once. */
+.ra-list,
+.ra-endpoints {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.ra-endpoints {
+  gap: var(--sp-2);
+}
+.ra-revoke {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6);
+}
+.ra-new {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 64ch;
+}
+.ra-note {
+  margin: 0;
+  max-width: 64ch;
+  line-height: var(--lh-body);
+}
+.ra-note b {
+  color: var(--text);
+  font-weight: 600;
+}
+.ra-note code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.ra-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+.ra-reveal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-12);
+  border: 1px solid var(--line2);
+  border-left: var(--edge-w) solid var(--accent);
+  background: var(--sunken);
+}
+.ra-reveal-title {
+  margin: 0;
+}
+.ra-reveal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  margin-top: var(--sp-4);
+}
+.ra-clients {
+  display: inline-flex;
+  gap: var(--sp-4);
+}
+.ra-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-8);
+  padding: var(--sp-6) var(--sp-6) var(--sp-6) var(--sp-10);
+  border: 1px solid var(--line2);
+  background: var(--bg);
+}
+.ra-copy-value {
+  flex: 1;
+  min-width: 0;
+  align-self: center;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-sm);
+  color: var(--text-hi);
+  user-select: all;
+}
+.ra-copy-btn {
+  flex: 0 0 auto;
+}
+@media (max-width: 640px) {
+  .ra-copy {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
