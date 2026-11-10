@@ -7,8 +7,14 @@ import type { AgentContext } from './agentContext';
  * else: no git here sees its checkout. So it must name them (or say why none changed), and the human is shown
  * them as its word.
  */
-export function declaredPaths(at: { remote: boolean; verified: boolean; paths?: string[]; noCodeReason?: string }) {
-  const paths = repoPaths(at.paths);
+export function declaredPaths(at: {
+  remote: boolean;
+  verified: boolean;
+  paths?: string[];
+  noCodeReason?: string;
+  repoRoot: string;
+}) {
+  const paths = repoPaths(at.paths, at.remote ? undefined : at.repoRoot);
   if (at.remote && at.verified && !paths.length && !at.noCodeReason?.trim())
     throw new OperationError(
       "Over a remote connection Teamtrail can't see your changes: pass paths with the files you changed (or noCodeReason when none had to), so the human sees what to review.",

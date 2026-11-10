@@ -40,7 +40,7 @@ export async function claimTicket(
   ctx: AgentContext,
   input: { ticket?: string; trail?: string; touches?: string[]; workspace?: boolean; guides?: string[] } = {},
 ) {
-  repoPaths(input.touches); // refuses an absolute or escaping path before anything is claimed
+  repoPaths(input.touches, repoRootOf(ctx.verifyEnv())); // refuses a path outside the repo before anything is claimed
   const recovered = await recoverStalled(ctx);
   const snap = await ctx.resolveTrail(input.trail);
   ctx.trail = snap.map.id;

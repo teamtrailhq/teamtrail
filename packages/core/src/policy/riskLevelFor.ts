@@ -9,6 +9,8 @@ export interface RiskSubject {
   paths?: string[];
   /** The repo is on a filesystem that ignores case, so the path rules do too. */
   caseInsensitive?: boolean;
+  /** Where the repo is: an absolute path inside it counts as repo-relative. */
+  repoRoot?: string;
 }
 
 const rank = (r: DecisionRisk) => RISK_LEVELS.indexOf(r.level);
@@ -18,7 +20,7 @@ const rank = (r: DecisionRisk) => RISK_LEVELS.indexOf(r.level);
  * path rule wins; ties keep the category. Without a category or paths there is nothing to judge: undefined.
  */
 export function riskLevelFor(subject: RiskSubject, policy: RiskPolicy): DecisionRisk | undefined {
-  const paths = repoPaths(subject.paths);
+  const paths = repoPaths(subject.paths, subject.repoRoot);
   if (!subject.category && !paths.length) return undefined;
   const found: DecisionRisk[] = [];
   if (subject.category) {

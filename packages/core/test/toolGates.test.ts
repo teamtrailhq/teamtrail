@@ -78,6 +78,18 @@ describe('declared paths', () => {
     expect(riskLevelFor({ paths: ['INFRA/x.tf'], caseInsensitive: true }, policy)?.level).toBe('high');
   });
 
+  it('takes an absolute path inside the repo as repo-relative, and folds Unicode and Windows spellings', () => {
+    expect(repoPath('/work/repo/infra/x.tf', '/work/repo')).toBe('infra/x.tf');
+    expect(() => repoPath('/work/other/infra/x.tf', '/work/repo')).toThrow(/absolute path outside the repo/);
+    expect(() => repoPath('/work/repo', '/work/repo')).toThrow();
+    expect(repoPath('infra./x.tf. ')).toBe('infra/x.tf');
+    expect(repoPath('infra /x.tf')).toBe('infra/x.tf');
+    expect(repoPath('caf\u0065\u0301/x')).toBe('caf\u00e9/x');
+    const nfcRule: RiskPolicy = { ...policy, paths: [{ glob: 'caf\u00e9/**', level: 'high' }] };
+    expect(riskLevelFor({ paths: ['caf\u0065\u0301/menu.ts'] }, nfcRule)?.level).toBe('high');
+    expect(riskLevelFor({ paths: ['/work/repo/infra/x.tf'], repoRoot: '/work/repo' }, policy)?.level).toBe('high');
+  });
+
   it('policy violations count what git saw and what the agent declared, and name what it left out', () => {
     const found = policyViolations({
       attempts: [

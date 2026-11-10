@@ -62,13 +62,16 @@ describe('declared paths are judged as the files they are', () => {
       'infra\\main.tf',
     ])
       await expect(decide([p]), p).rejects.toThrow(/High-risk call/);
-    for (const p of ['/abs/infra/main.tf', 'C:\\repo\\infra\\main.tf', '~/infra/main.tf'])
-      await expect(decide([p]), p).rejects.toThrow(/absolute path/);
+    for (const p of ['/abs/infra/main.tf', 'C:\\repo\\infra\\main.tf'])
+      await expect(decide([p]), p).rejects.toThrow(/absolute path outside the repo/);
+    await expect(decide(['~/infra/main.tf'])).rejects.toThrow(/home-relative/);
+    // An absolute path inside the repo is the same file as its repo-relative spelling.
+    await expect(decide([path.join(repo, 'infra', 'main.tf')])).rejects.toThrow(/High-risk call/);
     await expect(decide(['../elsewhere/infra/main.tf'])).rejects.toThrow(/outside the repo/);
     if (caseInsensitiveFs(root)) await expect(decide(['INFRA/main.tf'])).rejects.toThrow(/High-risk call/);
     else expect(await decide(['INFRA/main.tf'])).toBeTruthy();
     expect(await decide(['src/app.ts'])).toBeTruthy();
-    await expect(call('claim_ticket', { touches: ['/etc/passwd'] })).rejects.toThrow(/absolute path/);
+    await expect(call('claim_ticket', { touches: ['/etc/passwd'] })).rejects.toThrow(/absolute path outside the repo/);
   });
 
   it('a local close without verification is judged on the files git saw change, declared or not', async () => {
