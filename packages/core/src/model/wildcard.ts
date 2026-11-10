@@ -47,33 +47,41 @@ function collapse(tokens: Token[]): Token[] {
   return out;
 }
 
+type Cell = { t: Token; c: string; inText: boolean; next: Uint8Array; cur: Uint8Array; j: number };
+
+/** One cell for the tokens that never look past themselves: a literal, `?`, `*`, a bare `**`. */
+function cell({ t, c, inText, next, cur, j }: Cell): number {
+  switch (t.kind) {
+    case 'char':
+      return inText && c === t.c ? next[j + 1] : 0;
+    case 'one':
+      return inText && c !== '/' ? next[j + 1] : 0;
+    case 'star':
+      return next[j] || (inText && c !== '/' ? cur[j + 1] : 0);
+    case 'deep':
+      return next[j] || (inText ? cur[j + 1] : 0);
+    case 'dirs':
+      return 0;
+    default:
+      return t satisfies never;
+  }
+}
+
 /** One row of the table: does the pattern from token `t` on match the text from each position on? */
 function row(t: Token, next: Uint8Array, text: string): Uint8Array {
   const n = text.length;
   const cur = new Uint8Array(n + 1);
-  let dirsAhead = 0;
+  // `**/`: some `/` at or after j whose rest matches; remembered while walking back.
+  let slashAhead = 0;
   for (let j = n; j >= 0; j--) {
-    const here = j < n ? text[j] : '';
-    switch (t.kind) {
-      case 'char':
-        cur[j] = j < n && here === t.c ? next[j + 1] : 0;
-        break;
-      case 'one':
-        cur[j] = j < n && here !== '/' ? next[j + 1] : 0;
-        break;
-      case 'star':
-        cur[j] = next[j] || (j < n && here !== '/' ? cur[j + 1] : 0);
-        break;
-      case 'deep':
-        cur[j] = next[j] || (j < n ? cur[j + 1] : 0);
-        break;
-      case 'dirs':
-        if (j < n && here === '/' && next[j + 1]) dirsAhead = 1;
-        cur[j] = next[j] || dirsAhead;
-        break;
-      default:
-        return t satisfies never;
+    const inText = j < n;
+    const c = inText ? text[j] : '';
+    if (t.kind !== 'dirs') {
+      cur[j] = cell({ t, c, inText, next, cur, j });
+      continue;
     }
+    if (c === '/' && next[j + 1]) slashAhead = 1;
+    cur[j] = next[j] || slashAhead;
   }
   return cur;
 }
