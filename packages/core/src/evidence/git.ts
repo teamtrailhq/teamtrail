@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process';
+import { existsSync, statSync } from 'node:fs';
+import path from 'node:path';
 import { filterOverrides, gitEnv, SAFE_CONFIG, type ConfigPair } from './safeGit';
 
 const GIT_TIMEOUT_MS = 30_000;
@@ -32,16 +34,37 @@ function guarded(args: string[]) {
  */
 export async function git(cwd: string, args: string[], input?: string): Promise<GitResult> {
   if (NO_FILTERS.test(args[0] ?? '')) return run({ cwd, args, input, config: SAFE_CONFIG });
+  const filters: ConfigPair[] = [];
+  for (const dir of [cwd, ...actedOn(args)]) {
+    const own = await filtersOf(dir);
+    if (!own) return { code: 128, stdout: Buffer.alloc(0), stderr: UNREADABLE };
+    filters.push(...own);
+  }
+  return run({ cwd, args: guarded(args), input, config: [...SAFE_CONFIG, ...filters] });
+}
+
+/**
+ * Other checkouts a command acts in: the existing folders `git worktree <add|remove|move|…>` names after
+ * `--end-of-options`. A linked worktree has config of its own (`config.worktree`), and git runs a child in it
+ * (`worktree remove` checks it is clean there), so its filters are emptied as well as the cwd's.
+ */
+function actedOn(args: string[]) {
+  if (args[0] !== 'worktree') return [];
+  const at = args.indexOf('--end-of-options');
+  if (at === -1) return [];
+  return args.slice(at + 1).filter((a) => path.isAbsolute(a) && existsSync(a) && statSync(a).isDirectory());
+}
+
+/** The overrides that empty `dir`'s own content filters, or undefined when its config can't be read (fail closed). */
+async function filtersOf(dir: string): Promise<ConfigPair[] | undefined> {
   const listing = await run({
-    cwd,
+    cwd: dir,
     args: ['config', '--show-scope', '-z', '--get-regexp', '^filter\\.'],
     config: SAFE_CONFIG,
   });
   // 0: some filters, 1: none. Anything else (a config git can't parse, a missing binary) is not "none".
-  if (listing.code !== 0 && listing.code !== 1)
-    return { code: listing.code ?? 128, stdout: Buffer.alloc(0), stderr: UNREADABLE };
-  const filters = listing.code === 0 ? filterOverrides(listing.stdout.toString('utf8')) : [];
-  return run({ cwd, args: guarded(args), input, config: [...SAFE_CONFIG, ...filters] });
+  if (listing.code === 1) return [];
+  return listing.code === 0 ? filterOverrides(listing.stdout.toString('utf8')) : undefined;
 }
 
 function run(o: { cwd: string; args: string[]; input?: string; config: ConfigPair[] }): Promise<GitResult> {

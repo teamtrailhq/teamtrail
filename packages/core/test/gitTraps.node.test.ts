@@ -98,3 +98,28 @@ test('the filter listing failing is a refusal, never "no filters"', { skip: !pos
   assert.notEqual(res.code, 0);
   assert.match(res.stderr, /couldn't read this repository's git config/);
 });
+
+test(
+  'N1: a linked worktree’s own filter (config.worktree) never runs when git acts on that worktree',
+  { skip: !posix },
+  async () => {
+    const { dir, marker, trap } = scratch();
+    const r = path.join(dir, 'r');
+    const wt = path.join(dir, 'wt');
+    execFileSync('mkdir', [r]);
+    repo(r);
+    writeFileSync(path.join(r, '.gitattributes'), 'w.txt filter=w\n');
+    writeFileSync(path.join(r, 'w.txt'), 'w\n');
+    sh(r, 'add', '.');
+    sh(r, 'commit', '-qm', 'attrs');
+    sh(r, 'config', 'extensions.worktreeConfig', 'true');
+    sh(r, 'worktree', 'add', '-q', '-b', 'side', wt);
+    // What an agent working in the worktree can write: that worktree's own config.
+    sh(wt, 'config', '--worktree', 'filter.w.clean', trap);
+    const later = new Date(Date.now() + 5_000);
+    utimesSync(path.join(wt, 'w.txt'), later, later);
+    // Acting on the worktree from the main repo, without --force: git checks it is clean, inside the worktree.
+    await git(r, ['worktree', 'remove', '--end-of-options', wt]);
+    assert.equal(ran(marker), '');
+  },
+);

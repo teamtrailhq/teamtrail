@@ -48,7 +48,9 @@ export async function removeWorkspace(i: RemoveWorkspaceInput): Promise<RemoveWo
     const n = changes.split('\n').length;
     return refused(`${ws.path} has uncommitted changes (${n} ${n === 1 ? 'file' : 'files'}).`, true);
   }
-  const r = await git(repo, ['worktree', 'remove', ...(i.force ? ['--force'] : []), '--end-of-options', ws.path]);
+  // --force always: cleanliness was checked just above, and without it git checks again with a status of its own
+  // inside the worktree, where that worktree's own config could run a filter.
+  const r = await git(repo, ['worktree', 'remove', '--force', '--end-of-options', ws.path]);
   if (r.code !== 0) return refused(r.stderr.trim().split('\n')[0] || 'git worktree remove failed');
   await git(repo, ['worktree', 'prune']);
   dropWorkspace(i.root, i.mapId, i.ticketId);
