@@ -74,7 +74,10 @@ export function credentialStore(dir = configDir()) {
   return {
     file,
     read: (): Credentials => readJson<Credentials>(file, {}),
-    write: (c: Credentials) => withFileLock(file, () => writeJson(file, c, true)),
+    write(c: Credentials) {
+      ensurePrivateDir(dir);
+      withFileLock(file, () => writeJson(file, c, true));
+    },
     /**
      * Read, change and write under one lock: what every change should use, so a Lookout and an `mcp` process
      * saving different tokens at once both keep theirs.
