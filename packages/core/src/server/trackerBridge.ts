@@ -2,6 +2,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { MarkdownAdapter } from '../adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../adapters/markdown/nodeMarkdownFs';
+import { insideRoot } from '../projects/confinePath';
+import { symlinkFree } from '../projects/symlinkFree';
 import { handleAgents } from './agentRoutes';
 import { handleAttention } from './attentionRoutes';
 import { sendBridgeError } from './bridgeErrors';
@@ -36,6 +38,9 @@ import { watchTrackerFolder } from './watchTrackerFolder';
 import { watchVerification } from './watchVerification';
 import { handleWorkspaces } from './workspaceRoutes';
 
+/** Open `/events` streams one address may hold at once. */
+const MAX_STREAMS_PER_PEER = 16;
+
 /**
  * HTTP API for the local-markdown tracker. Shared by the Vite dev plugin and
  * the `teamtrail` CLI so both serve the same contract.
@@ -56,6 +61,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const routes = createTrackerRoutes({ ...trackers, root: abs, markdown, peer });
   const plugins = factories.map((f) => f({ root: abs, active: () => routes.active(), url: publicUrl }));
   const clients = new Set<ServerResponse>();
+  const streams = new Map<string, number>();
   const send = (text: string) => {
     for (const c of clients) c.write(text);
   };
@@ -81,7 +87,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     async (req, res, url) =>
       url.pathname.startsWith('/decisions') && handleDecisions(await routes.active(), req, res, url),
     (req, res, url) => handleLeases(ctx, req, res, url),
-    (req, res, url) => handleJournal(abs, req, res, url),
+    (req, res, url) => handleJournal({ root: abs, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
     (req, res, url) => handleAgents(abs, req, res, url),
@@ -100,9 +106,17 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   /** The live event stream and raw file access to the tracker folder. */
   async function fileRoute(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
     if (url.pathname === '/events') {
+      const who = req.socket.remoteAddress ?? '';
+      // A tab needs one stream; a few tabs and a phone, a few more. Past that it's hoarding connections.
+      if ((streams.get(who) ?? 0) >= MAX_STREAMS_PER_PEER)
+        return (sendJson(res, 429, { error: 'too many open event streams' }), true);
+      streams.set(who, (streams.get(who) ?? 0) + 1);
       openEventStream(res);
       clients.add(res);
-      req.on('close', () => clients.delete(res));
+      req.on('close', () => {
+        clients.delete(res);
+        streams.set(who, (streams.get(who) ?? 1) - 1);
+      });
       return true;
     }
     if (url.pathname === '/list') {
@@ -112,7 +126,9 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     }
     if (url.pathname !== '/file') return false;
     const p = url.searchParams.get('path') ?? '';
-    if (!isTrackerFile(p)) throw new BadRequest('not a tracker file');
+    // Inside the tracker folder once links are resolved, and written only where no link stands on the way.
+    if (!isTrackerFile(p) || !insideRoot(abs, p)) throw new BadRequest('not a tracker file');
+    if (req.method === 'PUT' && !symlinkFree(abs, p)) throw new BadRequest('not a tracker file');
     if (req.method === 'PUT') {
       const text = await readText(req);
       if (!fromThisMachine(req, peer)) {

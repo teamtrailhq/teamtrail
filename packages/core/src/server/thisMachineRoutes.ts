@@ -31,7 +31,12 @@ const WRITES: RegExp[] = [
  * stored credentials to look something up (the repos a GitHub token can see, a Linear key's teams and projects).
  * The settings themselves (`GET /trackers`) stay readable, without the account (redactForLan.ts).
  */
-const ALWAYS: RegExp[] = [/^\/remote-agents(\/|$)/, /^\/trackers\/.+/];
+const ALWAYS: RegExp[] = [
+  /^\/remote-agents(\/|$)/,
+  /^\/trackers\/.+/,
+  // Catalog searches and previews fetch the URLs in guides.json (agents can write it) from this machine.
+  /^\/guides\/catalog(\/|$)/,
+];
 
 const REMOVE_PROJECT = /^\/projects\/[^/]+$/;
 

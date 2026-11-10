@@ -50,6 +50,10 @@ async function sessionOf(root: string, questionId: string): Promise<string> {
 async function answer(ctx: ProjectRoutesContext, entry: ProjectEntry, req: IncomingMessage, res: ServerResponse) {
   const b = await readJson<Partial<AgentAnswer>>(req);
   required(b, ['questionId', 'text']);
+  // Both ids become file names under .agents/: only what Teamtrail itself hands out (as /agents/answer).
+  for (const k of ['sessionId', 'questionId'] as const)
+    if (b[k] !== undefined && (typeof b[k] !== 'string' || !/^[\w.-]{1,120}$/.test(b[k]) || b[k].includes('..')))
+      throw new BadRequest(`"${k}" is not an id`);
   const sessionId =
     typeof b.sessionId === 'string' && b.sessionId ? b.sessionId : await sessionOf(entry.root, b.questionId!);
   const author = typeof b.author === 'string' && b.author ? b.author : 'trail lead';

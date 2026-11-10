@@ -42,13 +42,26 @@ export function sendFailure(res: ServerResponse, err: unknown) {
   if (!bad) console.error(err);
   if (res.headersSent || res.writableEnded) return void res.destroy();
   res.setHeader('Connection', 'close');
+  if (err instanceof TooLarge) return sendJson(res, 413, { error: err.message });
   if (err instanceof BadRequest) return sendJson(res, 400, { error: err.message });
   sendJson(res, bad ? 400 : 500, { error: bad ? 'malformed request' : 'Internal error' });
 }
 
+/** The largest request body any route reads: a ticket file with long comments fits many times over. */
+export const MAX_BODY_BYTES = 2 * 1024 * 1024;
+
+/** A body past MAX_BODY_BYTES; answered with 413 and the connection closed, before the rest is read. */
+export class TooLarge extends BadRequest {}
+
 export async function readText(req: IncomingMessage): Promise<string> {
+  if (Number(req.headers['content-length'] ?? 0) > MAX_BODY_BYTES) throw new TooLarge('request body too large');
   const chunks: Buffer[] = [];
-  for await (const c of req) chunks.push(c as Buffer);
+  let size = 0;
+  for await (const c of req) {
+    size += (c as Buffer).length;
+    if (size > MAX_BODY_BYTES) throw new TooLarge('request body too large');
+    chunks.push(c as Buffer);
+  }
   return Buffer.concat(chunks).toString('utf8');
 }
 
