@@ -66,4 +66,5 @@ gh workflow run release.yml -f channel=stub                      # until launch:
 - **latest** must be higher than the current npm `latest`. It publishes, tags the commit `vX.Y.Z` and creates the GitHub release with generated notes.
 - **stub**: until launch, `latest` is a placeholder from `.github/stub/` that only prints "not released yet". It publishes the next `0.0.x` so the npm page shows the current README and links, and refuses once a real release is on `latest`.
 - Each run first does the full `npm run check` on the exact commit it publishes.
+- The version in `packages/cli/package.json` is the product version and must match the newest release in the in-app changelog (see AGENTS.md, Version and release notes).
 - Publishing uses npm trusted publishing: no npm token is stored, and every version carries provenance linking it to its commit and run.

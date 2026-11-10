@@ -179,10 +179,8 @@
   max-width: none;
   color: var(--text);
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .log-row .tag {
   color: var(--dim);

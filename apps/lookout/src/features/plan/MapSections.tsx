@@ -1,11 +1,11 @@
 import type { ActivityState, MapSnapshot } from '@teamtrail/core';
 import { useState } from 'react';
-import { EmptyState, Panel, SectionHeader, Tabs } from '../../components/ui';
+import { EmptyState, Panel, SectionHeader, Select } from '../../components/ui';
 import type { Selection } from '../../lib';
 import { PlanTabBody } from './PlanTabBody';
 import type { Tab } from './types';
 
-/** Map body sections ("the plan"): a static list per section, one tab each. */
+/** Map body sections ("the plan"): a static list per section, picked from a dropdown that carries each count. */
 export function MapSections({
   snap,
   selection,
@@ -50,7 +50,13 @@ export function MapSections({
         />
       )}
       <div className="sections-tabs">
-        <Tabs className="sub" value={tab} onChange={setTab} items={tabs} />
+        <Select
+          compact
+          aria-label="Plan section"
+          value={tab}
+          onChange={setTab}
+          options={tabs.map((t) => ({ value: t.id, label: t.n === undefined ? t.label : `${t.label} · ${t.n}` }))}
+        />
         {tab === 'decisions' && onAudit && (
           <button className="link" onClick={onAudit}>
             Audit ›

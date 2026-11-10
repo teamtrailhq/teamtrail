@@ -1,7 +1,6 @@
 export { ChecklistAnswers } from './ChecklistAnswers';
 export { GuideChip } from './GuideChip';
 export { clipName } from './guideLabels';
-export { GuideSignPart } from './GuideSignPart';
 export { GuidesSection } from './GuidesSection';
 export { TeamSection } from './TeamSection';
 export { TicketGuide } from './TicketGuide';

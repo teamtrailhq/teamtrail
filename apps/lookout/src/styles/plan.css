@@ -17,10 +17,8 @@
   display: flex;
   align-items: center;
   gap: var(--sp-8);
-  padding-right: var(--gutter);
-}
-.sections-tabs .tabs {
-  flex: 1;
+  justify-content: space-between;
+  padding: var(--sp-6) var(--gutter);
 }
 .list {
   list-style: none;
@@ -43,11 +41,6 @@
 .list li.sel button {
   background: var(--accent-bg);
   color: var(--text-hi);
-}
-/* Out of scope: ruled out, so quieter than the rest. */
-.row-list.oos .ds-row-title {
-  font-weight: 400;
-  color: var(--dim);
 }
 .notes {
   margin: 0;

@@ -1,6 +1,6 @@
 {
   "name": "teamtrail",
-  "version": "0.7.0",
+  "version": "0.24.0",
   "author": "Teamtrail",
   "description": "Teamtrail: the trail map for your AI coding agents. You pick the destination, your agents walk the trail, and you only get the calls that need you.",
   "type": "module",
@@ -16,13 +16,21 @@
     "node": ">=20"
   },
   "keywords": [
-    "agents",
-    "lookout",
-    "mcp",
+    "ai-agents",
+    "coding-agents",
     "claude-code",
     "codex",
-    "planning",
-    "hitl"
+    "cursor",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "agent-orchestration",
+    "human-in-the-loop",
+    "ai-coding",
+    "developer-tools",
+    "local-first",
+    "cli",
+    "planning"
   ],
   "scripts": {
     "build": "npm run build -w @teamtrail/lookout && node build.mjs",

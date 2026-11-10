@@ -19,7 +19,8 @@ function settledBy(a: Assumption) {
 
 /**
  * One assumption as a row: the assumption as the title; its id, status and who settled it, then the tickets that rely
- * on it, as context; the challenge evidence as detail. Amber while challenged.
+ * on it, as context; the challenge evidence as detail. Amber while challenged. Confirm shows on hover or focus,
+ * like every row action, so the row reads like the plan's other lists.
  */
 export function AssumptionRow(props: {
   a: Assumption;
@@ -54,7 +55,7 @@ export function AssumptionRow(props: {
       }
       detail={challenge}
       detailText={challenge}
-      trailing={
+      actions={
         props.onConfirm && (
           <Button size="sm" variant="ghost" disabled={props.busy} onClick={props.onConfirm}>
             Confirm
