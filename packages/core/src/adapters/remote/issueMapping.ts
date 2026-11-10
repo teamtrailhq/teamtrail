@@ -4,8 +4,8 @@ import { DEFAULT_MAP_MODE, type Comment, type DecisionRecord, type MapDoc } from
 import { settingsOf, type BodySettings } from './bodySettings';
 import { parseDecisionComment } from './decisionComment';
 import { readBody, readComment, splitBody } from './format';
-import { teammateDecision } from './teammateDecision';
 import type { Settled } from './settingsInForce';
+import { teammateDecision } from './teammateDecision';
 import type { Writer } from './writer';
 
 export interface TrailIssueParts {

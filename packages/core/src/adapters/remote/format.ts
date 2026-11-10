@@ -191,13 +191,26 @@ export interface IssueParts {
   closedAt?: string | null;
 }
 
+/** A ticket's settings as they apply here (settingsLedger.ts), as Ticket fields. */
+function ticketSettingsIn(
+  p: IssueParts,
+  meta: BodyMeta,
+): Pick<Ticket, 'verification' | 'checks' | 'guide' | 'settingsUnconfirmed'> {
+  const found = settingsOf({ ...meta });
+  const settled = p.settle ? p.settle(found) : { use: found };
+  const { verification, checks, guide } = settled.use;
+  return {
+    ...(verification ? { verification } : {}),
+    ...(checks ? { checks } : {}),
+    ...(guide ? { guide } : {}),
+    ...(settled.unconfirmed ? { settingsUnconfirmed: true as const } : {}),
+  };
+}
+
 export function ticketFromIssue(p: IssueParts): Ticket {
   const { text, meta } = readBody(p.body, p.writer);
   const type = typeFromLabels(p.labels);
   const status = TICKET_STATUSES.find((s) => s === meta.status);
-  const found = settingsOf({ ...meta });
-  const settled = p.settle ? p.settle(found) : { use: found };
-  const { verification, checks, guide } = settled.use;
   return {
     id: p.id,
     key: p.key,
@@ -209,11 +222,8 @@ export function ticketFromIssue(p: IssueParts): Ticket {
     closeReason: p.closed ? (p.closeReason ?? 'completed') : undefined,
     assignee: (typeof meta.assignee === 'string' && meta.assignee) || p.trackerAssignee,
     ...(status ? { status } : {}),
-    ...(verification ? { verification } : {}),
-    ...(checks ? { checks } : {}),
+    ...ticketSettingsIn(p, meta),
     ...(typeof meta.reviewOf === 'string' && meta.reviewOf ? { reviewOf: meta.reviewOf } : {}),
-    ...(guide ? { guide } : {}),
-    ...(settled.unconfirmed ? { settingsUnconfirmed: true as const } : {}),
     blockedBy: p.blockedBy,
     comments: p.comments,
     createdAt: Date.parse(p.createdAt) || 0,
