@@ -4,6 +4,7 @@ import { BRAND } from '@teamtrail/core';
 import { credentialStore, writeJsonAtomic } from '@teamtrail/core/bridge';
 import type { AskView } from './blocks';
 import { DEFAULT_COMMAND } from './manifest';
+import { settleOwners, type PendingOwner } from './owners';
 import type { PostedApproval } from './service/types';
 import { DEFAULT_NOTIFY_EVENTS, type SlackNotify, type SlackTokenSource, type SlackUser } from './types';
 
@@ -22,7 +23,10 @@ export interface SlackConfig {
   appId?: string;
   workspace?: { id: string; name: string; url: string };
   bot?: { userId: string; name?: string };
+  /** The confirmed owner; see `settleOwners` for what an earlier version saved here. */
   owners: SlackUser[];
+  /** A Slack account put forward as the owner, until the trail lead confirms or refuses it. */
+  pendingOwner?: PendingOwner;
   allow: SlackUser[];
   notify: SlackNotify;
   command: string;
@@ -59,7 +63,13 @@ export function slackStore(dir: string, env: Env = process.env) {
   const creds = credentialStore(dir);
   const read = (): SlackConfig => {
     const c = readJson<SlackConfig>(file);
-    return { ...DEFAULTS, ...c, notify: { ...DEFAULTS.notify, ...c.notify }, channelTrail: { ...c.channelTrail } };
+    return {
+      ...DEFAULTS,
+      ...c,
+      ...settleOwners(c),
+      notify: { ...DEFAULTS.notify, ...c.notify },
+      channelTrail: { ...c.channelTrail },
+    };
   };
   return {
     file,

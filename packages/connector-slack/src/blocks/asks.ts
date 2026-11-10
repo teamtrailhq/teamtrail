@@ -29,7 +29,7 @@ export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'tit
     .slice(0, 4)
     .map((s, i) => ({ type: 'button', action_id: `${ACTIONS.option}:${i}`, text: plain(clip(s, 75)), value: ref(i) }));
   return {
-    text: `Awaiting you · ${a.agent}: ${clip(a.text, 140)}`,
+    text: `Awaiting you · ${escape(a.agent)}: ${escape(clip(a.text, 140))}`,
     blocks: [
       { type: 'section', text: md(body) },
       {

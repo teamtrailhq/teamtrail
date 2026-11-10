@@ -12,8 +12,15 @@ export const DEFAULT_NOTIFY_EVENTS: SlackNotifyEvent[] = ['awaiting', 'blocked',
 export interface SlackUser {
   id: string;
   name?: string;
-  /** How the owner was identified: their git email matched a workspace member, or "This is me" on the Home tab. */
-  via?: 'git-email' | 'home';
+  /** The full name on the Slack profile, shown next to the display name when the trail lead confirms the owner. */
+  realName?: string;
+  /**
+   * How the account was put forward as the owner: its email is this machine's git email, it entered the one-time
+   * code from Settings → Slack, or it clicked "This is me" on the Home tab (versions before the code).
+   */
+  via?: 'git-email' | 'code' | 'home';
+  /** When the trail lead confirmed this account in the Lookout, on the machine Teamtrail runs on. */
+  confirmedAt?: number;
 }
 
 export interface SlackNotify {
@@ -24,7 +31,7 @@ export interface SlackNotify {
   detail: 'full' | 'titles-only';
 }
 
-/** 1 create app · 2 pick workspace (Slack) · 3 app-level token · 4 install + bot token · 5 owner claim. */
+/** 1 create app · 2 pick workspace (Slack) · 3 app-level token · 4 install + bot token · 5 confirm the owner. */
 export type SlackSetupStep = 1 | 2 | 3 | 4 | 5 | 'done';
 
 /** `GET <api>/slack`. */
@@ -41,7 +48,12 @@ export interface SlackStatus {
   };
   workspace?: { id: string; name: string; url: string };
   bot?: { userId: string; name?: string };
+  /** The confirmed owner. Empty until the trail lead confirms one; until then nothing is sent in Slack. */
   owners: SlackUser[];
+  /** A Slack account put forward as the owner, waiting for the trail lead to confirm or refuse it here. */
+  pendingOwner?: SlackUser;
+  /** Set while a one-time code can be entered in Slack. The code itself is only in the answer that created it. */
+  ownerCode?: { expiresAt: number };
   allow: SlackUser[];
   notify: SlackNotify;
   command: string;
@@ -55,6 +67,13 @@ export interface SlackTokenResult {
   kind?: 'app' | 'bot';
   error?: string;
   code?: string;
+  status: SlackStatus;
+}
+
+/** `POST <api>/slack/owner/code`: the one-time code to enter in Slack. Answered once; no GET returns it. */
+export interface SlackOwnerCode {
+  code: string;
+  expiresAt: number;
   status: SlackStatus;
 }
 

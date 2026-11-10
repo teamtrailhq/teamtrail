@@ -434,6 +434,24 @@
   gap: var(--sp-10);
   font-size: var(--fs-sm);
 }
+.sl-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-4) var(--sp-10);
+}
+.sl-code {
+  align-self: flex-start;
+  padding: var(--sp-8) var(--sp-12);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  color: var(--text-hi);
+  font-family: var(--mono);
+  font-size: var(--fs-heading);
+  letter-spacing: 0.12em;
+  user-select: all;
+}
 .label-codes {
   display: flex;
   flex-wrap: wrap;

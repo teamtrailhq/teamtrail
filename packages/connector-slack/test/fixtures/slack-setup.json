@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T17:18:19.922Z",
+  "recordedAt": "2026-11-10T13:22:05.691Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). Guided setup: wrong token type, app-level token, bot token missing a scope, bot token, Home tab, owner claim.",
   "exchanges": [
     {
@@ -119,30 +119,17 @@
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*Scout* is almost connected. Click below if you are setting up Teamtrail on this workspace."
+                  "text": "*Scout* isn't connected to anyone yet. Whoever runs Teamtrail finishes the setup on their computer, in Teamtrail → Settings → Slack.",
+                  "verbatim": true
                 }
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "action_id": "claim_owner",
-                    "style": "primary",
-                    "text": {
-                      "type": "plain_text",
-                      "text": "This is me",
-                      "emoji": true
-                    }
-                  }
-                ]
               },
               {
                 "type": "context",
                 "elements": [
                   {
                     "type": "mrkdwn",
-                    "text": "Runs while Teamtrail is open on your computer."
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
                   }
                 ]
               }
@@ -166,7 +153,106 @@
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*Scout* is almost connected. Click below if you are setting up Teamtrail on this workspace."
+                  "text": "*Scout* isn't connected to anyone yet. Whoever runs Teamtrail finishes the setup on their computer, in Teamtrail → Settings → Slack.",
+                  "verbatim": true
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/api/views.publish",
+        "body": {
+          "user_id": "U0RAJ0001",
+          "view": {
+            "type": "home",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Scout* isn't connected to anyone yet. Whoever runs Teamtrail finishes the setup on their computer, in Teamtrail → Settings → Slack.",
+                  "verbatim": true
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+        },
+        "body": {
+          "ok": true,
+          "view": {
+            "id": "VHU0RAJ0001",
+            "type": "home",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Scout* isn't connected to anyone yet. Whoever runs Teamtrail finishes the setup on their computer, in Teamtrail → Settings → Slack.",
+                  "verbatim": true
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/api/views.publish",
+        "body": {
+          "user_id": "U0EVE0001",
+          "view": {
+            "type": "home",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Scout* is almost connected. If you are setting up Teamtrail on your computer, enter the code shown in Teamtrail → Settings → Slack.",
+                  "verbatim": true
                 }
               },
               {
@@ -178,7 +264,7 @@
                     "style": "primary",
                     "text": {
                       "type": "plain_text",
-                      "text": "This is me",
+                      "text": "Enter code",
                       "emoji": true
                     }
                   }
@@ -189,7 +275,299 @@
                 "elements": [
                   {
                     "type": "mrkdwn",
-                    "text": "Runs while Teamtrail is open on your computer."
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+        },
+        "body": {
+          "ok": true,
+          "view": {
+            "id": "VHU0EVE0001",
+            "type": "home",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Scout* is almost connected. If you are setting up Teamtrail on your computer, enter the code shown in Teamtrail → Settings → Slack.",
+                  "verbatim": true
+                }
+              },
+              {
+                "type": "actions",
+                "elements": [
+                  {
+                    "type": "button",
+                    "action_id": "claim_owner",
+                    "style": "primary",
+                    "text": {
+                      "type": "plain_text",
+                      "text": "Enter code",
+                      "emoji": true
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/api/views.open",
+        "body": {
+          "trigger_id": "1793448002.2.fake2",
+          "view": {
+            "type": "modal",
+            "callback_id": "owner_code_modal",
+            "title": {
+              "type": "plain_text",
+              "text": "Connect Teamtrail",
+              "emoji": true
+            },
+            "submit": {
+              "type": "plain_text",
+              "text": "Continue",
+              "emoji": true
+            },
+            "close": {
+              "type": "plain_text",
+              "text": "Cancel",
+              "emoji": true
+            },
+            "blocks": [
+              {
+                "type": "input",
+                "block_id": "code",
+                "label": {
+                  "type": "plain_text",
+                  "text": "Code from Teamtrail → Settings → Slack",
+                  "emoji": true
+                },
+                "element": {
+                  "type": "plain_text_input",
+                  "action_id": "value",
+                  "max_length": 20,
+                  "placeholder": {
+                    "type": "plain_text",
+                    "text": "XXXX-XXXX",
+                    "emoji": true
+                  }
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "After this, confirm your Slack account in Teamtrail on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+        },
+        "body": {
+          "ok": true,
+          "view": {
+            "id": "V000000001",
+            "hash": "1793448002.h1",
+            "type": "modal",
+            "callback_id": "owner_code_modal",
+            "title": {
+              "type": "plain_text",
+              "text": "Connect Teamtrail",
+              "emoji": true
+            },
+            "submit": {
+              "type": "plain_text",
+              "text": "Continue",
+              "emoji": true
+            },
+            "close": {
+              "type": "plain_text",
+              "text": "Cancel",
+              "emoji": true
+            },
+            "blocks": [
+              {
+                "type": "input",
+                "block_id": "code",
+                "label": {
+                  "type": "plain_text",
+                  "text": "Code from Teamtrail → Settings → Slack",
+                  "emoji": true
+                },
+                "element": {
+                  "type": "plain_text_input",
+                  "action_id": "value",
+                  "max_length": 20,
+                  "placeholder": {
+                    "type": "plain_text",
+                    "text": "XXXX-XXXX",
+                    "emoji": true
+                  }
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "After this, confirm your Slack account in Teamtrail on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/api/views.open",
+        "body": {
+          "trigger_id": "1793448002.4.fake4",
+          "view": {
+            "type": "modal",
+            "callback_id": "owner_code_modal",
+            "title": {
+              "type": "plain_text",
+              "text": "Connect Teamtrail",
+              "emoji": true
+            },
+            "submit": {
+              "type": "plain_text",
+              "text": "Continue",
+              "emoji": true
+            },
+            "close": {
+              "type": "plain_text",
+              "text": "Cancel",
+              "emoji": true
+            },
+            "blocks": [
+              {
+                "type": "input",
+                "block_id": "code",
+                "label": {
+                  "type": "plain_text",
+                  "text": "Code from Teamtrail → Settings → Slack",
+                  "emoji": true
+                },
+                "element": {
+                  "type": "plain_text_input",
+                  "action_id": "value",
+                  "max_length": 20,
+                  "placeholder": {
+                    "type": "plain_text",
+                    "text": "XXXX-XXXX",
+                    "emoji": true
+                  }
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "After this, confirm your Slack account in Teamtrail on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+        },
+        "body": {
+          "ok": true,
+          "view": {
+            "id": "V000000002",
+            "hash": "1793448002.h2",
+            "type": "modal",
+            "callback_id": "owner_code_modal",
+            "title": {
+              "type": "plain_text",
+              "text": "Connect Teamtrail",
+              "emoji": true
+            },
+            "submit": {
+              "type": "plain_text",
+              "text": "Continue",
+              "emoji": true
+            },
+            "close": {
+              "type": "plain_text",
+              "text": "Cancel",
+              "emoji": true
+            },
+            "blocks": [
+              {
+                "type": "input",
+                "block_id": "code",
+                "label": {
+                  "type": "plain_text",
+                  "text": "Code from Teamtrail → Settings → Slack",
+                  "emoji": true
+                },
+                "element": {
+                  "type": "plain_text_input",
+                  "action_id": "value",
+                  "max_length": 20,
+                  "placeholder": {
+                    "type": "plain_text",
+                    "text": "XXXX-XXXX",
+                    "emoji": true
+                  }
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "After this, confirm your Slack account in Teamtrail on your computer.",
+                    "verbatim": true
                   }
                 ]
               }
@@ -229,6 +607,138 @@
     {
       "req": {
         "method": "POST",
+        "url": "/api/views.publish",
+        "body": {
+          "user_id": "U0ANA0001",
+          "view": {
+            "type": "home",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "Almost there. On your computer, open Teamtrail → Settings → Slack and confirm that this is your Slack account. Nothing is sent here until you do.",
+                  "verbatim": true
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+        },
+        "body": {
+          "ok": true,
+          "view": {
+            "id": "VHU0ANA0001",
+            "type": "home",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "Almost there. On your computer, open Teamtrail → Settings → Slack and confirm that this is your Slack account. Nothing is sent here until you do.",
+                  "verbatim": true
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/api/views.publish",
+        "body": {
+          "user_id": "U0RAJ0001",
+          "view": {
+            "type": "home",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Scout* isn't connected to anyone yet. Whoever runs Teamtrail finishes the setup on their computer, in Teamtrail → Settings → Slack.",
+                  "verbatim": true
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+        },
+        "body": {
+          "ok": true,
+          "view": {
+            "id": "VHU0RAJ0001",
+            "type": "home",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Scout* isn't connected to anyone yet. Whoever runs Teamtrail finishes the setup on their computer, in Teamtrail → Settings → Slack.",
+                  "verbatim": true
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
         "url": "/api/conversations.open",
         "body": {
           "users": "U0ANA0001"
@@ -254,7 +764,11 @@
         "url": "/api/chat.postMessage",
         "body": {
           "channel": "D00ANA0001",
-          "text": "Connected. Decisions and questions will reach you here."
+          "text": "Connected. Decisions and questions will reach you here.",
+          "parse": "none",
+          "link_names": false,
+          "unfurl_links": false,
+          "unfurl_media": false
         }
       },
       "res": {
@@ -266,12 +780,12 @@
         "body": {
           "ok": true,
           "channel": "D00ANA0001",
-          "ts": "1793448001.000003",
+          "ts": "1793448002.000005",
           "message": {
             "type": "message",
             "bot_id": "B0Scout0001",
             "text": "Connected. Decisions and questions will reach you here.",
-            "ts": "1793448001.000003"
+            "ts": "1793448002.000005"
           }
         }
       }
@@ -289,14 +803,16 @@
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "Connected. Decisions and questions reach you here."
+                  "text": "Connected. Decisions and questions reach you here.",
+                  "verbatim": true
                 }
               },
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "`/scout decide`, `/scout status`, `/scout inbox`, and *Save as decision* on any message."
+                  "text": "`/scout decide`, `/scout status`, `/scout inbox`, and *Save as decision* on any message.",
+                  "verbatim": true
                 }
               },
               {
@@ -319,7 +835,8 @@
                 "elements": [
                   {
                     "type": "mrkdwn",
-                    "text": "Runs while Teamtrail is open on your computer."
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
                   }
                 ]
               }
@@ -343,14 +860,16 @@
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "Connected. Decisions and questions reach you here."
+                  "text": "Connected. Decisions and questions reach you here.",
+                  "verbatim": true
                 }
               },
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "`/scout decide`, `/scout status`, `/scout inbox`, and *Save as decision* on any message."
+                  "text": "`/scout decide`, `/scout status`, `/scout inbox`, and *Save as decision* on any message.",
+                  "verbatim": true
                 }
               },
               {
@@ -373,113 +892,8 @@
                 "elements": [
                   {
                     "type": "mrkdwn",
-                    "text": "Runs while Teamtrail is open on your computer."
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "req": {
-        "method": "POST",
-        "url": "/api/views.publish",
-        "body": {
-          "user_id": "U0RAJ0001",
-          "view": {
-            "type": "home",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "Connected to Teamtrail for <@U0ANA0001>."
-                }
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "`/scout decide`, `/scout status`, `/scout inbox`, and *Save as decision* on any message."
-                }
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "action_id": "open_teamtrail",
-                    "text": {
-                      "type": "plain_text",
-                      "text": "Open in Teamtrail",
-                      "emoji": true
-                    },
-                    "url": "http://localhost:7420/"
-                  }
-                ]
-              },
-              {
-                "type": "context",
-                "elements": [
-                  {
-                    "type": "mrkdwn",
-                    "text": "Runs while Teamtrail is open on your computer."
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      },
-      "res": {
-        "status": 200,
-        "headers": {
-          "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
-        },
-        "body": {
-          "ok": true,
-          "view": {
-            "id": "VHU0RAJ0001",
-            "type": "home",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "Connected to Teamtrail for <@U0ANA0001>."
-                }
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "`/scout decide`, `/scout status`, `/scout inbox`, and *Save as decision* on any message."
-                }
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "action_id": "open_teamtrail",
-                    "text": {
-                      "type": "plain_text",
-                      "text": "Open in Teamtrail",
-                      "emoji": true
-                    },
-                    "url": "http://localhost:7420/"
-                  }
-                ]
-              },
-              {
-                "type": "context",
-                "elements": [
-                  {
-                    "type": "mrkdwn",
-                    "text": "Runs while Teamtrail is open on your computer."
+                    "text": "Runs while Teamtrail is open on your computer.",
+                    "verbatim": true
                   }
                 ]
               }
@@ -491,7 +905,7 @@
   ],
   "envelopes": [
     {
-      "label": "owner opens the Home tab",
+      "label": "ana opens the Home tab before a code exists",
       "type": "events_api",
       "payload": {
         "token": "legacy",
@@ -510,43 +924,7 @@
       }
     },
     {
-      "label": "owner clicks This is me",
-      "type": "interactive",
-      "payload": {
-        "type": "block_actions",
-        "user": {
-          "id": "U0ANA0001",
-          "username": "ana",
-          "name": "ana",
-          "team_id": "T0EFIKA01"
-        },
-        "api_app_id": "A0Scout0001",
-        "token": "legacy",
-        "container": {
-          "type": "view",
-          "view_id": "VHU0ANA0001"
-        },
-        "trigger_id": "1793448001.1.fake1",
-        "team": {
-          "id": "T0EFIKA01",
-          "domain": "efika"
-        },
-        "view": {
-          "id": "VHU0ANA0001",
-          "type": "home"
-        },
-        "actions": [
-          {
-            "type": "button",
-            "action_id": "claim_owner",
-            "block_id": "home",
-            "action_ts": "1793448001.000003"
-          }
-        ]
-      }
-    },
-    {
-      "label": "someone else clicks This is me later",
+      "label": "raj clicks the old claim button with no code waiting",
       "type": "interactive",
       "payload": {
         "type": "block_actions",
@@ -562,7 +940,214 @@
           "type": "view",
           "view_id": "VHU0RAJ0001"
         },
+        "trigger_id": "1793448001.1.fake1",
+        "team": {
+          "id": "T0EFIKA01",
+          "domain": "efika"
+        },
+        "view": {
+          "id": "VHU0RAJ0001",
+          "type": "home"
+        },
+        "actions": [
+          {
+            "type": "button",
+            "action_id": "claim_owner",
+            "block_id": "home",
+            "action_ts": "1793448001.000003"
+          }
+        ]
+      }
+    },
+    {
+      "label": "eve opens the Home tab while a code waits",
+      "type": "events_api",
+      "payload": {
+        "token": "legacy",
+        "team_id": "T0EFIKA01",
+        "api_app_id": "A0Scout0001",
+        "type": "event_callback",
+        "event_id": "Ev03",
+        "event_time": 1793448001,
+        "event": {
+          "type": "app_home_opened",
+          "user": "U0EVE0001",
+          "channel": "D00EVE0001",
+          "tab": "home",
+          "event_ts": "1793448001.000004"
+        }
+      }
+    },
+    {
+      "label": "eve clicks Enter code",
+      "type": "interactive",
+      "payload": {
+        "type": "block_actions",
+        "user": {
+          "id": "U0EVE0001",
+          "username": "eve",
+          "name": "eve",
+          "team_id": "T0EFIKA01"
+        },
+        "api_app_id": "A0Scout0001",
+        "token": "legacy",
+        "container": {
+          "type": "view",
+          "view_id": "VHU0EVE0001"
+        },
         "trigger_id": "1793448002.2.fake2",
+        "team": {
+          "id": "T0EFIKA01",
+          "domain": "efika"
+        },
+        "view": {
+          "id": "VHU0EVE0001",
+          "type": "home"
+        },
+        "actions": [
+          {
+            "type": "button",
+            "action_id": "claim_owner",
+            "block_id": "home",
+            "action_ts": "1793448002.000003"
+          }
+        ]
+      }
+    },
+    {
+      "label": "eve guesses a code",
+      "type": "interactive",
+      "payload": {
+        "type": "view_submission",
+        "team": {
+          "id": "T0EFIKA01",
+          "domain": "efika"
+        },
+        "user": {
+          "id": "U0EVE0001",
+          "username": "eve",
+          "name": "eve",
+          "team_id": "T0EFIKA01"
+        },
+        "api_app_id": "A0Scout0001",
+        "token": "legacy",
+        "trigger_id": "1793448002.3.fake3",
+        "view": {
+          "id": "V000000001",
+          "hash": "1793448002.h1",
+          "type": "modal",
+          "callback_id": "owner_code_modal",
+          "state": {
+            "values": {
+              "code": {
+                "value": {
+                  "type": "plain_text_input",
+                  "value": "AAAA-AAAA"
+                }
+              }
+            }
+          }
+        },
+        "response_urls": []
+      },
+      "ack": {
+        "response_action": "errors",
+        "errors": {
+          "code": "That code doesn't match. Check it in Teamtrail → Settings → Slack."
+        }
+      }
+    },
+    {
+      "label": "ana clicks Enter code",
+      "type": "interactive",
+      "payload": {
+        "type": "block_actions",
+        "user": {
+          "id": "U0ANA0001",
+          "username": "ana",
+          "name": "ana",
+          "team_id": "T0EFIKA01"
+        },
+        "api_app_id": "A0Scout0001",
+        "token": "legacy",
+        "container": {
+          "type": "view",
+          "view_id": "VHU0ANA0001"
+        },
+        "trigger_id": "1793448002.4.fake4",
+        "team": {
+          "id": "T0EFIKA01",
+          "domain": "efika"
+        },
+        "view": {
+          "id": "VHU0ANA0001",
+          "type": "home"
+        },
+        "actions": [
+          {
+            "type": "button",
+            "action_id": "claim_owner",
+            "block_id": "home",
+            "action_ts": "1793448002.000003"
+          }
+        ]
+      }
+    },
+    {
+      "label": "ana enters the code",
+      "type": "interactive",
+      "payload": {
+        "type": "view_submission",
+        "team": {
+          "id": "T0EFIKA01",
+          "domain": "efika"
+        },
+        "user": {
+          "id": "U0ANA0001",
+          "username": "ana",
+          "name": "ana",
+          "team_id": "T0EFIKA01"
+        },
+        "api_app_id": "A0Scout0001",
+        "token": "legacy",
+        "trigger_id": "1793448002.5.fake5",
+        "view": {
+          "id": "V000000002",
+          "hash": "1793448002.h2",
+          "type": "modal",
+          "callback_id": "owner_code_modal",
+          "state": {
+            "values": {
+              "code": {
+                "value": {
+                  "type": "plain_text_input",
+                  "value": "K7QF-2M9X"
+                }
+              }
+            }
+          }
+        },
+        "response_urls": []
+      }
+    },
+    {
+      "label": "raj clicks Enter code after it was used",
+      "type": "interactive",
+      "payload": {
+        "type": "block_actions",
+        "user": {
+          "id": "U0RAJ0001",
+          "username": "raj",
+          "name": "raj",
+          "team_id": "T0EFIKA01"
+        },
+        "api_app_id": "A0Scout0001",
+        "token": "legacy",
+        "container": {
+          "type": "view",
+          "view_id": "VHU0RAJ0001"
+        },
+        "trigger_id": "1793448002.6.fake6",
         "team": {
           "id": "T0EFIKA01",
           "domain": "efika"

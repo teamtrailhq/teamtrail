@@ -37,7 +37,9 @@ export interface SlackServiceOptions {
   sleep?: (ms: number) => Promise<void>;
   /** Lock owner id; distinct per service so tests can run several in one process. */
   lockOwner?: string;
-  /** The local user's email, matched against the workspace to skip the Home-tab claim. Defaults to `git config user.email`. */
+  /** The one-time owner code, eight characters; random unless a test fixes it. */
+  ownerCode?: () => string;
+  /** The local user's email; a workspace member with it is put forward as the owner. Defaults to `git config user.email`. */
   ownerEmail?: () => string | undefined;
 }
 

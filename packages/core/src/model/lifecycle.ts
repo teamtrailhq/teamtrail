@@ -171,6 +171,32 @@ export interface RemoteAgentEntry {
 /** The journal "trail" that holds remote agents' token changes. */
 export const REMOTE_AGENTS_JOURNAL = '_remote-agents';
 
+export type SlackOwnerAction = 'owner-claimed' | 'owner-confirmed' | 'owner-reset';
+
+/**
+ * A change to who Teamtrail talks to in Slack (Settings → Slack), in the project-wide `SLACK_JOURNAL` file: a Slack
+ * account claimed the owner's place (by the one-time code or the git email), the trail lead confirmed it on this
+ * machine, or reset it. Never holds a token or the code.
+ */
+export interface SlackOwnerEntry {
+  v: 1;
+  kind: 'slack';
+  at: number;
+  mapId: string;
+  action: SlackOwnerAction;
+  /** The Slack user id the change is about, and the name Slack gave for it. */
+  user: string;
+  name?: string;
+  /** How the account was put forward: the one-time code, the git email, or "This is me" in an older version. */
+  via?: string;
+  actor: string;
+  actorKind: ActorKind;
+  reason?: string;
+}
+
+/** The journal "trail" that holds changes to the Slack owner. */
+export const SLACK_JOURNAL = '_slack';
+
 export type JournalEntry = TransitionEntry | RerouteEntry;
 
 /** Where transitions are recorded: a JSONL file in node, the lookout server from the browser, nowhere in demos. */

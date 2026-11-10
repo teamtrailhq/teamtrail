@@ -27,7 +27,9 @@ export function SlackPreferences(props: { s: SlackStatus; set: (s: SlackStatus) 
         </Label>
         <div className="sl-owner">
           <b>@{owner?.name ?? owner?.id}</b>
-          {owner?.via === 'git-email' && <span className="t-meta">Matched your git email</span>}
+          <span className="t-meta">
+            {owner?.via === 'git-email' ? 'Matched your git email' : 'Confirmed on this machine'}
+          </span>
           <button type="button" className="link" onClick={() => void slackApi.resetOwner().then(props.set, () => {})}>
             Not you? Reset
           </button>

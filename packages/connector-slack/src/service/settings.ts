@@ -28,15 +28,11 @@ export function updateSettings(ctx: SlackContext, patch: SlackSettingsPatch) {
   return statusOf(ctx);
 }
 
-export function resetOwner(ctx: SlackContext) {
-  ctx.store.update({ owners: [] });
-  return statusOf(ctx);
-}
-
 export function remove(ctx: SlackContext) {
   ctx.stop();
   ctx.store.clear();
   ctx.dms.clear();
+  ctx.ownerCode = undefined;
   ctx.state = 'off';
   ctx.error = undefined;
   return statusOf(ctx);

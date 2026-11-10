@@ -1,7 +1,7 @@
 import { derivePhases, type ApprovalItem, type MapSnapshot } from '@teamtrail/core';
 import { approvalItems, journalFile, operatorAction } from '@teamtrail/core/agents';
 import { postResponse } from '../api';
-import { approvalClosedMessage, approvalMessage, type ApprovalRef } from '../blocks';
+import { approvalClosedMessage, approvalMessage, escape, mention, type ApprovalRef } from '../blocks';
 import type { SlackConfig } from '../store';
 import type { SlackContext } from './slackContext';
 import type { PostedApproval } from './types';
@@ -24,7 +24,7 @@ const PHASE_LINE: Record<string, string> = {
 function outcome(snap: MapSnapshot | undefined, i: ApprovalItem) {
   const phase = snap && derivePhases(snap.tickets, snap.map.mode).get(i.ticketId);
   return phase
-    ? `No longer waiting on you: ${i.ticketKey} ${PHASE_LINE[phase] ?? `is ${phase}`}.`
+    ? `No longer waiting on you: ${escape(i.ticketKey)} ${PHASE_LINE[phase] ?? `is ${escape(phase)}`}.`
     : 'No longer waiting on you.';
 }
 
@@ -149,12 +149,18 @@ export async function decideApproval(
     if (responseUrl)
       await postResponse(
         responseUrl,
-        { response_type: 'ephemeral', replace_original: false, text: `Could not ${d.action}: ${(e as Error).message}` },
+        {
+          response_type: 'ephemeral',
+          replace_original: false,
+          text: `Could not ${d.action}: ${escape((e as Error).message)}`,
+        },
         ctx.o.fetch,
       );
     return;
   }
   const line =
-    d.action === 'approve' ? `✓ Approved by <@${user}> via Slack.` : `↺ Sent back to rework by <@${user}> via Slack.`;
+    d.action === 'approve'
+      ? `✓ Approved by ${mention(user)} via Slack.`
+      : `↺ Sent back to rework by ${mention(user)} via Slack.`;
   await closeTicket(ctx, ref.m, ref.t, line);
 }

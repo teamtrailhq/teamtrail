@@ -76,7 +76,7 @@ export async function saveDecision(
       });
     }
   } catch (e) {
-    await tell(ctx, meta, `Couldn't save the decision: ${(e as Error).message}`);
+    await tell(ctx, meta, `Couldn't save the decision: ${escape((e as Error).message)}`);
     return;
   }
   ctx.store.update({ channelTrail: { ...ctx.store.read().channelTrail, [meta.c]: s.mapId } });

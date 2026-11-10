@@ -21,7 +21,7 @@ export function approvalMessage(trail: string, i: ApprovalItem, url?: string) {
     ...(i.attemptId ? { a: i.attemptId } : {}),
   } satisfies ApprovalRef);
   return {
-    text: `${i.kind === 'approve' ? 'Approve' : 'Held'} · ${i.ticketKey} ${clip(i.title, 120)}`,
+    text: `${i.kind === 'approve' ? 'Approve' : 'Held'} · ${escape(i.ticketKey)} ${escape(clip(i.title, 120))}`,
     blocks: [
       { type: 'section', text: md(`${header(trail, i)}\n${quote(clip(i.reason, 2800))}`) },
       {
@@ -39,7 +39,7 @@ export function approvalMessage(trail: string, i: ApprovalItem, url?: string) {
   };
 }
 
-/** The message once the ticket stopped waiting: the header and one line saying what happened. */
+/** The message once the ticket stopped waiting: the header and one line (mrkdwn, already escaped) saying what happened. */
 export function approvalClosedMessage(trail: string, i: ApprovalItem, line: string) {
   return {
     text: line,

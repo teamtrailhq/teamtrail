@@ -14,5 +14,6 @@ function stepFact(s: SlackStatus, n: number) {
     const via = owner.via === 'git-email' ? ' · git email' : '';
     return `owner ${owner.name ?? owner.id}${via}`;
   }
+  if (n === 5 && s.pendingOwner) return 'waiting for you to confirm';
   return undefined;
 }
