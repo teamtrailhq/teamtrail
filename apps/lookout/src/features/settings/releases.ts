@@ -17,6 +17,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.24.2',
+    date: '2026-11-10',
+    items: ['A ticket’s description no longer repeats which trail it is part of'],
+  },
+  {
     version: '0.24.1',
     date: '2026-11-10',
     items: ['Buttons in the same row are always the same size'],

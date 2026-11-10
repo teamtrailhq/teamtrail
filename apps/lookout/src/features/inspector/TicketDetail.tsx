@@ -14,6 +14,7 @@ import { LeaseFacts } from './LeaseFacts';
 import { OtherComments } from './OtherComments';
 import { ResolutionNote } from './ResolutionNote';
 import { TicketActions } from './TicketActions';
+import { ticketDescription } from './ticketDescription';
 import { TicketFacts } from './TicketFacts';
 import type { Form } from './types';
 
@@ -41,15 +42,16 @@ export function TicketDetail(props: {
   const lease = t.state === 'open' ? heldLeases(api.leases, snap.map.id).get(t.id) : undefined;
   const resolution = [...t.comments].reverse().find((c) => /^\*\*(Resolution|Ruled out of scope)\*\*/.test(c.body));
   const others = t.comments.filter((c) => c !== resolution);
+  const description = ticketDescription(t.body);
   const decisions = api.decisions.filter((d) => d.mapId === snap.map.id && d.ticketId === t.id);
 
   return (
     <div className="detail">
       <TicketFacts t={t} state={state} tickets={snap.tickets} />
-      {t.body.trim() && (
+      {description && (
         <section className="d-section ticket-body">
           <span className="t-label">Description</span>
-          <p className="body">{t.body}</p>
+          <p className="body">{description}</p>
         </section>
       )}
       <ModelWaitNote mapId={snap.map.id} ticketId={t.id} />
