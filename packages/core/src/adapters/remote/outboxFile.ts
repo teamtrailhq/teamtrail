@@ -1,7 +1,9 @@
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { machineStore } from '../../machine/machineStore';
 import { writePrivateFile } from '../../machine/writePrivateFile';
+import { legacyTargetKey } from './legacyTargetKey';
 import { isQueuedWrite } from './sync/isQueuedWrite';
 import type { OutboxStore, QueuedWrite } from './sync/types';
 import type { RemoteKind } from './types';
@@ -26,12 +28,20 @@ export const outboxDir = (root: string, configDir?: string) => path.join(machine
 export const isOutboxPath = (rel: string) =>
   rel === OUTBOX_DIR || rel.startsWith(`${OUTBOX_DIR}/`) || rel.startsWith(`${OUTBOX_DIR}\\`);
 
-/** `github-owner_name`, `linear-<team>[-<project>]`: a queue only replays into the tracker it was written for. */
+/**
+ * `github-owner_name-<hash>`, `linear-<team>[-<project>]-<hash>`: a queue (and an accepted-settings record) belongs
+ * to exactly one tracker target. The readable part folds characters together (`org/a.b` and `org/a_b` look alike),
+ * so the key ends in a hash of the raw target. Files under the old key (the readable part alone) are moved on first
+ * use (legacyTargetKey.ts).
+ */
 export function outboxKey(kind: RemoteKind, ...target: (string | undefined)[]) {
-  return [kind, ...target.filter(Boolean)]
+  const parts = [kind, ...target.filter(Boolean)];
+  const readable = parts
     .join('-')
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '_');
+  const hash = createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 16);
+  return `${readable}-${hash}`;
 }
 
 /** Adapters of this process that own their file. */
@@ -56,6 +66,12 @@ function owned(owner: string) {
 }
 
 /** Queue files for `key` that no live adapter owns. */
+/** Orphaned queues for `key`, and those an earlier version wrote under its old key (adopted, then renamed). */
+function mine(dir: string, key: string) {
+  const legacy = legacyTargetKey(key);
+  return legacy === key ? orphans(dir, key) : [...orphans(dir, key), ...orphans(dir, legacy)];
+}
+
 function orphans(dir: string, key: string) {
   let names: string[];
   try {
@@ -82,7 +98,7 @@ function readWrites(file: string): QueuedWrite[] {
 
 /** Unsent writes left for `key` by earlier runs (shown before an adapter adopts them). */
 export function orphanedWrites(dir: string, key: string) {
-  return orphans(dir, key).reduce((n, f) => n + readWrites(path.join(dir, f)).length, 0);
+  return mine(dir, key).reduce((n, f) => n + readWrites(path.join(dir, f)).length, 0);
 }
 
 /** The queue of one adapter in `dir` (see `outboxDir`). */
@@ -102,7 +118,7 @@ export function outboxFile(dir: string, key: string): OutboxStore & { file: stri
     load() {
       live.add(owner);
       const claimed: string[] = [];
-      for (const [i, name] of orphans(dir, key).entries()) {
+      for (const [i, name] of mine(dir, key).entries()) {
         const to = path.join(dir, `${key}.${owner}.claim-${i}.json`);
         try {
           renameSync(path.join(dir, name), to);

@@ -8,7 +8,7 @@ import {
   type Ticket,
   type TicketType,
 } from '@teamtrail/core';
-import { levelFor, listGuides, recordCharted } from '@teamtrail/core/agents';
+import { levelFor, listGuides, recordCharted, recordTypes } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaView, saveCriteria, type CriterionInput } from './criteria';
 import { briefView, claimable } from './discovery';
@@ -114,6 +114,8 @@ export async function addTicket(
     for (const b of blockers) await ctx.adapter.addBlocking(snap.map.id, b, t.id);
   }
   recordCharted(ctx.root, snap.map.id, [t.id], { agent: await ctx.agentId(), origin: ctx.origin });
+  // the type it was added as: its trail's level applies by it, whatever the file says before its first claim
+  recordTypes(ctx.root, snap.map.id, [t]);
   await ctx.adapter.comment(snap.map.id, t.id, await ctx.agentId(), addedLine(ctx, attention(t) === 'hitl'));
   if (input.guide) await setTicketGuide(ctx.adapter, { mapId: snap.map.id, ticketId: t.id }, input.guide, 'agent');
   if (input.criteria?.length) saveCriteria(ctx.root, snap.map, t, input.criteria);

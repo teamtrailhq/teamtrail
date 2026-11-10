@@ -1,6 +1,7 @@
 import { journalFile } from '../history/journalFile';
 import { TRUST_JOURNAL } from '../model/lifecycle';
 import type { MapSnapshot } from '../model/types';
+import { adoptableWithoutFile } from './adoptableWithoutFile';
 import { firstRun } from './firstRun';
 import { pendingTrust } from './pendingTrust';
 import { recordShown } from './recordShown';
@@ -39,7 +40,7 @@ export function approveTrust(input: ApproveTrustInput) {
   const { root, by } = input;
   const bulk = { on: input.items.length > 1, first: firstRun(root) };
   const all = pendingTrust(root, input.snaps);
-  const committed = (i: TrustItem) => (i.file ? !!input.committed?.has(i.file) : true);
+  const committed = (i: TrustItem) => (i.file ? !!input.committed?.has(i.file) : adoptableWithoutFile(root, i));
   const shown = bulk.on ? all.map((i) => ({ ...i, committed: committed(i) })) : all;
   const pending = new Map(shown.map((i) => [i.key, i]));
   const out = { approved: [] as TrustItem[], changed: [] as string[], refused: [] as string[] };

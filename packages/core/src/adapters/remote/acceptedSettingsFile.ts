@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { open, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { sleep } from '../../lib/emitter';
@@ -7,6 +7,7 @@ import { machineId } from '../../machine/machineId';
 import { machineSign, machineSigned } from '../../machine/machineKey';
 import { machineStore } from '../../machine/machineStore';
 import { writePrivateFile } from '../../machine/writePrivateFile';
+import { legacyTargetKey } from './legacyTargetKey';
 import type { AcceptedEntry } from './settingsInForce';
 import type { AcceptedStore } from './settingsLedger';
 
@@ -105,7 +106,27 @@ async function withLock(file: string, fn: () => void): Promise<boolean> {
   return false;
 }
 
+/**
+ * A record an earlier version wrote under the target's old key (legacyTargetKey.ts) moves to the new key once: read
+ * and checked under the old key, signed again for the new one, the old file removed. Never overwrites a new record.
+ */
+function migrate(root: string, target: string) {
+  const legacy = legacyTargetKey(target);
+  const from = acceptedSettingsPath(root, legacy);
+  const to = acceptedSettingsPath(root, target);
+  if (legacy === target || !existsSync(from) || existsSync(to)) return;
+  const issues = readDoc(root, from, legacy);
+  try {
+    const mac = machineSign(macParts(root, target, issues));
+    writePrivateFile(to, `${JSON.stringify({ v: 1, target, issues, mac } satisfies Doc, null, 2)}\n`);
+    rmSync(from, { force: true });
+  } catch {
+    // a config folder this process can't write: the old record stays, and nothing is accepted under the new key
+  }
+}
+
 export function acceptedSettingsFile(root: string, target: string): AcceptedStore {
+  migrate(root, target);
   const file = acceptedSettingsPath(root, target);
   return {
     read: () => readDoc(root, file, target),

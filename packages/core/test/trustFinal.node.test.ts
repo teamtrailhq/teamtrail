@@ -12,6 +12,7 @@ import { chartMap } from '../src/planning/operations/chart';
 import { approveTogether } from '../src/trust/approveTogether';
 import { pendingTrust } from '../src/trust/pendingTrust';
 import { trustKey, trustLedger } from '../src/trust/trustLedger';
+import { withCommitted } from '../src/trust/withCommitted';
 import { checkoutFor } from '../src/verification/checkoutFor';
 import { recordWorktree } from '../src/workspaces/trustedWorkspace';
 import { writeWorkspace } from '../src/workspaces/workspaceStore';
@@ -75,10 +76,14 @@ test('N7: on the first run, a level with no file to check in git is never adopte
     tickets: [],
   });
   const snaps = [remoteSnap('7', 'off'), remoteSnap('8', 'checks+review')];
-  const items = pendingTrust(root, snaps).map((i) => ({ key: i.key, hash: i.hash }));
-  const r = await approveTogether({ root, items, by: 'trail lead', snaps });
-  assert.ok(r.refused.includes('level:7'), 'lowered below the default: its own look');
-  assert.ok(r.approved.includes('level:8'), 'at least the default: may come along');
+  // levels are listed once the check commands are approved (which also ends the first run, so this is the rule both
+  // the page's "committed" flags and the server's bulk check use, tested where it is computed)
+  const checks = pendingTrust(root).find((i) => i.key === 'checks')!;
+  await approveTogether({ root, items: [{ key: checks.key, hash: checks.hash }], by: 'trail lead' });
+  const flagged = await withCommitted(root, pendingTrust(root, snaps));
+  const committed = (key: string) => flagged.find((i) => i.key === key)?.committed;
+  assert.equal(committed('level:7'), false, 'lowered below the default: its own look');
+  assert.equal(committed('level:8'), true, 'at least the default: may come along');
 });
 
 test("N9: repos whose names differ only in '.' and '_' never share a queue or a record", async () => {

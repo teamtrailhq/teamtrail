@@ -32,6 +32,15 @@ export function recordWorktree(root: string, at: { mapId: string; ticketId: stri
   });
 }
 
+/** The worktree Teamtrail prepared for this ticket on this machine, as recorded here; whatever the repo's files say. */
+export function preparedWorktree(root: string, mapId: string, ticketId: string): string | undefined {
+  try {
+    return machineStore(root).read<Record<string, string>>(FILE)?.[keyOf(mapId, ticketId)];
+  } catch {
+    return undefined;
+  }
+}
+
 /** The ticket's workspace record, only when it names the worktree Teamtrail prepared for it here and it exists. */
 export function trustedWorkspace(root: string, mapId: string, ticketId: string): WorkspaceRecord | undefined {
   const ws = readWorkspace(root, mapId, ticketId);

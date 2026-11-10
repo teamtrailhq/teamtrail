@@ -1,6 +1,7 @@
 import { createKnowledge, listKnowledge } from '../../knowledge/knowledgeStore';
 import type { Assumption } from '../../model/assumption';
 import type { RerouteProposal } from '../../model/reroute';
+import { recordTypes } from '../../verification/approvedLevel';
 import { settleAssumptions } from '../assumptions/assumptionOps';
 import { OperationError } from '../operations/operationError';
 import { applyReroute } from './applyReroute';
@@ -58,6 +59,14 @@ export async function approveReroute(env: RerouteEnv, d: RerouteDecision): Promi
     writeReroute(env.root, x);
   };
   p = await applyReroute({ adapter: env.adapter, actor: d.by, journal: env.journal, save }, p);
+  // the tickets it added keep the type they were created with, for their trail's level (approvedLevel.ts)
+  const created = new Set(Object.values(p.created));
+  if (created.size)
+    recordTypes(
+      env.root,
+      d.mapId,
+      (await env.adapter.loadMap(d.mapId)).tickets.filter((t) => created.has(t.id)),
+    );
   journal(env, p, { action: 'applied', actor: d.by, actorKind: 'trail lead', changes: p.applied.length });
   const invalidated = await settleAssumptions(env.adapter, d.mapId, {
     ids: p.invalidates,
