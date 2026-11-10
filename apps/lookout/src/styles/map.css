@@ -362,16 +362,8 @@
 .destination .x-stroke {
   fill: none;
   stroke: var(--mark);
-  stroke-width: 5;
-  opacity: 0.75;
+  stroke-width: 7;
   stroke-linecap: round;
-}
-.destination .x-sketch {
-  fill: none;
-  stroke: var(--text-hi);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  opacity: 0.45;
 }
 .destination text {
   font-family: var(--sans);

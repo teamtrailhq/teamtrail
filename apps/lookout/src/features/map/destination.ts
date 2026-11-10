@@ -29,11 +29,11 @@ export function destinationTrail(l: Laid, spot: { x: number; y: number }) {
   return lastOnes.map((n) => {
     if (l.direction === 'LR') {
       const a = { x: n.x + NODE_W, y: n.y + NODE_H / 2 };
-      const b = { x: spot.x - 44, y: spot.y };
+      const b = { x: spot.x - 30, y: spot.y };
       return routeEdge({ direction: 'LR', a, b, obstacles: cards, gap: 96 });
     }
     const a = { x: n.x + NODE_W / 2, y: n.y + NODE_H };
-    const b = { x: spot.x, y: spot.y - 44 };
+    const b = { x: spot.x, y: spot.y - 30 };
     return routeEdge({ direction: 'TB', a, b, obstacles: cards, gap: 48 });
   });
 }
