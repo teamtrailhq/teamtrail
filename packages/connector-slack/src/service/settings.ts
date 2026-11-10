@@ -1,8 +1,8 @@
 import type { SlackConfig } from '../store';
 import { SLACK_NOTIFY_EVENTS, type SlackSettingsPatch, type SlackUser } from '../types';
 import { statusOf } from './setupStatus';
-import { journalSlack } from './slackJournal';
 import type { SlackContext } from './slackContext';
+import { journalSlack } from './slackJournal';
 import type { Payload } from './types';
 
 export function markCreated(ctx: SlackContext) {

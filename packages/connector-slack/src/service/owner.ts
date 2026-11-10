@@ -4,10 +4,10 @@ import { homeView, type HomeState } from '../blocks';
 import type { PendingOwner } from '../owners';
 import type { SlackOwnerCode, SlackUser } from '../types';
 import { gitEmail } from './gitEmail';
-import { journalSlack } from './slackJournal';
 import { activeCode, newCode, redeemCode, type Redeemed } from './ownerCode';
 import { statusOf } from './setupStatus';
 import type { SlackContext } from './slackContext';
+import { journalSlack } from './slackJournal';
 
 const CONNECTED = 'Connected. Decisions and questions will reach you here.';
 

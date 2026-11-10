@@ -5,8 +5,8 @@ import { probeSocket } from '../socket';
 import { socketUrl } from '../socketUrl';
 import type { SlackTokenResult } from '../types';
 import { statusOf } from './setupStatus';
-import { journalSlack } from './slackJournal';
 import type { SlackContext } from './slackContext';
+import { journalSlack } from './slackJournal';
 
 /**
  * Tokens from $TEAMTRAIL_SLACK_APP_TOKEN / $TEAMTRAIL_SLACK_BOT_TOKEN are verified like pasted ones

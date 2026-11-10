@@ -15,5 +15,6 @@ function stepFact(s: SlackStatus, n: number) {
     return `owner ${owner.name ?? owner.id}${via}`;
   }
   if (n === 5 && s.pendingOwner) return 'waiting for you to confirm';
+  if (n === 5 && s.ownerRedo) return 'set it again';
   return undefined;
 }

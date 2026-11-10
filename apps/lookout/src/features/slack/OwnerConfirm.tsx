@@ -3,32 +3,34 @@ import { useState } from 'react';
 import { Button, Meta } from '../../components/ui';
 import { slackApi } from './slackApi';
 
-/** How the account came to be put forward, as the question the trail lead answers. */
-const ASKS: Record<NonNullable<SlackUser['via']>, string> = {
-  code: 'This Slack account entered your code. Is it yours?',
-  'git-email': 'Your git email belongs to this Slack account. Is it yours?',
-  home: 'This Slack account clicked “This is me” in Slack, in an earlier version. Confirm once that it is yours.',
+/** What Slack's email says about the account: a hint only, never a reason on its own. */
+const EMAIL_HINT: Record<'true' | 'false', string> = {
+  true: 'Its Slack email is your git email',
+  false: 'Its Slack email is not your git email',
 };
 
 /**
- * The Slack account put forward as the owner, for the trail lead to recognise and confirm on this machine. Until
- * they do, Scout sends nothing in Slack and takes nothing from it.
+ * The Slack account that entered the code shown on this machine, for the trail lead to recognise and confirm. The
+ * handle and the workspace lead, because a display name can be set to anyone's. Until the lead confirms, Scout
+ * sends nothing in Slack and takes nothing from it.
  */
-export function OwnerConfirm(props: { who: SlackUser; set: (s: SlackStatus) => void }) {
-  const { who, set } = props;
+export function OwnerConfirm(props: { s: SlackStatus; who: SlackUser; set: (s: SlackStatus) => void }) {
+  const { s, who, set } = props;
   const [error, setError] = useState<string>();
   const fail = (e: Error) => setError(e.message);
-  const handle = who.name ? `@${who.name}` : undefined;
-  const title = who.realName ?? handle ?? who.id;
+  const handle = who.name ? `@${who.name}` : who.id;
+  const host = s.workspace?.url?.replace(/^https?:\/\/|\/$/g, '');
+  const hint = who.gitEmail === undefined ? undefined : EMAIL_HINT[`${who.gitEmail}`];
   return (
     <>
-      <p>{ASKS[who.via ?? 'home']}</p>
+      <p>
+        A Slack account entered your code. Check that this is the account you just typed the code into, in your
+        workspace.
+      </p>
       <div className="sl-who">
-        <b className="t-row-title">{title}</b>
-        <span className="t-meta">
-          {handle && handle !== title && `${handle} · `}
-          <code>{who.id}</code>
-        </span>
+        <b className="t-row-title">{handle}</b>
+        <Meta parts={[who.realName, s.workspace?.name, host]} />
+        <Meta className="dim" parts={[<code key="id">{who.id}</code>, hint]} />
       </div>
       <div className="sl-actions">
         <Button variant="primary" onClick={() => void slackApi.confirmOwner(who.id).then(set, fail)}>

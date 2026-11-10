@@ -4,6 +4,7 @@ import { Button, Meta } from '../../components/ui';
 import { ExtLink } from './ExtLink';
 import { slackApi } from './slackApi';
 import { SlackStateLine } from './SlackStateLine';
+import { WrongTries } from './WrongTries';
 
 const minutesLeft = (expiresAt: number) => Math.max(1, Math.ceil((expiresAt - Date.now()) / 60_000));
 
@@ -38,7 +39,10 @@ export function OwnerCode(props: { s: SlackStatus; set: (s: SlackStatus) => void
             Get a code
           </Button>
         </div>
-        {made && <div className="test-line alert">That code expired or was used up. Get a new one.</div>}
+        {s.ownerCodeDropped && <WrongTries tries={s.ownerCodeDropped.by} dropped />}
+        {made && !s.ownerCodeDropped && (
+          <div className="test-line alert">That code expired or was used up. Get a new one.</div>
+        )}
         {error && <div className="test-line alert">✕ {error}</div>}
         <SlackStateLine s={s} />
       </>
@@ -62,6 +66,7 @@ export function OwnerCode(props: { s: SlackStatus; set: (s: SlackStatus) => void
       </div>
       {error && <div className="test-line alert">✕ {error}</div>}
       <Meta className="dim" parts={['Works once', `Valid for ${minutesLeft(waiting.expiresAt)} min`]} />
+      {s.ownerCode && s.ownerCode.wrongTries.length > 0 && <WrongTries tries={s.ownerCode.wrongTries} />}
       <SlackStateLine s={s} />
     </>
   );
