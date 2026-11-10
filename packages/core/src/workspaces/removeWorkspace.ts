@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { readLease } from '../agents/leaseStore';
 import { git, gitText } from '../evidence/git';
+import { ownWorktree } from './ownWorktree';
 import type { WorkspaceRecord } from './workspace';
 import { dropWorkspace, readWorkspace } from './workspaceStore';
 
@@ -40,8 +41,8 @@ export async function removeWorkspace(i: RemoveWorkspaceInput): Promise<RemoveWo
     dropWorkspace(i.root, i.mapId, i.ticketId);
     return { kind: 'removed', workspace: ws };
   }
-  const repo = await mainRepo(ws.path);
-  if (!repo) return refused(`${ws.path} is not a separate git worktree, so Teamtrail won't remove it.`);
+  const repo = await ownWorktree(i.root, ws.path);
+  if (!repo) return refused(`${ws.path} is not one of this repo's worktree folders, so Teamtrail won't remove it.`);
   const changes = (await gitText(ws.path, ['status', '--porcelain'])) ?? '';
   if (changes && !i.force) {
     const n = changes.split('\n').length;
@@ -52,12 +53,4 @@ export async function removeWorkspace(i: RemoveWorkspaceInput): Promise<RemoveWo
   await git(repo, ['worktree', 'prune']);
   dropWorkspace(i.root, i.mapId, i.ticketId);
   return { kind: 'removed', workspace: ws };
-}
-
-/** The main checkout a linked worktree belongs to; undefined when the folder is the main checkout itself. */
-async function mainRepo(worktree: string) {
-  const gitDir = await gitText(worktree, ['rev-parse', '--absolute-git-dir']);
-  const common = await gitText(worktree, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
-  if (!gitDir || !common || path.resolve(gitDir) === path.resolve(common)) return undefined;
-  return path.dirname(common);
 }

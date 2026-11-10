@@ -92,7 +92,7 @@ describe('removing a finished workspace', () => {
     const record = JSON.parse(fs.readFileSync(path.join(root, '.agents/workspaces/m1--1.json'), 'utf8'));
     fs.writeFileSync(path.join(root, '.agents/workspaces/m1--1.json'), JSON.stringify({ ...record, path: top }));
     const main = await removeWorkspace({ root, mapId: 'm1', ticketId: '1' });
-    expect(main).toMatchObject({ kind: 'refused', reason: expect.stringMatching(/not a separate git worktree/) });
+    expect(main).toMatchObject({ kind: 'refused', reason: expect.stringMatching(/not one of this repo's worktree folders/) });
     expect(fs.existsSync(path.join(top, 'a.txt'))).toBe(true);
     expect(fs.existsSync(ws.path)).toBe(true);
     expect(await removeWorkspace({ root, mapId: 'm1', ticketId: '9' })).toMatchObject({ kind: 'refused' });

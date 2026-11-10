@@ -155,3 +155,34 @@ describe('ticket ids and records never reach git as options or paths', () => {
     expect(removed.kind === 'refused' && removed.reason).toMatch(/doesn't name a folder/);
   });
 });
+
+describe('removing a workspace touches only this repo’s own worktrees', () => {
+  const plant = (r: { root: string }, record: WorkspaceRecord, at: string) =>
+    fs.writeFileSync(path.join(r.root, '.agents', 'workspaces', 'm1--1.json'), JSON.stringify({ ...record, path: at }));
+
+  it('a record pointing at another repo’s worktree, or a stray worktree of this one, removes nothing', async () => {
+    const r = repo();
+    const p = await claim(r, undefined);
+    if (!('workspace' in p)) throw new Error(p.note);
+    const record = readWorkspace(r.root, 'm1', '1') as WorkspaceRecord;
+    // Another project with a worktree of its own.
+    const other = path.join(r.base, 'code', 'other');
+    fs.mkdirSync(other);
+    sh(other, 'init', '-q', '-b', 'main');
+    sh(other, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'x');
+    const theirs = path.join(r.base, 'code', 'other-wt');
+    sh(other, 'worktree', 'add', '-q', '-b', 'w', theirs);
+    // A worktree of this repo that Teamtrail didn't make, outside its worktree folder.
+    const stray = path.join(r.base, 'stray');
+    sh(r.top, 'worktree', 'add', '-q', '-b', 'stray', stray);
+    for (const at of [theirs, stray, other, r.top]) {
+      plant(r, record, at);
+      const res = await removeWorkspace({ root: r.root, mapId: 'm1', ticketId: '1', force: true });
+      expect(res.kind, at).toBe('refused');
+      expect(fs.existsSync(at), at).toBe(true);
+    }
+    // The real one still goes.
+    plant(r, record, p.workspace.path);
+    expect((await removeWorkspace({ root: r.root, mapId: 'm1', ticketId: '1' })).kind).toBe('removed');
+  });
+});
