@@ -11,7 +11,7 @@ const rank = (r: DecisionRisk) => RISK_LEVELS.indexOf(r.level);
 
 /**
  * The level the policy gives a call, with the reason. The highest of the category's level and any matching
- * path rule wins; ties keep the category. Without a category or paths there is nothing to judge: undefined.
+ * path rule wins; ties keep the category, and name the others at that level in `also`. Without a category or paths there is nothing to judge: undefined.
  */
 export function riskLevelFor(subject: RiskSubject, policy: RiskPolicy): DecisionRisk | undefined {
   const paths = subject.paths ?? [];
@@ -32,5 +32,9 @@ export function riskLevelFor(subject: RiskSubject, policy: RiskPolicy): Decision
     });
   }
   if (!found.length) return { level: 'low', reason: 'no risky category or path' };
-  return found.reduce((best, r) => (rank(r) > rank(best) ? r : best));
+  const top = found.reduce((best, r) => (rank(r) > rank(best) ? r : best));
+  const also = [...new Set(found.filter((r) => rank(r) === rank(top)).map((r) => r.category))].filter(
+    (c): c is RiskCategory => !!c && c !== top.category,
+  );
+  return also.length ? { ...top, also } : top;
 }
