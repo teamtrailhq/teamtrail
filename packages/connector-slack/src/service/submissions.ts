@@ -40,7 +40,7 @@ function submitOwnerCode(ctx: SlackContext, { values, user }: Submitted): Envelo
   const result = claimWithCode(ctx, user, textOf(values, 'code'));
   // A wrong try is shown in the Lookout with the name Slack has for the account.
   if (result === 'wrong')
-    return { ...fieldError('code', CODE_ERRORS.wrong), after: () => ctx.nameOf(user).then(() => {}) };
+    return { ...fieldError('code', CODE_ERRORS.wrong), after: () => ctx.handleOf(user).then(() => {}) };
   if (result !== 'ok') return fieldError('code', CODE_ERRORS[result]);
   return { after: () => afterClaim(ctx, user) };
 }

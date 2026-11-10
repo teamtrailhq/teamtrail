@@ -1,5 +1,7 @@
 /** Browser-safe types shared by the local server (`/slack` routes) and Settings. No secrets cross this boundary. */
 
+import type { DeliveryProblem } from '@teamtrail/core';
+
 export type SlackState = 'off' | 'connecting' | 'online' | 'offline' | 'auth-error' | 'elsewhere' | 'unsupported';
 
 /** Where a token came from. Values never leave the machine running `teamtrail`. */
@@ -11,9 +13,15 @@ export const DEFAULT_NOTIFY_EVENTS: SlackNotifyEvent[] = ['awaiting', 'blocked',
 
 export interface SlackUser {
   id: string;
+  /** The handle: for an owner put forward, the unique Slack username (`name`); elsewhere the name Slack shows. */
   name?: string;
-  /** The full name on the Slack profile, shown next to the display name when the trail lead confirms the owner. */
+  /** The full name on the Slack profile. */
   realName?: string;
+  /**
+   * The display name on the Slack profile. Anyone can set theirs to anything, so it is shown after `name`, the
+   * unique username, never as the handle.
+   */
+  displayName?: string;
   /**
    * How the account was put forward as the owner: its email is this machine's git email, it entered the one-time
    * code from Settings → Slack, or it clicked "This is me" on the Home tab (versions before the code).
@@ -77,6 +85,8 @@ export interface SlackStatus {
   notify: SlackNotify;
   command: string;
   links: { create: string; app?: string; install?: string; home?: string; homeWeb?: string };
+  /** The last message Slack refused for good (an archived channel, the bot removed), until one gets through. */
+  delivery?: DeliveryProblem;
   /** Tracker folder of the other `teamtrail` that holds this machine's Slack connection. */
   heldBy?: string;
 }

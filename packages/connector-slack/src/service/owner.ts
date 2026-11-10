@@ -33,8 +33,10 @@ export async function publishHome(ctx: SlackContext, user: string) {
 type Profile = { id: string; deleted?: boolean; is_bot?: boolean; name?: string; real_name?: string } & {
   profile?: { display_name?: string; real_name?: string };
 };
+/** The unique username as the handle; the display name, which anyone can set to anything, only beside it. */
 const named = (u: Profile) => ({
-  name: u.profile?.display_name || u.name || u.real_name,
+  name: u.name,
+  ...(u.profile?.display_name ? { displayName: u.profile.display_name } : {}),
   realName: u.real_name || u.profile?.real_name,
 });
 

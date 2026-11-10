@@ -82,12 +82,16 @@ test('setup: tokens are routed by prefix, checked live, stored only in the local
   });
   assert.deepEqual(
     [r.pending.step, r.pending.owners, r.pending.pendingOwner, r.pending.ownerCode],
-    [5, [], { id: ANA, name: 'ana', realName: 'Ana Silva', via: 'code' }, undefined],
+    [5, [], { id: ANA, name: 'ana', displayName: 'ana', realName: 'Ana Silva', via: 'code' }, undefined],
     'the account that entered the code waits for the trail lead; the code is used up',
   );
   assert.deepEqual(
     [r.after.step, r.after.owners, r.after.pendingOwner],
-    ['done', [{ id: ANA, name: 'ana', realName: 'Ana Silva', via: 'code', confirmedAt: FROZEN }], undefined],
+    [
+      'done',
+      [{ id: ANA, name: 'ana', displayName: 'ana', realName: 'Ana Silva', via: 'code', confirmedAt: FROZEN }],
+      undefined,
+    ],
   );
   assert.deepEqual(r.creds, { slack: { appToken: TOKENS.app, botToken: TOKENS.bot } });
   assert.ok(
@@ -469,9 +473,23 @@ test('a git email alone puts nobody forward; it only tells the trail lead that t
       await svc.idle();
       return svc.status().pendingOwner;
     };
-    assert.deepEqual(await enter(RAJ), { id: RAJ, name: 'raj', realName: 'Raj Patel', via: 'code', gitEmail: false });
+    assert.deepEqual(await enter(RAJ), {
+      id: RAJ,
+      name: 'raj',
+      displayName: 'raj',
+      realName: 'Raj Patel',
+      via: 'code',
+      gitEmail: false,
+    });
     svc.resetOwner();
-    assert.deepEqual(await enter(ANA), { id: ANA, name: 'ana', realName: 'Ana Silva', via: 'code', gitEmail: true });
+    assert.deepEqual(await enter(ANA), {
+      id: ANA,
+      name: 'ana',
+      displayName: 'ana',
+      realName: 'Ana Silva',
+      via: 'code',
+      gitEmail: true,
+    });
     assert.deepEqual(fake.channels.get(fake.im(ANA))?.messages ?? [], [], 'not a word before the confirmation');
     svc.close();
   } finally {

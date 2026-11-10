@@ -5,8 +5,10 @@ import { socketUrl } from '../socketUrl';
 import { approvalStore, askStore, slackLock, slackStore } from '../store';
 import type { SlackState } from '../types';
 import { AUTH_CODES } from './constants';
+import { deliveryLog } from './deliveryLog';
 import { onEnvelope } from './interactions';
 import type { OwnerCode } from './ownerCode';
+import { refusedForGood } from './refusedForGood';
 import type { Batch, Env, TrailNotes, Payload, SlackServiceOptions } from './types';
 
 /** Every message Scout posts or edits goes out as written (`AS_WRITTEN`). */
@@ -27,6 +29,7 @@ export class SlackContext {
   bot?: SlackApi;
   readonly dms = new Map<string, string>();
   readonly names = new Map<string, string>();
+  readonly handles = new Map<string, string>();
   /** Questions an answer was already delivered for. */
   readonly answering = new Set<string>();
   readonly trails = new Map<string, TrailNotes>();
@@ -35,6 +38,8 @@ export class SlackContext {
   readonly digested = new Set<string>();
   /** Approval messages with live buttons, kept across restarts. */
   readonly approvals;
+  /** Messages Slack refused for good, until one gets through. */
+  readonly delivery;
   /** Approval messages already brought up to date by this process. */
   readonly refreshed = new Set<string>();
   /** Questions that went over the per-agent limit: they stay in the digest and never get their own message. */
@@ -54,6 +59,7 @@ export class SlackContext {
     this.lock = slackLock(o.configDir, o.lockOwner ?? `${process.pid}:${o.root}`);
     this.asks = askStore(o.root);
     this.approvals = approvalStore(o.root);
+    this.delivery = deliveryLog(o.root, () => o.now?.() ?? Date.now());
     this.apiUrl = o.apiUrl ?? this.env[`${BRAND.slug.toUpperCase()}_SLACK_API`];
     this.WS = o.WebSocket ?? (globalThis as { WebSocket?: WebSocketCtor }).WebSocket;
   }
@@ -120,8 +126,11 @@ export class SlackContext {
   async call<T = Payload>(method: string, args: Record<string, unknown> = {}): Promise<T> {
     if (!this.bot) throw new SlackApiError('not_connected', method);
     try {
-      return await this.bot.call<T>(method, POSTS.has(method) ? { ...args, ...AS_WRITTEN } : args);
+      const r = await this.bot.call<T>(method, POSTS.has(method) ? { ...args, ...AS_WRITTEN } : args);
+      if (method === 'chat.postMessage') this.delivery.delivered();
+      return r;
     } catch (e) {
+      if (method === 'chat.postMessage' && refusedForGood(e)) this.delivery.refused((e as SlackApiError).code);
       if (e instanceof SlackApiError && AUTH_CODES.has(e.code)) this.authFailed();
       throw e;
     }
@@ -144,6 +153,15 @@ export class SlackContext {
       this.names.set(user, (u?.profile?.display_name || u?.real_name || u?.name || user) as string);
     }
     return this.names.get(user)!;
+  }
+
+  /** The unique Slack username, for showing who did something security-relevant (display names can be copied). */
+  async handleOf(user: string) {
+    if (!this.handles.has(user)) {
+      const r = await this.call<{ user: Payload }>('users.info', { user }).catch(() => undefined);
+      this.handles.set(user, (r?.user?.name as string | undefined) ?? user);
+    }
+    return this.handles.get(user)!;
   }
 
   async dmOf(user: string) {

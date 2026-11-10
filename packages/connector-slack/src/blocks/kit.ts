@@ -23,14 +23,21 @@ export const clipEscaped = (s: string, n: number) =>
  * goes through `escape` (or `label`) first, so the length is counted after escaping.
  */
 export const md = (text: string) => ({ type: 'mrkdwn', text: clipEscaped(text, TEXT_LIMIT), verbatim: true });
-/** One line: line and paragraph breaks and tabs become spaces. */
-export const oneLine = (s: string) => s.replace(/[\r\n\t\u2028\u2029\v\f]+/g, ' ');
+/** One line: line and paragraph breaks (NEL, LS and PS included) and tabs become spaces. */
+export const oneLine = (s: string) => s.replace(/[\r\n\t\v\f\u0085\u2028\u2029]+/g, ' ');
 /**
- * A name from an agent or the tracker (agent, trail, ticket, channel, person), for mrkdwn: one line, escaped, and
- * with `*`, `~` and backticks swapped for look-alikes, so it can't start a line, a bold header or a code span of
+ * Invisible characters that can reorder or hide text: every control (Cc) and format (Cf) character, such as bidi
+ * overrides (U+202E), isolates, the zero-width space and the soft hyphen. ZWNJ (U+200C) and ZWJ (U+200D) stay,
+ * because emoji sequences and scripts such as Persian and the Indic scripts need them to render.
+ */
+const INVISIBLE = /(?![\u200C\u200D])[\p{Cc}\p{Cf}]/gu;
+/**
+ * A name from an agent or the tracker (agent, trail, ticket, channel, person), for mrkdwn: one line, no invisible
+ * characters, escaped, and with `*`, `~` and backticks swapped for look-alikes, so it can't start a line, a bold header or a code span of
  * its own. Underscores stay: names like `snake_case` are common, and italics fake nothing.
  */
-export const label = (s: string) => escape(oneLine(s)).replace(/\*/g, '∗').replace(/~/g, '∼').replace(/`/g, 'ʼ');
+export const label = (s: string) =>
+  escape(oneLine(s).replace(INVISIBLE, '')).replace(/\*/g, '∗').replace(/~/g, '∼').replace(/`/g, 'ʼ');
 /** A user mention, only for something that is a Slack user id; anything else is shown as text. */
 export const mention = (id: string) => (/^[UW][A-Z0-9]{2,}$/.test(id) ? `<@${id}>` : label(id));
 /** A quoted block; `md` keeps the whole within Slack's limit, counted after escaping. */

@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T19:38:02.659Z",
+  "recordedAt": "2026-11-10T19:54:54.063Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). Guided setup: wrong token type, app-level token, bot token missing a scope, bot token, Home tab, owner claim.",
   "exchanges": [
     {

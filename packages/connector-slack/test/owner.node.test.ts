@@ -76,7 +76,7 @@ test('the code: the account that enters it is only put forward; the trail lead c
     const pending = svc.status();
     assert.deepEqual(
       [pending.step, pending.owners, pending.pendingOwner, pending.ownerCode],
-      [5, [], { id: ANA, name: 'ana', realName: 'Ana Silva', via: 'code' }, undefined],
+      [5, [], { id: ANA, name: 'ana', displayName: 'ana', realName: 'Ana Silva', via: 'code' }, undefined],
     );
     assert.equal(calls('chat.postMessage').length, 0, 'entering the code delivers nothing yet');
     assert.match(calls('views.publish').at(-1)!.view.blocks[0].text.text, /confirm that this is your Slack account/);

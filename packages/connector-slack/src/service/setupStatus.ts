@@ -8,6 +8,7 @@ export function statusOf(ctx: SlackContext): SlackStatus {
   const c = ctx.store.read();
   const t = ctx.store.tokens();
   const code = activeCode(ctx);
+  const delivery = ctx.delivery.get();
   const step = setupStep({ created: c.created, app: !!t.app, bot: !!t.bot, owners: c.owners.length });
   return {
     state: ctx.state,
@@ -38,6 +39,7 @@ export function statusOf(ctx: SlackContext): SlackStatus {
         : {}),
     },
     ...(ctx.heldBy ? { heldBy: ctx.heldBy } : {}),
+    ...(delivery ? { delivery } : {}),
   };
 }
 
@@ -47,6 +49,7 @@ function pendingView(p: PendingOwner): SlackUser {
     id: p.id,
     ...(p.name ? { name: p.name } : {}),
     ...(p.realName ? { realName: p.realName } : {}),
+    ...(p.displayName ? { displayName: p.displayName } : {}),
     via: p.via,
     ...(p.gitEmail === undefined ? {} : { gitEmail: p.gitEmail }),
   };

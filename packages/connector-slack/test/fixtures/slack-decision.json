@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T19:38:02.689Z",
+  "recordedAt": "2026-11-10T19:54:54.094Z",
   "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). Save as decision on a thread (refused, modal, trail switch, validation, save), bot not in channel, /scout decide as trail only.",
   "exchanges": [
     {

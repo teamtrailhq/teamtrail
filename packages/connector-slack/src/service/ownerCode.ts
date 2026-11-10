@@ -44,10 +44,10 @@ export function newCode(ctx: SlackContext) {
   return { code: shown(code), expiresAt: ctx.ownerCode.expiresAt };
 }
 
-/** Who typed a wrong code, with the names Slack has for them once looked up. */
+/** Who typed a wrong code, by their unique Slack username once looked up. */
 export function wrongTries(ctx: SlackContext, tries: Map<string, number>): SlackWrongTry[] {
   return [...tries].map(([id, count]) => {
-    const name = ctx.names.get(id);
+    const name = ctx.handles.get(id);
     return { id, ...(name && name !== id ? { name } : {}), count };
   });
 }
