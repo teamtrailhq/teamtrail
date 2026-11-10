@@ -29,7 +29,7 @@ function journal(root: string, action: RemoteAgentAction, token: RemoteTokenView
 }
 
 /**
- * `/remote-agents`: who may reach the MCP endpoint over HTTP (Settings → Remote agents). The trail lead's routes:
+ * `/remote-agents`: who may reach the MCP endpoint over HTTP (Settings → Project → Remote agents). The trail lead's routes:
  * no agent token opens them, other sites can't drive them from a browser, and they answer only requests from
  * this machine (`local`, from the socket's address): another device gets 403 `{ elsewhere: true }`.
  *   GET  /remote-agents                 `{ tokens: RemoteTokenView[], endpoints: McpEndpoint[] }`

@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
@@ -14,7 +14,11 @@ const dataDir = path.resolve(repoRoot, process.env[BRAND.dataDirEnv] || BRAND.da
 const devProjects = path.join(repoRoot, 'node_modules', '.cache', 'teamtrail-dev-projects', 'config');
 const projectsConfigDir = process.env.TEAMTRAIL_CONFIG_DIR || (existsSync(devProjects) ? devProjects : undefined);
 
+// The CLI this Lookout ships in: the commands it shows name exactly this version (src/lib/cliVersion.ts).
+const cli = JSON.parse(readFileSync(path.join(repoRoot, 'packages/cli/package.json'), 'utf8')) as { version: string };
+
 export default defineConfig({
+  define: { __CLI_VERSION__: JSON.stringify(cli.version) },
   plugins: [react(), trackerFs({ root: dataDir, prefix: BRAND.apiPrefix, projectsConfigDir })],
   server: { port: 5173, host: true },
 });

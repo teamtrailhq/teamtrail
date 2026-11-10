@@ -1,3 +1,4 @@
+import { isSafeKey } from './safeKey';
 import { hasControl } from './safeText';
 
 /** YAML frontmatter as the local-markdown tracker writes it: flat scalars and inline lists. */
@@ -12,6 +13,7 @@ export function parseFront(md: string): { front: Front; body: string } {
     if (i < 0) continue;
     const k = line.slice(0, i).trim();
     const v = line.slice(i + 1).trim();
+    if (!isSafeKey(k)) continue;
     front[k] = v.startsWith('[') ? splitList(v.slice(1, -1)).map(unquote).filter(Boolean) : unquote(v);
   }
   return { front, body: m[2] };

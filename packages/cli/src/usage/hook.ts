@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { BRAND, agentPaths, type HostSessionLink } from '@teamtrail/core';
+import { BRAND, agentPaths, shellLine, type HostSessionLink } from '@teamtrail/core';
 import { writeJsonAtomic } from '@teamtrail/core/agents';
 import { writeIfChanged } from '../files';
+import type { SelfCommand } from '../selfCommand';
 
 /** The SessionStart payload fields this hook reads. */
 interface SessionStartInput {
@@ -56,16 +57,13 @@ export async function readStdin(timeoutMs = 5000) {
   });
 }
 
-/** The SessionStart hook command; `--dir` only when the tracker folder is not the default. */
-export function hookCommand(dir?: string) {
-  return [
-    'npx',
-    '-y',
-    BRAND.npm,
-    'hook',
-    'claude',
-    ...(dir && dir !== BRAND.dataDir ? ['--dir', JSON.stringify(dir)] : []),
-  ].join(' ');
+/**
+ * The SessionStart hook command, as the shell Claude Code runs it in reads it: the same pinned CLI as the MCP
+ * server, and `--dir` (only when the tracker folder is not the default) quoted as one word, whatever is in it.
+ */
+export function hookCommand(dir: string | undefined, self: SelfCommand) {
+  const where = dir && dir !== BRAND.dataDir ? ['--dir', dir] : [];
+  return shellLine([self.command, ...self.args, 'hook', 'claude', ...where]);
 }
 
 interface HookEntry {
@@ -77,7 +75,7 @@ interface HookEntry {
  * Add the usage hook to `.claude/settings.local.json` (personal, like the local-scope
  * MCP registration), keeping every other setting. Replaces an older teamtrail hook.
  */
-export function installClaudeHook(file: string, dir?: string) {
+export function installClaudeHook(file: string, dir: string | undefined, self: SelfCommand) {
   let settings: { hooks?: Record<string, HookEntry[]> } & Record<string, unknown> = {};
   if (fs.existsSync(file)) {
     try {
@@ -86,9 +84,9 @@ export function installClaudeHook(file: string, dir?: string) {
       return 'skipped (settings file is not valid JSON)';
     }
   }
-  const command = hookCommand(dir);
+  const command = hookCommand(dir, self);
   const ours = (h: { command?: string }) =>
-    !!h.command && new RegExp(`\\b(${BRAND.npm}|${BRAND.slug})\\b.*\\bhook claude\\b`).test(h.command);
+    !!h.command && new RegExp(`(\\b(${BRAND.npm}|${BRAND.slug})\\b|cli\\.js).*\\bhook claude\\b`).test(h.command);
   const entries = settings.hooks?.SessionStart ?? [];
   const kept = entries
     .map((e) => ({ ...e, hooks: (e.hooks ?? []).filter((h) => !ours(h)) }))

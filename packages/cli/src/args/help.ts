@@ -4,7 +4,7 @@ export const HELP = `${BRAND.name}: ${BRAND.category}
 
 Usage: ${BRAND.slug} [options]
        ${BRAND.slug} mcp [--dir <path>] [--agent <trailName>] [--lease-minutes <n>] [--no-register]
-       ${BRAND.slug} mcp --http [--port <n>] [--host <addr>] [--allow-host <name>] [--dir <path>]
+       ${BRAND.slug} mcp --http [--port <n>] [--host <addr>] [--allow-host <name>] [--dir <path>] [--lease-minutes <n>] [--no-register]
        ${BRAND.slug} connect claude|codex [--dir <path>] [--no-register]
        ${BRAND.slug} connect claude|codex --url <http(s)://host:port/mcp> [--token-stdin | --token <token>] [--allow-http]
        ${BRAND.slug} projects add [path] | list | remove <id|path>
@@ -16,23 +16,27 @@ Starts the Lookout for the current folder and opens it in your browser.
 
 Commands:
   mcp            Serve the MCP server for coding agents over stdio
-                 (claude mcp add ${BRAND.slug} -- npx -y ${BRAND.npm} mcp)
+                 (registered for you by ${BRAND.slug} connect, pinned to this version)
                  A claimed ticket returns to the queue after --lease-minutes without a
                  tool call from its agent (default: ${DEFAULT_LEASE_MINUTES}, or $${LEASE_MINUTES_ENV})
   mcp --http     Serve the same MCP tools over streamable HTTP, for agents on other machines or in
                  sandboxes (default: 127.0.0.1:7421, path /mcp; nothing else is served on the port).
-                 Every request needs a token created in the Lookout (Settings → Remote agents);
+                 Every request needs a token created in the Lookout (Settings → Project → Remote agents);
                  with no token it answers 401. Plain HTTP: put it behind TLS or a tunnel before
                  opening it with --host. --allow-host <name> lets it answer to a tunnel's or
-                 proxy's host name (IP addresses and localhost always work)
-  connect <agent>  Register the MCP server with Claude Code or Codex and add the /scout command
+                 proxy's host name (IP addresses and localhost always work). --lease-minutes and
+                 --no-register work as for mcp
+  connect <agent>  Register the MCP server with Claude Code or Codex and add the /scout command.
+                 It registers this exact version (npx -y ${BRAND.npm}@<version>), so agents never start a
+                 newer one by surprise; run connect again from a newer version to update
                  (for Claude Code also a SessionStart hook, so usage comes from the transcript)
   connect <agent> --url <endpoint>
                  Point the agent at a ${BRAND.name} MCP server over HTTP instead of starting one.
                  The token comes from --token-stdin, $${BRAND.tokenEnv} or --token (which lands in
                  your shell history). Codex only stores the variable's name. The token is checked against
                  the endpoint, except over plain HTTP to another machine, where the check would send
-                 it unencrypted: use https, or pass --allow-http to check anyway
+                 it unencrypted: use https, or pass --allow-http to check anyway. --dir and
+                 --no-register don't apply (the tracker folder is the server's) and are refused
   projects       The repos one Lookout supervises in All projects: add [path] registers a repo
                  (default: this one), list shows them, remove <id|path> forgets one. The list is
                  kept in your config dir, never in a repo. mcp and connect add their repo on start

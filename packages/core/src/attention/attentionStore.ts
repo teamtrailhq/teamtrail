@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
 import type { AttentionPolicy, AttentionPrefs, AttentionState } from '../model/attention';
+import { parseJsonSafe } from '../model/safeKey';
 import { configDir } from '../server/trackerConfig';
 import { ATTENTION_FILE, EMPTY_ATTENTION_STATE } from './defaults';
 import { parseAttentionPolicy, type Parsed } from './parsePolicy';
@@ -21,7 +22,7 @@ export function readAttentionPolicy(root: string): AttentionPolicyRead {
   if (!existsSync(file)) return { file: ATTENTION_FILE, exists: false, ...parseAttentionPolicy({ v: 1 }) };
   let raw: unknown;
   try {
-    raw = JSON.parse(readFileSync(file, 'utf8'));
+    raw = parseJsonSafe(readFileSync(file, 'utf8'));
   } catch (err) {
     const parsed = parseAttentionPolicy({ v: 1 });
     return { file: ATTENTION_FILE, exists: true, value: parsed.value, errors: [`not valid JSON: ${String(err)}`] };
@@ -37,7 +38,7 @@ export function readAttentionPrefs(dir = configDir()): AttentionPrefs {
 /** Validates and saves this person's prefs; returns the errors instead of saving when there are any. */
 export function writeAttentionPrefs(raw: unknown, dir = configDir()): Parsed<AttentionPrefs> {
   const parsed = parseAttentionPrefs(raw);
-  if (!parsed.errors.length) writeJsonAtomic(path.join(dir, ATTENTION_FILE), parsed.value);
+  if (!parsed.errors.length) writeJsonAtomic(path.join(dir, ATTENTION_FILE), parsed.value, { private: true });
   return parsed;
 }
 

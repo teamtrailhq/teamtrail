@@ -369,18 +369,19 @@ describe('connect claude', () => {
         },
       }),
     );
-    expect(installClaudeHook(file)).toBe('updated');
-    expect(installClaudeHook(file)).toBe('unchanged');
+    const self = { command: 'npx', args: ['-y', 'teamtrail@0.25.0'], pinned: 'teamtrail@0.25.0' };
+    expect(installClaudeHook(file, undefined, self)).toBe('updated');
+    expect(installClaudeHook(file, undefined, self)).toBe('unchanged');
     const s = JSON.parse(fs.readFileSync(file, 'utf8'));
     expect(s.permissions).toEqual({ allow: ['Bash(ls)'] });
     expect(s.hooks.Stop).toHaveLength(1);
     expect(s.hooks.SessionStart).toEqual([
       { hooks: [{ type: 'command', command: 'echo hi' }] },
-      { hooks: [{ type: 'command', command: 'npx -y teamtrail hook claude', timeout: 30 }] },
+      { hooks: [{ type: 'command', command: 'npx -y teamtrail@0.25.0 hook claude', timeout: 30 }] },
     ]);
-    installClaudeHook(file, 'plans');
+    installClaudeHook(file, 'plans', self);
     expect(JSON.parse(fs.readFileSync(file, 'utf8')).hooks.SessionStart[1].hooks[0].command).toBe(
-      'npx -y teamtrail hook claude --dir "plans"',
+      'npx -y teamtrail@0.25.0 hook claude --dir plans',
     );
   });
 });

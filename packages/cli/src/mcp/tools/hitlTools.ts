@@ -22,6 +22,13 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
       waitSeconds: z.number().int().min(0).max(86_400).optional(),
       framing: z.boolean().optional(),
       category: riskCategory.optional(),
+      categories: z
+        .array(riskCategory)
+        .max(8)
+        .optional()
+        .describe(
+          'Every risk category the question is about, when it is more than one (a migration that also changes billing). An answer backs a decision only for the categories it was asked with.',
+        ),
       urgency: z
         .enum(['blocking', 'soon', 'fyi'])
         .optional()

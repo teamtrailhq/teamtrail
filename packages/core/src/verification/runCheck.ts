@@ -2,7 +2,8 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { CheckResult, CheckSpec } from '../model/verification';
-import { isSecretEnv, redact, tailOf } from './redact';
+import { checkEnv, withheldNote } from './checkEnv';
+import { redact, tailOf } from './redact';
 
 /** Full output kept per check; the rest is dropped behind a marker. */
 export const MAX_LOG_BYTES = 1_048_576;
@@ -47,8 +48,8 @@ function killTree(pid: number, sig: NodeJS.Signals) {
 }
 
 /**
- * Runs one configured check: argv only (no shell), secrets removed from the
- * environment, the whole process tree killed on timeout. On Windows, commands
+ * Runs one configured check: argv only (no shell), an allowlisted environment
+ * (checkEnv.ts), the whole process tree killed on timeout. On Windows, commands
  * that are `.cmd` shims (npm, npx) must be named in full (`npm.cmd`).
  */
 export function runCheck(name: string, spec: CheckSpec, run: CheckRun): Promise<CheckResult> {
@@ -60,7 +61,7 @@ export function runCheck(name: string, spec: CheckSpec, run: CheckRun): Promise<
     const error = `cwd "${spec.cwd}" is not a directory inside the repo`;
     return Promise.resolve({ ...base, cwd: spec.cwd ?? '.', exitCode: null, durationMs: 0, error, tail: error });
   }
-  const env = Object.fromEntries(Object.entries(run.env ?? process.env).filter(([k]) => !isSecretEnv(k)));
+  const { env, withheld } = checkEnv(run.env ?? process.env);
   const chunks: Buffer[] = [];
   let kept = 0;
   let truncated = false;
@@ -118,6 +119,7 @@ export function runCheck(name: string, spec: CheckSpec, run: CheckRun): Promise<
       let text = Buffer.concat(chunks).toString('utf8');
       if (truncated) text += `\n[truncated: output over ${MAX_LOG_BYTES} bytes]\n`;
       if (aborted) error = 'cancelled';
+      if (exit?.code !== 0) text += withheldNote(withheld);
       try {
         mkdirSync(run.logDir, { recursive: true });
         writeFileSync(path.join(run.logDir, `${safe(name)}.log`), redact(text));

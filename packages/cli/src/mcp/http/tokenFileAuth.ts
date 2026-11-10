@@ -2,7 +2,7 @@ import { remoteTokenViews, touchRemoteToken, verifyRemoteToken } from '@teamtrai
 import type { McpHttpAuth } from './types';
 
 /**
- * Tokens from the repo's local token file (Settings → Remote agents). With no token created nothing
+ * Tokens from the repo's local token file (Settings → Project → Remote agents). With no token created nothing
  * authenticates, so the endpoint is closed until the trail lead opens it.
  */
 export function tokenFileAuth(root: string): McpHttpAuth {

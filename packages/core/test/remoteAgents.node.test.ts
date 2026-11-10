@@ -337,6 +337,11 @@ test('another device on the network reads, answers and approves, but changes not
     ['POST', '/guides/approve'],
     ['POST', '/guides/checks/approve'],
     ['POST', '/guides/catalog/add'],
+    // which guide a ticket or a trail's team uses brings that guide's checks: trust, not steering
+    ['POST', '/guides/ticket'],
+    ['POST', '/guides/team'],
+    // the raw file route: anything but a trail's map or tickets, and their trust fields, is this machine's
+    ['PUT', '/file?path=trail/notes.md'],
     ['POST', '/guides/remove'],
     ['PUT', '/file?path=verification.json'],
   ];
@@ -351,14 +356,12 @@ test('another device on the network reads, answers and approves, but changes not
     ['GET', '/policy'],
     ['GET', '/workspaces'],
     ['GET', '/guides'],
-    ['POST', '/guides/ticket'],
-    ['POST', '/guides/team'],
     ['GET', '/verification/config'],
     ['POST', '/verification/action'],
     ['POST', '/criteria/confirm'],
     ['POST', '/attention/snooze'],
     ['POST', '/journal'],
-    ['PUT', '/file?path=trail/notes.md'],
+    ['PUT', '/file?path=trail/map.md'],
   ];
   try {
     for (const [method, p] of REFUSED) {
@@ -480,7 +483,7 @@ test('the list of this-machine-only routes, as the predicate reads it', () => {
   assert.equal(only('PUT', '/projects/settings'), true);
   assert.equal(only('POST', '/projects/abc123/answer'), false, 'answering from the overview stays open');
   assert.equal(only('GET', '/projects'), false);
-  assert.equal(only('POST', '/guides/ticket'), false);
+  assert.equal(only('POST', '/guides/ticket'), true);
   assert.equal(only('POST', '/guides/ticketx'), true);
   assert.equal(only('POST', '/tracker/github/call'), false, 'the Lookout reads a GitHub tracker through this');
 });

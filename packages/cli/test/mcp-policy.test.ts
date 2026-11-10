@@ -148,6 +148,113 @@ describe('risk policy over MCP', () => {
     expect(closed.decision.decidedBy).toBe('trail lead');
   });
 
+  it("a declared category never stands in for the high risk the files carry (the review's reproduction)", async () => {
+    const call = await connect();
+    const m = await junctions(call);
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const lodash = await askAndAnswer(call, { question: 'Bump lodash?', category: 'dependencies' }, 'Yes');
+    const migration = { category: 'dependencies', paths: ['db/migrations/001.sql'] };
+    // "Bump lodash?" was about dependencies; the files make this a high-risk schema call.
+    await expect(
+      call('record_decision', { question: 'Bump lodash?', answer: 'Yes', ...migration, questionId: lodash }),
+    ).rejects.toThrow(/"schema"/);
+    // Still free for what it was asked about.
+    const own = await call<Decision>('record_decision', {
+      question: 'Bump lodash?',
+      answer: 'Yes',
+      category: 'dependencies',
+      questionId: lodash,
+    });
+    expect(own.decision.decidedBy).toBe('trail lead');
+  });
+
+  it('a high-risk path rule without a category is not carried by an answer asked with any category', async () => {
+    fs.writeFileSync(
+      path.join(root, 'policy.json'),
+      JSON.stringify({ v: 1, paths: [{ glob: 'infra/**', level: 'high' }] }),
+    );
+    const call = await connect();
+    const m = await junctions(call);
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const style = await askAndAnswer(call, { question: 'Rename the button?', category: 'product-behaviour' }, 'Yes');
+    await expect(
+      call('record_decision', { question: 'Rename?', answer: 'Yes', paths: ['infra/prod.tf'], questionId: style }),
+    ).rejects.toThrow(/high risk by its files.*category/);
+    // A decision that names the category it was asked with is that question's, high risk or not.
+    await expect(
+      call('record_decision', {
+        question: 'Rename?',
+        answer: 'Yes',
+        category: 'product-behaviour',
+        paths: ['infra/prod.tf'],
+        questionId: style,
+      }),
+    ).resolves.toBeTruthy();
+  });
+
+  it("two high-risk categories at once can't be carried by one answer", async () => {
+    const call = await connect();
+    const m = await junctions(call);
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const billing = await askAndAnswer(call, { question: 'Change the invoice?', category: 'billing' }, 'Yes');
+    await expect(
+      call('record_decision', {
+        question: 'Change?',
+        answer: 'Yes',
+        category: 'billing',
+        paths: ['db/migrations/002.sql'],
+        questionId: billing,
+      }),
+    ).rejects.toThrow(/"schema"/);
+    // Asked about both, the answer covers both: it backs the decision.
+    const both = await askAndAnswer(
+      call,
+      { question: 'Change the invoice and its table?', categories: ['billing', 'schema'] },
+      'Yes',
+    );
+    const d = await call<Decision>('record_decision', {
+      question: 'Change?',
+      answer: 'Yes',
+      category: 'billing',
+      paths: ['db/migrations/002.sql'],
+      questionId: both,
+    });
+    expect(d.decision.decidedBy).toBe('trail lead');
+    // `category` and `categories` together are one list.
+    const mixed = await askAndAnswer(
+      call,
+      { question: 'Both again?', category: 'schema', categories: ['billing'] },
+      'Yes',
+    );
+    await expect(
+      call('record_decision', {
+        question: 'Again?',
+        answer: 'Yes',
+        category: 'billing',
+        paths: ['db/migrations/3.sql'],
+        questionId: mixed,
+      }),
+    ).resolves.toBeTruthy();
+  });
+
+  it('a close that fails after the ticket is resolved has still used the answer', async () => {
+    const call = await connect();
+    const m = await junctions(call);
+    const trailId = fs.readdirSync(root).find((n) => fs.existsSync(path.join(root, n, 'map.md')))!;
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const tabs = await askAndAnswer(call, { question: 'Tabs or spaces?' }, 'tabs');
+    // The ticket closes, then recording the decision fails: its folder can't be written.
+    const decisions = path.join(root, trailId, 'decisions');
+    fs.rmSync(decisions, { recursive: true, force: true });
+    fs.writeFileSync(decisions, 'not a folder');
+    await expect(call('close_ticket', { resolution: 'Tabs', questionId: tabs })).rejects.toThrow();
+    fs.rmSync(decisions);
+    // The human answered once; that answer has gone into a close and can't back another decision.
+    await expect(
+      call('record_decision', { question: 'Tabs or spaces?', answer: 'tabs', questionId: tabs }),
+    ).rejects.toThrow(/already backs/);
+  });
+
   it('an fyi question is not a decision: it cannot close a ticket that is the human’s to decide', async () => {
     const call = await connect();
     const m = await junctions(call);

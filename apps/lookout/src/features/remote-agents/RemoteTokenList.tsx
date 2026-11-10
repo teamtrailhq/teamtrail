@@ -3,7 +3,7 @@ import { MetaLine, Row } from '../../components/ui';
 import { RevokeTokenButton } from './RevokeTokenButton';
 import { sinceLabel } from './sinceLabel';
 
-/** Settings → Remote agents: one row per token, with when it was made and last used, and Revoke. */
+/** Settings → Project → Remote agents: one row per token, with when it was made and last used, and Revoke. */
 export function RemoteTokenList(props: {
   tokens: RemoteTokenView[];
   onRevoke: (id: string) => Promise<string | undefined>;

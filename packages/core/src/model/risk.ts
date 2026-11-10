@@ -34,6 +34,8 @@ export interface DecisionRisk {
   level: RiskLevel;
   category?: RiskCategory;
   reason: string;
+  /** Other categories the call reaches at this same level (its files under another category's rule). */
+  also?: RiskCategory[];
 }
 
 export const isRiskCategory = (v: unknown): v is RiskCategory => RISK_CATEGORIES.includes(v as RiskCategory);

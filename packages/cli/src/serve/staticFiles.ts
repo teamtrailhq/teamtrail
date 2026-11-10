@@ -15,9 +15,18 @@ const TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
 };
 
+/** The path with its percent-encodings read; one that isn't valid (`/%E0%A4%A`) names no file, so the app answers. */
+function decoded(pathname: string) {
+  try {
+    return decodeURIComponent(pathname);
+  } catch {
+    return '/index.html';
+  }
+}
+
 /** Serves a file of the lookout bundle; unknown paths get `index.html` (client-side routes). */
 export async function serveStatic(appDir: string, pathname: string, res: http.ServerResponse) {
-  let rel = decodeURIComponent(pathname);
+  let rel = decoded(pathname);
   let file = path.join(appDir, path.normalize(rel));
   if (!file.startsWith(appDir + path.sep) || !existsSync(file) || statSync(file).isDirectory()) {
     rel = '/index.html';

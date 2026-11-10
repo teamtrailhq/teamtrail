@@ -1,18 +1,11 @@
-import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { GUIDE_CATALOG_CONTRIBUTING } from '@teamtrail/core';
-import { newGuide } from '@teamtrail/core/agents';
+import { gitConfigValue, newGuide } from '@teamtrail/core/agents';
 import { printFindings } from './printFindings';
 import type { GuidesArgs, GuidesIo } from './types';
 
 /** The person's git name, to sign the guide with; empty when git has none. */
-function gitName(cwd: string) {
-  try {
-    return execFileSync('git', ['config', 'user.name'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  } catch {
-    return '';
-  }
-}
+const gitName = (cwd: string) => gitConfigValue(cwd, 'user.name') ?? '';
 
 /**
  * `guides new <id>`: writes `guides/<id>.md` from a template that passes the lint, lints it, and says what comes next:

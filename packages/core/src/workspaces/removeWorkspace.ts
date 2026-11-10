@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { readLease } from '../agents/leaseStore';
 import { git, gitText } from '../evidence/git';
+import { ownWorktree } from './ownWorktree';
 import type { WorkspaceRecord } from './workspace';
 import { dropWorkspace, readWorkspace } from './workspaceStore';
 
@@ -34,28 +35,24 @@ export async function removeWorkspace(i: RemoveWorkspaceInput): Promise<RemoveWo
   if (!ws) return refused('This ticket has no workspace.');
   if (isClaimed(i.root, i.mapId, i.ticketId))
     return refused(`${ws.ticketKey} is still claimed. Finish it or release it to the queue first.`);
+  if (typeof ws.path !== 'string' || !path.isAbsolute(ws.path))
+    return refused("This ticket's workspace record doesn't name a folder, so Teamtrail won't remove anything.");
   if (!existsSync(ws.path)) {
     dropWorkspace(i.root, i.mapId, i.ticketId);
     return { kind: 'removed', workspace: ws };
   }
-  const repo = await mainRepo(ws.path);
-  if (!repo) return refused(`${ws.path} is not a separate git worktree, so Teamtrail won't remove it.`);
+  const repo = await ownWorktree(i.root, ws.path);
+  if (!repo) return refused(`${ws.path} is not one of this repo's worktree folders, so Teamtrail won't remove it.`);
   const changes = (await gitText(ws.path, ['status', '--porcelain'])) ?? '';
   if (changes && !i.force) {
     const n = changes.split('\n').length;
     return refused(`${ws.path} has uncommitted changes (${n} ${n === 1 ? 'file' : 'files'}).`, true);
   }
-  const r = await git(repo, ['worktree', 'remove', ...(i.force ? ['--force'] : []), ws.path]);
+  // --force always: cleanliness was checked just above, and without it git checks again with a status of its own
+  // inside the worktree, where that worktree's own config could run a filter.
+  const r = await git(repo, ['worktree', 'remove', '--force', '--end-of-options', ws.path]);
   if (r.code !== 0) return refused(r.stderr.trim().split('\n')[0] || 'git worktree remove failed');
   await git(repo, ['worktree', 'prune']);
   dropWorkspace(i.root, i.mapId, i.ticketId);
   return { kind: 'removed', workspace: ws };
-}
-
-/** The main checkout a linked worktree belongs to; undefined when the folder is the main checkout itself. */
-async function mainRepo(worktree: string) {
-  const gitDir = await gitText(worktree, ['rev-parse', '--absolute-git-dir']);
-  const common = await gitText(worktree, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
-  if (!gitDir || !common || path.resolve(gitDir) === path.resolve(common)) return undefined;
-  return path.dirname(common);
 }

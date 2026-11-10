@@ -5,7 +5,7 @@ import { REMOTE_TOKENS_FILE, REMOTE_TOKENS_USED_FILE } from '../remoteAgents/rem
 
 /**
  * Sends a named `remote-agents` SSE event when a token is created, revoked or used, or an MCP endpoint starts or
- * stops, so Settings → Remote agents stays current. Returns the stop function.
+ * stops, so Settings → Project → Remote agents stays current. Returns the stop function.
  */
 export function watchRemoteAgents(root: string, send: (text: string) => void, pollMs = 1000): () => void {
   const mtime = (rel: string) => statSync(path.join(root, rel), { throwIfNoEntry: false })?.mtimeMs ?? 0;

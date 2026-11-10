@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { fromThisMachine, requestRefusal } from '@teamtrail/core/bridge';
+import { fromThisMachine, requestRefusal, setSecurityHeaders } from '@teamtrail/core/bridge';
 import { bearerToken } from './bearerToken';
 import { refuse } from './respond';
 import { admit } from './sessionLimits';
@@ -21,7 +21,7 @@ interface Session {
 
 const METHODS = new Set(['POST', 'GET', 'DELETE']);
 const UNAUTHORIZED =
-  'Unauthorized. This endpoint needs a token: create one in the Lookout (Settings → Remote agents) and send it as "Authorization: Bearer <token>".';
+  'Unauthorized. This endpoint needs a token: create one in the Lookout (Settings → Project → Remote agents) and send it as "Authorization: Bearer <token>".';
 const THIS_MACHINE =
   'This endpoint answers this machine only. For agents on other machines, run `teamtrail mcp --http`.';
 
@@ -124,6 +124,7 @@ export function createMcpHttp(o: McpHttpOptions): McpHttp {
 
   return {
     async handle(req, res) {
+      setSecurityHeaders(res, 'api');
       try {
         await handle(req, res);
       } catch {

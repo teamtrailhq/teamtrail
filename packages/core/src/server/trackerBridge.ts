@@ -2,27 +2,32 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { MarkdownAdapter } from '../adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../adapters/markdown/nodeMarkdownFs';
-import { AnswerError } from '../agents/agentDocs';
+import { insideRoot } from '../projects/confinePath';
+import { symlinkFree } from '../projects/symlinkFree';
 import { handleAgents } from './agentRoutes';
 import { handleAttention } from './attentionRoutes';
+import { sendBridgeError } from './bridgeErrors';
 import type { BridgeOptions, TrackerBridge } from './bridgeTypes';
 import { handleBriefs } from './briefRoutes';
 import { handleCriteriaProposals } from './criteriaProposalRoutes';
 import { handleCriteria } from './criteriaRoutes';
 import { handleDecisions } from './decisionRoutes';
 import { handleGuides } from './guideRoutes';
-import { BadRequest, openEventStream, readText, refuseEarly, sendJson } from './http';
+import { BadRequest, openEventStream, readText, refuseEarly, requestUrl, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
 import { handleKnowledge } from './knowledgeRoutes';
+import { lanFileRefusal } from './lanFileRefusal';
+import { lanPlaces } from './lanPlaces';
 import { handleLeases } from './leaseRoutes';
 import { handleModels } from './modelRoutes';
+import { neverCrash } from './neverCrash';
 import { handlePolicy } from './policyRoutes';
-import { redactResponse } from './redactForLan';
+import { redactResponse } from './redactResponse';
 import { handleRemoteAgents } from './remoteAgentRoutes';
 import { fromThisMachine, requestRefusal } from './requestGuard';
 import { handleReroutes } from './rerouteRoutes';
+import { setSecurityHeaders } from './securityHeaders';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
-import { sendTrackerError } from './trackerErrors';
 import { createTrackerRoutes } from './trackerRoutes';
 import { handleTrackerSettings } from './trackerSettingsRoutes';
 import { handleVerification } from './verificationRoutes';
@@ -34,6 +39,9 @@ import { watchRemoteAgents } from './watchRemoteAgents';
 import { watchTrackerFolder } from './watchTrackerFolder';
 import { watchVerification } from './watchVerification';
 import { handleWorkspaces } from './workspaceRoutes';
+
+/** Open `/events` streams one address may hold at once. */
+const MAX_STREAMS_PER_PEER = 16;
 
 /**
  * HTTP API for the local-markdown tracker. Shared by the Vite dev plugin and
@@ -52,15 +60,17 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const abs = path.resolve(root);
   const fs = nodeMarkdownFs(abs);
   const markdown = new MarkdownAdapter({ ...fs, watch: undefined }, abs);
-  const routes = createTrackerRoutes({ ...trackers, root: abs, markdown });
+  const routes = createTrackerRoutes({ ...trackers, root: abs, markdown, peer });
   const plugins = factories.map((f) => f({ root: abs, active: () => routes.active(), url: publicUrl }));
   const clients = new Set<ServerResponse>();
+  const streams = new Map<string, number>();
   const send = (text: string) => {
     for (const c of clients) c.write(text);
   };
   const unwatch = watchTrackerFolder(abs, fs, send);
   const unwatchLeases = watchLeases(abs, () => routes.active(), send, leaseTiming);
   const ctx = { root: abs, active: () => routes.active() };
+  const places = lanPlaces(abs, trackers.configDir);
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send }, reconcilerTiming);
   const unwatchAttention = watchAttention(ctx, send, { configDir: trackers.configDir });
   const unwatchIntegration = watchIntegration(abs, integrationTiming);
@@ -81,7 +91,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     async (req, res, url) =>
       url.pathname.startsWith('/decisions') && handleDecisions(await routes.active(), req, res, url),
     (req, res, url) => handleLeases(ctx, req, res, url),
-    (req, res, url) => handleJournal(abs, req, res, url),
+    (req, res, url) => handleJournal({ root: abs, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
     (req, res, url) => handleAgents(abs, req, res, url),
@@ -101,9 +111,17 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   /** The live event stream and raw file access to the tracker folder. */
   async function fileRoute(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
     if (url.pathname === '/events') {
+      const who = req.socket.remoteAddress ?? '';
+      // A tab needs one stream; a few tabs and a phone, a few more. Past that it's hoarding connections.
+      if ((streams.get(who) ?? 0) >= MAX_STREAMS_PER_PEER)
+        return (sendJson(res, 429, { error: 'too many open event streams' }), true);
+      streams.set(who, (streams.get(who) ?? 0) + 1);
       openEventStream(res);
       clients.add(res);
-      req.on('close', () => clients.delete(res));
+      req.on('close', () => {
+        clients.delete(res);
+        streams.set(who, (streams.get(who) ?? 1) - 1);
+      });
       return true;
     }
     if (url.pathname === '/list') {
@@ -113,38 +131,53 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     }
     if (url.pathname !== '/file') return false;
     const p = url.searchParams.get('path') ?? '';
-    if (!isTrackerFile(p)) throw new BadRequest('not a tracker file');
+    // Inside the tracker folder once links are resolved, and written only where no link stands on the way.
+    if (!isTrackerFile(p) || !insideRoot(abs, p)) throw new BadRequest('not a tracker file');
+    if (req.method === 'PUT' && !symlinkFree(abs, p)) throw new BadRequest('not a tracker file');
     if (req.method === 'PUT') {
-      await fs.write(p, await readText(req));
+      const text = await readText(req);
+      if (!fromThisMachine(req, peer)) {
+        const before = await fs.read(p).catch(() => undefined);
+        const refused = lanFileRefusal(p, before, text);
+        if (refused) return (sendJson(res, 403, { error: refused, elsewhere: true }), true);
+      }
+      await fs.write(p, text);
       res.end('ok');
       return true;
     }
+    const text = await fs.read(p).catch((e: NodeJS.ErrnoException) => {
+      // A missing file is a plain 404: the error's own text names the absolute path.
+      if (e.code === 'ENOENT' || e.code === 'EISDIR') return undefined;
+      throw e;
+    });
+    if (text === undefined) return (sendJson(res, 404, { error: 'not found' }), true);
     res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
-    res.end(await fs.read(p));
+    res.end(text);
     return true;
   }
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
-    const url = new URL(req.url ?? '/', 'http://x');
+    setSecurityHeaders(res, 'api');
+    const url = requestUrl(req);
     const refusal = requestRefusal(req);
     if (refusal) return refuseEarly(res, { error: refusal });
     const local = fromThisMachine(req, peer);
     if (url.pathname === '/machine') return sendJson(res, 200, { local });
     if (!local && thisMachineOnly(req.method, url.pathname))
       return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
-    if (!local) redactResponse(res);
+    if (!local) redactResponse(res, places);
     try {
       for (const route of api) if (await route(req, res, url)) return;
       res.statusCode = 404;
       res.end('not found');
     } catch (err) {
-      sendError(res, err);
+      sendBridgeError(res, err);
     }
   }
 
   return {
     root: abs,
-    handle,
+    handle: neverCrash(handle),
     active: () => routes.active(),
     close() {
       for (const p of plugins) p.close();
@@ -170,12 +203,4 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
 function isTrackerFile(rel: string) {
   const parts = rel.split(/[\\/]/);
   return rel.endsWith('.md') && parts.every((part) => part !== '' && !part.startsWith('.'));
-}
-
-function sendError(res: ServerResponse, err: unknown) {
-  if (err instanceof BadRequest) return sendJson(res, 400, { error: err.message });
-  if (err instanceof AnswerError) return sendJson(res, 409, { error: err.message });
-  if (sendTrackerError(res, err)) return;
-  res.statusCode = 500;
-  res.end(String(err));
 }

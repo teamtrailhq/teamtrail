@@ -6,6 +6,7 @@ import {
   type RiskPathRule,
   type RiskPolicy,
 } from '../model/risk';
+import { parseJsonSafe } from '../model/safeKey';
 import { DEFAULT_POLICY } from './defaultPolicy';
 
 type Obj = Record<string, unknown>;
@@ -22,7 +23,7 @@ const LEVELS = RISK_LEVELS.join(', ');
 export function parsePolicy(text: string): { policy?: RiskPolicy; errors: string[] } {
   let raw: unknown;
   try {
-    raw = JSON.parse(text);
+    raw = parseJsonSafe(text);
   } catch (e) {
     return { errors: [`not valid JSON: ${(e as Error).message}`] };
   }

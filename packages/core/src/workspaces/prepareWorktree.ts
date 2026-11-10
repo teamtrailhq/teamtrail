@@ -1,8 +1,10 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { git, gitText } from '../evidence/git';
+import { isBranchName, isTicketSlug } from './gitNames';
 import type { Workspace, WorkspaceSettings } from './workspace';
 import { readWorkspace, writeWorkspace } from './workspaceStore';
+import { worktreeDir } from './worktreeDir';
 
 export interface PrepareInput {
   /** Tracker folder: where the workspace record is kept. */
@@ -25,12 +27,22 @@ const slugOf = (s: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'trail';
 
-/** The branch and folder a ticket's worktree uses: `teamtrail/<trail>/<n>` in `<repo>.teamtrail/<trail>-<n>`. */
-export function worktreeLocation(top: string, settings: WorkspaceSettings, mapId: string, key: string) {
+type Location = { branch: string; path: string } | { note: string };
+
+/**
+ * The branch and folder a ticket's worktree uses: `teamtrail/<trail>/<n>` in `<repo>.teamtrail/<trail>-<n>`.
+ * Both come from files others write (the ticket's id, workspaces.json), so both are checked before git sees
+ * them: an id that isn't one plain segment, or a folder outside the repo's parent, gets a note instead.
+ */
+export function worktreeLocation(top: string, settings: WorkspaceSettings, mapId: string, key: string): Location {
   const slug = slugOf(mapId);
   const n = key.replace(/^#/, '');
-  const dir = path.resolve(top, settings.dir ?? `../${path.basename(top)}.teamtrail`);
-  return { branch: `teamtrail/${slug}/${n}`, path: path.join(dir, `${slug}-${n}`) };
+  const branch = `teamtrail/${slug}/${n}`;
+  if (!isTicketSlug(n) || !isBranchName(branch))
+    return { note: `No workspace: ticket id ${JSON.stringify(key)} can't name a branch. Work in the repo.` };
+  const where = worktreeDir(top, settings.dir);
+  if ('refused' in where) return { note: `No workspace: ${where.refused} Work in the repo.` };
+  return { branch, path: path.join(where.dir, `${slug}-${n}`) };
 }
 
 /**
@@ -45,6 +57,7 @@ export async function prepareWorktree(i: PrepareInput): Promise<Prepared> {
   const head = await gitText(top, ['rev-parse', 'HEAD']);
   if (!head) return { note: 'No workspace: the repository has no commits yet. Work in the repo.' };
   const where = worktreeLocation(top, i.settings, i.mapId, i.ticket.key);
+  if ('note' in where) return where;
   const made = await addWorktree(top, where, head);
   if ('note' in made) return made;
   writeWorkspace(i.root, {
@@ -66,11 +79,11 @@ async function addWorktree(top: string, where: { branch: string; path: string },
     if (onBranch === where.branch) return { workspace: { ...where, base: await baseOf(where.path, head) } };
     return { note: `No workspace: ${where.path} already exists and isn't on ${where.branch}. Work in the repo.` };
   }
-  const branchExists = (await git(top, ['rev-parse', '--verify', '--quiet', `refs/heads/${where.branch}`])).code === 0;
-  const args = branchExists
-    ? ['worktree', 'add', where.path, where.branch]
-    : ['worktree', 'add', '-b', where.branch, where.path, head];
-  const r = await git(top, args);
+  const ref = `refs/heads/${where.branch}`;
+  const branchExists = (await git(top, ['show-ref', '--verify', '--quiet', '--end-of-options', ref])).code === 0;
+  const r = branchExists
+    ? await git(top, ['worktree', 'add', '--end-of-options', where.path, where.branch])
+    : await git(top, ['worktree', 'add', '-b', where.branch, '--end-of-options', where.path, head]);
   if (r.code !== 0) {
     const why = r.stderr.trim().split('\n')[0] || 'git worktree add failed';
     return { note: `No workspace: ${why}. Work in the repo.` };
@@ -81,7 +94,7 @@ async function addWorktree(top: string, where: { branch: string; path: string },
 
 /** Where a reused branch forked from the repo's HEAD. */
 async function baseOf(cwd: string, head: string) {
-  return (await gitText(cwd, ['merge-base', head, 'HEAD'])) ?? head;
+  return (await gitText(cwd, ['merge-base', '--end-of-options', head, 'HEAD'])) ?? head;
 }
 
 const pick = (w: Workspace): Workspace => ({ path: w.path, branch: w.branch, base: w.base });

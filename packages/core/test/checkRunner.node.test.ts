@@ -122,7 +122,14 @@ test('cwd must stay inside the repo, symlinks resolved', async () => {
 test('tokens are not passed to checks, and token-shaped output is redacted', async () => {
   const run = setup();
   const token = `ghp_${'a'.repeat(36)}`;
-  const env = { ...process.env, GITHUB_TOKEN: token, LINEAR_API_KEY: 'k', TEAMTRAIL_SECRET: 's', PLAIN: 'kept' };
+  const env = {
+    ...process.env,
+    GITHUB_TOKEN: token,
+    LINEAR_API_KEY: 'k',
+    TEAMTRAIL_SECRET: 's',
+    PLAIN: 'kept',
+    TEAMTRAIL_CHECK_ENV: 'PLAIN',
+  };
   const r = await runCheck(
     'env',
     node(

@@ -27,8 +27,26 @@ function valid(e: Partial<TransitionEntry>): e is TransitionEntry {
   );
 }
 
+/**
+ * Who an entry from the browser is by: the bridge says, never the body. The Lookout is the trail lead's (or, for
+ * what follows from their action, the engine's); an agent never journals through it. From another device the
+ * actor says so, so the history shows where an approval came from.
+ */
+function stamped(e: TransitionEntry, local: boolean): TransitionEntry | undefined {
+  if (e.actorKind === 'agent') return undefined;
+  const actor = e.actorKind === 'engine' ? 'engine' : 'trail lead';
+  const { sessionId: _ignored, ...rest } = e;
+  return { ...rest, actor: local ? actor : `${actor} (another device)` };
+}
+
 /** `/journal`: a trail's transition history (GET `?mapId=`), and appends from the browser (POST). */
-export async function handleJournal(root: string, req: IncomingMessage, res: ServerResponse, url: URL) {
+export async function handleJournal(
+  ctx: { root: string; local: boolean },
+  req: IncomingMessage,
+  res: ServerResponse,
+  url: URL,
+) {
+  const { root } = ctx;
   if (url.pathname !== '/journal') return false;
   const journal = journalFile(root);
   if (req.method === 'GET') {
@@ -39,8 +57,9 @@ export async function handleJournal(root: string, req: IncomingMessage, res: Ser
   }
   if (req.method === 'POST') {
     const e = await readJson<Partial<TransitionEntry>>(req, '{}');
-    if (!valid(e)) throw new BadRequest('not a transition entry');
-    journal.append(e);
+    const entry = valid(e) ? stamped(e, ctx.local) : undefined;
+    if (!entry) throw new BadRequest('not a transition entry from the Lookout');
+    journal.append(entry);
     sendJson(res, 200, { ok: true });
     return true;
   }

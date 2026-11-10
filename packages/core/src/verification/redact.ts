@@ -14,7 +14,3 @@ export function tailOf(text: string, lines = 60, bytes = 4096) {
   const kept = text.replace(/\r\n?/g, '\n').trimEnd().split('\n').slice(-lines).join('\n');
   return redact(kept.length > bytes ? kept.slice(-bytes) : kept);
 }
-
-/** Environment variable names never passed to check commands. */
-export const isSecretEnv = (name: string) =>
-  /^(GITHUB_TOKEN|GH_TOKEN|GH_ENTERPRISE_TOKEN|LINEAR_API_KEY)$/.test(name) || /^(TEAMTRAIL_|SLACK_)/.test(name);

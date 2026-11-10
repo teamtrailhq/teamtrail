@@ -150,6 +150,8 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
     ticket: t,
     checked: checkedAnswers(ctx, { snap, ticket: t, given: input.checklist }),
   });
+  // Spent before the resolving writes (comment, close, decision): one failing part way can't free it again.
+  spend(c.human, `the close of ${t.key}`);
   let unverified: { warning?: string } = {};
   if (!verified) {
     unverified = { warning: await flagUnverified(ctx, { snap, ticket: t, seen: c.seen }) };

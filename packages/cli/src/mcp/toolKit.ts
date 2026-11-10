@@ -88,6 +88,13 @@ export function waitControl(extra: Extra, message = 'Waiting on the human in the
 }
 
 /**
+ * A tool with `retired` inputs lets unknown inputs through instead of dropping them, so its handler can refuse a
+ * retired one by name (record_decision's `decidedBy`) while the schema agents read no longer lists it.
+ */
+const inputSchema = <S extends z.ZodRawShape>(shape: S, retired?: string[]) =>
+  retired?.length ? z.looseObject(shape) : shape;
+
+/**
  * Registers one tool: its result is JSON text, errors become tool errors, and agent state is flushed after every
  * call. Every string input is a single line unless its schema is `text()` (lineSafety.ts). `human` says whether the tool speaks for the human (remoteGate.ts): a remote session doesn't get a tool
  * that does, and can't pass the inputs that claim the human's word.
@@ -95,7 +102,7 @@ export function waitControl(extra: Extra, message = 'Waiting on the human in the
 export function toolDefiner(server: McpServer, agent: TrailAgent) {
   return <S extends z.ZodRawShape>(
     name: string,
-    meta: { title: string; description: string; human: HumanRole; readOnly?: boolean },
+    meta: { title: string; description: string; human: HumanRole; readOnly?: boolean; retired?: string[] },
     shape: S,
     fn: (args: z.infer<z.ZodObject<S>>, extra: Extra) => Promise<unknown>,
   ) => {
@@ -108,7 +115,7 @@ export function toolDefiner(server: McpServer, agent: TrailAgent) {
       {
         title: meta.title,
         description: meta.description,
-        inputSchema: agent.remote ? markHumanInputs(shape, meta.human) : shape,
+        inputSchema: inputSchema(agent.remote ? markHumanInputs(shape, meta.human) : shape, meta.retired),
         annotations: { readOnlyHint: !!meta.readOnly, openWorldHint: false },
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

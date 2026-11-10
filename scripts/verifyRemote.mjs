@@ -1,5 +1,5 @@
 // Remote agents steps of the end-to-end check (verify-mcp.mjs), on their own scratch project: the MCP endpoint is
-// closed until the trail lead creates a token in Settings → Remote agents; a client then connects over streamable
+// closed until the trail lead creates a token in Settings → Project → Remote agents; a client then connects over streamable
 // HTTP to the Lookout's /mcp and to `teamtrail mcp --http`, shares the trail with a stdio agent, claims and closes
 // a ticket the Lookout shows; revoking the token in the Lookout cuts the client off. Waits on what the user sees
 // and on what the server answers, never on sleeps.

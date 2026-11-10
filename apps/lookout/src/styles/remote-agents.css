@@ -1,4 +1,4 @@
-/* Settings → Remote agents: tokens for agents that connect over HTTP, and the token shown once. */
+/* Settings → Project → Remote agents: tokens for agents that connect over HTTP, and the token shown once. */
 .ra-list,
 .ra-endpoints {
   list-style: none;

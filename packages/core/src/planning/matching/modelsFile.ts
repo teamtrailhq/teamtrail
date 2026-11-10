@@ -1,4 +1,5 @@
 import { isModelTier, MODEL_TIERS, type ModelTier } from '../../model/modelTier';
+import { parseJsonSafe } from '../../model/safeKey';
 
 const KEYS = new Set(['v', 'models']);
 
@@ -9,7 +10,7 @@ const KEYS = new Set(['v', 'models']);
 export function parseModelsConfig(text: string): { models?: Record<string, ModelTier>; errors: string[] } {
   let raw: unknown;
   try {
-    raw = JSON.parse(text);
+    raw = parseJsonSafe(text);
   } catch (e) {
     return { errors: [`not valid JSON: ${(e as Error).message}`] };
   }

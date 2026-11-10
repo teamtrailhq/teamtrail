@@ -6,10 +6,12 @@ import { githubLookups } from './githubLookups';
 import { handleGitHubRepos } from './githubRepoRoutes';
 import { githubSignIn } from './githubSignIn';
 import { GITHUB_SIGN_IN, handleGitHubSignIn } from './githubSignInRoutes';
-import { BadRequest, readJson, sendJson } from './http';
+import { BadRequest, readJson, sendFailure, sendJson } from './http';
+import { lanCallRefusal } from './lanCallRefusal';
 import { linearLookups } from './linearLookups';
 import { handleLinearTeams, LINEAR_PROJECTS, LINEAR_TEAMS } from './linearTeamRoutes';
 import { isKind, remoteAdapters } from './remoteAdapters';
+import { fromThisMachine } from './requestGuard';
 import { CALLS } from './trackerCalls';
 import { trackerContext, type TrackerRoutesOptions } from './trackerContext';
 import { crossSite, sendTrackerError } from './trackerErrors';
@@ -60,7 +62,7 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
       if (!handled) sendJson(res, 405, { error: 'method not allowed' });
     } catch (err) {
       if (err instanceof BadRequest) sendJson(res, 400, { error: err.message });
-      else if (!sendTrackerError(res, err)) sendJson(res, 500, { error: String((err as Error)?.message ?? err) });
+      else if (!sendTrackerError(res, err)) sendFailure(res, err);
     }
     return true;
   }
@@ -99,9 +101,10 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
 
   function forgetCredentials(kind: string) {
     if (!isKind(kind)) throw new BadRequest('unknown tracker');
-    const c = ctx.creds.read();
-    delete c[kind];
-    ctx.creds.write(c);
+    ctx.creds.update((c) => {
+      const { [kind]: _gone, ...rest } = c;
+      return rest;
+    });
     remotes.reset(kind);
     ctx.forgetGitHubToken();
     lookups.reset();
@@ -121,8 +124,14 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
     if (!isKind(kind)) throw new BadRequest('unknown tracker');
     if (action === 'events' && req.method === 'GET')
       return (streamTrackerEvents(() => remotes.get(kind), req, res), true);
+    // Only the tracker the project uses: another one with stored credentials is not this project's to drive.
+    if (ctx.project.read().active !== kind)
+      return (void sendJson(res, 409, { error: `${kind} is not the tracker this project uses` }), true);
     if (action === 'call' && req.method === 'POST') {
-      const result = await callAdapter(kind, await readJson<{ method?: string; args?: unknown[] }>(req, '{}'));
+      const body = await readJson<{ method?: string; args?: unknown[] }>(req, '{}');
+      const refused = fromThisMachine(req, o.peer) ? undefined : lanCallRefusal(String(body.method), body.args ?? []);
+      if (refused) return (void sendJson(res, 403, { error: refused, elsewhere: true }), true);
+      const result = await callAdapter(kind, body);
       return (void sendJson(res, 200, { result: result ?? null }), true);
     }
     return false;

@@ -162,7 +162,8 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Record a decision',
       description:
-        'Keep a DecisionRecord (question, answer, rationale, alternatives, who decided) and add it to the Logbook, without closing a ticket.',
+        "Keep a DecisionRecord (question, answer, rationale, alternatives) and add it to the Logbook, without closing a ticket. The decision is recorded as yours; it is the human's only when questionId names the question they answered.",
+      retired: ['decidedBy'],
     },
     {
       trail,
@@ -178,8 +179,6 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
         .describe(
           'For a decision the human made: the ask_human question they answered. The record keeps the question as asked and their answer word for word, yours as its reading; each answer backs one decision.',
         ),
-      decidedBy: z.string().optional().describe('Not taken any more: use questionId for the human, leave out for you.'),
-
       appendToTrail: z.boolean().optional(),
       category: riskCategory.optional(),
       paths: riskPaths.optional(),

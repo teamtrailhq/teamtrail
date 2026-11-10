@@ -11,6 +11,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { chromium } from 'playwright-core';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
+import { verifyHeaders } from './verifyHeaders.mjs';
 import { verifyLinear } from './verifyLinear.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
@@ -489,6 +490,8 @@ const githubOk = await verifyGitHub({ browser, cli, log, shots });
 const linearOk = await verifyLinear({ browser, cli, log, shots });
 // Remote agents: a token created in Settings, an MCP client over HTTP next to a stdio one, and Revoke cutting it off.
 const remoteOk = await verifyRemote({ browser, cli, log, shots });
+// The page's Content-Security-Policy in a real browser, API headers, and a frame from another origin refused.
+const headersOk = await verifyHeaders({ browser, url, log });
 
 await client.close();
 await page.waitForTimeout(1500);
@@ -526,6 +529,7 @@ if (
   !reviewOk ||
   !discoveryOk ||
   !supervisionOk ||
+  !headersOk ||
   !parallelOk ||
   !modelsOk ||
   !projectsOk ||
