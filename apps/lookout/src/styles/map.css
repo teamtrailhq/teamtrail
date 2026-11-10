@@ -369,11 +369,15 @@
   stroke-width: 7;
   stroke-linecap: round;
 }
-.destination text {
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 600;
-  fill: var(--text-hi);
+.destination {
+  cursor: help;
+  outline: none;
+}
+.destination .x-hit {
+  fill: transparent;
+}
+.destination:focus-visible .x-stroke {
+  stroke-width: 9;
 }
 .quarantine text {
   font-family: var(--label);

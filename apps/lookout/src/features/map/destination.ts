@@ -15,10 +15,10 @@ interface Laid {
 export function destinationSpot(l: Laid) {
   if (l.direction === 'LR') {
     const x = l.width + 96;
-    return { x, y: l.graphH / 2, right: x + 60, bottom: l.height };
+    return { x, y: l.graphH / 2, right: x + 34, bottom: l.height };
   }
   const y = l.graphH + 76;
-  return { x: l.width / 2, y, right: l.width, bottom: Math.max(l.height, y + 70) };
+  return { x: l.width / 2, y, right: l.width, bottom: Math.max(l.height, y + 40) };
 }
 
 /** The last stretches: from every ticket nothing else waits for, on to the X, as elbows like the other connectors. */

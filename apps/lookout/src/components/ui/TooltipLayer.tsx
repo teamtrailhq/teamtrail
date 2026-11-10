@@ -36,7 +36,8 @@ export function TooltipLayer() {
     };
     const target = (e: Event) => {
       const el = (e.target as Element | null)?.closest?.('[data-tip], [title]');
-      if (!el || el instanceof SVGElement) return null;
+      // In the map's SVG only an explicit data-tip counts: its <title> elements stay native.
+      if (!el || (el instanceof SVGElement && !el.hasAttribute('data-tip'))) return null;
       const title = el.getAttribute('title');
       if (title) {
         el.setAttribute('data-tip', title);

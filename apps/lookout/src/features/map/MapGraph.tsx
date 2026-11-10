@@ -176,7 +176,9 @@ export function MapGraph(props: {
             />
 
             <DestinationTrail trails={destinationTrail(L, destination)} />
-            {L.nodes.length > 0 && <DestinationMark x={destination.x} y={destination.y} />}
+            {L.nodes.length > 0 && (
+              <DestinationMark x={destination.x} y={destination.y} text={snap.map.sections.destination} />
+            )}
 
             {L.nodes.map((n) => (
               <GraphNode
