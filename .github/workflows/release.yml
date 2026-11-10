@@ -1,8 +1,9 @@
-# Publishes the CLI to npm as `teamtrail`. Run it from Actions → Release → Run workflow, or:
-#   gh workflow run release.yml -f channel=next                    a prerelease to try: npx teamtrail@next
-#   gh workflow run release.yml -f channel=latest                  a stable release of packages/cli/package.json's version
-#   gh workflow run release.yml -f channel=latest -f version=0.8.0 a stable release of a version you name
-#   gh workflow run release.yml -f channel=stub                    refresh the "coming soon" placeholder on `latest`
+# Publishes the CLI to npm as `teamtrail`. Run it on main from Actions → Release → Run workflow, or:
+#   gh workflow run release.yml --ref main -f channel=next                    a prerelease to try: npx teamtrail@next
+#   gh workflow run release.yml --ref main -f channel=latest                  a stable release of packages/cli/package.json's version
+#   gh workflow run release.yml --ref main -f channel=latest -f version=0.8.0 a stable release of a version you name
+#   gh workflow run release.yml --ref main -f channel=stub                    refresh the "coming soon" placeholder on `latest`
+#   gh workflow run release.yml -f channel=next -f dry_run=true               build, check and pack only: nothing is published
 # next:   <upcoming>-next.<run>, where <upcoming> is the package.json version (or the patch after npm's latest
 #         if that is higher). Only the `next` dist-tag moves; `latest` is never touched.
 # latest: must be higher than npm's latest. Publishes it as `latest`, then tags the commit vX.Y.Z and creates
@@ -10,8 +11,20 @@
 # stub:   until launch, `latest` is a placeholder (.github/stub/) that only prints "not released yet". This
 #         publishes it again as the next 0.0.x, so the npm page shows the current README and links. It refuses
 #         once a real release is on `latest`.
+#
+# Three jobs, so that the code that can publish is never the code that runs the project's dependencies:
+#   build           contents: read only. Picks the version, runs the full check on it, packs the tarball and
+#                   uploads it with its sha256. This is the only job that checks out the repo, installs
+#                   dependencies or runs third-party actions that touch the code.
+#   publish         id-token: write only, in the `release` environment (main only, approved by a reviewer).
+#                   No checkout, no install: it downloads the tarball, checks its sha256 against the build
+#                   job's output, and runs `npm publish <tarball>`. Nothing else in this workflow can mint
+#                   the OIDC token npm trusts.
+#   github-release  contents: write only, `latest` only: tags the commit and creates the GitHub release.
+# Publishing happens from main only. A dry run stops after `build`, so it may run from any branch.
 # Publishing uses npm trusted publishing (OIDC), so there is no npm token: on npmjs.com, the teamtrail package
-# trusts this repository's release.yml. Every version gets provenance pointing at the commit and this run.
+# trusts this repository's release.yml in the `release` environment. Every version gets provenance pointing
+# at the commit and this run.
 name: Release
 
 on:
@@ -25,31 +38,52 @@ on:
       version:
         description: 'latest only, optional: the version to release (e.g. 0.8.0). Defaults to packages/cli/package.json.'
         required: false
+      dry_run:
+        description: 'Build, check and pack only. Nothing is published, tagged or released.'
+        type: boolean
+        default: false
 
-permissions:
-  contents: write
-  id-token: write
+# Each job asks for what it needs; nothing is granted by default.
+permissions: {}
 
 concurrency:
-  group: release
+  group: release-${{ inputs.dry_run && 'dry-run' || 'publish' }}
   cancel-in-progress: false
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  publish:
+  build:
+    name: Build, check and pack
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tarball: ${{ steps.pack.outputs.tarball }}
+      sha256: ${{ steps.pack.outputs.sha256 }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Publish from main only
+        if: github.ref != 'refs/heads/main' && !inputs.dry_run
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          echo "::error::Releases are published from main only, and this run is on $REF. Use dry_run to try another branch."
+          exit 1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      # No dependency cache: a release is built from the lockfile, not from what an earlier run left behind.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          cache: npm
-          registry-url: https://registry.npmjs.org
-      # Trusted publishing needs npm 11.5.1 or later; Node 22 ships npm 10.
-      - run: npm install -g npm@^11.5.1
       - id: chrome
         if: inputs.channel != 'stub'
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@c785b87e244131f27c9f19c1a33e2ead956ab7ce # v1.7.3
+      # Git evidence and verification tests commit in temp repos.
       - run: |
           git config --global user.name "Teamtrail CI"
           git config --global user.email "ci@teamtrail.app"
@@ -59,35 +93,132 @@ jobs:
           CHANNEL: ${{ inputs.channel }}
           REQUESTED: ${{ inputs.version }}
         run: node .github/scripts/release-version.mjs >> "$GITHUB_OUTPUT"
-      - name: Publish the placeholder
-        if: inputs.channel == 'stub'
-        run: |
-          cp LICENSE .github/stub/LICENSE
-          cd .github/stub
-          npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
-          npm publish --tag latest --access public --provenance
       - run: npm ci
         if: inputs.channel != 'stub'
       - name: Set the package version
         if: inputs.channel != 'stub'
-        run: npm version "${{ steps.version.outputs.version }}" -w teamtrail --no-git-tag-version --allow-same-version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "$VERSION" -w teamtrail --no-git-tag-version --allow-same-version
+      # The checks run on the version that ships.
       - run: npm run check
         if: inputs.channel != 'stub'
         env:
           CHROME: ${{ steps.chrome.outputs.chrome-path }}
-      - name: Publish to npm
+      - name: Pack the CLI
         if: inputs.channel != 'stub'
-        run: npm publish -w teamtrail --tag "${{ inputs.channel }}" --access public --provenance
-      - name: Tag and GitHub release
-        if: inputs.channel == 'latest'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: v${{ steps.version.outputs.version }}
-        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --generate-notes
-      - name: Summary
         run: |
-          v="${{ steps.version.outputs.version }}"
-          tag="${{ inputs.channel }}"
+          mkdir -p "$RUNNER_TEMP/release"
+          npm pack -w teamtrail --pack-destination "$RUNNER_TEMP/release"
+      - name: Pack the placeholder
+        if: inputs.channel == 'stub'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cp LICENSE .github/stub/LICENSE
+          cd .github/stub
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          mkdir -p "$RUNNER_TEMP/release"
+          npm pack --pack-destination "$RUNNER_TEMP/release"
+      - name: Checksum
+        id: pack
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        working-directory: ${{ runner.temp }}/release
+        run: |
+          tarball="teamtrail-$VERSION.tgz"
+          [ -f "$tarball" ] || { echo "::error::npm pack did not write $tarball"; ls -la; exit 1; }
+          sha256sum "$tarball" > SHA256SUMS
+          sha256="$(cut -d' ' -f1 SHA256SUMS)"
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+          {
+            echo "Built \`$tarball\` ($(tar -tzf "$tarball" | wc -l | tr -d ' ') files, $(du -h "$tarball" | cut -f1))"
+            echo
+            echo "sha256 \`$sha256\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: teamtrail-tarball
+          path: |
+            ${{ runner.temp }}/release/*.tgz
+            ${{ runner.temp }}/release/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
+      - name: Dry run
+        if: inputs.dry_run
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          {
+            echo
+            echo "Dry run: teamtrail@$VERSION was built, checked and packed. Nothing was published."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish to npm
+    needs: build
+    if: github.ref == 'refs/heads/main' && !inputs.dry_run
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Restricted to main and approved by a reviewer in the repository's settings; npm trusts only this environment.
+    environment: release
+    permissions:
+      id-token: write
+    steps:
+      # Node 24 ships an npm new enough for trusted publishing (11.5.1 or later), so npm itself is never
+      # installed from the registry in the job that can publish.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: teamtrail-tarball
+          path: ${{ runner.temp }}/release
+      - name: Verify the tarball
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          TARBALL: ${{ needs.build.outputs.tarball }}
+          SHA256: ${{ needs.build.outputs.sha256 }}
+        working-directory: ${{ runner.temp }}/release
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-next\.[0-9]+)?$ ]] || { echo "::error::unexpected version $VERSION"; exit 1; }
+          [ "$TARBALL" = "teamtrail-$VERSION.tgz" ] || { echo "::error::unexpected tarball name $TARBALL"; exit 1; }
+          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::the build job gave no sha256"; exit 1; }
+          echo "$SHA256  $TARBALL" | sha256sum --check --strict
+          npm --version
+      - name: Publish to npm
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          TARBALL: ${{ needs.build.outputs.tarball }}
+        working-directory: ${{ runner.temp }}/release
+        run: |
+          tag="$CHANNEL"
           [ "$tag" = stub ] && tag=latest
-          echo "Published teamtrail@$v as \`$tag\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "Try it: \`npx teamtrail@$v\`" >> "$GITHUB_STEP_SUMMARY"
+          npm publish "$PWD/$TARBALL" --tag "$tag" --access public --provenance --ignore-scripts
+      - name: Summary
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          tag="$CHANNEL"
+          [ "$tag" = stub ] && tag=latest
+          echo "Published teamtrail@$VERSION as \`$tag\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Try it: \`npx teamtrail@$VERSION\`" >> "$GITHUB_STEP_SUMMARY"
+
+  github-release:
+    name: Tag and GitHub release
+    needs: [build, publish]
+    if: inputs.channel == 'latest'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ needs.build.outputs.version }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::unexpected tag $TAG"; exit 1; }
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$TAG" --generate-notes
