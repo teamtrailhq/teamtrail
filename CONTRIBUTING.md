@@ -53,18 +53,26 @@ Every screen presents data the same way, so people never have to work out where 
 
 ## Releasing
 
-`main` is protected: changes land through a pull request once CI (`check`) passes. Maintainers publish the `teamtrail` CLI from Actions → **Release** → Run workflow, or with `gh`:
+`main` is protected: changes land through a pull request once CI (`check`) passes. Maintainers publish the `teamtrail` CLI from `main`, in Actions → **Release** → Run workflow, or with `gh`:
 
 ```bash
-gh workflow run release.yml -f channel=next                      # prerelease: npx teamtrail@next
-gh workflow run release.yml -f channel=latest                    # stable: the version in packages/cli/package.json
-gh workflow run release.yml -f channel=latest -f version=0.8.0   # stable: a version you name
-gh workflow run release.yml -f channel=stub                      # until launch: refresh the placeholder on latest
+gh workflow run release.yml --ref main -f channel=next                      # prerelease: npx teamtrail@next
+gh workflow run release.yml --ref main -f channel=latest                    # stable: the version in packages/cli/package.json
+gh workflow run release.yml --ref main -f channel=latest -f version=0.8.0   # stable: a version you name
+gh workflow run release.yml --ref main -f channel=stub                      # until launch: refresh the placeholder on latest
+gh workflow run release.yml -f channel=next -f dry_run=true                 # build, check and pack only: publishes nothing
 ```
 
-- **next** publishes `<upcoming>-next.<run>` under the `next` tag. `latest` doesn't move, so it's safe to run from any branch.
+- **next** publishes `<upcoming>-next.<run>` under the `next` tag. `latest` doesn't move.
 - **latest** must be higher than the current npm `latest`. It publishes, tags the commit `vX.Y.Z` and creates the GitHub release with generated notes.
 - **stub**: until launch, `latest` is a placeholder from `.github/stub/` that only prints "not released yet". It publishes the next `0.0.x` so the npm page shows the current README and links, and refuses once a real release is on `latest`.
-- Each run first does the full `npm run check` on the exact commit it publishes.
+- **dry_run** stops after the build: it runs the checks, packs the tarball and uploads it to the run with its sha256. It's the way to try a change to the workflow, and the only kind of run allowed on a branch other than `main` (add `--ref <branch>`).
+- Each run first does the full `npm run check` on the exact commit and version it publishes.
+- A run has three jobs, so the job that can publish never runs the project's dependencies:
+  - **build** (read-only) picks the version, runs the checks, and packs the tarball.
+  - **publish** runs in the `release` environment and waits there for a reviewer's approval. It doesn't check out the repo or install anything: it downloads the tarball, verifies its sha256 and runs `npm publish` on it.
+  - **github-release** (`latest` only) tags the commit and creates the GitHub release.
+- The `release` environment (Settings → Environments) allows only the `main` branch and requires a reviewer. npm's trusted publisher for `teamtrail` names `release.yml` and that environment, so no other workflow, branch or job can publish.
+- Actions in `.github/workflows/` are pinned to a full commit SHA, with the version in a comment. To update one, change both.
 - The version in `packages/cli/package.json` is the product version and must match the newest release in the in-app changelog (see AGENTS.md, Version and release notes).
 - Publishing uses npm trusted publishing: no npm token is stored, and every version carries provenance linking it to its commit and run.
