@@ -28,7 +28,11 @@ const completion = {
     .array(
       z.object({
         id: z.string().describe('AC-<n>'),
-        evidence: z.string().describe('check:<name>, test:<name>, command:<cmd>, pr, or manual (the human signs off).'),
+        evidence: z
+          .string()
+          .describe(
+            'check:<name> (run and verified here), test:<name>, command:<cmd> or pr (recorded as claimed, not verified), or manual (the human signs off).',
+          ),
         note: z.string().optional(),
       }),
     )
@@ -76,7 +80,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Close a ticket',
       description:
-        'Resolve a ticket (default: the one you claimed): posts the resolution, closes it, records a DecisionRecord (with the HITL transcript of this session) and unblocks dependants. When the ticket lists `verification` checks, completing is a claim: the checks run first, and the result says done, rework (with the failing output to fix) or verifying (still running). outcome "out_of_scope" rules it out instead.',
+        'Resolve a ticket (default: the one you claimed): posts the resolution, closes it, records a DecisionRecord (with the HITL transcript of this session) and unblocks dependants. When the ticket lists `verification` checks, completing is a claim: the checks run first, and the result says done, rework (with the failing output to fix) or verifying (still running). outcome "out_of_scope" rules it out instead, only when you hold it and the human agreed to an ask_human question on it; otherwise it becomes a reroute proposal to cancel it.',
     },
     { ...completion, outcome: z.enum(['completed', 'out_of_scope']).optional() },
     (a, extra) => agent.closeTicket(a, waitControl(extra, CHECKS_WAIT)),

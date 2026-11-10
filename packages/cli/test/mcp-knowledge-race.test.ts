@@ -9,8 +9,9 @@ const unseen = new Set<string>();
 
 vi.mock('node:fs', async (original) => {
   const real = await original<typeof import('node:fs')>();
-  const readdirSync = ((...args: Parameters<typeof real.readdirSync>) =>
-    (real.readdirSync(...args) as string[]).filter((n) => !unseen.has(n))) as typeof real.readdirSync;
+  const list = real.readdirSync as unknown as (...args: unknown[]) => string[];
+  const readdirSync = ((...args: unknown[]) =>
+    list(...args).filter((n) => !unseen.has(n))) as unknown as typeof real.readdirSync;
   return { ...real, readdirSync, default: { ...real, readdirSync } };
 });
 
