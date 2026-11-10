@@ -11,16 +11,19 @@ import type {
   TicketType,
 } from '../../../model/types';
 import type { MapInput } from '../../adapter';
-import { authoredBody, decisionComment, mapLabels, mapBody, ticketBody, ticketLabels } from '../format';
+import { decisionComment } from '../decisionComment';
+import { authoredBody, mapLabels, mapBody, mapSettings, ticketBody, ticketLabels } from '../format';
 import { HttpClient, TrackerError, linear, type HttpOptions } from '../http';
+import { SettingsLedger, type AcceptedStore } from '../settingsLedger';
 import { SyncedAdapter } from '../sync/syncedAdapter';
 import type { RemoteComment, SyncOptions } from '../sync/types';
 import { changedTrails } from './changedTrails';
 import { linearGql, type LinearGql } from './linearGql';
 import { fetchLinearTeam } from './linearTeam';
+import { linearWrites, type LinearWrites } from './linearWrites';
 import { linearTicket, readTrail, type DecisionFound } from './readTrail';
 import { removeBlocksRelation } from './removeBlocksRelation';
-import { CHANGES_QUERY, ISSUE_FIELDS, TRAIL_QUERY, type LChanges, type LIssue } from './schema';
+import { CHANGES_QUERY, TRAIL_QUERY, type LChanges, type LIssue } from './schema';
 
 /*
  * Linear mapping:
@@ -28,7 +31,9 @@ import { CHANGES_QUERY, ISSUE_FIELDS, TRAIL_QUERY, type LChanges, type LIssue } 
  *   ticket     sub-issue (parentId = trail), labelled teamtrail:<type>
  *   blockedBy  native "blocks" relation
  *   close      the team's first "completed" state, or its first "canceled" state for not planned
- *   decision   comment on the ticket (format.ts)
+ *   decision   comment on the ticket (decisionComment.ts)
+ * Reads: one query per trail, which also says who the key is: markers in comments count only from that user, or
+ * as a teammate's; a description's settings only once this machine put or accepted them (linear/readTrail.ts).
  * Polling: issues and comments with `updatedAt > cursor`, one request per poll.
  */
 
@@ -40,6 +45,8 @@ export interface LinearOptions extends SyncOptions, HttpOptions {
   apiUrl?: string;
   /** Header location, e.g. `ENG · Mobile`; defaults to the team key once known. */
   display?: string;
+  /** Where this machine keeps the settings it accepted per issue; in memory without one. */
+  accepted?: AcceptedStore;
 }
 
 export class LinearAdapter extends SyncedAdapter {
@@ -50,18 +57,24 @@ export class LinearAdapter extends SyncedAdapter {
   private gql: LinearGql;
   private decisionComments = new Map<string, string>();
   private cursor?: string;
+  private ledger: SettingsLedger;
+  private mutations: LinearWrites;
   private found: DecisionFound = (d, commentId) => this.decisionComments.set(`${d.mapId}/${d.id}`, commentId);
 
   constructor(private o: LinearOptions) {
     super({ pollMs: 12_000, ...o });
     this.http = new HttpClient(linear, o);
     this.gql = linearGql(this.http, o.apiKey, o.apiUrl);
+    this.ledger = new SettingsLedger(o.accepted);
+    this.mutations = linearWrites(this.gql, o);
     this.location = o.display ?? o.teamId;
   }
 
   protected rate() {
     return this.http.rate;
   }
+
+  unacceptedSettings = () => this.ledger.unaccepted();
 
   /** Team states and Teamtrail labels, creating missing labels once. */
   private meta = cachedUntilFailure(async () => {
@@ -92,11 +105,13 @@ export class LinearAdapter extends SyncedAdapter {
   }
 
   protected async fetchMap(mapId: string): Promise<{ snap: MapSnapshot; decisions: DecisionRecord[] }> {
-    const d = await this.gql<{ issue: LIssue | null }>(TRAIL_QUERY, { id: mapId });
+    type Trail = { viewer?: { id: string } | null; issue: LIssue | null };
+    const d = await this.gql<Trail>(TRAIL_QUERY, { id: mapId });
     const root = d.issue;
     if (!root || !root.labels.nodes.some((l) => l.name === MAP_LABEL))
       throw new TrackerError('not_found', `Linear: ${mapId} is not a trail`);
-    return readTrail(mapId, root, this.found);
+    const gate = this.ledger.gate(mapId, this.now());
+    return readTrail(mapId, root, { viewer: d.viewer?.id, gate, found: this.found });
   }
 
   protected async changedSince(known: (ref: string) => string | undefined): Promise<string[] | 'all'> {
@@ -114,37 +129,13 @@ export class LinearAdapter extends SyncedAdapter {
     return changedTrails(d, known);
   }
 
-  private async create(input: Record<string, unknown>) {
-    const d = await this.gql<{ issueCreate: { issue: LIssue } }>(
-      `mutation Create($input: IssueCreateInput!) { issueCreate(input: $input) { issue { ${ISSUE_FIELDS} } } }`,
-      {
-        input: { teamId: this.o.teamId, ...(this.o.projectId ? { projectId: this.o.projectId } : {}), ...input },
-      },
-    );
-    return d.issueCreate.issue;
-  }
-
-  private async update(id: string, input: Record<string, unknown>) {
-    await this.gql(
-      `mutation Update($id: String!, $input: IssueUpdateInput!) { issueUpdate(id: $id, input: $input) { success } }`,
-      { id, input },
-    );
-  }
-
-  private async postComment(issueId: string, body: string) {
-    const d = await this.gql<{ commentCreate: { comment: { id: string } } }>(
-      `mutation Comment($input: CommentCreateInput!) { commentCreate(input: $input) { comment { id } } }`,
-      { input: { issueId, body } },
-    );
-    return d.commentCreate.comment.id;
-  }
-
   protected async remoteCreateMap(input: MapInput & { mode: MapMode }): Promise<MapDoc> {
-    const i = await this.create({
+    const i = await this.mutations.create({
       title: input.title,
       description: mapBody(input),
       labelIds: await this.labelIds(mapLabels(input.mode)),
     });
+    this.ledger.wrote(i.id, mapSettings(input));
     return {
       id: i.id,
       key: i.identifier,
@@ -161,13 +152,14 @@ export class LinearAdapter extends SyncedAdapter {
     map: MapDoc,
     input: { title: string; type: TicketType; body: string; hitl?: boolean },
   ): Promise<Ticket> {
-    const i = await this.create({
+    const i = await this.mutations.create({
       title: input.title,
       description: guardMarkers(input.body),
       parentId: map.id,
       labelIds: await this.labelIds(ticketLabels(input.type, input.hitl)),
     });
-    return linearTicket(map.id, i, new Set(), this.found);
+    this.ledger.wrote(i.id, {});
+    return linearTicket(map.id, i, new Set(), { viewer: undefined, found: this.found });
   }
 
   protected async remoteAddBlocking(_map: MapDoc, blocker: Ticket, blocked: Ticket) {
@@ -184,21 +176,22 @@ export class LinearAdapter extends SyncedAdapter {
   }
 
   protected async remoteEditTicket(_map: MapDoc, t: Ticket) {
-    await this.update(t.id, { title: t.title, description: ticketBody(t) });
+    const edit = { title: t.title, description: ticketBody(t) };
+    await this.ledger.writeTicket(t, () => this.mutations.update(t.id, edit));
   }
 
   protected async remoteReopen(_map: MapDoc, t: Ticket) {
     const m = await this.meta();
     if (!m.open) throw new TrackerError('invalid', `Linear: team ${m.key} has no unstarted or backlog state`);
-    await this.update(t.id, { stateId: m.open });
+    await this.mutations.update(t.id, { stateId: m.open });
   }
 
   protected async remoteSetMeta(_map: MapDoc, t: Ticket) {
-    await this.update(t.id, { description: ticketBody(t) });
+    await this.ledger.writeTicket(t, () => this.mutations.update(t.id, { description: ticketBody(t) }));
   }
 
   protected async remoteComment(_map: MapDoc, t: Ticket, c: RemoteComment) {
-    await this.postComment(t.id, authoredBody(c.author, c.body, c.writeId));
+    await this.mutations.comment(t.id, authoredBody(c.author, c.body, c.writeId));
   }
 
   protected async remoteClose(_map: MapDoc, t: Ticket, reason: 'completed' | 'not_planned') {
@@ -209,28 +202,28 @@ export class LinearAdapter extends SyncedAdapter {
         'invalid',
         `Linear: team ${m.key} has no ${reason === 'completed' ? 'completed' : 'canceled'} state`,
       );
-    await this.update(t.id, { stateId });
+    await this.mutations.update(t.id, { stateId });
   }
 
   protected async remoteUpdateMap(map: MapDoc) {
-    await this.update(map.id, { description: mapBody(map) });
+    await this.ledger.writeMap(map, () => this.mutations.update(map.id, { description: mapBody(map) }));
   }
 
   protected async remoteSetMode(map: MapDoc, mode: MapMode) {
     const ids = await this.labelIds([PLAN_ONLY_LABEL]);
-    await this.update(map.id, mode === 'plan-only' ? { addedLabelIds: ids } : { removedLabelIds: ids });
+    await this.mutations.update(map.id, mode === 'plan-only' ? { addedLabelIds: ids } : { removedLabelIds: ids });
   }
 
   protected async remotePostDecision(map: MapDoc, d: DecisionRecord, ticket?: Ticket) {
-    this.decisionComments.set(`${map.id}/${d.id}`, await this.postComment(ticket?.id ?? map.id, decisionComment(d)));
+    this.decisionComments.set(
+      `${map.id}/${d.id}`,
+      await this.mutations.comment(ticket?.id ?? map.id, decisionComment(d)),
+    );
   }
 
   protected async remoteUpdateDecision(map: MapDoc, d: DecisionRecord) {
     const id = this.decisionComments.get(`${map.id}/${d.id}`);
     if (!id) throw new TrackerError('not_found', `Linear: no comment holds decision ${d.id}`);
-    await this.gql(
-      `mutation EditComment($id: String!, $input: CommentUpdateInput!) { commentUpdate(id: $id, input: $input) { success } }`,
-      { id, input: { body: decisionComment(d) } },
-    );
+    await this.mutations.editComment(id, decisionComment(d));
   }
 }

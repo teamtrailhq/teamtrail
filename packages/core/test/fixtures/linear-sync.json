@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T23:06:27.080Z",
+  "recordedAt": "2026-11-10T13:24:09.608Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). Between polls, \"Grace\" comments on and completes the ticket in Linear.",
   "exchanges": [
     {
@@ -27,6 +27,13 @@
               "id": "team-eng",
               "key": "ENG",
               "name": "Engineering",
+              "projects": [
+                {
+                  "id": "proj-mobile",
+                  "name": "Mobile",
+                  "state": "started"
+                }
+              ],
               "states": {
                 "nodes": [
                   {
@@ -376,7 +383,9 @@
             "teamId": "team-eng",
             "title": "Ship offline sync",
             "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-            "labelIds": ["lbl-0001-fake"]
+            "labelIds": [
+              "lbl-0001-fake"
+            ]
           }
         }
       },
@@ -432,7 +441,9 @@
             "title": "Survey CRDT libraries",
             "description": "Compare.\n\nPart of trail ENG-1.",
             "parentId": "iss-0010-fake",
-            "labelIds": ["lbl-0004-fake"]
+            "labelIds": [
+              "lbl-0004-fake"
+            ]
           }
         }
       },
@@ -541,6 +552,9 @@
         },
         "body": {
           "data": {
+            "viewer": {
+              "id": "usr-ada"
+            },
             "issue": {
               "id": "iss-0010-fake",
               "identifier": "ENG-1",
@@ -708,6 +722,9 @@
         },
         "body": {
           "data": {
+            "viewer": {
+              "id": "usr-ada"
+            },
             "issue": {
               "id": "iss-0010-fake",
               "identifier": "ENG-1",
@@ -762,6 +779,7 @@
                           "body": "Closing: Yjs it is.",
                           "createdAt": "2026-10-31T12:00:03.000Z",
                           "user": {
+                            "id": "usr-grace",
                             "displayName": "Grace"
                           }
                         }

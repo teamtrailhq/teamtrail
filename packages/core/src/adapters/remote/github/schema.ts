@@ -18,14 +18,22 @@ export interface RestIssue {
   pull_request?: unknown;
 }
 
-export interface GqlComment {
+/** Who wrote a comment or an issue body: its author, whoever edited it last, and how the author relates to the repo. */
+export interface GqlAuthored {
+  author: { login: string } | null;
+  /** The last person to edit it; null when it was never edited. */
+  editor?: { login: string } | null;
+  /** `OWNER`, `MEMBER`, `COLLABORATOR`, `CONTRIBUTOR`, `NONE`, …: of the author. */
+  authorAssociation?: string;
+}
+
+export interface GqlComment extends GqlAuthored {
   databaseId: number;
   body: string;
   createdAt: string;
-  author: { login: string } | null;
 }
 
-export interface GqlIssue {
+export interface GqlIssue extends GqlAuthored {
   id: string;
   databaseId: number;
   number: number;
@@ -43,12 +51,16 @@ export interface GqlIssue {
   subIssues?: { nodes: GqlIssue[] };
 }
 
-const ISSUE_FIELDS = `id databaseId number title body state stateReason createdAt updatedAt closedAt
+const AUTHORED = `author { login } editor { login } authorAssociation`;
+
+const ISSUE_FIELDS = `id databaseId number title body state stateReason createdAt updatedAt closedAt ${AUTHORED}
   labels(first: 30) { nodes { name } }
   assignees(first: 5) { nodes { login } }
-  comments(first: 100) { nodes { databaseId body createdAt author { login } } }`;
+  comments(first: 100) { nodes { databaseId body createdAt ${AUTHORED} } }`;
 
+/** One trail with its tickets, and `viewer`: the account behind the token, whose markers are this machine's own. */
 export const TRAIL_QUERY = `query Trail($owner: String!, $name: String!, $number: Int!) {
+  viewer { login }
   repository(owner: $owner, name: $name) {
     issue(number: $number) {
       ${ISSUE_FIELDS}

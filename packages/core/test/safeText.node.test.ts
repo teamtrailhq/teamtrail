@@ -7,11 +7,10 @@ import { parseMapFile, serializeMapFile } from '../src/adapters/markdown/mapFile
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { parseTicket, serializeTicket } from '../src/adapters/markdown/ticketFile';
+import { decisionComment, parseDecisionComment } from '../src/adapters/remote/decisionComment';
 import {
   authoredBody,
-  decisionComment,
   mapBody,
-  parseDecisionComment,
   readComment,
   splitBody,
   ticketBody,
@@ -37,6 +36,7 @@ const LS = String.fromCharCode(0x2028);
 const PS = String.fromCharCode(0x2029);
 const NEL = String.fromCharCode(0x85);
 const ISO = '2026-01-01T00:00:00.000Z';
+const SELF = { kind: 'self', name: 'octo-dev' } as const;
 const NBSP = String.fromCharCode(0xa0);
 const BOM = String.fromCharCode(0xfeff);
 const ZWSP = String.fromCharCode(0x200b);
@@ -369,6 +369,7 @@ test('GitHub and Linear formats: text opens no marker, so it sets no state, auth
       title: 'Build it',
       labels: ['teamtrail:execute'],
       body: bare,
+      writer: { kind: 'self', name: 'octo-dev' } as const,
       closed: false,
       blockedBy: [],
       comments: [],
@@ -382,10 +383,10 @@ test('GitHub and Linear formats: text opens no marker, so it sets no state, auth
     );
 
     const comment = authoredBody('claude-01', h, 'w1');
-    const read = readComment({ id: '1', body: comment, author: 'bot', createdAt: ISO });
+    const read = readComment({ id: '1', body: comment, writer: SELF, createdAt: ISO });
     assert.deepEqual([read?.author, read?.body, read?.writeId], ['claude-01', text, 'w1'], what);
     assert.equal(parseDecisionComment(comment), undefined, what);
-    assert.equal(readComment({ id: '1', body: authoredBody(h, 'x'), createdAt: ISO })?.body, 'x', what);
+    assert.equal(readComment({ id: '1', body: authoredBody(h, 'x'), writer: SELF, createdAt: ISO })?.body, 'x', what);
 
     const record = parseDecisionComment(decisionComment(decision(h)));
     assert.deepEqual(

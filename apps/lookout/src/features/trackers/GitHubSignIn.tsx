@@ -16,6 +16,9 @@ export function GitHubSignIn(props: { onSignedIn: () => Promise<void> | void }) 
             Sign in with GitHub
           </Button>
           <MetaLine parts={['No gh login or token needed', 'the token stays on this machine']} />
+          <MetaLine
+            parts={['GitHub asks for access to your repos: it has no narrower scope for issues in private repos']}
+          />
         </div>
       );
     case 'starting':

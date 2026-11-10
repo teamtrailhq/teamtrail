@@ -1,9 +1,10 @@
 import { PLAN_ONLY_LABEL } from '../../model/brand';
-import { levelOf } from '../../model/lifecycle';
 import { parseMapBody } from '../../model/mapBody';
 import { DEFAULT_MAP_MODE, type Comment, type DecisionRecord, type MapDoc } from '../../model/types';
-import { modelMatchingOf } from '../modelMatchingOf';
-import { parseDecisionComment, readComment, splitBody } from './format';
+import { settingsOf, type BodySettings } from './bodySettings';
+import { isDecisionComment, parseDecisionComment, teammateDecision } from './decisionComment';
+import { readBody, readComment, splitBody } from './format';
+import type { Writer } from './writer';
 
 export interface TrailIssueParts {
   id: string;
@@ -11,23 +12,28 @@ export interface TrailIssueParts {
   title: string;
   labels: string[];
   body: string | null | undefined;
+  /** Who last wrote the body, as far as the tracker says. */
+  writer: Writer;
+  /** The settings in force given the ones the body carries (settingsLedger.ts); missing: the body's own. */
+  settle?: (found: BodySettings) => BodySettings;
   createdAt: string;
   updatedAt: string;
 }
 
 /** The trail issue as a map: plan-only by label, sections, verification level and model matching from the issue body. */
 export function mapFromIssue(p: TrailIssueParts): MapDoc {
-  const { text, meta } = splitBody(p.body);
-  const verification = levelOf(meta.verification);
-  const guides = Array.isArray(meta.guides) ? meta.guides.filter((r) => typeof r === 'string' && r) : [];
-  const modelMatching = modelMatchingOf(meta.modelMatching);
+  // The map body guards its own fields and carries real assumption markers, so a trusted one is parsed as it
+  // is; an outsider's comes back with every marker guarded, which makes its assumption markers text too.
+  const { text, meta } = p.writer.kind === 'outsider' ? readBody(p.body, p.writer) : splitBody(p.body);
+  const found = settingsOf({ ...meta });
+  const { verification, guides, modelMatching } = p.settle ? p.settle(found) : found;
   return {
     id: p.id,
     key: p.key,
     title: p.title,
     mode: p.labels.includes(PLAN_ONLY_LABEL) ? 'plan-only' : DEFAULT_MAP_MODE,
     ...(verification ? { verification } : {}),
-    ...(guides.length ? { guides } : {}),
+    ...(guides?.length ? { guides } : {}),
     ...(modelMatching ? { modelMatching } : {}),
     sections: parseMapBody(text),
     createdAt: Date.parse(p.createdAt) || 0,
@@ -38,11 +44,14 @@ export function mapFromIssue(p: TrailIssueParts): MapDoc {
 export interface IssueComment<Id> {
   id: Id;
   body: string;
-  author?: string;
+  writer: Writer;
   createdAt: string;
 }
 
-/** An issue's comments in order; decision records among them go to `onDecision` instead. */
+/**
+ * An issue's comments in order; decision records among them go to `onDecision` instead. A record counts when
+ * this account posted it, or a teammate did (as that person's decision); an outsider's is an ordinary comment.
+ */
 export function readIssueComments<Id>(
   mapId: string,
   comments: IssueComment<Id>[],
@@ -50,13 +59,16 @@ export function readIssueComments<Id>(
 ): Comment[] {
   const out: Comment[] = [];
   for (const c of comments) {
-    const d = parseDecisionComment(c.body);
+    const trusted = c.writer.kind !== 'outsider';
+    const d = trusted ? parseDecisionComment(c.body) : undefined;
     if (d) {
-      onDecision({ ...d, mapId }, c.id);
+      const record = c.writer.kind === 'teammate' ? teammateDecision(d, c.writer.name || 'unknown') : d;
+      onDecision({ ...record, mapId }, c.id);
       continue;
     }
-    const parsed = readComment({ id: String(c.id), body: c.body, author: c.author, createdAt: c.createdAt });
-    if (parsed) out.push(parsed);
+    // A record of ours too broken to read is not conversation either.
+    if (trusted && isDecisionComment(c.body)) continue;
+    out.push(readComment({ id: String(c.id), body: c.body, writer: c.writer, createdAt: c.createdAt }));
   }
   return out;
 }

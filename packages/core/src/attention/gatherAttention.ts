@@ -1,4 +1,5 @@
 import type { TrackerAdapter } from '../adapters/adapter';
+import { reportsSettings } from '../adapters/remote/settingsLedger';
 import { readAgentDocs } from '../agents/agentDocs';
 import { connectedAgents } from '../agents/connectedAgents';
 import { readLeases } from '../agents/leaseStore';
@@ -40,6 +41,7 @@ export async function gatherAttention(input: {
     violations: await readViolations({ root, adapter, snaps, docs }),
     integrations: integrationsOf(root),
     guides: listGuides(root).filter((r) => r.origin === 'local'),
+    trackerSettings: reportsSettings(adapter) ? adapter.unacceptedSettings() : [],
     agents: connectedAgents(docs),
     policy,
     state: readAttentionState(root),

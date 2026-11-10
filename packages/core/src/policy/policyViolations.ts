@@ -34,7 +34,9 @@ const keyOf = (mapId: string, ticketId: string) => `${mapId}/${ticketId}`;
  */
 export function policyViolations(input: ViolationInput): PolicyViolation[] {
   const covered = new Set((input.covered ?? []).map((c) => keyOf(c.mapId, c.ticketId)));
-  for (const d of input.decisions) if (d.ticketId && madeBy(d) === 'human') covered.add(keyOf(d.mapId, d.ticketId));
+  // A record another tracker account posted is that person's call, not this machine's human's.
+  const own = input.decisions.filter((d) => d.ticketId && !d.postedBy && madeBy(d) === 'human');
+  for (const d of own) covered.add(keyOf(d.mapId, d.ticketId!));
   const highRules = input.policy.paths.filter((r) => r.level === 'high');
   return latestPerTicket(input.attempts)
     .filter((a) => !covered.has(keyOf(a.mapId, a.ticketId)))

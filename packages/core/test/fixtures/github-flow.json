@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T23:06:27.052Z",
+  "recordedAt": "2026-11-10T13:24:09.585Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema).",
   "exchanges": [
     {
@@ -248,7 +248,9 @@
         "body": {
           "title": "Ship offline sync",
           "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-          "labels": ["teamtrail:map"]
+          "labels": [
+            "teamtrail:map"
+          ]
         }
       },
       "res": {
@@ -287,7 +289,9 @@
         "body": {
           "title": "Survey CRDT libraries",
           "body": "Compare Automerge and Yjs.\n\nPart of trail #1.",
-          "labels": ["teamtrail:research"]
+          "labels": [
+            "teamtrail:research"
+          ]
         }
       },
       "res": {
@@ -363,7 +367,9 @@
         "body": {
           "title": "Pick a conflict policy",
           "body": "Last-writer-wins or merge?\n\nPart of trail #1.",
-          "labels": ["teamtrail:junction"]
+          "labels": [
+            "teamtrail:junction"
+          ]
         }
       },
       "res": {
@@ -753,7 +759,9 @@
         "method": "POST",
         "url": "/repos/octo-org/launchpad/issues/1/labels",
         "body": {
-          "labels": ["teamtrail:plan-only"]
+          "labels": [
+            "teamtrail:plan-only"
+          ]
         }
       },
       "res": {
@@ -783,7 +791,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "etag": "\"f10320b735bcda01e6c6aae5d5de73fb30f3ff89\"",
+          "etag": "\"888ef17b18e7ad0ffe852fab3a3c30072aef882e\"",
           "x-ratelimit-limit": "5000",
           "x-ratelimit-remaining": "4990",
           "x-ratelimit-reset": "1793451616"
@@ -835,6 +843,9 @@
         },
         "body": {
           "data": {
+            "viewer": {
+              "login": "octo-dev"
+            },
             "repository": {
               "issue": {
                 "id": "I_kwDOfake1",
@@ -847,6 +858,13 @@
                 "createdAt": "2026-10-31T12:00:01Z",
                 "updatedAt": "2026-10-31T12:00:16Z",
                 "closedAt": null,
+                "author": {
+                  "login": "octo-dev"
+                },
+                "editor": {
+                  "login": "octo-dev"
+                },
+                "authorAssociation": "COLLABORATOR",
                 "labels": {
                   "nodes": [
                     {
@@ -876,6 +894,13 @@
                       "createdAt": "2026-10-31T12:00:02Z",
                       "updatedAt": "2026-10-31T12:00:14Z",
                       "closedAt": "2026-10-31T12:00:10Z",
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "editor": {
+                        "login": "octo-dev"
+                      },
+                      "authorAssociation": "COLLABORATOR",
                       "labels": {
                         "nodes": [
                           {
@@ -894,7 +919,9 @@
                             "createdAt": "2026-10-31T12:00:08Z",
                             "author": {
                               "login": "octo-dev"
-                            }
+                            },
+                            "editor": null,
+                            "authorAssociation": "COLLABORATOR"
                           },
                           {
                             "databaseId": 9002,
@@ -902,7 +929,9 @@
                             "createdAt": "2026-10-31T12:00:09Z",
                             "author": {
                               "login": "octo-dev"
-                            }
+                            },
+                            "editor": null,
+                            "authorAssociation": "COLLABORATOR"
                           },
                           {
                             "databaseId": 9003,
@@ -910,7 +939,11 @@
                             "createdAt": "2026-10-31T12:00:12Z",
                             "author": {
                               "login": "octo-dev"
-                            }
+                            },
+                            "editor": {
+                              "login": "octo-dev"
+                            },
+                            "authorAssociation": "COLLABORATOR"
                           },
                           {
                             "databaseId": 9004,
@@ -918,7 +951,9 @@
                             "createdAt": "2026-10-31T12:00:14Z",
                             "author": {
                               "login": "octo-dev"
-                            }
+                            },
+                            "editor": null,
+                            "authorAssociation": "COLLABORATOR"
                           }
                         ]
                       },
@@ -937,6 +972,11 @@
                       "createdAt": "2026-10-31T12:00:04Z",
                       "updatedAt": "2026-10-31T12:00:06Z",
                       "closedAt": null,
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "editor": null,
+                      "authorAssociation": "COLLABORATOR",
                       "labels": {
                         "nodes": [
                           {

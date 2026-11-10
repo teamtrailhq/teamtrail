@@ -15,6 +15,7 @@ import { questionSource } from './questionSource';
 import { rerouteSource } from './rerouteSource';
 import { rerouteSuggestedSource } from './rerouteSuggestedSource';
 import { stalledSource } from './stalledSource';
+import { trackerSettingsSource } from './trackerSettingsSource';
 
 /**
  * Every attention source. Adding a kind: write `sources/<kind>Source.ts`, list it here, and give the
@@ -37,4 +38,5 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   guideSource,
   guideChecksSource,
   modelSource,
+  trackerSettingsSource,
 ];

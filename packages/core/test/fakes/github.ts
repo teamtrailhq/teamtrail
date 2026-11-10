@@ -19,7 +19,10 @@ export interface FakeIssue {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
-  comments: { id: number; body: string; created_at: string; user: string }[];
+  comments: { id: number; body: string; created_at: string; user: string; editor?: string }[];
+  /** Who opened the issue, and who last edited its body (null: never edited). */
+  author: string;
+  editor: string | null;
   subIssues: number[];
   blockedBy: number[];
 }
@@ -47,6 +50,8 @@ export function fakeGitHub(
     repos?: FakeRepo[];
     /** When set, any other bearer token is refused with 401. */
     token?: string;
+    /** Other logins that belong to the repo: their `authorAssociation` is `COLLABORATOR`, everyone else's `NONE`. */
+    team?: string[];
   } = {},
 ) {
   const repo = opts.repo ?? 'octo-org/launchpad';
@@ -72,6 +77,9 @@ export function fakeGitHub(
     'x-ratelimit-reset': String(Math.floor(clock / 1000) + 3600),
   });
   const byId = (id: number) => [...issues.values()].find((i) => i.id === id);
+  const team = new Set(opts.team ?? []);
+  const association = (user: string) => (user === login || team.has(user) ? 'COLLABORATOR' : 'NONE');
+  const actor = (user: string | null | undefined) => (user ? { login: user } : null);
 
   const rest = (i: FakeIssue) => ({
     id: i.id,
@@ -100,6 +108,9 @@ export function fakeGitHub(
     createdAt: i.created_at,
     updatedAt: i.updated_at,
     closedAt: i.closed_at,
+    author: actor(i.author),
+    editor: actor(i.editor),
+    authorAssociation: association(i.author),
     labels: { nodes: i.labels.map((name) => ({ name })) },
     assignees: { nodes: i.assignees.map((l) => ({ login: l })) },
     comments: {
@@ -107,7 +118,9 @@ export function fakeGitHub(
         databaseId: c.id,
         body: c.body,
         createdAt: c.created_at,
-        author: { login: c.user },
+        author: actor(c.user),
+        editor: actor(c.editor),
+        authorAssociation: association(c.user),
       })),
     },
     ...(withBlocked ? { blockedBy: { nodes: i.blockedBy.map((id) => ({ number: byId(id)!.number })) } } : {}),
@@ -115,7 +128,7 @@ export function fakeGitHub(
 
   const etagOf = (v: unknown) => `"${createHash('sha1').update(JSON.stringify(v)).digest('hex')}"`;
 
-  function createIssue(b: { title: string; body?: string; labels?: string[] }): FakeIssue {
+  function createIssue(b: { title: string; body?: string; labels?: string[]; author?: string }): FakeIssue {
     const n = nextNumber++;
     const now = tick();
     const i: FakeIssue = {
@@ -132,6 +145,8 @@ export function fakeGitHub(
       updated_at: now,
       closed_at: null,
       comments: [],
+      author: b.author ?? login,
+      editor: null,
       subIssues: [],
       blockedBy: [],
     };
@@ -162,7 +177,7 @@ export function fakeGitHub(
       const issue = root
         ? { ...gql(root, false), subIssues: { nodes: root.subIssues.map((n) => gql(issues.get(n)!, true)) } }
         : null;
-      return ok({ data: { repository: { issue } } });
+      return ok({ data: { viewer: { login }, repository: { issue } } });
     }
     if (opts.token && headers.get('authorization') !== `Bearer ${opts.token}`)
       return { status: 401, headers: rate(), body: { message: 'Bad credentials' } };
@@ -207,6 +222,7 @@ export function fakeGitHub(
         const c = i.comments.find((x) => x.id === Number(cm[1]));
         if (c) {
           c.body = (body as { body: string }).body;
+          c.editor = login;
           return ok({ id: c.id, body: c.body });
         }
       }
@@ -220,7 +236,10 @@ export function fakeGitHub(
     if (method === 'PATCH' && !sub) {
       const b = body as Partial<{ title: string; body: string; state: 'open' | 'closed'; state_reason: string }>;
       if (b.title !== undefined) issue.title = b.title;
-      if (b.body !== undefined) issue.body = b.body;
+      if (b.body !== undefined) {
+        issue.body = b.body;
+        issue.editor = login;
+      }
       if (b.state) {
         issue.state = b.state;
         issue.state_reason = b.state === 'closed' ? (b.state_reason ?? 'completed') : null;
@@ -324,8 +343,21 @@ export function fakeGitHub(
         i.comments.push({ id: nextComment++, body, created_at: tick(), user });
         i.updated_at = tick();
       },
-      createSubIssue(parent: number, title: string, labelNames: string[] = []) {
-        const i = createIssue({ title, body: '', labels: labelNames });
+      /** Someone edits an issue body in the GitHub UI (its author, or a person with write access). */
+      editBody(number: number, user: string, body: string) {
+        const i = issues.get(number)!;
+        Object.assign(i, { body, editor: user, updated_at: tick() });
+      },
+      /** Someone with write access edits another person's comment. */
+      editComment(commentId: number, user: string, body: string) {
+        for (const i of issues.values()) {
+          const c = i.comments.find((x) => x.id === commentId);
+          if (c) Object.assign(c, { body, editor: user });
+          if (c) i.updated_at = tick();
+        }
+      },
+      createSubIssue(parent: number, title: string, labelNames: string[] = [], author?: string) {
+        const i = createIssue({ title, body: '', labels: labelNames, author });
         issues.get(parent)!.subIssues.push(i.number);
         issues.get(parent)!.updated_at = tick();
         return i;

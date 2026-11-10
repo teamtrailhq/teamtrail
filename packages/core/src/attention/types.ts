@@ -1,3 +1,4 @@
+import type { UnacceptedSettings } from '../adapters/remote/settingsInForce';
 import type { TicketLease } from '../agents/ticketLease';
 import type { DiscoveryBrief } from '../discovery/brief';
 import type { KnowledgeEntry } from '../knowledge/knowledge';
@@ -35,6 +36,8 @@ export interface AttentionInput {
   integrations?: IntegrationOverlap[];
   /** Installed guides, checked against the lock (guides/guideStore.ts). Missing: none. */
   guides?: InstalledGuide[];
+  /** Settings someone else wrote into a tracked issue that this machine hasn't accepted. Missing: none. */
+  trackerSettings?: UnacceptedSettings[];
   /** Agents connected now, with their model tier (model matching). Missing: none. */
   agents?: ConnectedAgent[];
   /** Missing: the defaults. */

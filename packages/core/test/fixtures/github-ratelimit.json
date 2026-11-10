@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-10-31T23:06:27.070Z",
+  "recordedAt": "2026-11-10T13:24:09.602Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema). Error bodies and headers as documented for secondary (429 + retry-after) and primary (403 + x-ratelimit-remaining: 0) limits.",
   "exchanges": [
     {
@@ -231,7 +231,9 @@
         "body": {
           "title": "Ship offline sync",
           "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-          "labels": ["teamtrail:map"]
+          "labels": [
+            "teamtrail:map"
+          ]
         }
       },
       "res": {
@@ -270,7 +272,9 @@
         "body": {
           "title": "Survey CRDT libraries",
           "body": "Compare.\n\nPart of trail #1.",
-          "labels": ["teamtrail:research"]
+          "labels": [
+            "teamtrail:research"
+          ]
         }
       },
       "res": {
@@ -454,6 +458,9 @@
         },
         "body": {
           "data": {
+            "viewer": {
+              "login": "octo-dev"
+            },
             "repository": {
               "issue": {
                 "id": "I_kwDOfake1",
@@ -466,6 +473,11 @@
                 "createdAt": "2026-10-31T12:00:01Z",
                 "updatedAt": "2026-10-31T12:00:03Z",
                 "closedAt": null,
+                "author": {
+                  "login": "octo-dev"
+                },
+                "editor": null,
+                "authorAssociation": "COLLABORATOR",
                 "labels": {
                   "nodes": [
                     {
@@ -492,6 +504,11 @@
                       "createdAt": "2026-10-31T12:00:02Z",
                       "updatedAt": "2026-10-31T12:00:05Z",
                       "closedAt": null,
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "editor": null,
+                      "authorAssociation": "COLLABORATOR",
                       "labels": {
                         "nodes": [
                           {
@@ -510,7 +527,9 @@
                             "createdAt": "2026-10-31T12:00:04Z",
                             "author": {
                               "login": "octo-dev"
-                            }
+                            },
+                            "editor": null,
+                            "authorAssociation": "COLLABORATOR"
                           },
                           {
                             "databaseId": 9002,
@@ -518,7 +537,9 @@
                             "createdAt": "2026-10-31T12:00:05Z",
                             "author": {
                               "login": "octo-dev"
-                            }
+                            },
+                            "editor": null,
+                            "authorAssociation": "COLLABORATOR"
                           }
                         ]
                       },

@@ -23,6 +23,7 @@ describe('the HITL flag', () => {
       key: '#4',
       title: 'Ship it',
       body: 'Body',
+      writer: { kind: 'self', name: 'octo-dev' } as const,
       closed: false,
       blockedBy: [],
       comments: [],

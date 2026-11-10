@@ -139,10 +139,7 @@ export interface DecisionSource {
  * Actor ids are plain strings namespaced by where the actor lives:
  * `trail lead` (Lookout), agent trail names (`claude-07`), `slack:U123`.
  */
-export interface Participant {
-  id: string;
-  name?: string;
-}
+export type Participant = { id: string; name?: string };
 
 export interface TranscriptEntry {
   from: 'agent' | 'human' | 'system';
@@ -183,12 +180,18 @@ export interface DecisionRecord {
   transcript: TranscriptEntry[];
   /** The risk level the policy gave this call, when the agent named a category or the files it touches. */
   risk?: DecisionRisk;
+  /**
+   * Remote trackers: the tracker account that posted this record, when it isn't the one this machine writes as
+   * (a teammate's Teamtrail). Read from the tracker, never stored: such a record is that person's decision, and
+   * doesn't count as this machine's human having had a say.
+   */
+  postedBy?: string;
 }
 
 export type DecisionStatus = 'active' | 'superseded';
 
 type DecisionDefaults = 'decidedAt' | 'summary' | 'alternatives' | 'rationale' | 'participants' | 'transcript';
-export type DecisionInput = Omit<DecisionRecord, 'id' | 'mapId' | 'supersededBy' | DecisionDefaults> &
+export type DecisionInput = Omit<DecisionRecord, 'id' | 'mapId' | 'supersededBy' | 'postedBy' | DecisionDefaults> &
   Partial<Pick<DecisionRecord, DecisionDefaults>>;
 
 export type TrackerEvent =
