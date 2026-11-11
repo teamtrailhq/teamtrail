@@ -23,7 +23,7 @@ teamtrail
 
 Requires Node 20 or newer. No other runtime dependencies.
 
-The Lookout's address is always `http://127.0.0.1:<port>/`, never `localhost`, which a browser may send to `::1` instead. It listens on 127.0.0.1 and `::1` (where the machine has it) on its port, besides any `--host` address, so no other program can take its address beside it; if another program already holds the port on any of them, it doesn't start. `teamtrail mcp --http` does the same.
+The Lookout's address is always `http://127.0.0.1:<port>/`, never `localhost`, which a browser may send to `::1` instead. It listens on 127.0.0.1 and `::1` (where the machine has it) on its port, besides the `--host` address, so no other program can take its address beside it; if another program already holds the port on any of them, it doesn't start and names the address. It never listens on a wildcard: `--host 0.0.0.0` (or `::`) listens on each of the machine's network addresses at start, and only those are offered for pairing. After a network change (a new Wi-Fi, a VPN), restart `teamtrail` to serve the new address. `teamtrail mcp --http` does the same.
 
 ### Signing in
 

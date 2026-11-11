@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
 
-const [url = 'http://localhost:7420/', dir, shotPath] = process.argv.slice(2);
+const [url = 'http://127.0.0.1:7420/', dir, shotPath] = process.argv.slice(2);
 if (!dir) throw new Error('usage: verify-cli.mjs <sign-in link> <trackerDir> [screenshot.png]');
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME ?? '/usr/local/bin/google-chrome' });

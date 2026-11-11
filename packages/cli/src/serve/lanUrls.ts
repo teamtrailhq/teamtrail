@@ -1,16 +1,12 @@
-import os from 'node:os';
-
-const LOOPBACK = /^(127\.\d+\.\d+\.\d+|localhost|::1|\[::1\])$/;
+const LOOPBACK = /^(127\.\d+\.\d+\.\d+|::1)$/;
 
 /**
- * Where other devices on the network reach the Lookout, for Settings → Pair a device: none when it listens on this
- * machine only (the default), every network address when it listens on all of them, else the one it was given.
+ * Where other devices on the network reach the Lookout, for Settings → Pair a device: the addresses it holds
+ * besides loopback (listen.ts), IPv4 first. None when it listens on this machine only (the default). Only held
+ * addresses are handed out: an interface that appeared after the start isn't served until a restart.
  */
-export function lanUrls(host: string, port: number): string[] {
-  if (LOOPBACK.test(host)) return [];
-  if (host !== '0.0.0.0' && host !== '::') return [`http://${host.includes(':') ? `[${host}]` : host}:${port}/`];
-  return Object.values(os.networkInterfaces())
-    .flat()
-    .filter((a) => !!a && a.family === 'IPv4' && !a.internal)
-    .map((a) => `http://${a!.address}:${port}/`);
+export function lanUrls(held: string[], port: number): string[] {
+  const lan = held.filter((h) => !LOOPBACK.test(h));
+  const ordered = [...lan.filter((h) => !h.includes(':')), ...lan.filter((h) => h.includes(':'))];
+  return ordered.map((h) => (h.includes(':') ? `http://[${h}]:${port}/` : `http://${h}:${port}/`));
 }

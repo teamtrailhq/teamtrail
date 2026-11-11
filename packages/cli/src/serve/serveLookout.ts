@@ -62,14 +62,14 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
   } catch (err) {
     fail(listenFailure(err));
   }
-  const { port, servers } = listening;
+  const { port, servers, addresses } = listening;
   const url = lookoutUrl(port);
   const bridge = createTrackerBridge(root, {
     plugins: [slackPlugin()],
     url: () => url,
   });
   // Every API route needs a paired browser; the link below pairs the one this command opens.
-  const signIn = createLookoutSignIn({ root: bridge.root, lanUrls: () => lanUrls(opts.host, port) });
+  const signIn = createLookoutSignIn({ root: bridge.root, lanUrls: () => lanUrls(addresses, port) });
   // Other registered projects open on first use, at /p/<id>/…, with their own checkout for the GitHub origin; Slack stays with the home project.
   hub = createProjectsHub({
     signIn,

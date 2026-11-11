@@ -51,9 +51,9 @@ export async function runMcpHttp(opts: McpHttpServeOptions) {
   } catch (err) {
     fail(listenFailure(err));
   }
-  const { port, servers } = listening;
+  const { port, servers, addresses } = listening;
   keepServing();
-  const url = endpointUrl(opts.host, port);
+  const url = endpointUrl(opts.host, port, addresses);
   const network = !isLoopback(opts.host);
   const release = writeMcpEndpoint(opts.root, { url, kind: 'standalone', network });
   const tokens = remoteTokenViews(opts.root).length;
