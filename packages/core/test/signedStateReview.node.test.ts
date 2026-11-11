@@ -23,7 +23,9 @@ import { deriveStates } from '../src/planning/derive';
 import { chartMap } from '../src/planning/operations/chart';
 import { claim } from '../src/planning/operations/claims';
 import { recordDecision } from '../src/planning/operations/decisionOps';
-import { MAX_ITEM_BYTES } from '../src/signedState/cachedFields';
+import { cachedFields, cachedText, cacheSizes, MAX_ENTRIES, MAX_ITEM_BYTES } from '../src/signedState/cachedFields';
+import { lru } from '../src/signedState/lru';
+import { stateItemOf } from '../src/signedState/stateItem';
 import { outsideChanges } from '../src/signedState/outsideChanges';
 import { revertState } from '../src/signedState/revertState';
 import { stateRecordFile } from '../src/signedState/stateRecord';
@@ -380,4 +382,50 @@ test('#62: a ticket’s type and hitl label edited in its file: gates read the s
     [j, ['type']],
     [t, ['hitl']],
   ]);
+});
+
+test('9: the caches keep at most their cap, dropping the least recently used first', () => {
+  const cache = lru<number>(3);
+  cache.set('a', 1);
+  cache.set('b', 2);
+  cache.set('c', 3);
+  assert.equal(cache.get('a'), 1, 'a is now the newest');
+  cache.set('d', 4);
+  assert.equal(cache.get('b'), undefined, 'b was the least recently used');
+  assert.deepEqual([cache.get('a'), cache.get('c'), cache.get('d'), cache.size], [1, 3, 4, 3]);
+  // and the file caches stay within theirs however many files a project has
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-signed-cap-'));
+  for (let i = 0; i <= MAX_ENTRIES + 10; i++) {
+    const file = path.join(dir, `${i}.md`);
+    writeFileSync(file, `---\nid: "${i}"\ntitle: T\ntype: task\nstate: open\n---\n`);
+    cachedFields(stateItemOf(`t/tickets/${i}.md`)!, cachedText(file) as string);
+  }
+  const sizes = cacheSizes();
+  assert.ok(sizes.fields <= MAX_ENTRIES && sizes.texts <= MAX_ENTRIES, JSON.stringify(sizes));
+  assert.equal(sizes.texts, MAX_ENTRIES);
+});
+
+test('#62: a Teamtrail write to a map keeps a pending outside destination and deleted assumption pending', async () => {
+  const root = tmpRoot();
+  const { adapter, mapId } = await trail(root);
+  const rel = `${mapId}/map.md`;
+  edit(root, rel, /^D$/m, 'Rewritten outside');
+  edit(root, rel, /^.*S-1.*\n/m, '');
+  await adapter.updateMapSections(mapId, { notes: 'Teamtrail writes the map' });
+  const file = readFileSync(path.join(root, rel), 'utf8');
+  assert.match(file, /^Rewritten outside$/m, 'the outside version stays in the file');
+  assert.doesNotMatch(file, /S-1/);
+  assert.match(file, /Teamtrail writes the map/);
+  const change = outsideChanges(root).changes.find((c) => c.kind === 'map')!;
+  assert.deepEqual(change.fields, ['assumption:S-1', 'destination']);
+  const snap = await adapter.loadMap(mapId);
+  assert.equal(snap.map.sections.destination, 'D', 'gates still read the signed destination');
+  assert.equal(snap.map.sections.assumptions?.[0]?.id, 'S-1');
+  const item = pendingTrust(root).find((i) => i.kind === 'state' && i.key.endsWith(':map'))!;
+  assert.match(item.lines.join('\n'), /\+ Rewritten outside/);
+  approveTrust({ root, items: [{ key: item.key, hash: item.hash }], by: 'trail lead' });
+  const accepted = await adapter.loadMap(mapId);
+  assert.equal(accepted.map.sections.destination, 'Rewritten outside');
+  assert.deepEqual(accepted.map.sections.assumptions ?? [], []);
+  assert.deepEqual(outsideChanges(root).changes, []);
 });

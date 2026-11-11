@@ -1,34 +1,16 @@
 import { readFileSync, statSync } from 'node:fs';
 import { fieldsOfText } from './itemCodec';
+import { lru } from './lru';
 import type { Fields } from './stateFields';
 import type { StateItem } from './stateItem';
 
 /** Files larger than this are never read whole: they count as changed outside Teamtrail (`oversized`). */
 export const MAX_ITEM_BYTES = 1024 * 1024;
 /** Entries each cache keeps; the least recently used goes first. */
-const MAX_ENTRIES = 2000;
-
-/** A Map that keeps the `MAX_ENTRIES` most recently used keys. */
-function lru<V>() {
-  const map = new Map<string, V>();
-  return {
-    get(key: string) {
-      const v = map.get(key);
-      if (v === undefined) return undefined;
-      map.delete(key);
-      map.set(key, v);
-      return v;
-    },
-    set(key: string, v: V) {
-      map.delete(key);
-      map.set(key, v);
-      if (map.size > MAX_ENTRIES) map.delete(map.keys().next().value!);
-    },
-  };
-}
+export const MAX_ENTRIES = 2000;
 
 /** The last text seen per file, with its fields: a trail is read far more often than it changes. */
-const seen = lru<{ text: string; fields?: Fields }>();
+const seen = lru<{ text: string; fields?: Fields }>(MAX_ENTRIES);
 
 /** The gate fields of an item's text, parsed once per version of the text. */
 export function cachedFields(item: StateItem, text: string): Fields | undefined {
@@ -39,7 +21,7 @@ export function cachedFields(item: StateItem, text: string): Fields | undefined 
   return fields;
 }
 
-const texts = lru<{ stamp: string; text: string }>();
+const texts = lru<{ stamp: string; text: string }>(MAX_ENTRIES);
 
 /** What a tracker file holds: its text, nothing (it is gone), or more than Teamtrail reads (`oversized`). */
 export type FileText = string | undefined | { oversized: number };
@@ -64,3 +46,6 @@ export function cachedText(file: string): FileText {
   texts.set(file, { stamp, text });
   return text;
 }
+
+/** How many entries each cache holds now: never more than `MAX_ENTRIES` (signedStateReview.node.test.ts). */
+export const cacheSizes = () => ({ fields: seen.size, texts: texts.size });

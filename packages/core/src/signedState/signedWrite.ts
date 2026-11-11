@@ -4,6 +4,7 @@ import { contentHash } from '../trust/trustLedger';
 import { oversizedFile } from './cachedFields';
 import { codecOf, fieldsOfText } from './itemCodec';
 import { judgeItem } from './judgeItem';
+import { keepOutsideMapText } from './outsideMapText';
 import { projectSigned } from './projectSigned';
 import { staleWrite } from './staleWrite';
 import { changedKeys, fieldsHash, sameValue, type Fields } from './stateFields';
@@ -46,8 +47,9 @@ function entryFor(w: SignedWrite, f: Fields, written: string, was?: StateEntry):
   const value = codec.parse(written);
   const entry: StateEntry = { f, h: fieldsHash(f), file: contentHash(written), by: w.by, at: Date.now() };
   if (w.item.kind === 'ticket') entry.title = (value as { title: string }).title;
-  // a trail's text, for its assumption lines (signedMapText.ts)
-  if (w.item.kind === 'map') entry.text = written;
+  // a trail's text as signed, for its destination and assumption lines (signedMapText.ts): the writer's, which
+  // never carries an outside change it didn't make (outsideMapText.ts keeps those in the file only)
+  if (w.item.kind === 'map') entry.text = w.text;
   if (w.item.kind === 'decision') {
     const exact = !changedKeys(codec.fields(value), f).length;
     entry.text = exact ? written : was?.text;
@@ -84,7 +86,9 @@ function plan(w: SignedWrite, raw: string | undefined, was: StateEntry | undefin
   if (clash.length) throw staleWrite(w.item.rel, clash);
   const keep = Object.entries(rawFields ?? {}).filter(([k, v]) => !changed.includes(k) && !sameValue(v, after[k]));
   const codec = codecOf(w.item);
-  const written = keep.length ? codec.serialize(codec.apply(codec.parse(w.text), Object.fromEntries(keep))) : w.text;
+  const kept = keep.length ? codec.serialize(codec.apply(codec.parse(w.text), Object.fromEntries(keep))) : w.text;
+  const outsideText = w.item.kind === 'map' && raw !== undefined && !!was;
+  const written = outsideText ? keepOutsideMapText({ mapId: w.item.mapId, written: kept, raw, changed }) : kept;
   const fields: Fields = { ...judged.base };
   for (const k of changed) {
     if (k in after) fields[k] = after[k];
