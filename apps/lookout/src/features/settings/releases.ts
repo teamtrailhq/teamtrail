@@ -17,6 +17,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.27.1',
+    date: '2026-11-11',
+    items: ['The map and the queue no longer miss a change made while the Lookout was loading or reconnecting'],
+  },
+  {
     version: '0.27.0',
     date: '2026-11-11',
     items: [
