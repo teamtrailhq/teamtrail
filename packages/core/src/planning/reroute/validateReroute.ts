@@ -75,6 +75,10 @@ function changeErrors(s: Scope, c: RerouteChange): string[] {
       return textErrors(c.text, 'text');
     case 'reopen':
       return [...reopenErrors(s, c.ticket), ...textErrors(c.reason, 'reason')];
+    case 'skip_discovery':
+      return [];
+    case 'set_mode':
+      return c.mode === s.snap.map.mode ? [`the trail is already ${c.mode}`] : [];
     default: {
       const unknown: never = c;
       return [`unknown change ${(unknown as { op?: string }).op}`];

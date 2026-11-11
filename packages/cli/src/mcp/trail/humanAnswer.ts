@@ -9,7 +9,6 @@ import {
   type TranscriptEntry,
 } from '@teamtrail/core';
 import type { AgentContext } from './agentContext';
-import { aboutArg, aboutText, sameAbout, type QuestionAbout } from './questionAbout';
 
 /**
  * An answer the human gave to a question this agent asked. It is the only thing that makes a decision the
@@ -40,8 +39,6 @@ export interface HumanAnswer {
   via?: AnswerVia;
   /** For `chat`: the agent whose chat it was given in. */
   chatOf?: string;
-  /** The trail lead's setting the question asked them to change, if any (questionAbout.ts). */
-  about?: QuestionAbout;
   /** What it backed, once used. */
   usedFor?: string;
 }
@@ -70,8 +67,6 @@ interface Wanted {
   risk?: DecisionRisk;
   /** The answer has to carry weight: it closes a ticket that is the human's to decide. */
   hitl?: boolean;
-  /** Changing a trail lead's setting: the question must have been asked about exactly that. */
-  about?: QuestionAbout;
 }
 
 /** Held by a call that is still writing its decision; a second call finds the answer taken. */
@@ -113,9 +108,6 @@ function refusal(a: HumanAnswer, w: Wanted): string | undefined {
   // the Lookout or Slack is the human's word at a gate.
   if (!approvesGates(a.via)) return chatRefusal(a);
   if (a.usedFor) return `${q} already backs ${a.usedFor}: one answer, one decision. Ask again for another one.`;
-  if (a.about && !w.about) return `${q} was asked to let you ${aboutText(a.about)}; it backs nothing else.`;
-  if (w.about && !sameAbout(a.about, w.about))
-    return `${q} was not asked about this: to ${aboutText(w.about)}, ask with ask_human and about ${aboutArg(w.about)}.`;
   if (w.ticket && a.ticketId !== w.ticket.id)
     return `${q} was not asked on ${w.ticket.key}. Ask the human about ${w.ticket.key} while you hold it.`;
   const high = w.risk?.level === 'high';
@@ -154,7 +146,7 @@ function named(ctx: AgentContext, w: Wanted) {
 }
 
 const latestFor = (ctx: AgentContext, w: Wanted) =>
-  w.ticket || w.about ? [...ctx.answers.values()].filter((a) => refusal(a, w) === undefined).at(-1) : undefined;
+  w.ticket ? [...ctx.answers.values()].filter((a) => refusal(a, w) === undefined).at(-1) : undefined;
 
 /** The answer backed a decision: it is used up, and says for what. */
 export function spend(a: HumanAnswer | undefined, what: string) {

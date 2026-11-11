@@ -277,7 +277,7 @@ describe('reroute proposals cannot stop a trail', () => {
     );
     const next = (await adapter().listDecisions(m.trail.id)).find((x) => x.supersedes === d.decision.id)!;
     expect(next.summary).toBe('JSON (proposed by claude-01, approved by trail lead)');
-    expect(next.rationale).toMatch(/^Proposed by claude-01 in reroute R-1; approved by trail lead\./);
+    expect(next.rationale).toMatch(/^Proposed by claude-01 in reroute R-2; approved by trail lead\./);
     expect(next.rationale).toMatch(/claude-01's rationale: Clients parse JSON/);
   });
 });

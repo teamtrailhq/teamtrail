@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { skipDiscoveryInLookout } from './e2eHelpers.mjs';
+import { approveSkipInLookout } from './e2eHelpers.mjs';
 
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
@@ -77,15 +77,18 @@ export async function verifyParallel({ browser, cli, log, shots }) {
     await page.goto(url);
     await page.locator('.dialog.onboarding').waitFor();
     await page.getByRole('button', { name: 'Get started' }).click();
-    await one.call('start_trail', {
-      discovery: false,
-      questionId: await skipDiscoveryInLookout({ call: one.call, page, url }),
-      title: 'Release search',
-      destination: 'Readers find a release in seconds',
-      tickets: [
-        { ref: 'box', title: 'Search box on the changelog', type: 'task' },
-        { ref: 'rank', title: 'Rank results by version', type: 'task' },
-      ],
+    await approveSkipInLookout({
+      started: await one.call('start_trail', {
+        discovery: false,
+        title: 'Release search',
+        destination: 'Readers find a release in seconds',
+        tickets: [
+          { ref: 'box', title: 'Search box on the changelog', type: 'task' },
+          { ref: 'rank', title: 'Rank results by version', type: 'task' },
+        ],
+      }),
+      page,
+      url: url,
     });
     const a = await one.call('claim_ticket', { touches: ['src/search/**'] });
     const b = await two.call('claim_ticket', { touches: ['src/search/index.ts'] });

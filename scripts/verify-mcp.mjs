@@ -188,29 +188,9 @@ await answerInUi('Users of the CLI', { chip: true });
 const f = await framing;
 log(`framing answered in UI: "${f.answer}" by ${f.answeredBy}`);
 
-// Skipping discovery is the trail lead's call: the agent asks, and the inbox says what answering allows.
-const skipAsk = call('ask_human', {
-  question: 'A small page: skip discovery?',
-  about: { kind: 'skip-discovery' },
-  suggestions: ['Yes, skip it'],
-  framing: true,
-});
-await page.locator('.inbox-list li').first().waitFor({ timeout: 15_000 });
-await page.locator('.inbox-list li button').first().click();
-const stakesShown = await page
-  .locator('.open-q', { hasText: /Answering this lets claude-\d+ skip discovery/ })
-  .waitFor({ timeout: 15_000 })
-  .then(
-    () => true,
-    () => false,
-  );
-await answerInUi('Yes, skip it', { chip: true });
-const skip = await skipAsk;
-log(`skip discovery answered in UI (stakes shown: ${stakesShown})`);
-
 const started = await call('start_trail', {
   discovery: false,
-  questionId: skip.questionId,
+  skipReason: 'A single static page generated from notes we already keep',
   title: 'Changelog page',
   destination: 'A public changelog page generated from release notes',
   decided: ['Static page, no backend'],
@@ -224,6 +204,20 @@ const started = await call('start_trail', {
   ],
 });
 log(`trail ${started.trail.key} "${started.trail.title}" · ${started.tickets.length} tickets`);
+// Skipping discovery is a request: the trail lead approves it with the Lookout's Approve button.
+await page.locator('.reroute-banner button', { hasText: 'Review' }).click({ timeout: 20_000 });
+const askShown = await page
+  .locator('.reroute-dialog', { hasText: /asks to change your setting/ })
+  .waitFor({ timeout: 15_000 })
+  .then(
+    () => true,
+    () => false,
+  );
+await page.locator('.reroute-approve').click();
+await page.locator('.reroute-banner').waitFor({ state: 'detached', timeout: 15_000 });
+const skipApproved =
+  (await call('reroute_status', { id: started.skipDiscovery.request })).reroute.status === 'approved';
+log(`skip discovery: request ${started.skipDiscovery.request} approved in the Lookout (${skipApproved && askShown})`);
 await page.locator('.node').nth(3).waitFor({ timeout: 15_000 });
 await shot('02-trail-charted-by-agent');
 
@@ -259,6 +253,14 @@ const hitl = call('ask_human', {
 });
 await page.locator('.inbox-list li').first().waitFor({ timeout: 15_000 });
 await page.locator('.inbox-list li button').first().click();
+// On a junction, the question says what answering it decides.
+const stakesShown = await page
+  .locator('.open-q', { hasText: /Answering this decides #\d+/ })
+  .waitFor({ timeout: 15_000 })
+  .then(
+    () => true,
+    () => false,
+  );
 await shot('03-agent-question-waiting-on-you');
 await answerInUi('Grouped by version, newest first');
 const h = await hitl;
@@ -596,7 +598,8 @@ if (
   h.answer !== 'Grouped by version, newest first' ||
   !chatOk ||
   !stakesShown ||
-  skip.answeredVia !== 'lookout' ||
+  !skipApproved ||
+  !askShown ||
   status.trail.progress !== '2/4 decided' ||
   after !== 0 ||
   !handoffOk ||

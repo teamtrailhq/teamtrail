@@ -132,9 +132,9 @@ describe('teamtrail MCP server', () => {
         { ref: 'build', title: 'Build the page', type: 'execute', blockedBy: ['look'] },
       ],
     });
-    expect(started.tickets).toHaveLength(3);
-    // Theirs, and the one about skipping discovery (fakes/callTool.ts).
-    expect(started.framingQuestionsAnswered).toBe(2);
+    // and discovery, last: the trail lead approved skipping it (fakes/callTool.ts)
+    expect(started.tickets).toHaveLength(4);
+    expect(started.framingQuestionsAnswered).toBe(1);
     const key = (ref: string) => started.tickets.find((t) => t.ref === ref)!.key;
     expect(started.next.key).toBe(key('src'));
 
@@ -195,8 +195,8 @@ describe('teamtrail MCP server', () => {
     expect(status.trail.progress).toBe('2/3 decided');
     expect(status.trail.ready.map((t) => t.key)).toEqual([key('build')]);
     expect(status.trail.decisions.map((d) => d.summary)).toEqual([
-      // skipping discovery: the trail lead's call, kept with the question as asked (fakes/callTool.ts)
-      'skip discovery · Yes, skip it (asked: Skip discovery for this trail?)',
+      // skipping discovery: the trail lead approved the request (fakes/callTool.ts)
+      'claude-01: skip discovery, approved',
       'Release notes live in the in-app changelog module.',
       // the human's decision is summarised in their own words, not the agent's
       'By version (asked: Timeline or grouped by version?)',
@@ -292,11 +292,13 @@ describe('teamtrail MCP server', () => {
       outcome: 'out_of_scope',
     });
     expect(ruled.outcome).toBe('proposed');
-    const lines = fs
+    const all = fs
       .readFileSync(journalPath(root, started.trail.id), 'utf8')
       .trim()
       .split('\n')
       .map((l) => JSON.parse(l));
+    // from the claim on: before it, skipping discovery was asked and approved (fakes/callTool.ts)
+    const lines = all.slice(all.findIndex((e) => e.event === 'claim'));
     expect(lines.map((e) => [e.ticketKey, e.event, e.from, e.to, e.actor, e.actorKind])).toEqual([
       [c.claimed.key, 'claim', 'ready', 'working', 'claude-07', 'agent'],
       [c.claimed.key, 'complete', 'working', 'done', 'claude-07', 'agent'],

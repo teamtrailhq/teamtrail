@@ -1,52 +1,42 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
+import { MarkdownAdapter, type TrackerAdapter } from '@teamtrail/core';
+import { approveReroute, journalFile, readReroute, rerouteHash } from '@teamtrail/core/agents';
+import { nodeMarkdownFs } from '@teamtrail/core/node';
 
 type Args = Record<string, unknown>;
 type Result = { isError?: boolean; content: { text: string }[] };
 
 /**
- * A tool call as the tests make them. Skipping discovery is the human's call (humanCall.ts), and most tests chart
- * a trail without it to get to what they test: there, the agent asks first and the trail lead says yes in the
- * Lookout, as they would. Tests about that gate itself call `start_trail` with a `questionId` or test the refusal
- * through `rawCall`.
+ * A tool call as the tests make them. Skipping discovery is the trail lead's call: `start_trail` with
+ * `discovery: false` charts the trail with discovery and asks them (trail/settings.ts). Most tests chart without
+ * discovery only to get to what they test, so here the trail lead approves that request in the Lookout at once,
+ * as they would. Tests about the request itself make the call without this helper.
  */
-export async function callTool(client: Client, root: string, name: string, args: Args, timeout?: number) {
-  const raw = (n: string, a: Args) =>
-    client.callTool({ name: n, arguments: a }, undefined, timeout ? { timeout } : undefined) as Promise<Result>;
-  if (name !== 'start_trail' || args.discovery !== false || args.questionId) return raw(name, args);
-  const questionId = await trailLeadSaysSkip(root, raw);
-  return raw(name, { ...args, questionId });
+export async function callTool(
+  client: Client,
+  root: string,
+  name: string,
+  args: Args,
+  o: { timeout?: number; adapter?: TrackerAdapter } = {},
+) {
+  const r = (await client.callTool(
+    { name, arguments: args },
+    undefined,
+    o.timeout ? { timeout: o.timeout } : undefined,
+  )) as Result;
+  if (name !== 'start_trail' || args.discovery !== false || r.isError) return r;
+  const out = JSON.parse(r.content[0].text) as { trail: { id: string }; skipDiscovery?: { request: string } };
+  if (out.skipDiscovery)
+    await approveInLookout({ root, mapId: out.trail.id, id: out.skipDiscovery.request, adapter: o.adapter });
+  return r;
 }
 
-/** The agent asks to skip discovery; the trail lead answers yes in the Lookout. */
-async function trailLeadSaysSkip(root: string, raw: (n: string, a: Args) => Promise<Result>) {
-  const asked = raw('ask_human', {
-    question: 'Skip discovery for this trail?',
-    about: { kind: 'skip-discovery' },
-    framing: true,
-    waitSeconds: 30,
-  });
-  await answerInLookout(root, /skip discovery/, 'Yes, skip it');
-  const r = await asked;
-  if (r.isError) throw new Error(r.content[0].text);
-  return (JSON.parse(r.content[0].text) as { questionId: string }).questionId;
-}
-
-/** The trail lead answers the waiting question whose stakes match, in the Lookout. */
-export async function answerInLookout(root: string, stakes: RegExp, text: string) {
-  for (let i = 0; i < 1500; i++) {
-    for (const d of await readAgentDocs(root)) {
-      const q = d.pending.find((p) => stakes.test(p.stakes ?? ''));
-      if (q)
-        return writeAgentAnswer(root, {
-          sessionId: d.session.id,
-          questionId: q.id,
-          text,
-          author: 'trail lead',
-          via: 'lookout',
-        });
-    }
-    await new Promise((r) => setTimeout(r, 20));
-  }
-  throw new Error(`no question waiting about ${stakes}`);
+/** The trail lead approves a request as the Lookout shows it: bound to the hash of what they saw. */
+export async function approveInLookout(a: { root: string; mapId: string; id: string; adapter?: TrackerAdapter }) {
+  const adapter = a.adapter ?? new MarkdownAdapter({ ...nodeMarkdownFs(a.root), watch: undefined }, a.root);
+  const p = readReroute(a.root, a.mapId, a.id)!;
+  return approveReroute(
+    { root: a.root, adapter, journal: journalFile(a.root) },
+    { mapId: a.mapId, id: a.id, by: 'trail lead', hash: rerouteHash(p) },
+  );
 }

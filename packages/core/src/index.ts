@@ -55,6 +55,7 @@ export { policyViolations, type PolicyViolation, type ViolationInput } from './p
 export { decisionsByRisk, type RiskGroup, type RiskGroupLevel } from './policy/decisionsByRisk';
 export * from './model/assumption';
 export * from './model/reroute';
+export { settingAsk, settingText } from './planning/reroute/settingText';
 export * from './planning/assumptions/assumptionOps';
 export { confirmAssumption } from './planning/assumptions/confirmAssumption';
 export { validateReroute, type RerouteDraft } from './planning/reroute/validateReroute';

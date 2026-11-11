@@ -1,4 +1,4 @@
-import type { TicketType } from './types';
+import type { MapMode, TicketType } from './types';
 
 /*
  * A reroute proposal: typed changes to a trail's map, proposed by an agent with evidence, applied only when the
@@ -25,7 +25,11 @@ export type RerouteChange =
   | { op: 'update_destination'; text: string }
   | { op: 'add_unspecified'; text: string }
   | { op: 'add_out_of_scope'; text: string }
-  | { op: 'reopen'; ticket: string; reason: string };
+  | { op: 'reopen'; ticket: string; reason: string }
+  /** A trail lead's setting, requested in the `setting` lane: implementation no longer waits for a brief. */
+  | { op: 'skip_discovery' }
+  /** A trail lead's setting, requested in the `setting` lane: the trail's mode. */
+  | { op: 'set_mode'; mode: MapMode };
 
 export type RerouteOp = RerouteChange['op'];
 
@@ -39,6 +43,8 @@ export const REROUTE_OPS: RerouteOp[] = [
   'add_unspecified',
   'add_out_of_scope',
   'reopen',
+  'skip_discovery',
+  'set_mode',
 ];
 
 /**
@@ -72,8 +78,12 @@ export interface RerouteProposal {
    * it freezes nothing, and the trail lead is told instead.
    */
   wide?: { touched: number; open: number };
-  /** `rule-out`: an agent asking to rule a ticket out (close_ticket out_of_scope), kept apart from plan proposals. */
-  lane?: 'rule-out';
+  /**
+   * `rule-out`: an agent asking to rule a ticket out (close_ticket out_of_scope), kept apart from plan proposals.
+   * `setting`: an agent asking the trail lead to change one of their settings (skip discovery, the mode, the
+   * destination); approving it is recorded as their decision (settingRequests.ts).
+   */
+  lane?: 'rule-out' | 'setting';
   at: number;
   reason: string;
   evidence: string;
@@ -121,6 +131,10 @@ export interface DiffNode {
 export interface RerouteDiff {
   nodes: DiffNode[];
   destination?: { before: string; after: string };
+  /** A `set_mode` change: the trail's mode before and after. */
+  mode?: { before: MapMode; after: MapMode };
+  /** A `skip_discovery` change: implementation stops waiting for the brief. */
+  skipDiscovery?: boolean;
   unspecified: string[];
   outOfScope: string[];
   superseded: { decision: string; answer: string }[];

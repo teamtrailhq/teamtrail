@@ -8,6 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { approveSkipInLookout } from './e2eHelpers.mjs';
 
 function repo(top, name) {
   const dir = path.join(top, name);
@@ -86,26 +87,18 @@ export async function verifyProjects({ browser, cli, log, shots }) {
     const visited = [];
     page.on('framenavigated', (f) => f === page.mainFrame() && visited.push(f.url()));
 
-    // Skipping discovery is the trail lead's call: answered here, in All projects, like any question.
-    const skipAsk = two.call('ask_human', {
-      question: 'Skip discovery for usage invoices?',
-      about: { kind: 'skip-discovery' },
-      framing: true,
-      waitSeconds: 90,
-    });
-    const skipItem = page.locator('.projects-view .pj-item', { hasText: 'Skip discovery for usage invoices?' });
-    await skipItem.locator('textarea').fill('Yes, skip it');
-    await skipItem.getByRole('button', { name: 'Answer' }).click();
-    const skip = await skipAsk;
-    await skipItem.waitFor({ state: 'detached', timeout: 20_000 });
-
     // A ticket item from another project: it opens that project with the ticket selected in the inspector.
-    await two.call('start_trail', {
-      discovery: false,
-      questionId: skip.questionId,
-      title: 'Usage invoices',
-      destination: 'Invoices explain every line',
-      tickets: [{ ref: 'cur', title: 'Which currency ships first?', type: 'junction' }],
+    // Skipping discovery is a request the trail lead approves: here through billing's own API, as its Lookout would.
+    await approveSkipInLookout({
+      started: await two.call('start_trail', {
+        discovery: false,
+        title: 'Usage invoices',
+        destination: 'Invoices explain every line',
+        tickets: [{ ref: 'cur', title: 'Which currency ships first?', type: 'junction' }],
+      }),
+      page,
+      url,
+      project: 'billing',
     });
     const ticketItem = page.locator('.projects-view .pj-item', { hasText: 'Which currency ships first?' });
     await ticketItem.locator('.ds-row-main').click({ timeout: 20_000 });

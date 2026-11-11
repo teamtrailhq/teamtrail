@@ -15,9 +15,8 @@ import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
 import { saveCriteria } from './criteria';
 import { briefView, claimable } from './discovery';
 import { assertGuide } from './guides';
-import { humanCallFor, recordHumanCall, releaseHumanCall } from './humanCall';
 import { knowledgeFor } from './knowledge';
-import type { QuestionAbout } from './questionAbout';
+import { requestSetting } from './settings';
 import { ticketInfo } from './ticketInfo';
 import type { TicketPlanInput } from './types';
 
@@ -32,8 +31,10 @@ interface StartInput {
   outOfScope?: string[];
   /** Default on: implementation waits for an accepted discovery brief. Off only when the human says to skip it. */
   discovery?: boolean;
-  /** With `discovery: false`: the question about skipping it the human answered in the Lookout or Slack. */
-  questionId?: string;
+  /** With `discovery: false`: why, for the trail lead who approves skipping it. */
+  skipReason?: string;
+  /** The discovery ticket goes after the planned ones (skipping it was asked). */
+  discoveryLast?: boolean;
   /** What the trail relies on; `tickets` are plan refs. */
   assumptions?: AssumptionPlanInput[];
   /** The trail's team of installed guide ids. */
@@ -52,22 +53,21 @@ const EMPTY_BRIEF = {
   openQuestions: [],
 };
 
-const SKIP: QuestionAbout = { kind: 'skip-discovery' };
-
 /**
- * `start_trail`: charts the map and its tickets, saves their criteria and opens the discovery brief. Without
- * discovery only on the human's answer about skipping it (humanCall.ts), kept on the trail as their decision.
+ * `start_trail`: charts the map and its tickets, saves their criteria and opens the discovery brief. Every trail
+ * starts with discovery: skipping it is the trail lead's setting, so `discovery: false` asks them (settings.ts)
+ * and the brief stays required until they approve.
  */
 export async function startTrail(ctx: AgentContext, input: StartInput) {
-  const skip = input.discovery === false ? humanCallFor(ctx, SKIP, input.questionId) : undefined;
-  try {
-    const out = await chartTrail(ctx, input);
-    if (skip) await recordHumanCall(ctx, { answer: skip, snap: await ctx.load(out.trail.id), about: SKIP });
-    return out;
-  } catch (e) {
-    releaseHumanCall(skip);
-    throw e;
-  }
+  const skipAsked = input.discovery === false;
+  const out = await chartTrail(ctx, { ...input, discovery: true, discoveryLast: skipAsked });
+  if (!skipAsked) return out;
+  const request = await requestSetting(ctx, {
+    trail: out.trail.id,
+    change: { op: 'skip_discovery' },
+    why: input.skipReason ?? 'The agent was asked to skip discovery for this trail.',
+  });
+  return { ...out, skipDiscovery: request };
 }
 
 async function chartTrail(ctx: AgentContext, input: StartInput) {
@@ -156,7 +156,10 @@ function chartInput(ctx: AgentContext, input: StartInput, agent: string) {
   // the approved config's default: an unapproved edit to verification.json can't pick a new trail's level
   const level = trustedChecks(ctx.root).config.config?.default;
   const verifies = level !== undefined && level !== 'off';
-  const discovery = input.discovery === false ? [] : [{ ref: '__discovery', ...DISCOVERY_TICKET }];
+  const planned = (input.tickets ?? []).map((t) => ({ ...t, body: t.body ?? '' }));
+  const discovery = [{ ref: '__discovery', ...DISCOVERY_TICKET }];
+  // Asked to skip it, the trail still has discovery, after the planned tickets: if the trail lead approves, it is
+  // ruled out and the planned tickets read as they were planned.
   return {
     title: input.title,
     mode: input.mode,
@@ -168,7 +171,7 @@ function chartInput(ctx: AgentContext, input: StartInput, agent: string) {
       unspecified: input.unspecified ?? [],
       outOfScope: input.outOfScope ?? [],
     },
-    tickets: [...discovery, ...(input.tickets ?? []).map((t) => ({ ...t, body: t.body ?? '' }))],
+    tickets: input.discoveryLast ? [...planned, ...discovery] : [...discovery, ...planned],
   };
 }
 

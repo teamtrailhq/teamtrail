@@ -86,14 +86,11 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
         .boolean()
         .optional()
         .describe(
-          'Default true: the trail starts with a discovery ticket, and implementation tickets wait until the human accepts your discovery brief. false needs the human: ask with ask_human and about {"kind":"skip-discovery"}, and once they answer in the Lookout or Slack, pass false with that questionId.',
+          'Default true: the trail starts with a discovery ticket, and implementation tickets wait until the human accepts your discovery brief. false asks the human to skip it: the trail still starts with discovery, and a request waits for them to approve or decline in the Lookout or Slack (reroute_status tells you).',
         ),
-      questionId: z
-        .string()
+      skipReason: text()
         .optional()
-        .describe(
-          'With discovery=false: the question about skipping discovery the human answered in the Lookout or Slack.',
-        ),
+        .describe('With discovery=false: why discovery can be skipped, for the human who decides.'),
     },
     (a) => agent.startTrail(a),
   );
@@ -124,14 +121,14 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
       },
       title: 'Update trail',
       description:
-        'Edit the destination or notes, add Not yet specified, Out of scope or Assumptions lines, or switch mode. To change the plan itself (cancel, rewire, a new destination), use propose_reroute.',
+        "Edit the notes, add Not yet specified, Out of scope or Assumptions lines. A new destination or mode is the human's: it becomes a request (returned in requests) they approve or decline in the Lookout or Slack, and nothing changes until they approve. To change the plan itself (cancel, rewire), use propose_reroute.",
     },
     {
       trail,
       destination: text()
         .optional()
         .describe(
-          'The human\'s: a new one needs their answer to ask_human with about {"kind":"destination","destination":<this exact text>}, or propose_reroute.',
+          "The human's: a new destination is a request they approve or decline in the Lookout or Slack (or propose_reroute with kind challenge-destination, with evidence).",
         ),
       notes: text().optional(),
       addUnspecified: z.array(z.string()).optional(),
@@ -143,14 +140,9 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
         .enum(['plan+execute', 'plan-only'])
         .optional()
         .describe(
-          'The human\'s setting: changing it needs their answer to ask_human with about {"kind":"mode","mode":…}.',
+          "The human's setting: a new mode is a request they approve or decline in the Lookout or Slack; nothing changes until they approve.",
         ),
-      questionId: z
-        .string()
-        .optional()
-        .describe(
-          'For a new mode or destination: the question about exactly that change the human answered in the Lookout or Slack. One change per question.',
-        ),
+      reason: text().optional().describe('Why you ask for a new mode or destination, for the human who decides.'),
     },
     (a) => agent.updateTrail(a),
   );

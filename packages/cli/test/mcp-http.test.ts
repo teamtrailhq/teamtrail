@@ -68,7 +68,7 @@ type Call = <T = Record<string, unknown>>(name: string, args?: Record<string, un
 
 function caller(client: Client, timeout = 15_000): Call {
   return async <T>(name: string, args: Record<string, unknown> = {}) => {
-    const r = (await callTool(client, root, name, args, timeout)) as {
+    const r = (await callTool(client, root, name, args, { timeout })) as {
       isError?: boolean;
       content: { text: string }[];
     };
@@ -138,7 +138,7 @@ function raw(o: { method?: string; headers?: Record<string, string>; body?: unkn
 }
 
 const startTrail = (call: Call) =>
-  call<{ trail: { id: string }; tickets: { key: string }[] }>('start_trail', {
+  call<{ trail: { id: string }; tickets: { key: string; title: string }[] }>('start_trail', {
     discovery: false,
     title: 'Offline sync',
     destination: 'Edits made offline survive',
@@ -279,7 +279,9 @@ describe('MCP over HTTP: the same engine', () => {
       claims.push(await c<{ claimed: { key: string; assignee: string } }>('claim_ticket'));
     const byAgent = Object.fromEntries(claims.map((c) => [c.claimed.assignee, c.claimed.key]));
     expect(Object.keys(byAgent).sort()).toEqual(['claude-01', 'claude-02', 'codex-01'].sort());
-    expect(Object.values(byAgent).sort()).toEqual(m.tickets.map((t) => t.key).sort());
+    // all but discovery, ruled out when the trail lead approved skipping it (fakes/callTool.ts)
+    const planned = m.tickets.filter((t) => !t.title.startsWith('Discovery brief'));
+    expect(Object.values(byAgent).sort()).toEqual(planned.map((t) => t.key).sort());
     expect(
       readLeases(root)
         .map((l) => l.agent)
@@ -617,10 +619,12 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
       delivered: true,
     });
     await call('start_trail', { discovery: false, title: 'Local', destination: 'Works as before' });
-    // The trail lead's settings need their answer, for local agents too (mcp-human-settings.test.ts).
-    await expect(call('update_trail', { mode: 'plan-only' })).rejects.toThrow(
-      /switch the trail to plan-only is the human's call/,
-    );
+    // The trail lead's settings are requests they approve, for local agents too (mcp-human-settings.test.ts).
+    const requested = await call<{ mode: string; requests: { note: string }[] }>('update_trail', {
+      mode: 'plan-only',
+    });
+    expect(requested.mode).toBe('plan+execute');
+    expect(requested.requests[0].note).toMatch(/trail lead's call/);
     await call('update_trail', { notes: 'Still the local agent\u2019s to edit' });
     // The local agent passed on the human's answer with answer_question: it guides, but never makes a decision
     // theirs (mcp-chat-answers.test.ts). Recorded without it, the decision is the agent's own.

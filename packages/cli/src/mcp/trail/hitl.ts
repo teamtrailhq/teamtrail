@@ -11,7 +11,6 @@ import { readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { rankedAttention } from './attention';
 import { CHAT_GUIDES } from './humanAnswer';
-import { aboutText, type QuestionAbout } from './questionAbout';
 import { trailNameFamily } from './trailName';
 import { TRAIL_LEAD, type AskResult, type WaitControl } from './types';
 
@@ -57,7 +56,6 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
         transcript: ctx.sessions.transcript(sid) ?? [],
         via,
         chatOf,
-        ...(input.about ? { about: input.about } : {}),
       });
       return { text, author, via };
     }),
@@ -81,13 +79,10 @@ export interface AskInput {
   urgency?: 'blocking' | 'soon' | 'fyi';
   /** Ticket refs that can't move until this is answered. */
   blocks?: string[];
-  /** A trail lead's setting the answer would let the agent change (questionAbout.ts). */
-  about?: QuestionAbout;
 }
 
 /** What the answer lets the agent do, for the Lookout and Slack to show with the question. */
 function stakesOf(ctx: AgentContext, c: { input: AskInput; agent: string; ticketId?: string }) {
-  if (c.input.about) return `Answering this lets ${c.agent} ${aboutText(c.input.about)}`;
   const t = c.ticketId ? ctx.seen(c.ticketId) : undefined;
   if (!t || attention(t) !== 'hitl' || c.input.urgency === 'fyi') return undefined;
   return `Answering this decides ${t.key}`;

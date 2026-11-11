@@ -107,7 +107,7 @@ describe('guides over MCP', () => {
     await expect(call('add_ticket', { title: 'X', type: 'junction', guide: 'qa' })).rejects.toThrow(/not junction/);
     const added = await call<{ ticket: Info }>('add_ticket', { title: 'Docs', type: 'task', guide: 'docs' });
     expect(added.ticket.guide?.id).toBe('docs');
-    expect(m.tickets).toHaveLength(2);
+    expect(m.tickets).toHaveLength(3); // and discovery, ruled out (fakes/callTool.ts)
   });
 
   it('completing a ticket with a guide needs an answer per checklist item, which is kept', async () => {

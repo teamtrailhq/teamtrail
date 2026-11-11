@@ -15,6 +15,8 @@ export interface Proposer {
 export const MAX_PENDING_PER_TRAIL = 3;
 /** Pending rule-out proposals one agent (or token) holds at most on a trail. */
 export const MAX_RULE_OUTS = 5;
+/** Pending requests to change a trail lead's setting a trail holds at most. */
+export const MAX_SETTING_REQUESTS = 3;
 /**
  * Pending proposals that together would freeze more than this share of the trail's open tickets (and at least
  * `WIDE_MIN` of them) stop the trail: the one that tips it over freezes nothing, and the trail lead is asked instead.
@@ -34,24 +36,35 @@ const ruledOut = (p: Pick<RerouteProposal, 'changes'>) =>
  * its own lane: it never replaces a plan of the agent's, nor is replaced by one.
  */
 export const replacedBy = (all: RerouteProposal[], n: Proposer) =>
-  laneOf(n) === 'rule-out'
-    ? []
-    : all.filter((p) => p.status === 'pending' && laneOf(p) === 'plan' && sameProposer(p, n));
+  laneOf(n) === 'plan' ? all.filter((p) => p.status === 'pending' && laneOf(p) === 'plan' && sameProposer(p, n)) : [];
 
-/** A pending rule-out of the same ticket: asking again returns it instead of a new proposal. */
-export const sameRuleOut = (all: RerouteProposal[], n: Proposer) =>
-  laneOf(n) === 'rule-out'
-    ? all.find((p) => p.status === 'pending' && laneOf(p) === 'rule-out' && ruledOut(p)[0] === ruledOut(n)[0])
-    : undefined;
+const sameChanges = (a: Pick<RerouteProposal, 'changes'>, b: Pick<RerouteProposal, 'changes'>) =>
+  JSON.stringify(a.changes) === JSON.stringify(b.changes);
+
+/**
+ * A pending rule-out of the same ticket, or a pending request for the same setting change: asking again returns it
+ * instead of a new proposal.
+ */
+export function sameRuleOut(all: RerouteProposal[], n: Proposer) {
+  const pending = all.filter((p) => p.status === 'pending' && laneOf(p) === laneOf(n));
+  if (laneOf(n) === 'rule-out') return pending.find((p) => ruledOut(p)[0] === ruledOut(n)[0]);
+  return laneOf(n) === 'setting' ? pending.find((p) => sameChanges(p, n)) : undefined;
+}
+
+/** The recent decline that makes this proposal wait: of the same ticket, the same setting, or the same proposer. */
+function turnedDownFor(recent: RerouteProposal[], n: Proposer) {
+  const lane = laneOf(n);
+  const same = recent.filter((p) => laneOf(p) === lane);
+  if (lane === 'rule-out') return same.find((p) => ruledOut(p)[0] === ruledOut(n)[0]);
+  if (lane === 'setting') return same.find((p) => p.changes[0]?.op === n.changes[0]?.op);
+  return same.find((p) => sameProposer(p, n));
+}
 
 /** Refuses a proposal the trail has no room for, or that comes too soon after the trail lead turned one down. */
 export function assertRoom(all: RerouteProposal[], n: Proposer, now: number) {
   const recent = all.filter((p) => p.status === 'rejected' && now - (p.decidedAt ?? 0) < COOL_DOWN_MS);
   const lane = laneOf(n);
-  const turnedDown =
-    lane === 'rule-out'
-      ? recent.find((p) => laneOf(p) === 'rule-out' && ruledOut(p)[0] === ruledOut(n)[0])
-      : recent.find((p) => laneOf(p) === 'plan' && sameProposer(p, n));
+  const turnedDown = turnedDownFor(recent, n);
   if (turnedDown)
     throw new OperationError(
       `The human turned down ${turnedDown.id} ${Math.round((now - (turnedDown.decidedAt ?? now)) / 60_000)} min ago: wait ${COOL_DOWN_MS / 60_000} min before proposing it again, and read their note (reroute_status).`,
@@ -60,6 +73,11 @@ export function assertRoom(all: RerouteProposal[], n: Proposer, now: number) {
   if (lane === 'rule-out') {
     if (pending.filter((p) => sameProposer(p, n)).length >= MAX_RULE_OUTS)
       throw new OperationError(`You already have ${MAX_RULE_OUTS} rule-outs waiting on the human for this trail.`);
+    return;
+  }
+  if (lane === 'setting') {
+    if (pending.length >= MAX_SETTING_REQUESTS)
+      throw new OperationError(`${pending.length} setting requests already wait on the human for this trail.`);
     return;
   }
   const others = pending.filter((p) => !sameProposer(p, n));

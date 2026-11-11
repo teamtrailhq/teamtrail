@@ -4,22 +4,30 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { MarkdownAdapter } from '@teamtrail/core';
-import { readAgentDocs } from '@teamtrail/core/agents';
+import {
+  journalPath,
+  readAgentDocs,
+  readBrief,
+  readReroute,
+  rejectReroute,
+  journalFile,
+  writeAgentAnswer,
+} from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
-import { answerInLookout } from './fakes/callTool';
+import { approveInLookout } from './fakes/callTool';
 
 /*
- * Skipping discovery, the trail's mode and its destination are the trail lead's settings. An agent, local or
- * remote, changes one only on the human's answer to a question asked about exactly that change, given in the
- * Lookout or Slack and not as an fyi; the change is kept as their decision, with the question as asked.
+ * Skipping discovery, the trail's mode and its destination are the trail lead's settings. An agent's call never
+ * changes them: it becomes a request (what, by whom, why) they approve or decline in the Lookout or Slack, like a
+ * rule-out. No answer to a question stands in for Approve, whatever its words. An approval is kept as their decision.
  */
 let root: string;
 const open: { close(): void | Promise<void> }[] = [];
 
-/** A local agent, its calls made as they are: no test helper asks for it. */
+/** A local agent, its calls made as they are: no test helper approves anything. */
 async function connect() {
   const agent = new TrailAgent({ root, agent: 'claude-01', pollMs: 20 });
   const server = createMcpServer(agent, '0.0.0-test');
@@ -34,7 +42,12 @@ async function connect() {
   };
 }
 type Call = Awaited<ReturnType<typeof connect>>;
-type Asked = { questionId: string; answeredVia?: string };
+type Started = {
+  trail: { id: string };
+  tickets: { key: string; title: string; type: string }[];
+  skipDiscovery?: { request: string; note: string };
+};
+type Status = { reroute: { status: string; next: string } };
 
 beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-settings-'));
@@ -44,155 +57,129 @@ afterEach(async () => {
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-const TRAIL = { title: 'Exports', destination: 'Clients export their data' };
-const decisions = async () => {
-  const adapter = new MarkdownAdapter(nodeMarkdownFs(root), root);
-  const [map] = await adapter.listMaps();
-  return adapter.listDecisions(map.id);
+const TRAIL = {
+  title: 'Exports',
+  destination: 'Clients export their data',
+  tickets: [{ ref: 'b', title: 'Build the export', type: 'execute' }],
 };
+const adapter = () => new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
+const env = () => ({ root, adapter: adapter(), journal: journalFile(root) });
+const decline = (mapId: string, id: string) =>
+  rejectReroute(env(), { mapId, id, by: 'trail lead', note: 'Do the discovery, it is a big change.' });
 
-/** Asks about a setting and has the trail lead answer in the Lookout. */
-async function askedInLookout(call: Call, args: Record<string, unknown>, stakes: RegExp, text = 'Yes') {
-  const asked = call<Asked>('ask_human', { waitSeconds: 30, ...args });
-  await answerInLookout(root, stakes, text);
-  return (await asked).questionId;
+/** The human answers whatever waits, in the Lookout. */
+async function answerAll(text: string) {
+  for (const d of await readAgentDocs(root))
+    for (const q of d.pending)
+      writeAgentAnswer(root, { sessionId: d.session.id, questionId: q.id, text, author: 'trail lead', via: 'lookout' });
 }
 
-describe('skipping discovery', () => {
-  it('is refused without the human’s answer, saying how to ask', async () => {
+async function skipRequested(call: Call) {
+  const started = await call<Started>('start_trail', {
+    ...TRAIL,
+    discovery: false,
+    skipReason: 'A one-file change',
+  });
+  return { started, id: started.skipDiscovery!.request, build: started.tickets.find((t) => t.type === 'execute')! };
+}
+
+describe('skipping discovery is a request the trail lead approves', () => {
+  it('nothing changes until they approve; then the brief no longer gates, kept as their decision', async () => {
     const call = await connect();
-    await expect(call('start_trail', { ...TRAIL, discovery: false })).rejects.toThrow(
-      /To skip discovery is the human's call\. Ask them with ask_human and about \{"kind":"skip-discovery"\}/,
-    );
-    expect(await readAgentDocs(root)).not.toContainEqual(expect.objectContaining({ pending: [expect.anything()] }));
+    const { started, id, build } = await skipRequested(call);
+    expect(started.skipDiscovery!.note).toMatch(/trail lead's call.*approve or decline in the Lookout or Slack/s);
+    expect(readReroute(root, started.trail.id, id)).toMatchObject({
+      lane: 'setting',
+      status: 'pending',
+      by: 'claude-01',
+      reason: 'Skip discovery',
+      evidence: 'A one-file change',
+    });
+    await expect(call('claim_ticket', { ticket: build.key })).rejects.toThrow(/accepted discovery brief/);
+
+    await approveInLookout({ root, mapId: started.trail.id, id });
+    expect(readBrief(root, started.trail.id)).toBeUndefined();
+    const snap = await adapter().loadMap(started.trail.id);
+    expect(snap.tickets.find((t) => t.title.startsWith('Discovery brief'))).toMatchObject({ state: 'closed' });
+    await expect(call('claim_ticket', { ticket: build.key })).resolves.toBeTruthy();
+    const rec = (await adapter().listDecisions(started.trail.id)).find((d) => d.question.includes('asks to'))!;
+    expect(rec).toMatchObject({ decidedBy: 'trail lead', source: { kind: 'lookout' } });
+    expect(rec.question).toMatch(/^claude-01 asks to skip discovery\. Why: Skip discovery/);
+    const journal = fs.readFileSync(journalPath(root, started.trail.id), 'utf8');
+    expect(journal).toMatch(/"action":"approved"/);
+    const st = await call<Status>('reroute_status', { trail: started.trail.id, id });
+    expect(st.reroute).toMatchObject({ status: 'approved' });
+    expect(st.reroute.next).toMatch(/agreed to skip discovery/);
   });
 
-  it('shows the human what answering allows, and works on their Lookout answer, kept as their decision', async () => {
+  it('declined: nothing changes, and the agent is told plainly', async () => {
     const call = await connect();
-    const asked = call<Asked>('ask_human', {
-      question: 'This is a one-file change. Skip discovery?',
-      about: { kind: 'skip-discovery' },
-      framing: true,
-      waitSeconds: 30,
-    });
-    let pending;
-    while (!(pending = (await readAgentDocs(root)).flatMap((d) => d.pending)[0]))
-      await new Promise((r) => setTimeout(r, 20));
-    expect(pending.stakes).toBe('Answering this lets claude-01 skip discovery');
-    await answerInLookout(root, /skip discovery/, 'Yes, skip it');
-    const { questionId } = await asked;
-    const started = await call<{ tickets: { title: string }[] }>('start_trail', {
-      ...TRAIL,
-      discovery: false,
-      questionId,
-    });
-    expect(started.tickets.map((t) => t.title)).not.toContain('Discovery');
-    const [rec] = await decisions();
-    expect(rec).toMatchObject({
-      decidedBy: 'trail lead',
-      question: 'This is a one-file change. Skip discovery?',
-      answer: 'Yes, skip it',
-    });
-    // one answer, one change
-    await expect(call('start_trail', { ...TRAIL, discovery: false, questionId })).rejects.toThrow(/already backs/);
+    const { started, id, build } = await skipRequested(call);
+    await decline(started.trail.id, id);
+    await expect(call('claim_ticket', { ticket: build.key })).rejects.toThrow(/accepted discovery brief/);
+    const st = await call<Status>('reroute_status', { trail: started.trail.id, id });
+    expect(st.reroute.next).toMatch(
+      /Declined: the trail lead said no to skip discovery \(Do the discovery, it is a big change\.\)\. Don't do it/,
+    );
+    expect((await adapter().listDecisions(started.trail.id)).filter((d) => d.decidedBy === 'trail lead')).toEqual([]);
   });
 
-  it('a chat answer, an fyi, or a question about something else doesn’t do', async () => {
+  it('no answer approves it, whatever it says: in the Lookout or in a chat', async () => {
     const call = await connect();
-    const chat = await call<Asked>('ask_human', {
-      question: 'Skip discovery?',
-      about: { kind: 'skip-discovery' },
-      framing: true,
-      waitSeconds: 0,
-    });
-    await call('answer_question', { questionId: chat.questionId, answer: 'Yes' });
-    await call('wait_for_answer', { questionId: chat.questionId, waitSeconds: 5 });
-    await expect(call('start_trail', { ...TRAIL, discovery: false })).rejects.toThrow(/human's call/);
-    await expect(call('start_trail', { ...TRAIL, discovery: false, questionId: chat.questionId })).rejects.toThrow(
-      /guide agents but can't approve this/,
-    );
-    const fyi = await askedInLookout(
-      call,
-      { question: 'Skip discovery?', about: { kind: 'skip-discovery' }, framing: true, urgency: 'fyi' },
-      /skip discovery/,
-    );
-    await expect(call('start_trail', { ...TRAIL, discovery: false, questionId: fyi })).rejects.toThrow(/fyi/);
-    const plain = await askedInLookout(call, { question: 'Who is it for?', framing: true }, /^$/, 'Clients');
-    await expect(call('start_trail', { ...TRAIL, discovery: false, questionId: plain })).rejects.toThrow(
-      /was not asked about this/,
-    );
-    // With discovery, nothing to ask.
-    await expect(call('start_trail', TRAIL)).resolves.toBeTruthy();
+    const { started, build } = await skipRequested(call);
+    const asked = call<{ questionId: string }>('ask_human', { question: 'Can I skip discovery?', waitSeconds: 30 });
+    await new Promise((r) => setTimeout(r, 100));
+    await answerAll('Yes, skip discovery, approved.');
+    await asked;
+    const chat = await call<{ questionId: string }>('ask_human', { question: 'Skip it?', waitSeconds: 0 });
+    await call('answer_question', { questionId: chat.questionId, answer: 'Approve' });
+    await expect(call('claim_ticket', { ticket: build.key })).rejects.toThrow(/accepted discovery brief/);
+    expect(readBrief(root, started.trail.id)?.status).not.toBe('accepted');
+  });
+
+  it('asking again returns the same request; an approval of what was not shown is refused', async () => {
+    const call = await connect();
+    const { started, id } = await skipRequested(call);
+    const again = await call<{ requests: { request: string }[] }>('update_trail', { mode: 'plan-only' });
+    expect(again.requests[0].request).not.toBe(id);
+    const again2 = await call<{ requests: { request: string }[] }>('update_trail', { mode: 'plan-only' });
+    expect(again2.requests[0].request).toBe(again.requests[0].request);
+    const { approveReroute } = await import('@teamtrail/core/agents');
+    await expect(
+      approveReroute(env(), { mapId: started.trail.id, id, by: 'trail lead', hash: 'not-what-was-shown' }),
+    ).rejects.toThrow(/changed since you looked at it/);
   });
 });
 
 describe('the trail’s mode and destination', () => {
-  async function trail(call: Call) {
-    await call('start_trail', { ...TRAIL, mode: 'plan-only' });
-  }
-
-  it('a new mode needs the answer about that mode; the same mode needs nothing', async () => {
+  it('a new mode is a request: applied when approved, the same mode asks nothing', async () => {
     const call = await connect();
-    await trail(call);
-    await expect(call('update_trail', { mode: 'plan+execute' })).rejects.toThrow(
-      /To switch the trail to plan\+execute is the human's call/,
-    );
-    await expect(call('update_trail', { mode: 'plan-only', notes: 'n' })).resolves.toBeTruthy();
-    const other = await askedInLookout(
-      call,
-      { question: 'Plan only?', about: { kind: 'mode', mode: 'plan-only' } },
-      /switch the trail to plan-only/,
-    );
-    await expect(call('update_trail', { mode: 'plan+execute', questionId: other })).rejects.toThrow(
-      /was not asked about this/,
-    );
-    const q = await askedInLookout(
-      call,
-      { question: 'Start building?', about: { kind: 'mode', mode: 'plan+execute' } },
-      /switch the trail to plan\+execute/,
-    );
-    const done = await call<{ mode: string }>('update_trail', { mode: 'plan+execute' });
-    expect(done.mode).toBe('plan+execute');
-    expect((await decisions()).map((d) => d.question)).toContain('Start building?');
-    expect(q).toBeTruthy();
-  });
-
-  it('a new destination needs the answer about that exact text, or a reroute', async () => {
-    const call = await connect();
-    await trail(call);
-    await expect(call('update_trail', { destination: 'Clients export and import' })).rejects.toThrow(
-      /set the destination to “Clients export and import” is the human's call.*propose_reroute/s,
-    );
-    const q = await askedInLookout(
-      call,
-      { question: 'Widen it to imports?', about: { kind: 'destination', destination: 'Clients export and import' } },
-      /set the destination/,
-    );
-    await expect(call('update_trail', { destination: 'Clients import', questionId: q })).rejects.toThrow(
-      /was not asked about this/,
-    );
-    await call('update_trail', { destination: 'Clients export and import', questionId: q });
-    expect((await decisions()).at(-1)).toMatchObject({ decidedBy: 'trail lead', question: 'Widen it to imports?' });
-  });
-
-  it('an answer about a setting backs nothing else, such as closing a junction', async () => {
-    const call = await connect();
-    const m = await call<{ tickets: { key: string; title: string }[] }>('start_trail', {
-      ...TRAIL,
-      tickets: [{ ref: 'j', title: 'CSV or JSON?', type: 'junction' }],
+    const s = await call<Started>('start_trail', { ...TRAIL, mode: 'plan-only' });
+    const same = await call<{ mode: string; requests?: unknown }>('update_trail', { mode: 'plan-only', notes: 'n' });
+    expect(same.requests).toBeUndefined();
+    const asked = await call<{ mode: string; requests: { request: string; note: string }[] }>('update_trail', {
+      mode: 'plan+execute',
+      reason: 'The decisions are made',
     });
-    await call('claim_ticket', { ticket: m.tickets.find((t) => t.title === 'CSV or JSON?')!.key });
-    const q = await askedInLookout(
-      call,
-      { question: 'Plan only?', about: { kind: 'mode', mode: 'plan-only' } },
-      /switch the trail to plan-only/,
-    );
-    await expect(call('close_ticket', { resolution: 'CSV', questionId: q })).rejects.toThrow(/backs nothing else/);
+    expect(asked.mode).toBe('plan-only');
+    expect(asked.requests[0].note).toMatch(/switch the trail to plan\+execute is the trail lead's call/);
+    await approveInLookout({ root, mapId: s.trail.id, id: asked.requests[0].request });
+    expect((await adapter().loadMap(s.trail.id)).map.mode).toBe('plan+execute');
+  });
+
+  it('a new destination is a request: declined, the destination stays', async () => {
+    const call = await connect();
+    const s = await call<Started>('start_trail', TRAIL);
+    const asked = await call<{ requests: { request: string }[] }>('update_trail', {
+      destination: 'Clients export and import',
+    });
+    await decline(s.trail.id, asked.requests[0].request);
+    expect((await adapter().loadMap(s.trail.id)).map.sections.destination).toBe('Clients export their data');
   });
 
   it('a question on a junction says what answering it decides; an fyi says nothing', async () => {
     const call = await connect();
-    const m = await call<{ tickets: { key: string; title: string }[] }>('start_trail', {
+    const m = await call<Started>('start_trail', {
       ...TRAIL,
       tickets: [{ ref: 'j', title: 'CSV or JSON?', type: 'junction' }],
     });

@@ -40,6 +40,7 @@ type Started = {
   trail: { id: string };
   tickets: { key: string; title: string; type: string }[];
   discovery: { status: string };
+  skipDiscovery?: { request: string };
 };
 
 describe('discovery brief over MCP', () => {
@@ -106,8 +107,10 @@ describe('discovery brief over MCP', () => {
       destination: 'No typos in the docs',
       tickets: [{ ref: 'fix', title: 'Fix typos', type: 'task' }],
     });
-    expect(started.discovery).toBeNull();
-    expect(started.tickets.some((t) => t.title.startsWith('Discovery brief'))).toBe(false);
+    // Asked to skip it, the trail starts with discovery last and a request; the trail lead approved it in the
+    // Lookout (fakes/callTool.ts): the brief is gone and the discovery ticket ruled out.
+    expect(started.skipDiscovery).toBeTruthy();
+    expect(started.tickets.at(-1)?.title).toMatch(/^Discovery brief/);
     expect(fs.existsSync(briefPath(root, started.trail.id))).toBe(false);
     const claimed = await call<{ claimed: { title: string } }>('claim_ticket');
     expect(claimed.claimed.title).toBe('Fix typos');

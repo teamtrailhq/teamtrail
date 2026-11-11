@@ -23,6 +23,9 @@ export interface ChangePart {
 /** The note a one-click dismiss sends the agent. */
 export const DISMISS_NOTE = 'Dismissed by the trail lead. Carry on with the current plan.';
 
+/** The note a one-click decline of a setting request sends the agent. */
+export const DECLINE_NOTE = 'Declined by the trail lead.';
+
 /**
  * Everything a change writes that its row only names: the new title and description of an edit, the description
  * and HITL mark of a new ticket, a superseding decision's words and how it will be recorded. Empty when the row
@@ -74,6 +77,18 @@ export function describeChange(c: RerouteChange, name: (idOrRef: string) => stri
       return { verb: 'Out of scope', text: c.text };
     case 'reopen':
       return { verb: 'Reopen', text: name(c.ticket), detail: `Back in the queue: ${c.reason}` };
+    case 'skip_discovery':
+      return {
+        verb: 'Skip discovery',
+        text: 'Implementation stops waiting for a discovery brief',
+        detail: 'The discovery ticket is ruled out',
+      };
+    case 'set_mode':
+      return {
+        verb: 'Mode',
+        text: c.mode,
+        detail: c.mode === 'plan-only' ? 'Execute tickets wait' : 'Execute tickets can be worked',
+      };
     default: {
       const unknown: never = c;
       return unknown;

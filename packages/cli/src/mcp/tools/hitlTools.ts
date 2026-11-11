@@ -39,16 +39,6 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
         .array(z.string())
         .optional()
         .describe('Ticket refs (#4 or ids) that cannot move until this is answered; they rank the question higher.'),
-      about: z
-        .discriminatedUnion('kind', [
-          z.object({ kind: z.literal('skip-discovery') }),
-          z.object({ kind: z.literal('mode'), mode: z.enum(['plan-only', 'plan+execute']) }),
-          z.object({ kind: z.literal('destination'), destination: text().min(1) }),
-        ])
-        .optional()
-        .describe(
-          "A trail lead's setting you ask the human to change: skipping discovery (start_trail discovery=false), the trail's mode, or its destination (the exact new text). The Lookout and Slack show it with the question; once they answer there (not as fyi), that one change is yours to make.",
-        ),
     },
     (a, extra) => agent.ask(a, waitControl(extra)),
   );

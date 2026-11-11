@@ -76,7 +76,7 @@ describe('claim leases', () => {
     expect(second.claimed.assignee).toBe('claude-02');
     expect(second.claimed.resume?.handoff).toMatch(/claude-01 went silent/);
     expect(second.claimed.resume?.handoff).toMatch(/Yjs and Automerge both fit/);
-    // D-1 is the human's answer to skip discovery (fakes/callTool.ts).
+    // D-1: the trail lead approved skipping discovery (fakes/callTool.ts).
     expect(second.claimed.resume?.handoff).toMatch(/D-2 · Use Yjs/);
     expect(second.claimed.decisionsSoFar.map((d) => d.id)).toEqual(['D-2']);
     const leases = readLeases(root);

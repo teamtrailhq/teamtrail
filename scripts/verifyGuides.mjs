@@ -11,7 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { skipDiscoveryInLookout } from './e2eHelpers.mjs';
+import { approveSkipInLookout } from './e2eHelpers.mjs';
 import { PERF, verifyOwnGuides } from './verifyOwnGuides.mjs';
 
 const A11Y = `---
@@ -173,12 +173,15 @@ export async function verifyGuides({ browser, cli, log, shots }) {
     const approved = config.checks.a11y?.run?.join(' ') === 'node checks/a11y.js';
     const pinned = JSON.parse(fs.readFileSync(path.join(root, 'guides.lock.json'), 'utf8')).guides.a11y;
 
-    await worker.call('start_trail', {
-      discovery: false,
-      questionId: await skipDiscoveryInLookout({ call: worker.call, page, url }),
-      title: 'Keyboard shortcuts',
-      destination: 'Every action has a shortcut',
-      tickets: [{ ref: 'keys', title: 'Add the shortcut sheet', type: 'task', guide: 'a11y' }],
+    await approveSkipInLookout({
+      started: await worker.call('start_trail', {
+        discovery: false,
+        title: 'Keyboard shortcuts',
+        destination: 'Every action has a shortcut',
+        tickets: [{ ref: 'keys', title: 'Add the shortcut sheet', type: 'task', guide: 'a11y' }],
+      }),
+      page,
+      url: url,
     });
     const claim = await worker.call('claim_ticket', { guides: ['a11y'] });
     const guide = claim.claimed.guide;

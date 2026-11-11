@@ -1,4 +1,5 @@
 import type { RerouteProposal } from '../../model/reroute';
+import { settingAsk } from '../../planning/reroute/settingText';
 import type { AttentionSource, Candidate } from '../types';
 import { clip } from './clip';
 
@@ -14,6 +15,7 @@ export const rerouteSource: AttentionSource = {
   kind: 'reroute',
   collect({ reroutes = [] }) {
     return reroutes.map(({ proposal: p, frozen }): Candidate => {
+      if (p.lane === 'setting') return settingCandidate(p);
       const notes = [p.kind === 'challenge-destination' ? 'wrong mountain?' : 'proposes a new plan'];
       if (p.destinationReason) notes.push(DESTINATION_REASON[p.destinationReason]);
       if (frozen.length) notes.push(`closes ${frozen.length} ticket${frozen.length === 1 ? '' : 's'}`);
@@ -32,3 +34,18 @@ export const rerouteSource: AttentionSource = {
     });
   },
 };
+
+/** A request to change one of the trail lead's settings: what, by whom, and that nothing changes until they approve. */
+function settingCandidate(p: RerouteProposal): Candidate {
+  return {
+    kind: 'reroute',
+    mapId: p.mapId,
+    title: clip(`${settingAsk(p)} (${p.id})`),
+    since: p.at,
+    urgency: 'soon',
+    ref: p.id,
+    agent: p.by,
+    holds: [],
+    notes: ['your setting: approve or decline', clip(p.evidence)],
+  };
+}
