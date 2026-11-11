@@ -1,7 +1,8 @@
 import { type AttentionPrefs, type AttentionView } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
 import { apiBase } from '../../lib/apiBase';
-import { onServerEvent } from '../../lib/trackerChanges';
+import { newestWins } from '../../lib/newestWins';
+import { onServerEvent, onStreamOpen } from '../../lib/trackerChanges';
 
 const api = `${apiBase()}/attention`;
 /** Bursts of tracker changes refetch once. */
@@ -35,13 +36,26 @@ export interface AttentionApi {
 export function useAttention(nudge: unknown): AttentionApi {
   const [view, setView] = useState<AttentionView>();
   const [error, setError] = useState<string>();
+  // a request that started before the server's last event never replaces it: the server sends the next event only
+  // when the queue changes again, so an older view landing late would stay on screen until then
+  const [order] = useState(newestWins);
   const load = useCallback(() => {
+    const fresh = order.start();
     void fetch(api)
       .then((r) => (r.ok ? (r.json() as Promise<AttentionView>) : undefined))
-      .then((v) => v && setView(v))
+      .then((v) => v && fresh() && setView(v))
       .catch(() => {});
-  }, []);
-  useEffect(() => onServerEvent('attention', (data) => setView(JSON.parse(data) as AttentionView)), []);
+  }, [order]);
+  useEffect(
+    () =>
+      onServerEvent('attention', (data) => {
+        order.pushed();
+        setView(JSON.parse(data) as AttentionView);
+      }),
+    [order],
+  );
+  // the server sends the queue only when it changes: one that changed before the stream opened is loaded here
+  useEffect(() => onStreamOpen(load), [load]);
   useEffect(() => {
     const t = setTimeout(load, NUDGE_MS);
     return () => clearTimeout(t);

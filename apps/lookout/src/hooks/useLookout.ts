@@ -10,6 +10,8 @@ import {
 } from '@teamtrail/core';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createActions, TRAIL_LEAD, type Runtime, type Selection, isRunning } from '../lib';
+import { newestWins } from '../lib/newestWins';
+import { onStreamOpen } from '../lib/trackerChanges';
 import { useLeases } from './useLeases';
 
 /** What the trail lead reads when a change hit a file that moved on since it was loaded (httpFs.ts, 409). */
@@ -47,9 +49,11 @@ export function useLookout(rt: Runtime) {
     setSelection(null);
   }, []);
 
+  // a refresh can start while another still loads: the older one never lands over the newer
+  const [order] = useState(newestWins);
   const refresh = useCallback(async () => {
+    const fresh = order.start();
     const list = await rt.adapter.listMaps();
-    setMaps(list);
     let id = mapIdRef.current;
     const follow = followRef.current;
     if (follow && list.some((m) => m.id === follow)) {
@@ -64,11 +68,13 @@ export function useLookout(rt: Runtime) {
       Promise.all(list.map((m) => rt.adapter.loadMap(m.id))),
       Promise.all(list.map((m) => rt.adapter.listDecisions(m.id))),
     ]);
+    if (!fresh()) return;
+    setMaps(list);
     setAllSnaps(Object.fromEntries(snaps.map((s) => [s.map.id, s])));
     setRecords(Object.fromEntries(list.map((m, i) => [m.id, recs[i]])));
     setLoaded(true);
     setSnap(snaps.find((s) => s.map.id === id));
-  }, [rt, setMapId]);
+  }, [rt, setMapId, order]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -79,6 +85,8 @@ export function useLookout(rt: Runtime) {
       clearTimeout(timer);
       timer = setTimeout(() => void refresh().catch((e) => setError(String(e))), 40);
     };
+    // changes made before the event stream opened (or while it reconnected) never arrive as events
+    const offOpen = onStreamOpen(schedule);
     const agentWrote = (s: SessionInfo, mapId?: string) =>
       isRunning(s) && rt.activity.isRemote(s.id) && (!mapId || !s.mapId || s.mapId === mapId);
     const ticketById = (id: string) => snapRef.current?.tickets.find((t) => t.id === id);
@@ -106,13 +114,15 @@ export function useLookout(rt: Runtime) {
       alive = false;
       offT();
       offA();
+      offOpen();
       clearTimeout(timer);
     };
   }, [rt, refresh]);
 
+  // through refresh, so a load for the trail just opened never lands over a newer one
   useEffect(() => {
-    if (mapId) void rt.adapter.loadMap(mapId).then(setSnap);
-  }, [mapId, rt]);
+    if (mapId) void refresh().catch((e) => setError(String(e)));
+  }, [mapId, refresh]);
 
   // A connected agent that charts a new trail brings the Lookout along.
   useEffect(() => {
@@ -152,16 +162,7 @@ export function useLookout(rt: Runtime) {
   );
 
   const actions = useMemo(
-    () =>
-      createActions({
-        rt,
-        guard,
-        setMapId,
-        mapIdRef,
-        snapRef,
-        setChatSession,
-        setSelection,
-      }),
+    () => createActions({ rt, guard, setMapId, mapIdRef, snapRef, setChatSession, setSelection }),
     [guard, rt, setMapId],
   );
 

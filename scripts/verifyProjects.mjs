@@ -114,8 +114,9 @@ export async function verifyProjects({ browser, cli, log, shots }) {
     await page.locator('.project-switcher .all-projects').click();
     await page.locator('.projects-view .pj-item', { hasText: 'Show prices with tax?' }).locator('.ds-row-main').click();
     await page.locator('.open-q', { hasText: 'Show prices with tax?' }).waitFor({ timeout: 20_000 });
-    const questionLink = visited.at(-1) ?? '';
-    const questionOpened = /[?&]item=question/.test(questionLink) && !/[?&]project=/.test(questionLink);
+    // the link it followed: the Lookout drops `item` from the address once it opened the item, maybe before this
+    const questionLink = visited.findLast((u) => /[?&]item=question/.test(u)) ?? '';
+    const questionOpened = !!questionLink && !/[?&]project=/.test(questionLink);
     await page.locator('.comms-input textarea').fill('Yes, with tax');
     await page.locator('.comms-input textarea').press('Enter');
     const answeredA = await askA;

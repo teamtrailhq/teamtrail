@@ -5,6 +5,7 @@ import { effectiveText } from './effectiveText';
 import { removedFiles } from './removedFiles';
 import { signedWrite } from './signedWrite';
 import { stateItemOf } from './stateItem';
+import { writerDone } from './writerDone';
 
 const notFound = (p: string) => Object.assign(new Error(`not found: ${p}`), { code: 'ENOENT' });
 
@@ -37,7 +38,14 @@ export function signedFs(root: string, inner: MarkdownFs, by: () => string): Mar
     async read(p) {
       const item = stateItemOf(p);
       if (!item) return inner.read(p);
-      const { text } = effectiveText(root, item, await readRaw(root, inner, p));
+      let seen = effectiveText(root, item, await readRaw(root, inner, p));
+      // what looks changed outside Teamtrail may be a write of its own between the file and its record: read it
+      // again once that write is done, or the reader keeps the old values until something else changes
+      if (seen.judged.outside.length) {
+        await writerDone(root, item.mapId);
+        seen = effectiveText(root, item, await readRaw(root, inner, p));
+      }
+      const { text } = seen;
       if (text === undefined) throw notFound(p);
       return text;
     },

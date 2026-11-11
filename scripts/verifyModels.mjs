@@ -110,9 +110,12 @@ async function matching({ fast, strong, page, shot }) {
 async function waiting({ fast, strong, page, shot }) {
   await strong.client.close();
   const added = await fast.call('add_ticket', { title: 'Pick the ranking rule', type: 'junction' });
-  const item = page.locator('.attention-queue li.att-item.k-model');
+  // this ticket's item, not any model item: the junction charted with the trail waited the same way until the strong
+  // agent's first call reported its model, and a queue that hasn't caught up yet can still show that one
+  const title = new RegExp(`^${added.ticket.key} needs a strongest model`);
+  const item = page.locator('.attention-queue li.att-item.k-model', { hasText: title });
   await item.waitFor({ timeout: 20_000 });
-  const title = (await item.textContent()) ?? '';
+  const shown = (await item.textContent()) ?? '';
   await item.click();
   await page.locator('.model-wait').waitFor({ timeout: 15_000 });
   await shot('19-needs-a-strongest-model');
@@ -122,12 +125,12 @@ async function waiting({ fast, strong, page, shot }) {
   await item.waitFor({ state: 'detached', timeout: 20_000 });
   return {
     ok:
-      /needs a strongest model/.test(title) &&
+      title.test(shown) &&
       next.ticket === null &&
       /stronger model/.test(auto) &&
       explicit.claimed.key === added.ticket.key &&
       /set for strongest; this session runs fast/.test(explicit.tierNote ?? ''),
-    text: `queue "${title.slice(0, 60)}", next_ticket null, auto claim refused, explicit claim note: ${explicit.tierNote}`,
+    text: `queue "${shown.slice(0, 60)}", next_ticket null, auto claim refused, explicit claim note: ${explicit.tierNote}`,
   };
 }
 
