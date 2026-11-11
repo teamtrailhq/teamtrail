@@ -15,7 +15,7 @@ type Step = { kind: 'ready' } | { kind: 'adding' } | { kind: 'added'; pending: s
 export function AddGuideFlow(props: {
   preview: CatalogPreview;
   installed?: string;
-  add: (id: string) => Promise<{ pendingChecks: string[] }>;
+  add: (id: string, sha256: string) => Promise<{ pendingChecks: string[] }>;
 }) {
   const { preview: p } = props;
   const { act, find } = useGuides();
@@ -26,7 +26,7 @@ export function AddGuideFlow(props: {
     setError(undefined);
     setStep({ kind: 'adding' });
     try {
-      setStep({ kind: 'added', pending: (await props.add(id)).pendingChecks });
+      setStep({ kind: 'added', pending: (await props.add(id, p.entry.sha256)).pendingChecks });
     } catch (e) {
       setError((e as Error).message);
       setStep({ kind: 'ready' });
@@ -39,7 +39,7 @@ export function AddGuideFlow(props: {
     const label = props.installed ? 'Update guide' : 'Add guide';
     return (
       <div className="add-guide">
-        {!p.ok && <span className="t-meta">The safety lint found errors, so this guide can't be added.</span>}
+        {!p.ok && <span className="t-meta">The lint found errors, so this guide can't be added.</span>}
         <Button variant="primary" disabled={!p.ok || same || step.kind === 'adding'} onClick={() => void add()}>
           {same ? 'Added' : label}
         </Button>

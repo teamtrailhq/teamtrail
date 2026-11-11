@@ -92,10 +92,13 @@ test('guides: an approval record committed with the repo approves nothing', () =
   // the attack: the "approved on this machine" record arrives with the repo
   mkdirSync(path.join(root, '.agents'), { recursive: true });
   writeFileSync(path.join(root, '.agents', 'guides-approved.json'), lock);
+  // the built-in stays in use; the planted file waits beside it, not usable
   const guide = listGuides(root).find((g) => g.id === id)!;
-  assert.equal(guide.origin, 'local');
-  assert.notEqual(guide.status, 'active', 'the planted guide is not usable');
-  assert.match(guide.reason ?? '', /approv/);
+  assert.equal(guide.origin, 'builtin');
+  assert.equal(guide.status, 'active');
+  assert.equal(guide.override?.origin, 'local');
+  assert.notEqual(guide.override?.status, 'active', 'the planted guide is not usable');
+  assert.match(guide.override?.reason ?? '', /approv/);
 });
 
 test("answers: a file the asking agent writes is not the human's answer", async () => {

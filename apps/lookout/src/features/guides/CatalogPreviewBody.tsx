@@ -1,14 +1,17 @@
+import type { GuideDoc, GuideFinding } from '@teamtrail/core';
 import { argvText } from './guideLabels';
 import { LintFindings } from './LintFindings';
-import type { CatalogPreview } from './types';
 
-/** A previewed catalog guide: lint findings, checklist, proposed commands as argv, and the full instructions. */
-export function CatalogPreviewBody(props: { p: CatalogPreview }) {
+/**
+ * A guide in full, before it's added or approved: what the lint found, the checklist, every command it proposes as
+ * its argv, and the whole instruction text the agent would read.
+ */
+export function CatalogPreviewBody(props: { p: { findings: GuideFinding[]; guide?: GuideDoc; text?: string } }) {
   const { p } = props;
   const checks = Object.entries(p.guide?.proposedChecks ?? {});
   return (
     <>
-      <span className="t-label">Safety lint</span>
+      <span className="t-label">Lint</span>
       <LintFindings findings={p.findings} />
       {p.guide && p.guide.checklist.length > 0 && <span className="t-label">Checklist</span>}
       {p.guide && (
@@ -22,6 +25,7 @@ export function CatalogPreviewBody(props: { p: CatalogPreview }) {
       {checks.map(([name, spec]) => (
         <code key={name} className="t-code guide-check">
           {name}: {argvText(spec.run)}
+          {spec.cwd && ` (in ${spec.cwd})`}
         </code>
       ))}
       <span className="t-label">Instructions</span>

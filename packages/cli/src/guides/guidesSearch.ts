@@ -1,10 +1,11 @@
 import path from 'node:path';
 import { searchCatalog, type CatalogEntry } from '@teamtrail/core';
 import { fetchCatalog } from '@teamtrail/core/agents';
+import { hostOf } from './hostOf';
 import { pickRegistries } from './pickRegistry';
 import type { GuidesArgs, GuidesIo } from './types';
 
-/** `guides search [query]`: guides in the catalogs whose id, name, summary or author match every word. */
+/** `guides search [query]`: guides in the catalogs whose id, name, summary or author match every word, by catalog and host. */
 export async function guidesSearch(a: GuidesArgs, io: GuidesIo): Promise<number> {
   const root = path.resolve(a.dir);
   let found = 0;
@@ -12,6 +13,7 @@ export async function guidesSearch(a: GuidesArgs, io: GuidesIo): Promise<number>
     const index = await fetchCatalog(registry, { fetch: io.fetch });
     const hits = searchCatalog(index, { query: a.rest.join(' '), verifiedOnly: a.verified });
     found += hits.length;
+    if (hits.length) io.out(`Catalog ${registry.name} · ${hostOf(registry.url)}\n`);
     for (const e of hits) {
       const badge = badgeOf(e);
       const reported = e.reported ? ' · reported' : '';

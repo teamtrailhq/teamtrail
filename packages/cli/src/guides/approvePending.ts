@@ -1,5 +1,6 @@
 import type { GuideDoc } from '@teamtrail/core';
 import { approveCheck } from '@teamtrail/core/agents';
+import { argvLine } from './argvLine';
 import { journalGuide } from './journalGuide';
 import type { GuidesIo } from './types';
 
@@ -18,7 +19,7 @@ export async function approvePending(input: {
   const left: string[] = [];
   for (const name of input.pending) {
     const spec = guide.proposedChecks[name];
-    io.out(`  check ${name}: ${JSON.stringify(spec.run)}${spec.cwd ? ` in ${spec.cwd}` : ''}\n`);
+    io.out(`  check ${name}: ${argvLine(spec)}\n`);
     const yes = await decide(input, name);
     if (!yes) {
       left.push(name);

@@ -20,26 +20,33 @@ export function readGuideFiles(root: string): { id: string; text: string }[] {
 
 /**
  * Every guide the project has: the built-in ones, and the files in `guides/`, each checked against `guides.lock.json`.
- * A file with a built-in's id replaces it. Pinned guides whose file is gone stay listed as tampered. Id order.
+ * A file with a built-in's id replaces it once the trail lead has approved it on this machine; until then the built-in
+ * stays active and carries the waiting file as `override`, so a file dropped into the repo can't switch a built-in
+ * off. Pinned guides whose file is gone stay listed as tampered. Id order.
  */
 export function listGuides(root: string): InstalledGuide[] {
   const lock = readGuideLock(root);
   const approved = readApprovedLock(root);
   const files = readGuideFiles(root);
-  const local = new Set(files.map((f) => f.id));
-  const builtins = Object.entries(BUILTIN_GUIDES)
-    .filter(([id]) => !local.has(id))
-    .map(([id, text]) => guideStatus({ id, origin: 'builtin', text }));
   const installed = files.map((f) => {
     const lockChanged = lockChangedFor(lock, approved, f.id);
     // a changed entry can't be trusted: the approved one's required checks keep applying
     const entry = lockChanged ? approved.guides[f.id] : lock.guides[f.id];
     return guideStatus({ ...f, origin: 'local', lock: entry, lockChanged, overridesBuiltin: f.id in BUILTIN_GUIDES });
   });
+  const waiting = (r: InstalledGuide) => r.id in BUILTIN_GUIDES && !(r.id in approved.guides);
+  const local = new Map(installed.map((r) => [r.id, r]));
+  const builtins = Object.entries(BUILTIN_GUIDES)
+    .filter(([id]) => !local.has(id) || waiting(local.get(id)!))
+    .map(([id, text]) => {
+      const override = local.get(id);
+      return { ...guideStatus({ id, origin: 'builtin', text }), ...(override ? { override } : {}) };
+    });
   const gone = Object.entries({ ...approved.guides, ...lock.guides })
     .filter(([id]) => !local.has(id) && !(id in BUILTIN_GUIDES))
     .map(([id]) => missingGuide(id, approved.guides[id] ?? lock.guides[id]));
-  return [...builtins, ...installed, ...gone].sort((a, b) => a.id.localeCompare(b.id));
+  const overrides = installed.filter((r) => !waiting(r));
+  return [...builtins, ...overrides, ...gone].sort((a, b) => a.id.localeCompare(b.id));
 }
 
 /** Ids of the guides agents can use now. */

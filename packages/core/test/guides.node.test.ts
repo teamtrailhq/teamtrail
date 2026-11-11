@@ -42,7 +42,7 @@ const A11Y = guideText({
     'requiresChecks: [a11y]',
     'proposedChecks:',
     '  a11y:',
-    '    run: [npx, pa11y-ci]',
+    '    run: [node_modules/.bin/pa11y-ci]',
     '    timeoutSec: 300',
   ].join('\n'),
 });
@@ -75,7 +75,7 @@ test('the built-in guides parse, pass the lint and are active without a lockfile
 test('a guide file parses its frontmatter, nested checks and body; errors name the line', () => {
   const { guide } = parseGuide(A11Y);
   assert.deepEqual(guide?.handles, { types: ['task', 'execute'], labels: [] });
-  assert.deepEqual(guide?.proposedChecks, { a11y: { run: ['npx', 'pa11y-ci'], timeoutSec: 300 } });
+  assert.deepEqual(guide?.proposedChecks, { a11y: { run: ['node_modules/.bin/pa11y-ci'], timeoutSec: 300 } });
   assert.deepEqual(guide?.requiresChecks, ['a11y']);
   assert.equal(guide?.instructions, 'Work the ticket as the a11y guide.');
   const bad = parseGuide(guideText({ id: 'x', extra: 'version: two' }));
@@ -187,19 +187,22 @@ test('a guide only adds checks: it never lowers the level or removes one, and it
   assert.match(notApproved.note!, /unknown check a11y/);
 
   approveCheck({ root, id: 'a11y', name: 'a11y' });
-  assert.deepEqual(readVerificationConfig(root).config!.checks.a11y.run, ['npx', 'pa11y-ci']);
+  assert.deepEqual(readVerificationConfig(root).config!.checks.a11y.run, ['node_modules/.bin/pa11y-ci']);
   assert.deepEqual(listGuides(root).find((r) => r.id === 'a11y')!.pendingChecks, []);
 
-  const changed = A11Y.replace('[npx, pa11y-ci]', '[npx, pa11y-ci, --all]').replace('1.0.0', '1.1.0');
+  const changed = A11Y.replace('[node_modules/.bin/pa11y-ci]', '[node_modules/.bin/pa11y-ci, --all]').replace(
+    '1.0.0',
+    '1.1.0',
+  );
   installGuide({ root, text: changed, source: 'local', by: 'trail lead' });
   assert.deepEqual(listGuides(root).find((r) => r.id === 'a11y')!.pendingChecks, ['a11y'], 'a new argv is pending');
   assert.deepEqual(
     readVerificationConfig(root).config!.checks.a11y.run,
-    ['npx', 'pa11y-ci'],
+    ['node_modules/.bin/pa11y-ci'],
     'old argv until approved',
   );
   approveCheck({ root, id: 'a11y', name: 'a11y' });
-  assert.deepEqual(readVerificationConfig(root).config!.checks.a11y.run, ['npx', 'pa11y-ci', '--all']);
+  assert.deepEqual(readVerificationConfig(root).config!.checks.a11y.run, ['node_modules/.bin/pa11y-ci', '--all']);
 });
 
 test('approving a check without a verification.json creates one with verification off', () => {

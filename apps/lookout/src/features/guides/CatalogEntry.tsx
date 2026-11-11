@@ -7,14 +7,14 @@ import { ReportLink } from './ReportLink';
 import type { CatalogPreview } from './types';
 
 /**
- * One catalog guide in full before it's added: author, review history, what the safety lint found, the checklist,
+ * One catalog guide in full before it's added: author, history, what the lint found, the checklist,
  * the commands it proposes, and the whole instruction text the agent would read.
  */
 export function CatalogEntry(props: {
   entry: Entry;
   installed?: string;
   preview: (id: string) => Promise<CatalogPreview>;
-  add: (id: string) => Promise<{ pendingChecks: string[] }>;
+  add: (id: string, sha256: string) => Promise<{ pendingChecks: string[] }>;
   onBack: () => void;
 }) {
   const e = props.entry;
@@ -44,7 +44,6 @@ export function CatalogEntry(props: {
           {e.history.map((h) => (
             <li key={`${h.version}-${h.commit}`} className="t-meta">
               {h.version} · <code className="t-code">{h.commit.slice(0, 8)}</code> · {h.at.slice(0, 10)}
-              {h.reviewer && ` · reviewed by ${h.reviewer}`}
             </li>
           ))}
         </ul>

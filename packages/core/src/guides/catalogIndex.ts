@@ -5,6 +5,13 @@ const isStr = (v: unknown): v is string => typeof v === 'string';
 /** A path inside the catalog: relative, no `..`, a markdown file. */
 const safePath = (p: string) => /^[\w./-]+\.md$/.test(p) && !p.startsWith('/') && !p.split('/').includes('..');
 
+/**
+ * Verified only when the catalog's reviewed hash (`verifiedSha256`, from its CODEOWNERS-protected verified.json) is
+ * this entry's file. A bare `verified: true` is not enough: older catalogs set it from a commit message anyone could
+ * write. The file is checked against `sha256` when it's fetched, so a verified guide is the file that was reviewed.
+ */
+const isVerified = (e: Record<string, unknown>) => e.verified === true && e.verifiedSha256 === e.sha256;
+
 function entryOf(e: Record<string, unknown>): CatalogEntry | undefined {
   if (![e.id, e.version, e.path, e.sha256, e.summary, e.author].every(isStr)) return undefined;
   if (!safePath(e.path as string) || !/^sha256:[0-9a-f]{64}$/.test(e.sha256 as string)) return undefined;
@@ -18,8 +25,8 @@ function entryOf(e: Record<string, unknown>): CatalogEntry | undefined {
     ...(isStr(e.name) ? { name: e.name } : {}),
     summary: e.summary as string,
     author: e.author as string,
-    verified: e.verified === true,
-    reviewedBy: Array.isArray(e.reviewedBy) ? e.reviewedBy.filter(isStr) : [],
+    verified: isVerified(e),
+    reviewedBy: isVerified(e) && Array.isArray(e.reviewedBy) ? e.reviewedBy.filter(isStr) : [],
     history,
     ...(e.reported === true ? { reported: true } : {}),
     ...(e.builtin === true ? { builtin: true } : {}),

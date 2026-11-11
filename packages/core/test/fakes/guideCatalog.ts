@@ -43,6 +43,8 @@ export async function fakeGuideCatalog(files: Record<string, string>, opts: { ta
       summary: `The ${id} guide`,
       author: 'Test Author',
       verified: id !== 'unreviewed',
+      // the catalog's verified.json names the reviewed file's hash; "unreviewed" has none
+      ...(id !== 'unreviewed' ? { verifiedSha256: sha(text) } : {}),
       reviewedBy: ['maintainer'],
       history: [{ version: '1.0.0', commit: 'abc123', at: '2026-11-01T00:00:00Z', reviewer: 'maintainer' }],
     })),

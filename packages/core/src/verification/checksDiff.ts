@@ -1,4 +1,4 @@
-import { argvProblems } from '../guides/guideLint';
+import { checkArgv } from '../guides/checkArgv';
 import type { CheckSpec, VerificationConfig } from '../model/verification';
 import { parseVerificationConfig } from './config';
 
@@ -55,7 +55,7 @@ export function checksDiff(approved: string | undefined, current: string | undef
   else if (!lines.length && !before) lines.push('no check commands yet: approving lets you add them from guides');
   else if (!lines.length) lines.push('the same commands and settings, written differently');
   const warnings = Object.entries(after?.checks ?? {}).flatMap(([name, spec]) =>
-    argvProblems(spec).map((problem) => `${name} ${problem}`),
+    checkArgv(spec).map((problem) => `${name} ${problem}`),
   );
   return { lines, warnings };
 }

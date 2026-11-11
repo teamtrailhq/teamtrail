@@ -4,6 +4,8 @@ import type { CatalogFetch } from '@teamtrail/core/agents';
 export interface GuidesIo {
   out: (text: string) => void;
   err: (text: string) => void;
+  /** Shows a long text a screen at a time (a pager at a terminal); `out` when missing. */
+  page?: (text: string) => void;
   /** True when a person can answer prompts (a TTY). */
   interactive: boolean;
   /** Asks a yes/no question; only called when `interactive`. */
@@ -20,6 +22,8 @@ export interface GuidesArgs {
   registry?: string;
   /** Who `guides new` signs the guide with; defaults to the repo's user.name. */
   author?: string;
+  /** `--sha256`: approve exactly the guide file with this hash, without a terminal. */
+  sha256?: string;
   verified: boolean;
   approveChecks: boolean;
   json: boolean;

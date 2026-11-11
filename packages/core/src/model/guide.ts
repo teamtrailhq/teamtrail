@@ -111,6 +111,11 @@ export interface InstalledGuide {
   pendingChecks: string[];
   /** A local file with a built-in guide's id. */
   overridesBuiltin: boolean;
+  /**
+   * On a built-in guide: a local file with its id that the trail lead hasn't approved on this machine yet. The
+   * built-in stays active until they do; the file then replaces it.
+   */
+  override?: InstalledGuide;
 }
 
 /** An agent's answer to one checklist item. Presence is checked, not truth. */

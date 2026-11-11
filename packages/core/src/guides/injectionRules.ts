@@ -1,16 +1,46 @@
 /**
  * Text a guide must never carry: it would steer the agent around Teamtrail's rules or the human. Each rule is checked
- * line by line over the whole file (frontmatter included, since checklist items are read by the agent too).
+ * on every line of the file (frontmatter included, since checklist items are read by the agent too) and, unless
+ * `perLine`, over the whole text normalised (textLint.ts), so splitting a sentence over two lines or spelling it in
+ * full-width letters doesn't hide it. `squashed` rules also run with spaces, quotes and backticks taken out, so
+ * "verification .json" is still the file. A pattern list can only find what it knows: the human still reads the guide.
  */
 export interface TextRule {
   rule: string;
   re: RegExp;
   message: string;
   level: 'error' | 'warn';
+  perLine?: boolean;
+  squashed?: boolean;
 }
 
-const PROTECTED =
-  'verification\\.json|guides\\.lock\\.json|guides\\.json|policy\\.json|attention\\.json|workspaces\\.json';
+/** Files and folders only the trail lead changes, or that hold this machine's trust. */
+const PROTECTED = [
+  'verification\\.json',
+  'guides\\.lock\\.json',
+  'guides\\.json',
+  'guides-approved\\.json',
+  'policy\\.json',
+  'attention\\.json',
+  'workspaces\\.json',
+  'models\\.json',
+  'trackers\\.json',
+  'approvals\\.json',
+  'credentials\\.json',
+  'projects\\.json',
+  'remote-tokens',
+  'machine\\.key',
+  '(^|[^\\w.])\\.teamtrail\\b',
+  'dot-?teamtrail',
+  "teamtrail('s)?[ -]?(folder|directory|dir|config)",
+  '(^|[^\\w])\\.agents/',
+  '\\.config/teamtrail',
+  'teamtrail_config_dir',
+].join('|');
+
+/** Files that hold secrets on a developer's machine. */
+const SECRET_FILES =
+  '\\.env\\b|id_(rsa|ed25519|ecdsa)|\\.ssh/|\\.npmrc|\\.netrc|\\.pypirc|\\.aws/|\\.docker/config|\\.kube/config|\\.git-credentials';
 
 export const TEXT_RULES: TextRule[] = [
   {
@@ -38,10 +68,17 @@ export const TEXT_RULES: TextRule[] = [
     level: 'error',
   },
   {
+    rule: 'around-human',
+    re: /\b(never|don'?t|do not|avoid|no need to|without)\b[^.\n]{0,30}\b(ask(ing)?|tell(ing)?|notify(ing)?|consult(ing)?|involv(e|ing)|bother(ing)?|interrupt(ing)?|escalat(e|ing)|check(ing)? (in )?with|wait(ing)? for)\b[^.\n]{0,30}\b(them|human|humans|user|users|people|person|trail lead|lead|anyone|anybody|questions?|approvals?|permission|answers?)\b/i,
+    message: 'steers the agent around the human',
+    level: 'error',
+  },
+  {
     rule: 'protected-file',
-    re: new RegExp(`(${PROTECTED})|\\.teamtrail/`, 'i'),
+    re: new RegExp(PROTECTED, 'i'),
     message: 'mentions a file only the trail lead changes',
     level: 'error',
+    squashed: true,
   },
   {
     rule: 'tool-permissions',
@@ -63,8 +100,17 @@ export const TEXT_RULES: TextRule[] = [
   },
   {
     rule: 'exfiltration',
-    re: /\b(send|post|upload|exfiltrate|leak|share)\b[^.\n]{0,40}\b(secrets?|tokens?|credentials?|env(ironment)? variables?|api keys?|\.env)\b/i,
+    re: /\b(send|post|upload|exfiltrate|leak|share|paste|copy|include|attach|print|echo|dump|commit|write)\b[^.\n]{0,40}\b(secrets?|tokens?|credentials?|env(ironment)? variables?|api keys?|passwords?|private keys?)\b/i,
     message: 'sends secrets somewhere',
+    level: 'error',
+  },
+  {
+    rule: 'exfiltration',
+    re: new RegExp(
+      `\\b(read|cat|open|print|copy|paste|include|dump|show|echo|output|upload|send|post|attach|share|commit|load|source)\\b.{0,40}(${SECRET_FILES})`,
+      'i',
+    ),
+    message: 'reads a file that holds secrets',
     level: 'error',
   },
   {
@@ -72,23 +118,20 @@ export const TEXT_RULES: TextRule[] = [
     re: /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]|[\u{E0000}-\u{E007F}]/u,
     message: 'has hidden or direction-changing unicode characters',
     level: 'error',
+    perLine: true,
   },
   {
     rule: 'hidden-text',
     re: /<!--|<\s*(script|iframe|style|img|object|embed)\b/i,
     message: 'has an HTML comment or tag the reader may not see',
     level: 'error',
+    perLine: true,
   },
   {
     rule: 'link',
     re: /\bhttps?:\/\/\S+/i,
     message: 'links to an outside address; agents may follow it',
     level: 'warn',
+    perLine: true,
   },
 ];
-
-/** argv[0] values a proposed check may not start with. */
-export const SHELLS = new Set(['sh', 'bash', 'zsh', 'fish', 'dash', 'ksh', 'cmd', 'cmd.exe', 'powershell', 'pwsh']);
-export const NETWORK_TOOLS = new Set(['curl', 'wget', 'nc', 'netcat', 'scp', 'sftp', 'ssh', 'ftp']);
-/** Interpreter flags that run code given inline instead of a file in the repo. */
-export const INLINE_CODE = /^(-e|--eval|-c|-p|--print|-Command|-EncodedCommand)$/;

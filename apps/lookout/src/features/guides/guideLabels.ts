@@ -26,16 +26,21 @@ export function statusPart(r: InstalledGuide): MetaPart | undefined {
   return r.status === 'active' ? undefined : STATUS_TEXT[r.status];
 }
 
+/** The host a catalog is read from: shown next to its name, which guides.json chooses. */
+export function hostOf(url: string) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
 /** Where a guide comes from: built in, a hand-written file, or the catalog host it was added from. */
 export function sourceLabel(r: InstalledGuide) {
   if (r.origin === 'builtin') return 'Built in';
   const src = r.lock?.source;
   if (!src || src === 'local') return r.overridesBuiltin ? 'Local, replaces the built-in' : 'Local';
-  try {
-    return `From ${new URL(src.registry).host}`;
-  } catch {
-    return 'From a catalog';
-  }
+  return `From ${hostOf(src.registry)}`;
 }
 
 /** A check command as the trail lead approves it: the exact argv, space-joined. */

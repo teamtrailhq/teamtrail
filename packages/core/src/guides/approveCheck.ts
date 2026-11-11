@@ -5,8 +5,8 @@ import { OperationError } from '../planning/operations/operationError';
 import { approveChecksHere, checksApproval } from '../verification/checksApproval';
 import { parseVerificationConfig } from '../verification/config';
 import { VERIFICATION_FILE } from '../verification/configFile';
+import { checkArgv } from './checkArgv';
 import { checkSha } from './guideHash';
-import { argvProblems } from './guideLint';
 import { readGuideLock, writeGuideLock } from './guideLock';
 import { listGuides } from './guideStore';
 
@@ -44,7 +44,7 @@ export function approveCheck(input: { root: string; id: string; name: string }) 
     throw new OperationError(`approve guide ${input.id} before its checks`);
   const proposed = r.guide.proposedChecks[input.name];
   if (!proposed) throw new OperationError(`${input.id} proposes no check "${input.name}"`);
-  const unsafe = argvProblems(proposed);
+  const unsafe = checkArgv(proposed);
   if (unsafe.length) throw new OperationError(`check ${input.name} ${unsafe.join('; ')}`);
   const file = path.join(input.root, VERIFICATION_FILE);
   const raw = readRaw(file);
