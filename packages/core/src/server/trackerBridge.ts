@@ -59,7 +59,9 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     ...trackers
   } = options;
   const abs = path.resolve(root);
-  const fs = nodeMarkdownFs(abs);
+  // What the Lookout writes is signed as the trail lead's (or Teamtrail's for them); see signedState/.
+  const fs = nodeMarkdownFs(abs, { by: 'lookout' });
+  const lanFs = nodeMarkdownFs(abs, { by: 'lookout on another device' });
   const markdown = new MarkdownAdapter({ ...fs, watch: undefined }, abs);
   // The Lookout stays on the approved tracker while a change to trackers.json waits for the human.
   const routes = createTrackerRoutes({ unapproved: 'stay', ...trackers, root: abs, markdown, peer });
@@ -107,7 +109,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
-    (req, res, url) => handleTrust(ctx, req, res, url),
+    (req, res, url) =>
+      handleTrust({ ...ctx, changed: (rel) => send(`data: ${JSON.stringify({ path: rel })}\n\n`) }, req, res, url),
     (req, res, url) => handleRemoteAgents({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
   ];
 
@@ -143,6 +146,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
         const before = await fs.read(p).catch(() => undefined);
         const refused = lanFileRefusal(p, before, text);
         if (refused) return (sendJson(res, 403, { error: refused, elsewhere: true }), true);
+        await lanFs.write(p, text);
+        return (res.end('ok'), true);
       }
       await fs.write(p, text);
       res.end('ok');

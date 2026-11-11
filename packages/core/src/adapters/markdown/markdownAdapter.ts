@@ -202,14 +202,15 @@ export class MarkdownAdapter implements TrackerAdapter {
 
   async listDecisions(mapId: string): Promise<DecisionRecord[]> {
     const files = (await this.fs.list()).filter((f) => f.startsWith(`${mapId}/decisions/`));
-    return Promise.all(
-      files.map(async (f) => {
-        const text = await this.fs.read(f);
-        const d = { ...parseDecision(text), mapId };
-        if (!this.external.knows(f)) this.external.remember(f, text, d.supersededBy);
-        return d;
-      }),
-    );
+    const all = files.map(async (f) => {
+      // A file that doesn't read as a decision here (one nobody signed on this machine) isn't one.
+      const text = await this.fs.read(f).catch(() => '');
+      if (!text) return undefined;
+      const d = { ...parseDecision(text), mapId };
+      if (!this.external.knows(f)) this.external.remember(f, text, d.supersededBy);
+      return d;
+    });
+    return (await Promise.all(all)).filter((d): d is DecisionRecord => !!d);
   }
 
   async createDecision(mapId: string, input: DecisionInput) {

@@ -1,5 +1,5 @@
-// Smoke test for the local-markdown tracker: external file edits stream into the UI,
-// and UI writes land on disk. Usage: node scripts/check-markdown.mjs <dataDir> <out.png>
+// Smoke test for the local-markdown tracker: external file edits stream into the UI (a claim edited into a
+// file is held as changed outside Teamtrail, never shown as a claim), and UI writes land on disk. Usage: node scripts/check-markdown.mjs <dataDir> <out.png>
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
@@ -15,10 +15,10 @@ await page.goto('http://localhost:5173/?tracker=markdown');
 await page.locator('.node').first().waitFor({ timeout: 10000 });
 console.log('nodes', await page.locator('.node').count());
 
-// External edit: assign #7 on disk, as another agent would.
+// External edit: assign #7 on disk, as another agent would. It doesn't count: signed state keeps it unclaimed.
 fs.writeFileSync(ticketFile, fs.readFileSync(ticketFile, 'utf8').replace(/^assignee: *$/m, 'assignee: codex-cli'));
 await page.waitForTimeout(2500);
-console.log('external claim visible:', (await page.locator('.node', { hasText: 'codex-cli' }).count()) > 0);
+console.log('external claim ignored:', (await page.locator('.node', { hasText: 'codex-cli' }).count()) === 0);
 
 // UI write: claim a frontier ticket as trail lead, verify the file changed.
 await page.locator('.node.st-frontier').first().click();

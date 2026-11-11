@@ -14,7 +14,7 @@ export const devProjectsDir = (repoRoot: string) =>
   path.join(repoRoot, 'node_modules', '.cache', 'teamtrail-dev-projects');
 
 async function seedBilling(root: string, now: number) {
-  const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
+  const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root, { by: 'seed' }), watch: undefined }, root);
   const map = await adapter.createMap({
     title: 'Usage-based invoices',
     mode: 'plan+execute',

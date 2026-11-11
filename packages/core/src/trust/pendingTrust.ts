@@ -1,6 +1,7 @@
 import type { MapSnapshot } from '../model/types';
 import { serializePolicy } from '../policy/policyFile';
 import { POLICY_FILE, readPolicy, readPolicyFile } from '../policy/policyStore';
+import { stateItems } from '../signedState/stateItems';
 import { checksApproval } from '../verification/checksApproval';
 import { checksDiff } from '../verification/checksDiff';
 import { VERIFICATION_FILE } from '../verification/configFile';
@@ -45,8 +46,9 @@ function policyItem(root: string, ledger: Ledger): TrustItem[] {
 
 /**
  * Everything the project's files claim that this machine's trail lead hasn't approved as it is now: the check
- * commands, accepted briefs, confirmed criteria, live knowledge, a risk policy that lowers a level, and (given the
- * trails) verification levels lowered below what was approved here. Read from the files and the ledger only.
+ * commands, accepted briefs, confirmed criteria, live knowledge, a risk policy that lowers a level, (given the
+ * trails) verification levels lowered below what was approved here, and trail files changed outside Teamtrail
+ * (signedState/outsideChanges.ts). Read from the files and the ledger only.
  */
 export function pendingTrust(root: string, snaps: MapSnapshot[] = []): TrustItem[] {
   const ledger = trustLedger(root).all();
@@ -57,5 +59,6 @@ export function pendingTrust(root: string, snaps: MapSnapshot[] = []): TrustItem
     ...briefItems(root, ledger),
     ...criteriaItems(root, ledger),
     ...knowledgeItems(root, ledger),
+    ...stateItems(root),
   ];
 }

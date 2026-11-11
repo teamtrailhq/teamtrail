@@ -1,5 +1,5 @@
 /** What a pending approval is about. */
-export type TrustKind = 'checks' | 'brief' | 'criteria' | 'knowledge' | 'policy' | 'level' | 'type';
+export type TrustKind = 'checks' | 'brief' | 'criteria' | 'knowledge' | 'policy' | 'level' | 'type' | 'state';
 
 /**
  * Something the repo's files ask this machine to trust that the trail lead hasn't approved here, as it is now.

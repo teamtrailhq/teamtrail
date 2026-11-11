@@ -17,6 +17,7 @@ import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
+import { verifySignedState } from './verifySignedState.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -354,6 +355,19 @@ log(`released in the Lookout; the agent ${releaseOk ? 'was told' : 'WAS NOT told
 await shot('06-released-to-queue');
 await crashClient.close().catch(() => {});
 
+// Signed state: an edit to the ticket's file instead of the tools doesn't count; the human reverts it in Approvals.
+const signedOk = await verifySignedState({
+  call,
+  page,
+  url,
+  shot,
+  log,
+  repo,
+  mapId: started.trail.id,
+  ticketKey: added.ticket.key,
+  clickNode,
+});
+
 // Verified completion: the completion fails the repo's check and comes back for rework with the failing output;
 // once the agent fixes the cause, the check passes and the ticket is done.
 const route = await call('add_ticket', { title: 'Add the /changelog route', type: 'execute' });
@@ -555,6 +569,7 @@ if (
   after !== 0 ||
   !handoffOk ||
   !releaseOk ||
+  !signedOk ||
   !verifiedOk ||
   !reviewOk ||
   !discoveryOk ||

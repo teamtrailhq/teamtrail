@@ -4,6 +4,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
+import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { createTrackerBridge, type TrackerBridge } from '../src/bridge';
 
 /*
@@ -25,8 +26,9 @@ const TICKET = `---\nid: 1\ntitle: Build it\ntype: task\nstate: open\nlabels: [t
 before(async () => {
   root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lantrust-')), 'repo', '.teamtrail');
   mkdirSync(path.join(root, 'trail', 'tickets'), { recursive: true });
-  writeFileSync(path.join(root, 'trail', 'map.md'), MAP);
-  writeFileSync(path.join(root, 'trail', 'tickets', '1.md'), TICKET);
+  // a trail Teamtrail wrote on this machine (signed)
+  await nodeMarkdownFs(root).create!('trail/map.md', MAP);
+  await nodeMarkdownFs(root).create!('trail/tickets/1.md', TICKET);
   // GitHub is the project's tracker (no token here: a refused call never gets as far as needing one).
   writeFileSync(path.join(root, 'trackers.json'), JSON.stringify({ active: 'github', github: { repo: 'o/r' } }));
   bridge = createTrackerBridge(root, {

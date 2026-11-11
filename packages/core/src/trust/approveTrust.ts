@@ -1,8 +1,9 @@
 import { journalFile } from '../history/journalFile';
 import { TRUST_JOURNAL } from '../model/lifecycle';
 import type { MapSnapshot } from '../model/types';
+import { acceptState } from '../signedState/acceptState';
 import { adoptableWithoutFile } from './adoptableWithoutFile';
-import { firstRun } from './firstRun';
+import { firstRun, stateFirstRun } from './firstRun';
 import { pendingTrust } from './pendingTrust';
 import { recordShown } from './recordShown';
 import type { TrustItem } from './trustItem';
@@ -19,17 +20,22 @@ export interface ApproveTrustInput {
 }
 
 /** Why an item can't be approved in this request, or undefined when it can. */
-function why(item: TrustItem | undefined, want: { hash: string }, bulk: { on: boolean; first: boolean }) {
+function why(item: TrustItem | undefined, want: { hash: string }, bulk: Bulk) {
   if (!item) return 'gone';
   if (item.hash !== want.hash) return 'changed';
-  if (bulk.on && !(bulk.first && item.committed)) return 'refused';
+  const first = item.kind === 'state' ? bulk.stateFirst : bulk.first;
+  if (bulk.on && !(first && item.committed)) return 'refused';
   return undefined;
 }
+
+/** Several at once, and whether this is the first run for the trust ledger and for trail state. */
+type Bulk = { on: boolean; first: boolean; stateFirst: boolean };
 
 /**
  * The trail lead approves pending items on this machine, each exactly as the page showed it (recordShown.ts).
  *   - An item whose content changed since (another hash) is left waiting, in `changed`: never approved unseen.
- *   - Approving several at once is for the first run on this machine only (`firstRun`), and adopts only items
+ *   - Approving several at once is for the first run on this machine only (`firstRun`; for trail files changed
+ *     outside Teamtrail, until the first such change is accepted here: `stateFirstRun`), and adopts only items
  *     committed to git as they are (`withCommitted`). Anything else is approved one at a time, read whole, and is
  *     listed in `refused` here. (Committing is something an agent with a shell can do too: once this machine has
  *     approved anything, every later item gets its own look.)
@@ -38,7 +44,7 @@ function why(item: TrustItem | undefined, want: { hash: string }, bulk: { on: bo
  */
 export function approveTrust(input: ApproveTrustInput) {
   const { root, by } = input;
-  const bulk = { on: input.items.length > 1, first: firstRun(root) };
+  const bulk = { on: input.items.length > 1, first: firstRun(root), stateFirst: stateFirstRun(root) };
   const all = pendingTrust(root, input.snaps);
   const committed = (i: TrustItem) => (i.file ? !!input.committed?.has(i.file) : adoptableWithoutFile(root, i));
   const shown = bulk.on ? all.map((i) => ({ ...i, committed: committed(i) })) : all;
@@ -50,7 +56,7 @@ export function approveTrust(input: ApproveTrustInput) {
     if (problem === 'changed') out.changed.push(want.key);
     if (problem === 'refused') out.refused.push(want.key);
     if (problem) continue;
-    recordShown({ root, item: item!, by });
+    approveOne(root, item!, by);
     out.approved.push(item!);
   }
   journal(root, out.approved, by);
@@ -60,6 +66,16 @@ export function approveTrust(input: ApproveTrustInput) {
     refused: out.refused,
     pending: pendingTrust(root, input.snaps),
   };
+}
+
+/**
+ * Records one approval. An outside change to a trail is signed in the trail's record (acceptState.ts); the ledger
+ * keeps that the human has approved something here, which ends the first run.
+ */
+function approveOne(root: string, item: TrustItem, by: string) {
+  if (item.kind !== 'state') return recordShown({ root, item, by });
+  acceptState({ root, item, by });
+  recordShown({ root, item: { key: 'state', hash: item.hash, content: '' }, by });
 }
 
 function journal(root: string, items: TrustItem[], by: string) {

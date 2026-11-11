@@ -47,8 +47,10 @@ export async function runMcpServer(opts: {
     const v = server?.server.getClientVersion();
     return v ? `${v.name} ${v.version}` : undefined;
   };
-  const markdown = new MarkdownAdapter({ ...nodeMarkdownFs(opts.root), watch: undefined }, opts.root);
-  const agent = new TrailAgent({
+  // Every tracker write this agent makes is signed as its own (signed state); `agent` exists by the first write.
+  const by = () => agent.signedBy;
+  const markdown = new MarkdownAdapter({ ...nodeMarkdownFs(opts.root, { by }), watch: undefined }, opts.root);
+  const agent: TrailAgent = new TrailAgent({
     root: opts.root,
     agent: opts.agent,
     client,

@@ -62,7 +62,7 @@ fs.writeFileSync(
   )}\n`,
 );
 
-const adapter = new MarkdownAdapter(nodeMarkdownFs(root), root);
+const adapter = new MarkdownAdapter(nodeMarkdownFs(root, { by: 'seed' }), root);
 
 // 1. A trail mid-flight: decisions made and superseded, work done, blocked, ruled out of scope.
 const main = await seedSnapshot(adapter);
