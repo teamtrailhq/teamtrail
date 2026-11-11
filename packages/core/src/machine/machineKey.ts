@@ -14,13 +14,20 @@ export const MACHINE_KEY_FILE = 'machine.key';
 
 const KEY = /^[0-9a-f]{64}$/;
 
+/**
+ * The key in `file`; undefined when the file is missing or isn't a key (damaged), which may be replaced. Any other
+ * read error (EACCES, EMFILE, EIO…) throws: a key that can't be read right now is never replaced, or everything it
+ * signed would read as forged.
+ */
 function readKey(file: string): string | undefined {
+  let text: string;
   try {
-    const text = readFileSync(file, 'utf8').trim();
-    return KEY.test(text) ? text : undefined;
-  } catch {
-    return undefined;
+    text = readFileSync(file, 'utf8').trim();
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw e;
   }
+  return KEY.test(text) ? text : undefined;
 }
 
 /**
@@ -42,7 +49,7 @@ export function machineKey(dir: string = configDir()): string {
   }
   const made = readKey(file);
   if (made) return made;
-  // a file that isn't a key (damaged): replaced, as before
+  // missing after the link (a dangling link) or a file that isn't a key (damaged): replaced, as before
   writePrivateFile(file, `${randomBytes(32).toString('hex')}\n`);
   return readKey(file)!;
 }
