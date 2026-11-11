@@ -1,5 +1,5 @@
 // Builds nothing; run `npm run build` first. Serves dist/ and writes PNG captures, the animated banner GIF and an MP4 demo loop.
-// Usage: OUT_DIR=captures CHROME=/path/to/chrome [WORDMARK='Teamtrail'] node tools/capture.mjs
+// Usage: OUT_DIR=captures CHROME=/path/to/chrome [WORDMARK='teamtrail'] node tools/capture.mjs
 // WORDMARK overrides the wordmark; the default is WORDMARK in preview/content.ts.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
@@ -41,6 +41,7 @@ const BRAND = join(OUT, 'brand');
 mkdirSync(BRAND, { recursive: true });
 const KIT = [
   ['github-org-avatar.png', 'GitHub org avatar', 1000, 1000, 'square', '&n=1000'],
+  ['github-org-avatar-wordmark.png', 'GitHub org avatar, wordmark', 1000, 1000, 'square', '&n=1000&who=wordmark'],
   ['github-social-preview.png', 'GitHub repo social preview', 1280, 640, 'banner', '&w=1280&h=640'],
   ['og-image-1200x630.png', 'Open Graph · teamtrail.app', 1200, 630, 'banner', '&w=1200&h=630'],
   ['x-header-1500x500.png', 'X header', 1500, 500, 'banner', '&w=1500&h=500&layout=header'],
@@ -50,8 +51,11 @@ const KIT = [
   ['slack-icon-512.png', 'Slack app icon (Scout)', 512, 512, 'square', '&n=512&who=scout'],
   ['scout-badge-1000.png', 'Scout badge', 1000, 1000, 'square', '&n=1000&who=scout'],
   ['linkedin-discord-avatar-512.png', 'LinkedIn / Discord avatar', 512, 512, 'square', '&n=512'],
-  ['favicon-64.png', 'Favicon 64', 64, 64, 'favicon', '&px=64'],
-  ['favicon-32.png', 'Favicon 32', 32, 32, 'favicon', '&px=32'],
+  ['logo-light-512.png', 'Logo, light version', 512, 512, 'square', '&n=512&theme=light'],
+  ['favicon-64.png', 'Favicon 64 (light tabs)', 64, 64, 'favicon', '&px=64'],
+  ['favicon-32.png', 'Favicon 32 (light tabs)', 32, 32, 'favicon', '&px=32'],
+  ['favicon-64-dark.png', 'Favicon 64 (dark tabs)', 64, 64, 'favicon', '&px=64&theme=dark'],
+  ['favicon-32-dark.png', 'Favicon 32 (dark tabs)', 32, 32, 'favicon', '&px=32&theme=dark'],
 ];
 for (const [file, , w, h, view, extra] of KIT) {
   const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });

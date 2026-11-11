@@ -17,6 +17,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.26.1',
+    date: '2026-11-11',
+    items: [
+      'A refreshed logo: the trail’s destination is larger, and there are light and dark versions that follow your theme',
+    ],
+  },
+  {
     version: '0.26.0',
     date: '2026-11-11',
     items: [

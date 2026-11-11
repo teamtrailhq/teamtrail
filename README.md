@@ -1,4 +1,4 @@
-<img src="brand/teamtrail-banner.gif" alt="Scout, the voice of Teamtrail, next to the name Teamtrail and a trail through the mountains." width="100%" />
+<img src="brand/teamtrail-banner.gif" alt="The teamtrail wordmark, ending in an orange dot, above a dashed trail through the mountains that reaches the same orange destination." width="100%" />
 
 # Teamtrail
 

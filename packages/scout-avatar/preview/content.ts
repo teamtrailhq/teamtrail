@@ -8,8 +8,8 @@ export const LINES = {
 export const SPEAK_AT = 1500;
 export const ORDER: ScoutStyleId[] = ['crt'];
 export const TAGLINE = 'You pick the destination. Your agents walk the trail.';
-/** Banner wordmark, one colour; override with `?wordmark=` (capture: WORDMARK env). */
-export const WORDMARK = 'Teamtrail';
+/** The wordmark's text, lowercase, before its dot; override with `?wordmark=` (capture: WORDMARK env). */
+export const WORDMARK = 'teamtrail';
 
 export const SCRIPT: { state: ScoutState; speaking?: string; ms: number; log?: string; hot?: boolean }[] = [
   { state: 'idle', ms: 2200 },
@@ -22,5 +22,5 @@ export const SCRIPT: { state: ScoutState; speaking?: string; ms: number; log?: s
   { state: 'idle', ms: 1400 },
 ];
 
-/** Animated README banner: one pass through watching, processing, transmitting and decision waiting. */
+/** The animated README banner's length: one pass of these steps (the trail walks, then rests at its destination). */
 export const BANNER_LOOP = SCRIPT.slice(0, 4);
