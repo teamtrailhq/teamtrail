@@ -11,6 +11,13 @@
  */
 export type SignInKind = 'machine' | 'device';
 
+/**
+ * How a pairing came: `opened-page`, the one-time page `teamtrail` or `teamtrail pair` opened the browser on
+ * (signIn/writeSignInRedirect.ts). Its code lives a minute, and its use is announced in the terminal and listed in
+ * Settings, so a pairing the human didn't make shows. Missing: a link or code the human opened or typed.
+ */
+export type SignInVia = 'opened-page';
+
 /** A paired browser, as stored: never the session itself. */
 export interface StoredSignIn {
   /** Stable id (`si_…`), safe to show and to journal. */
@@ -32,6 +39,7 @@ export interface StoredSignIn {
   lastUsedAt: number;
   /** Moves forward while the browser is used: 30 days after it was last used. */
   expiresAt: number;
+  via?: SignInVia;
 }
 
 /** A pairing code waiting to be used once: never the code itself. */
@@ -44,6 +52,7 @@ export interface StoredPairCode {
   instance: number;
   createdAt: number;
   expiresAt: number;
+  via?: SignInVia;
 }
 
 export interface SignInFile {
@@ -59,6 +68,7 @@ export interface SignInView {
   kind: SignInKind;
   pairedAt: number;
   lastUsedAt: number;
+  via?: SignInVia;
   /** The browser asking. */
   current: boolean;
 }

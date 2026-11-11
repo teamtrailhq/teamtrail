@@ -3,7 +3,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { slackPlugin } from '@teamtrail/connector-slack/node';
-import { BRAND } from '@teamtrail/core';
+import { BRAND, type StoredSignIn } from '@teamtrail/core';
 import { writeLookoutLock, writeMcpEndpoint } from '@teamtrail/core/agents';
 import {
   createLookoutSignIn,
@@ -38,6 +38,14 @@ function firstCode(signIn: LookoutSignIn) {
   }
 }
 
+/**
+ * Says so when a browser signs in through the page `teamtrail` or `teamtrail pair` opened: anything that can read
+ * the config dir can read that page, so a pairing the human didn't make shows here, and in Settings.
+ */
+function onPaired(session: StoredSignIn) {
+  if (session.via === 'opened-page') process.stdout.write(`  Signed in a browser (opened page): ${session.name}\n`);
+}
+
 /** The default command: one process serving the lookout bundle and the tracker API, until Ctrl+C. */
 export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
   const appDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'app');
@@ -70,7 +78,7 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
     url: () => url,
   });
   // Every API route needs a paired browser; the link below pairs the one this command opens.
-  const signIn = createLookoutSignIn({ root: bridge.root, lanUrls: () => lanUrls(addresses, port) });
+  const signIn = createLookoutSignIn({ root: bridge.root, lanUrls: () => lanUrls(addresses, port), onPaired });
   // Other registered projects open on first use, at /p/<id>/…, with their own checkout for the GitHub origin; Slack stays with the home project.
   hub = createProjectsHub({
     signIn,
@@ -83,7 +91,7 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
   const next = slackSetup ? '?settings=slack' : '';
   const signInLink = pairLink(url, firstCode(signIn), next);
   const howToSignIn = opts.open
-    ? 'Your browser opens ready to sign in, with one click. For another browser, open this link'
+    ? 'Your browser opens ready to sign in: one click, within a minute. For another browser, open this link'
     : 'Open it to sign in the browser';
   process.stdout.write(
     `\n  ${BRAND.name} ${__VERSION__} · ${BRAND.assistant.name} online\n\n` +
@@ -94,12 +102,12 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
       `  Press Ctrl+C to stop.\n\n`,
   );
   if (slackSetup) process.stdout.write(`  Slack setup     ${url}?settings=slack\n\n`);
-  // The browser gets a link of its own, so the printed one stays for another browser. No link is ever on the
-  // opener's command line (openSignedIn.ts): the browser opens a one-time page in the machine store that sends it
-  // on, or the bare Lookout when that store can't be written.
+  // The browser gets a code of its own, for a minute, so the printed one stays for another browser. No code is ever
+  // on the opener's command line (openSignedIn.ts): the browser opens a one-time page in the machine store that
+  // sends it on, or the bare Lookout when there's no browser for it or the store can't be written.
   if (opts.open) {
-    const link = pairLink(url, firstCode(signIn), next);
-    openSignedIn({ root: bridge.root, link, fallback: `${url}${next}` });
+    const mint = () => pairLink(url, signIn.mintCode('machine', 'opened-page').code, next);
+    openSignedIn({ root: bridge.root, mint, fallback: `${url}${next}` });
   }
   const unlock = writeLookoutLock(bridge.root, url);
   for (const w of await agentVersionWarnings(bridge.root, __VERSION__))

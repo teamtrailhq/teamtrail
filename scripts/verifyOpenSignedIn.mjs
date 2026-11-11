@@ -1,28 +1,44 @@
-// Opening the browser signed in, end to end against the built CLI: `teamtrail` and `teamtrail pair` hand the
-// platform's opener (a stand-in on PATH that records its argv) only the file:// path of a one-time page in the
-// machine store, never a code; Chrome, opened on that page, lands on the Lookout's "Sign in this browser" and
+// Opening the browser signed in, end to end against the built CLI: `teamtrail` and `teamtrail pair` find the http
+// browser (stand-ins on PATH for `osascript` on macOS and `xdg-settings` on Linux name one) and hand its launcher
+// (stand-in `open` or `gio` that records its argv) only the path of a one-time page in the machine store, never a
+// code; the terminal announces the sign-in; Chrome, opened on that page, lands on the Lookout's "Sign in this browser" and
 // signs in with one click; the page is gone once used, and every page is gone once the Lookout stops.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import { lookoutLinks } from './e2eHelpers.mjs';
 
 const CODE = /#pair=([A-Za-z0-9_-]{43})/;
 
-/** A folder with a tracker, a config dir and stand-ins for `open` and `xdg-open` that append their argv to a file. */
+/**
+ * A folder with a tracker, a config dir and stand-ins: `osascript` and `xdg-settings` name a browser, and `open`,
+ * `xdg-open` and `gio` append their argv, tab-separated, to a file.
+ */
 function scratch(env) {
   const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-open-signed-in-e2e-'));
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const bin = path.join(top, 'bin');
   const record = path.join(top, 'opened.txt');
   fs.mkdirSync(bin);
-  for (const name of ['open', 'xdg-open']) {
-    fs.writeFileSync(path.join(bin, name), `#!/bin/sh\necho "$@" >> '${record}'\n`, { mode: 0o755 });
+  for (const name of ['open', 'xdg-open', 'gio']) {
+    fs.writeFileSync(path.join(bin, name), `#!/bin/sh\nprintf '%s\\t' "$@" >> '${record}'\necho >> '${record}'\n`, {
+      mode: 0o755,
+    });
   }
+  fs.writeFileSync(path.join(bin, 'osascript'), '#!/bin/sh\necho com.example.browser\n', { mode: 0o755 });
+  fs.writeFileSync(path.join(bin, 'xdg-settings'), '#!/bin/sh\necho teamtrail-test.desktop\n', { mode: 0o755 });
+  const data = path.join(top, 'data');
+  fs.mkdirSync(path.join(data, 'applications'), { recursive: true });
+  fs.writeFileSync(path.join(data, 'applications', 'teamtrail-test.desktop'), '[Desktop Entry]\nExec=browser %u\n');
   const config = path.join(top, 'config');
-  const runEnv = { ...env, TEAMTRAIL_CONFIG_DIR: config, PATH: `${bin}${path.delimiter}${env.PATH ?? ''}` };
+  const runEnv = {
+    ...env,
+    TEAMTRAIL_CONFIG_DIR: config,
+    XDG_DATA_HOME: data,
+    PATH: `${bin}${path.delimiter}${env.PATH ?? ''}`,
+  };
   return { top, record, config, env: runEnv };
 }
 
@@ -36,8 +52,8 @@ async function opened(record, count) {
 
 /** What one opening looks like: the argv, the page it names, the link that page sends the browser to. */
 function inspect(argv) {
-  const url = argv.split(' ').find((a) => a.startsWith('file://'));
-  const file = url ? fileURLToPath(url) : undefined;
+  const file = argv.split('\t').find((a) => a.endsWith('.html'));
+  const url = file ? pathToFileURL(file).href : undefined;
   const html = file && fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
   const target = /location\.replace\("([^"]+)"\)/.exec(html)?.[1];
   const code = target ? CODE.exec(target)?.[1] : undefined;
@@ -79,9 +95,9 @@ async function waitGone(file) {
 export async function verifyOpenSignedIn({ browser, cli, env }) {
   const s = scratch(env);
   const server = spawn(process.execPath, [cli, '--port', '0'], { cwd: s.top, env: s.env });
+  let out = '';
   try {
     const printed = await new Promise((resolve, reject) => {
-      let out = '';
       server.stdout.on('data', (c) => {
         out += c;
         const found = lookoutLinks(out);
@@ -109,6 +125,7 @@ export async function verifyOpenSignedIn({ browser, cli, env }) {
     const leftAfterStop = pagesLeft(s.config).length;
 
     const landedOnLookout = [first, second].every((x) => x.landed === printed.url && x.signedIn);
+    const announced = (out.match(/Signed in a browser \(opened page\)/g) ?? []).length;
     const ok =
       startClean &&
       pair.clean &&
@@ -116,12 +133,14 @@ export async function verifyOpenSignedIn({ browser, cli, env }) {
       landedOnLookout &&
       firstGone &&
       waiting === 1 &&
-      !leftAfterStop;
+      !leftAfterStop &&
+      announced === 2;
     const said =
-      `the opener got ${start.url ? 'only a file:// page' : 'NO PAGE'} (${start.mode}, ${startClean ? 'no code in argv' : 'A CODE IN ARGV'}), ` +
+      `the browser's launcher got ${start.url ? 'only a page path' : 'NO PAGE'} (${start.mode}, ${startClean ? 'no code in argv' : 'A CODE IN ARGV'}), ` +
       `\`teamtrail pair\` too (${pair.clean ? 'no code in argv' : 'A CODE IN ARGV'}); Chrome went from file:// to ${first.landed} and ` +
       `signed in with one click (${landedOnLookout ? 'both' : 'NOT BOTH'}); the used page ${firstGone ? 'was removed' : 'STAYED'}, ` +
-      `${leftAfterStop ? `${leftAfterStop} PAGES LEFT` : 'none left'} after the Lookout stopped`;
+      `${leftAfterStop ? `${leftAfterStop} PAGES LEFT` : 'none left'} after the Lookout stopped; ` +
+      `the terminal announced ${announced} of 2 sign-ins through an opened page`;
     return { ok, said, target: start.target?.split('#')[0] ?? 'nothing opened' };
   } finally {
     server.kill('SIGTERM');

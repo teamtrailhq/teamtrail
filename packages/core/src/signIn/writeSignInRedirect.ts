@@ -8,10 +8,12 @@ import type { SignInPlace } from './signInStore';
 /**
  * A one-time page that sends the browser on to `link` (`…#pair=<code>`), so the browser can be opened on the page's
  * random path and the code never goes on a command line, which every process of this user can read for a moment.
- * It lives where the code itself is minted, the machine store: 0600 in a 0700 folder, so whoever can read it could
- * already make a code of their own. Created exclusively, never overwritten; the Lookout removes it once the code is
- * used or expires, and on stop (sweepSignInRedirects.ts). Returns the file's path; throws, saying why, when the
- * store can't be written.
+ * The page is a bearer secret: anything that can read the config dir (an agent sandbox that may read but not
+ * write it, say) can read the code in it and sign in as this machine, which minting a code of its own would need
+ * write access for. So the code is an `opened-page` one that lives one minute (pairCodes.ts), works once, and its
+ * use is announced in the terminal and in Settings. 0600 in a 0700 folder; created exclusively, never overwritten.
+ * The Lookout removes it once the code is used or expires, and on stop (sweepSignInRedirects.ts). Returns the
+ * file's path; throws, saying why, when the store can't be written.
  */
 export function writeSignInRedirect(at: SignInPlace & { link: string }): string {
   const store = machineStore(at.root, at.configDir);

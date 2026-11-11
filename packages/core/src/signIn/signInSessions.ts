@@ -42,6 +42,7 @@ export function pairWithCode(
       pairedAt: now,
       lastUsedAt: now,
       expiresAt: now + SESSION_MS,
+      ...(used.via ? { via: used.via } : {}),
     };
     // sessions of a Lookout that has stopped are over: they go with this write (another one running keeps its own)
     const live = file.sessions

@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { SignInFile, SignInKind, SignInView, StoredSignIn } from '../model/signIn';
+import type { SignInFile, SignInKind, SignInVia, SignInView, StoredSignIn } from '../model/signIn';
 import { browserName } from './browserName';
 import { pairAttempts } from './pairAttempts';
 import { mintPairCode, normalizePairCode } from './pairCodes';
@@ -20,6 +20,8 @@ export interface LookoutSignInOptions extends SignInPlace {
   sweepMs?: number;
   /** This Lookout's process id: the only codes it takes are the ones made for it. Default `process.pid`. */
   instance?: number;
+  /** Told of every browser paired here, as it pairs: the Lookout says so in its terminal for an opened page's. */
+  onPaired?: (session: StoredSignIn) => void;
 }
 
 export type SignInCheck = { kind: 'signed-in'; session: StoredSignIn } | { kind: 'signed-out' };
@@ -98,6 +100,7 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
     const done = pairWithCode({ ...place, code: at.code, local: at.local, name, instance, start, now: now() });
     if (done.kind === 'paired') {
       sweepPages();
+      o.onPaired?.(done.session);
       return { ...done, verifier: sessionVerifier(done.session.id, o.configDir) };
     }
     if (shape.kind === 'typed') attempts.failed(at.who, now());
@@ -136,14 +139,14 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
     pair,
     prove,
     streamTicket: (session: StoredSignIn) => tickets.issue(session.id),
-    mintCode: (kind: SignInKind) => mintPairCode({ ...place, kind, instance, now: now() }),
+    mintCode: (kind: SignInKind, via?: SignInVia) => mintPairCode({ ...place, kind, via, instance, now: now() }),
     lanUrls: () => o.lanUrls?.() ?? [],
     views: (currentId?: string): SignInView[] =>
       live()
         // this browser first, then the one used most recently
         .sort((a, b) => Number(b.id === currentId) - Number(a.id === currentId) || b.lastUsedAt - a.lastUsedAt)
-        .map(({ id, name, kind, pairedAt, lastUsedAt }) => ({
-          ...{ id, name, kind, pairedAt, lastUsedAt },
+        .map(({ id, name, kind, pairedAt, lastUsedAt, via }) => ({
+          ...{ id, name, kind, pairedAt, lastUsedAt, via },
           current: id === currentId,
         })),
     /** Ends a session and its event streams; the removed one, or undefined when the id is unknown. */

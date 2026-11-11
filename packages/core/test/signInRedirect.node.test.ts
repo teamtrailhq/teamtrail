@@ -15,8 +15,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { before, test } from 'node:test';
 import { machineStore } from '../src/machine/machineStore';
+import type { StoredSignIn } from '../src/model/signIn';
 import { createLookoutSignIn } from '../src/signIn/lookoutSignIn';
-import { LINK_CODE_MS, mintPairCode } from '../src/signIn/pairCodes';
+import { LINK_CODE_MS, mintPairCode, OPENED_CODE_MS } from '../src/signIn/pairCodes';
 import { signInRedirectPage } from '../src/signIn/signInRedirectPage';
 import { sweepSignInRedirects } from '../src/signIn/sweepSignInRedirects';
 import { writeSignInRedirect } from '../src/signIn/writeSignInRedirect';
@@ -136,4 +137,41 @@ test('a store that can’t be written throws, saying why', { skip: process.getui
   } finally {
     chmodSync(locked, 0o700);
   }
+});
+
+test('an opened page’s code lives one minute: past that it signs nobody in, and its page is gone', () => {
+  const at = place();
+  let now = Date.now();
+  const signIn = createLookoutSignIn({ ...at, now: () => now, sweepMs: 60_000 });
+  const opened = signIn.mintCode('machine', 'opened-page');
+  const printed = signIn.mintCode('machine');
+  assert.equal(OPENED_CODE_MS, 60_000);
+  assert.equal(opened.expiresAt - now, OPENED_CODE_MS);
+  assert.equal(printed.expiresAt - now, LINK_CODE_MS);
+  const page = writeSignInRedirect({ ...at, link: link(opened.code) });
+
+  now += OPENED_CODE_MS + 1;
+  sweepSignInRedirects({ ...at, keep: 'pending', now });
+  assert.equal(existsSync(page), false, 'the page goes when its code expires');
+  assert.equal(signIn.pair(request, { code: opened.code, local: true, who: 'loopback' }).kind, 'refused');
+  // the printed link keeps its ten minutes
+  assert.equal(signIn.pair(request, { code: printed.code, local: true, who: 'loopback' }).kind, 'paired');
+  signIn.close();
+});
+
+test('a pairing through an opened page is announced and listed as such', () => {
+  const at = place();
+  const announced: StoredSignIn[] = [];
+  const signIn = createLookoutSignIn({ ...at, sweepMs: 60_000, onPaired: (s) => announced.push(s) });
+  const { code } = signIn.mintCode('machine', 'opened-page');
+  const done = signIn.pair(request, { code, local: true, who: 'loopback' });
+  assert.equal(done.kind, 'paired');
+  assert.equal(announced.length, 1);
+  assert.equal(announced[0].via, 'opened-page');
+  assert.equal(signIn.views()[0].via, 'opened-page');
+  // a link the human opened is not marked
+  const other = signIn.mintCode('machine').code;
+  signIn.pair({ headers: {}, socket: {} } as unknown as IncomingMessage, { code: other, local: true, who: 'loopback' });
+  assert.equal(announced[1].via, undefined);
+  signIn.close();
 });
