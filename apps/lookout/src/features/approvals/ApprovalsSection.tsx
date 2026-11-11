@@ -1,4 +1,4 @@
-import { BRAND } from '@teamtrail/core';
+import { BRAND, type TrustItem } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button, MetaLine } from '../../components/ui';
 import { SettingsSection } from '../settings/SettingsSection';
@@ -31,10 +31,10 @@ export function ApprovalsSection() {
     );
   };
   const { items, tracker, oldQueue } = view;
-  // together only on this machine's first run, and only what was committed; after that, each on its own
-  const committed = items.filter(
-    (i) => i.committed !== false && (i.kind === 'state' ? view.stateFirstRun : view.firstRun),
-  );
+  // together only on this machine's first run, only what was committed, and never trail state signed here before
+  const adoptable = (i: TrustItem) =>
+    i.kind === 'state' ? view.stateFirstRun && i.standing === 'elsewhere' : view.firstRun;
+  const committed = items.filter((i) => i.committed !== false && adoptable(i));
   const waiting = items.length + (tracker ? 1 : 0) + (oldQueue ? 1 : 0);
   return (
     <SettingsSection title="Approvals">
@@ -88,7 +88,7 @@ export function ApprovalsSection() {
                 busy={busy}
                 local={local}
                 onAccept={() => run(approve([item]))}
-                onRevert={() => run(act('/trust/revert', { key: item.key, hash: item.hash }))}
+                onRevert={(remove) => run(act('/trust/revert', { key: item.key, hash: item.hash, remove }))}
               />
             ) : (
               <TrustItemRow

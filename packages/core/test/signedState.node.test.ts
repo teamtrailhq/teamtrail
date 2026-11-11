@@ -41,10 +41,10 @@ const tmpRoot = () => {
   return root;
 };
 
-async function trail(root: string, mode: 'plan+execute' | 'plan-only' = 'plan+execute') {
+async function trail(root: string, mode: 'plan+execute' | 'plan-only' = 'plan+execute', title = 'Trail') {
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root, { by: 'agent claude-01' }), watch: undefined }, root);
   const { map, tickets } = await chartMap(adapter, {
-    title: 'Trail',
+    title,
     mode,
     sections: SECTIONS,
     tickets: [
@@ -190,31 +190,34 @@ test('first run (and the upgrade): existing trails are adopted together, but onl
   git('init', '-q');
   git('config', 'user.email', 't@example.com');
   git('config', 'user.name', 't');
-  const { mapId, j, x } = await trail(root);
+  const one = await trail(root);
+  const two = await trail(root, 'plan+execute', 'Second');
   // A clone on a new machine: the files are there, nothing is signed here.
-  edit(root, `${mapId}/tickets/${j}.md`, /^state: open$/m, 'state: closed');
+  edit(root, `${one.mapId}/tickets/${one.j}.md`, /^state: open$/m, 'state: closed');
   git('add', '-A');
   git('commit', '-qm', 'trail');
-  rmSync(path.dirname(stateRecordFile(root, mapId)), { recursive: true, force: true });
+  rmSync(path.dirname(stateRecordFile(root, one.mapId)), { recursive: true, force: true });
   // an upgrade: this machine approved other things before trail state was signed
   trustLedger(root).set({ checks: { hash: 'sha256:x', at: 1, by: 'trail lead' } });
-  edit(root, `${mapId}/tickets/${x}.md`, /^assignee: .*$/m, 'assignee: claude-09');
+  edit(root, `${two.mapId}/tickets/${two.x}.md`, /^assignee: .*$/m, 'assignee: claude-09');
   const items = await withCommitted(
     root,
     pendingTrust(root).filter((i) => i.kind === 'state'),
   );
-  const closed = items.find((i) => i.ticketId === j)!;
-  const taken = items.find((i) => i.ticketId === x)!;
-  assert.equal(closed.committed, true);
-  assert.equal(taken.committed, false);
+  const first = items.find((i) => i.mapId === one.mapId)!;
+  const second = items.find((i) => i.mapId === two.mapId)!;
+  assert.equal(first.committed, true);
+  assert.equal(second.committed, false, 'a file in it changed since the commit');
   const r = await approveTogether({ root, items: items.map((i) => ({ key: i.key, hash: i.hash })), by: 'trail lead' });
-  assert.ok(r.approved.includes(closed.key));
-  assert.deepEqual(r.refused, [taken.key]);
+  assert.deepEqual(r.approved, [first.key]);
+  assert.deepEqual(r.refused, [second.key]);
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
-  assert.equal((await ticketOf(adapter, mapId, j)).state, 'closed');
-  assert.equal((await ticketOf(adapter, mapId, x)).assignee, undefined);
+  assert.equal((await ticketOf(adapter, one.mapId, one.j)).state, 'closed');
+  const held = await ticketOf(adapter, two.mapId, two.x);
+  assert.equal(held.assignee, undefined);
+  assert.equal(held.status, 'blocked', 'nobody signed it, and the project has signed state now: held');
   // after that, outside changes are accepted one at a time
-  edit(root, `${mapId}/tickets/${j}.md`, /^assignee: .*$/m, 'assignee: claude-07');
+  edit(root, `${one.mapId}/tickets/${one.j}.md`, /^assignee: .*$/m, 'assignee: claude-07');
   git('commit', '-qam', 'claim');
   const later = await withCommitted(
     root,

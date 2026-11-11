@@ -12,6 +12,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createActions, TRAIL_LEAD, type Runtime, type Selection, isRunning } from '../lib';
 import { useLeases } from './useLeases';
 
+/** What the trail lead reads when a change hit a file that moved on since it was loaded (httpFs.ts, 409). */
+const STALE_WRITE =
+  'That changed while you were on it, so nothing was written. It is reloaded now: look again, then redo the change.';
+
 export function useLookout(rt: Runtime) {
   const [maps, setMaps] = useState<MapSummary[]>([]);
   const [mapId, setMapIdState] = useState<string>();
@@ -136,12 +140,15 @@ export function useLookout(rt: Runtime) {
         setError(undefined);
         await fn();
       } catch (e) {
-        const msg = (e as Error).message ?? String(e);
+        const stale = (e as { stale?: boolean }).stale === true;
+        const msg = stale ? STALE_WRITE : ((e as Error).message ?? String(e));
         setError(msg);
         rt.activity.push({ source: 'trail lead', agent: TRAIL_LEAD, level: 'alert', text: `Rejected · ${msg}` });
+        // the file moved on while this was being done: show it as it is now
+        if (stale) void refresh().catch((err) => setError(String(err)));
       }
     },
-    [rt],
+    [rt, refresh],
   );
 
   const actions = useMemo(

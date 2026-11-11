@@ -33,8 +33,9 @@ async function snapsOf(ctx: RouteContext): Promise<MapSnapshot[]> {
  * its file is committed. POST `/trust/approve` `{ items: [{ key, hash }] }` approves them as the page showed them
  * and answers `{ approved, changed, refused, pending }`: an item that changed since stays pending, and several at
  * once only adopts committed content. Approving answers this machine only (thisMachineRoutes.ts) and is journaled.
- * POST `/trust/revert` `{ key, hash }` writes the signed values back over a trail file changed outside Teamtrail
- * (signedState/revertState.ts), only as shown (409 when it changed since); this machine only, journaled.
+ * POST `/trust/revert` `{ key, hash, remove? }` writes the signed values back over a trail file changed outside
+ * Teamtrail, or deletes files nobody signed once `remove` names each (signedState/revertState.ts), only as shown
+ * (409 when it changed since); this machine only, journaled.
  * GET `/signed-state` lists which tickets, decisions and trails changed outside Teamtrail, by field, and which had
  * only their text edited: what the Lookout marks.
  */
@@ -61,10 +62,12 @@ export async function handleTrust(ctx: TrustContext, req: IncomingMessage, res: 
 }
 
 async function revert(ctx: RouteContext, req: IncomingMessage, res: ServerResponse) {
-  const b = await readJson<{ key?: unknown; hash?: unknown }>(req, '{}');
+  const b = await readJson<{ key?: unknown; hash?: unknown; remove?: unknown }>(req, '{}');
   if (!isWant(b)) throw new BadRequest('"key" and "hash" are required');
+  const named: unknown = (b as { remove?: unknown }).remove;
+  const remove = Array.isArray(named) && named.every((f) => typeof f === 'string') ? named : undefined;
   try {
-    revertState({ root: ctx.root, key: b.key, hash: b.hash, by: 'trail lead' });
+    revertState({ root: ctx.root, key: b.key, hash: b.hash, by: 'trail lead', remove });
   } catch (e) {
     return (sendJson(res, 409, { error: (e as Error).message }), true);
   }

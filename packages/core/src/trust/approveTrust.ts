@@ -4,6 +4,7 @@ import type { MapSnapshot } from '../model/types';
 import { acceptState } from '../signedState/acceptState';
 import { adoptableWithoutFile } from './adoptableWithoutFile';
 import { firstRun, stateFirstRun } from './firstRun';
+import { itemFiles } from './itemFiles';
 import { pendingTrust } from './pendingTrust';
 import { recordShown } from './recordShown';
 import type { TrustItem } from './trustItem';
@@ -23,7 +24,7 @@ export interface ApproveTrustInput {
 function why(item: TrustItem | undefined, want: { hash: string }, bulk: Bulk) {
   if (!item) return 'gone';
   if (item.hash !== want.hash) return 'changed';
-  const first = item.kind === 'state' ? bulk.stateFirst : bulk.first;
+  const first = item.kind === 'state' ? bulk.stateFirst && item.standing === 'elsewhere' : bulk.first;
   if (bulk.on && (item.alone || !(first && item.committed))) return 'refused';
   return undefined;
 }
@@ -34,8 +35,9 @@ type Bulk = { on: boolean; first: boolean; stateFirst: boolean };
 /**
  * The trail lead approves pending items on this machine, each exactly as the page showed it (recordShown.ts).
  *   - An item whose content changed since (another hash) is left waiting, in `changed`: never approved unseen.
- *   - Approving several at once is for the first run on this machine only (`firstRun`; for trail files changed
- *     outside Teamtrail, until the first such change is accepted here: `stateFirstRun`), and adopts only items
+ *   - Approving several at once is for the first run on this machine only (`firstRun`; for trail files, until
+ *     Teamtrail first signs trail state here or the first change is accepted: `stateFirstRun`, and never an item
+ *     this machine signed before: only `elsewhere` ones), and adopts only items
  *     committed to git as they are (`withCommitted`). Anything else is approved one at a time, read whole, and is
  *     listed in `refused` here. (Committing is something an agent with a shell can do too: once this machine has
  *     approved anything, every later item gets its own look.)
@@ -46,7 +48,10 @@ export function approveTrust(input: ApproveTrustInput) {
   const { root, by } = input;
   const bulk = { on: input.items.length > 1, first: firstRun(root), stateFirst: stateFirstRun(root) };
   const all = pendingTrust(root, input.snaps);
-  const committed = (i: TrustItem) => (i.file ? !!input.committed?.has(i.file) : adoptableWithoutFile(root, i));
+  const committed = (i: TrustItem) => {
+    const files = itemFiles(i);
+    return files.length ? files.every((f) => !!input.committed?.has(f)) : adoptableWithoutFile(root, i);
+  };
   const shown = bulk.on ? all.map((i) => ({ ...i, committed: committed(i) })) : all;
   const pending = new Map(shown.map((i) => [i.key, i]));
   const out = { approved: [] as TrustItem[], changed: [] as string[], refused: [] as string[] };

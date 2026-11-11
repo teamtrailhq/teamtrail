@@ -31,7 +31,7 @@ export const PROGRESS_KEYS = ['state', 'close_reason', 'assignee', 'status', 're
 export const MAP_KEYS = ['mode', 'verification', 'guides', 'model_matching'] as const;
 export const ASSUMPTION_PREFIX = 'assumption:';
 
-/** Decision fields; `words` is the hash of the question, the answer and the human's words in the transcript. */
+/** Decision fields; `words` is the hash of its words (`decisionWords`). */
 export const DECISION_KEYS = [
   'id',
   'ticket',
@@ -81,15 +81,27 @@ export function mapFields(m: MapDoc): Fields {
   };
 }
 
-/** The human's words a decision rests on, as one hash: rewording them is a change to the decision. */
-const words = (d: DecisionRecord) =>
-  contentHash(
-    JSON.stringify([
-      d.question,
-      d.answer,
-      d.transcript.filter((e) => e.from === 'human').map((e) => [e.author, e.text]),
-    ]),
-  );
+/** A decision's words, each as stated: rewording any of them is a change to the decision (stateLines.ts shows it). */
+export function decisionWords(d: DecisionRecord) {
+  return {
+    question: d.question,
+    answer: d.answer,
+    summary: d.summary,
+    rationale: d.rationale,
+    alternatives: d.alternatives.join('\n'),
+    assumes: (d.assumes ?? []).join(', '),
+    'human’s words': d.transcript
+      .filter((e) => e.from === 'human')
+      .map((e) => `${e.author}: ${e.text}`)
+      .join('\n'),
+  };
+}
+
+/**
+ * The words a decision rests on, as one hash: the question, the answer, its summary, rationale, alternatives and
+ * the assumptions it relies on, and the human's words in the transcript. Rewording any is a change to the decision.
+ */
+const words = (d: DecisionRecord) => contentHash(JSON.stringify(Object.values(decisionWords(d))));
 
 export function decisionFields(d: DecisionRecord): Fields {
   return {

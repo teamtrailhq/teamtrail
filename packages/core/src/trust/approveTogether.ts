@@ -1,6 +1,7 @@
 import type { MapSnapshot } from '../model/types';
 import { approveTrust } from './approveTrust';
 import { committedFiles } from './committedFiles';
+import { itemFiles } from './itemFiles';
 import { pendingTrust } from './pendingTrust';
 
 /**
@@ -14,6 +15,6 @@ export async function approveTogether(input: {
   snaps?: MapSnapshot[];
 }) {
   if (input.items.length < 2) return approveTrust(input);
-  const files = pendingTrust(input.root, input.snaps).flatMap((i) => (i.file ? [i.file] : []));
+  const files = pendingTrust(input.root, input.snaps).flatMap(itemFiles);
   return approveTrust({ ...input, committed: await committedFiles(input.root, [...new Set(files)]) });
 }

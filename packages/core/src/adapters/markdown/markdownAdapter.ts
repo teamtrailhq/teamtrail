@@ -25,6 +25,7 @@ import type { MarkdownFs } from './markdownFs';
 import { nextNumber } from './nextNumber';
 import { isTicketFile, segment, trailSlug } from './paths';
 import { parseTicket, serializeTicket } from './ticketFile';
+import { unreadDecision } from './unreadDecision';
 
 /*
  * Labels mirror the tracker labels (see brand.ts); HITL tasks carry HITL_LABEL.
@@ -55,9 +56,10 @@ export class MarkdownAdapter implements TrackerAdapter {
     });
   }
 
-  private async put(path: string, text: string) {
+  /** `base`: the file as read before this change, so a write never undoes one made in between (signedWrite.ts). */
+  private async put(path: string, text: string, base?: string) {
     this.selfWrites.set(path, Date.now());
-    await this.fs.write(path, text);
+    await this.fs.write(path, text, base === undefined ? undefined : { base });
   }
 
   /** A new numbered file under a number nobody else has (createNumbered.ts). */
@@ -69,17 +71,11 @@ export class MarkdownAdapter implements TrackerAdapter {
     return parseMapFile(mapId, await this.fs.read(`${segment(mapId)}/map.md`));
   }
 
-  private async writeMap(m: MapDoc) {
-    await this.put(`${segment(m.id)}/map.md`, serializeMapFile(m));
+  private async writeMap(m: MapDoc, base?: string) {
+    await this.put(`${segment(m.id)}/map.md`, serializeMapFile(m), base);
   }
 
-  private async readTicket(mapId: string, id: string) {
-    return parseTicket(await this.fs.read(`${segment(mapId)}/tickets/${segment(id)}.md`));
-  }
-
-  private async writeTicket(mapId: string, t: Ticket) {
-    await this.put(`${segment(mapId)}/tickets/${segment(t.id)}.md`, serializeTicket({ ...t, updatedAt: Date.now() }));
-  }
+  private ticketPath = (mapId: string, id: string) => `${segment(mapId)}/tickets/${segment(id)}.md`;
 
   async listMaps() {
     const files = await this.fs.list();
@@ -119,7 +115,8 @@ export class MarkdownAdapter implements TrackerAdapter {
   }
 
   private async editMap(mapId: string, edit: (m: MapDoc) => MapDoc, event: TrackerEvent) {
-    await this.writeMap({ ...edit(await this.readMap(mapId)), updatedAt: Date.now() });
+    const base = await this.fs.read(`${segment(mapId)}/map.md`);
+    await this.writeMap({ ...edit(parseMapFile(mapId, base)), updatedAt: Date.now() }, base);
     this.events.emit(event);
   }
 
@@ -148,14 +145,18 @@ export class MarkdownAdapter implements TrackerAdapter {
   }
 
   async addBlocking(mapId: string, blockerId: string, blockedId: string) {
-    const t = await this.readTicket(mapId, blockedId);
-    if (!t.blockedBy.includes(blockerId))
-      await this.writeTicket(mapId, { ...t, blockedBy: [...t.blockedBy, blockerId] });
+    await this.update(mapId, blockedId, (t) =>
+      t.blockedBy.includes(blockerId) ? t : { ...t, blockedBy: [...t.blockedBy, blockerId] },
+    );
     this.events.emit({ kind: 'edge.added', mapId, blockerId, blockedId, at: Date.now() });
   }
 
   private async update(mapId: string, ticketId: string, change: (t: Ticket) => Ticket) {
-    await this.writeTicket(mapId, change(await this.readTicket(mapId, ticketId)));
+    const base = await this.fs.read(this.ticketPath(mapId, ticketId));
+    const t = parseTicket(base);
+    const next = change(t);
+    if (next !== t)
+      await this.put(this.ticketPath(mapId, t.id), serializeTicket({ ...next, updatedAt: Date.now() }), base);
   }
 
   async removeBlocking(mapId: string, blockerId: string, blockedId: string) {
@@ -203,8 +204,7 @@ export class MarkdownAdapter implements TrackerAdapter {
   async listDecisions(mapId: string): Promise<DecisionRecord[]> {
     const files = (await this.fs.list()).filter((f) => f.startsWith(`${mapId}/decisions/`));
     const all = files.map(async (f) => {
-      // A file that doesn't read as a decision here (one nobody signed on this machine) isn't one.
-      const text = await this.fs.read(f).catch(() => '');
+      const text = await this.fs.read(f).catch((e: { code?: string }) => unreadDecision(f, e));
       if (!text) return undefined;
       const d = { ...parseDecision(text), mapId };
       if (!this.external.knows(f)) this.external.remember(f, text, d.supersededBy);
@@ -225,10 +225,10 @@ export class MarkdownAdapter implements TrackerAdapter {
 
   async markSuperseded(mapId: string, decisionId: string, supersededBy: string) {
     const path = `${segment(mapId)}/decisions/${segment(decisionId)}.md`;
-    const d = parseDecision(await this.fs.read(path));
-    const text = serializeDecision({ ...d, mapId, supersededBy });
+    const base = await this.fs.read(path);
+    const text = serializeDecision({ ...parseDecision(base), mapId, supersededBy });
     this.external.remember(path, text, supersededBy);
-    await this.put(path, text);
+    await this.put(path, text, base);
     this.events.emit({ kind: 'decision.superseded', mapId, decisionId, supersededBy, at: Date.now() });
   }
 

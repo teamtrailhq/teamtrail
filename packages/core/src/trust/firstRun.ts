@@ -1,3 +1,4 @@
+import { projectSigned } from '../signedState/projectSigned';
 import { trustLedger } from './trustLedger';
 
 /**
@@ -9,8 +10,8 @@ export const firstRun = (root: string) =>
   Object.keys(trustLedger(root).all()).every((k) => k.startsWith('level:') || k.startsWith('type:'));
 
 /**
- * Whether the trail lead has never accepted a trail's outside changes on this machine (signedState/): a fresh
- * clone, a new machine, or the upgrade to signed trail state, even where other approvals were made before. Until
- * then, committed trail files may be adopted in one step; after the first acceptance each change is its own.
+ * Whether trail state was never signed on this machine (signedState/): a fresh clone, a new machine, or the upgrade
+ * to signed trail state, even where other approvals were made before. Until Teamtrail first writes a trail here, or
+ * the human first accepts a change, committed trail files may be adopted in one step; after that, each on its own.
  */
-export const stateFirstRun = (root: string) => !trustLedger(root).get('state');
+export const stateFirstRun = (root: string) => !trustLedger(root).get('state') && !projectSigned(root);

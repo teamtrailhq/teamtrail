@@ -1,5 +1,4 @@
 import {
-  type MarkdownFs,
   BRAND,
   ActivityStream,
   type AgentSessionDoc,
@@ -16,29 +15,9 @@ import {
   type Journal,
 } from '@teamtrail/core';
 import { apiBase } from './apiBase';
+import { httpFs } from './httpFs';
 import { LeaseBoard } from './leaseBoard';
 import { type TrackerChoice, loadPrefs } from './prefs';
-import { onTrackerChange } from './trackerChanges';
-
-/** File API served by the Vite dev server (see plugins/trackerFs.ts). */
-export const httpFs: MarkdownFs = {
-  async list() {
-    const r = await fetch(`${apiBase()}/list`);
-    return (await r.json()).files as string[];
-  },
-  async read(path) {
-    const r = await fetch(`${apiBase()}/file?path=${encodeURIComponent(path)}`);
-    if (!r.ok) throw new Error(`read ${path}: ${r.status}`);
-    return r.text();
-  },
-  async write(path, text) {
-    const r = await fetch(`${apiBase()}/file?path=${encodeURIComponent(path)}`, { method: 'PUT', body: text });
-    if (!r.ok) throw new Error(`write ${path}: ${r.status}`);
-  },
-  watch(cb) {
-    return onTrackerChange(cb);
-  },
-};
 
 /** Mirror agent sessions reported over MCP (see core agentLink.ts) and send trail lead answers back to them. */
 export function linkAgents(activity: ActivityStream, leases: LeaseBoard) {

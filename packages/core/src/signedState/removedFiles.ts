@@ -28,3 +28,14 @@ export function removedFiles(root: string, files: string[]): string[] {
         .filter((rel): rel is string => !!rel && rel !== `${mapId}/map.md` && !have.has(rel)),
     );
 }
+
+/**
+ * Trails this machine signed whose map is gone: removed, or renamed (moved to another folder, which is then a
+ * trail nobody signed here). Each is one change, accepted or restored as a whole.
+ */
+export function removedTrails(root: string, files: string[]): string[] {
+  const have = new Set(files);
+  return recordedTrails(root).filter(
+    (mapId) => !have.has(`${mapId}/map.md`) && Object.keys(readStateRecord(root, mapId).entries).length > 0,
+  );
+}

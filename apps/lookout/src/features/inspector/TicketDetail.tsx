@@ -49,7 +49,7 @@ export function TicketDetail(props: {
   return (
     <div className="detail">
       <TicketFacts t={t} state={state} tickets={snap.tickets} />
-      <OutsideChangeNote mapId={snap.map.id} ticketId={t.id} />
+      <OutsideChangeNote mapId={snap.map.id} kind="ticket" id={t.id} />
       {description && (
         <section className="d-section ticket-body">
           <span className="t-label">Description</span>

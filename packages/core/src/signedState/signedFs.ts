@@ -1,4 +1,6 @@
+import path from 'node:path';
 import type { MarkdownFs } from '../adapters/markdown/markdownFs';
+import { oversizedFile } from './cachedFields';
 import { effectiveText } from './effectiveText';
 import { removedFiles } from './removedFiles';
 import { signedWrite } from './signedWrite';
@@ -6,7 +8,9 @@ import { stateItemOf } from './stateItem';
 
 const notFound = (p: string) => Object.assign(new Error(`not found: ${p}`), { code: 'ENOENT' });
 
-async function readRaw(inner: MarkdownFs, p: string): Promise<string | undefined> {
+/** The file as it is on disk; undefined when it is gone, or too large to read whole (cachedFields.ts). */
+async function readRaw(root: string, inner: MarkdownFs, p: string): Promise<string | undefined> {
+  if (oversizedFile(path.join(root, p))) return undefined;
   try {
     return await inner.read(p);
   } catch (e) {
@@ -19,7 +23,7 @@ async function readRaw(inner: MarkdownFs, p: string): Promise<string | undefined
  * The tracker folder as Teamtrail on this machine sees it (`root` is its absolute path):
  * - reading a trail's map, a ticket or a decision gives it with the gate fields that count (effectiveText.ts): an
  *   outside change reads as the signed value, a decision nobody signed isn't there, a removed ticket still is;
- * - writing one signs the change as `by`'s (signedWrite.ts);
+ * - writing one signs the change as `by`'s (signedWrite.ts), against the text the writer read (`base`);
  * - every other file (briefs, criteria, knowledge, guides) passes through as it is.
  * The Lookout's file route and every Teamtrail process on this machine use it, so every write they make is signed
  * and every read applies the same rules.
@@ -33,14 +37,14 @@ export function signedFs(root: string, inner: MarkdownFs, by: () => string): Mar
     async read(p) {
       const item = stateItemOf(p);
       if (!item) return inner.read(p);
-      const { text } = effectiveText(root, item, await readRaw(inner, p));
+      const { text } = effectiveText(root, item, await readRaw(root, inner, p));
       if (text === undefined) throw notFound(p);
       return text;
     },
-    async write(p, text) {
+    async write(p, text, opts) {
       const item = stateItemOf(p);
-      if (!item) return inner.write(p, text);
-      signedWrite({ root, item, text, by: by() });
+      if (!item) return inner.write(p, text, opts);
+      signedWrite({ root, item, text, by: by(), base: opts?.base });
     },
     async create(p, text) {
       const item = stateItemOf(p);
