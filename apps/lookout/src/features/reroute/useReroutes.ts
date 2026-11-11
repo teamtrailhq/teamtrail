@@ -1,10 +1,16 @@
 import { type MapSnapshot } from '@teamtrail/core';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
-import { onTrackerEvent } from '../../lib/trackerChanges';
 import type { RerouteView } from './types';
 
 const api = `${apiBase()}/reroutes`;
+
+async function fetchReroutes(mapId?: string): Promise<RerouteView[]> {
+  if (!mapId) return [];
+  const r = await fetch(`${api}?map=${encodeURIComponent(mapId)}`);
+  return r.ok ? ((await r.json()) as { reroutes: RerouteView[] }).reroutes : [];
+}
 
 /**
  * The trail's reroute proposals (`/reroutes`), live: refetched on the `reroute` event for this trail and when the
@@ -14,22 +20,14 @@ export function useReroutes(snap?: MapSnapshot) {
   const mapId = snap?.map.id;
   const [reroutes, setReroutes] = useState<RerouteView[]>([]);
   const [error, setError] = useState<string>();
-  const load = useCallback(() => {
-    if (!mapId) return setReroutes([]);
-    void fetch(`${api}?map=${encodeURIComponent(mapId)}`)
-      .then((r) => (r.ok ? (r.json() as Promise<{ reroutes: RerouteView[] }>) : { reroutes: [] }))
-      .then((b) => setReroutes(b.reroutes))
-      .catch(() => setReroutes([]));
-  }, [mapId]);
-  const version = snap?.tickets.reduce((n, t) => Math.max(n, t.updatedAt), snap.map.updatedAt);
-  useEffect(load, [load, version]);
-  useEffect(
-    () =>
-      onTrackerEvent('reroute', (data) => {
-        if ((data as { mapId?: string }).mapId === mapId) load();
-      }),
-    [load, mapId],
-  );
+  const { reload } = useLiveLoad({
+    view: mapId,
+    version: snap?.tickets.reduce((n, t) => Math.max(n, t.updatedAt), snap.map.updatedAt),
+    load: () => fetchReroutes(mapId),
+    show: setReroutes,
+    failed: () => setReroutes([]),
+    events: { reroute: (data) => (data as { mapId?: string } | undefined)?.mapId === mapId },
+  });
 
   /** Resolves true when the call went through; on failure the error is kept for the dialog. */
   const decide = async (action: 'approve' | 'reject', id: string, note?: string) => {
@@ -42,7 +40,7 @@ export function useReroutes(snap?: MapSnapshot) {
     const b = (await r.json().catch(() => ({}))) as { error?: string; errors?: { message: string }[] };
     if (r.ok) {
       setError(undefined);
-      load();
+      reload();
       return true;
     }
     const details = b.errors?.map((e) => e.message).join('; ');

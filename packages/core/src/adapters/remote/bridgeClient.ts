@@ -29,6 +29,12 @@ import type {
 
 const LABELS: Record<RemoteKind, string> = { github: 'GitHub Issues', linear: 'Linear' };
 
+/** What BridgeAdapter needs of an event stream: a browser EventSource, or one that signs in before it connects. */
+export interface EventStreamLike {
+  addEventListener(type: string, listener: (e: Event) => void): void;
+  close(): void;
+}
+
 async function post<T>(url: string, method: string, body?: unknown): Promise<T> {
   let r: Response;
   try {
@@ -61,8 +67,13 @@ export class BridgeAdapter implements TrackerAdapter {
   status: SyncStatus = { state: 'connecting', queued: 0 };
   private events = new Emitter<TrackerEvent>();
   private statusEvents = new Emitter<SyncStatus>();
-  private source?: EventSource;
+  private source?: EventStreamLike;
   private listeners = 0;
+  /**
+   * Opens an event stream at `path` under the bridge. A bare EventSource can't send a session, so a page behind
+   * the Lookout's sign-in sets one that gets a stream ticket first.
+   */
+  openEvents: (path: string) => EventStreamLike = (path) => new EventSource(`${this.base}${path}`);
 
   constructor(
     readonly kind: RemoteKind,
@@ -107,19 +118,19 @@ export class BridgeAdapter implements TrackerAdapter {
     this.call<void>('markSuperseded', mapId, decisionId, supersededBy);
 
   private open() {
-    const es = new EventSource(`${this.base}/tracker/${this.kind}/events`);
-    es.onmessage = (m) => this.events.emit(JSON.parse(m.data) as TrackerEvent);
+    const es = this.openEvents(`/tracker/${this.kind}/events`);
+    es.addEventListener('message', (m) => this.events.emit(JSON.parse((m as MessageEvent).data) as TrackerEvent));
     es.addEventListener('status', (m) => {
       const s = JSON.parse((m as MessageEvent).data) as SyncStatus & { location?: string };
       if (s.location) this.location = s.location;
       this.status = s;
       this.statusEvents.emit(s);
     });
-    es.onerror = () => {
+    es.addEventListener('error', () => {
       if (this.status.state === 'offline') return;
       this.status = { ...this.status, state: 'offline', error: 'Lookout server unreachable' };
       this.statusEvents.emit(this.status);
-    };
+    });
     this.source = es;
   }
 

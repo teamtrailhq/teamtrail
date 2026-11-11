@@ -1,10 +1,16 @@
 import { type KnowledgeCall, type KnowledgeEntry } from '@teamtrail/core';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
-import { onTrackerChange } from '../../lib/trackerChanges';
 import type { KnowledgeDraft, KnowledgeStore } from './knowledgeContext';
 
 const api = `${apiBase()}/knowledge`;
+
+type Listed = {
+  entries: (KnowledgeEntry & { hash?: string })[];
+  stale: Record<string, string[]>;
+  hashes?: Record<string, string>;
+};
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const r = await fetch(`${api}${path}`, {
@@ -17,6 +23,11 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return b;
 }
 
+async function fetchKnowledge(): Promise<Listed | null> {
+  const r = await fetch(api);
+  return r.ok ? ((await r.json()) as Listed) : null;
+}
+
 /** Project knowledge for the Lookout (`/knowledge`), live: refetched when a `knowledge/` file changes. */
 export function useKnowledgeStore(briefText: string): KnowledgeStore {
   // each entry as served carries the hash of it as shown: a call sends it, so an entry changed since is refused
@@ -26,29 +37,16 @@ export function useKnowledgeStore(briefText: string): KnowledgeStore {
   const [hashes, setHashes] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string>();
-  const load = useCallback(() => {
-    void fetch(api)
-      .then((r) =>
-        r.ok
-          ? (r.json() as Promise<{
-              entries: KnowledgeEntry[];
-              stale: Record<string, string[]>;
-              hashes?: Record<string, string>;
-            }>)
-          : null,
-      )
-      .then((b) => {
-        if (!b) return;
-        setEntries(b.entries);
-        setStale(b.stale);
-        setHashes(b.hashes ?? {});
-      })
-      .catch(() => {});
-  }, []);
-  useEffect(() => {
-    load();
-    return onTrackerChange((path) => path.startsWith('knowledge/') && load());
-  }, [load]);
+  const { reload } = useLiveLoad({
+    load: fetchKnowledge,
+    show: (b) => {
+      if (!b) return;
+      setEntries(b.entries);
+      setStale(b.stale);
+      setHashes(b.hashes ?? {});
+    },
+    changed: (path) => path.startsWith('knowledge/'),
+  });
   const attention = useMemo(
     () => entries.filter((e) => e.status === 'suggested' || e.flag || (stale[e.id] && e.status !== 'outdated')).length,
     [entries, stale],
@@ -64,12 +62,12 @@ export function useKnowledgeStore(briefText: string): KnowledgeStore {
     hashes,
     call: (id: string, call: KnowledgeCall, shown?: string) =>
       post('/call', { id, call, hash: shown ?? hashes[id] }).then(
-        () => (setError(undefined), load(), true),
-        (e: Error) => (setError(e.message), load(), false),
+        () => (setError(undefined), reload(), true),
+        (e: Error) => (setError(e.message), reload(), false),
       ),
     propose: (draft: KnowledgeDraft) =>
       post<{ entry: KnowledgeEntry }>('/propose', draft).then(
-        (b) => (load(), b.entry),
+        (b) => (reload(), b.entry),
         (e: Error) => (setError(e.message), undefined),
       ),
   };

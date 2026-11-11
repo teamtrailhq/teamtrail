@@ -6,7 +6,7 @@ type Listener = (e: Event) => void;
 const MAX_RETRY_MS = 10_000;
 
 /**
- * The server's event stream (`<api>/events`), signed in. EventSource can't send the session header, so each
+ * A server event stream (`<api>/events`, or another `path` such as a tracker's), signed in. EventSource can't send the session header, so each
  * connection first gets a single-use ticket with it (`POST /sign-in/stream`) and opens `/events?ticket=`. A ticket
  * works once, so when the connection drops this opens a new one with a new ticket (backing off to 10 s), instead
  * of EventSource's own retry; and before each, the server proves it is the Lookout (serverProof.ts). Listeners ('message', 'open', 'error' and named events) carry over.
@@ -17,7 +17,10 @@ export class SessionEventSource {
   private closed = false;
   private retryMs = 1000;
 
-  constructor(private readonly base = apiBase()) {
+  constructor(
+    private readonly base = apiBase(),
+    private readonly path = '/events',
+  ) {
     void this.connect();
   }
 
@@ -53,7 +56,7 @@ export class SessionEventSource {
       .catch(() => undefined);
     if (this.closed) return;
     if (!ticket) return this.failed();
-    const es = new EventSource(`${this.base}/events?ticket=${encodeURIComponent(ticket)}`);
+    const es = new EventSource(`${this.base}${this.path}?ticket=${encodeURIComponent(ticket)}`);
     this.inner = es;
     for (const [type, l] of this.listeners) es.addEventListener(type, l);
     es.addEventListener('open', () => (this.retryMs = 1000));

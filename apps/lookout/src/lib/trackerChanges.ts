@@ -10,6 +10,7 @@ let stream: SessionEventSource | undefined;
 const listeners = new Set<(path: string) => void>();
 const named = new Map<string, Set<(data: string) => void>>();
 const opened = new Set<() => void>();
+const dropped = new Set<() => void>();
 
 function listen(name: string) {
   stream?.addEventListener(name, (m) => {
@@ -20,7 +21,10 @@ function listen(name: string) {
 function open() {
   if (stream) return;
   stream = new SessionEventSource();
-  stream.onerror = reloadIfSignedOut;
+  stream.onerror = () => {
+    for (const l of dropped) l();
+    reloadIfSignedOut();
+  };
   // the stream starts after the page's first loads and reconnects after a drop: what changed meanwhile was never sent
   stream.addEventListener('open', () => {
     for (const l of opened) l();
@@ -34,7 +38,7 @@ function open() {
 
 function closeIfIdle() {
   const anyNamed = [...named.values()].some((s) => s.size > 0);
-  if (listeners.size || anyNamed || opened.size) return;
+  if (listeners.size || anyNamed || opened.size || dropped.size) return;
   stream?.close();
   stream = undefined;
 }
@@ -79,6 +83,16 @@ export function onStreamOpen(listener: () => void) {
   open();
   return () => {
     opened.delete(listener);
+    closeIfIdle();
+  };
+}
+
+/** Calls `listener` each time the stream drops or can't connect: until it opens again, nothing is sent. */
+export function onStreamDrop(listener: () => void) {
+  dropped.add(listener);
+  open();
+  return () => {
+    dropped.delete(listener);
     closeIfIdle();
   };
 }

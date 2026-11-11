@@ -1,7 +1,7 @@
 import { type RiskPolicy } from '@teamtrail/core';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
-import { onTrackerChange } from '../../lib/trackerChanges';
 
 export interface PolicyView {
   policy: RiskPolicy;
@@ -24,25 +24,27 @@ async function fetchPolicy(): Promise<PolicyView | null> {
  */
 export function usePolicy() {
   const [view, setView] = useState<PolicyView | null>();
-  const load = useCallback(() => {
-    fetchPolicy().then(setView, () => setView(null));
-  }, []);
-  useEffect(() => {
-    load();
-    return onTrackerChange((p) => {
-      if (p.endsWith('policy.json')) load();
-    });
-  }, [load]);
-  const save = useCallback(async (policy: RiskPolicy): Promise<string | undefined> => {
-    const r = await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(policy),
-    });
-    const body = (await r.json()) as PolicyView & { error?: string };
-    if (!r.ok) return body.error ?? `Saving failed (${r.status})`;
-    setView(body);
-    return undefined;
-  }, []);
+  const { pushed } = useLiveLoad({
+    load: fetchPolicy,
+    show: setView,
+    failed: () => setView(null),
+    changed: (p) => p.endsWith('policy.json'),
+  });
+  const save = useCallback(
+    async (policy: RiskPolicy): Promise<string | undefined> => {
+      const r = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(policy),
+      });
+      const body = (await r.json()) as PolicyView & { error?: string };
+      if (!r.ok) return body.error ?? `Saving failed (${r.status})`;
+      // the policy as saved: a load started before it is older
+      pushed();
+      setView(body);
+      return undefined;
+    },
+    [pushed],
+  );
   return { view, save };
 }

@@ -1,8 +1,8 @@
 import type { Criterion } from '@teamtrail/core';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
 import { responseError } from '../../lib/responseError';
-import { onTrackerEvent } from '../../lib/trackerChanges';
 
 /** A change an agent proposed to criteria the trail lead confirmed (core criteria/criteriaProposals.ts). */
 export interface CriteriaProposalView {
@@ -17,23 +17,23 @@ export interface CriteriaProposalView {
 
 const api = `${apiBase()}/criteria-proposals`;
 
+async function fetchProposals(mapId?: string): Promise<CriteriaProposalView[]> {
+  if (!mapId) return [];
+  const r = await fetch(`${api}?mapId=${encodeURIComponent(mapId)}`);
+  return r.ok ? ((await r.json()) as { proposals: CriteriaProposalView[] }).proposals : [];
+}
+
 /** A trail's proposed criteria changes, live; `decide` takes one (accept) or drops it (dismiss). */
 export function useCriteriaProposals(mapId?: string) {
   const [proposals, setProposals] = useState<CriteriaProposalView[]>([]);
-  const load = useCallback(() => {
-    if (!mapId) return setProposals([]);
-    void fetch(`${api}?mapId=${encodeURIComponent(mapId)}`)
-      .then((r) => (r.ok ? (r.json() as Promise<{ proposals: CriteriaProposalView[] }>) : { proposals: [] }))
-      .then((b) => setProposals(b.proposals))
-      .catch(() => setProposals([]));
-  }, [mapId]);
-  useEffect(() => {
-    load();
+  const { reload } = useLiveLoad({
+    view: mapId,
+    load: () => fetchProposals(mapId),
+    show: setProposals,
+    failed: () => setProposals([]),
     // Proposals live in `.agents/` (local only), which the watcher reports as its own event.
-    return onTrackerEvent('criteria-proposals', (data) => {
-      if ((data as { mapId?: string }).mapId === mapId) load();
-    });
-  }, [load, mapId]);
+    events: { 'criteria-proposals': (data) => (data as { mapId?: string } | undefined)?.mapId === mapId },
+  });
   const decide = (action: 'accept' | 'dismiss', body: { title: string; ticketId: string; hash?: string }) =>
     fetch(`${api}/${action}`, {
       method: 'POST',
@@ -43,7 +43,7 @@ export function useCriteriaProposals(mapId?: string) {
       .catch(() => undefined)
       .then(async (r) => {
         const error = await responseError(r);
-        load();
+        reload();
         return error;
       });
   return { proposals, decide };

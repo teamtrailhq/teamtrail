@@ -1,10 +1,8 @@
 import {
   BRAND,
   ActivityStream,
-  type AgentSessionDoc,
   type KeyValueStore,
   PREFS_KEY,
-  type TicketLease,
   type TrackerAdapter,
   Presence,
   BridgeAdapter,
@@ -17,44 +15,9 @@ import {
 import { apiBase } from './apiBase';
 import { httpFs } from './httpFs';
 import { LeaseBoard } from './leaseBoard';
+import { linkAgents } from './linkAgents';
 import { type TrackerChoice, loadPrefs } from './prefs';
 import { SessionEventSource } from './sessionEvents';
-
-/** Mirror agent sessions reported over MCP (see core agentLink.ts) and send trail lead answers back to them. */
-export function linkAgents(activity: ActivityStream, leases: LeaseBoard) {
-  activity.remoteAnswer = (q, text, author) => {
-    void fetch(`${apiBase()}/agents/answer`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: q.sessionId, questionId: q.id, text, author }),
-    })
-      .then(async (r) => {
-        if (!r.ok)
-          throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error ?? `HTTP ${r.status}`);
-      })
-      .catch((e: Error) =>
-        activity.push({
-          source: 'system',
-          level: 'alert',
-          sessionId: q.sessionId,
-          text: `Answer not delivered to ${q.agent} · ${e.message}`,
-        }),
-      );
-  };
-  const es = new SessionEventSource();
-  es.addEventListener('agent', (m) =>
-    activity.syncRemote(JSON.parse((m as MessageEvent<string>).data) as AgentSessionDoc),
-  );
-  es.addEventListener('leases', (m) => leases.set(JSON.parse((m as MessageEvent<string>).data).leases));
-  void fetch(`${apiBase()}/agents/leases`)
-    .then((r) => (r.ok ? (r.json() as Promise<{ leases: TicketLease[] }>) : { leases: [] }))
-    .then(({ leases: l }) => leases.set(l))
-    .catch(() => {});
-  void fetch(`${apiBase()}/agents`)
-    .then((r) => (r.ok ? (r.json() as Promise<{ sessions: AgentSessionDoc[] }>) : { sessions: [] }))
-    .then(({ sessions }) => [...sessions].reverse().forEach((d) => activity.syncRemote(d)))
-    .catch(() => {});
-}
 
 export type TrackerKind = TrackerChoice;
 
@@ -91,6 +54,8 @@ export function createRuntime(kind: TrackerKind) {
   const journal: Journal = httpJournal(apiBase());
   if (kind === 'github' || kind === 'linear') {
     const remote = new BridgeAdapter(kind, apiBase());
+    // the tracker's own event stream sits behind the Lookout's sign-in, like `/events`
+    remote.openEvents = (path) => new SessionEventSource(apiBase(), path);
     raw = remote;
     ready = fetch(`${apiBase()}/trackers`)
       .then(

@@ -1,7 +1,8 @@
 import type { PendingTracker, TrustItem } from '@teamtrail/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiBase } from '../../lib/apiBase';
-import { onTrackerChange } from '../../lib/trackerChanges';
+import { newestWins } from '../../lib/newestWins';
+import { onStreamOpen, onTrackerChange } from '../../lib/trackerChanges';
 
 export interface OldQueue {
   writes: number;
@@ -74,21 +75,35 @@ export function useApprovals() {
   useEffect(() => void (shown.current = view), [view]);
   /** Actions of this page in flight: the file events they cause are not news to the human. */
   const acting = useRef(0);
+  // overlapping loads land in the order they started; `loads` counts them, so a recheck knows one is newer
+  const [order] = useState(newestWins);
+  const loads = useRef(0);
   const load = useCallback(() => {
-    setChanged(false);
+    loads.current++;
+    const fresh = order.start();
     // `shown` at once, not after the render: a file event right after an action compares against the new list.
-    const show = (v: ApprovalsView | null) => ((shown.current = v), setView(v));
+    const show = (v: ApprovalsView | null) => {
+      if (!fresh()) return;
+      shown.current = v;
+      setView(v);
+      setChanged(false);
+    };
     return fetchView().then(show, () => show(null));
-  }, []);
+  }, [order]);
   /** A file changed: compare what the server lists now with what is shown, and only say so. */
   const recheck = useCallback(async () => {
     if (acting.current) return;
+    const before = loads.current;
     const next = await fetchView().catch(() => null);
     const was = shown.current;
+    // a load started meanwhile shows the list as it is now; before the first one lands there is nothing to compare
+    if (loads.current !== before || was === undefined) return;
     if (!next || !was || !sameView(next, was)) setChanged(true);
   }, []);
   useEffect(() => void load(), [load]);
   useEffect(() => onTrackerChange((p) => void (p.startsWith('.') || recheck())), [recheck]);
+  // what changed while the event stream was down (before it opened, or while it reconnected) was never sent
+  useEffect(() => onStreamOpen(() => void recheck()), [recheck]);
   /** Runs one of this page's actions, then shows the list as it is now. */
   const during = useCallback(
     async <T>(work: () => Promise<T>) => {
