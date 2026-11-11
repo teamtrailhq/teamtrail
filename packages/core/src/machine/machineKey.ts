@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { linkSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { configDir } from '../server/trackerConfig';
 import { writePrivateFile } from './writePrivateFile';
@@ -23,11 +23,26 @@ function readKey(file: string): string | undefined {
   }
 }
 
-/** The key, created when missing. Two processes starting together may both write; the second read settles on one. */
+/**
+ * The key, created when missing. Created exclusively: two processes starting together both end up with the first
+ * one's key, never one each (a second key would make everything the first signed read as forged, signedState/).
+ */
 export function machineKey(dir: string = configDir()): string {
   const file = path.join(dir, MACHINE_KEY_FILE);
   const known = readKey(file);
   if (known) return known;
+  const draft = `${file}.${process.pid}.${randomBytes(4).toString('hex')}`;
+  writePrivateFile(draft, `${randomBytes(32).toString('hex')}\n`);
+  try {
+    linkSync(draft, file);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+  } finally {
+    rmSync(draft, { force: true });
+  }
+  const made = readKey(file);
+  if (made) return made;
+  // a file that isn't a key (damaged): replaced, as before
   writePrivateFile(file, `${randomBytes(32).toString('hex')}\n`);
   return readKey(file)!;
 }

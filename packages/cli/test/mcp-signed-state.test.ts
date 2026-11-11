@@ -9,6 +9,7 @@ import { createTrackerBridge, type TrackerBridge } from '@teamtrail/core/bridge'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { approveInLookout } from './fakes/callTool';
 
 /*
  * Signed state over MCP: an agent's writes through the tools are signed as its own and raise no flag, and an edit
@@ -58,7 +59,11 @@ afterEach(async () => {
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-type Started = { trail: { id: string; key: string }; tickets: { ref?: string; key: string; title: string }[] };
+type Started = {
+  trail: { id: string; key: string };
+  tickets: { ref?: string; key: string; title: string }[];
+  skipDiscovery?: { request: string };
+};
 
 async function start(call: Awaited<ReturnType<typeof connect>>) {
   const started = await call<Started>('start_trail', {
@@ -74,7 +79,7 @@ async function start(call: Awaited<ReturnType<typeof connect>>) {
     assumptions: [{ text: 'The v2 API supports batch writes', tickets: ['batch'] }],
   });
   const key = (ref: string) => started.tickets.find((t) => t.ref === ref)!.key;
-  return { mapId: started.trail.id, key };
+  return { mapId: started.trail.id, key, skip: started.skipDiscovery?.request };
 }
 
 describe('signed state over MCP', () => {
@@ -148,7 +153,9 @@ describe('signed state over MCP', () => {
 
   it('#62: a HITL junction edited to a task, or a task with its hitl label removed, still needs the human to close', async () => {
     const call = await connect();
-    const { mapId, key } = await start(call);
+    const { mapId, key, skip } = await start(call);
+    // skipping discovery is the trail lead's call (#62): approved, so the task can be claimed
+    await approveInLookout({ root, mapId, id: skip! });
     const fileOf = (ref: string) => path.join(root, mapId, 'tickets', `${key(ref).slice(1)}.md`);
     const editFile = (ref: string, from: RegExp, to: string) =>
       fs.writeFileSync(fileOf(ref), fs.readFileSync(fileOf(ref), 'utf8').replace(from, to));
