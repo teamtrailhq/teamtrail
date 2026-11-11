@@ -21,8 +21,10 @@ import { tokenFileAuth } from '../mcp/http/tokenFileAuth';
 import { printGreeting } from '../printGreeting';
 import { keepServing } from './keepServing';
 import { lanUrls } from './lanUrls';
-import { listen } from './listen';
+import { listen, type Listening } from './listen';
+import { listenFailure } from './listenFailure';
 import { lookoutHandler } from './lookoutHandler';
+import { lookoutUrl } from './lookoutUrl';
 import { openBrowser } from './openBrowser';
 import { pairLink } from './pairLink';
 
@@ -50,17 +52,18 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
     thisMachineOnly: true,
   });
   let hub: ProjectsHub | undefined;
-  const server = http.createServer(lookoutHandler({ appDir, mcp, hub: () => hub }));
+  const handler = lookoutHandler({ appDir, mcp, hub: () => hub });
 
-  let port: number;
+  // One server per address (the --host one, 127.0.0.1 and ::1), all with the same handler: see listen.ts.
+  let listening: Listening;
   try {
-    port = await listen(server, opts.port, opts.host, opts.portExplicit ? 0 : 20);
+    const retries = opts.portExplicit ? 0 : 20;
+    listening = await listen({ make: () => http.createServer(handler), port: opts.port, host: opts.host, retries });
   } catch (err) {
-    const e = err as NodeJS.ErrnoException;
-    fail(e.code === 'EADDRINUSE' ? `port ${opts.port} is already in use; pick another with --port <n>` : e.message);
+    fail(listenFailure(err));
   }
-  const shownHost = opts.host === '127.0.0.1' || opts.host === '0.0.0.0' ? 'localhost' : opts.host;
-  const url = `http://${shownHost}:${port}/`;
+  const { port, servers } = listening;
+  const url = lookoutUrl(port);
   const bridge = createTrackerBridge(root, {
     plugins: [slackPlugin()],
     url: () => url,
@@ -102,8 +105,11 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
     void mcp.close();
     hub?.close();
     bridge.close();
-    server.close(() => process.exit(0));
-    server.closeAllConnections();
+    let open = servers.length;
+    for (const server of servers) {
+      server.close(() => --open || process.exit(0));
+      server.closeAllConnections();
+    }
   };
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);

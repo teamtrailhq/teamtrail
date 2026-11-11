@@ -54,12 +54,12 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
         const { port } = server.httpServer!.address() as { port: number };
         // Like the Lookout's own port: this machine only, whatever interfaces the dev server listens on.
         unlist = writeMcpEndpoint(bridge.root, {
-          url: `http://localhost:${port}/mcp`,
+          url: `http://127.0.0.1:${port}/mcp`,
           kind: 'lookout',
           network: false,
         });
         // what `teamtrail pair --dir <this folder>` checks before it makes a link for this server
-        unlock = writeLookoutLock(bridge.root, `http://localhost:${port}/`);
+        unlock = writeLookoutLock(bridge.root, `http://127.0.0.1:${port}/`);
         setTimeout(printPairLink, 100);
       });
       server.httpServer?.on('close', () => {

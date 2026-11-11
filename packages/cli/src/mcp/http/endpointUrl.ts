@@ -15,11 +15,14 @@ function lanAddress() {
   return all.find((a) => a.family === 'IPv4' && !a.internal)?.address;
 }
 
-/** The endpoint's URL as a client should type it: `localhost` for loopback, a reachable address otherwise. */
+/**
+ * The endpoint's URL as a client should type it: `127.0.0.1` for loopback, a reachable address otherwise. Never
+ * `localhost`, which a client may resolve to `::1` first: an IP address is one socket, the one the server holds.
+ */
 export function endpointUrl(host: string, port: number) {
   let shown = host;
-  if (isLoopback(host)) shown = 'localhost';
-  else if (WILDCARD.has(host)) shown = lanAddress() ?? 'localhost';
+  if (isLoopback(host)) shown = '127.0.0.1';
+  else if (WILDCARD.has(host)) shown = lanAddress() ?? '127.0.0.1';
   if (shown.includes(':')) shown = `[${shown}]`;
   return `http://${shown}:${port}${MCP_PATH}`;
 }

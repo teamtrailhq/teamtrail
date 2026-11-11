@@ -300,7 +300,7 @@ test('hub: a project another live Lookout serves is only read, and links there o
     res.end(req.url === '/__teamtrail/session' ? JSON.stringify({ signedIn: false, project: projectId(gamma) }) : '{}');
   });
   await new Promise<void>((r) => other.listen(0, '127.0.0.1', r));
-  const at = `http://localhost:${(other.address() as { port: number }).port}/`;
+  const at = `http://127.0.0.1:${(other.address() as { port: number }).port}/`;
   // as a Teamtrail of this machine writes it: signed with the machine key (unsigned: see below)
   const lock = (url: string, signed = true) => {
     const sig = signed ? announcementSig(gamma, LOCK_SIG, [url, process.ppid, now]) : undefined;
@@ -322,6 +322,9 @@ test('hub: a project another live Lookout serves is only read, and links there o
       'http://192.168.1.9:7420/',
       'javascript:alert(1)',
       'http://localhost:1/',
+      at.replace('127.0.0.1', 'localhost'),
+      at.replace('127.0.0.1', '127.0.0.2'),
+      at.replace('127.0.0.1', '[::1]'),
     ]) {
       lock(forged);
       assert.deepEqual(await stateOf(), { kind: 'elsewhere' }, forged);

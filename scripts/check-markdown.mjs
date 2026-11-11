@@ -11,7 +11,7 @@ const ticketFile = path.join(dataDir, mapDir, 'tickets', '7.md');
 const browser = await chromium.launch({ executablePath: process.env.CHROME ?? '/usr/local/bin/google-chrome' });
 const page = await browser.newPage({ viewport: { width: 1680, height: 945 } });
 page.on('pageerror', (e) => console.log('pageerror:', e.message));
-await page.goto('http://localhost:7477/?tracker=markdown');
+await page.goto('http://127.0.0.1:7477/?tracker=markdown');
 await page.locator('.node').first().waitFor({ timeout: 10000 });
 console.log('nodes', await page.locator('.node').count());
 

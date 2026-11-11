@@ -143,9 +143,9 @@ describe('connect --url', () => {
   });
 
   it('shows an endpoint URL a client can type', () => {
-    expect(endpointUrl('127.0.0.1', 7421)).toBe('http://localhost:7421/mcp');
+    expect(endpointUrl('127.0.0.1', 7421)).toBe('http://127.0.0.1:7421/mcp');
     expect(endpointUrl('192.168.1.5', 7421)).toBe('http://192.168.1.5:7421/mcp');
-    expect(endpointUrl('::1', 7421)).toBe('http://localhost:7421/mcp');
+    expect(endpointUrl('::1', 7421)).toBe('http://127.0.0.1:7421/mcp');
     expect(endpointUrl('0.0.0.0', 7421)).toMatch(/^http:\/\/[\w.]+:7421\/mcp$/);
     expect(isLoopback('127.0.0.1')).toBe(true);
     expect(isLoopback('0.0.0.0')).toBe(false);

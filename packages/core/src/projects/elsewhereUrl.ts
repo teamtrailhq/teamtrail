@@ -7,11 +7,13 @@ import { BRAND } from '../model/brand';
 import type { ProjectState } from '../model/project';
 import { projectId } from './projectId';
 
-const LOOPBACK = /^http:\/\/(localhost|127\.\d+\.\d+\.\d+|\[::1\]):\d{1,5}\/(\?project=[\w-]{1,64})?$/;
+// 127.0.0.1 only, the address a Lookout writes and holds: `localhost` may resolve to `::1` first, and another
+// 127.x address is a socket another program could hold.
+const LOOPBACK = /^http:\/\/127\.0\.0\.1:\d{1,5}\/(\?project=[\w-]{1,64})?$/;
 const TTL_MS = 30_000;
 const known = new Map<string, { at: number; ok: boolean }>();
 
-/** A lock's URL as a Lookout writes it: plain http on this machine, its root path, maybe `?project=<id>`. */
+/** A lock's URL as a Lookout writes it: plain http on 127.0.0.1, its root path, maybe `?project=<id>`. */
 export const isLoopbackLookoutUrl = (url: unknown): url is string => typeof url === 'string' && LOOPBACK.test(url);
 
 /**

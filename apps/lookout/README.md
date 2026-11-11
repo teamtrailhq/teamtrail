@@ -14,7 +14,7 @@ cd your-repo
 teamtrail
 ```
 
-`teamtrail` starts a local server (default `http://localhost:7420`, the next free port if that one is taken), opens the Lookout in your browser and keeps trails as markdown in `./.teamtrail/` in the current folder. The header shows the folder name. Agents and people can edit those files directly; changes stream into the UI.
+`teamtrail` starts a local server (default `http://127.0.0.1:7420`, the next free port if that one is taken), opens the Lookout in your browser and keeps trails as markdown in `./.teamtrail/` in the current folder. The header shows the folder name. Agents and people can edit those files directly; changes stream into the UI.
 
 | Flag | Default | |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ From the repo root:
 
 ```bash
 npm install
-npm run dev                 # resets the dev project (npm run seed), then Vite with hot reload, http://localhost:7477
+npm run dev                 # resets the dev project (npm run seed), then Vite with hot reload, http://127.0.0.1:7477
 npm run dev:keep            # the same server without reseeding, keeping what you changed
 npm run dev:agent           # real MCP agents working the dev project (after npm run build -w teamtrail)
 npm run build               # every workspace; the lookout bundle + CLI land in packages/cli/dist

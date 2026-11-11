@@ -373,7 +373,7 @@ test('pairing, device codes and revoking are journaled without a secret; old jou
 });
 
 test('`teamtrail pair` trusts a lock only when its process is alive and the server there proves it is that process', async () => {
-  const at = `http://localhost:${port}/`;
+  const at = `http://127.0.0.1:${port}/`;
   // this test's hub answers without the Lookout's `/__teamtrail` prefix
   const unprefixed: typeof fetch = (u, init) => fetch(String(u).replace('/__teamtrail', ''), init);
   const release = writeLookoutLock(root, at);
@@ -384,7 +384,7 @@ test('`teamtrail pair` trusts a lock only when its process is alive and the serv
       res.end(JSON.stringify({ signedIn: false, instance: process.pid, proof: 'f'.repeat(64) })),
     );
     await new Promise<void>((r) => fake.listen(0, '127.0.0.1', r));
-    const fakeUrl = `http://localhost:${(fake.address() as { port: number }).port}/`;
+    const fakeUrl = `http://127.0.0.1:${(fake.address() as { port: number }).port}/`;
     writeLookoutLock(root, fakeUrl);
     assert.equal((await runningLookout(root, unprefixed)).kind, 'not-answering');
     fake.close();
