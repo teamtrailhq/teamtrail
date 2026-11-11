@@ -24,7 +24,7 @@ function why(item: TrustItem | undefined, want: { hash: string }, bulk: Bulk) {
   if (!item) return 'gone';
   if (item.hash !== want.hash) return 'changed';
   const first = item.kind === 'state' ? bulk.stateFirst : bulk.first;
-  if (bulk.on && !(first && item.committed)) return 'refused';
+  if (bulk.on && (item.alone || !(first && item.committed))) return 'refused';
   return undefined;
 }
 

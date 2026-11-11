@@ -17,8 +17,8 @@ function registryOf(root: string, name: string | null | undefined): Registry {
 
 /**
  * `/guides/catalog`: GET `?registry` lists a catalog's index; GET `/guides/catalog/preview?registry&id` fetches one
- * guide, sha-checked and linted, without writing anything; POST `/guides/catalog/add { registry, id }` installs and pins
- * it (journaled). A catalog that can't be reached answers 502; a refused install 409.
+ * guide, sha-checked and linted, without writing anything; POST `/guides/catalog/add { registry, id, sha256 }` installs
+ * and pins the file that was previewed (journaled). A catalog that can't be reached answers 502; a refused install 409.
  */
 export async function handleGuideCatalog(ctx: RouteContext, req: IncomingMessage, res: ServerResponse, url: URL) {
   try {
@@ -43,10 +43,12 @@ export async function handleGuideCatalog(ctx: RouteContext, req: IncomingMessage
 }
 
 async function add(ctx: RouteContext, req: IncomingMessage, res: ServerResponse) {
-  const b = await readJson<{ registry?: unknown; id?: unknown }>(req, '{}');
+  const b = await readJson<{ registry?: unknown; id?: unknown; sha256?: unknown }>(req, '{}');
   if (typeof b.id !== 'string' || !b.id) throw new BadRequest('"id" is required');
+  // the hash of the file the page showed in full: adding approves exactly that file
+  if (typeof b.sha256 !== 'string' || !b.sha256) throw new BadRequest('"sha256" is required');
   const registry = registryOf(ctx.root, typeof b.registry === 'string' ? b.registry : undefined);
-  const r = await addFromCatalog({ root: ctx.root, registry, id: b.id, by: TRAIL_LEAD });
+  const r = await addFromCatalog({ root: ctx.root, registry, id: b.id, by: TRAIL_LEAD, sha256: b.sha256 });
   journalGuide(ctx.root, { action: r.updated ? 'updated' : 'installed', guide: r.guide.id, version: r.guide.version });
   const installed = { id: r.guide.id, version: r.guide.version, pendingChecks: r.pendingChecks };
   sendJson(res, 200, { installed, ...guidesView(ctx.root) });

@@ -6,6 +6,7 @@ import { checksApproval } from '../verification/checksApproval';
 import { checksDiff } from '../verification/checksDiff';
 import { VERIFICATION_FILE } from '../verification/configFile';
 import { levelItems } from '../verification/levelItems';
+import { catalogsItem } from './catalogsItem';
 import { briefItems, criteriaItems, knowledgeItems } from './fileItems';
 import type { TrustItem } from './trustItem';
 import { contentHash, trustKey, trustLedger, type TrustRecord } from './trustLedger';
@@ -30,6 +31,8 @@ function checksItem(root: string): TrustItem[] {
       lines,
       warnings,
       file: VERIFICATION_FILE,
+      // a command the lint refuses, or one Teamtrail can't place, is looked at on its own, never adopted with the rest
+      ...(warnings.length ? { alone: true } : {}),
     },
   ];
 }
@@ -46,15 +49,16 @@ function policyItem(root: string, ledger: Ledger): TrustItem[] {
 
 /**
  * Everything the project's files claim that this machine's trail lead hasn't approved as it is now: the check
- * commands, accepted briefs, confirmed criteria, live knowledge, a risk policy that lowers a level, (given the
- * trails) verification levels lowered below what was approved here, and trail files changed outside Teamtrail
- * (signedState/outsideChanges.ts). Read from the files and the ledger only.
+ * commands, the guide catalogs, accepted briefs, confirmed criteria, live knowledge, a risk policy that lowers a
+ * level, (given the trails) verification levels lowered below what was approved here, and trail files changed outside
+ * Teamtrail (signedState/outsideChanges.ts). Read from the files and the ledger only.
  */
 export function pendingTrust(root: string, snaps: MapSnapshot[] = []): TrustItem[] {
   const ledger = trustLedger(root).all();
   return [
     ...checksItem(root),
     ...policyItem(root, ledger),
+    ...catalogsItem(root),
     ...levelItems(root, ledger, snaps),
     ...briefItems(root, ledger),
     ...criteriaItems(root, ledger),

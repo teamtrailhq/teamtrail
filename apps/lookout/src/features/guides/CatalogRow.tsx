@@ -1,8 +1,9 @@
 import type { CatalogEntry } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
+import { catalogReviewPart } from './guideLabels';
 
 /** One guide in the catalog list: what it is, who wrote it, whether the catalog's reviewers verified it. */
-export function CatalogRow(props: { entry: CatalogEntry; installed?: string; onOpen: () => void }) {
+export function CatalogRow(props: { entry: CatalogEntry; catalogUrl: string; installed?: string; onOpen: () => void }) {
   const e = props.entry;
   return (
     <li className="catalog-row" data-guide-id={e.id}>
@@ -10,7 +11,13 @@ export function CatalogRow(props: { entry: CatalogEntry; installed?: string; onO
         title={e.name ?? e.id}
         context={
           <MetaLine
-            parts={[{ text: e.id, code: true }, e.version, e.author, reviewPart(e), e.reported && 'Reported']}
+            parts={[
+              { text: e.id, code: true },
+              e.version,
+              e.author,
+              catalogReviewPart(e, props.catalogUrl),
+              e.reported && 'Reported',
+            ]}
           />
         }
         detail={e.summary}
@@ -19,10 +26,4 @@ export function CatalogRow(props: { entry: CatalogEntry; installed?: string; onO
       />
     </li>
   );
-}
-
-/** Built in, Verified or Not reviewed: what the catalog says about this guide. */
-function reviewPart(e: CatalogEntry) {
-  if (e.builtin) return { text: 'Built in', strong: true };
-  return e.verified ? { text: 'Verified', strong: true } : 'Not reviewed';
 }

@@ -1,6 +1,7 @@
 import { BRAND } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button } from '../../components/ui';
+import { CheckApprove } from './CheckApprove';
 import { argvText } from './guideLabels';
 import type { CatalogPreview } from './types';
 import { useGuides } from './useGuides';
@@ -15,7 +16,7 @@ type Step = { kind: 'ready' } | { kind: 'adding' } | { kind: 'added'; pending: s
 export function AddGuideFlow(props: {
   preview: CatalogPreview;
   installed?: string;
-  add: (id: string) => Promise<{ pendingChecks: string[] }>;
+  add: (id: string, sha256: string) => Promise<{ pendingChecks: string[] }>;
 }) {
   const { preview: p } = props;
   const { act, find } = useGuides();
@@ -26,7 +27,7 @@ export function AddGuideFlow(props: {
     setError(undefined);
     setStep({ kind: 'adding' });
     try {
-      setStep({ kind: 'added', pending: (await props.add(id)).pendingChecks });
+      setStep({ kind: 'added', pending: (await props.add(id, p.entry.sha256)).pendingChecks });
     } catch (e) {
       setError((e as Error).message);
       setStep({ kind: 'ready' });
@@ -39,7 +40,7 @@ export function AddGuideFlow(props: {
     const label = props.installed ? 'Update guide' : 'Add guide';
     return (
       <div className="add-guide">
-        {!p.ok && <span className="t-meta">The safety lint found errors, so this guide can't be added.</span>}
+        {!p.ok && <span className="t-meta">The lint found errors, so this guide can't be added.</span>}
         <Button variant="primary" disabled={!p.ok || same || step.kind === 'adding'} onClick={() => void add()}>
           {same ? 'Added' : label}
         </Button>
@@ -48,7 +49,8 @@ export function AddGuideFlow(props: {
     );
   }
   const waiting = find(id)?.pendingChecks ?? step.pending;
-  const approve = async (name: string) => setError(await act('/guides/checks/approve', { id, name }));
+  const approve = async (name: string, acknowledged: boolean) =>
+    setError(await act('/guides/checks/approve', { id, name, acknowledged }));
   return (
     <div className="add-guide">
       <p className="t-body">
@@ -61,9 +63,11 @@ export function AddGuideFlow(props: {
           <code className="t-code">
             {name}: {argvText(p.guide?.proposedChecks[name]?.run ?? [])}
           </code>
-          <Button size="sm" onClick={() => void approve(name)}>
-            Approve check {name}
-          </Button>
+          <CheckApprove
+            name={name}
+            spec={p.guide?.proposedChecks[name] ?? { run: [] }}
+            onApprove={(n, ack) => void approve(n, ack)}
+          />
         </span>
       ))}
       {error && <span className="vf-err">{error}</span>}
