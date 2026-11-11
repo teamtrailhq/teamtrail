@@ -11,7 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout } from './e2eHelpers.mjs';
+import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
 import { PERF, verifyOwnGuides } from './verifyOwnGuides.mjs';
 
 const A11Y = `---
@@ -86,16 +86,16 @@ function scratchProject(catalogs) {
 
 async function startServer(cli, cwd) {
   const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd });
-  const url = await new Promise((resolve, reject) => {
+  const { url, pair } = await new Promise((resolve, reject) => {
     let out = '';
     server.stdout.on('data', (c) => {
       out += c;
-      const m = out.match(/Lookout\s+(http:\S+)/);
-      if (m) resolve(m[1]);
+      const links = lookoutLinks(out);
+      if (links) resolve(links);
     });
     server.on('exit', (code) => reject(new Error(`teamtrail exited ${code}: ${out}`)));
   });
-  return { server, url };
+  return { server, url, pair };
 }
 
 async function agent(cli, cwd) {
@@ -169,13 +169,15 @@ export async function verifyGuides({ browser, cli, log, shots }) {
     { name: 'second', url: second.url },
   ];
   const { top, root } = scratchProject(catalogs);
-  const { server, url } = await startServer(cli, top);
+  const { server, url, pair } = await startServer(cli, top);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const shot = async (name) => shots && page.screenshot({ path: path.join(shots, `${name}.png`) });
   const worker = await agent(cli, top);
   try {
+    // the link `teamtrail` printed signs this browser in
+    await signInWith(page, pair);
     const verifiedInSettings = await addInLookout({ page, url, shot });
     const config = JSON.parse(fs.readFileSync(path.join(root, 'verification.json'), 'utf8'));
     const approved = config.checks.a11y?.run?.join(' ') === 'node checks/a11y.js';

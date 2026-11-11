@@ -5,7 +5,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { createRemoteToken } from '@teamtrail/core/agents';
-import { createProjectsHub, createTrackerBridge } from '@teamtrail/core/bridge';
+import { createLookoutSignIn, createProjectsHub, createTrackerBridge } from '@teamtrail/core/bridge';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { trackerFs } from '../../../apps/lookout/plugins/trackerFs';
 import { createMcpHttp } from '../src/mcp/http/createMcpHttp';
@@ -126,6 +126,7 @@ beforeAll(async () => {
     home: bridge,
     openBridge: (p) => createTrackerBridge(p.root, { env: {}, configDir }),
     configDir,
+    signIn: createLookoutSignIn({ root, configDir }),
   });
   const mcp = createMcpHttp({
     auth: tokenFileAuth(root),
@@ -140,16 +141,17 @@ beforeAll(async () => {
     {
       name: 'the Lookout server',
       api: '/__teamtrail',
-      sane: ['GET /__teamtrail/list', 200],
+      // the one API route a browser reaches before it is paired
+      sane: ['GET /__teamtrail/session', 200],
       listener: lookoutHandler({ appDir, mcp, hub: () => hub }),
     },
     { name: 'the bridge', api: '', sane: ['GET /list', 200], listener: bridge.handle },
-    { name: 'the projects hub', api: '', sane: ['GET /projects', 200], listener: hub.handle },
+    { name: 'the projects hub', api: '', sane: ['GET /session', 200], listener: hub.handle },
     { name: 'mcp --http', api: '', sane: ['GET /nothing', 404], listener: mcpHttpListener(mcp) },
     {
       name: 'the dev plugin',
       api: '/__teamtrail',
-      sane: ['GET /__teamtrail/list', 200],
+      sane: ['GET /__teamtrail/session', 200],
       listener: dev(root, configDir),
     },
   );

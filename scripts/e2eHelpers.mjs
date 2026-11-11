@@ -1,4 +1,5 @@
-// Small helpers shared by the tracker steps of the end-to-end check (verifyGitHub.mjs, verifyLinear.mjs).
+// Small helpers shared by the steps of the end-to-end check.
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
 /**
@@ -39,21 +40,61 @@ export async function shootThemes(page, dir, name) {
 }
 
 /**
+ * The Lookout's address and its one-time sign-in link, from what `teamtrail` prints when it starts; null until both
+ * are out. Every step opens the Lookout with the link first, as a person does: it signs that browser in.
+ */
+export function lookoutLinks(out) {
+  const url = out.match(/Lookout\s+(http:\S+)/)?.[1];
+  const pair = out.match(/Sign in\s+(http:\S+)/)?.[1];
+  return url && pair ? { url, pair } : null;
+}
+
+/** A new one-time sign-in link for the Lookout running in `cwd`, as `teamtrail pair` prints it: for a second browser. */
+export function pairLink({ cli, cwd, env = process.env }) {
+  const out = execFileSync(process.execPath, [cli, 'pair'], { cwd, env }).toString();
+  const link = out.match(/(http:\S+#pair=\S+)/)?.[1];
+  if (!link) throw new Error(`teamtrail pair printed no link: ${out}`);
+  return link;
+}
+
+/**
+ * Opens a sign-in link (`…#pair=<code>`) and signs the page's browser in as a person does: one click on the Lookout's
+ * own page. Resolves once the Lookout has reloaded, signed in.
+ */
+export async function signInWith(page, link) {
+  await page.goto(link);
+  // The page reloads once it has stored the session: wait for that load itself, not the one already done (a
+  // `goto` started before the reload is otherwise cut short by it).
+  const reloaded = page.waitForEvent('load', { timeout: 15_000 });
+  await page.getByRole('button', { name: 'Sign in this browser' }).click();
+  await page.waitForFunction(() => !!localStorage.getItem('teamtrail.session'));
+  await reloaded;
+}
+
+/** The header the page's own API calls carry, for a script's direct calls through `page.request`. */
+export async function sessionHeaders(page) {
+  const session = await page.evaluate(() => JSON.parse(localStorage.getItem('teamtrail.session') ?? '{}').secret);
+  return { 'X-Teamtrail-Session': session ?? '' };
+}
+
+/**
  * Skipping discovery is the trail lead's call: `start_trail` with `discovery: false` returns a request, and the trail
  * lead approves it with the calls the Lookout's Approve button makes (the request as shown, by its hash), from the
  * browser's session. `project` is the name of a repo other than the Lookout's home one. verify-mcp clicks the button.
  */
 export async function approveSkipInLookout({ started, page, url, project }) {
+  const headers = await sessionHeaders(page);
   const id = project
-    ? (await (await page.request.get(new URL('__teamtrail/projects', url).href)).json()).projects.find(
+    ? (await (await page.request.get(new URL('__teamtrail/projects', url).href, { headers })).json()).projects.find(
         (p) => p.name === project,
       ).id
     : undefined;
   const api = (p) => new URL(`__teamtrail${id ? `/p/${id}` : ''}${p}`, url).href;
   const request = started.skipDiscovery?.request;
   if (!request) throw new Error('start_trail with discovery: false returned no request');
-  const shown = await (await page.request.get(api(`/reroutes/${request}?map=${started.trail.id}`))).json();
+  const shown = await (await page.request.get(api(`/reroutes/${request}?map=${started.trail.id}`), { headers })).json();
   const r = await page.request.post(api('/reroutes/approve'), {
+    headers,
     data: { mapId: started.trail.id, id: request, hash: shown.reroute.hash },
   });
   if (!r.ok()) throw new Error(`approve refused: ${r.status()} ${await r.text()}`);

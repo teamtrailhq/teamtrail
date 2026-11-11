@@ -12,16 +12,23 @@ cd your-repo
 teamtrail
 ```
 
-`teamtrail` starts a local server, opens the Lookout in your browser and keeps trails as markdown in `./.teamtrail/` in the current folder. Commit that folder or ignore it; agents and people can edit the files directly, and changes show up live.
+`teamtrail` starts a local server at `http://127.0.0.1:7420/`, opens the Lookout in your browser and keeps trails as markdown in `./.teamtrail/` in the current folder. Commit that folder or ignore it; agents and people can edit the files directly, and changes show up live.
 
 | Option | Default | |
 | --- | --- | --- |
 | `--dir <path>` | `./.teamtrail` (or `$TEAMTRAIL_DIR`) | Tracker folder |
 | `--port <n>` | `7420`, next free port if taken | Port |
-| `--host <addr>` | `127.0.0.1` | Interface to bind. The server can write files in the tracker folder, so only expose it on networks you trust. |
+| `--host <addr>` | `127.0.0.1` | IP address to bind (a name is refused; `0.0.0.0` or `::` means each of the machine's addresses). The server can write files in the tracker folder, so only expose it on networks you trust. |
 | `--no-open` | | Don't open the browser |
 
 Requires Node 20 or newer. No other runtime dependencies.
+
+The Lookout's address is always `http://127.0.0.1:<port>/`, never `localhost`, which a browser may send to `::1` instead. It listens on 127.0.0.1 and `::1` (where the machine has it) on its port, besides the `--host` address, so no other program can take its address beside it; if another program already holds the port on any of them, it doesn't start and names the address. It never listens on a wildcard: `--host 0.0.0.0` (or `::`) listens on each of the machine's network addresses at start, and only those are offered for pairing. After a network change (a new Wi-Fi, a VPN), restart `teamtrail` to serve the new address. `teamtrail mcp --http` does the same.
+
+### Signing in
+
+The Lookout opens only in browsers you've paired. `teamtrail` opens the Lookout and prints a one-time **Sign in** link in its terminal; open it and click **Sign in this browser**. (The link is never passed to the browser on a command line, where other programs could read it.) A link works once, within 10 minutes, and only for the Lookout that printed it. A browser stays signed in while that Lookout runs, up to 30 days after it was last used; when you restart `teamtrail`, browsers and devices pair again (so a session a program grabbed while the Lookout was stopped opens nothing). Before the page sends its session, the server proves it is your Lookout; if it can't, the page says Teamtrail isn't running there and sends nothing. A browser that isn't paired sees "Pair this browser". For another browser on the same machine, run `teamtrail pair` in the repo while the Lookout runs: it prints a new link, after checking that the server at the Lookout's address really is that Lookout. To pair a phone or another computer (the Lookout started with `--host`), open Settings → You → Browsers & devices → **Pair a device** on the machine and type the short code on the device, or scan its QR code. Phones and other devices must pair again after every Lookout restart. The same page lists every paired browser with Revoke; a revoked browser is signed out at once. 
+The session is never a cookie: browsers send cookies to every port of a host, so another server on your machine (an agent's dev server, say) would get it. It is kept in the Lookout page's own storage and sent by that page alone, and the code in a link travels after `#`, which no server sees. Sign-in stops a program on your machine, or a device on your network, that isn't a paired browser: an agent with `curl` can't approve its own work, answer its own questions or change your settings through the Lookout, and a device paired from Settings can read, answer and approve but never change what runs on the machine or whom it trusts. It can't stop a program that can read Teamtrail's config folder (it can make a pairing code, as `teamtrail pair` does) or your browser's profile on disk. The MCP endpoints keep their own tokens and are not affected.
 
 ## Connect your coding agent
 
@@ -88,7 +95,7 @@ npx -y teamtrail connect claude --url https://trail.example.com/mcp   # or: conn
 
 `--token-stdin` and `--token <token>` work too. Claude Code keeps the token in its own config; Codex only stores the variable's name and reads `$TEAMTRAIL_TOKEN` when it starts. `connect` checks the token against the endpoint, except over plain HTTP to another machine, where the check itself would send it unencrypted: use https, or pass `--allow-http`.
 
-The connection is plain HTTP and binds to `127.0.0.1` unless you pass `--host`. Before agents elsewhere use it, put the `mcp --http` port behind HTTPS (a reverse proxy or a tunnel) and pass `--allow-host <name>` with the host name they'll use. The Lookout's own port is not for sharing: it has no sign-in, so its `/mcp` answers the machine itself only, and its API refuses a `Host` that isn't `localhost` or an IP address. Another device on your network that opens the Lookout by IP can read, answer and approve, but can't change what runs on the machine or whom it trusts: tokens, the tracker connection (and anything looked up with its credentials), Slack, the risk policy, verification levels, workspaces, guides, attention preferences and the projects list are set on the machine itself, and what that device reads leaves out absolute paths and the tracker account. A token only opens the agent tools, at most 8 sessions at a time, and revoking it in Settings ends them within about a second.
+The connection is plain HTTP and binds to `127.0.0.1` unless you pass `--host`. Before agents elsewhere use it, put the `mcp --http` port behind HTTPS (a reverse proxy or a tunnel) and pass `--allow-host <name>` with the host name they'll use. The Lookout's own port is not for sharing: its `/mcp` answers the machine itself only, its API needs a paired browser (never a token), and it refuses a `Host` that isn't `localhost` or an IP address. Another device on your network, once paired from Settings, can read, answer and approve, but can't change what runs on the machine or whom it trusts: tokens, the tracker connection (and anything looked up with its credentials), Slack, the risk policy, verification levels, workspaces, guides, attention preferences and the projects list are set on the machine itself, and what that device reads leaves out absolute paths and the tracker account. A token only opens the agent tools, at most 8 sessions at a time, and revoking it in Settings ends them within about a second.
 
 The risk policy acts on what an agent declares: a decision is held for you when the agent names a high-risk category or files that match your path rules. An agent that declares nothing is not caught by it. So give an agent you don't fully trust only trails where you review the work: verification on, where every remote completion comes to you.
 

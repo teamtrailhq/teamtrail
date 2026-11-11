@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { chromium } from 'playwright-core';
+import { lookoutLinks, pairLink, sessionHeaders, signInWith } from './e2eHelpers.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
@@ -17,6 +18,7 @@ import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
+import { verifySignIn } from './verifySignIn.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -56,12 +58,12 @@ fs.writeFileSync(
 
 // 1. The Lookout, as the user starts it.
 const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd: repo });
-const url = await new Promise((resolve, reject) => {
+const { url, pair } = await new Promise((resolve, reject) => {
   let out = '';
   server.stdout.on('data', (c) => {
     out += c;
-    const m = out.match(/Lookout\s+(http:\S+)/);
-    if (m) resolve(m[1]);
+    const links = lookoutLinks(out);
+    if (links) resolve(links);
   });
   server.on('exit', (code) => reject(new Error(`teamtrail exited ${code}: ${out}`)));
 });
@@ -72,7 +74,8 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-await page.goto(url);
+// The link `teamtrail` printed signs this browser in and opens the Lookout, as it does for a person.
+await signInWith(page, pair);
 await page.locator('.dialog.onboarding').waitFor();
 await page.getByRole('button', { name: 'Get started' }).click();
 const shot = async (name) => {
@@ -408,11 +411,10 @@ log(
 
 // Independent review: at checks+review+human a passing completion gets a review ticket. The worker is never given its
 // own review; a second agent passes it, and the trail lead approves from the Lookout inbox.
-const api = new URL('/__teamtrail/verification/action', url);
-await fetch(api, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ action: 'level', mapId: started.trail.id, level: 'checks+review+human' }),
+// With the page's own session, as its API calls carry it.
+await page.request.post(new URL('/__teamtrail/verification/action', url).href, {
+  headers: await sessionHeaders(page),
+  data: { action: 'level', mapId: started.trail.id, level: 'checks+review+human' },
 });
 const footer = await call('add_ticket', { title: 'Link the changelog from the footer', type: 'execute' });
 await call('claim_ticket', { ticket: footer.ticket.key });
@@ -544,7 +546,9 @@ const linearOk = await verifyLinear({ browser, cli, log, shots });
 // Remote agents: a token created in Settings, an MCP client over HTTP next to a stdio one, and Revoke cutting it off.
 const remoteOk = await verifyRemote({ browser, cli, log, shots });
 // The page's Content-Security-Policy in a real browser, API headers, and a frame from another origin refused.
-const headersOk = await verifyHeaders({ browser, url, log });
+const headersOk = await verifyHeaders({ browser, url, log, pair: () => pairLink({ cli, cwd: repo }) });
+// Sign-in: pairing links work once, the API answers no one else, a revoked browser is signed out live.
+const signInOk = await verifySignIn({ browser, cli, log, shots });
 
 // Answered in the agent's own chat (/scout inbox): delivered as guidance, never the human's word at a gate.
 const side = await call('ask_human', { question: 'Show dates in UTC?', urgency: 'fyi', waitSeconds: 0 });
@@ -609,6 +613,7 @@ if (
   !discoveryOk ||
   !supervisionOk ||
   !headersOk ||
+  !signInOk ||
   !parallelOk ||
   !modelsOk ||
   !projectsOk ||

@@ -18,6 +18,7 @@ import {
 import { apiBase } from './apiBase';
 import { LeaseBoard } from './leaseBoard';
 import { type TrackerChoice, loadPrefs } from './prefs';
+import { SessionEventSource } from './sessionEvents';
 import { onTrackerChange } from './trackerChanges';
 
 /** File API served by the Vite dev server (see plugins/trackerFs.ts). */
@@ -61,7 +62,7 @@ export function linkAgents(activity: ActivityStream, leases: LeaseBoard) {
         }),
       );
   };
-  const es = new EventSource(`${apiBase()}/events`);
+  const es = new SessionEventSource();
   es.addEventListener('agent', (m) =>
     activity.syncRemote(JSON.parse((m as MessageEvent<string>).data) as AgentSessionDoc),
   );

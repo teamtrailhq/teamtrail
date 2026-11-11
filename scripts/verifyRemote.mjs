@@ -10,23 +10,25 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { approveSkipInLookout, shootThemes } from './e2eHelpers.mjs';
+import { approveSkipInLookout, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 /** Starts the built CLI and resolves once its output names the URL it serves. */
 async function start(cli, args, cwd, pattern) {
   const proc = spawn(process.execPath, [cli, ...args], { cwd });
-  const url = await new Promise((resolve, reject) => {
+  const { url, pair } = await new Promise((resolve, reject) => {
     let out = '';
     const read = (c) => {
       out += c;
       const m = out.match(pattern);
-      if (m) resolve(m[1]);
+      // the Lookout also prints its one-time sign-in link; wait for it too
+      const link = out.match(/Sign in\s+(http:\S+)/)?.[1];
+      if (m && (link || !/Lookout/.test(pattern.source))) resolve({ url: m[1], pair: link });
     };
     proc.stdout.on('data', read);
     proc.stderr.on('data', read);
     proc.on('exit', (code) => reject(new Error(`teamtrail ${args.join(' ')} exited ${code}: ${out}`)));
   });
-  return { proc, url };
+  return { proc, url, pair };
 }
 
 const caller =
@@ -120,6 +122,8 @@ export async function verifyRemote({ browser, cli, log, shots }) {
     );
     closers.push(() => stdio.close());
     const local = caller(stdio);
+    // signed in first: skipping discovery is approved through the signed-in Lookout
+    await signInWith(page, lookout.pair);
     const trail = await approveSkipInLookout({
       started: await local('start_trail', {
         discovery: false,

@@ -9,20 +9,20 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout } from './e2eHelpers.mjs';
+import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
 
 async function startServer(cli, cwd) {
   const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd });
-  const url = await new Promise((resolve, reject) => {
+  const { url, pair } = await new Promise((resolve, reject) => {
     let out = '';
     server.stdout.on('data', (c) => {
       out += c;
-      const m = out.match(/Lookout\s+(http:\S+)/);
-      if (m) resolve(m[1]);
+      const links = lookoutLinks(out);
+      if (links) resolve(links);
     });
     server.on('exit', (code) => reject(new Error(`teamtrail exited ${code}: ${out}`)));
   });
-  return { server, url };
+  return { server, url, pair };
 }
 
 /** An agent as Claude Code runs it: every call is logged first in its own transcript, by `model`. */
@@ -135,7 +135,7 @@ export async function verifyModels({ browser, cli, log, shots }) {
   const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-models-e2e-'));
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const config = path.join(top, '.claude-config');
-  const { server, url } = await startServer(cli, top);
+  const { server, url, pair } = await startServer(cli, top);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -146,7 +146,7 @@ export async function verifyModels({ browser, cli, log, shots }) {
   const fast = await agent({ cli, top, config, name: 'fast', model: 'claude-haiku-4-5' });
   const strong = await agent({ cli, top, config, name: 'strong', model: 'claude-opus-4-1' });
   try {
-    await page.goto(url);
+    await signInWith(page, pair);
     await page.locator('.dialog.onboarding').waitFor();
     await page.getByRole('button', { name: 'Get started' }).click();
     await approveSkipInLookout({

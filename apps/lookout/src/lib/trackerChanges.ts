@@ -1,11 +1,12 @@
-import { apiBase } from './apiBase';
+import { SessionEventSource } from './sessionEvents';
+import { reloadIfSignedOut } from './signedOutReload';
 
 /**
  * One shared `/events` stream: "a tracker file changed" messages and named server events (`attention`, …).
  * Browsers allow only six connections per host, and every EventSource holds one open, so hooks subscribe here
  * instead of opening their own.
  */
-let stream: EventSource | undefined;
+let stream: SessionEventSource | undefined;
 const listeners = new Set<(path: string) => void>();
 const named = new Map<string, Set<(data: string) => void>>();
 
@@ -17,9 +18,10 @@ function listen(name: string) {
 
 function open() {
   if (stream) return;
-  stream = new EventSource(`${apiBase()}/events`);
+  stream = new SessionEventSource();
+  stream.onerror = reloadIfSignedOut;
   stream.onmessage = (m) => {
-    const p = (JSON.parse(m.data) as { path?: unknown }).path;
+    const p = (JSON.parse((m as MessageEvent<string>).data) as { path?: unknown }).path;
     if (typeof p === 'string') for (const l of listeners) l(p);
   };
   for (const name of named.keys()) listen(name);

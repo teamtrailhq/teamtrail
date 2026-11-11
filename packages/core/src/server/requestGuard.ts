@@ -1,6 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 import { isIP } from 'node:net';
 import type { TLSSocket } from 'node:tls';
+import { markedFromDevice } from './deviceRequests';
 
 /** A Host header's host name, lower-cased, without port or IPv6 brackets; undefined when it isn't one. */
 function hostName(host: string | undefined) {
@@ -47,8 +48,10 @@ export type PeerAddress = (req: IncomingMessage) => string | undefined;
 
 /**
  * Whether the request comes from this machine, by the socket's remote address. A tunnel or reverse proxy on
- * this machine also connects from loopback, so whoever runs one in front of a port has opened that port.
+ * this machine also connects from loopback, so whoever runs one in front of a port has opened that port. A request
+ * the projects hub marked as a paired device's (deviceRequests.ts) never is.
  */
 export function fromThisMachine(req: IncomingMessage, peer: PeerAddress = (r) => r.socket.remoteAddress) {
+  if (markedFromDevice(req)) return false;
   return LOOPBACK.test(peer(req) ?? '');
 }

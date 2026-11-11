@@ -25,6 +25,7 @@ import { projectState } from '../src/projects/projectState';
 import { projectSummary } from '../src/projects/projectSummary';
 import { registerProject, unregisterProject } from '../src/projects/registerProject';
 import { trackerPin } from '../src/server/trackerPin';
+import { pairedSignIn } from './fakes/signedIn';
 
 const tmp = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-projects-')));
 const configDir = path.join(tmp, 'config');
@@ -81,12 +82,16 @@ let server: http.Server;
 let hub: ProjectsHub;
 let homeBridge: TrackerBridge;
 let base: string;
+let header: Record<string, string>;
 
 before(async () => {
   home = await seedRepo('alpha', 'Which date format?');
   other = await seedRepo('beta', 'SMS or push?');
   homeBridge = createTrackerBridge(home, { env: {}, configDir, cwd: path.dirname(home) });
+  const paired = pairedSignIn({ root: home, configDir });
+  header = paired.header;
   hub = createProjectsHub({
+    signIn: paired.signIn,
     home: homeBridge,
     openBridge: (p) => createTrackerBridge(p.root, { env: {}, configDir, cwd: p.path }),
     configDir,
@@ -108,7 +113,7 @@ after(() => {
 const call = async <T>(method: string, p: string, body?: unknown) => {
   const r = await fetch(base + p, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...header },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   return { status: r.status, json: (await r.json().catch(() => undefined)) as T };
@@ -298,10 +303,11 @@ test('hub: a project another live Lookout serves is only read, and links there o
   // The other Lookout: it answers on its URL for this very tracker folder.
   const other = http.createServer((req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    res.end(req.url === '/__teamtrail/list' ? JSON.stringify({ root: realpathSync(gamma), files: [] }) : '{}');
+    // its sign-in status, the one route open before pairing, names this project
+    res.end(req.url === '/__teamtrail/session' ? JSON.stringify({ signedIn: false, project: projectId(gamma) }) : '{}');
   });
   await new Promise<void>((r) => other.listen(0, '127.0.0.1', r));
-  const at = `http://localhost:${(other.address() as { port: number }).port}/`;
+  const at = `http://127.0.0.1:${(other.address() as { port: number }).port}/`;
   // as a Teamtrail of this machine writes it: signed with the machine key (unsigned: see below)
   const lock = (url: string, signed = true) => {
     const sig = signed ? announcementSig(gamma, LOCK_SIG, [url, process.ppid, now]) : undefined;
@@ -323,6 +329,9 @@ test('hub: a project another live Lookout serves is only read, and links there o
       'http://192.168.1.9:7420/',
       'javascript:alert(1)',
       'http://localhost:1/',
+      at.replace('127.0.0.1', 'localhost'),
+      at.replace('127.0.0.1', '127.0.0.2'),
+      at.replace('127.0.0.1', '[::1]'),
     ]) {
       lock(forged);
       assert.deepEqual(await stateOf(), { kind: 'elsewhere' }, forged);
@@ -345,7 +354,11 @@ test('hub: adding a path creates its tracker folder; a missing one reads as miss
   assert.equal(added.status, 201);
   assert.ok(existsSync(path.join(repo, '.teamtrail')));
   assert.equal((await call('POST', '/projects', { path: path.join(tmp, 'nowhere') })).status, 400);
-  const plain = await fetch(`${base}/projects`, { method: 'POST', body: JSON.stringify({ path: repo }) });
+  const plain = await fetch(`${base}/projects`, {
+    method: 'POST',
+    headers: header,
+    body: JSON.stringify({ path: repo }),
+  });
   assert.equal(plain.status, 403, 'cross-site writes are refused');
   const gone = registerProject({ configDir, root: path.join(tmp, 'vanished', '.teamtrail') });
   const view = await call<ProjectsView>('GET', '/projects');
@@ -391,5 +404,5 @@ test('the hub refuses a request for another host before any project route', asyn
   const evil = { Host: 'evil.example:7420', Origin: 'http://evil.example:7420' };
   for (const p of ['/projects', '/projects/overview', `/p/${hub.homeId}/list`, '/events', '/list'])
     assert.equal(await status(p, evil), 403, p);
-  assert.equal(await status('/projects', { Host: `localhost:${port}` }), 200);
+  assert.equal(await status('/projects', { Host: `localhost:${port}`, ...header }), 200);
 });
