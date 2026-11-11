@@ -17,6 +17,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.26.0',
+    date: '2026-11-11',
+    items: [
+      'The Lookout asks you to sign in: open the link `teamtrail` prints, and pair your phone with a QR code (again after each restart)',
+      'Your answers count only when you give them in the Lookout or Slack, and skipping discovery or changing a trail’s mode or destination waits for your Approve',
+      'Check commands, briefs, criteria and other trusted settings run only once you approve them on this machine, in Settings → Approvals',
+      'Changes made to trail files outside Teamtrail have no effect until you accept them',
+    ],
+  },
+  {
     version: '0.25.0',
     date: '2026-11-10',
     items: [
@@ -173,33 +183,6 @@ export const RELEASES: Release[] = [
       'Stalled state on the map, in sessions and in the ticket inspector when a lease is about to run out, with a Release to queue action',
       'Works with GitHub and Linear: the return is an ordinary comment + unassign, queued in the offline outbox like any other write',
       'Set the lease with `miloops mcp --lease-minutes <n>` or `MILOOPS_LEASE_MINUTES`',
-    ],
-  },
-  {
-    version: '0.12.0',
-    date: '2026-10-31',
-    items: [
-      'Slack: your own MILO app, created from a manifest and connected from your machine over Socket Mode in five guided steps (Settings → Slack or `miloops connect slack`)',
-      'Tokens stay in your local credential store next to the GitHub and Linear ones; nothing passes through MILOOPS servers',
-      'Agent questions arrive as a Slack DM with answer buttons and a Reply… box; answering there resolves the item in Waiting on you, and answering in the command center closes the DM',
-      'Save as decision on any message, or `/milo decide`: the form is prefilled with a summary of the thread, and the decision is recorded with a permalink, resolving the related ticket by default',
-      '`/milo status` and `/milo inbox` for the mission at a glance; DMs when a ticket is blocked or a mission is done',
-      'Allowed users, notification target and events in Settings → Slack',
-      'Slack setup without Paste clicks: press ⌘V / Ctrl+V anywhere, or in Chrome just come back to the tab after copying; pasting the app token opens the install page; MILO recognises you by your git email, so there is nothing to claim in Slack',
-    ],
-  },
-  {
-    version: '0.11.0',
-    date: '2026-10-31',
-    items: [
-      'GitHub Issues tracker: missions are labelled issues, tickets are sub-issues, blocking uses native issue dependencies',
-      'Linear tracker: missions are labelled issues in a team (optionally one project), tickets are sub-issues, blocking uses "blocks" relations',
-      'Two-way sync: tickets, status, claims, comments, blockers and decisions written from MILOOPS land in the tracker; changes made there show up within seconds',
-      'Decisions are posted as comments on their ticket and listed in the mission',
-      'Connect from Settings with Test connection; GitHub reuses your gh login or GITHUB_TOKEN, Linear takes a personal API key',
-      'Tokens stay on your machine: kept by the local server, never sent to the browser or anywhere else',
-      'Offline and rate limits: changes queue and send in order when the tracker answers again; the connector shows status, queue and remaining requests',
-      'Connected agents (MCP) work on the active tracker: with GitHub or Linear connected, their missions, claims and decisions land there, and their sessions show live in the command center',
     ],
   },
   ...OLDER_RELEASES,
