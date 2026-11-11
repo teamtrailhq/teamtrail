@@ -127,6 +127,7 @@ export * from './model/guide';
 export { hasControl, oneLine } from './model/safeText';
 export { webUrl } from './model/webUrl';
 export type * from './model/remoteToken';
+export type * from './model/signIn';
 export { parseGuide, splitGuideFile } from './guides/guideFile';
 export { lintGuide, type GuideLint } from './guides/guideLint';
 export { checkArgv, checkNotice, UNKNOWN_PROGRAM } from './guides/checkArgv';

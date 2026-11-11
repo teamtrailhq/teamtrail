@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { BRAND } from '../../packages/core/src/model/brand';
+import { holdIpv6Loopback } from './plugins/holdIpv6Loopback';
 import { trackerFs } from './plugins/trackerFs';
 
 // Dev tracker folder: $<DATA_DIR_ENV>, else <dataDir> at the repo root, the folder `npm run seed` resets and
@@ -19,6 +20,10 @@ const cli = JSON.parse(readFileSync(path.join(repoRoot, 'packages/cli/package.js
 
 export default defineConfig({
   define: { __CLI_VERSION__: JSON.stringify(cli.version) },
-  plugins: [react(), trackerFs({ root: dataDir, prefix: BRAND.apiPrefix, projectsConfigDir })],
-  server: { port: 5173, host: true },
+  plugins: [react(), holdIpv6Loopback(), trackerFs({ root: dataDir, prefix: BRAND.apiPrefix, projectsConfigDir })],
+  // Not 5173: agents' own dev servers commonly take it, and a server squatting this port would get the dev page's
+  // origin (the page checks its server before sending its session, but a stranger's page there reads its storage).
+  // 127.0.0.1, never `localhost`: one address, held with [::1] beside it (plugins/holdIpv6Loopback.ts); a taken port
+  // stops it rather than moving on.
+  server: { port: 7477, host: '127.0.0.1', strictPort: true },
 });

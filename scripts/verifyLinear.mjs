@@ -11,7 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
-import { responseGate, shootThemes } from './e2eHelpers.mjs';
+import { lookoutLinks, responseGate, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const KEY = 'lin_api_e2e_never_shown_5b1c';
@@ -55,16 +55,16 @@ async function serveFake(top) {
 
 async function startLookout(cli, cwd, env) {
   const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd, env });
-  const url = await new Promise((resolve, reject) => {
+  const { url, pair } = await new Promise((resolve, reject) => {
     let out = '';
     server.stdout.on('data', (c) => {
       out += c;
-      const m = out.match(/Lookout\s+(http:\S+)/);
-      if (m) resolve(m[1]);
+      const links = lookoutLinks(out);
+      if (links) resolve(links);
     });
     server.on('exit', (code) => reject(new Error(`teamtrail exited ${code}: ${out}`)));
   });
-  return { server, url };
+  return { server, url, pair };
 }
 
 export async function verifyLinear({ browser, cli, log, shots }) {
@@ -83,13 +83,15 @@ export async function verifyLinear({ browser, cli, log, shots }) {
     GITHUB_TOKEN: 'gho_unused_in_linear_steps',
   };
   delete env.GH_TOKEN;
-  const { server, url } = await startLookout(cli, repo, env);
+  const { server, url, pair } = await startLookout(cli, repo, env);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  const api = async (p) => (await fetch(new URL(`__teamtrail${p}`, url))).text();
+  // with the page's own session, as its API calls carry it
+  const api = async (p) =>
+    (await page.request.get(new URL(`__teamtrail${p}`, url).href, { headers: await sessionHeaders(page) })).text();
   try {
-    await page.goto(url);
+    await signInWith(page, pair);
     const dialog = page.locator('.dialog.onboarding');
     const choice = dialog.locator('.choice', { hasText: 'Linear' });
     await choice

@@ -18,6 +18,7 @@ import { apiBase } from './apiBase';
 import { httpFs } from './httpFs';
 import { LeaseBoard } from './leaseBoard';
 import { type TrackerChoice, loadPrefs } from './prefs';
+import { SessionEventSource } from './sessionEvents';
 
 /** Mirror agent sessions reported over MCP (see core agentLink.ts) and send trail lead answers back to them. */
 export function linkAgents(activity: ActivityStream, leases: LeaseBoard) {
@@ -40,7 +41,7 @@ export function linkAgents(activity: ActivityStream, leases: LeaseBoard) {
         }),
       );
   };
-  const es = new EventSource(`${apiBase()}/events`);
+  const es = new SessionEventSource();
   es.addEventListener('agent', (m) =>
     activity.syncRemote(JSON.parse((m as MessageEvent<string>).data) as AgentSessionDoc),
   );

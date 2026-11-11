@@ -88,6 +88,7 @@ const server = spawn(process.execPath, [cli, '--no-open', '--port', String(port)
   stdio: 'inherit',
 });
 
+// Like `teamtrail` itself: the browser opens on the Lookout, and the one-time Sign in link is in this terminal.
 if (browser) openBrowser();
 
 function openBrowser() {

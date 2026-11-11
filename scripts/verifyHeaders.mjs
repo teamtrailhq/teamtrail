@@ -1,11 +1,14 @@
 // The Lookout's own headers in a real browser: the page loads under its Content-Security-Policy with no
 // violation in any Settings group, API answers are never cached or framed, and another site can't frame it.
+import { sessionHeaders, signInWith } from './e2eHelpers.mjs';
 
 /** Every Settings group, opened by its link, as a person would. */
 const GROUPS = ['trail', 'project', 'alerts', 'you', 'projects', 'about', 'remote-agents', 'slack', 'guides'];
 
-export async function verifyHeaders({ browser, url, log }) {
+export async function verifyHeaders({ browser, url, log, pair }) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  // a browser of its own: signed in with a new link from `teamtrail pair`
+  await signInWith(page, pair());
   const violations = [];
   page.on('console', (m) => /Content Security Policy|Refused to/i.test(m.text()) && violations.push(m.text()));
   await page.addInitScript(() =>
@@ -26,7 +29,7 @@ export async function verifyHeaders({ browser, url, log }) {
     await page.goto(`${url}?settings=${g}`);
     await page.waitForTimeout(400);
   }
-  const api = await page.request.get(`${url}__teamtrail/list`);
+  const api = await page.request.get(`${url}__teamtrail/list`, { headers: await sessionHeaders(page) });
   const a = api.headers();
   const apiOk =
     a['cache-control'] === 'no-store' &&

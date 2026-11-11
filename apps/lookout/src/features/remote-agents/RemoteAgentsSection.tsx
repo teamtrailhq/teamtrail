@@ -35,8 +35,8 @@ export function RemoteAgentsSection() {
         <p className="t-meta ra-note">
           <b>Before you open it to other machines.</b> The connection is plain HTTP. Run <code>{START_COMMAND}</code>,
           which serves the agent tools and nothing else, and put that port behind HTTPS with a reverse proxy or a
-          tunnel. The Lookout's own port is not for sharing: it has no sign-in, so its agent endpoint and these tokens
-          answer this machine only. A token only ever opens the agent tools.
+          tunnel. The Lookout's own port is not for sharing: its agent endpoint answers this machine only. A token only
+          ever opens the agent tools, never the Lookout, which signs in browsers, not agents.
         </p>
         <p className="t-meta ra-note">
           <b>What a remote agent can't do.</b> Speak for you: it can't answer a question, skip discovery, change the

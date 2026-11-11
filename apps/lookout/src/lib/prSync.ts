@@ -1,5 +1,6 @@
 import { type PrSyncStatus, type TicketSync, type VerificationSyncEvent } from '@teamtrail/core';
 import { apiBase } from './apiBase';
+import { SessionEventSource } from './sessionEvents';
 
 export interface PrSyncSnapshot {
   /** The server answered at least once; false in a static build, where nothing is shown. */
@@ -40,7 +41,7 @@ function load() {
 function start() {
   started = true;
   load();
-  const es = new EventSource(`${apiBase()}/events`);
+  const es = new SessionEventSource();
   es.addEventListener('verification', (m) => {
     const e = JSON.parse((m as MessageEvent<string>).data) as VerificationSyncEvent | { kind?: string };
     if (e.kind === 'evidence') for (const l of evidenceListeners) l();

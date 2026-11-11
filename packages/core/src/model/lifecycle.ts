@@ -181,6 +181,33 @@ export interface RemoteAgentEntry {
 /** The journal "trail" that holds remote agents' token changes. */
 export const REMOTE_AGENTS_JOURNAL = '_remote-agents';
 
+export type SignInAction = 'paired' | 'revoked' | 'signed-out' | 'device-code';
+
+/**
+ * A browser paired with the Lookout, revoked, or signed out, or a code made to pair another device (Settings → You →
+ * Browsers & devices), in the project-wide `SIGN_IN_JOURNAL` file of the folder the Lookout was started in. Never
+ * holds a session or a code: only the session's id and the browser's name.
+ */
+export interface SignInEntry {
+  v: 1;
+  kind: 'sign-in';
+  at: number;
+  mapId: string;
+  action: SignInAction;
+  /** The session, for every action but `device-code`. */
+  sessionId?: string;
+  /** "Chrome on macOS". */
+  name?: string;
+  /** Whether the session may change this machine's settings (`machine`) or not (`device`). */
+  signIn?: 'machine' | 'device';
+  actor: string;
+  actorKind: ActorKind;
+  reason?: string;
+}
+
+/** The journal "trail" that holds the Lookout's sign-ins. */
+export const SIGN_IN_JOURNAL = '_sign-in';
+
 export type SlackOwnerAction =
   'owner-claimed' | 'owner-confirmed' | 'owner-reset' | 'allow-added' | 'allow-removed' | 'app-changed' | 'removed';
 
