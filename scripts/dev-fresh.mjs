@@ -85,21 +85,31 @@ console.log(`
 const server = spawn(process.execPath, [cli, '--no-open', '--port', String(port)], {
   cwd: project,
   env,
-  stdio: 'inherit',
+  stdio: ['inherit', 'pipe', 'inherit'],
+});
+// What `teamtrail` prints goes on to this terminal; its one-time sign-in link opens the new browser, as it would.
+let printed = '';
+server.stdout.on('data', (c) => {
+  process.stdout.write(c);
+  if (!browser || printed === null) return;
+  printed += c;
+  const link = printed.match(/Sign in\s+(http:\S+)/)?.[1];
+  if (link) {
+    printed = null;
+    openBrowser(link);
+  }
 });
 
-if (browser) openBrowser();
-
-function openBrowser() {
+function openBrowser(link) {
   const chrome =
     process.env.CHROME ??
     (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'google-chrome');
-  const flags = [`--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', url];
+  const flags = [`--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', link];
   // Wait until the server answers, then open a window with its own empty profile.
   const tryOpen = (left) =>
     fetch(url)
       .then(() => spawn(chrome, flags, { stdio: 'ignore', detached: true }).unref())
-      .catch(() => (left > 0 ? setTimeout(() => tryOpen(left - 1), 250) : console.log(`Open ${url} yourself.`)));
+      .catch(() => (left > 0 ? setTimeout(() => tryOpen(left - 1), 250) : console.log(`Open ${link} yourself.`)));
   tryOpen(40);
 }
 

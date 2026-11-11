@@ -23,6 +23,7 @@ export type SettingsSectionId =
   | 'appearance'
   | 'transcript'
   | 'agent'
+  | 'devices'
   | 'projects'
   | 'changelog';
 

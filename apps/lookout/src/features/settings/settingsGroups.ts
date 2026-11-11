@@ -40,11 +40,12 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     id: 'you',
     label: 'You',
-    intro: 'How the Lookout looks and reads for you.',
+    intro: 'How the Lookout looks and reads for you, and the browsers and devices signed in to it.',
     sections: [
       { id: 'appearance', title: 'Appearance' },
       { id: 'transcript', title: 'HITL transcript' },
       { id: 'agent', title: 'Agent' },
+      { id: 'devices', title: 'Browsers & devices' },
     ],
   },
   {

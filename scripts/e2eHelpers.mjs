@@ -1,4 +1,5 @@
-// Small helpers shared by the tracker steps of the end-to-end check (verifyGitHub.mjs, verifyLinear.mjs).
+// Small helpers shared by the steps of the end-to-end check.
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
 /**
@@ -36,4 +37,22 @@ export async function shootThemes(page, dir, name) {
     if (t) document.documentElement.dataset.theme = t;
     else delete document.documentElement.dataset.theme;
   }, was);
+}
+
+/**
+ * The Lookout's address and its one-time sign-in link, from what `teamtrail` prints when it starts; null until both
+ * are out. Every step opens the Lookout with the link first, as a person does: it signs that browser in.
+ */
+export function lookoutLinks(out) {
+  const url = out.match(/Lookout\s+(http:\S+)/)?.[1];
+  const pair = out.match(/Sign in\s+(http:\S+)/)?.[1];
+  return url && pair ? { url, pair } : null;
+}
+
+/** A new one-time sign-in link for the Lookout running in `cwd`, as `teamtrail pair` prints it: for a second browser. */
+export function pairLink({ cli, cwd, env = process.env }) {
+  const out = execFileSync(process.execPath, [cli, 'pair'], { cwd, env }).toString();
+  const link = out.match(/(http:\S+\/pair\?code=\S+)/)?.[1];
+  if (!link) throw new Error(`teamtrail pair printed no link: ${out}`);
+  return link;
 }

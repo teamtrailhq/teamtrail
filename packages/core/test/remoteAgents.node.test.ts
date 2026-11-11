@@ -24,6 +24,7 @@ import {
 import { REMOTE_TOKENS_FILE } from '../src/remoteAgents/remoteTokenStore';
 import { thisMachineOnly } from '../src/server/thisMachineRoutes';
 import { NO_GH_CLI_ENV, resolveGitHubToken } from '../src/server/trackerConfig';
+import { pairCookie, pairedSignIn } from './fakes/signedIn';
 
 const tmp = (name: string) =>
   path.join(mkdtempSync(path.join(os.tmpdir(), `teamtrail-${name}-`)), 'repo', '.teamtrail');
@@ -422,28 +423,38 @@ test('the projects hub: another device sees the projects, and cannot add, remove
   const peer = (req: http.IncomingMessage) =>
     (req.headers['x-test-peer'] as string | undefined) ?? req.socket.remoteAddress;
   const home = createTrackerBridge(r, { env: {}, configDir, cwd: path.dirname(r), peer });
+  const { signIn, cookie } = pairedSignIn({ root: r, configDir });
   const hub = createProjectsHub({
     home,
     openBridge: (p) => createTrackerBridge(p.root, { env: {}, configDir }),
     configDir,
     peer,
+    signIn,
   });
   const srv = http.createServer((req, res) => void hub.handle(req, res));
   await new Promise<void>((done) => srv.listen(0, '127.0.0.1', done));
   const port = (srv.address() as { port: number }).port;
-  const phone = { 'x-test-peer': '192.168.1.20', Host: `192.168.1.5:${port}` };
+  // A phone paired as a device, and the browser on this machine.
+  const phone = {
+    'x-test-peer': '192.168.1.20',
+    Host: `192.168.1.5:${port}`,
+    Cookie: pairCookie(signIn, { local: false }),
+  };
+  // Framed bodies: a DELETE's body without a length would be read as the next request.
+  const hubCall = (o: Parameters<typeof raw>[0]) =>
+    raw({ ...o, headers: { Cookie: cookie, 'Content-Length': String(Buffer.byteLength(o.body ?? '')), ...o.headers } });
   try {
     // A second, registered project: its routes are held to the same list, checked in the hub itself.
     const otherRepo = path.dirname(tmp('remote-hub-other'));
     mkdirSync(path.join(otherRepo, '.teamtrail'), { recursive: true });
-    const added = await raw({ port, method: 'POST', path: '/projects', body: JSON.stringify({ path: otherRepo }) });
+    const added = await hubCall({ port, method: 'POST', path: '/projects', body: JSON.stringify({ path: otherRepo }) });
     assert.equal(added.status, 201, added.text);
-    const listed = JSON.parse((await raw({ port, path: '/projects' })).text) as {
+    const listed = JSON.parse((await hubCall({ port, path: '/projects' })).text) as {
       projects: { id: string; path: string }[];
     };
     const other = listed.projects.find((x) => x.id !== hub.homeId)!;
     assert.ok(other && path.isAbsolute(other.path));
-    const seen = JSON.parse((await raw({ port, path: '/projects', headers: phone })).text) as {
+    const seen = JSON.parse((await hubCall({ port, path: '/projects', headers: phone })).text) as {
       projects: { path: string }[];
     };
     assert.deepEqual(
@@ -462,12 +473,12 @@ test('the projects hub: another device sees the projects, and cannot add, remove
       ['GET', `/p/${other.id}/trackers/github/repos`],
       ['POST', `/p/${other.id}/guides/approve`],
     ]) {
-      const res = await raw({ port, method, path: p, headers: phone, body: '{}' });
-      assert.equal(res.status, 403, `${method} ${p}`);
+      const res = await hubCall({ port, method, path: p, headers: phone, body: '{}' });
+      assert.equal(res.status, 403, `${method} ${p} ${res.text}`);
       assert.equal(JSON.parse(res.text).elsewhere, true, `${method} ${p}`);
     }
-    assert.equal((await raw({ port, path: '/projects', headers: phone })).status, 200);
-    assert.equal((await raw({ port, path: `/p/${hub.homeId}/agents`, headers: phone })).status, 200);
+    assert.equal((await hubCall({ port, path: '/projects', headers: phone })).status, 200);
+    assert.equal((await hubCall({ port, path: `/p/${hub.homeId}/agents`, headers: phone })).status, 200);
   } finally {
     hub.close();
     home.close();

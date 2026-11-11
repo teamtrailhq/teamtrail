@@ -1,4 +1,5 @@
 import { apiBase } from './apiBase';
+import { reloadIfSignedOut } from './signedOutReload';
 
 /**
  * One shared `/events` stream: "a tracker file changed" messages and named server events (`attention`, …).
@@ -18,6 +19,7 @@ function listen(name: string) {
 function open() {
   if (stream) return;
   stream = new EventSource(`${apiBase()}/events`);
+  stream.onerror = reloadIfSignedOut;
   stream.onmessage = (m) => {
     const p = (JSON.parse(m.data) as { path?: unknown }).path;
     if (typeof p === 'string') for (const l of listeners) l(p);

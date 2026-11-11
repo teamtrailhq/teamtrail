@@ -1,0 +1,53 @@
+/**
+ * Sign-in to the Lookout. A browser is paired once, with a one-time code, and then carries a session cookie. The
+ * server keeps only the SHA-256 of each session and code (signIn/signInStore.ts), in the machine store.
+ *
+ * `machine`: paired on the machine Teamtrail runs on, with a link the CLI printed or opened. Only such a session,
+ * from this machine, may use the routes that change what runs here or whom it trusts (server/thisMachineRoutes.ts).
+ * `device`: paired with a code from Settings → You → Browsers & devices, or from another address. It reads,
+ * answers and approves like any device on the network, and never more.
+ */
+export type SignInKind = 'machine' | 'device';
+
+/** A paired browser, as stored: never the session itself. */
+export interface StoredSignIn {
+  /** Stable id (`si_…`), safe to show and to journal. */
+  id: string;
+  /** Read from the browser's user agent when it paired: "Chrome on macOS". */
+  name: string;
+  /** SHA-256 of the session value, hex. */
+  hash: string;
+  kind: SignInKind;
+  pairedAt: number;
+  /** To the minute. */
+  lastUsedAt: number;
+  /** Moves forward while the browser is used: 30 days after it was last used. */
+  expiresAt: number;
+}
+
+/** A pairing code waiting to be used once: never the code itself. */
+export interface StoredPairCode {
+  /** SHA-256 of the code as it is typed back (upper case, no dashes), hex. */
+  hash: string;
+  /** What the session it opens may become; `machine` also needs the pairing to come from this machine. */
+  kind: SignInKind;
+  createdAt: number;
+  expiresAt: number;
+}
+
+export interface SignInFile {
+  v: 1;
+  sessions: StoredSignIn[];
+  codes: StoredPairCode[];
+}
+
+/** A paired browser as Settings lists it. */
+export interface SignInView {
+  id: string;
+  name: string;
+  kind: SignInKind;
+  pairedAt: number;
+  lastUsedAt: number;
+  /** The browser asking. */
+  current: boolean;
+}

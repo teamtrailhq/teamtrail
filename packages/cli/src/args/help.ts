@@ -11,9 +11,11 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} connect slack [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
        ${BRAND.slug} approve [--hash <hash>]… [--dir <path>]
+       ${BRAND.slug} pair [--dir <path>]
        ${BRAND.slug} guides list|search|add|new|update|remove|lint … [--dir <path>]
 
-Starts the Lookout for the current folder and opens it in your browser.
+Starts the Lookout for the current folder and opens it in your browser, signed in: it prints a one-time
+link that pairs the browser that opens it. Every other browser needs a link of its own.
 
 Commands:
   mcp            Serve the MCP server for coding agents over stdio
@@ -46,6 +48,9 @@ Commands:
                  commands, policy, accepted briefs, confirmed criteria and knowledge, levels): shows
                  exactly what changed and asks y/N for each. Without a terminal it approves only
                  what --hash names exactly. The Lookout's Settings → Approvals does the same
+  pair           A new one-time link that signs a browser in to the Lookout running for this folder
+                 (works once, for 10 minutes). Phones and other computers pair from the Lookout:
+                 Settings → You → Browsers & devices
   knowledge import <file.md>  Seed project knowledge from a markdown document: one suggestion per
                  ## heading, for you to review in the Lookout
   guides list     Guides agents take on (built in, local and from a catalog), with their status
@@ -73,7 +78,7 @@ Commands:
 Options:
   --dir <path>   Tracker folder (default: ./${BRAND.dataDir}, or $${BRAND.dataDirEnv})
   --port <n>     Port to listen on (default: 7420; the next free port is used if taken)
-  --host <addr>  Interface to bind (default: 127.0.0.1)
+  --host <addr>  Interface to bind (default: 127.0.0.1). Other devices still need to be paired
   --no-open      Don't open the browser
   -v, --version  Print the version
   -h, --help     Show this help

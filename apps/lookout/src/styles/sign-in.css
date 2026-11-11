@@ -1,0 +1,111 @@
+/* "Pair this browser", the page a browser sees until it is paired, and Settings → You → Browsers & devices. */
+.pair-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-18) var(--sp-14);
+  background: var(--bg);
+}
+.pair-card {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-14);
+  padding: var(--sp-18) 22px 22px;
+  background: var(--panel-solid);
+  border-color: var(--line2);
+}
+.pair-title {
+  margin: 0;
+  color: var(--text-hi);
+}
+.pair-step {
+  margin: 0;
+  max-width: 60ch;
+}
+.pair-step code,
+.si-note code {
+  white-space: nowrap;
+  color: var(--text);
+}
+.pair-problem {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-12);
+  border-left: var(--edge-w) solid var(--amber);
+  background: var(--sunken);
+}
+.pair-device {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
+/* The second way to pair, set apart from the first. */
+.pair-here + .pair-device,
+.pair-device + .pair-here {
+  padding-top: var(--sp-14);
+  border-top: 1px solid var(--line);
+}
+.pair-code-row {
+  display: flex;
+  gap: var(--sp-8);
+}
+.pair-code-input {
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
+  letter-spacing: var(--ls-data);
+  text-transform: uppercase;
+}
+.pair-device .vf-err {
+  margin: 0;
+}
+
+.si-list {
+  margin-bottom: var(--sp-12);
+}
+.si-pair,
+.si-signout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+}
+.si-signout {
+  margin: var(--sp-8) 0 var(--sp-12);
+}
+.si-note {
+  margin: 0;
+  max-width: 64ch;
+  line-height: var(--lh-body);
+}
+.si-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-14);
+  padding: var(--sp-12);
+  border: 1px solid var(--line2);
+  border-left: var(--edge-w) solid var(--accent);
+  background: var(--sunken);
+}
+.si-qr {
+  width: 168px;
+  height: 168px;
+  flex: none;
+}
+.si-code-words {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-8);
+  min-width: 0;
+  flex: 1 1 220px;
+}
+.si-code-value {
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-data);
+  color: var(--text-hi);
+}

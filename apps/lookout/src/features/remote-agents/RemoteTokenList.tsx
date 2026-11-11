@@ -1,7 +1,7 @@
 import type { RemoteTokenView } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
+import { sinceLabel } from '../../lib/sinceLabel';
 import { RevokeTokenButton } from './RevokeTokenButton';
-import { sinceLabel } from './sinceLabel';
 
 /** Settings → Project → Remote agents: one row per token, with when it was made and last used, and Revoke. */
 export function RemoteTokenList(props: {

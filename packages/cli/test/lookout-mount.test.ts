@@ -10,9 +10,10 @@ import { remoteAgentOpener } from '../src/mcp/http/remoteAgentOpener';
 import { tokenFileAuth } from '../src/mcp/http/tokenFileAuth';
 import type { McpHttp } from '../src/mcp/http/types';
 import { lookoutHandler } from '../src/serve/lookoutHandler';
+import { pairedSignIn } from './fakes/signedIn';
 
 /*
- * The Lookout's port as `teamtrail` serves it: the app, the bridge (which has no sign-in) and /mcp, together.
+ * The Lookout's port as `teamtrail` serves it: the app, the bridge (behind sign-in) and /mcp, together.
  * These are the attacks a security review ran against that port, each as a request that used to get a 200.
  */
 let top: string;
@@ -23,6 +24,7 @@ let hub: ProjectsHub;
 let mcp: McpHttp;
 let port: number;
 let token: string;
+let cookie: string;
 
 /** The socket's address in production; here a header stands in for another device on the network. */
 const peer = (req: http.IncomingMessage) =>
@@ -43,7 +45,12 @@ function raw(o: { method?: string; path: string; headers?: Record<string, string
         port,
         path: o.path,
         method: o.method ?? 'GET',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream', ...o.headers },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json, text/event-stream',
+          Cookie: cookie,
+          ...o.headers,
+        },
       },
       (res) => {
         let text = '';
@@ -68,10 +75,14 @@ beforeEach(async () => {
   for (const d of [root, appDir, configDir]) fs.mkdirSync(d, { recursive: true });
   fs.writeFileSync(path.join(appDir, 'index.html'), '<!doctype html>lookout');
   bridge = createTrackerBridge(root, { env: {}, configDir, cwd: path.dirname(root), peer });
+  const paired = pairedSignIn({ root, configDir });
+  cookie = paired.cookie;
   hub = createProjectsHub({
     home: bridge,
     openBridge: (p) => createTrackerBridge(p.root, { env: {}, configDir }),
     configDir,
+    peer,
+    signIn: paired.signIn,
   });
   mcp = createMcpHttp({
     auth: tokenFileAuth(root),
@@ -157,5 +168,18 @@ describe('the Lookout port: bridge and /mcp together', () => {
     expect(mcp.sessionCount()).toBe(0);
     expect((await raw({ path: '/', headers: lan })).text).toContain('lookout');
     expect((await raw({ path: '/__teamtrail/agents', headers: lan })).status).toBe(200);
+  });
+
+  it('without a paired browser the API answers nothing but sign-in; the page shell and /mcp are as before', async () => {
+    const none = { Cookie: '' };
+    for (const p of ['/__teamtrail/list', '/__teamtrail/events', '/__teamtrail/remote-agents', '/__teamtrail/projects'])
+      expect((await raw({ path: p, headers: none })).status, p).toBe(401);
+    // an agent's token is no session
+    expect((await raw({ path: '/__teamtrail/list', headers: { ...none, ...bearer() } })).status).toBe(401);
+    expect(JSON.parse((await raw({ path: '/__teamtrail/session', headers: none })).text).signedIn).toBe(false);
+    expect((await raw({ path: '/', headers: none })).text).toContain('lookout');
+    expect(
+      (await raw({ method: 'POST', path: '/mcp', headers: { ...none, ...bearer() }, body: initialize })).status,
+    ).toBe(200);
   });
 });

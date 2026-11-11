@@ -4,12 +4,21 @@ import { remoteAgentOpener } from '../../../packages/cli/src/mcp/http/remoteAgen
 import { tokenFileAuth } from '../../../packages/cli/src/mcp/http/tokenFileAuth';
 import { slackPlugin } from '../../../packages/connector-slack/src/node';
 import { writeMcpEndpoint } from '../../../packages/core/src/agentHost';
-import { createProjectsHub, createTrackerBridge, neverCrash, requestUrl } from '../../../packages/core/src/bridge';
+import {
+  createLookoutSignIn,
+  createProjectsHub,
+  createTrackerBridge,
+  fromThisMachine,
+  neverCrash,
+  requestUrl,
+} from '../../../packages/core/src/bridge';
 
 /**
  * Mounts the tracker file API (shared with the `teamtrail` CLI) on the Vite dev server, with the projects hub
  * in front: `/projects` and `/p/<id>/…` for the projects in `projectsConfigDir` (default: the user config dir).
  * Like the CLI, it also serves the MCP endpoint for remote agents at `/mcp` (this machine only, closed until a token is created).
+ * Like the CLI, every API route needs a paired browser: the dev server prints a pairing link when it starts, and a
+ * fresh one whenever a browser on this machine that isn't paired opens the Lookout (it then shows "Pair this browser").
  */
 export function trackerFs(opts: { root: string; prefix: string; projectsConfigDir?: string }): Plugin {
   return {
@@ -20,7 +29,19 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
         return a ? a.replace(/\/?$/, '/') : undefined;
       };
       const bridge = createTrackerBridge(opts.root, { plugins: [slackPlugin()], url });
+      const signIn = createLookoutSignIn({ root: bridge.root, lanUrls: () => server.resolvedUrls?.network ?? [] });
+      let printedAt = 0;
+      const printPairLink = () => {
+        const base = url();
+        if (!base || Date.now() - printedAt < 5_000) return;
+        printedAt = Date.now();
+        const { code } = signIn.mintCode('machine');
+        server.config?.logger.info(
+          `  ➜  Pair this browser (once, 10 min): ${base}${opts.prefix.slice(1)}/pair?code=${code}`,
+        );
+      };
       const hub = createProjectsHub({
+        signIn,
         home: bridge,
         openBridge: (p) => createTrackerBridge(p.root, { cwd: p.path, url }),
         configDir: opts.projectsConfigDir,
@@ -54,8 +75,14 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
         res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
         next();
       });
+      server.httpServer?.once('listening', () => setTimeout(printPairLink, 100));
       // Like the CLI's servers: nothing a request carries may end the dev server.
-      server.middlewares.use(opts.prefix, (req, res) => void hub.handle(req, res));
+      server.middlewares.use(opts.prefix, (req, res) => {
+        // dev only: an unpaired browser on this machine asking whether it is signed in gets a link in the terminal
+        const unpaired = req.url === '/session' && fromThisMachine(req) && signIn.check(req).kind !== 'signed-in';
+        if (unpaired) printPairLink();
+        void hub.handle(req, res);
+      });
       server.middlewares.use('/mcp', (req, res, next) => {
         const guarded = neverCrash((rq, rs) => {
           const exact = requestUrl(rq).pathname === '/';

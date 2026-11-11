@@ -15,18 +15,20 @@ import { shootThemes } from './e2eHelpers.mjs';
 /** Starts the built CLI and resolves once its output names the URL it serves. */
 async function start(cli, args, cwd, pattern) {
   const proc = spawn(process.execPath, [cli, ...args], { cwd });
-  const url = await new Promise((resolve, reject) => {
+  const { url, pair } = await new Promise((resolve, reject) => {
     let out = '';
     const read = (c) => {
       out += c;
       const m = out.match(pattern);
-      if (m) resolve(m[1]);
+      // the Lookout also prints its one-time sign-in link; wait for it too
+      const link = out.match(/Sign in\s+(http:\S+)/)?.[1];
+      if (m && (link || !/Lookout/.test(pattern.source))) resolve({ url: m[1], pair: link });
     };
     proc.stdout.on('data', read);
     proc.stderr.on('data', read);
     proc.on('exit', (code) => reject(new Error(`teamtrail ${args.join(' ')} exited ${code}: ${out}`)));
   });
-  return { proc, url };
+  return { proc, url, pair };
 }
 
 const caller =
@@ -131,6 +133,7 @@ export async function verifyRemote({ browser, cli, log, shots }) {
     });
     const mine = await local('claim_ticket', { ticket: trail.tickets[0].key });
 
+    await page.goto(lookout.pair);
     await page.goto(`${lookout.url}?settings=remote-agents`);
     await page.locator('.dialog.onboarding').waitFor();
     await page.getByRole('button', { name: 'Get started' }).click();

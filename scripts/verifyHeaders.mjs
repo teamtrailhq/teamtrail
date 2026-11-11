@@ -4,8 +4,10 @@
 /** Every Settings group, opened by its link, as a person would. */
 const GROUPS = ['trail', 'project', 'alerts', 'you', 'projects', 'about', 'remote-agents', 'slack', 'guides'];
 
-export async function verifyHeaders({ browser, url, log }) {
+export async function verifyHeaders({ browser, url, log, pair }) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  // a browser of its own: signed in with a new link from `teamtrail pair`
+  await page.goto(pair());
   const violations = [];
   page.on('console', (m) => /Content Security Policy|Refused to/i.test(m.text()) && violations.push(m.text()));
   await page.addInitScript(() =>

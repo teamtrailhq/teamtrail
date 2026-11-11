@@ -24,3 +24,7 @@ export { createProjectsHub, type ProjectsHub, type ProjectsHubOptions } from './
 export { BadRequest, requestUrl, sendFailure } from './server/http';
 export { neverCrash } from './server/neverCrash';
 export { setSecurityHeaders } from './server/securityHeaders';
+export { createLookoutSignIn, type LookoutSignIn, type LookoutSignInOptions } from './signIn/lookoutSignIn';
+export { mintPairCode } from './signIn/pairCodes';
+export { cookieName } from './signIn/signInCookie';
+export { runningLookout, type RunningLookout } from './signIn/runningLookout';
