@@ -169,3 +169,11 @@
 .guide-review p {
   margin: 0;
 }
+.guide-unknown {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding-left: var(--sp-8);
+  border-left: 3px solid var(--edge-attention);
+}

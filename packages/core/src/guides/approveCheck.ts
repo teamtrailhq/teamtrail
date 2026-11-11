@@ -5,7 +5,7 @@ import { OperationError } from '../planning/operations/operationError';
 import { approveChecksHere, checksApproval } from '../verification/checksApproval';
 import { parseVerificationConfig } from '../verification/config';
 import { VERIFICATION_FILE } from '../verification/configFile';
-import { checkArgv } from './checkArgv';
+import { checkArgv, checkNotice } from './checkArgv';
 import { checkSha } from './guideHash';
 import { readGuideLock, writeGuideLock } from './guideLock';
 import { listGuides } from './guideStore';
@@ -35,10 +35,11 @@ const specOf = (p: ProposedCheck) => ({
 
 /**
  * The trail lead approves one check a guide proposes: it is written to verification.json (the only place Teamtrail
- * runs commands from) and its argv hash to the lock. Refuses when the guide isn't active, the argv is unsafe, or
+ * runs commands from) and its argv hash to the lock. A program Teamtrail doesn't know needs `acknowledged`. Refuses
+ * when the guide isn't active, the argv is unsafe, or
  * verification.json already has a different check of that name.
  */
-export function approveCheck(input: { root: string; id: string; name: string }) {
+export function approveCheck(input: { root: string; id: string; name: string; acknowledged?: boolean }) {
   const r = listGuides(input.root).find((x) => x.id === input.id);
   if (!r || r.status !== 'active' || !r.guide || r.origin !== 'local')
     throw new OperationError(`approve guide ${input.id} before its checks`);
@@ -46,6 +47,9 @@ export function approveCheck(input: { root: string; id: string; name: string }) 
   if (!proposed) throw new OperationError(`${input.id} proposes no check "${input.name}"`);
   const unsafe = checkArgv(proposed);
   if (unsafe.length) throw new OperationError(`check ${input.name} ${unsafe.join('; ')}`);
+  const notice = checkNotice(proposed);
+  if (notice && !input.acknowledged)
+    throw new OperationError(`check ${input.name}: ${notice}; approve it again, acknowledging that`);
   const file = path.join(input.root, VERIFICATION_FILE);
   const raw = readRaw(file);
   const checks = { ...(raw.checks ?? {}) };

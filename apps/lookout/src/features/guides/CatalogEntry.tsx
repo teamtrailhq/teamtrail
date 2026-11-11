@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button, MetaLine } from '../../components/ui';
 import { AddGuideFlow } from './AddGuideFlow';
 import { CatalogPreviewBody } from './CatalogPreviewBody';
+import { catalogReviewPart } from './guideLabels';
 import { ReportLink } from './ReportLink';
 import type { CatalogPreview } from './types';
 
@@ -12,6 +13,7 @@ import type { CatalogPreview } from './types';
  */
 export function CatalogEntry(props: {
   entry: Entry;
+  catalogUrl: string;
   installed?: string;
   preview: (id: string) => Promise<CatalogPreview>;
   add: (id: string, sha256: string) => Promise<{ pendingChecks: string[] }>;
@@ -34,7 +36,7 @@ export function CatalogEntry(props: {
           { text: e.id, code: true },
           e.version,
           `by ${e.author}`,
-          reviewPart(e),
+          catalogReviewPart(e, props.catalogUrl),
           e.reviewedBy.length > 0 && `reviewed by ${e.reviewedBy.join(', ')}`,
         ]}
       />
@@ -54,10 +56,4 @@ export function CatalogEntry(props: {
       {p && <AddGuideFlow preview={p} installed={props.installed} add={props.add} />}
     </div>
   );
-}
-
-/** Built in, Verified or Not reviewed: what the catalog says about this guide. */
-function reviewPart(e: Entry) {
-  if (e.builtin) return { text: 'Built in', strong: true };
-  return e.verified ? { text: 'Verified', strong: true } : 'Not reviewed';
 }

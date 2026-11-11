@@ -57,16 +57,21 @@ Commands:
                  the tracker folder and pin it in guides.lock.json. The lint refuses common
                  problems; it isn't a review. An id is looked up in every catalog, in order;
                  one found in more than one is refused until you name it as catalog/id.
-                 Without a terminal nothing is added unless --sha256 names the file. Each
-                 check command it proposes is asked about; without a terminal, none is
-                 approved unless --approve-checks is given
+                 Without a terminal nothing is added unless --sha256 names the file (an
+                 agent that can run this CLI can pass the printed hash too, the same limit
+                 as approve --hash). Each check command it proposes is asked about; without
+                 a terminal, none is approved unless --approve-checks is given, and a
+                 program Teamtrail doesn't know only ever at the terminal. Argv that itself
+                 carries or downloads code is refused; what repo files run (npm scripts,
+                 Makefiles, test files) is covered by your approval, not by the lint
   guides new <id> [--author <name>]
                  Write your own guide: a template in guides/<id>.md that passes the lint.
                  Agents can use it once the trail lead approves it in the Lookout
   guides update [id...] [--sha256 <hash>]
                  Newer versions of the catalog guides approved on this machine, from the
                  catalog each was approved from: shows what changed and asks before
-                 installing (without a terminal, only the file --sha256 names). New or
+                 installing (without a terminal, only the file --sha256 names; an agent
+                 that can run this CLI can pass the printed hash too). New or
                  changed check commands are asked about on their own
   guides remove <id>     Remove an installed guide (its approved checks stay in verification.json)
   guides lint [dir|file...] [--json]

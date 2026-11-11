@@ -21,7 +21,7 @@ const INTERPRETERS: Record<string, Interpreter> = {
   python: { inline: 'c', value: 'mWXQ', long: ['--command'], stop: '-m' },
   pypy: { inline: 'c', value: 'mWXQ', long: [], stop: '-m' },
   ruby: { inline: 'e', value: 'rICEx', long: [] },
-  perl: { inline: 'eE', value: 'IMmxCd', long: [] },
+  perl: { inline: 'eEMm', value: 'IxCd', long: [] },
   php: { inline: 'rBRFE', value: 'dcfz', long: [] },
   lua: { inline: 'e', value: 'l', long: [] },
   luajit: { inline: 'e', value: 'lbj', long: [] },

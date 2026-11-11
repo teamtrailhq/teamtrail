@@ -23,6 +23,17 @@ const NETWORK = new Set([
   'bisect',
   'difftool',
   'mergetool',
+  'upload-pack',
+  'upload-archive',
+  'fetch-pack',
+  'send-pack',
+  'receive-pack',
+  'instaweb',
+  'rebase',
+  'http-backend',
+  'shell',
+  'web--browse',
+  'imap-send',
 ]);
 
 /** Global options that take the next argument as their value. */
@@ -45,7 +56,11 @@ export function gitProblem(args: string[]): string | undefined {
     }
     if (arg.startsWith('-')) continue;
     const sub = arg.toLowerCase();
-    return NETWORK.has(sub) ? `runs git ${sub}, which reaches a remote or changes git's configuration` : undefined;
+    if (NETWORK.has(sub) || sub.startsWith('remote-'))
+      return `runs git ${sub}, which reaches a remote, runs commands or changes git's configuration`;
+    if (sub === 'grep' && args.slice(i + 1).some((a) => /^-[A-Za-z]*O|^--open-files-in-pager/.test(a)))
+      return 'runs git grep with a pager command (-O)';
+    return undefined;
   }
   return undefined;
 }

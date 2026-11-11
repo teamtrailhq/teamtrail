@@ -20,8 +20,8 @@ export function readGuideFiles(root: string): { id: string; text: string }[] {
 
 /**
  * Every guide the project has: the built-in ones, and the files in `guides/`, each checked against `guides.lock.json`.
- * A file with a built-in's id replaces it once the trail lead has approved it on this machine; until then the built-in
- * stays active and carries the waiting file as `override`, so a file dropped into the repo can't switch a built-in
+ * A file with a built-in's id replaces it while it is approved on this machine as it is; until then (and again after
+ * any change to it) the built-in stays active and carries the waiting file as `override`, so a file dropped into the repo can't switch a built-in
  * off. Pinned guides whose file is gone stay listed as tampered. Id order.
  */
 export function listGuides(root: string): InstalledGuide[] {
@@ -34,7 +34,8 @@ export function listGuides(root: string): InstalledGuide[] {
     const entry = lockChanged ? approved.guides[f.id] : lock.guides[f.id];
     return guideStatus({ ...f, origin: 'local', lock: entry, lockChanged, overridesBuiltin: f.id in BUILTIN_GUIDES });
   });
-  const waiting = (r: InstalledGuide) => r.id in BUILTIN_GUIDES && !(r.id in approved.guides);
+  // an override replaces the built-in only while it is active: new, changed or broken, the built-in stays in use
+  const waiting = (r: InstalledGuide) => r.id in BUILTIN_GUIDES && r.status !== 'active';
   const local = new Map(installed.map((r) => [r.id, r]));
   const builtins = Object.entries(BUILTIN_GUIDES)
     .filter(([id]) => !local.has(id) || waiting(local.get(id)!))

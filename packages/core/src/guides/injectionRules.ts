@@ -40,7 +40,7 @@ const PROTECTED = [
 
 /** Files that hold secrets on a developer's machine. */
 const SECRET_FILES =
-  '\\.env\\b|id_(rsa|ed25519|ecdsa)|\\.ssh/|\\.npmrc|\\.netrc|\\.pypirc|\\.aws/|\\.docker/config|\\.kube/config|\\.git-credentials';
+  '\\.env\\b|\\.config/gh\\b|hosts\\.yml|\\.gnupg|id_(rsa|ed25519|ecdsa)|\\.ssh/|\\.npmrc|\\.netrc|\\.pypirc|\\.aws/|\\.docker/config|\\.kube/config|\\.git-credentials';
 
 export const TEXT_RULES: TextRule[] = [
   {
@@ -59,6 +59,18 @@ export const TEXT_RULES: TextRule[] = [
     rule: 'answers-for-human',
     re: /\banswer_question\b|\bon (the )?(human|user|trail lead)('s)? behalf\b/i,
     message: "answers on the human's behalf",
+    level: 'error',
+  },
+  {
+    rule: 'answers-for-human',
+    re: /\banswer\b[^.\n]{0,40}\b(yourself|for (the )?(human|user|trail lead))\b|\binstead of (asking )?(the )?(human|user|trail lead)\b/i,
+    message: "answers on the human's behalf",
+    level: 'error',
+  },
+  {
+    rule: 'secret-file',
+    re: /\.config\/gh\b|\bhosts\.yml\b|\.git-credentials|\.ssh\/|\bid_(rsa|ed25519|ecdsa)\b|\.aws\/credentials|\.netrc\b|\.npmrc\b|\.pypirc\b|\.docker\/config|\.kube\/config|\.gnupg\b/i,
+    message: 'names a file that holds credentials',
     level: 'error',
   },
   {
@@ -117,6 +129,16 @@ export const TEXT_RULES: TextRule[] = [
     rule: 'hidden-text',
     re: /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]|[\u{E0000}-\u{E007F}]/u,
     message: 'has hidden or direction-changing unicode characters',
+    level: 'error',
+    perLine: true,
+  },
+  {
+    rule: 'control-chars',
+    // C0 and C1 controls other than tab and new line: ESC sequences, carriage returns and backspaces can hide text
+    // or rewrite what a terminal showed above the approval prompt
+    // eslint-disable-next-line no-control-regex -- control characters are exactly what this looks for
+    re: /[\x00-\x08\x0B-\x1F\x7F-\x9F]/,
+    message: 'has control characters (escape sequences, carriage returns, backspaces) that can hide or rewrite text',
     level: 'error',
     perLine: true,
   },

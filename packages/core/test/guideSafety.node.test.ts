@@ -210,9 +210,11 @@ test('an unapproved file with a built-in id leaves the built-in active until the
   const now = listGuides(root).find((r) => r.id === 'reviewer')!;
   assert.equal(now.origin, 'local');
   assert.equal(now.status, 'active');
-  // once approved here, an edit disables it as with any guide (its approved required checks keep applying)
+  // once approved here, an edit waits for approval again, and the built-in is used meanwhile
   writeFileSync(guideFilePath(root, 'reviewer'), `${override}\nMore.\n`);
-  assert.equal(listGuides(root).find((r) => r.id === 'reviewer')!.status, 'tampered');
+  const edited = listGuides(root).find((r) => r.id === 'reviewer')!;
+  assert.equal(edited.origin, 'builtin');
+  assert.equal(edited.override?.status, 'tampered');
 });
 
 test('a check approval comes from this machine, never from the committed lock', () => {

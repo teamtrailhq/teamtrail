@@ -7,6 +7,49 @@ interface Normalised {
   lineOf: number[];
 }
 
+/**
+ * Letters from other scripts that look like Latin ones (Cyrillic, Greek), folded to the Latin letter so "іgnore" or
+ * "vеrification.json" reads as written. Small on purpose: the lint is advice, the person still reads the guide.
+ */
+const LOOKALIKES: Record<string, string> = {
+  а: 'a',
+  в: 'b',
+  е: 'e',
+  ё: 'e',
+  к: 'k',
+  м: 'm',
+  н: 'h',
+  о: 'o',
+  р: 'p',
+  с: 'c',
+  т: 't',
+  у: 'y',
+  х: 'x',
+  і: 'i',
+  ї: 'i',
+  ј: 'j',
+  ѕ: 's',
+  ԁ: 'd',
+  ԛ: 'q',
+  ԝ: 'w',
+  ɡ: 'g',
+  ı: 'i',
+  α: 'a',
+  β: 'b',
+  ε: 'e',
+  ι: 'i',
+  κ: 'k',
+  ν: 'v',
+  ο: 'o',
+  ρ: 'p',
+  τ: 't',
+  υ: 'u',
+  χ: 'x',
+  ζ: 'z',
+  η: 'n',
+};
+const fold = (s: string) => [...s].map((c) => LOOKALIKES[c] ?? c).join('');
+
 /** Taken out of the squashed form: spaces, quotes, backticks and the marks people split a word with. */
 const SQUASH = /[\s`'"*+_|]/;
 
@@ -25,7 +68,7 @@ function normalise(lines: string[], squash: boolean): Normalised {
   };
   lines.forEach((raw, i) => {
     for (const ch of `${raw}\n`) {
-      const c = ch.normalize('NFKC').toLowerCase();
+      const c = fold(ch.normalize('NFKC').toLowerCase());
       if (squash && SQUASH.test(c)) continue;
       if (/\s/.test(c)) {
         if (out.at(-1) !== ' ') push(' ', i + 1);

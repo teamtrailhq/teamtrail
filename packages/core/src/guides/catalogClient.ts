@@ -16,20 +16,14 @@ export interface CatalogFetch {
 
 const join = (base: string, rel: string) => `${base.replace(/\/+$/, '')}/${rel}`;
 
-/** A catalog served from a GitHub repo's raw files: owner, repo, ref, and the folder under it. */
-const RAW_GITHUB = /^https:\/\/raw\.githubusercontent\.com\/([\w.-]+)\/([\w.-]+)\/[^/]+(\/[^?#]*)?$/;
-const FULL_SHA = /^[0-9a-f]{40}$/;
-
 /**
- * Where a guide file is read from. On a GitHub catalog, at the commit the index names for it (raw URL with the SHA),
- * so what is fetched is the reviewed revision, not whatever the branch holds a moment later; elsewhere, the path under
- * the catalog's address. Either way the text is checked against the index's sha256 before anything uses it.
+ * Where a guide file is read from: its path under the catalog's address, the same branch its index.json came from.
+ * Not the commit the index names: raw.githubusercontent.com serves any commit of the repo's fork network under the
+ * repo's own path, so a commit SHA can deliver text that was never on the catalog's branch. The text is checked
+ * against the index's sha256 before anything uses it, which is what ties it to the index.
  */
 export function guideUrl(registry: Registry, entry: CatalogEntry): string {
-  const commit = entry.history.at(-1)?.commit ?? '';
-  const m = RAW_GITHUB.exec(registry.url.replace(/\/+$/, ''));
-  if (!m || !FULL_SHA.test(commit)) return join(registry.url, entry.path);
-  return join(`https://raw.githubusercontent.com/${m[1]}/${m[2]}/${commit}${m[3] ?? ''}`, entry.path);
+  return join(registry.url, entry.path);
 }
 
 /** The most a catalog's index.json may be; a guide file has its own, smaller cap (guideLint's size rule). */

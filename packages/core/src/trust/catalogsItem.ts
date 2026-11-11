@@ -41,6 +41,8 @@ export function catalogsItem(root: string): TrustItem[] {
       lines: [...lines, ...changed],
       warnings: errors,
       file: GUIDES_CONFIG_FILE,
+      // where guides come from is always looked at on its own, never adopted with the rest
+      alone: true,
     },
   ];
 }

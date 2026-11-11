@@ -10,7 +10,7 @@ import { GuideRow } from './GuideRow';
 export function WriteYourOwn(props: {
   guides: InstalledGuide[];
   busy?: boolean;
-  onAct: (path: string, body: Record<string, string>) => void;
+  onAct: (path: string, body: Record<string, string | boolean>) => void;
   error?: string;
 }) {
   return (

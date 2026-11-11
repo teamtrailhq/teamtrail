@@ -4,7 +4,8 @@ import type { GuidesIo } from './types';
 
 /**
  * A long text through the person's pager ($PAGER, else `less`), so all of it can be read before they answer; text
- * that fits the screen, or a pager that fails, is printed as is. `less -X` leaves it on the screen afterwards.
+ * that fits the screen, or a pager that fails, is printed as is. `less -X` leaves it on the screen afterwards; no
+ * `-R`, so less shows any escape sequence instead of passing it to the terminal (the text is printable() already).
  */
 function page(text: string) {
   const rows = process.stdout.rows ?? 0;
@@ -13,7 +14,7 @@ function page(text: string) {
   const stdio: ['pipe', 'inherit', 'inherit'] = ['pipe', 'inherit', 'inherit'];
   const r = pager
     ? spawnSync(pager, { input: text, stdio, shell: true })
-    : spawnSync('less', ['-X', '-R'], { input: text, stdio });
+    : spawnSync('less', ['-X'], { input: text, stdio });
   if (r.error || r.status !== 0) process.stdout.write(text);
 }
 

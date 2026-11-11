@@ -28,6 +28,8 @@ export interface TrustItem {
    * an agent wrote since is approved one at a time, read whole. Set where it is shown (trustRoutes.ts).
    */
   committed?: boolean;
+  /** Approved only on its own, never in a bulk adoption: guide catalogs, check commands Teamtrail can't place. */
+  alone?: boolean;
   mapId?: string;
   ticketId?: string;
 }

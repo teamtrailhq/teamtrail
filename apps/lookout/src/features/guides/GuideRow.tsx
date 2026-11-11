@@ -21,7 +21,7 @@ function detailOf(r: InstalledGuide) {
 export function GuideRow(props: {
   r: InstalledGuide;
   busy?: boolean;
-  onAct: (path: string, body: Record<string, string>) => void;
+  onAct: (path: string, body: Record<string, string | boolean>) => void;
 }) {
   const { r } = props;
   const id = r.id;
@@ -70,7 +70,7 @@ export function GuideRow(props: {
             <GuideChecks
               r={r}
               busy={props.busy}
-              onApprove={(name) => props.onAct('/guides/checks/approve', { id, name })}
+              onApprove={(name, acknowledged) => props.onAct('/guides/checks/approve', { id, name, acknowledged })}
             />
           </>
         }

@@ -151,7 +151,8 @@ async function addInLookout({ page, url, shot }) {
   await approve.waitFor({ state: 'detached', timeout: 15_000 });
   // the catalog's review is pinned in the lock, so Settings (under the dialog) shows it without fetching the catalog
   const installed = section.locator('li.guide-row[data-guide-id="a11y"]');
-  await installed.getByText('Verified', { exact: true }).waitFor({ timeout: 15_000 });
+  // a catalog other than the official one vouches only for itself, so its Verified names its host
+  await installed.getByText(/^Verified by 127\.0\.0\.1:\d+'s catalog$/).waitFor({ timeout: 15_000 });
   // Esc belongs to the dialog on top; the Settings page under it goes once the catalog is closed
   await dialog.getByRole('button', { name: 'Close' }).click();
   await page.keyboard.press('Escape');

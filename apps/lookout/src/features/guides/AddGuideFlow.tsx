@@ -1,6 +1,7 @@
 import { BRAND } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button } from '../../components/ui';
+import { CheckApprove } from './CheckApprove';
 import { argvText } from './guideLabels';
 import type { CatalogPreview } from './types';
 import { useGuides } from './useGuides';
@@ -48,7 +49,8 @@ export function AddGuideFlow(props: {
     );
   }
   const waiting = find(id)?.pendingChecks ?? step.pending;
-  const approve = async (name: string) => setError(await act('/guides/checks/approve', { id, name }));
+  const approve = async (name: string, acknowledged: boolean) =>
+    setError(await act('/guides/checks/approve', { id, name, acknowledged }));
   return (
     <div className="add-guide">
       <p className="t-body">
@@ -61,9 +63,11 @@ export function AddGuideFlow(props: {
           <code className="t-code">
             {name}: {argvText(p.guide?.proposedChecks[name]?.run ?? [])}
           </code>
-          <Button size="sm" onClick={() => void approve(name)}>
-            Approve check {name}
-          </Button>
+          <CheckApprove
+            name={name}
+            spec={p.guide?.proposedChecks[name] ?? { run: [] }}
+            onApprove={(n, ack) => void approve(n, ack)}
+          />
         </span>
       ))}
       {error && <span className="vf-err">{error}</span>}

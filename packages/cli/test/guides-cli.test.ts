@@ -5,6 +5,7 @@ import { listGuides, readGuideLock } from '@teamtrail/core/agents';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fakeGuideCatalog, guideText } from '../../core/test/fakes/guideCatalog';
 import { runGuides } from '../src/guides/guidesCommand';
+import { printable } from '../src/guides/printable';
 import type { GuidesIo } from '../src/guides/types';
 import { approveAllHere } from './fakes/trailLead';
 
@@ -116,6 +117,30 @@ describe('teamtrail guides', () => {
     const yes = await run(['add', 'a11y'], io({ interactive: true, answers: [true, true] }));
     expect(yes.asked).toEqual(['  Add and approve a11y 1.0.0? [y/N] ', '    Approve a11y for a11y? [y/N] ']);
     expect(verification().checks.a11y.run).toEqual(['node_modules/.bin/pa11y-ci']);
+  });
+
+  it('refuses a guide with terminal escapes, and never prints one raw', async () => {
+    await catalog({ esc: guideText({ id: 'esc', body: 'Fine.\n\x1b[8mHidden.\x1b[0m\rOver.' }) });
+    const r = await run(['add', 'esc']);
+    expect(r.code).toBe(1);
+    expect(r.err()).toMatch(/control-chars/);
+    expect(r.out() + r.err()).not.toContain('\x1b');
+    expect(r.out() + r.err()).not.toContain('\r');
+    expect(printable('a\x1b[8mb\rc\u202ed\te\n')).toBe('a\\u{1b}[8mb\\u{d}c\\u{202e}d\te\n');
+  });
+
+  it('a check Teamtrail does not know is never approved in bulk, only with a yes that acknowledges it', async () => {
+    const SC = guideText({ id: 'sc', extra: 'proposedChecks:\n  sc:\n    run: [shellcheck, scripts/x.sh]' });
+    await catalog({ sc: SC });
+    const sha = /--sha256 (\S+) /.exec((await run(['add', 'sc'])).err())![1];
+    const bulk = await run(['add', 'sc', '--sha256', sha, '--approve-checks']);
+    expect(bulk.out()).toContain("UNKNOWN PROGRAM: TEAMTRAIL CAN'T TELL WHAT THIS RUNS");
+    expect(bulk.out()).toContain('Not approved yet: sc');
+    fs.rmSync(path.join(root, 'guides.lock.json'));
+    const t = io({ interactive: true, answers: [true, true] });
+    await run(['add', 'sc'], t);
+    expect(t.asked[1]).toBe('    I know what it runs: approve sc for sc? [y/N] ');
+    expect(verification().checks.sc.run).toEqual(['shellcheck', 'scripts/x.sh']);
   });
 
   it('refuses a catalog guide that fails the lint, naming the line', async () => {

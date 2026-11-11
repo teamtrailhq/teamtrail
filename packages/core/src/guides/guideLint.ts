@@ -1,5 +1,5 @@
 import type { GuideDoc, GuideFinding } from '../model/guide';
-import { checkArgv } from './checkArgv';
+import { checkArgv, checkNotice } from './checkArgv';
 import { parseGuide } from './guideFile';
 import { lintText } from './textLint';
 
@@ -32,7 +32,15 @@ export function lintGuide(text: string): GuideLint {
 function lintChecks(text: string, guide: GuideDoc): GuideFinding[] {
   return Object.entries(guide.proposedChecks).flatMap(([name, spec]) => {
     const line = checkLine(text, name);
-    return checkArgv(spec).map((message) => ({ line, rule: 'check-command', level: 'error' as const, message }));
+    const errors = checkArgv(spec).map((message) => ({
+      line,
+      rule: 'check-command',
+      level: 'error' as const,
+      message,
+    }));
+    const notice = checkNotice(spec);
+    // not refused, but not a check Teamtrail knows: approved only with an acknowledgement
+    return notice ? [...errors, { line, rule: 'check-unknown', level: 'warn' as const, message: notice }] : errors;
   });
 }
 

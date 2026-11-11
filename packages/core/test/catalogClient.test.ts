@@ -97,15 +97,14 @@ function recording(body: string) {
   return { f, calls };
 }
 
-// Finding 4: the guide is read at the commit the index names, not whatever `main` holds a moment later.
-test('a GitHub catalog guide is fetched at its commit and checked against the index', async () => {
+// The index's commit is display only: raw GitHub serves fork-network commits under the catalog's path, so the guide is
+// read from the catalog's branch, where its index came from, and must match the index's hash.
+test('a catalog guide is fetched from the catalog branch and checked against the index', async () => {
   const github = { name: 'teamtrail', url: 'https://raw.githubusercontent.com/teamtrailhq/teamtrail-guides/main' };
   const r = recording(GUIDE);
   expect(await fetchCatalogGuide(github, entry, { fetch: r.f })).toBe(GUIDE);
-  expect(r.calls[0].url).toBe(
-    `https://raw.githubusercontent.com/teamtrailhq/teamtrail-guides/${COMMIT}/guides/a11y.md`,
-  );
-  // another catalog host has no commit URLs: the path under its address, still checked against the index
+  expect(r.calls[0].url).toBe('https://raw.githubusercontent.com/teamtrailhq/teamtrail-guides/main/guides/a11y.md');
+  expect(r.calls[0].url).not.toContain(COMMIT);
   const other = recording(GUIDE);
   await fetchCatalogGuide({ name: 'ours', url: 'https://guides.example.com/' }, entry, { fetch: other.f });
   expect(other.calls[0].url).toBe('https://guides.example.com/guides/a11y.md');

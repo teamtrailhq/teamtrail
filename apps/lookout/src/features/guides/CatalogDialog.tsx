@@ -59,6 +59,7 @@ export function CatalogDialog(props: { registries: { name: string; url: string }
         {open ? (
           <CatalogEntry
             entry={open}
+            catalogUrl={current?.url ?? ''}
             installed={installedOf(open.id)}
             preview={cat.preview}
             add={cat.add}
@@ -88,7 +89,13 @@ export function CatalogDialog(props: { registries: { name: string; url: string }
             {cat.index && !entries.length && <Empty>No guides match.</Empty>}
             <ul className="catalog-list">
               {entries.map((e) => (
-                <CatalogRow key={e.id} entry={e} installed={installedOf(e.id)} onOpen={() => setOpenId(e.id)} />
+                <CatalogRow
+                  key={e.id}
+                  entry={e}
+                  catalogUrl={current?.url ?? ''}
+                  installed={installedOf(e.id)}
+                  onOpen={() => setOpenId(e.id)}
+                />
               ))}
             </ul>
           </>

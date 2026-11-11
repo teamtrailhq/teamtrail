@@ -3,6 +3,7 @@ import { guideSha, installGuide } from '@teamtrail/core/agents';
 import { approvePending } from './approvePending';
 import { argvLine } from './argvLine';
 import { journalGuide } from './journalGuide';
+import { printable } from './printable';
 import { printFindings } from './printFindings';
 import type { GuidesIo } from './types';
 
@@ -76,8 +77,8 @@ export async function installText(input: {
     return 1;
   }
   const sha = guideSha(input.text);
-  (io.page ?? io.out)(wholeGuide(lint.guide));
-  if (input.changes?.length) io.out(`${input.changes.join('\n')}\n\n`);
+  (io.page ?? io.out)(printable(wholeGuide(lint.guide)));
+  if (input.changes?.length) io.out(printable(`${input.changes.join('\n')}\n\n`));
   io.out(`${NOT_A_REVIEW}  sha256 ${sha}\n`);
   const label = `${lint.guide.id} ${lint.guide.version}`;
   if (!(await approves({ io, sha256: input.sha256, label }, sha))) return 1;

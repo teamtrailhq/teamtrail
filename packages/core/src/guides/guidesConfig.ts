@@ -1,4 +1,4 @@
-import { GUIDES_CONFIG_FILE, type GuidesConfig } from '../model/guide';
+import { GUIDES_CONFIG_FILE, OFFICIAL_CATALOG_URL, type GuidesConfig } from '../model/guide';
 import { parseJsonSafe } from '../model/safeKey';
 import { catalogsApproval } from './catalogsApproval';
 
@@ -9,7 +9,7 @@ import { catalogsApproval } from './catalogsApproval';
  */
 export const DEFAULT_REGISTRY = {
   name: 'teamtrail',
-  url: 'https://raw.githubusercontent.com/teamtrailhq/teamtrail-guides/main',
+  url: OFFICIAL_CATALOG_URL,
 };
 
 /** HTTPS only, except a catalog on this machine (tests, a local checkout served for review). */
@@ -23,7 +23,7 @@ function registryProblem(r: Partial<Registry> | null | undefined): string | unde
   const shown = JSON.stringify(r);
   if (!r || typeof r.name !== 'string' || !r.name || typeof r.url !== 'string' || !isRegistryUrl(r.url))
     return `registry ${shown} needs a name and an https url`;
-  if (r.name === DEFAULT_REGISTRY.name && r.url !== DEFAULT_REGISTRY.url)
+  if (r.name.trim().toLowerCase() === DEFAULT_REGISTRY.name && r.url !== DEFAULT_REGISTRY.url)
     return `registry ${shown}: "${DEFAULT_REGISTRY.name}" is the official catalog's name; give this one another`;
   return undefined;
 }

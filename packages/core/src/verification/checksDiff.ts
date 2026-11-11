@@ -1,4 +1,4 @@
-import { checkArgv } from '../guides/checkArgv';
+import { checkArgv, checkNotice } from '../guides/checkArgv';
 import type { CheckSpec, VerificationConfig } from '../model/verification';
 import { parseVerificationConfig } from './config';
 
@@ -54,8 +54,11 @@ export function checksDiff(approved: string | undefined, current: string | undef
   else if (!after) lines.push('the file has errors: completions that need checks would wait for you');
   else if (!lines.length && !before) lines.push('no check commands yet: approving lets you add them from guides');
   else if (!lines.length) lines.push('the same commands and settings, written differently');
-  const warnings = Object.entries(after?.checks ?? {}).flatMap(([name, spec]) =>
-    checkArgv(spec).map((problem) => `${name} ${problem}`),
-  );
-  return { lines, warnings };
+  const checks = Object.entries(after?.checks ?? {});
+  const warnings = checks.flatMap(([name, spec]) => checkArgv(spec).map((problem) => `${name} ${problem}`));
+  const unknown = checks.flatMap(([name, spec]) => {
+    const notice = checkNotice(spec);
+    return notice ? [`${name}: ${notice}`] : [];
+  });
+  return { lines, warnings: [...warnings, ...unknown], unknown: unknown.length > 0 };
 }

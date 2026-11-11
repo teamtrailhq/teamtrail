@@ -8,7 +8,7 @@ import { GuideRow } from './GuideRow';
 import { useGuides } from './useGuides';
 import { WriteYourOwn } from './WriteYourOwn';
 
-type Act = (path: string, body: Record<string, string>) => void;
+type Act = (path: string, body: Record<string, string | boolean>) => void;
 
 /**
  * Settings → Guides: the built-in guides and those added from a catalog, then the ones your team wrote (Write your
