@@ -4,6 +4,7 @@ import { remoteTokenViews, writeMcpEndpoint } from '@teamtrail/core/agents';
 import { configDir } from '@teamtrail/core/bridge';
 import { autoRegister } from '@teamtrail/core/node';
 import { fail } from '../../args/help';
+import { canonicalHost } from '../../serve/canonicalHost';
 import { keepServing } from '../../serve/keepServing';
 import { listen, type Listening } from '../../serve/listen';
 import { listenFailure } from '../../serve/listenFailure';
@@ -53,8 +54,10 @@ export async function runMcpHttp(opts: McpHttpServeOptions) {
   }
   const { port, servers, addresses } = listening;
   keepServing();
-  const url = endpointUrl(opts.host, port, addresses);
-  const network = !isLoopback(opts.host);
+  // listen() refused a --host that isn't an IP address; this is the spelling it bound.
+  const host = canonicalHost(opts.host) ?? opts.host;
+  const url = endpointUrl(host, port, addresses);
+  const network = !isLoopback(host);
   const release = writeMcpEndpoint(opts.root, { url, kind: 'standalone', network });
   const tokens = remoteTokenViews(opts.root).length;
   const access = tokens

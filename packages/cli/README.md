@@ -18,7 +18,7 @@ teamtrail
 | --- | --- | --- |
 | `--dir <path>` | `./.teamtrail` (or `$TEAMTRAIL_DIR`) | Tracker folder |
 | `--port <n>` | `7420`, next free port if taken | Port |
-| `--host <addr>` | `127.0.0.1` | Interface to bind. The server can write files in the tracker folder, so only expose it on networks you trust. |
+| `--host <addr>` | `127.0.0.1` | IP address to bind (a name is refused; `0.0.0.0` or `::` means each of the machine's addresses). The server can write files in the tracker folder, so only expose it on networks you trust. |
 | `--no-open` | | Don't open the browser |
 
 Requires Node 20 or newer. No other runtime dependencies.

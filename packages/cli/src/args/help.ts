@@ -89,7 +89,7 @@ Commands:
 Options:
   --dir <path>   Tracker folder (default: ./${BRAND.dataDir}, or $${BRAND.dataDirEnv})
   --port <n>     Port to listen on (default: 7420; the next free port is used if taken)
-  --host <addr>  Interface to bind (default: 127.0.0.1). Other devices still need to be paired
+  --host <addr>  IP address to bind (default: 127.0.0.1). Other devices still need to be paired
   --no-open      Don't open the browser
   -v, --version  Print the version
   -h, --help     Show this help

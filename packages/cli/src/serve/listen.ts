@@ -1,5 +1,6 @@
 import type http from 'node:http';
 import { bindServer } from './bindServer';
+import { canonicalHost } from './canonicalHost';
 import { listenAddresses } from './listenAddresses';
 
 const NO_SUCH_ADDRESS = new Set(['EADDRNOTAVAIL', 'EAFNOSUPPORT']);
@@ -51,7 +52,10 @@ async function attempt(make: () => http.Server, host: string, port: number): Pro
  * the error is thrown, never a partial listen.
  */
 export async function listen(o: ListenOptions): Promise<Listening> {
-  const result = await attempt(o.make, o.host, o.port);
+  const host = canonicalHost(o.host);
+  if (!host)
+    throw new Error(`--host must be an IP address (127.0.0.1, 0.0.0.0, ::, or one of this machine's), not "${o.host}"`);
+  const result = await attempt(o.make, host, o.port);
   if (result.kind === 'ok') return result.listening;
   if (result.error.code !== 'EADDRINUSE') throw result.error;
   // Port 0: the port the first address got may be another program's on a later one; draw again a few times.

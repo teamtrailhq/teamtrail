@@ -150,6 +150,43 @@ describe('the Lookout holds every loopback socket of its port', () => {
     expect(await bindError('127.0.0.1', port)).toBeUndefined();
   });
 
+  it('every spelling of all-zeros (::0, 0, 0:0:0:0:0:0:0:0) is the wildcard expansion: the LAN address can’t be squatted', async () => {
+    const lan = lanAddress();
+    for (const host of ['::0', '0', '0:0:0:0:0:0:0:0']) {
+      open = await listen({ make, port: 0, host, retries: 0 });
+      const bound = open.servers.map((s) => (s.address() as net.AddressInfo).address);
+      expect(bound, host).not.toContain('0.0.0.0');
+      expect(bound, host).not.toContain('::');
+      if (lan) {
+        expect(open.addresses, host).toContain(lan);
+        expect(await bindError(lan, open.port), host).toBe('EADDRINUSE');
+      }
+      for (const s of [...open.servers, ...others.splice(0)]) s.close();
+      open = undefined;
+    }
+  });
+
+  it('refuses a --host that isn’t an IP address, with a clear message', async () => {
+    for (const host of ['localhost', 'my-mac.local', 'example.com', '1.2.3', '']) {
+      const refused = await listen({ make, port: 0, host, retries: 0 }).catch((e: unknown) => e);
+      expect(listenFailure(refused), host).toBe(
+        `--host must be an IP address (127.0.0.1, 0.0.0.0, ::, or one of this machine's), not "${host}"`,
+      );
+    }
+  });
+
+  it('a loopback --host (::1, ::ffff:127.0.0.1) starts like the default, with no duplicate socket', async () => {
+    for (const host of [...(ipv6 ? ['::1', '[::1]'] : []), '::ffff:127.0.0.1', '127.0.0.1']) {
+      open = await listen({ make, port: 0, host, retries: 0 });
+      expect(new Set(open.addresses).size, host).toBe(open.addresses.length);
+      expect(open.addresses, host).toContain('127.0.0.1');
+      if (ipv6) expect(open.addresses, host).toContain('::1');
+      expect(lanUrls(open.addresses, open.port), host).toEqual([]);
+      for (const s of open.servers) s.close();
+      open = undefined;
+    }
+  });
+
   it('prints and opens an IP address, never localhost', () => {
     expect(lookoutUrl(7420)).toBe('http://127.0.0.1:7420/');
   });
