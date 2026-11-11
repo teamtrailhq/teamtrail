@@ -68,6 +68,8 @@ export function trustLedger(root: string, configDir?: string) {
 export const trustKey = {
   checks: 'checks',
   policy: 'policy',
+  /** guides.json: the guide catalogs Teamtrail fetches from. */
+  catalogs: 'catalogs',
   brief: (mapId: string) => `brief:${mapId}`,
   criteria: (mapId: string, ticketId: string) => `criteria:${mapId}:${ticketId}`,
   knowledge: (id: string) => `knowledge:${id}`,

@@ -1,11 +1,11 @@
 import { BRAND } from '@teamtrail/core';
 import type { GuidesArgs } from './types';
 
-const VALUE_FLAGS = { '--dir': 'dir', '--registry': 'registry', '--author': 'author' } as const;
+const VALUE_FLAGS = { '--dir': 'dir', '--registry': 'registry', '--author': 'author', '--sha256': 'sha256' } as const;
 
 const defaultDir = () => process.env[BRAND.dataDirEnv] || BRAND.dataDir;
 
-/** `guides <command> [args] [--dir <path>] [--registry <name>] [--author <name>] [--verified] [--approve-checks] [--json]`. */
+/** `guides <command> [args] [--dir <path>] [--registry <name>] [--author <name>] [--sha256 <hash>] [--verified] [--approve-checks] [--json]`. */
 export function parseGuidesArgs(argv: string[]): GuidesArgs | { error: string } {
   const o: GuidesArgs = {
     command: argv[0] ?? '',

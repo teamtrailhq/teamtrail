@@ -9,7 +9,9 @@ import { KIND_CAVEAT, KIND_EFFECT, standingText } from './approvalCopy';
 export function TrustItemRow(props: { item: TrustItem; busy: boolean; local: boolean; onApprove: () => void }) {
   const { item } = props;
   const whole = item.committed === false;
-  const shown = whole ? item.content.split('\n') : item.lines;
+  // guide catalogs keep their summary (each catalog with its host) above the file shown whole
+  const summary = item.kind === 'catalogs' ? [...item.lines, ''] : [];
+  const shown = whole ? [...summary, ...item.content.split('\n')] : item.lines;
   return (
     <Row
       as="li"

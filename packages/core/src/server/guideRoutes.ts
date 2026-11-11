@@ -18,15 +18,19 @@ const str = (v: unknown, name: string) => {
   return v;
 };
 
-/** The trail lead's guide actions on the project: approve a file as it is, approve a check, remove a guide. */
+/**
+ * The trail lead's guide actions on the project: approve a file as it was shown (`sha256`, the hash of the text the
+ * page showed in full), approve a check, remove a guide.
+ */
 async function projectAction(ctx: RouteContext, req: IncomingMessage, path: string) {
-  const b = await readJson<{ id?: unknown; name?: unknown }>(req, '{}');
+  const b = await readJson<{ id?: unknown; name?: unknown; sha256?: unknown; acknowledged?: unknown }>(req, '{}');
   const id = str(b.id, 'id');
   if (path === '/guides/approve') {
-    const r = approveGuide({ root: ctx.root, id, by: TRAIL_LEAD });
+    const r = approveGuide({ root: ctx.root, id, by: TRAIL_LEAD, sha256: str(b.sha256, 'sha256') });
     journalGuide(ctx.root, { action: 'approved', guide: id, version: r.guide.version });
   } else if (path === '/guides/checks/approve') {
-    const r = approveCheck({ root: ctx.root, id, name: str(b.name, 'name') });
+    const acknowledged = b.acknowledged === true;
+    const r = approveCheck({ root: ctx.root, id, name: str(b.name, 'name'), acknowledged });
     journalGuide(ctx.root, { action: 'check-approved', guide: id, version: r.version, check: r.check });
   } else {
     removeGuide({ root: ctx.root, id });
@@ -59,7 +63,7 @@ async function trailAction(ctx: RouteContext, req: IncomingMessage, path: string
 
 /**
  * `/guides`, the trail lead's side of guides (agents only read them, over MCP). GET `/guides` lists them; POST
- * `/guides/approve { id }`, `/guides/checks/approve { id, name }` and `/guides/remove { id }` act on the project;
+ * `/guides/approve { id, sha256 }`, `/guides/checks/approve { id, name, acknowledged? }` (a program Teamtrail doesn't know needs `acknowledged`) and `/guides/remove { id }` act on the project;
  * POST `/guides/ticket { mapId, ticketId, guide|null }` and `/guides/team { mapId, guides }` on a trail. GET
  * `/guides/checklist?mapId&ticketId` is a ticket's latest checklist answers. Catalog routes are in guideCatalogRoutes.ts.
  * Every write is journaled; a refused one answers 409 with the reason.

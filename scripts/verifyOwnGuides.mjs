@@ -84,9 +84,13 @@ export async function verifyOwnGuides({ page, url, cli, root, call, shot, second
   const offered = after.guides.find((g) => g.id === OWN);
   const lockEntry = JSON.parse(fs.readFileSync(path.join(root, 'guides.lock.json'), 'utf8')).guides[OWN];
 
-  const added = await guidesCli(cli, root, ['add', 'perf']);
+  // without a terminal, the whole guide is shown and nothing is added until the person names its hash
+  const shown = await guidesCli(cli, root, ['add', 'perf']);
+  const hash = /--sha256 (sha256:[0-9a-f]{64})/.exec(shown.err)?.[1];
+  const heldBack = shown.code === 1 && !!hash && !fs.existsSync(path.join(root, 'guides', 'perf.md'));
+  const added = await guidesCli(cli, root, ['add', 'perf', '--sha256', hash ?? '']);
   const perf = JSON.parse(fs.readFileSync(path.join(root, 'guides.lock.json'), 'utf8')).guides.perf;
-  const fromSecond = added.code === 0 && /Found perf 1\.0\.0 in catalog second/.test(added.out);
+  const fromSecond = heldBack && added.code === 0 && /Found perf 1\.0\.0 in catalog second/.test(added.out);
   const ok =
     scaffolded &&
     waiting &&

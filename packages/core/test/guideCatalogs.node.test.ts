@@ -10,6 +10,7 @@ import { guideFilePath, listGuides } from '../src/guides/guideStore';
 import { approveGuide } from '../src/guides/installGuide';
 import { guideTemplate, newGuide } from '../src/guides/newGuide';
 import { fakeGuideCatalog, guideText } from './fakes/guideCatalog';
+import { approveAllHere } from './fakes/trailLead';
 
 const tmpRoot = () => {
   const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-catalogs-')), '.teamtrail');
@@ -18,6 +19,7 @@ const tmpRoot = () => {
 };
 const config = (root: string, value: unknown) => {
   writeFileSync(path.join(root, 'guides.json'), JSON.stringify(value));
+  approveAllHere(root); // the trail lead approved it on this machine
   return readGuidesConfig(root);
 };
 const ours = { name: 'ours', url: 'https://guides.example.com' };

@@ -5,13 +5,19 @@
 // Catalog repo layout (a public git repo; no server, no accounts):
 //   guides/<id>.md          one guide file per guide (the format `teamtrail guides lint` checks)
 //   examples/<id>/…        at least one test example per guide: a ticket, a diff, a transcript to try it on
+//   verified.json          optional: { "v": 1, "guides": { "<id>": { "sha256": "sha256:…", "reviewer": "<GitHub login>" } } }
+//                          the reviewed file of each verified guide; protect it with CODEOWNERS (see below)
 //   reported.json          optional: ids of guides with an open report, shown with a "reported" mark
 //   builtin.json           optional: ids of guides that are copies of Teamtrail's built-in ones ("Built in" badge)
 //   README.md              optional: the guides table is written between <!-- guides:start --> and <!-- guides:end -->
 //
-// Reviews: maintainers merge a guide change with a `Reviewed-by: <name>` trailer in the commit message. Every commit
-// that touched a guide file becomes a history entry (version read from the file at that commit, reviewer from the
-// trailer); a guide is "verified" when its latest commit has a reviewer.
+// Reviews: a guide is "verified" only while verified.json names the sha256 of its file as it is now, with the GitHub
+// login of the maintainer who reviewed it. The catalog repo protects verified.json with CODEOWNERS and a required
+// code-owner review, so only a reviewed change to that file marks a guide verified; editing the guide afterwards drops
+// the mark until the new file is reviewed. (Commit messages are not used: anyone can write a `Reviewed-by:` line.)
+// The index carries the reviewed hash (`verifiedSha256`), and Teamtrail shows Verified only when it is the file's
+// sha256, which it checks against what it downloads. Every commit that touched a guide file becomes a history entry
+// (version read from the file at that commit).
 //
 // Output (default <checkout>/dist): index.json (what `teamtrail guides search|add` and the Lookout read), index.html (a
 // dependency-free page with report links to `<repo>/issues/new?template=report-guide.yml`), and guides/<id>.md copies.
@@ -80,17 +86,36 @@ function historyOf(rel) {
     .map((c) => c.trim())
     .filter(Boolean)
     .map((c) => {
-      const [commit, at, ...body] = c.split('\t');
-      const reviewer = /^Reviewed-by:\s*(.+)$/im.exec(body.join('\t'))?.[1].trim();
+      const [commit, at] = c.split('\t');
       let version = '?';
       try {
         version = /^version:\s*(\S+)/m.exec(git('show', `${commit}:${rel}`))?.[1] ?? '?';
       } catch {
         // the file didn't exist at that commit (a rename)
       }
-      return { version, commit, at, ...(reviewer ? { reviewer } : {}) };
+      return { version, commit, at };
     })
     .reverse();
+}
+
+/** A GitHub login: what CODEOWNERS and branch protection know a reviewer by. */
+const LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
+
+/** verified.json: id → the reviewed file's sha256 and its reviewer's login. Malformed entries are left out. */
+function readVerified() {
+  let raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(path.join(checkout, 'verified.json'), 'utf8'));
+  } catch {
+    return new Map();
+  }
+  const out = new Map();
+  for (const [id, v] of Object.entries(raw?.v === 1 && raw.guides ? raw.guides : {})) {
+    const ok = v && /^sha256:[0-9a-f]{64}$/.test(v.sha256 ?? '') && LOGIN.test(v.reviewer ?? '');
+    if (ok) out.set(id, { sha256: v.sha256, reviewer: v.reviewer });
+    else console.error(`verified.json: ${id} needs a sha256 and a reviewer's GitHub login; ignored`);
+  }
+  return out;
 }
 
 /** An optional JSON list of ids in the checkout. */
@@ -127,16 +152,18 @@ ul{list-style:none;padding:0}li{border-top:1px solid #ddd;padding:1rem 0}h2{font
 .v{background:#dcefe2}.u{background:#eee}.r{background:#f6dcd6}code{font-size:.9em}
 @media (prefers-color-scheme:dark){body{background:#151816;color:#e7e9e5}li{border-color:#333}.m{color:#9a9f99}.v{background:#244231}.u{background:#333}.r{background:#4a2a24}}
 </style></head><body><h1>Teamtrail guides</h1>
-<p>Guides your coding agents can take on. Each is a plain markdown file, linted for prompt injection and reviewed before it is marked verified. Installing one pins its hash; any check command it proposes runs only after you approve it.</p>
+<p>Guides your coding agents can take on. Each is a plain markdown file. The lint looks for common problems; it isn't a review. A guide is Verified when a maintainer reviewed this exact file (its hash is in verified.json). Read a guide before you approve it: installing one pins its hash, and any check command it proposes runs only after you approve that too.</p>
 <ul>${rows.join('\n')}</ul></body></html>\n`;
 }
 
 const reported = idSet('reported.json');
+const reviewed = readVerified();
 const builtin = idSet('builtin.json');
 const guides = lint().map((r) => {
   const rel = path.relative(checkout, r.path).split(path.sep).join('/');
   const history = historyOf(rel);
-  const reviewers = [...new Set(history.map((h) => h.reviewer).filter(Boolean))];
+  const review = reviewed.get(r.id);
+  const verified = !!review && review.sha256 === r.sha256;
   return {
     id: r.id,
     version: r.version,
@@ -146,8 +173,9 @@ const guides = lint().map((r) => {
     summary: r.summary,
     author: r.author,
     types: r.types,
-    verified: !!history.at(-1)?.reviewer,
-    reviewedBy: reviewers,
+    verified,
+    ...(verified ? { verifiedSha256: review.sha256 } : {}),
+    reviewedBy: verified ? [review.reviewer] : [],
     history,
     ...(reported.has(r.id) ? { reported: true } : {}),
     ...(builtin.has(r.id) ? { builtin: true } : {}),

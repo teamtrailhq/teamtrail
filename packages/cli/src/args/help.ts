@@ -52,19 +52,30 @@ Commands:
   guides search [query] [--verified] [--registry <name>]
                  Search the guide catalogs: those listed in guides.json, then the official one
                  (unless guides.json says "official": false)
-  guides add <id>|<catalog/id>|<file.md> [--registry <name>] [--approve-checks]
-                 Copy a guide into the tracker folder and pin it in guides.lock.json, after
-                 the safety lint. An id is looked up in every catalog, in order; one found in
-                 more than one is refused until you name it as catalog/id. Each check command
-                 it proposes is shown and asked about; without a terminal, none is approved
-                 unless --approve-checks is given
+  guides add <id>|<catalog/id>|<file.md> [--registry <name>] [--sha256 <hash>] [--approve-checks]
+                 Show the whole guide (paged when long) and, once you approve it, copy it into
+                 the tracker folder and pin it in guides.lock.json. The lint refuses common
+                 problems; it isn't a review. An id is looked up in every catalog, in order;
+                 one found in more than one is refused until you name it as catalog/id.
+                 Without a terminal nothing is added unless --sha256 names the file (an
+                 agent that can run this CLI can pass the printed hash too, the same limit
+                 as approve --hash). Each check command it proposes is asked about; without
+                 a terminal, none is approved unless --approve-checks is given, and a
+                 program Teamtrail doesn't know only ever at the terminal. Argv that itself
+                 carries or downloads code is refused; what repo files run (npm scripts,
+                 Makefiles, test files) is covered by your approval, not by the lint
   guides new <id> [--author <name>]
                  Write your own guide: a template in guides/<id>.md that passes the lint.
                  Agents can use it once the trail lead approves it in the Lookout
-  guides update [id...]  Install newer catalog versions; changed check commands are asked about again
+  guides update [id...] [--sha256 <hash>]
+                 Newer versions of the catalog guides approved on this machine, from the
+                 catalog each was approved from: shows what changed and asks before
+                 installing (without a terminal, only the file --sha256 names; an agent
+                 that can run this CLI can pass the printed hash too). New or
+                 changed check commands are asked about on their own
   guides remove <id>     Remove an installed guide (its approved checks stay in verification.json)
   guides lint [dir|file...] [--json]
-                 Schema and safety lint (default: the project's own guides); in a catalog
+                 Schema and lint for common problems (default: the project's own guides); in a catalog
                  checkout also a test example per guide (examples/<id>/). Exits 1 on any error
   connect slack  Start the Lookout on the Slack setup (Socket Mode from this machine;
                  tokens stay in your local credential store)

@@ -50,9 +50,11 @@ async function fakeCatalog(files) {
       sha256: sha(text),
       summary: /summary: (.+)/.exec(text)[1],
       author: /author: (.+)/.exec(text)[1],
+      // reviewed: the catalog's verified.json names this file's hash and the reviewer's login
       verified: true,
+      verifiedSha256: sha(text),
       reviewedBy: ['maintainer'],
-      history: [{ version: '1.0.0', commit: 'abc1234', at: '2026-11-01T10:00:00Z', reviewer: 'maintainer' }],
+      history: [{ version: '1.0.0', commit: 'abc1234', at: '2026-11-01T10:00:00Z' }],
     })),
   };
   const server = http.createServer((req, res) => {
@@ -124,6 +126,11 @@ async function addInLookout({ page, url, shot }) {
   if (await onboarding.isVisible()) await onboarding.click();
   await page.locator('.dialog.onboarding').waitFor({ state: 'detached', timeout: 15_000 });
   await checksRow.getByRole('button', { name: 'Approve' }).click({ timeout: 15_000 });
+  // so did guides.json: its catalogs are fetched only once approved here, each shown with its host
+  const catalogsRow = page.locator('.ap-row', { hasText: 'Guide catalogs in guides.json' });
+  await catalogsRow.getByText(/1\. e2e · 127\.0\.0\.1:\d+/).waitFor({ timeout: 15_000 });
+  await shot('19-guide-catalogs-approval');
+  await catalogsRow.getByRole('button', { name: 'Approve' }).click({ timeout: 15_000 });
   await page.getByText('Nothing waiting').waitFor({ timeout: 15_000 });
   await page.goto(`${url}?settings=guides`);
   const section = page.locator('.guides-section');
@@ -144,7 +151,8 @@ async function addInLookout({ page, url, shot }) {
   await approve.waitFor({ state: 'detached', timeout: 15_000 });
   // the catalog's review is pinned in the lock, so Settings (under the dialog) shows it without fetching the catalog
   const installed = section.locator('li.guide-row[data-guide-id="a11y"]');
-  await installed.getByText('Verified', { exact: true }).waitFor({ timeout: 15_000 });
+  // a catalog other than the official one vouches only for itself, so its Verified names its host
+  await installed.getByText(/^Verified by 127\.0\.0\.1:\d+'s catalog$/).waitFor({ timeout: 15_000 });
   // Esc belongs to the dialog on top; the Settings page under it goes once the catalog is closed
   await dialog.getByRole('button', { name: 'Close' }).click();
   await page.keyboard.press('Escape');
