@@ -5,8 +5,18 @@ import { writeLocalJson } from '../lib/ensureLocalDir';
 import { readJsonFile } from '../lib/jsonFile';
 import { machineAccess } from '../machine/machineAccess';
 import { BRAND } from '../model/brand';
-import { agentAnswerSigned } from './agentAnswerSignature';
+import { compareVersions } from '../model/compareVersions';
+import { runningVersion } from '../model/runningVersion';
+import type { AnsweredQuestion } from '../model/types';
+import { versionSkew } from '../model/versionSkew';
+import { checkAgentAnswer, type AnswerCheck } from './agentAnswerSignature';
 import { agentPaths, type AgentAnswer, type AgentSessionDoc } from './agentLink';
+import { signAnswered } from './answeredSignature';
+
+const teamtrailVersion = () => {
+  const v = runningVersion();
+  return v ? { teamtrail: v } : {};
+};
 
 /**
  * Persists every session of an in-process ActivityStream as a session doc and
@@ -18,6 +28,8 @@ export class AgentDocWriter {
   private off: () => void;
   private written = new Map<string, string>();
   private blocked = false;
+  private toldSkew = false;
+  private signatures = new Map<string, AnsweredQuestion>();
 
   constructor(
     private root: string,
@@ -37,6 +49,14 @@ export class AgentDocWriter {
     }, 25);
   }
 
+  /** The answered entry signed, once per entry: it was delivered from a verified answer in this process. */
+  private signed(a: AnsweredQuestion) {
+    const key = JSON.stringify(a);
+    let s = this.signatures.get(key);
+    if (!s) this.signatures.set(key, (s = signAnswered(this.root, a)));
+    return s;
+  }
+
   /** Write every session whose slice changed. */
   flush() {
     clearTimeout(this.timer);
@@ -49,9 +69,10 @@ export class AgentDocWriter {
         session,
         chats: st.chats.filter((c) => c.sessionId === sid),
         pending: st.pending.filter((q) => q.sessionId === sid),
-        answered: st.answered.filter((a) => a.sessionId === sid),
+        answered: st.answered.filter((a) => a.sessionId === sid).map((a) => this.signed(a)),
         feed: st.feed.filter((f) => f.sessionId === sid).slice(-200),
         client: this.opts.client?.(),
+        ...teamtrailVersion(),
         pid: process.pid,
       };
       const key = JSON.stringify(doc);
@@ -76,19 +97,40 @@ export class AgentDocWriter {
   }
 
   private take(file: string, ans: AgentAnswer, q: { id: string; sessionId: string; agent: string }) {
-    let signed: boolean;
+    let check: AnswerCheck;
     try {
-      signed = agentAnswerSigned(this.root, ans, { sessionId: q.sessionId, questionId: q.id });
+      check = checkAgentAnswer(this.root, ans, { sessionId: q.sessionId, questionId: q.id });
     } catch {
       return this.cannotVerify(q.sessionId);
     }
+    // A newer Teamtrail may sign in a way this one doesn't know: keep the answer and say why, never call it forged.
+    if (check.kind === 'forged' && this.newerWriter(ans.writer)) return this.skewed(q.sessionId, ans.writer!);
     rmSync(file, { force: true });
-    if (signed) return this.activity.answer(q.id, ans.text, ans.author || 'trail lead');
+    // An unlabelled answer (an older writer, or a label that doesn't verify) counts as chat at gates (answerVia.ts).
+    if (check.kind === 'signed') return this.activity.answer(q.id, ans.text, ans.author || 'trail lead', check.how);
     this.activity.push({
       source: 'system',
       level: 'alert',
       sessionId: q.sessionId,
       text: `An answer file for ${q.agent}'s question was not written by ${BRAND.name} on this machine. It was ignored; the question still waits for you.`,
+    });
+  }
+
+  private newerWriter(writer: unknown) {
+    const own = runningVersion();
+    return typeof writer === 'string' && !!own && compareVersions(writer, own) > 0;
+  }
+
+  /** Said once per process: the answer stays for an agent on the Lookout's version to read. */
+  private skewed(sessionId: string, writer: string) {
+    if (this.toldSkew) return;
+    this.toldSkew = true;
+    const text = versionSkew({ agentVersion: runningVersion(), lookoutVersion: writer });
+    this.activity.push({
+      source: 'system',
+      level: 'alert',
+      sessionId,
+      text: `An answer waits that this agent can't read. ${text}`,
     });
   }
 

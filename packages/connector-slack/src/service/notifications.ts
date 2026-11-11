@@ -8,6 +8,7 @@ import { day } from './constants';
 import { digestWindowMs } from './digestWindow';
 import { queueLine } from './queueLine';
 import { refusedForGood } from './refusedForGood';
+import { syncSettingRequests } from './settingRequests';
 import type { SlackContext } from './slackContext';
 import { trailChanges, notesOf } from './trailChanges';
 
@@ -43,6 +44,7 @@ export async function syncTrails(ctx: SlackContext, docs: AgentSessionDoc[], c: 
     for (const line of trailChanges({ snap, docs, prev, now, events: ev })) queueLine(ctx, m.id, line);
   }
   await syncApprovals(ctx, snaps, c);
+  await syncSettingRequests(ctx, snaps, c);
 }
 
 /** How much one digest message carries; the rest is in the Lookout. */

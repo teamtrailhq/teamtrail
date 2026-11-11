@@ -9,13 +9,19 @@ import { contentHash, trustKey, trustLedger } from '../../trust/trustLedger';
  */
 
 /** What an approval covers: everything that decides what the reroute does. */
-type Approved = Pick<RerouteProposal, 'kind' | 'destinationReason' | 'reason' | 'evidence' | 'invalidates' | 'changes'>;
+type Approved = Pick<
+  RerouteProposal,
+  'kind' | 'destinationReason' | 'reason' | 'evidence' | 'invalidates' | 'changes' | 'lane' | 'by'
+>;
 
 export function rerouteContent(p: RerouteProposal): string {
   const core: Approved & { id: string; mapId: string } = {
     id: p.id,
     mapId: p.mapId,
     kind: p.kind,
+    // the lane decides how approving is recorded, and who asked is part of what was shown
+    lane: p.lane,
+    by: p.by,
     destinationReason: p.destinationReason,
     reason: p.reason,
     evidence: p.evidence,

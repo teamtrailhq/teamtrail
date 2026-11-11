@@ -16,9 +16,12 @@ export function rerouteDiff(snap: MapSnapshot, changes: RerouteChange[]): Rerout
     existingNode(t, marks.get(t.id) ?? 'unchanged', { added: added(t.id), removed: removed(t.id) }),
   );
   const destination = changes.find((c) => c.op === 'update_destination');
+  const mode = changes.find((c) => c.op === 'set_mode');
   return {
     nodes: [...existing, ...changes.flatMap((c) => addedNodes(c, added))],
     ...(destination ? { destination: { before: snap.map.sections.destination, after: destination.text } } : {}),
+    ...(mode ? { mode: { before: snap.map.mode, after: mode.mode } } : {}),
+    ...(changes.some((c) => c.op === 'skip_discovery') ? { skipDiscovery: true } : {}),
     unspecified: changes.flatMap((c) => (c.op === 'add_unspecified' ? [c.text] : [])),
     outOfScope: changes.flatMap((c) => (c.op === 'add_out_of_scope' ? [c.text] : [])),
     superseded: changes.flatMap((c) =>

@@ -116,14 +116,18 @@ test('setup: tokens are routed by prefix, checked live, stored only in the local
 test('asks: DM to the owner, buttons answer the waiting agent, late and unauthorized clicks are refused, UI answers close the DM', async () => {
   const r = await replayed('slack-ask.json', askFlow);
   // each answer carries this machine's signature, so the waiting agent knows Teamtrail wrote it, not the agent
-  const unsigned = ({ sig, ...a }: Record<string, unknown>) => (assert.match(String(sig), /^[0-9a-f]{64}$/), a);
+  const unsigned = ({ sig, sigVia, ...a }: Record<string, unknown>) => (
+    assert.match(String(sig), /^[0-9a-f]{64}$/),
+    assert.match(String(sigVia), /^[0-9a-f]{64}$/, 'and how it was given, Slack, is signed too'),
+    a
+  );
   assert.deepEqual(
     { ...unsigned(r.answer1), at: 0 },
-    { sessionId: 's1', questionId: 'q1', text: 'Postgres', author: `slack:${ANA}`, at: 0 },
+    { sessionId: 's1', questionId: 'q1', text: 'Postgres', author: `slack:${ANA}`, at: 0, via: 'slack' },
   );
   assert.deepEqual(
     { ...unsigned(r.answer3), at: 0 },
-    { sessionId: 's3', questionId: 'q3', text: 'event_log', author: `slack:${ANA}`, at: 0 },
+    { sessionId: 's3', questionId: 'q3', text: 'event_log', author: `slack:${ANA}`, at: 0, via: 'slack' },
   );
   assert.deepEqual(r.answers.sort(), ['s1', 's3'], 'refused, late and UI answers write nothing');
   assert.ok(

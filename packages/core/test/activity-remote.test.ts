@@ -157,7 +157,7 @@ describe('ActivityStream.syncRemote', () => {
       at: 1500,
     };
     a.syncRemote(doc({ pending: [q] }));
-    expect(a.answer('q1', 'Postgres', 'trail lead')).toBe(true);
+    expect(a.answer('q1', 'Postgres', 'trail lead', { via: 'lookout' })).toBe(true);
     expect(sent).toEqual([['q1', 'Postgres', 'trail lead']]);
     expect(a.snapshot.pending).toHaveLength(0);
     expect(a.snapshot.chats.at(-1)).toMatchObject({ from: 'human', text: 'Postgres' });

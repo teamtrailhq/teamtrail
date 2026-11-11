@@ -7,6 +7,7 @@ import { setModelMatching } from '@teamtrail/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { callTool } from './fakes/callTool';
 
 let root: string;
 const open: { close(): void | Promise<void> }[] = [];
@@ -22,7 +23,7 @@ async function connect(agentName: string, model?: string): Promise<{ call: Call;
   await Promise.all([server.connect(a), client.connect(b)]);
   open.push({ close: () => agent.close() }, client);
   const call: Call = async (name, args = {}) => {
-    const r = (await client.callTool({ name, arguments: args })) as { isError?: boolean; content: { text: string }[] };
+    const r = (await callTool(client, root, name, args)) as { isError?: boolean; content: { text: string }[] };
     if (r.isError) throw new Error(r.content[0].text);
     return JSON.parse(r.content[0].text);
   };

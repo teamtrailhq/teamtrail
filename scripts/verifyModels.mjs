@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { lookoutLinks, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
 
 async function startServer(cli, cwd) {
   const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd });
@@ -135,7 +135,7 @@ export async function verifyModels({ browser, cli, log, shots }) {
   const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-models-e2e-'));
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const config = path.join(top, '.claude-config');
-  const { server, pair } = await startServer(cli, top);
+  const { server, url, pair } = await startServer(cli, top);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -149,15 +149,19 @@ export async function verifyModels({ browser, cli, log, shots }) {
     await signInWith(page, pair);
     await page.locator('.dialog.onboarding').waitFor();
     await page.getByRole('button', { name: 'Get started' }).click();
-    await fast.call('start_trail', {
-      discovery: false,
-      title: 'Release search',
-      destination: 'Readers find a release in seconds',
-      tickets: [
-        { ref: 'size', title: 'Survey release sizes', type: 'research' },
-        { ref: 'format', title: 'Pick the index format', type: 'junction' },
-        { ref: 'years', title: 'Count releases per year', type: 'research' },
-      ],
+    await approveSkipInLookout({
+      started: await fast.call('start_trail', {
+        discovery: false,
+        title: 'Release search',
+        destination: 'Readers find a release in seconds',
+        tickets: [
+          { ref: 'size', title: 'Survey release sizes', type: 'research' },
+          { ref: 'format', title: 'Pick the index format', type: 'junction' },
+          { ref: 'years', title: 'Count releases per year', type: 'research' },
+        ],
+      }),
+      page,
+      url: url,
     });
     await page.locator('.node', { hasText: 'Pick the index' }).first().waitFor({ timeout: 15_000 });
     const on = await switchOn({ page, top, shot });

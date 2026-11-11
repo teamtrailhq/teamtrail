@@ -86,6 +86,7 @@ test('every message, modal and Home builder: hostile text in every field comes o
     agent: EVIL,
     trail: EVIL,
     ticket: EVIL,
+    stakes: EVIL,
   };
   const built: Record<string, unknown> = {
     askMessage: askMessage(ask, { url: 'http://localhost:7420/' }),
@@ -129,7 +130,8 @@ test('every message, modal and Home builder: hostile text in every field comes o
   };
   for (const [name, message] of Object.entries(built)) assertInert(message, name);
   // Buttons and menu options are plain_text, which Slack never parses; they must not be mrkdwn.
-  const labels = (built.askMessage as { blocks: { elements?: { text: { type: string } }[] }[] }).blocks[1].elements!;
+  type Blocks = { blocks: { type: string; elements?: { text: { type: string } }[] }[] };
+  const labels = (built.askMessage as Blocks).blocks.find((b) => b.type === 'actions')!.elements!;
   assert.ok(labels.every((e) => e.text.type === 'plain_text'));
 });
 

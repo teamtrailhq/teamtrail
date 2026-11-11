@@ -1,5 +1,7 @@
 import {
   frozenTickets,
+  settingAsk,
+  settingText,
   type DestinationReason,
   type MapSnapshot,
   type RerouteChange,
@@ -12,8 +14,8 @@ import type { WaitControl } from './types';
 
 export interface ProposeArgs {
   trail?: string;
-  /** `rule-out`: close_ticket out_of_scope, in its own lane (ruleOut.ts). */
-  lane?: 'rule-out';
+  /** `rule-out`: close_ticket out_of_scope (ruleOut.ts); `setting`: a trail lead's setting (settings.ts). */
+  lane?: 'rule-out' | 'setting';
   kind?: RerouteKind;
   destinationReason?: DestinationReason;
   reason: string;
@@ -116,9 +118,18 @@ async function statusView(ctx: AgentContext, mapId: string, p: RerouteProposal) 
     ...(p.supersededBy ? { supersededBy: p.supersededBy } : {}),
     applied: `${p.applied.length} of ${p.changes.length}`,
     created: Object.values(p.created).map(keyOf),
-    next: NEXT[p.status],
+    next: p.lane === 'setting' ? SETTING_NEXT[p.status](p) : NEXT[p.status],
   };
 }
+
+const SETTING_NEXT: Record<RerouteProposal['status'], (p: RerouteProposal) => string> = {
+  pending: (p) =>
+    `Still waiting on the human to approve or decline: ${settingAsk(p)}. Nothing changes until they approve.`,
+  approved: (p) => `Approved: the trail lead agreed to ${settingText(p.changes[0])}, and it is done.`,
+  rejected: (p) =>
+    `Declined: the trail lead said no to ${settingText(p.changes[0])}${p.note ? ` (${p.note})` : ''}. Don't do it; carry on as the trail is.`,
+  superseded: () => 'Replaced by a newer request.',
+};
 
 const NEXT: Record<RerouteProposal['status'], string> = {
   pending: 'Still waiting on the human. Keep working on tickets the proposal does not freeze.',

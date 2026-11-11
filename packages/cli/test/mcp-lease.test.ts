@@ -9,6 +9,7 @@ import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { callTool } from './fakes/callTool';
 
 let root: string;
 const open: { close(): void | Promise<void> }[] = [];
@@ -22,7 +23,7 @@ async function connect(agentName: string, leaseMs: number) {
   await Promise.all([server.connect(a), client.connect(b)]);
   open.push({ close: () => agent.close() }, client);
   return async <T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}) => {
-    const r = (await client.callTool({ name, arguments: args })) as { isError?: boolean; content: { text: string }[] };
+    const r = (await callTool(client, root, name, args)) as { isError?: boolean; content: { text: string }[] };
     if (r.isError) throw new Error(r.content[0].text);
     return JSON.parse(r.content[0].text) as T;
   };
@@ -75,8 +76,9 @@ describe('claim leases', () => {
     expect(second.claimed.assignee).toBe('claude-02');
     expect(second.claimed.resume?.handoff).toMatch(/claude-01 went silent/);
     expect(second.claimed.resume?.handoff).toMatch(/Yjs and Automerge both fit/);
-    expect(second.claimed.resume?.handoff).toMatch(/D-1 · Use Yjs/);
-    expect(second.claimed.decisionsSoFar.map((d) => d.id)).toEqual(['D-1']);
+    // D-1: the trail lead approved skipping discovery (fakes/callTool.ts).
+    expect(second.claimed.resume?.handoff).toMatch(/D-2 · Use Yjs/);
+    expect(second.claimed.decisionsSoFar.map((d) => d.id)).toEqual(['D-2']);
     const leases = readLeases(root);
     expect(leases.map((l: TicketLease) => [l.agent, l.returned?.reason ?? 'live'])).toEqual([['claude-02', 'live']]);
 

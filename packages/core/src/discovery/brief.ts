@@ -58,11 +58,6 @@ export const EMPTY_SECTIONS: BriefSections = {
 /** Ticket types agents may claim before the brief is accepted: investigation, decisions with the human, reviews. */
 export const DISCOVERY_TYPES: TicketType[] = ['research', 'junction', 'review'];
 
-/** What an agent may claim on this trail: `undefined` means anything (no discovery, or the brief is accepted). */
-export function claimableTypes(brief: DiscoveryBrief | undefined): TicketType[] | undefined {
-  return !brief || brief.status === 'accepted' ? undefined : DISCOVERY_TYPES;
-}
-
 const UNAPPROVED: Record<NonNullable<DiscoveryBrief['approval']>, string> = {
   elsewhere:
     'the brief was accepted on another machine, not on this one: the human has to accept it here in the Lookout (editing the file does not accept it)',
@@ -83,10 +78,12 @@ function briefState(brief: DiscoveryBrief): string {
   }
 }
 
-/** Why a claim of `type` is refused, or `undefined` when it's allowed. */
+/**
+ * Why a claim of `type` is refused while this brief isn't accepted, or `undefined` when it's allowed. Whether the trail
+ * requires discovery at all is the machine's fact (discoveryGate.ts), not the brief file's.
+ */
 export function gateReason(brief: DiscoveryBrief | undefined, type: TicketType): string | undefined {
-  const allowed = claimableTypes(brief);
-  if (!brief || !allowed || allowed.includes(type)) return undefined;
+  if (!brief || brief.status === 'accepted' || DISCOVERY_TYPES.includes(type)) return undefined;
   const state = briefState(brief);
   return `This trail needs an accepted discovery brief before ${type} tickets can be claimed, and ${state}. Work research and junction tickets meanwhile, or write the brief with submit_brief.`;
 }

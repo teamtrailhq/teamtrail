@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BRAND } from '@teamtrail/core';
+import { BRAND, setRunningVersion } from '@teamtrail/core';
 import { approveCli } from './approve/approveCli';
 import { fail } from './args/help';
 import { parseArgs, parseSubArgs } from './args/parseArgs';
@@ -50,7 +50,15 @@ async function mcpCommand(argv: string[]) {
 
 /** `teamtrail connect claude|codex`: a local stdio server, or a remote one with `--url`. */
 async function connectCommand(argv: string[]) {
-  const o = parseSubArgs(argv, ['--dir', '--no-register', '--url', '--token', '--token-stdin', '--allow-http']);
+  const o = parseSubArgs(argv, [
+    '--dir',
+    '--no-register',
+    '--url',
+    '--token',
+    '--token-stdin',
+    '--allow-http',
+    '--no-protect-config',
+  ]);
   const target = o.rest[0];
   if (target !== 'claude' && target !== 'codex') fail('connect needs an agent: claude or codex');
   if (!o.url && (o.token || o.tokenStdin)) fail('--token and --token-stdin need --url <the MCP endpoint>');
@@ -67,15 +75,24 @@ async function connectCommand(argv: string[]) {
       url: o.url,
       token: await connectToken(o),
       allowHttp: o.allowHttp,
+      protectConfig: !o.noProtectConfig,
     });
   else {
     const self = selfCommand({ version: __VERSION__, file: fileURLToPath(import.meta.url) });
-    runConnect(target, { cwd: process.cwd(), dir: o.dir, noRegister: o.noRegister, self });
+    runConnect(target, {
+      cwd: process.cwd(),
+      dir: o.dir,
+      noRegister: o.noRegister,
+      self,
+      protectConfig: !o.noProtectConfig,
+    });
   }
   process.stdout.write('\n');
 }
 
 async function main() {
+  // Said next to what this process hands another one (answers, session docs, the lock): versions can be compared.
+  setRunningVersion(__VERSION__);
   const argv = process.argv.slice(2);
   if (argv[0] === 'mcp') return mcpCommand(argv.slice(1));
   if (argv[0] === 'hook') {

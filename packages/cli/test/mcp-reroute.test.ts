@@ -8,6 +8,7 @@ import { createTrackerBridge, type TrackerBridge } from '@teamtrail/core/bridge'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { callTool } from './fakes/callTool';
 
 let root: string;
 let bridge: TrackerBridge;
@@ -23,7 +24,7 @@ async function connect(agentName = 'claude-01') {
   await Promise.all([mcp.connect(a), client.connect(b)]);
   open.push({ close: () => agent.close() }, client);
   return async <T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}) => {
-    const r = (await client.callTool({ name, arguments: args })) as { isError?: boolean; content: { text: string }[] };
+    const r = (await callTool(client, root, name, args)) as { isError?: boolean; content: { text: string }[] };
     if (r.isError) throw new Error(r.content[0].text);
     return JSON.parse(r.content[0].text) as T;
   };
@@ -90,7 +91,8 @@ describe('adaptive trails over MCP', () => {
     );
     expect(ch).toMatchObject({
       assumption: { status: 'challenged' },
-      dependents: { tickets: [key('batch')], decisions: ['D-1'] },
+      // D-1: the trail lead approved skipping discovery (fakes/callTool.ts).
+      dependents: { tickets: [key('batch')], decisions: ['D-2'] },
     });
 
     const invalid = await call<{ status: string; errors: { change: number }[] }>('propose_reroute', {
@@ -114,20 +116,27 @@ describe('adaptive trails over MCP', () => {
         { op: 'add_ticket', ref: 'flush', title: 'Flush the queue on reconnect', type: 'task', blockedBy: ['queue'] },
       ],
     });
-    expect(proposed).toMatchObject({ id: 'R-1', status: 'pending', frozen: [key('batch')] });
+    // R-1 was the trail lead approving the skip of discovery (fakes/callTool.ts).
+    expect(proposed).toMatchObject({ id: 'R-2', status: 'pending', frozen: [key('batch')] });
     expect(fs.readFileSync(path.join(root, mapId, 'map.md'), 'utf8')).toBe(before);
-    await expect(call('claim_ticket', { ticket: key('batch') })).rejects.toThrow(/frozen by reroute proposal R-1/);
+    await expect(call('claim_ticket', { ticket: key('batch') })).rejects.toThrow(/frozen by reroute proposal R-2/);
     const next = await call<{ ticket: { key: string } }>('next_ticket');
     expect(next.ticket.key).toBe(key('docs'));
     expect(await call('status')).toMatchObject({
-      adaptive: { pendingReroutes: [{ id: 'R-1', frozen: [key('batch')] }] },
+      adaptive: { pendingReroutes: [{ id: 'R-2', frozen: [key('batch')] }] },
     });
 
     const listedRoute = await get(`/reroutes?map=${mapId}`);
-    expect(listedRoute).toMatchObject({ pending: 1, reroutes: [{ id: 'R-1', frozen: [expect.any(String)] }] });
-    expect((await post('/reroutes/reject', { mapId, id: 'R-1' })).status).toBe(409);
-    expect((await post('/reroutes/approve', { mapId, id: 'R-1' })).status).toBe(400);
-    expect((await approve(mapId, 'R-1')).body).toMatchObject({
+    expect(listedRoute).toMatchObject({
+      pending: 1,
+      reroutes: [
+        { id: 'R-2', frozen: [expect.any(String)] },
+        { id: 'R-1', status: 'approved' },
+      ],
+    });
+    expect((await post('/reroutes/reject', { mapId, id: 'R-2' })).status).toBe(409);
+    expect((await post('/reroutes/approve', { mapId, id: 'R-2' })).status).toBe(400);
+    expect((await approve(mapId, 'R-2')).body).toMatchObject({
       reroute: { status: 'approved' },
     });
 

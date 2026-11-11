@@ -10,7 +10,7 @@ import {
 } from '@teamtrail/core';
 import {
   chartedBy,
-  readBrief,
+  discoverySkipped,
   readCriteria,
   readCriteriaProposals,
   writeCriteriaProposal,
@@ -41,7 +41,7 @@ function checkedCriteria(items: CriterionInput[]) {
 /** What an agent sees about a ticket's criteria: the list, whether they're required, and business rules to cover. */
 export function criteriaView(root: string, snap: MapSnapshot, t: Ticket, level: string) {
   const entry = readCriteria(root, snap.map.id).find((x) => x.ticketId === t.id);
-  const required = criteriaRequired(!!readBrief(root, snap.map.id), t.type, level as never);
+  const required = criteriaRequired(requiresCriteria(root, snap.map.id), t.type, level as never);
   const rules = (knowledgeFor(root, snap, t) ?? []).filter((k) => k.kind === 'business-rule');
   const uncovered = uncoveredRules(
     entry?.criteria ?? [],
@@ -120,6 +120,9 @@ function assertMayWriteCriteria(ctx: AgentContext, at: { snap: MapSnapshot; t: T
   );
 }
 
+/** Criteria are required on every trail that keeps its discovery step: all, unless the trail lead skipped it here. */
+const requiresCriteria = (root: string, mapId: string) => !discoverySkipped(root, mapId);
+
 /** A change an agent proposed to the ticket's confirmed criteria, still waiting on the human. */
 export function proposedCriteria(root: string, mapId: string, t: Ticket) {
   return readCriteriaProposals(root, mapId).find((p) => p.ticketId === t.id);
@@ -127,7 +130,7 @@ export function proposedCriteria(root: string, mapId: string, t: Ticket) {
 
 /** Refuses a completion that needs criteria and has none. */
 export function assertCriteria(root: string, snap: MapSnapshot, t: Ticket, level: string) {
-  if (!criteriaRequired(!!readBrief(root, snap.map.id), t.type, level as never)) return;
+  if (!criteriaRequired(requiresCriteria(root, snap.map.id), t.type, level as never)) return;
   if (readCriteria(root, snap.map.id).find((x) => x.ticketId === t.id)?.criteria.length) return;
   throw new OperationError(
     `${t.key} needs acceptance criteria before it can be completed: call set_criteria with what must be true, then complete it with evidence for each.`,

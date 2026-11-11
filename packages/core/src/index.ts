@@ -42,6 +42,10 @@ export { parseKnowledge, serializeKnowledge } from './knowledge/knowledgeFile';
 export * from './knowledge/select';
 export * from './knowledge/staleness';
 export * from './model/risk';
+export * from './model/answerVia';
+export { compareVersions } from './model/compareVersions';
+export { runningVersion, setRunningVersion } from './model/runningVersion';
+export { versionSkew } from './model/versionSkew';
 export { DEFAULT_POLICY } from './policy/defaultPolicy';
 export { parsePolicy, serializePolicy } from './policy/policyFile';
 export { riskLevelFor, type RiskSubject } from './policy/riskLevelFor';
@@ -51,6 +55,7 @@ export { policyViolations, type PolicyViolation, type ViolationInput } from './p
 export { decisionsByRisk, type RiskGroup, type RiskGroupLevel } from './policy/decisionsByRisk';
 export * from './model/assumption';
 export * from './model/reroute';
+export { settingAsk, settingText } from './planning/reroute/settingText';
 export * from './planning/assumptions/assumptionOps';
 export { confirmAssumption } from './planning/assumptions/confirmAssumption';
 export { validateReroute, type RerouteDraft } from './planning/reroute/validateReroute';

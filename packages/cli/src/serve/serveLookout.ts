@@ -19,6 +19,7 @@ import { endpointUrl } from '../mcp/http/endpointUrl';
 import { remoteAgentOpener } from '../mcp/http/remoteAgentOpener';
 import { tokenFileAuth } from '../mcp/http/tokenFileAuth';
 import { printGreeting } from '../printGreeting';
+import { agentVersionWarnings } from './agentVersionWarnings';
 import { keepServing } from './keepServing';
 import { lanUrls } from './lanUrls';
 import { listen, type Listening } from './listen';
@@ -93,6 +94,8 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
   // this user for a moment, and the code would be on it. The link is only in this terminal.
   if (opts.open) openBrowser(slackSetup ? `${url}?settings=slack` : url);
   const unlock = writeLookoutLock(bridge.root, url);
+  for (const w of await agentVersionWarnings(bridge.root, __VERSION__))
+    process.stdout.write(`  Heads up        ${w}\n`);
   const unlist = writeMcpEndpoint(bridge.root, {
     url: endpointUrl('127.0.0.1', port),
     kind: 'lookout',

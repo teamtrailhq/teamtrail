@@ -1,5 +1,6 @@
 /** What a pending approval is about. */
-export type TrustKind = 'checks' | 'catalogs' | 'brief' | 'criteria' | 'knowledge' | 'policy' | 'level' | 'type';
+export type TrustKind =
+  'checks' | 'catalogs' | 'brief' | 'criteria' | 'knowledge' | 'policy' | 'level' | 'type' | 'discovery';
 
 /**
  * Something the repo's files ask this machine to trust that the trail lead hasn't approved here, as it is now.
@@ -28,7 +29,10 @@ export interface TrustItem {
    * an agent wrote since is approved one at a time, read whole. Set where it is shown (trustRoutes.ts).
    */
   committed?: boolean;
-  /** Approved only on its own, never in a bulk adoption: guide catalogs, check commands Teamtrail can't place. */
+  /**
+   * Approved only on its own, never in a bulk adoption: guide catalogs, check commands Teamtrail can't place, a trail
+   * that runs without discovery.
+   */
   alone?: boolean;
   mapId?: string;
   ticketId?: string;

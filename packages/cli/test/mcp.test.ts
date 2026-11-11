@@ -9,6 +9,7 @@ import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent, trailNameFamily } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { callTool } from './fakes/callTool';
 
 let root: string;
 const open: { close(): void | Promise<void> }[] = [];
@@ -30,7 +31,7 @@ async function connect(agentName?: string, clientName = 'claude-code') {
   await Promise.all([server.connect(a), client.connect(b)]);
   open.push({ close: () => agent.close() }, client);
   const call = async <T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}) => {
-    const r = (await client.callTool({ name, arguments: args })) as { isError?: boolean; content: { text: string }[] };
+    const r = (await callTool(client, root, name, args)) as { isError?: boolean; content: { text: string }[] };
     if (r.isError) throw new Error(r.content[0].text);
     return JSON.parse(r.content[0].text) as T;
   };
@@ -41,7 +42,14 @@ async function connect(agentName?: string, clientName = 'claude-code') {
 async function answerNext(text: string, match?: RegExp) {
   for (let i = 0; i < 200; i++) {
     const q = (await readAgentDocs(root)).flatMap((d) => d.pending).find((p) => !match || match.test(p.text));
-    if (q) return writeAgentAnswer(root, { sessionId: q.sessionId, questionId: q.id, text, author: 'trail lead' });
+    if (q)
+      return writeAgentAnswer(root, {
+        sessionId: q.sessionId,
+        questionId: q.id,
+        text,
+        author: 'trail lead',
+        via: 'lookout',
+      });
     await new Promise((r) => setTimeout(r, 20));
   }
   throw new Error('no question showed up');
@@ -124,7 +132,8 @@ describe('teamtrail MCP server', () => {
         { ref: 'build', title: 'Build the page', type: 'execute', blockedBy: ['look'] },
       ],
     });
-    expect(started.tickets).toHaveLength(3);
+    // and discovery, last: the trail lead approved skipping it (fakes/callTool.ts)
+    expect(started.tickets).toHaveLength(4);
     expect(started.framingQuestionsAnswered).toBe(1);
     const key = (ref: string) => started.tickets.find((t) => t.ref === ref)!.key;
     expect(started.next.key).toBe(key('src'));
@@ -186,6 +195,8 @@ describe('teamtrail MCP server', () => {
     expect(status.trail.progress).toBe('2/3 decided');
     expect(status.trail.ready.map((t) => t.key)).toEqual([key('build')]);
     expect(status.trail.decisions.map((d) => d.summary)).toEqual([
+      // skipping discovery: the trail lead approved the request (fakes/callTool.ts)
+      'claude-01: skip discovery, approved',
       'Release notes live in the in-app changelog module.',
       // the human's decision is summarised in their own words, not the agent's
       'By version (asked: Timeline or grouped by version?)',
@@ -281,11 +292,13 @@ describe('teamtrail MCP server', () => {
       outcome: 'out_of_scope',
     });
     expect(ruled.outcome).toBe('proposed');
-    const lines = fs
+    const all = fs
       .readFileSync(journalPath(root, started.trail.id), 'utf8')
       .trim()
       .split('\n')
       .map((l) => JSON.parse(l));
+    // from the claim on: before it, skipping discovery was asked and approved (fakes/callTool.ts)
+    const lines = all.slice(all.findIndex((e) => e.event === 'claim'));
     expect(lines.map((e) => [e.ticketKey, e.event, e.from, e.to, e.actor, e.actorKind])).toEqual([
       [c.claimed.key, 'claim', 'ready', 'working', 'claude-07', 'agent'],
       [c.claimed.key, 'complete', 'working', 'done', 'claude-07', 'agent'],

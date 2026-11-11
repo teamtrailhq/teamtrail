@@ -1,5 +1,6 @@
 import { BRAND, overrideUrl } from '@teamtrail/core';
 import { AS_WRITTEN, SlackApi, SlackApiError } from '../api';
+import { settingStore } from '../settingStore';
 import { SocketMode, type WebSocketCtor } from '../socket';
 import { socketUrl } from '../socketUrl';
 import { approvalStore, askStore, slackLock, slackStore } from '../store';
@@ -38,6 +39,8 @@ export class SlackContext {
   readonly digested = new Set<string>();
   /** Approval messages with live buttons, kept across restarts. */
   readonly approvals;
+  /** Setting request cards with live buttons, kept across restarts. */
+  readonly settingRequests;
   /** Messages Slack refused for good, until one gets through. */
   readonly delivery;
   /** Approval messages already brought up to date by this process. */
@@ -59,6 +62,7 @@ export class SlackContext {
     this.lock = slackLock(o.configDir, o.lockOwner ?? `${process.pid}:${o.root}`);
     this.asks = askStore(o.root);
     this.approvals = approvalStore(o.root);
+    this.settingRequests = settingStore(o.root);
     this.delivery = deliveryLog(o.root, () => o.now?.() ?? Date.now());
     this.apiUrl = o.apiUrl ?? overrideUrl(this.env, `${BRAND.slug.toUpperCase()}_SLACK_API`);
     this.WS = o.WebSocket ?? (globalThis as { WebSocket?: WebSocketCtor }).WebSocket;

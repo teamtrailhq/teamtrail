@@ -9,6 +9,7 @@ import {
   type ApprovalRef,
   type AskRef,
 } from '../blocks';
+import type { SettingRef } from '../blocks/settingRequests';
 import { SAVE_DECISION_CALLBACK } from '../manifest';
 import type { Envelope, EnvelopeResult } from '../socket';
 import { plainText } from '../summary';
@@ -20,6 +21,7 @@ import { REFUSED, ALREADY } from './constants';
 import { changeTrail, openDecision } from './decisionModal';
 import { publishHome } from './owner';
 import { activeCode } from './ownerCode';
+import { decideSetting } from './settingRequests';
 import type { SlackContext } from './slackContext';
 import { onSubmit } from './submissions';
 import type { Payload, DecisionMeta } from './types';
@@ -99,6 +101,7 @@ export function onAction(ctx: SlackContext, p: Payload): EnvelopeResult | void {
     return { after: () => changeTrail(ctx, p.view, a.selected_option.value) };
   }
   if (id === ACTIONS.approve || id === ACTIONS.rework) return onApproval(ctx, p, id, String(a.value));
+  if (id === ACTIONS.settingApprove || id === ACTIONS.settingDecline) return onSetting(ctx, p, id, String(a.value));
   if (id !== ACTIONS.reply && !id.startsWith(`${ACTIONS.option}:`)) return;
   const ephemeral = (text: string) =>
     postResponse(p.response_url, { response_type: 'ephemeral', replace_original: false, text }, ctx.o.fetch);
@@ -158,4 +161,15 @@ function onApproval(ctx: SlackContext, p: Payload, id: string, value: string): E
         });
     },
   };
+}
+
+/** Approve or Decline on a setting request card: only the confirmed owner, like every other button. */
+function onSetting(ctx: SlackContext, p: Payload, id: string, value: string): EnvelopeResult {
+  const user = p.user.id as string;
+  const ephemeral = (text: string) =>
+    postResponse(p.response_url, { response_type: 'ephemeral', replace_original: false, text }, ctx.o.fetch);
+  if (!ctx.allowed(user)) return { after: () => ephemeral(REFUSED) };
+  const ref = JSON.parse(value) as SettingRef;
+  const action = id === ACTIONS.settingApprove ? 'approve' : 'decline';
+  return { after: () => decideSetting(ctx, { ref, user, responseUrl: p.response_url }, action) };
 }

@@ -6,7 +6,7 @@ import { changedSinceProposed } from './changedSinceProposed';
 import { RerouteChangeRow } from './RerouteChangeRow';
 import { RerouteDestination } from './RerouteDestination';
 import { RerouteDrift } from './RerouteDrift';
-import { DISMISS_NOTE } from './rerouteText';
+import { DECLINE_NOTE, DISMISS_NOTE } from './rerouteText';
 import { ticketNamer } from './ticketNamer';
 import type { RerouteView } from './types';
 
@@ -41,11 +41,14 @@ export function RerouteDialog(props: {
   const changed = pending ? changedSinceProposed(snap, p) : [];
   const mayApprove = !changed.length || seen;
   const challenge = p.kind === 'challenge-destination';
+  // A request to change one of your settings (skip discovery, the mode, the destination): Approve or Decline.
+  const setting = p.lane === 'setting';
+  const heading = setting ? `${p.by} asks to change your setting` : 'Reroute proposal';
   return (
     <div className="scrim" onClick={props.onClose}>
       <Panel as="div" className="dialog reroute-dialog" onClick={(e) => e.stopPropagation()}>
         <header>
-          <h2 className="t-heading caps">{challenge ? 'Destination challenged' : 'Reroute proposal'}</h2>
+          <h2 className="t-heading caps">{challenge ? 'Destination challenged' : heading}</h2>
           <MetaLine parts={[{ text: p.id, code: true }, p.status, `by ${p.by}`, `${ago(Date.now() - p.at)} ago`]} />
         </header>
         <div className="reroute-body">
@@ -125,9 +128,9 @@ export function RerouteDialog(props: {
                 className="reroute-dismiss"
                 variant="ghost"
                 data-tip="Reject it without a note of your own"
-                onClick={() => props.onReject(DISMISS_NOTE)}
+                onClick={() => props.onReject(setting ? DECLINE_NOTE : DISMISS_NOTE)}
               >
-                Dismiss
+                {setting ? 'Decline' : 'Dismiss'}
               </Button>
               <Button className="reroute-reject" disabled={!note.trim()} onClick={() => props.onReject(note.trim())}>
                 Reject

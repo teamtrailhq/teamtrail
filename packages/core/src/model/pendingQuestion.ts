@@ -19,4 +19,9 @@ export interface PendingQuestion {
   urgency?: 'blocking' | 'soon' | 'fyi';
   /** Ids of tickets that can't move until this is answered. */
   blocks?: string[];
+  /**
+   * What answering it in the Lookout or Slack lets the agent do, said with the question so a one-click reply is no
+   * surprise: "Answering this decides #3", "Answering this lets claude-01 skip discovery".
+   */
+  stakes?: string;
 }

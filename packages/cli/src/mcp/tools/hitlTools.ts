@@ -14,7 +14,7 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Ask the human',
       description:
-        'Ask the human a question. It lands in the Lookout inbox (Waiting on you), ranked with everything else that needs them, and this call waits for the answer, up to waitSeconds (default 600; 50 for Codex). Returns answered=false with a questionId on timeout: call wait_for_answer to keep waiting. Set framing=true for the framing questions of a trail that does not exist yet. Set urgency honestly and ask related questions together.',
+        'Ask the human a question. It lands in the Lookout inbox (Waiting on you), ranked with everything else that needs them, and this call waits for the answer, up to waitSeconds (default 600; 50 for Codex). Returns answered=false with a questionId on timeout: call wait_for_answer to keep waiting. Set framing=true for the framing questions of a trail that does not exist yet. Set urgency honestly and ask related questions together. answeredVia says how the human answered: lookout or slack answers can back their decisions; a chat answer (passed on with answer_question) only guides.',
     },
     {
       question: text().min(1),
@@ -82,7 +82,7 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
       },
       title: 'Answer a question',
       description:
-        "Answer a waiting question on the human's behalf, with the human's own words from this chat. Only use text the human gave you.",
+        "Pass on the human's answer to a waiting question, with their own words from this chat. Only use text the human gave you. It is delivered as given in your chat: it guides the agent that asked, but can't approve anything that needs the human (a high-risk call, a HITL ticket, a decision recorded as theirs); for that they answer in the Lookout or Slack.",
     },
     { questionId: z.string(), answer: text().min(1) },
     (a) => agent.answerQuestion(a),

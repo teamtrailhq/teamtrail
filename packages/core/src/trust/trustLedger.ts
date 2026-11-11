@@ -76,6 +76,8 @@ export const trustKey = {
   reroute: (mapId: string, id: string) => `reroute:${mapId}:${id}`,
   /** The verification level approved here for a trail, or for one ticket's override. */
   level: (mapId: string, ticketId?: string) => (ticketId ? `level:${mapId}:${ticketId}` : `level:${mapId}`),
+  /** The trail lead skipped discovery for this trail here (discovery/discoveryGate.ts). */
+  discoverySkipped: (mapId: string) => `discovery-skipped:${mapId}`,
   /** A ticket's type as recorded here: which trail level applies to it. */
   type: (mapId: string, ticketId: string) => `type:${mapId}:${ticketId}`,
 };

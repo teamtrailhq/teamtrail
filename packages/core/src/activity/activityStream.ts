@@ -1,4 +1,5 @@
 import { Emitter, uid } from '../lib/emitter';
+import { labelOf, type AnswerHow } from '../model/answerVia';
 import { BRAND } from '../model/brand';
 import { STEPS } from '../model/steps';
 import type {
@@ -94,14 +95,18 @@ export class ActivityStream {
     this.set({ chats: [...this.state.chats, { id: uid('m'), at: Date.now(), ...m }].slice(-600) });
   }
 
-  /** Deliver a human answer to a pending question. */
-  answer(questionId: string, text: string, author: string) {
+  /**
+   * Deliver a human answer to a pending question, with how it was given (model/answerVia.ts): the caller's own
+   * path says, never the answer's input. Left out only for answers from before labels, which count as chat.
+   */
+  answer(questionId: string, text: string, author: string, how: AnswerHow) {
     const q = this.state.pending.find((p) => p.id === questionId);
     const resolveFn = this.resolvers.get(questionId);
     const remote = !!q && this.remote.has(q.sessionId) && !!this.remoteAnswer;
     if (!q || (!resolveFn && !remote)) return false;
     this.resolvers.delete(questionId);
-    this.chat({ sessionId: q.sessionId, ticketId: q.ticketId, from: 'human', author, text });
+    const label = labelOf(how);
+    this.chat({ sessionId: q.sessionId, ticketId: q.ticketId, from: 'human', author, text, ...label });
     this.set({
       pending: this.state.pending.filter((p) => p.id !== questionId),
       answered: [
@@ -116,6 +121,7 @@ export class ActivityStream {
           ...(q.ticketId ? { ticketId: q.ticketId } : {}),
           ...(q.category ? { category: q.category } : {}),
           ...(q.urgency ? { urgency: q.urgency } : {}),
+          ...label,
         },
       ].slice(-200),
     });

@@ -193,6 +193,7 @@ log(`framing answered in UI: "${f.answer}" by ${f.answeredBy}`);
 
 const started = await call('start_trail', {
   discovery: false,
+  skipReason: 'A single static page generated from notes we already keep',
   title: 'Changelog page',
   destination: 'A public changelog page generated from release notes',
   decided: ['Static page, no backend'],
@@ -206,6 +207,20 @@ const started = await call('start_trail', {
   ],
 });
 log(`trail ${started.trail.key} "${started.trail.title}" · ${started.tickets.length} tickets`);
+// Skipping discovery is a request: the trail lead approves it with the Lookout's Approve button.
+await page.locator('.reroute-banner button', { hasText: 'Review' }).click({ timeout: 20_000 });
+const askShown = await page
+  .locator('.reroute-dialog', { hasText: /asks to change your setting/ })
+  .waitFor({ timeout: 15_000 })
+  .then(
+    () => true,
+    () => false,
+  );
+await page.locator('.reroute-approve').click();
+await page.locator('.reroute-banner').waitFor({ state: 'detached', timeout: 15_000 });
+const skipApproved =
+  (await call('reroute_status', { id: started.skipDiscovery.request })).reroute.status === 'approved';
+log(`skip discovery: request ${started.skipDiscovery.request} approved in the Lookout (${skipApproved && askShown})`);
 await page.locator('.node').nth(3).waitFor({ timeout: 15_000 });
 await shot('02-trail-charted-by-agent');
 
@@ -241,6 +256,14 @@ const hitl = call('ask_human', {
 });
 await page.locator('.inbox-list li').first().waitFor({ timeout: 15_000 });
 await page.locator('.inbox-list li button').first().click();
+// On a junction, the question says what answering it decides.
+const stakesShown = await page
+  .locator('.open-q', { hasText: /Answering this decides #\d+/ })
+  .waitFor({ timeout: 15_000 })
+  .then(
+    () => true,
+    () => false,
+  );
 await shot('03-agent-question-waiting-on-you');
 await answerInUi('Grouped by version, newest first');
 const h = await hitl;
@@ -527,6 +550,28 @@ const headersOk = await verifyHeaders({ browser, url, log, pair: () => pairLink(
 // Sign-in: pairing links work once, the API answers no one else, a revoked browser is signed out live.
 const signInOk = await verifySignIn({ browser, cli, log, shots });
 
+// Answered in the agent's own chat (/scout inbox): delivered as guidance, never the human's word at a gate.
+const side = await call('ask_human', { question: 'Show dates in UTC?', urgency: 'fyi', waitSeconds: 0 });
+const given = await call('answer_question', { questionId: side.questionId, answer: 'Yes, UTC' });
+const chatAnswer = await call('wait_for_answer', { questionId: side.questionId, waitSeconds: 10 });
+const chatRefused = await call('record_decision', {
+  question: 'Show dates in UTC?',
+  answer: 'UTC',
+  questionId: side.questionId,
+}).then(
+  () => '',
+  (e) => e.message,
+);
+const chatOk =
+  f.answeredVia === 'lookout' &&
+  h.answeredVia === 'lookout' &&
+  d2.decision.decidedBy === 'trail lead' &&
+  given.via === 'chat' &&
+  chatAnswer.answer === 'Yes, UTC' &&
+  chatAnswer.answeredVia === 'chat' &&
+  /guide agents but can't approve this; answer in the Lookout or Slack/.test(chatRefused);
+log(`answers: Lookout ones back decisions, a chat one guides only: ${chatOk ? 'ok' : `FAILED (${chatRefused})`}`);
+
 await client.close();
 await page.waitForTimeout(1500);
 const after = await page.locator('.sessions-list li:not(.claim)').count();
@@ -555,6 +600,10 @@ if (
   !/Measured from the Claude Code session transcript/.test(ui.usageSource ?? '') ||
   f.answer !== 'Users of the CLI' ||
   h.answer !== 'Grouped by version, newest first' ||
+  !chatOk ||
+  !stakesShown ||
+  !skipApproved ||
+  !askShown ||
   status.trail.progress !== '2/4 decided' ||
   after !== 0 ||
   !handoffOk ||

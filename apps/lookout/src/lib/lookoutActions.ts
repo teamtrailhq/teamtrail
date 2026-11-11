@@ -37,7 +37,8 @@ export function createActions({ rt, guard, setMapId, mapIdRef, snapRef, setChatS
   return {
     selectMap: (id: string) => setMapId(id),
     openChat: (sessionId: string | undefined) => setChatSession(sessionId),
-    answer: (questionId: string, text: string) => rt.activity.answer(questionId, text, TRAIL_LEAD),
+    // An agent in another process gets it through the bridge, which labels it `lookout` itself (agentRoutes.ts).
+    answer: (questionId: string, text: string) => rt.activity.answer(questionId, text, TRAIL_LEAD, { via: 'lookout' }),
     claim: (ticketId: string) =>
       guard('Claim', () => claim(rt.adapter, mapIdRef.current!, ticketId, { ...asOperator, assignee: TRAIL_LEAD })),
     release: (ticketId: string) =>

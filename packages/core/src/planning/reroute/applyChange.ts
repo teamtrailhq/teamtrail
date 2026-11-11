@@ -1,4 +1,5 @@
 import type { TrackerAdapter } from '../../adapters/adapter';
+import { DISCOVERY_TICKET } from '../../discovery/brief';
 import type { Journal } from '../../model/lifecycle';
 import type { RerouteChange, RerouteProposal } from '../../model/reroute';
 import { oneLine } from '../../model/safeText';
@@ -15,6 +16,11 @@ export interface ApplyEnv {
   journal?: Journal;
   /** Persists the proposal after every step, so an interrupted apply resumes where it stopped. */
   save(p: RerouteProposal): void | Promise<void>;
+  /**
+   * Drops the trail's discovery brief (the trail becomes one without discovery) and returns its discovery ticket's
+   * id; on the node side only (briefStore.ts), so this module stays free of the file system.
+   */
+  dropBrief?: (mapId: string) => string | undefined;
 }
 
 /** One change, with the proposal it belongs to and the ids of the tickets the proposal created. */
@@ -54,6 +60,10 @@ export async function applyChange(s: Step, c: RerouteChange): Promise<void> {
       return appendLine(s, snap, { key: 'outOfScope', text: c.text });
     case 'reopen':
       return reopen(s, snap, c);
+    case 'set_mode':
+      return snap.map.mode === c.mode ? undefined : env.adapter.setMapMode(mapId, c.mode);
+    case 'skip_discovery':
+      return skipDiscovery(s, snap);
     default: {
       const unknown: never = c;
       throw new Error(`unknown change ${(unknown as { op?: string }).op}`);
@@ -142,4 +152,27 @@ async function appendLine(s: Step, snap: MapSnapshot, line: { key: 'unspecified'
   const text = line.text.trim();
   if (current.includes(text)) return;
   await s.env.adapter.updateMapSections(s.p.mapId, { [line.key]: [...current, text] });
+}
+
+/**
+ * The trail lead approved skipping discovery: the trail becomes one without discovery, as if charted so (no brief,
+ * so no brief gate and no required criteria), and the discovery ticket is ruled out. Safe to run twice.
+ */
+async function skipDiscovery(s: Step, snap: MapSnapshot) {
+  if (!s.env.dropBrief) throw new Error('skipping discovery needs the tracker folder');
+  const ticketId = s.env.dropBrief(s.p.mapId);
+  const ticket = ticketId
+    ? snap.tickets.find((t) => t.id === ticketId)
+    : snap.tickets.find((t) => t.title === DISCOVERY_TICKET.title);
+  if (!ticket || ticket.state === 'closed') return;
+  // Not a decision of its own: the trail lead's approval is the decision (recordSettingDecision.ts).
+  const reason = `Discovery skipped by the trail lead (${rerouteMark(s.p, s.index)})`;
+  await s.env.adapter.comment(s.p.mapId, ticket.id, s.env.actor, `**Ruled out of scope**\n\n${reason}`);
+  await transition(s.env.adapter, s.p.mapId, ticket.id, {
+    event: 'cancel',
+    actor: s.env.actor,
+    actorKind: 'trail lead',
+    reason,
+    journal: s.env.journal,
+  });
 }

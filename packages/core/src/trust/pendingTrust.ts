@@ -6,6 +6,7 @@ import { checksDiff } from '../verification/checksDiff';
 import { VERIFICATION_FILE } from '../verification/configFile';
 import { levelItems } from '../verification/levelItems';
 import { catalogsItem } from './catalogsItem';
+import { discoveryItems } from './discoveryItems';
 import { briefItems, criteriaItems, knowledgeItems } from './fileItems';
 import type { TrustItem } from './trustItem';
 import { contentHash, trustKey, trustLedger, type TrustRecord } from './trustLedger';
@@ -61,5 +62,6 @@ export function pendingTrust(root: string, snaps: MapSnapshot[] = []): TrustItem
     ...briefItems(root, ledger),
     ...criteriaItems(root, ledger),
     ...knowledgeItems(root, ledger),
+    ...discoveryItems(root, ledger, snaps),
   ];
 }

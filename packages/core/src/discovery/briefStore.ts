@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { contentHash, trustKey, trustLedger } from '../trust/trustLedger';
 import { BRIEF_DIR, type DiscoveryBrief } from './brief';
@@ -62,4 +62,11 @@ export function writeBriefText(root: string, brief: DiscoveryBrief): string {
   mkdirSync(path.join(root, BRIEF_DIR), { recursive: true });
   writeFileSync(briefPath(root, brief.mapId), text);
   return text;
+}
+
+/** The trail lead approved skipping discovery: the brief file goes; returns its discovery ticket's id, if any. */
+export function dropBrief(root: string, mapId: string): string | undefined {
+  const ticketId = readBriefFile(root, mapId)?.brief.ticketId;
+  rmSync(briefPath(root, mapId), { force: true });
+  return ticketId;
 }
