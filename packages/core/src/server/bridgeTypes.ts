@@ -69,4 +69,6 @@ export interface BridgeOptions extends Omit<TrackerRoutesOptions, 'root' | 'mark
   reconciler?: { firstMs?: number };
   /** How often active claim branches are compared for overlapping changes (watchIntegration.ts). */
   integration?: { pollMs?: number };
+  /** How often the attention queue is recomputed for the `attention` event (watchAttention.ts). */
+  attention?: { pollMs?: number };
 }

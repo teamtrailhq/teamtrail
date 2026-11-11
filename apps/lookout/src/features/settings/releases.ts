@@ -17,6 +17,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.27.3',
+    date: '2026-11-11',
+    items: [
+      'On Linux, the Lookout sees every change an agent makes to a ticket again, not only the first: a claimed ticket no longer stays in the queue as waiting',
+    ],
+  },
+  {
     version: '0.27.2',
     date: '2026-11-11',
     items: [

@@ -64,8 +64,8 @@ export function watchTrackerFolder(abs: string, fs: MarkdownFs, send: (text: str
     sentDocs.set(rel, text);
     send(`event: agent\ndata: ${text}\n\n`);
   }
-  // Session docs are replaced by rename, which recursive fs.watch on Linux reports only once per file,
-  // so they are polled by mtime. A killed agent writes nothing more: running sessions are re-read to notice.
+  // Session docs are also polled by mtime, as a backstop to the folder watch (lib/watchTree.ts). A killed agent
+  // writes nothing more: running sessions are re-read to notice.
   const mtimes = new Map<string, number>();
   let ticks = 0;
   const liveness = setInterval(() => {

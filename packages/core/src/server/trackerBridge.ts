@@ -53,6 +53,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     leases: leaseTiming,
     reconciler: reconcilerTiming,
     integration: integrationTiming,
+    attention: attentionTiming,
     peer,
     ...trackers
   } = options;
@@ -74,7 +75,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const ctx = { root: abs, active: () => routes.active() };
   const places = lanPlaces(abs, trackers.configDir);
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send }, reconcilerTiming);
-  const unwatchAttention = watchAttention(ctx, send, { configDir: trackers.configDir });
+  const attention = watchAttention(ctx, send, { ...attentionTiming, configDir: trackers.configDir });
   const unwatchIntegration = watchIntegration(abs, integrationTiming);
   const unwatchRemoteAgents = watchRemoteAgents(abs, send);
 
@@ -103,7 +104,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleCriteriaProposals(abs, req, res, url),
     (req, res, url) => handleCriteria(abs, req, res, url),
     (req, res, url) => handlePolicy(ctx, req, res, url),
-    (req, res, url) => handleAttention({ ...ctx, configDir: trackers.configDir }, req, res, url),
+    (req, res, url) =>
+      handleAttention({ ...ctx, configDir: trackers.configDir, served: attention.served }, req, res, url),
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
@@ -161,7 +163,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       routes.close();
       unwatch();
       unwatchLeases();
-      unwatchAttention();
+      attention.stop();
       unwatchIntegration();
       unwatchRemoteAgents();
       reconciler.stop();
