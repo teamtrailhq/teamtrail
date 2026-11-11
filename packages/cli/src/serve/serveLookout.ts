@@ -81,7 +81,7 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
     `\n  ${BRAND.name} ${__VERSION__} · ${BRAND.assistant.name} online\n\n` +
       `  Lookout  ${url}\n` +
       `  Sign in  ${signInLink}\n` +
-      `           Signs in the browser that opens it: once, within 10 minutes. \`${BRAND.slug} pair\` prints another.\n` +
+      `           Opens the Lookout and signs that browser in: once, within 10 minutes. \`${BRAND.slug} pair\` prints another.\n` +
       `  Tracker         ${path.relative(process.cwd(), bridge.root) || '.'}${path.sep}  (${bridge.root})\n\n` +
       `  Press Ctrl+C to stop.\n\n`,
   );

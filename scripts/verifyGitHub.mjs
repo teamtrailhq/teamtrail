@@ -14,7 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
-import { lookoutLinks, responseGate, shootThemes } from './e2eHelpers.mjs';
+import { lookoutLinks, responseGate, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const TOKEN = 'gho_e2e_never_shown_7f3a';
@@ -97,10 +97,11 @@ async function pickerSteps({ browser, cli, shots, top, fake }) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  // the page's own requests carry its sign-in cookie
-  const api = async (p) => (await page.request.get(new URL(`__teamtrail${p}`, url).href)).text();
+  // with the page's own session, as its API calls carry it
+  const api = async (p) =>
+    (await page.request.get(new URL(`__teamtrail${p}`, url).href, { headers: await sessionHeaders(page) })).text();
   try {
-    await page.goto(pair);
+    await signInWith(page, pair);
     const dialog = page.locator('.dialog.onboarding');
     const ghChoice = dialog.locator('.choice', { hasText: 'GitHub Issues' });
     await ghChoice.getByText('Will use octo-org/launchpad as octo-dev (GITHUB_TOKEN)').waitFor({ timeout: 15_000 });
@@ -192,11 +193,12 @@ async function signInSteps({ browser, cli, shots, top, fake }) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  // the page's own requests carry its sign-in cookie
-  const api = async (p) => (await page.request.get(new URL(`__teamtrail${p}`, url).href)).text();
+  // with the page's own session, as its API calls carry it
+  const api = async (p) =>
+    (await page.request.get(new URL(`__teamtrail${p}`, url).href, { headers: await sessionHeaders(page) })).text();
   const credFile = path.join(config, 'credentials.json');
   try {
-    await page.goto(pair);
+    await signInWith(page, pair);
     const dialog = page.locator('.dialog.onboarding');
     await dialog.locator('.choice', { hasText: 'GitHub Issues' }).click();
     await dialog.getByRole('button', { name: 'Sign in with GitHub' }).click();

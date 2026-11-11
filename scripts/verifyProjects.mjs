@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { lookoutLinks } from './e2eHelpers.mjs';
+import { lookoutLinks, signInWith } from './e2eHelpers.mjs';
 
 function repo(top, name) {
   const dir = path.join(top, name);
@@ -68,7 +68,7 @@ export async function verifyProjects({ browser, cli, log, shots }) {
       (p) => p.name,
     );
 
-    await page.goto(pair);
+    await signInWith(page, pair);
     await page.goto(`${url}?projects`);
     await page.locator('.dialog.onboarding').waitFor();
     await page.getByRole('button', { name: 'Get started' }).click();

@@ -82,14 +82,14 @@ let server: http.Server;
 let hub: ProjectsHub;
 let homeBridge: TrackerBridge;
 let base: string;
-let cookie: string;
+let header: Record<string, string>;
 
 before(async () => {
   home = await seedRepo('alpha', 'Which date format?');
   other = await seedRepo('beta', 'SMS or push?');
   homeBridge = createTrackerBridge(home, { env: {}, configDir, cwd: path.dirname(home) });
   const paired = pairedSignIn({ root: home, configDir });
-  cookie = paired.cookie;
+  header = paired.header;
   hub = createProjectsHub({
     signIn: paired.signIn,
     home: homeBridge,
@@ -113,7 +113,7 @@ after(() => {
 const call = async <T>(method: string, p: string, body?: unknown) => {
   const r = await fetch(base + p, {
     method,
-    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    headers: { 'Content-Type': 'application/json', ...header },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   return { status: r.status, json: (await r.json().catch(() => undefined)) as T };
@@ -346,7 +346,7 @@ test('hub: adding a path creates its tracker folder; a missing one reads as miss
   assert.equal((await call('POST', '/projects', { path: path.join(tmp, 'nowhere') })).status, 400);
   const plain = await fetch(`${base}/projects`, {
     method: 'POST',
-    headers: { Cookie: cookie },
+    headers: header,
     body: JSON.stringify({ path: repo }),
   });
   assert.equal(plain.status, 403, 'cross-site writes are refused');
@@ -394,5 +394,5 @@ test('the hub refuses a request for another host before any project route', asyn
   const evil = { Host: 'evil.example:7420', Origin: 'http://evil.example:7420' };
   for (const p of ['/projects', '/projects/overview', `/p/${hub.homeId}/list`, '/events', '/list'])
     assert.equal(await status(p, evil), 403, p);
-  assert.equal(await status('/projects', { Host: `localhost:${port}`, Cookie: cookie }), 200);
+  assert.equal(await status('/projects', { Host: `localhost:${port}`, ...header }), 200);
 });

@@ -27,7 +27,7 @@ export function ShownDeviceCode(props: { device: DeviceCode; onDone: () => void 
         <MetaLine parts={['Works once', `expires in ${left} min`]} />
         <p className="t-meta si-note">
           Scan it with the device’s camera, or open{' '}
-          {link ? <code className="t-code">{link.split('__')[0]}</code> : 'the Lookout'} there and type the code.
+          {link ? <code className="t-code">{link.split('#')[0]}</code> : 'the Lookout'} there and type the code.
         </p>
         <Button size="sm" onClick={props.onDone}>
           Done

@@ -3,12 +3,11 @@ import { createMcpHttp } from '../../../packages/cli/src/mcp/http/createMcpHttp'
 import { remoteAgentOpener } from '../../../packages/cli/src/mcp/http/remoteAgentOpener';
 import { tokenFileAuth } from '../../../packages/cli/src/mcp/http/tokenFileAuth';
 import { slackPlugin } from '../../../packages/connector-slack/src/node';
-import { writeMcpEndpoint } from '../../../packages/core/src/agentHost';
+import { writeLookoutLock, writeMcpEndpoint } from '../../../packages/core/src/agentHost';
 import {
   createLookoutSignIn,
   createProjectsHub,
   createTrackerBridge,
-  fromThisMachine,
   neverCrash,
   requestUrl,
 } from '../../../packages/core/src/bridge';
@@ -17,8 +16,9 @@ import {
  * Mounts the tracker file API (shared with the `teamtrail` CLI) on the Vite dev server, with the projects hub
  * in front: `/projects` and `/p/<id>/…` for the projects in `projectsConfigDir` (default: the user config dir).
  * Like the CLI, it also serves the MCP endpoint for remote agents at `/mcp` (this machine only, closed until a token is created).
- * Like the CLI, every API route needs a paired browser: the dev server prints a pairing link when it starts, and a
- * fresh one whenever a browser on this machine that isn't paired opens the Lookout (it then shows "Pair this browser").
+ * Like the CLI, every API route needs a paired browser: the dev server prints a pairing link once, when it starts,
+ * and writes the signed Lookout lock, so `npm run dev:pair` (the built `teamtrail pair`) prints another on request.
+ * Nothing a request does makes a code.
  */
 export function trackerFs(opts: { root: string; prefix: string; projectsConfigDir?: string }): Plugin {
   return {
@@ -30,15 +30,11 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
       };
       const bridge = createTrackerBridge(opts.root, { plugins: [slackPlugin()], url });
       const signIn = createLookoutSignIn({ root: bridge.root, lanUrls: () => server.resolvedUrls?.network ?? [] });
-      let printedAt = 0;
       const printPairLink = () => {
         const base = url();
-        if (!base || Date.now() - printedAt < 5_000) return;
-        printedAt = Date.now();
+        if (!base) return;
         const { code } = signIn.mintCode('machine');
-        server.config?.logger.info(
-          `  ➜  Pair this browser (once, 10 min): ${base}${opts.prefix.slice(1)}/pair?code=${code}`,
-        );
+        server.config?.logger.info(`  ➜  Sign in (once, 10 min): ${base}#pair=${code}   (another: npm run dev:pair)`);
       };
       const hub = createProjectsHub({
         signIn,
@@ -53,6 +49,7 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
         thisMachineOnly: true,
       });
       let unlist = () => {};
+      let unlock = () => {};
       server.httpServer?.once('listening', () => {
         const { port } = server.httpServer!.address() as { port: number };
         // Like the Lookout's own port: this machine only, whatever interfaces the dev server listens on.
@@ -61,9 +58,13 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
           kind: 'lookout',
           network: false,
         });
+        // what `teamtrail pair --dir <this folder>` checks before it makes a link for this server
+        unlock = writeLookoutLock(bridge.root, `http://localhost:${port}/`);
+        setTimeout(printPairLink, 100);
       });
       server.httpServer?.on('close', () => {
         unlist();
+        unlock();
         void mcp.close();
         hub.close();
         bridge.close();
@@ -75,14 +76,8 @@ export function trackerFs(opts: { root: string; prefix: string; projectsConfigDi
         res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
         next();
       });
-      server.httpServer?.once('listening', () => setTimeout(printPairLink, 100));
       // Like the CLI's servers: nothing a request carries may end the dev server.
-      server.middlewares.use(opts.prefix, (req, res) => {
-        // dev only: an unpaired browser on this machine asking whether it is signed in gets a link in the terminal
-        const unpaired = req.url === '/session' && fromThisMachine(req) && signIn.check(req).kind !== 'signed-in';
-        if (unpaired) printPairLink();
-        void hub.handle(req, res);
-      });
+      server.middlewares.use(opts.prefix, (req, res) => void hub.handle(req, res));
       server.middlewares.use('/mcp', (req, res, next) => {
         const guarded = neverCrash((rq, rs) => {
           const exact = requestUrl(rq).pathname === '/';

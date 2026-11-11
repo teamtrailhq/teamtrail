@@ -26,5 +26,5 @@ export { neverCrash } from './server/neverCrash';
 export { setSecurityHeaders } from './server/securityHeaders';
 export { createLookoutSignIn, type LookoutSignIn, type LookoutSignInOptions } from './signIn/lookoutSignIn';
 export { mintPairCode } from './signIn/pairCodes';
-export { cookieName } from './signIn/signInCookie';
+export { SESSION_HEADER } from './signIn/signInHeader';
 export { runningLookout, type RunningLookout } from './signIn/runningLookout';

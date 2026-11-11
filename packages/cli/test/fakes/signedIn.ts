@@ -3,12 +3,13 @@ import { createLookoutSignIn } from '@teamtrail/core/bridge';
 
 /**
  * The Lookout's sign-in for a test server, with one browser already paired on this machine: pass `signIn` to
- * createProjectsHub and send `cookie` as the `Cookie` header.
+ * createProjectsHub and send `header` with each request, as the Lookout's page does.
  */
 export function pairedSignIn(o: { root: string; configDir: string }) {
   const signIn = createLookoutSignIn(o);
   const { code } = signIn.mintCode('machine');
-  const done = signIn.pair({ headers: {}, socket: {} } as unknown as IncomingMessage, { code, local: true });
+  const req = { headers: {}, socket: {} } as unknown as IncomingMessage;
+  const done = signIn.pair(req, { code, local: true, who: 'loopback' });
   if (done.kind !== 'paired') throw new Error(`pairing failed: ${done.kind}`);
-  return { signIn, cookie: done.cookie.split(';')[0] };
+  return { signIn, header: { 'X-Teamtrail-Session': done.secret } };
 }

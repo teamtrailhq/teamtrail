@@ -10,7 +10,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { shootThemes } from './e2eHelpers.mjs';
+import { shootThemes, signInWith } from './e2eHelpers.mjs';
 
 /** Starts the built CLI and resolves once its output names the URL it serves. */
 async function start(cli, args, cwd, pattern) {
@@ -133,7 +133,7 @@ export async function verifyRemote({ browser, cli, log, shots }) {
     });
     const mine = await local('claim_ticket', { ticket: trail.tickets[0].key });
 
-    await page.goto(lookout.pair);
+    await signInWith(page, lookout.pair);
     await page.goto(`${lookout.url}?settings=remote-agents`);
     await page.locator('.dialog.onboarding').waitFor();
     await page.getByRole('button', { name: 'Get started' }).click();

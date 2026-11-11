@@ -6,7 +6,7 @@ export const newSessionSecret = () => randomBytes(32).toString('base64url');
 /** What the store keeps of a session or a code: its SHA-256, hex. */
 export const secretHash = (secret: string) => createHash('sha256').update(secret, 'utf8').digest('hex');
 
-/** The value a session cookie must have, before anything is looked up. */
+/** The value a session must have, before anything is looked up. */
 export const SESSION_SHAPE = /^[A-Za-z0-9_-]{43}$/;
 
 /**

@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { lookoutLinks } from './e2eHelpers.mjs';
+import { lookoutLinks, signInWith } from './e2eHelpers.mjs';
 
 async function startServer(cli, cwd) {
   const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd });
@@ -146,7 +146,7 @@ export async function verifyModels({ browser, cli, log, shots }) {
   const fast = await agent({ cli, top, config, name: 'fast', model: 'claude-haiku-4-5' });
   const strong = await agent({ cli, top, config, name: 'strong', model: 'claude-opus-4-1' });
   try {
-    await page.goto(pair);
+    await signInWith(page, pair);
     await page.locator('.dialog.onboarding').waitFor();
     await page.getByRole('button', { name: 'Get started' }).click();
     await fast.call('start_trail', {

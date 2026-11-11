@@ -1,5 +1,6 @@
 import { BRAND, type SignInView } from '@teamtrail/core';
 import { useCallback, useEffect, useState } from 'react';
+import { forgetSession } from '../../lib/session';
 
 export interface SignInsView {
   sessions: SignInView[];
@@ -59,6 +60,7 @@ export function useSignIns() {
   );
   const signOut = useCallback(async () => {
     await post('/sign-out');
+    forgetSession();
     location.reload();
   }, []);
   return { view, device, closeDevice: () => (setDevice(undefined), load()), pairDevice, revoke, signOut };

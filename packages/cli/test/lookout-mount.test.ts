@@ -24,7 +24,7 @@ let hub: ProjectsHub;
 let mcp: McpHttp;
 let port: number;
 let token: string;
-let cookie: string;
+let header: Record<string, string>;
 
 /** The socket's address in production; here a header stands in for another device on the network. */
 const peer = (req: http.IncomingMessage) =>
@@ -48,7 +48,7 @@ function raw(o: { method?: string; path: string; headers?: Record<string, string
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json, text/event-stream',
-          Cookie: cookie,
+          ...header,
           ...o.headers,
         },
       },
@@ -76,7 +76,7 @@ beforeEach(async () => {
   fs.writeFileSync(path.join(appDir, 'index.html'), '<!doctype html>lookout');
   bridge = createTrackerBridge(root, { env: {}, configDir, cwd: path.dirname(root), peer });
   const paired = pairedSignIn({ root, configDir });
-  cookie = paired.cookie;
+  header = paired.header;
   hub = createProjectsHub({
     home: bridge,
     openBridge: (p) => createTrackerBridge(p.root, { env: {}, configDir }),
@@ -171,7 +171,7 @@ describe('the Lookout port: bridge and /mcp together', () => {
   });
 
   it('without a paired browser the API answers nothing but sign-in; the page shell and /mcp are as before', async () => {
-    const none = { Cookie: '' };
+    const none = { 'X-Teamtrail-Session': '' };
     for (const p of ['/__teamtrail/list', '/__teamtrail/events', '/__teamtrail/remote-agents', '/__teamtrail/projects'])
       expect((await raw({ path: p, headers: none })).status, p).toBe(401);
     // an agent's token is no session

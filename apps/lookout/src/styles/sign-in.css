@@ -109,3 +109,8 @@
   letter-spacing: var(--ls-data);
   color: var(--text-hi);
 }
+.pair-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-14);
+}

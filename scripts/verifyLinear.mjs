@@ -11,7 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
-import { lookoutLinks, responseGate, shootThemes } from './e2eHelpers.mjs';
+import { lookoutLinks, responseGate, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const KEY = 'lin_api_e2e_never_shown_5b1c';
@@ -87,10 +87,11 @@ export async function verifyLinear({ browser, cli, log, shots }) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  // the page's own requests carry its sign-in cookie
-  const api = async (p) => (await page.request.get(new URL(`__teamtrail${p}`, url).href)).text();
+  // with the page's own session, as its API calls carry it
+  const api = async (p) =>
+    (await page.request.get(new URL(`__teamtrail${p}`, url).href, { headers: await sessionHeaders(page) })).text();
   try {
-    await page.goto(pair);
+    await signInWith(page, pair);
     const dialog = page.locator('.dialog.onboarding');
     const choice = dialog.locator('.choice', { hasText: 'Linear' });
     await choice

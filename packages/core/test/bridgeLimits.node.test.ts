@@ -17,7 +17,7 @@ let port: number;
 let top: string;
 let root: string;
 let configDir: string;
-let cookie: string;
+let header: Record<string, string>;
 const LAN = { 'x-test-peer': '192.168.1.20' };
 const peer = (req: http.IncomingMessage) => (req.headers['x-test-peer'] as string | undefined) ?? '127.0.0.1';
 
@@ -28,7 +28,7 @@ before(async () => {
   mkdirSync(path.join(root, 'trail', 'tickets'), { recursive: true });
   bridge = createTrackerBridge(root, { env: {}, configDir, cwd: path.dirname(root), peer });
   const paired = pairedSignIn({ root, configDir });
-  cookie = paired.cookie;
+  header = paired.header;
   hub = createProjectsHub({
     home: bridge,
     openBridge: (p) => createTrackerBridge(p.root, { env: {}, configDir }),
@@ -50,7 +50,7 @@ after(() => {
 const call = async (method: string, p: string, body?: string, headers: Record<string, string> = {}) => {
   const r = await fetch(`http://127.0.0.1:${port}${p}`, {
     method,
-    headers: { 'Content-Type': 'application/json', Cookie: cookie, ...headers },
+    headers: { 'Content-Type': 'application/json', ...header, ...headers },
     body,
   });
   return { status: r.status, text: await r.text() };
@@ -64,7 +64,7 @@ test('a request body past 2 MiB is refused with 413, and the server keeps answer
       let text = '';
       const socket = net.connect(port, '127.0.0.1', () => {
         socket.write(
-          `PUT /file?path=trail/tickets/9.md HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: ${cookie}\r\n${head}\r\n\r\n`,
+          `PUT /file?path=trail/tickets/9.md HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Teamtrail-Session: ${header['X-Teamtrail-Session']}\r\n${head}\r\n\r\n`,
         );
         socket.write(body, () => {});
       });
@@ -87,7 +87,7 @@ test('one address holds at most 16 event streams', async () => {
   const open: http.ClientRequest[] = [];
   const status = () =>
     new Promise<number>((resolve) => {
-      const req = http.get({ host: '127.0.0.1', port, path: '/events', headers: { Cookie: cookie } }, (res) =>
+      const req = http.get({ host: '127.0.0.1', port, path: '/events', headers: header }, (res) =>
         resolve(res.statusCode ?? 0),
       );
       open.push(req);

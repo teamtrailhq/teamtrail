@@ -137,7 +137,9 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     // The same list for every project: `/p/<id>/policy` is `/policy` of that project.
     const inProject = /^\/p\/[^/]+(\/.*)?$/.exec(url.pathname);
     const route = inProject ? (inProject[1] ?? '/') : url.pathname;
-    const session = await signInGate({ signIn: o.signIn, local: fromThisMachine(req, o.peer), homeId }, req, res, url);
+    const loopback = fromThisMachine(req, o.peer);
+    const who = loopback ? 'loopback' : ((o.peer ?? ((r) => r.socket.remoteAddress))(req) ?? 'unknown');
+    const session = await signInGate({ signIn: o.signIn, local: loopback, who, homeId, route }, req, res, url);
     if (!session) return;
     // A device's session is a device's everywhere behind this point, whatever address it comes from.
     if (session.kind === 'device') markFromDevice(req);

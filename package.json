@@ -18,6 +18,7 @@
     "dev:empty": "node scripts/dev-empty.mjs",
     "dev:fresh": "node scripts/dev-fresh.mjs",
     "dev:agent": "node scripts/dev-agent.mjs",
+    "dev:pair": "node scripts/dev-pair.mjs",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run && npm run test --workspaces --if-present",

@@ -6,22 +6,16 @@ export type SignInStatus =
   | { kind: 'signed-in' }
   /** No Lookout server behind the page (a static build, a demo): nothing to sign in to. */
   | { kind: 'no-server' }
-  | { kind: 'signed-out'; local: boolean; ambiguous: boolean };
+  | { kind: 'signed-out'; local: boolean };
 
-interface SessionReply {
-  signedIn?: boolean;
-  local?: boolean;
-  ambiguous?: boolean;
-}
-
-/** Whether this browser is paired with the Lookout (`GET /session`, the one API route open before pairing). */
+/** Whether this browser is paired with the Lookout (`GET /session`, the one API read open before pairing). */
 export async function fetchSignInStatus(): Promise<SignInStatus> {
   try {
     const r = await fetch(`${BRAND.apiPrefix}/session`, { cache: 'no-store' });
     if (!r.ok) return { kind: 'no-server' };
-    const s = (await r.json()) as SessionReply;
+    const s = (await r.json()) as { signedIn?: unknown; local?: unknown };
     if (typeof s.signedIn !== 'boolean') return { kind: 'no-server' };
-    return s.signedIn ? { kind: 'signed-in' } : { kind: 'signed-out', local: !!s.local, ambiguous: !!s.ambiguous };
+    return s.signedIn ? { kind: 'signed-in' } : { kind: 'signed-out', local: s.local === true };
   } catch {
     return { kind: 'no-server' };
   }

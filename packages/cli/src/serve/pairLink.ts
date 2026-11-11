@@ -1,10 +1,8 @@
-import { BRAND } from '@teamtrail/core';
-
 /**
- * The one-time link that signs a browser in to the Lookout at `base` (`http://localhost:7420/`), then opens it,
- * on `next` when given (`?settings=slack`).
+ * The one-time link that signs a browser in to the Lookout at `base` (`http://localhost:7420/`): the Lookout's own
+ * page, maybe on `next` (`?settings=slack`), with the code in the fragment (`#pair=…`). A fragment never reaches a
+ * server, a log or a Referer; the page reads it, takes it out of the address bar and pairs on a click.
  */
 export function pairLink(base: string, code: string, next = '') {
-  const then = next ? `&next=${encodeURIComponent(next)}` : '';
-  return `${base.replace(/\/?$/, '/')}${BRAND.apiPrefix.slice(1)}/pair?code=${code}${then}`;
+  return `${base.replace(/\/?$/, '/')}${next}#pair=${code}`;
 }

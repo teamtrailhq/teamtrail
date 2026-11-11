@@ -31,6 +31,7 @@ const isCode = (c: unknown): c is StoredPairCode => {
     !!x &&
     typeof x.hash === 'string' &&
     (x.kind === 'machine' || x.kind === 'device') &&
+    typeof x.instance === 'number' &&
     typeof x.expiresAt === 'number'
   );
 };

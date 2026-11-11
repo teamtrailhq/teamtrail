@@ -1,20 +1,23 @@
 import assert from 'node:assert/strict';
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, statSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
+import { writeLookoutLock } from '../src/agents/lookoutLock';
 import { createProjectsHub, createTrackerBridge, type ProjectsHub, type TrackerBridge } from '../src/bridge';
 import { journalFile, journalPath } from '../src/history/journalFile';
 import { machineStore } from '../src/machine/machineStore';
 import { SIGN_IN_JOURNAL } from '../src/model/lifecycle';
 import type { SignInView } from '../src/model/signIn';
+import { instanceProven } from '../src/signIn/instanceProof';
 import { createLookoutSignIn, type LookoutSignIn } from '../src/signIn/lookoutSignIn';
 import { mintPairCode } from '../src/signIn/pairCodes';
-import { cookieName } from '../src/signIn/signInCookie';
+import { runningLookout } from '../src/signIn/runningLookout';
 import { SESSION_MS } from '../src/signIn/signInSessions';
 import { SIGN_IN_FILE } from '../src/signIn/signInStore';
-import { pairCookie } from './fakes/signedIn';
+import { pairSession, sessionHeader } from './fakes/signedIn';
 
 let top: string;
 let root: string;
@@ -24,15 +27,18 @@ let signIn: LookoutSignIn;
 let hub: ProjectsHub;
 let server: http.Server;
 let port: number;
-let cookie: string;
+let secret: string;
+let mine: Record<string, string>;
 
 const LAN_PEER = '192.168.1.20';
 const peer = (req: http.IncomingMessage) => (req.headers['x-test-peer'] as string | undefined) ?? '127.0.0.1';
+const lan = (address = LAN_PEER) => ({ 'x-test-peer': address, Host: `192.168.1.5:${port}` });
 
 before(async () => {
   top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-sign-in-'));
   root = path.join(top, 'repo', '.teamtrail');
   configDir = path.join(top, 'config');
+  process.env.TEAMTRAIL_CONFIG_DIR = configDir;
   mkdirSync(path.join(root, 'trail', 'tickets'), { recursive: true });
   bridge = createTrackerBridge(root, { env: {}, configDir, cwd: path.dirname(root), peer });
   signIn = createLookoutSignIn({ root, configDir, lanUrls: () => ['http://192.168.1.5:7420/'], sweepMs: 50 });
@@ -46,7 +52,8 @@ before(async () => {
   server = http.createServer((req, res) => void hub.handle(req, res));
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
   port = (server.address() as { port: number }).port;
-  cookie = pairCookie(signIn);
+  secret = pairSession(signIn);
+  mine = sessionHeader(secret);
 });
 
 after(() => {
@@ -58,14 +65,20 @@ after(() => {
 
 type Answer = { status: number; text: string; headers: http.IncomingHttpHeaders };
 function call(o: { method?: string; path: string; headers?: Record<string, string>; body?: string }) {
+  const method = o.method ?? 'GET';
+  const body = method === 'GET' ? undefined : (o.body ?? '{}');
   return new Promise<Answer>((resolve, reject) => {
     const req = http.request(
       {
         host: '127.0.0.1',
         port,
         path: o.path,
-        method: o.method ?? 'GET',
-        headers: { 'Content-Type': 'application/json', ...o.headers },
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(body === undefined ? {} : { 'Content-Length': String(Buffer.byteLength(body)) }),
+          ...o.headers,
+        },
       },
       (res) => {
         let text = '';
@@ -75,13 +88,14 @@ function call(o: { method?: string; path: string; headers?: Record<string, strin
       },
     );
     req.on('error', reject);
-    req.end((o.method ?? 'GET') === 'GET' ? undefined : o.body);
+    req.end(body);
   });
 }
 const json = (a: Answer) => JSON.parse(a.text) as Record<string, unknown>;
-const cookieOf = (a: Answer) => String(a.headers['set-cookie']?.[0] ?? '').split(';')[0];
+const pairBody = (code: string) => JSON.stringify({ code });
+const sessionFrom = (a: Answer) => sessionHeader(String(json(a).session));
 
-test('every API route needs a paired browser: reads, writes, the event stream and other projects', async () => {
+test('every API route needs the session header: no cookie, no forged value, nothing else opens it', async () => {
   const routes: [string, string][] = [
     ['GET', '/list'],
     ['GET', '/file?path=trail/map.md'],
@@ -91,6 +105,8 @@ test('every API route needs a paired browser: reads, writes, the event stream an
     ['GET', '/projects'],
     ['GET', `/p/${hub.homeId}/list`],
     ['GET', '/events'],
+    ['GET', `/p/${hub.homeId}/events`],
+    ['GET', '/pair?code=x'],
     ['POST', '/agents/answer'],
     ['POST', '/verification/action'],
     ['PUT', '/policy'],
@@ -98,76 +114,96 @@ test('every API route needs a paired browser: reads, writes, the event stream an
     ['POST', '/trust/approve'],
     ['GET', '/sign-in/sessions'],
     ['POST', '/sign-in/codes'],
+    ['POST', '/sign-in/stream'],
     ['GET', '/nowhere'],
   ];
+  // What a server on another port of this host would have had to steal or replay: a cookie. It opens nothing.
+  const asCookie = { Cookie: `teamtrail_${hub.homeId}=${secret}; teamtrail_session=${secret}` };
   for (const [method, p] of routes) {
-    const res = await call({ method, path: p, body: '{}' });
-    assert.equal(res.status, 401, `${method} ${p} ${res.text}`);
-    assert.equal(json(res).signIn, 'required', `${method} ${p}`);
-    // a cookie that is no session is no better
-    const forged = await call({
-      method,
-      path: p,
-      body: '{}',
-      headers: { Cookie: `${signIn.cookieName}=${'A'.repeat(43)}` },
-    });
-    assert.equal(forged.status, 401, `${method} ${p} (forged)`);
+    for (const headers of [
+      {},
+      asCookie,
+      sessionHeader('A'.repeat(43)),
+      { 'X-Teamtrail-Session': `${secret}, ${secret}` },
+    ]) {
+      const res = await call({ method, path: p, headers });
+      assert.equal(res.status, 401, `${method} ${p} ${JSON.stringify(headers).slice(0, 40)}`);
+      assert.equal(json(res).signIn, 'required');
+    }
   }
   for (const p of ['/list', '/machine', '/projects', `/p/${hub.homeId}/list`, '/sign-in/sessions'])
-    assert.equal((await call({ path: p, headers: { Cookie: cookie } })).status, 200, p);
+    assert.equal((await call({ path: p, headers: mine })).status, 200, p);
 });
 
-test('GET /session answers anyone, and says whether this browser is signed in and which project this is', async () => {
-  const out = json(await call({ path: '/session' }));
-  assert.deepEqual(out, { signedIn: false, local: true, project: hub.homeId });
-  const signedIn = json(await call({ path: '/session', headers: { Cookie: cookie } }));
-  assert.deepEqual(signedIn, { signedIn: true, local: true, project: hub.homeId, kind: 'machine' });
+test('GET /session: anyone learns whether they are signed in; only this machine or a paired browser learns the project', async () => {
+  assert.deepEqual(json(await call({ path: '/session' })), { signedIn: false, local: true, project: hub.homeId });
+  assert.deepEqual(json(await call({ path: '/session', headers: lan() })), { signedIn: false, local: false });
+  assert.deepEqual(json(await call({ path: '/session', headers: mine })), {
+    signedIn: true,
+    local: true,
+    kind: 'machine',
+    project: hub.homeId,
+  });
 });
 
-test('a pairing link works once: cookie set, sent on to the Lookout, never twice', async () => {
+test('GET /session?nonce= proves to this machine which Lookout process answers, signed with the machine key', async () => {
+  const nonce = randomBytes(16).toString('hex');
+  const out = json(await call({ path: `/session?nonce=${nonce}` }));
+  assert.equal(out.instance, process.pid);
+  assert.ok(instanceProven(root, process.pid, nonce, out.proof));
+  assert.ok(!instanceProven(root, process.pid, `${nonce}0`, out.proof));
+  assert.equal(json(await call({ path: `/session?nonce=${nonce}`, headers: lan() })).proof, undefined);
+});
+
+test('a link code pairs once, by POST from the Lookout page; the session comes back in the body, never a cookie', async () => {
   const { code } = signIn.mintCode('machine');
-  const first = await call({ path: `/pair?code=${code}&next=?settings=slack` });
-  assert.equal(first.status, 303);
-  assert.equal(first.headers.location, '/?settings=slack');
-  assert.equal(first.headers['referrer-policy'], 'no-referrer');
+  const first = await call({ method: 'POST', path: '/pair', body: pairBody(code) });
+  assert.equal(first.status, 200, first.text);
+  assert.equal(first.headers['set-cookie'], undefined);
   assert.equal(first.headers['cache-control'], 'no-store');
-  const set = String(first.headers['set-cookie']?.[0]);
-  assert.match(set, new RegExp(`^${signIn.cookieName}=[A-Za-z0-9_-]{43}; `));
-  for (const attr of ['Path=/', 'HttpOnly', 'SameSite=Strict', `Max-Age=${SESSION_MS / 1000}`])
-    assert.ok(set.includes(attr), attr);
-  assert.ok(!set.includes('Secure'), 'plain http on localhost: no Secure flag');
-  assert.equal((await call({ path: '/list', headers: { Cookie: cookieOf(first) } })).status, 200);
-  const again = await call({ path: `/pair?code=${code}` });
-  assert.equal(again.status, 303);
-  assert.equal(again.headers.location, '/?pair=used');
-  assert.equal(again.headers['set-cookie'], undefined);
-  // only a query for the Lookout's own page: never another path or site
+  assert.equal(json(first).kind, 'machine');
+  assert.match(String(json(first).session), /^[A-Za-z0-9_-]{43}$/);
+  assert.equal((await call({ path: '/list', headers: sessionFrom(first) })).status, 200);
+  assert.equal((await call({ method: 'POST', path: '/pair', body: pairBody(code) })).status, 400);
+  // another site can't complete it, nor a form post
   const { code: other } = signIn.mintCode('machine');
-  const away = await call({ path: `/pair?code=${other}&next=//evil.example/` });
-  assert.equal(away.headers.location, '/');
+  const evil = { Origin: 'http://evil.example', Host: `127.0.0.1:${port}` };
+  assert.equal((await call({ method: 'POST', path: '/pair', headers: evil, body: pairBody(other) })).status, 403);
+  const form = { 'Content-Type': 'application/x-www-form-urlencoded' };
+  assert.equal((await call({ method: 'POST', path: '/pair', headers: form, body: `code=${other}` })).status, 403);
+  assert.equal(
+    (await call({ method: 'POST', path: '/pair', body: pairBody(other) })).status,
+    200,
+    'the code was never spent',
+  );
 });
 
-test('a browser already signed in that opens another link keeps its session; the code is spent', async () => {
+test('a browser already signed in keeps its session: a code it is sent never replaces it', async () => {
   const before = signIn.views().length;
   const { code } = signIn.mintCode('machine');
-  const res = await call({ path: `/pair?code=${code}`, headers: { Cookie: cookie } });
-  assert.equal(res.status, 303);
-  assert.equal(res.headers['set-cookie'], undefined);
+  const res = await call({ method: 'POST', path: '/pair', headers: mine, body: pairBody(code) });
+  assert.deepEqual(json(res), { ok: true, kind: 'machine' });
   assert.equal(signIn.views().length, before);
-  assert.equal(
-    json(await call({ method: 'POST', path: '/pair', body: JSON.stringify({ code }) })).error !== undefined,
-    true,
-  );
+  assert.equal((await call({ method: 'POST', path: '/pair', body: pairBody(code) })).status, 400, 'spent');
+});
+
+test('a code made for another Lookout process is refused: a replayed lock gets nothing usable', async () => {
+  const { code } = mintPairCode({ root, configDir, kind: 'machine', instance: process.pid + 1 });
+  assert.equal((await call({ method: 'POST', path: '/pair', body: pairBody(code) })).status, 400);
+  // and `teamtrail pair` for this process works at once, from another process's write
+  const { code: right } = mintPairCode({ root, configDir, kind: 'machine', instance: process.pid });
+  const ok = await call({ method: 'POST', path: '/pair', body: pairBody(right) });
+  assert.equal((await call({ path: '/list', headers: sessionFrom(ok) })).status, 200);
 });
 
 test('codes expire, and the store keeps only hashes, private to this user', () => {
   let now = Date.now();
   const timed = createLookoutSignIn({ root, configDir, now: () => now });
+  const req = { headers: {}, socket: {} } as unknown as http.IncomingMessage;
   try {
     const { code } = timed.mintCode('device');
     now += 5 * 60_000 + 1;
-    const req = { headers: {}, socket: {} } as unknown as http.IncomingMessage;
-    assert.equal(timed.pair(req, { code, local: true }).kind, 'refused');
+    assert.equal(timed.pair(req, { code, local: true, who: 'loopback' }).kind, 'refused');
   } finally {
     timed.close();
   }
@@ -175,114 +211,93 @@ test('codes expire, and the store keeps only hashes, private to this user', () =
   const file = machineStore(root, configDir).file(SIGN_IN_FILE);
   const text = readFileSync(file, 'utf8');
   assert.ok(!text.includes(code));
-  assert.ok(!text.includes(cookie.split('=')[1]));
+  assert.ok(!text.includes(secret));
   assert.equal(statSync(file).mode & 0o777, 0o600);
 });
 
-test('wrong codes lock pairing for a minute, even for a right code', async () => {
-  let now = Date.now();
-  const timed = createLookoutSignIn({ root, configDir, now: () => now });
+test('wrong typed codes hold back that caller only; links and malformed input are never held', () => {
+  const t = createLookoutSignIn({ root, configDir });
   const req = { headers: {}, socket: {} } as unknown as http.IncomingMessage;
+  const pair = (code: unknown, who: string, local = false) => t.pair(req, { code, local, who }).kind;
   try {
-    for (let i = 0; i < 5; i++) assert.equal(timed.pair(req, { code: 'WRONG-CODE', local: true }).kind, 'refused');
-    const { code } = timed.mintCode('device');
-    assert.equal(timed.pair(req, { code, local: true }).kind, 'locked');
-    now += 61_000;
-    assert.equal(timed.pair(req, { code, local: true }).kind, 'paired');
+    // empty and malformed input: refused, counted against nobody
+    for (let i = 0; i < 50; i++) for (const junk of [undefined, '', 'x', '%%%', 'A'.repeat(64)]) pair(junk, LAN_PEER);
+    assert.equal(pair(t.mintCode('device').code, LAN_PEER), 'paired');
+    // five wrong typed codes from one device: its typed codes wait
+    for (let i = 0; i < 5; i++) assert.equal(pair('ZZZZ-ZZZZ', LAN_PEER), 'refused');
+    assert.equal(pair(t.mintCode('device').code, LAN_PEER), 'locked');
+    // ...not anyone else's, and never a link's 256-bit code
+    assert.equal(pair(t.mintCode('device').code, '192.168.1.21'), 'paired');
+    assert.equal(pair(t.mintCode('device').code, 'loopback', true), 'paired');
+    assert.equal(pair(t.mintCode('machine').code, LAN_PEER), 'paired');
+    // a local program guessing can't lock out a link the CLI printed
+    for (let i = 0; i < 20; i++) pair('ZZZZ-ZZZZ', 'loopback', true);
+    assert.equal(pair(t.mintCode('machine').code, 'loopback', true), 'paired');
   } finally {
-    timed.close();
-  }
-  // over HTTP: 429 with Retry-After
-  const fresh = createLookoutSignIn({ root, configDir });
-  try {
-    for (let i = 0; i < 5; i++) fresh.pair(req, { code: 'ABCD-EFGH', local: true });
-    assert.equal(fresh.pair(req, { code: 'ABCD-EFGH', local: true }).kind, 'locked');
-  } finally {
-    fresh.close();
+    t.close();
   }
 });
 
-test('a cookie name sent twice is refused, not guessed', async () => {
-  const value = cookie.split('=')[1];
-  const res = await call({ path: '/list', headers: { Cookie: `${cookie}; ${signIn.cookieName}=${value}` } });
-  assert.equal(res.status, 401);
-  assert.equal(json(res).signIn, 'ambiguous');
-  // another Lookout's cookie (another project) is simply not ours
-  assert.notEqual(cookieName(path.join(top, 'other', '.teamtrail')), signIn.cookieName);
-  assert.equal((await call({ path: '/list', headers: { Cookie: `teamtrail_0123456789=x; ${cookie}` } })).status, 200);
+test('over HTTP: 429 with Retry-After for the caller that guessed, and loopback keeps its own budget', async () => {
+  const guesser = lan('192.168.1.77');
+  for (let i = 0; i < 5; i++)
+    await call({ method: 'POST', path: '/pair', headers: guesser, body: pairBody('ZZZZ-ZZZZ') });
+  const locked = await call({ method: 'POST', path: '/pair', headers: guesser, body: pairBody('ZZZZ-ZZZZ') });
+  assert.equal(locked.status, 429);
+  assert.ok(Number(locked.headers['retry-after']) > 0);
+  const { code } = signIn.mintCode('device');
+  assert.equal((await call({ method: 'POST', path: '/pair', body: pairBody(code) })).status, 200);
 });
 
 test('another device pairs with a typed code: it reads and answers, never what only this machine may do', async () => {
-  const codes = await call({ method: 'POST', path: '/sign-in/codes', headers: { Cookie: cookie } });
+  const codes = await call({ method: 'POST', path: '/sign-in/codes', headers: mine });
   assert.equal(codes.status, 200);
   const { code, links, expiresAt } = json(codes) as { code: string; links: string[]; expiresAt: number };
   assert.match(code, /^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
   assert.ok(expiresAt > Date.now() && expiresAt <= Date.now() + 5 * 60_000);
-  assert.deepEqual(links, [`http://192.168.1.5:7420/__teamtrail/pair?code=${code.replace('-', '')}`]);
+  // the code rides in the fragment: no server, log or Referer gets it
+  assert.deepEqual(links, [`http://192.168.1.5:7420/#pair=${code.replace('-', '')}`]);
   const phone = {
-    'x-test-peer': LAN_PEER,
-    Host: `192.168.1.5:${port}`,
-    'User-Agent':
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1',
+    ...lan(),
+    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Version/17.0 Mobile/15E148 Safari/604.1',
   };
-  const paired = await call({
-    method: 'POST',
-    path: '/pair',
-    headers: phone,
-    body: JSON.stringify({ code: code.toLowerCase() }),
-  });
+  const paired = await call({ method: 'POST', path: '/pair', headers: phone, body: pairBody(code.toLowerCase()) });
   assert.equal(paired.status, 200, paired.text);
-  assert.deepEqual(json(paired), { ok: true, kind: 'device' });
-  const device = cookieOf(paired);
-  assert.equal((await call({ path: '/list', headers: { ...phone, Cookie: device } })).status, 200);
-  // its cookie, even sent from this machine, is a device's
-  for (const headers of [{ ...phone, Cookie: device }, { Cookie: device }]) {
+  assert.equal(json(paired).kind, 'device');
+  const device = sessionFrom(paired);
+  assert.equal((await call({ path: '/list', headers: { ...phone, ...device } })).status, 200);
+  // its session, even sent from this machine, is a device's
+  for (const headers of [{ ...phone, ...device }, device]) {
     for (const [method, p] of [
       ['GET', '/sign-in/sessions'],
       ['POST', '/sign-in/codes'],
       ['POST', '/remote-agents/tokens'],
       ['PUT', '/policy'],
     ]) {
-      const res = await call({ method, path: p, headers, body: '{}' });
+      const res = await call({ method, path: p, headers });
       assert.equal(res.status, 403, `${method} ${p}`);
       assert.equal(json(res).elsewhere, true);
     }
     assert.deepEqual(json(await call({ path: '/machine', headers })), { local: false });
   }
-  const listed = json(await call({ path: '/sign-in/sessions', headers: { Cookie: cookie } })) as {
-    sessions: SignInView[];
-  };
-  const row = listed.sessions.find((s) => s.name === 'Safari on iPhone');
-  assert.equal(row?.kind, 'device');
-  assert.equal(listed.sessions.filter((s) => s.current).length, 1);
+  const listed = json(await call({ path: '/sign-in/sessions', headers: mine })) as { sessions: SignInView[] };
+  assert.equal(listed.sessions.find((s) => s.name === 'Safari on iPhone')?.kind, 'device');
+  assert.equal(listed.sessions[0].current, true);
 });
 
-test('a link printed for this machine, opened on another device, pairs a device', async () => {
+test('a link code used from another device pairs a device', async () => {
   const { code } = signIn.mintCode('machine');
-  const res = await call({
-    path: `/pair?code=${code}`,
-    headers: { 'x-test-peer': LAN_PEER, Host: `192.168.1.5:${port}` },
-  });
-  const session = json(
-    await call({
-      path: '/session',
-      headers: { Cookie: cookieOf(res), 'x-test-peer': LAN_PEER, Host: `192.168.1.5:${port}` },
-    }),
-  );
-  assert.equal(session.kind, 'device');
+  const res = await call({ method: 'POST', path: '/pair', headers: lan(), body: pairBody(code) });
+  assert.equal(json(res).kind, 'device');
 });
 
-test('`teamtrail pair` adds a code from another process: the running Lookout takes it at once', async () => {
-  const { code } = mintPairCode({ root, configDir, kind: 'machine' });
-  const res = await call({ path: `/pair?code=${code}` });
-  assert.equal(res.headers.location, '/');
-  assert.equal((await call({ path: '/list', headers: { Cookie: cookieOf(res) } })).status, 200);
-});
-
-test('revoking a browser signs it out and ends its event stream; signing out clears the cookie', async () => {
-  const other = pairCookie(signIn, { userAgent: 'Mozilla/5.0 (X11; Linux x86_64) Firefox/120.0' });
+test('event streams open with a single-use ticket; revoking a browser ends its stream; signing out ends a session', async () => {
+  const other = sessionHeader(pairSession(signIn, { userAgent: 'Mozilla/5.0 (X11; Linux x86_64) Firefox/120.0' }));
+  const ticketOf = async (h: Record<string, string>) =>
+    String(json(await call({ method: 'POST', path: '/sign-in/stream', headers: h })).ticket);
+  const ticket = await ticketOf(other);
   const ended = new Promise<void>((resolve, reject) => {
-    const req = http.request({ host: '127.0.0.1', port, path: '/events', headers: { Cookie: other } }, (res) => {
+    const req = http.request({ host: '127.0.0.1', port, path: `/events?ticket=${ticket}` }, (res) => {
       assert.equal(res.statusCode, 200);
       res.resume();
       res.on('end', resolve);
@@ -290,38 +305,37 @@ test('revoking a browser signs it out and ends its event stream; signing out cle
     req.on('error', reject);
     req.end();
   });
-  const { sessions } = json(await call({ path: '/sign-in/sessions', headers: { Cookie: cookie } })) as {
-    sessions: SignInView[];
-  };
+  // used once
+  assert.equal((await call({ path: `/events?ticket=${ticket}` })).status, 401);
+  assert.equal(
+    (await call({ path: `/list?ticket=${await ticketOf(other)}` })).status,
+    401,
+    'a ticket opens streams only',
+  );
+  const { sessions } = json(await call({ path: '/sign-in/sessions', headers: mine })) as { sessions: SignInView[] };
   const target = sessions.find((s) => s.name === 'Firefox on Linux')!;
   const revoked = await call({
     method: 'POST',
     path: '/sign-in/revoke',
-    headers: { Cookie: cookie },
+    headers: mine,
     body: JSON.stringify({ id: target.id }),
   });
   assert.equal(revoked.status, 200);
   await ended;
-  assert.equal((await call({ path: '/list', headers: { Cookie: other } })).status, 401);
-  // signing out: this browser only
-  const mine = pairCookie(signIn);
-  const out = await call({ method: 'POST', path: '/sign-in/sign-out', headers: { Cookie: mine }, body: '{}' });
-  assert.equal(out.status, 200);
-  assert.match(String(out.headers['set-cookie']?.[0]), /Max-Age=0/);
-  assert.equal((await call({ path: '/list', headers: { Cookie: mine } })).status, 401);
-  assert.equal((await call({ path: '/list', headers: { Cookie: cookie } })).status, 200);
+  assert.equal((await call({ path: '/list', headers: other })).status, 401);
+  const leaving = sessionHeader(pairSession(signIn));
+  assert.equal((await call({ method: 'POST', path: '/sign-in/sign-out', headers: leaving })).status, 200);
+  assert.equal((await call({ path: '/list', headers: leaving })).status, 401);
+  assert.equal((await call({ path: '/list', headers: mine })).status, 200);
 });
 
 test('a session stays while it is used and ends 30 days after it last was', () => {
   let now = Date.now();
   const timed = createLookoutSignIn({ root, configDir, now: () => now });
   try {
-    const c = pairCookie(timed);
-    const req = { headers: { cookie: c }, socket: {} } as unknown as http.IncomingMessage;
+    const req = { headers: sessionHeaderLower(pairSession(timed)), socket: {} } as unknown as http.IncomingMessage;
     now += SESSION_MS - 60_000;
-    const used = timed.check(req);
-    assert.equal(used.kind, 'signed-in');
-    assert.ok(used.kind === 'signed-in' && used.renew?.includes('Max-Age='), 'the browser gets the cookie again');
+    assert.equal(timed.check(req).kind, 'signed-in');
     now += SESSION_MS - 60_000;
     assert.equal(timed.check(req).kind, 'signed-in');
     now += SESSION_MS + 1;
@@ -331,6 +345,9 @@ test('a session stays while it is used and ends 30 days after it last was', () =
   }
 });
 
+/** Node lower-cases the names of the headers it receives. */
+const sessionHeaderLower = (s: string) => ({ 'x-teamtrail-session': s });
+
 test('pairing, device codes and revoking are journaled without a secret; old journals still load', () => {
   const file = journalPath(root, SIGN_IN_JOURNAL);
   appendFileSync(file, '{"v":1,"at":1,"mapId":"_sign-in","kind":"from-a-newer-version"}\n');
@@ -338,17 +355,33 @@ test('pairing, device codes and revoking are journaled without a secret; old jou
   const actions = new Set(entries.map((e) => e.action));
   for (const a of ['paired', 'device-code', 'revoked', 'signed-out']) assert.ok(actions.has(a as never), a);
   const text = readFileSync(file, 'utf8');
-  assert.ok(!text.includes(cookie.split('=')[1]));
+  assert.ok(!text.includes(secret));
   assert.ok(!/"hash"/.test(text));
   assert.deepEqual(journalFile(root).readAll(SIGN_IN_JOURNAL), []);
 });
 
-test('wrong codes over HTTP: 429 with Retry-After', async () => {
-  for (let i = 0; i < 6; i++)
-    await call({ method: 'POST', path: '/pair', body: JSON.stringify({ code: 'ZZZZ-ZZZZ' }) });
-  const locked = await call({ method: 'POST', path: '/pair', body: JSON.stringify({ code: 'ZZZZ-ZZZZ' }) });
-  assert.equal(locked.status, 429);
-  assert.ok(Number(locked.headers['retry-after']) > 0);
-  const link = await call({ path: '/pair?code=ZZZZZZZZ' });
-  assert.equal(link.headers.location, '/?pair=wait');
+test('`teamtrail pair` trusts a lock only when its process is alive and the server there proves it is that process', async () => {
+  const at = `http://localhost:${port}/`;
+  // this test's hub answers without the Lookout's `/__teamtrail` prefix
+  const unprefixed: typeof fetch = (u, init) => fetch(String(u).replace('/__teamtrail', ''), init);
+  const release = writeLookoutLock(root, at);
+  try {
+    assert.deepEqual(await runningLookout(root, unprefixed), { kind: 'running', url: at, instance: process.pid });
+    // an agent's server on the lock's port: alive pid, signed lock, but no proof
+    const fake = http.createServer((_req, res) =>
+      res.end(JSON.stringify({ signedIn: false, instance: process.pid, proof: 'f'.repeat(64) })),
+    );
+    await new Promise<void>((r) => fake.listen(0, '127.0.0.1', r));
+    const fakeUrl = `http://localhost:${(fake.address() as { port: number }).port}/`;
+    writeLookoutLock(root, fakeUrl);
+    assert.equal((await runningLookout(root, unprefixed)).kind, 'not-answering');
+    fake.close();
+    // an old signed lock of a process that is gone
+    const lockFile = path.join(root, '.agents', 'server.json');
+    const old = JSON.parse(readFileSync(lockFile, 'utf8')) as Record<string, unknown>;
+    writeFileSync(lockFile, JSON.stringify({ ...old, pid: 999_999 }));
+    assert.equal((await runningLookout(root)).kind, 'none');
+  } finally {
+    release();
+  }
 });

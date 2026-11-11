@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { lookoutLinks } from './e2eHelpers.mjs';
+import { lookoutLinks, signInWith } from './e2eHelpers.mjs';
 
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
@@ -74,7 +74,7 @@ export async function verifyParallel({ browser, cli, log, shots }) {
   const one = await agent(cli, top);
   const two = await agent(cli, top);
   try {
-    await page.goto(pair);
+    await signInWith(page, pair);
     await page.locator('.dialog.onboarding').waitFor();
     await page.getByRole('button', { name: 'Get started' }).click();
     await one.call('start_trail', {

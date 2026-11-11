@@ -52,7 +52,24 @@ export function lookoutLinks(out) {
 /** A new one-time sign-in link for the Lookout running in `cwd`, as `teamtrail pair` prints it: for a second browser. */
 export function pairLink({ cli, cwd, env = process.env }) {
   const out = execFileSync(process.execPath, [cli, 'pair'], { cwd, env }).toString();
-  const link = out.match(/(http:\S+\/pair\?code=\S+)/)?.[1];
+  const link = out.match(/(http:\S+#pair=\S+)/)?.[1];
   if (!link) throw new Error(`teamtrail pair printed no link: ${out}`);
   return link;
+}
+
+/**
+ * Opens a sign-in link (`…#pair=<code>`) and signs the page's browser in as a person does: one click on the Lookout's
+ * own page. Resolves once the Lookout has reloaded, signed in.
+ */
+export async function signInWith(page, link) {
+  await page.goto(link);
+  await page.getByRole('button', { name: 'Sign in this browser' }).click();
+  await page.waitForFunction(() => !!localStorage.getItem('teamtrail.session'));
+  await page.waitForLoadState('load');
+}
+
+/** The header the page's own API calls carry, for a script's direct calls through `page.request`. */
+export async function sessionHeaders(page) {
+  const session = await page.evaluate(() => localStorage.getItem('teamtrail.session'));
+  return { 'X-Teamtrail-Session': session ?? '' };
 }

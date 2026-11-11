@@ -11,7 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { lookoutLinks } from './e2eHelpers.mjs';
+import { lookoutLinks, signInWith } from './e2eHelpers.mjs';
 import { PERF, verifyOwnGuides } from './verifyOwnGuides.mjs';
 
 const A11Y = `---
@@ -169,7 +169,7 @@ export async function verifyGuides({ browser, cli, log, shots }) {
   const worker = await agent(cli, top);
   try {
     // the link `teamtrail` printed signs this browser in
-    await page.goto(pair);
+    await signInWith(page, pair);
     const verifiedInSettings = await addInLookout({ page, url, shot });
     const config = JSON.parse(fs.readFileSync(path.join(root, 'verification.json'), 'utf8'));
     const approved = config.checks.a11y?.run?.join(' ') === 'node checks/a11y.js';

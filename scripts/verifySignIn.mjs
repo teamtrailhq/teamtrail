@@ -3,9 +3,10 @@
 // a device on the network pairs with the short code from Settings and gets no more than a device may.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { lookoutLinks, pairLink, shootThemes } from './e2eHelpers.mjs';
+import { lookoutLinks, pairLink, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 async function startLookout(cli, cwd, env) {
   // On every interface, so a "device" can come in by the network address.
@@ -38,6 +39,42 @@ async function readQr(page) {
   });
 }
 
+/**
+ * Another server on this host, opened in the same paired browser (an agent's dev server on another port): what the
+ * browser sends it, what its page can read, and whether its page can reach the Lookout's API. Nothing usable.
+ */
+async function anotherPortSeesNothing(page, lookoutUrl) {
+  const seen = [];
+  const other = http.createServer((req, res) => {
+    seen.push(JSON.stringify(req.headers));
+    res.setHeader('Content-Type', 'text/html');
+    res.end('<!doctype html><title>dev server</title><p>an agent’s dev server</p>');
+  });
+  await new Promise((r) => other.listen(0, '127.0.0.1', r));
+  const at = `http://localhost:${other.address().port}/`;
+  try {
+    const session = await page.evaluate(() => localStorage.getItem('teamtrail.session'));
+    await page.goto(at);
+    const read = await page.evaluate(async (api) => {
+      const reached = await fetch(`${api}__teamtrail/list`, { headers: { 'X-Teamtrail-Session': 'x' } }).then(
+        (r) => r.status,
+        () => 'blocked',
+      );
+      return { storage: localStorage.getItem('teamtrail.session'), cookie: document.cookie, reached };
+    }, lookoutUrl);
+    await page.goBack();
+    const leaked = seen.some((h) => h.includes(session) || /teamtrail/i.test(h));
+    const ok =
+      !!session && !leaked && read.storage === null && !read.cookie.includes(session) && read.reached === 'blocked';
+    return {
+      ok,
+      said: `a server on another port got ${leaked ? 'THE SESSION' : 'nothing'}, its page read ${read.storage === null ? 'nothing' : 'THE SESSION'} and reached the API: ${read.reached}`,
+    };
+  } finally {
+    other.close();
+  }
+}
+
 const getStarted = async (page) => {
   await page.locator('.dialog.onboarding').waitFor({ timeout: 15_000 });
   await page.getByRole('button', { name: 'Get started' }).click();
@@ -56,7 +93,10 @@ async function devicePairing({ browser, page, shots }) {
   await phone.getByLabel('Pairing code').fill(code.toLowerCase());
   await phone.getByRole('button', { name: 'Pair' }).click();
   await getStarted(phone);
-  const policy = await phone.request.put(`${lan.origin}/__teamtrail/policy`, { data: {} });
+  const policy = await phone.request.put(`${lan.origin}/__teamtrail/policy`, {
+    data: {},
+    headers: await sessionHeaders(phone),
+  });
   await phone.goto(`${lan.origin}/?settings=devices`);
   await phone.getByText('This device is paired with the Lookout').waitFor({ timeout: 15_000 });
   await phone.close();
@@ -90,17 +130,23 @@ export async function verifySignIn({ browser, cli, log, shots }) {
     await a.goto(url);
     await a.getByRole('heading', { name: 'Pair this browser' }).waitFor({ timeout: 15_000 });
     await shootThemes(a, shots, '35-sign-in-pair');
+    // The link opens the Lookout's page, which takes the code out of the address bar and signs in on a click.
     await a.goto(pair);
-    await getStarted(a);
+    await a.getByRole('button', { name: 'Sign in this browser' }).waitFor({ timeout: 15_000 });
     const codeGone = a.url() === url;
+    await shootThemes(a, shots, '35-sign-in-confirm');
+    await a.getByRole('button', { name: 'Sign in this browser' }).click();
+    await getStarted(a);
 
     // The same link again, in another browser: spent.
     const b = await newPage();
     await b.goto(pair);
-    await b.getByText('That link was already used or has expired').waitFor({ timeout: 15_000 });
+    await b.getByRole('button', { name: 'Sign in this browser' }).click();
+    await b.getByText('That code was already used').waitFor({ timeout: 15_000 });
     // `teamtrail pair` makes a new one.
-    await b.goto(pairLink({ cli, cwd: top, env }));
+    await signInWith(b, pairLink({ cli, cwd: top, env }));
     await getStarted(b);
+    const otherPort = await anotherPortSeesNothing(a, url);
 
     await a.goto(`${url}?settings=devices`);
     const rows = a.locator('#settings-devices .ra-row');
@@ -119,9 +165,9 @@ export async function verifySignIn({ browser, cli, log, shots }) {
     await other.getByRole('button', { name: /^Revoke .+/ }).click();
     await b.getByRole('heading', { name: 'Pair this browser' }).waitFor({ timeout: 15_000 });
 
-    const ok = closed && codeGone && listed === 2 && device.ok;
+    const ok = closed && codeGone && listed === 2 && device.ok && otherPort.ok;
     log(
-      `sign-in ${ok ? 'ok' : 'WRONG'}: API without a session ${bare.map((r) => r.status).join('/')}; link used once${codeGone ? ', code gone from the address bar' : ', code LEFT in the URL'}; teamtrail pair signed in a second browser; ${listed} paired browsers listed; ${device.said}; the revoked browser dropped to Pair this browser`,
+      `sign-in ${ok ? 'ok' : 'WRONG'}: API without a session ${bare.map((r) => r.status).join('/')}; link used once${codeGone ? ', code gone from the address bar' : ', code LEFT in the URL'}; teamtrail pair signed in a second browser; ${listed} paired browsers listed; ${device.said}; the revoked browser dropped to Pair this browser; ${otherPort.said}`,
     );
     return ok;
   } catch (e) {

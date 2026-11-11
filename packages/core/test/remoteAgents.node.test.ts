@@ -24,7 +24,7 @@ import {
 import { REMOTE_TOKENS_FILE } from '../src/remoteAgents/remoteTokenStore';
 import { thisMachineOnly } from '../src/server/thisMachineRoutes';
 import { NO_GH_CLI_ENV, resolveGitHubToken } from '../src/server/trackerConfig';
-import { pairCookie, pairedSignIn } from './fakes/signedIn';
+import { pairedSignIn, pairSession, sessionHeader } from './fakes/signedIn';
 
 const tmp = (name: string) =>
   path.join(mkdtempSync(path.join(os.tmpdir(), `teamtrail-${name}-`)), 'repo', '.teamtrail');
@@ -423,7 +423,7 @@ test('the projects hub: another device sees the projects, and cannot add, remove
   const peer = (req: http.IncomingMessage) =>
     (req.headers['x-test-peer'] as string | undefined) ?? req.socket.remoteAddress;
   const home = createTrackerBridge(r, { env: {}, configDir, cwd: path.dirname(r), peer });
-  const { signIn, cookie } = pairedSignIn({ root: r, configDir });
+  const { signIn, header } = pairedSignIn({ root: r, configDir });
   const hub = createProjectsHub({
     home,
     openBridge: (p) => createTrackerBridge(p.root, { env: {}, configDir }),
@@ -438,11 +438,11 @@ test('the projects hub: another device sees the projects, and cannot add, remove
   const phone = {
     'x-test-peer': '192.168.1.20',
     Host: `192.168.1.5:${port}`,
-    Cookie: pairCookie(signIn, { local: false }),
+    ...sessionHeader(pairSession(signIn, { local: false })),
   };
   // Framed bodies: a DELETE's body without a length would be read as the next request.
   const hubCall = (o: Parameters<typeof raw>[0]) =>
-    raw({ ...o, headers: { Cookie: cookie, 'Content-Length': String(Buffer.byteLength(o.body ?? '')), ...o.headers } });
+    raw({ ...o, headers: { ...header, 'Content-Length': String(Buffer.byteLength(o.body ?? '')), ...o.headers } });
   try {
     // A second, registered project: its routes are held to the same list, checked in the hub itself.
     const otherRepo = path.dirname(tmp('remote-hub-other'));

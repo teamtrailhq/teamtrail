@@ -1,5 +1,4 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { BRAND } from '../model/brand';
 import type { StoredSignIn } from '../model/signIn';
 import type { LookoutSignIn } from '../signIn/lookoutSignIn';
 import { journalSignIn } from '../signIn/signInJournal';
@@ -12,8 +11,8 @@ export interface SignInContext {
   session: StoredSignIn;
 }
 
-const pairLink = (base: string, code: string) =>
-  `${base.replace(/\/?$/, '/')}${BRAND.apiPrefix.slice(1)}/pair?code=${code}`;
+/** The Lookout's page with the code in the fragment, which no server, log or Referer ever gets. */
+const pairLink = (base: string, code: string) => `${base.replace(/\/?$/, '/')}#pair=${code}`;
 
 /**
  * `/sign-in`: the paired browsers (Settings → You → Browsers & devices). Listing, pairing another device and
@@ -21,7 +20,8 @@ const pairLink = (base: string, code: string) =>
  *   GET  /sign-in/sessions   `{ sessions: SignInView[], lan: string[] }`
  *   POST /sign-in/codes      → `{ code, expiresAt, links }`: a short code for another device, and the links that use it
  *   POST /sign-in/revoke     body `{ id }` → `{ sessions }`; that browser is signed out and its event streams end
- *   POST /sign-in/sign-out   this browser: its session ends and its cookie is cleared
+ *   POST /sign-in/stream     → `{ ticket }`: opens one `/events?ticket=` stream within 30 s (EventSource sends no headers)
+ *   POST /sign-in/sign-out   this browser: its session ends
  * False when the path doesn't match.
  */
 export async function handleSignIn(ctx: SignInContext, req: IncomingMessage, res: ServerResponse, url: URL) {
@@ -45,13 +45,12 @@ export async function handleSignIn(ctx: SignInContext, req: IncomingMessage, res
     const gone = signIn.revoke(body.id);
     if (!gone) return (sendJson(res, 404, { error: 'no such browser', sessions: sessions() }), true);
     journalSignIn(signIn.root, 'revoked', gone);
-    if (gone.id === session.id) res.setHeader('Set-Cookie', signIn.signedOutCookie(req));
     return (sendJson(res, 200, { sessions: sessions() }), true);
   }
+  if (route === 'POST /sign-in/stream') return (sendJson(res, 200, { ticket: signIn.streamTicket(session) }), true);
   if (route === 'POST /sign-in/sign-out') {
     const gone = signIn.revoke(session.id);
     if (gone) journalSignIn(signIn.root, 'signed-out', gone);
-    res.setHeader('Set-Cookie', signIn.signedOutCookie(req));
     return (sendJson(res, 200, { ok: true }), true);
   }
   return false;

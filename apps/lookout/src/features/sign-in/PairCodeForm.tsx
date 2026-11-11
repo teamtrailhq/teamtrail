@@ -1,17 +1,7 @@
 import { BRAND } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button } from '../../components/ui';
-
-async function sendCode(code: string): Promise<string | undefined> {
-  const r = await fetch(`${BRAND.apiPrefix}/pair`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
-  });
-  if (r.ok) return undefined;
-  const reply = (await r.json().catch(() => ({}))) as { error?: string };
-  return reply.error ?? 'That code didn’t work. Get a new one.';
-}
+import { sendPairCode } from './sendPairCode';
 
 /** A code typed from the Settings of the machine the Lookout runs on: "Pair a device". */
 export function PairCodeForm() {
@@ -21,7 +11,7 @@ export function PairCodeForm() {
   const submit = async () => {
     if (!code.trim() || busy) return;
     setBusy(true);
-    const failed = await sendCode(code).catch(() => 'The Lookout didn’t answer. Try again.');
+    const failed = await sendPairCode(code);
     setBusy(false);
     setError(failed);
     if (!failed) location.reload();

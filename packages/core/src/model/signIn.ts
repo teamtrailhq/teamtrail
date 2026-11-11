@@ -1,6 +1,8 @@
 /**
- * Sign-in to the Lookout. A browser is paired once, with a one-time code, and then carries a session cookie. The
- * server keeps only the SHA-256 of each session and code (signIn/signInStore.ts), in the machine store.
+ * Sign-in to the Lookout. A browser is paired once, with a one-time code, and then sends its session in the
+ * `X-Teamtrail-Session` header of every API call, from storage of the Lookout's own origin (never a cookie, which
+ * every other port on the same host would get too). The server keeps only the SHA-256 of each session and code
+ * (signIn/signInStore.ts), in the machine store.
  *
  * `machine`: paired on the machine Teamtrail runs on, with a link the CLI printed or opened. Only such a session,
  * from this machine, may use the routes that change what runs here or whom it trusts (server/thisMachineRoutes.ts).
@@ -31,6 +33,8 @@ export interface StoredPairCode {
   hash: string;
   /** What the session it opens may become; `machine` also needs the pairing to come from this machine. */
   kind: SignInKind;
+  /** The Lookout process the code is for (its pid): no other Lookout, now or later, takes it. */
+  instance: number;
   createdAt: number;
   expiresAt: number;
 }

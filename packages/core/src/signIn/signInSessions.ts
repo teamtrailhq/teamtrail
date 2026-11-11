@@ -13,16 +13,19 @@ export type PairResult = { kind: 'paired'; secret: string; session: StoredSignIn
 
 /**
  * Uses a pairing code, once: the code is gone whatever happens next. A good one opens a new session. `local` is
- * whether the browser pairing is on this machine; only then does a `machine` code give a `machine` session.
+ * whether the browser pairing is on this machine; only then does a `machine` code give a `machine` session. `instance`
+ * is this Lookout's process: codes made for another are refused.
  */
 export function pairWithCode(
-  at: SignInPlace & { code: unknown; name: string; local: boolean; now?: number },
+  at: SignInPlace & { code: unknown; name: string; local: boolean; instance: number; now?: number },
 ): PairResult {
   const now = at.now ?? Date.now();
-  const code = normalizePairCode(at.code);
+  const code = normalizePairCode(at.code)?.code;
   return updateSignIns<PairResult>(at, (file) => {
     const codes = file.codes.filter((c) => c.expiresAt > now);
-    const used = code ? findByHash(codes, code) : undefined;
+    // Only a code made for this very Lookout process: never one a replayed lock got out of `teamtrail pair`.
+    const mine = codes.filter((c) => c.instance === at.instance);
+    const used = code ? findByHash(mine, code) : undefined;
     const rest = codes.filter((c) => c !== used);
     if (!used) return { file: { ...file, codes: rest }, result: { kind: 'refused' } };
     const kind: SignInKind = used.kind === 'machine' && at.local ? 'machine' : 'device';
@@ -44,7 +47,7 @@ export function pairWithCode(
 
 /** Burns a code without opening a session: a browser that is already signed in opened another link. */
 export function burnPairCode(at: SignInPlace & { code: unknown }) {
-  const code = normalizePairCode(at.code);
+  const code = normalizePairCode(at.code)?.code;
   if (!code) return;
   updateSignIns(at, (file) => {
     const used = findByHash(file.codes, code);

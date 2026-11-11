@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { chromium } from 'playwright-core';
-import { lookoutLinks, pairLink } from './e2eHelpers.mjs';
+import { lookoutLinks, pairLink, sessionHeaders, signInWith } from './e2eHelpers.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
@@ -75,7 +75,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 // The link `teamtrail` printed signs this browser in and opens the Lookout, as it does for a person.
-await page.goto(pair);
+await signInWith(page, pair);
 await page.locator('.dialog.onboarding').waitFor();
 await page.getByRole('button', { name: 'Get started' }).click();
 const shot = async (name) => {
@@ -388,8 +388,9 @@ log(
 
 // Independent review: at checks+review+human a passing completion gets a review ticket. The worker is never given its
 // own review; a second agent passes it, and the trail lead approves from the Lookout inbox.
-// The page's own request context: it carries the browser's sign-in cookie.
+// With the page's own session, as its API calls carry it.
 await page.request.post(new URL('/__teamtrail/verification/action', url).href, {
+  headers: await sessionHeaders(page),
   data: { action: 'level', mapId: started.trail.id, level: 'checks+review+human' },
 });
 const footer = await call('add_ticket', { title: 'Link the changelog from the footer', type: 'execute' });
