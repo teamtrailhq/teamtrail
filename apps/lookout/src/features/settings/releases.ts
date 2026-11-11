@@ -17,6 +17,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.26.0',
+    date: '2026-11-11',
+    items: [
+      'The Lookout asks you to sign in: open the link `teamtrail` prints, and pair your phone with a QR code (again after each restart)',
+      'Your answers count only when you give them in the Lookout or Slack, and skipping discovery or changing a trail’s mode or destination waits for your Approve',
+      'Check commands, briefs, criteria and other trusted settings run only once you approve them on this machine, in Settings → Approvals',
+      'Changes made to trail files outside Teamtrail have no effect until you accept them',
+    ],
+  },
+  {
     version: '0.25.0',
     date: '2026-11-10',
     items: [
