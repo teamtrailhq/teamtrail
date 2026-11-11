@@ -1,7 +1,7 @@
 /**
  * Single source for the in-app Changelog tab, newest first. The newest release's version is the product version: it
  * must equal packages/cli/package.json (a test checks). A feature PR adds a release with a minor bump and 1–4 short,
- * user-facing lines; a fix PR bumps the patch, with no lines when users wouldn't notice (the Changelog skips it). `NEXT` only teases what's coming.
+ * user-facing lines; a fix PR bumps the patch. `NEXT` only teases what's coming.
  */
 import { OLDER_RELEASES } from './olderReleases';
 
@@ -16,8 +16,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 ];
 
 export const RELEASES: Release[] = [
-  // A fix with nothing a user would notice in the app: no lines, so the Changelog doesn't show it.
-  { version: '0.26.2', date: '2026-11-11', items: [] },
+  {
+    version: '0.26.2',
+    date: '2026-11-11',
+    items: ['The Lookout shows the new teamtrail. wordmark'],
+  },
   {
     version: '0.26.1',
     date: '2026-11-11',
