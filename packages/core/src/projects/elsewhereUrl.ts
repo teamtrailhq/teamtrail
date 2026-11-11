@@ -1,4 +1,3 @@
-import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { agentPaths, type LookoutLock } from '../agents/agentLink';
 import { LOCK_SIG } from '../agents/lookoutLock';
@@ -6,31 +5,29 @@ import { readJsonFile } from '../lib/jsonFile';
 import { announcementSigned } from '../machine/announcementSigned';
 import { BRAND } from '../model/brand';
 import type { ProjectState } from '../model/project';
+import { projectId } from './projectId';
 
-const LOOPBACK = /^http:\/\/(localhost|127\.\d+\.\d+\.\d+|\[::1\]):\d{1,5}\/(\?project=[\w-]{1,64})?$/;
+// 127.0.0.1 only, the address a Lookout writes and holds: `localhost` may resolve to `::1` first, and another
+// 127.x address is a socket another program could hold.
+const LOOPBACK = /^http:\/\/127\.0\.0\.1:\d{1,5}\/(\?project=[\w-]{1,64})?$/;
 const TTL_MS = 30_000;
 const known = new Map<string, { at: number; ok: boolean }>();
 
-/** A lock's URL as a Lookout writes it: plain http on this machine, its root path, maybe `?project=<id>`. */
+/** A lock's URL as a Lookout writes it: plain http on 127.0.0.1, its root path, maybe `?project=<id>`. */
 export const isLoopbackLookoutUrl = (url: unknown): url is string => typeof url === 'string' && LOOPBACK.test(url);
 
-const real = (p: string) => {
-  try {
-    return realpathSync(p);
-  } catch {
-    return p;
-  }
-};
-
-/** Whether `url` answers as a Teamtrail serving `root`: its file list names that same folder. */
+/**
+ * Whether `url` answers as a Teamtrail serving `root`: its sign-in status (the one route that needs no session)
+ * names that same folder's project id.
+ */
 async function answersFor(url: string, root: string, fetcher: typeof fetch) {
   try {
-    const res = await fetcher(new URL(`${BRAND.apiPrefix}/list`, url), {
+    const res = await fetcher(new URL(`${BRAND.apiPrefix}/session`, url), {
       signal: AbortSignal.timeout(1500),
       redirect: 'error',
     });
-    const body = (await res.json()) as { root?: unknown };
-    return res.ok && typeof body.root === 'string' && real(body.root) === real(root);
+    const body = (await res.json()) as { project?: unknown };
+    return res.ok && body.project === projectId(root);
   } catch {
     return false;
   }

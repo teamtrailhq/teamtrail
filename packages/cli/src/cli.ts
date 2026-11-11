@@ -12,6 +12,7 @@ import { importKnowledge } from './knowledgeImport';
 import { mcpHttpOptions } from './mcp/http/mcpHttpOptions';
 import { runMcpHttp } from './mcp/http/runMcpHttp';
 import { runMcpServer } from './mcp/server';
+import { pairCli } from './pairCli';
 import { printGreeting } from './printGreeting';
 import { runProjects } from './projects';
 import { selfCommand } from './selfCommand';
@@ -104,6 +105,7 @@ async function main() {
   }
   if (GUIDE_COMMANDS.has(argv[0])) return guidesCli(argv.slice(1));
   if (argv[0] === 'approve') return approveCli(argv.slice(1));
+  if (argv[0] === 'pair') return pairCli(argv.slice(1));
   const slackSetup = argv[0] === 'connect' && argv[1] === 'slack';
   if (argv[0] === 'connect' && !slackSetup) return connectCommand(argv.slice(1));
   await serveLookout(parseArgs(slackSetup ? argv.slice(2) : argv), slackSetup);

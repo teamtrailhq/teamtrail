@@ -6,24 +6,25 @@ import type {
   Journal,
   JournalEntry,
   RemoteAgentEntry,
+  SignInEntry,
   SlackOwnerEntry,
   TransitionEntry,
   TrustEntry,
 } from '../model/lifecycle';
 
 /*
- * Trail history, one JSON line per transition, reroute step, guide change, remote-agent token change or Slack owner
- * change, append-only:
+ * Trail history, one JSON line per transition, reroute step, guide change, remote-agent token change, Slack owner
+ * change or sign-in, append-only:
  *   <tracker dir>/.events/<mapId>.jsonl
  *   <tracker dir>/.events/.gitignore      `*`: local history, never committed
  * Lines stay well under 4 KB, so concurrent appends from several processes never interleave.
  * `read` returns transitions only, so older readers (delivery report, Report tab) are unaffected by newer kinds;
  * `readAll` returns transitions and reroute steps and skips the rest (guide and remote-agent changes included, and
  * kinds a newer version wrote); `readGuides` returns the guide changes, `readRemoteAgents` the token changes,
- * `readSlack` the Slack owner changes.
+ * `readSlack` the Slack owner changes, `readSignIn` the Lookout's sign-ins.
  */
 const TRAIL_KINDS = new Set<string>(['transition', 'reroute']);
-type AnyEntry = JournalEntry | GuideEntry | RemoteAgentEntry | SlackOwnerEntry | TrustEntry;
+type AnyEntry = JournalEntry | GuideEntry | RemoteAgentEntry | SlackOwnerEntry | TrustEntry | SignInEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -38,6 +39,7 @@ export function journalFile(root: string): Journal & {
   readGuides(mapId: string): GuideEntry[];
   readRemoteAgents(mapId: string): RemoteAgentEntry[];
   readSlack(mapId: string): SlackOwnerEntry[];
+  readSignIn(mapId: string): SignInEntry[];
   readTrust(mapId: string): TrustEntry[];
 } {
   const raw = (mapId: string) => readEntries(root, mapId) as AnyEntry[];
@@ -53,6 +55,7 @@ export function journalFile(root: string): Journal & {
     readGuides: (mapId) => raw(mapId).filter((e): e is GuideEntry => e.kind === 'guide'),
     readRemoteAgents: (mapId) => raw(mapId).filter((e): e is RemoteAgentEntry => e.kind === 'remote-agent'),
     readSlack: (mapId) => raw(mapId).filter((e): e is SlackOwnerEntry => e.kind === 'slack'),
+    readSignIn: (mapId) => raw(mapId).filter((e): e is SignInEntry => e.kind === 'sign-in'),
     readTrust: (mapId) => raw(mapId).filter((e): e is TrustEntry => e.kind === 'trust'),
   };
 }

@@ -44,7 +44,7 @@ function checkedUrl(raw: string) {
   try {
     url = new URL(raw);
   } catch {
-    fail('--url needs the MCP endpoint, e.g. http://localhost:7421/mcp');
+    fail('--url needs the MCP endpoint, e.g. http://127.0.0.1:7421/mcp');
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') fail('--url must start with http:// or https://');
   if (url.username || url.password || url.search)

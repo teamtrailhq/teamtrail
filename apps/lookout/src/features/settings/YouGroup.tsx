@@ -1,12 +1,13 @@
 import { AGENT_INTEGRATIONS } from '@teamtrail/core';
 import { Choice } from '../../components/ui';
+import { DevicesSection } from '../sign-in';
 import { SettingsSection } from './SettingsSection';
 import { SettingsSlot } from './SettingsSlot';
 import { ThemeChoice } from './ThemeChoice';
 import { TranscriptChoice } from './TranscriptChoice';
 import type { SettingsData } from './types';
 
-/** Settings → You: appearance, the HITL transcript and the coding agent. */
+/** Settings → You: appearance, the HITL transcript, the coding agent, and the browsers signed in. */
 export function YouGroup({ data }: { data: SettingsData }) {
   const { prefs, update } = data;
   return (
@@ -29,6 +30,9 @@ export function YouGroup({ data }: { data: SettingsData }) {
             ))}
           </div>
         </SettingsSection>
+      </SettingsSlot>
+      <SettingsSlot id="devices" storage="machine">
+        <DevicesSection />
       </SettingsSlot>
     </>
   );

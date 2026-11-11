@@ -7,6 +7,7 @@ import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { createProjectsHub, createTrackerBridge, type ProjectsHub, type TrackerBridge } from '../src/bridge';
 import { registerProject } from '../src/projects/registerProject';
+import { pairedSignIn } from './fakes/signedIn';
 
 /* The second audit's low items on the bridge and the hub, each as the request that used to get through. */
 let server: http.Server;
@@ -16,6 +17,7 @@ let port: number;
 let top: string;
 let root: string;
 let configDir: string;
+let header: Record<string, string>;
 const LAN = { 'x-test-peer': '192.168.1.20' };
 const peer = (req: http.IncomingMessage) => (req.headers['x-test-peer'] as string | undefined) ?? '127.0.0.1';
 
@@ -25,11 +27,14 @@ before(async () => {
   configDir = path.join(top, 'config');
   mkdirSync(path.join(root, 'trail', 'tickets'), { recursive: true });
   bridge = createTrackerBridge(root, { env: {}, configDir, cwd: path.dirname(root), peer });
+  const paired = pairedSignIn({ root, configDir });
+  header = paired.header;
   hub = createProjectsHub({
     home: bridge,
     openBridge: (p) => createTrackerBridge(p.root, { env: {}, configDir }),
     configDir,
     peer,
+    signIn: paired.signIn,
   });
   server = http.createServer((req, res) => void hub.handle(req, res));
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
@@ -45,7 +50,7 @@ after(() => {
 const call = async (method: string, p: string, body?: string, headers: Record<string, string> = {}) => {
   const r = await fetch(`http://127.0.0.1:${port}${p}`, {
     method,
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: { 'Content-Type': 'application/json', ...header, ...headers },
     body,
   });
   return { status: r.status, text: await r.text() };
@@ -58,7 +63,9 @@ test('a request body past 2 MiB is refused with 413, and the server keeps answer
     new Promise<number>((resolve) => {
       let text = '';
       const socket = net.connect(port, '127.0.0.1', () => {
-        socket.write(`PUT /file?path=trail/tickets/9.md HTTP/1.1\r\nHost: 127.0.0.1\r\n${head}\r\n\r\n`);
+        socket.write(
+          `PUT /file?path=trail/tickets/9.md HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Teamtrail-Session: ${header['X-Teamtrail-Session']}\r\n${head}\r\n\r\n`,
+        );
         socket.write(body, () => {});
       });
       socket.setTimeout(10_000, () => socket.destroy());
@@ -80,7 +87,9 @@ test('one address holds at most 16 event streams', async () => {
   const open: http.ClientRequest[] = [];
   const status = () =>
     new Promise<number>((resolve) => {
-      const req = http.get({ host: '127.0.0.1', port, path: '/events' }, (res) => resolve(res.statusCode ?? 0));
+      const req = http.get({ host: '127.0.0.1', port, path: '/events', headers: header }, (res) =>
+        resolve(res.statusCode ?? 0),
+      );
       open.push(req);
     });
   const first = await Promise.all(Array.from({ length: 16 }, status));

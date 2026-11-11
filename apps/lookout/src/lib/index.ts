@@ -13,3 +13,4 @@ export { createRuntime, type Runtime, trackerKind } from './runtime';
 export type { Selection } from './selection';
 export { isRunning, isWaiting } from './sessions';
 export { pickPending } from './pickPending';
+export { sinceLabel } from './sinceLabel';

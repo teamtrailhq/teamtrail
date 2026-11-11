@@ -1,8 +1,9 @@
 /*
- * What only the machine itself may do. The Lookout has no sign-in, and with `--host` a phone or laptop on the
- * same network can open it: to read the trail, answer questions, approve and steer. What that other device may
- * not do is change what runs on this machine or whom it trusts. Those routes answer loopback connections only
- * (requestGuard.ts `fromThisMachine`), and this list is the one place that says which they are.
+ * What only the machine itself may do. Every API route needs a paired browser (server/signInGate.ts), and with
+ * `--host` a phone or laptop paired as a device can open the Lookout: to read the trail, answer questions, approve
+ * and steer. What that device may not do is change what runs on this machine or whom it trusts. Those routes
+ * answer loopback connections of a browser paired on this machine only (requestGuard.ts `fromThisMachine`), and
+ * this list is the one place that says which they are.
  */
 export const ELSEWHERE = 'This can only be changed on the machine Teamtrail runs on. Open the Lookout there.';
 
@@ -37,6 +38,8 @@ const WRITES: RegExp[] = [
  */
 const ALWAYS: RegExp[] = [
   /^\/remote-agents(\/|$)/,
+  // Who is signed in to the Lookout: listing paired browsers, pairing another device, revoking one.
+  /^\/sign-in\/(sessions|codes|revoke)$/,
   /^\/trackers\/.+/,
   /^\/slack\/.+/,
   // Catalog searches and previews fetch the URLs in guides.json (agents can write it) from this machine.

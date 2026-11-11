@@ -10,8 +10,10 @@ import { projectEntries } from '../projects/projectEntries';
 import { projectId } from '../projects/projectId';
 import { projectState } from '../projects/projectState';
 import { projectsView } from '../projects/projectsView';
+import type { LookoutSignIn } from '../signIn/lookoutSignIn';
 import { sendBridgeError } from './bridgeErrors';
 import type { TrackerBridge } from './bridgeTypes';
+import { markFromDevice } from './deviceRequests';
 import { BadRequest, refuseEarly, requestUrl, sendJson } from './http';
 import { lanPlaces } from './lanPlaces';
 import { neverCrash } from './neverCrash';
@@ -19,6 +21,8 @@ import { handleProjects } from './projectRoutes';
 import { redactResponse } from './redactResponse';
 import { fromThisMachine, requestRefusal, type PeerAddress } from './requestGuard';
 import { setSecurityHeaders } from './securityHeaders';
+import { signInGate } from './signInGate';
+import { handleSignIn } from './signInRoutes';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { configDir as defaultConfigDir } from './trackerConfig';
 import { watchProjects } from './watchProjects';
@@ -36,6 +40,11 @@ export interface ProjectsHubOptions {
   peer?: PeerAddress;
   /** How often project summaries are recomputed while a Lookout listens. */
   pollMs?: number;
+  /**
+   * Who may use the API (signIn/lookoutSignIn.ts): every route but pairing needs a paired browser's session. Made
+   * for the folder the Lookout was started in, by whoever serves it (the CLI, the dev server).
+   */
+  signIn: LookoutSignIn;
 }
 
 export type ProjectsHub = ReturnType<typeof createProjectsHub>;
@@ -128,10 +137,18 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     // The same list for every project: `/p/<id>/policy` is `/policy` of that project.
     const inProject = /^\/p\/[^/]+(\/.*)?$/.exec(url.pathname);
     const route = inProject ? (inProject[1] ?? '/') : url.pathname;
+    const loopback = fromThisMachine(req, o.peer);
+    const who = loopback ? 'loopback' : ((o.peer ?? ((r) => r.socket.remoteAddress))(req) ?? 'unknown');
+    const session = await signInGate({ signIn: o.signIn, local: loopback, who, homeId, route }, req, res, url);
+    if (!session) return;
+    // A device's session is a device's everywhere behind this point, whatever address it comes from.
+    if (session.kind === 'device') markFromDevice(req);
     const local = fromThisMachine(req, o.peer);
     if (!local && thisMachineOnly(req.method, route)) return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
     if (!local) redactResponse(res, places);
+    if (route === '/events') o.signIn.holdStream(session.id, req, res);
     try {
+      if (await handleSignIn({ signIn: o.signIn, session }, req, res, url)) return;
       const m = /^\/p\/([^/]+)(\/.*)?$/.exec(url.pathname);
       if (m) return await forward(req, res, { id: m[1], rest: m[2] ?? '/', url });
       if (await handleProjects(ctx, req, res, url)) return;
@@ -149,6 +166,7 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     close() {
       watcher.stop();
       bridges.close();
+      o.signIn.close();
     },
   };
 }
