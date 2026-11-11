@@ -123,7 +123,7 @@ export type {
   QueuedChange,
 } from './adapters/remote/sync/types';
 export { TrackerError, isTransient, type RateInfo, type TrackerErrorCode } from './adapters/remote/http';
-export { BridgeAdapter, trackerSettingsApi } from './adapters/remote/bridgeClient';
+export { BridgeAdapter, type EventStreamLike, trackerSettingsApi } from './adapters/remote/bridgeClient';
 export type * from './adapters/remote/types';
 export type { TrustItem, TrustKind } from './trust/trustItem';
 export type * from './adapters/remote/signInTypes';

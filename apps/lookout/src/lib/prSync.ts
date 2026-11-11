@@ -1,6 +1,7 @@
 import { type PrSyncStatus, type TicketSync, type VerificationSyncEvent } from '@teamtrail/core';
 import { apiBase } from './apiBase';
-import { SessionEventSource } from './sessionEvents';
+import { newestWins } from './newestWins';
+import { onServerEvent, onStreamDrop, onStreamOpen } from './trackerChanges';
 
 export interface PrSyncSnapshot {
   /** The server answered at least once; false in a static build, where nothing is shown. */
@@ -17,41 +18,65 @@ let snap: PrSyncSnapshot = { reached: false, live: false, tickets: {} };
 let started = false;
 const listeners = new Set<() => void>();
 const evidenceListeners = new Set<() => void>();
+/** Loads land in the order they started. */
+const order = newestWins();
+/** `sync` events so far, and when each ticket and the status last came in one: a load started before has them older. */
+let events = 0;
+const sentAt = new Map<string, number>();
+let statusAt = 0;
 
 function set(next: PrSyncSnapshot) {
   snap = next;
   for (const l of listeners) l();
 }
 
+/** A load's tickets, keeping those an event brought after the load started. */
+function merged(loaded: TicketSync[], since: number) {
+  const tickets = Object.fromEntries(loaded.map((t) => [keyOf(t.mapId, t.ticketId), t]));
+  for (const [key, at] of sentAt) if (at > since && snap.tickets[key]) tickets[key] = snap.tickets[key];
+  return tickets;
+}
+
 function load() {
+  const fresh = order.start();
+  const since = events;
   void fetch(`${apiBase()}/verification/sync`)
     .then((r) => (r.ok ? (r.json() as Promise<{ status: PrSyncStatus; tickets: TicketSync[] }>) : Promise.reject()))
     .then(
       (b) =>
+        fresh() &&
         set({
           reached: true,
           live: true,
-          status: b.status,
-          tickets: Object.fromEntries(b.tickets.map((t) => [keyOf(t.mapId, t.ticketId), t])),
+          status: statusAt > since ? snap.status : b.status,
+          tickets: merged(b.tickets, since),
         }),
       () => snap.reached && set({ ...snap, live: false }),
     );
 }
 
+function onVerification(raw: string) {
+  const e = JSON.parse(raw) as VerificationSyncEvent | { kind?: string };
+  if (e.kind === 'evidence') for (const l of evidenceListeners) l();
+  if (e.kind !== 'sync') return;
+  const sync = e as VerificationSyncEvent;
+  statusAt = ++events;
+  const tickets = { ...snap.tickets };
+  for (const t of sync.tickets) {
+    const key = keyOf(t.mapId, t.ticketId);
+    tickets[key] = t;
+    sentAt.set(key, events);
+  }
+  set({ reached: true, live: true, status: sync.status, tickets });
+}
+
+/** On the shared stream: loaded now and each time it opens, since nothing is sent while it is down. */
 function start() {
   started = true;
+  onServerEvent('verification', onVerification);
+  onStreamDrop(() => snap.reached && snap.live && set({ ...snap, live: false }));
+  onStreamOpen(load);
   load();
-  const es = new SessionEventSource();
-  es.addEventListener('verification', (m) => {
-    const e = JSON.parse((m as MessageEvent<string>).data) as VerificationSyncEvent | { kind?: string };
-    if (e.kind === 'evidence') for (const l of evidenceListeners) l();
-    if (e.kind !== 'sync') return;
-    const tickets = { ...snap.tickets };
-    for (const t of (e as VerificationSyncEvent).tickets) tickets[keyOf(t.mapId, t.ticketId)] = t;
-    set({ reached: true, live: true, status: (e as VerificationSyncEvent).status, tickets });
-  });
-  es.addEventListener('error', () => snap.reached && snap.live && set({ ...snap, live: false }));
-  es.addEventListener('open', () => snap.reached && load());
 }
 
 /** PR/CI evidence from the reconciler: one fetch plus the SSE `verification` event, shared by every reader. */

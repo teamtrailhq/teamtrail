@@ -304,6 +304,21 @@ test('a link code used from another device pairs a device', async () => {
   assert.equal(json(res).kind, 'device');
 });
 
+test("a GitHub or Linear tracker's event stream opens with a ticket too, and only with one", async () => {
+  const ticket = String(json(await call({ method: 'POST', path: '/sign-in/stream', headers: mine })).ticket);
+  const status = await new Promise<number | undefined>((resolve, reject) => {
+    const req = http.request({ host: '127.0.0.1', port, path: `/tracker/github/events?ticket=${ticket}` }, (res) => {
+      resolve(res.statusCode);
+      req.destroy();
+    });
+    req.on('error', reject);
+    req.end();
+  });
+  assert.equal(status, 200);
+  assert.equal((await call({ path: `/tracker/github/events?ticket=${ticket}` })).status, 401, 'used once');
+  assert.equal((await call({ path: '/tracker/github/events' })).status, 401);
+});
+
 test('event streams open with a single-use ticket; revoking a browser ends its stream; signing out ends a session', async () => {
   const other = sessionHeader(pairSession(signIn, { userAgent: 'Mozilla/5.0 (X11; Linux x86_64) Firefox/120.0' }));
   const ticketOf = async (h: Record<string, string>) =>

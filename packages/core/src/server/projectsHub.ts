@@ -14,6 +14,7 @@ import type { LookoutSignIn } from '../signIn/lookoutSignIn';
 import { sendBridgeError } from './bridgeErrors';
 import type { TrackerBridge } from './bridgeTypes';
 import { markFromDevice } from './deviceRequests';
+import { isEventStreamRoute } from './eventStreamRoute';
 import { BadRequest, refuseEarly, requestUrl, sendJson } from './http';
 import { lanPlaces } from './lanPlaces';
 import { neverCrash } from './neverCrash';
@@ -146,7 +147,7 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     const local = fromThisMachine(req, o.peer);
     if (!local && thisMachineOnly(req.method, route)) return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
     if (!local) redactResponse(res, places);
-    if (route === '/events') o.signIn.holdStream(session.id, req, res);
+    if (isEventStreamRoute(route)) o.signIn.holdStream(session.id, req, res);
     try {
       if (await handleSignIn({ signIn: o.signIn, session }, req, res, url)) return;
       const m = /^\/p\/([^/]+)(\/.*)?$/.exec(url.pathname);

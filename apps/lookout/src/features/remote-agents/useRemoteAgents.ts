@@ -1,7 +1,7 @@
 import type { McpEndpoint, RemoteTokenView } from '@teamtrail/core';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
-import { onServerEvent } from '../../lib/trackerChanges';
 
 export interface RemoteAgentsView {
   tokens: RemoteTokenView[];
@@ -28,6 +28,13 @@ async function post(path: string, body: unknown): Promise<{ ok: boolean; reply: 
   return { ok: r.ok, reply: (await r.json()) as Reply };
 }
 
+async function fetchView(): Promise<RemoteAgentsView | 'elsewhere' | null> {
+  const r = await fetch(url);
+  if (r.ok) return (await r.json()) as RemoteAgentsView;
+  const refused = (await r.json().catch(() => ({}))) as { elsewhere?: boolean };
+  return refused.elsewhere ? 'elsewhere' : null;
+}
+
 /**
  * Settings → Project → Remote agents: the tokens and the endpoints, kept current by the server's `remote-agents` event.
  * undefined while loading, null without a server, `elsewhere` when this page is open on another device than the
@@ -36,30 +43,37 @@ async function post(path: string, body: unknown): Promise<{ ok: boolean; reply: 
 export function useRemoteAgents() {
   const [view, setView] = useState<RemoteAgentsView | 'elsewhere' | null>();
   const [created, setCreated] = useState<CreatedToken>();
-  const load = useCallback(() => {
-    fetch(url)
-      .then(async (r) => {
-        if (r.ok) return (await r.json()) as RemoteAgentsView;
-        const refused = (await r.json().catch(() => ({}))) as { elsewhere?: boolean };
-        return refused.elsewhere ? 'elsewhere' : null;
-      })
-      .then(setView, () => setView(null));
-  }, []);
-  useEffect(() => {
-    load();
-    return onServerEvent('remote-agents', load);
-  }, [load]);
-  const create = useCallback(async (name: string): Promise<string | undefined> => {
-    const { ok, reply } = await post('/tokens', { name });
-    if (!ok || !reply.token || !reply.created) return reply.error ?? 'The token could not be created.';
-    setView({ tokens: reply.tokens, endpoints: reply.endpoints });
-    setCreated({ token: reply.token, name: reply.created.name });
-    return undefined;
-  }, []);
-  const revoke = useCallback(async (id: string): Promise<string | undefined> => {
-    const { ok, reply } = await post('/tokens/revoke', { id });
-    if (reply.tokens) setView({ tokens: reply.tokens, endpoints: reply.endpoints });
-    return ok ? undefined : (reply.error ?? 'The token could not be revoked.');
-  }, []);
+  const { pushed } = useLiveLoad({
+    load: fetchView,
+    show: setView,
+    failed: () => setView(null),
+    events: { 'remote-agents': () => true },
+  });
+  /** The reply carries the list as it is now: loads started before it are older. */
+  const showReply = useCallback(
+    (reply: Reply) => {
+      pushed();
+      setView({ tokens: reply.tokens, endpoints: reply.endpoints });
+    },
+    [pushed],
+  );
+  const create = useCallback(
+    async (name: string): Promise<string | undefined> => {
+      const { ok, reply } = await post('/tokens', { name });
+      if (!ok || !reply.token || !reply.created) return reply.error ?? 'The token could not be created.';
+      showReply(reply);
+      setCreated({ token: reply.token, name: reply.created.name });
+      return undefined;
+    },
+    [showReply],
+  );
+  const revoke = useCallback(
+    async (id: string): Promise<string | undefined> => {
+      const { ok, reply } = await post('/tokens/revoke', { id });
+      if (reply.tokens) showReply(reply);
+      return ok ? undefined : (reply.error ?? 'The token could not be revoked.');
+    },
+    [showReply],
+  );
   return { view, created, dismissCreated: () => setCreated(undefined), create, revoke };
 }
