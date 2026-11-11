@@ -17,6 +17,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.26.2',
+    date: '2026-11-11',
+    items: ['The Lookout shows the new teamtrail. wordmark'],
+  },
+  {
     version: '0.26.1',
     date: '2026-11-11',
     items: [

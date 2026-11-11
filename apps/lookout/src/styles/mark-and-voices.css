@@ -18,8 +18,19 @@
 .onb-brand {
   display: flex;
   align-items: center;
-  gap: var(--sp-8);
-  color: var(--accent);
+}
+/* The teamtrail. wordmark (components/ui/Wordmark.tsx): ink and dot per theme, in styles/theme.css. */
+.tt-wordmark {
+  color: var(--wordmark-ink);
+  white-space: nowrap;
+}
+.tt-wordmark-dot {
+  display: inline-block;
+  width: 0.24em;
+  height: 0.24em;
+  margin-left: 0.042em;
+  border-radius: 50%;
+  background: var(--wordmark-dot);
 }
 
 /* ---------- Type voices: people and agents (Geist) vs tracker data (label face) ---------- */

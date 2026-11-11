@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Panel, TeamtrailLogo, Wordmark } from '../../components/ui';
+import { Panel, Wordmark } from '../../components/ui';
 import { ConfirmPair } from './ConfirmPair';
 import { PairWays } from './PairWays';
 
@@ -20,7 +20,6 @@ export function PairPage(props: { local: boolean; code?: string }) {
     <div className="pair-page">
       <Panel as="main" className="pair-card">
         <div className="onb-brand">
-          <TeamtrailLogo size={22} bare />
           <Wordmark className="onb-title" />
         </div>
         <h1 className="t-heading pair-title">Pair this browser</h1>

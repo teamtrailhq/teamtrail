@@ -5,6 +5,12 @@ Two marks, one drawing style:
 - **The Teamtrail logo** (`src/logo/`): a lowercase t whose stem curves into a path that runs to its destination, an orange dot, on a tile. Two versions: `dark` for dark backgrounds (dark tile, light moss; the default) and `light` for light ones (pale tile, deep moss), with the colours in `logoColors.ts`. `<Logo theme="auto">` follows the page's `color-scheme`. Favicons use it without the tile (`bare`); `logoFaviconSvg()` is one SVG that switches with `prefers-color-scheme`. Nav, favicon, npm, GitHub and social images use it.
 - **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. A CRT head with ear cups and a baseball cap, drawn smooth to the proportions of the original sprite, with no frame around it. Guides are symbol badges in a circle (`guideArt.ts`): magnifier, check, shield, book, compass, and a grey plus for Community.
 
+**Which mark where**
+
+- **Square or squarish spaces** (avatars, favicons, app icons, the Slack, GitHub and X avatars): the `t.` logo, as the tile or the bare mark.
+- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail.` wordmark, lowercase in Londrina Solid 900 with the orange dot.
+- Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
+
 `ScoutAvatar` and `mountScout` draw the same badge from `badgeArt.ts`.
 
 - **Renderings:** `crt` (day) and `night` (the cap lamp burns bright).

@@ -2,10 +2,16 @@
 
 The Teamtrail logo, the `teamtrail.` wordmark and Scout's badge, rendered at exact sizes. Source and re-rendering: [`packages/scout-avatar`](../packages/scout-avatar) (`npm run capture`).
 
+## Which mark where
+
+- **Square or squarish spaces** (avatars, favicons, app icons, the Slack, GitHub and X avatars): the `t.` logo, as the tile or the bare mark.
+- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail.` wordmark, lowercase in Londrina Solid 900 with the orange dot.
+- Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
+
 | File                              | Size      | Use it for                                                                                                                                      |
 | --------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `github-org-avatar.png`           | 1000×1000 | GitHub organization avatar: the logo tile (dark version)                                                                                         |
-| `github-org-avatar-wordmark.png`  | 1000×1000 | Alternative org avatar: the `teamtrail.` wordmark on a dark square                                                                              |
+| `github-org-avatar-wordmark.png`  | 1000×1000 | Alternative org avatar: the `teamtrail.` wordmark on a dark square (the rule above prefers the tile for square spaces)                          |
 | `github-social-preview.gif` | 640×320 | Animated GitHub repository social preview, under GitHub's 1 MB limit (Settings → Social preview). Sites that don't play GIFs show its first frame |
 | `github-social-preview.png`       | 1280×640  | Still version of the GitHub social preview                                                                                    |
 | `teamtrail-banner.gif`            | 960×480   | Animated README banner: the `teamtrail.` wordmark while the trail walks to its destination, the orange dot (still platforms use the PNGs) |

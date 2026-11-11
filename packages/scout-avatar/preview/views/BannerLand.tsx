@@ -71,7 +71,7 @@ function trailPoint(w: number, h: number, t: number): [number, number] {
 }
 
 /**
- * The banners' scene, like the site's hero: contour lines over layered ridges and pines, a moon, and the dashed trail
+ * The banners' scene, like the site's hero: contour lines over layered ridges and pines, and the dashed trail
  * ticking off tickets on its way to the destination: the orange dot of the logo and wordmark, a ring until the trail reaches it. `progress` is how far the trail has walked, `wobble` moves the contours.
  */
 export function BannerLand({
@@ -98,9 +98,6 @@ export function BannerLand({
   return (
     <svg className="banner-land" viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
       <path d={contours} fill="none" stroke="#8fbf84" strokeOpacity="0.2" strokeWidth={Math.max(1, 1.2 * u)} />
-      <circle cx={w * 0.91} cy={h * 0.17} r={46 * u} fill="#eae2c8" />
-      <circle cx={w * 0.895} cy={h * 0.155} r={9 * u} fill="#d6cdb0" />
-      <circle cx={w * 0.925} cy={h * 0.2} r={6 * u} fill="#d6cdb0" />
       <path d={far.d} fill="#1b2c26" />
       <path d={mid.d} fill="#223a2e" />
       {PINES.map(([x, tall]) => (

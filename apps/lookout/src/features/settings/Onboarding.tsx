@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Panel, ScoutBadge, TeamtrailLogo, Wordmark, Choice, Button, Loading } from '../../components/ui';
+import { Panel, ScoutBadge, Wordmark, Choice, Button, Loading } from '../../components/ui';
 import type { Prefs, TrackerChoice } from '../../lib';
 import { GitHubSetup, LinearSetup, useTrackerSettings, trackerApi, switchTracker } from '../trackers';
 import { onboardingChoices } from './onboardingChoices';
@@ -44,7 +44,6 @@ export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) =>
     <div className="scrim">
       <Panel as="div" className="dialog onboarding">
         <div className="onb-brand">
-          <TeamtrailLogo size={22} bare />
           <Wordmark className="onb-title" />
         </div>
         <h2 className="onb-question t-heading">
