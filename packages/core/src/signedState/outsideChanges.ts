@@ -18,9 +18,9 @@ export interface OutsideChange extends StateItem {
   file?: Fields;
   /** Whether this machine ever signed the item. */
   signed: boolean;
-  /** The file's text, where showing or accepting needs it (a decision's words). */
+  /** The file's text, where showing or accepting needs it (a decision's words, a trail's destination). */
   text?: string;
-  /** A decision's file as Teamtrail last wrote it: what a rewording is shown against. */
+  /** A decision's or trail's file as Teamtrail last wrote it: what a rewording is shown against. */
   signedText?: string;
   /** Its trail's record can't be read, so a signed item may show as one nobody signed. */
   unreadable?: boolean;
@@ -69,7 +69,7 @@ function judgeFile(root: string, item: StateItem, strict: boolean, out: OutsideC
   if (judged.textEdited) out.textEdits.push(item);
   if (!judged.outside.length) return;
   const signedText = entry?.text ? { signedText: entry.text } : {};
-  const keep = item.kind === 'decision' && text !== undefined ? { text, ...signedText } : {};
+  const keep = item.kind !== 'ticket' && text !== undefined ? { text, ...signedText } : {};
   const signed = !!entry;
   out.changes.push({ ...item, fields: judged.outside, counts: judged.base, file, signed, ...keep, ...unreadable });
 }

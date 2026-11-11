@@ -8,7 +8,7 @@ import { contentHash } from '../trust/trustLedger';
 import { effectiveText } from './effectiveText';
 import { codecOf } from './itemCodec';
 import type { OutsideChange } from './outsideChanges';
-import { withSignedAssumptions } from './signedAssumptions';
+import { withSignedMapText } from './signedMapText';
 import { fieldsHash } from './stateFields';
 import { stateApprovals } from './stateItems';
 import { entriesToChange, withStateLock, writeStateRecord, type StateEntry } from './stateRecord';
@@ -20,7 +20,7 @@ function restored(root: string, c: OutsideChange, raw: string | undefined, entry
   const codec = codecOf(c);
   const from = c.kind === 'decision' && c.fields.includes('words') && entry?.text ? entry.text : raw;
   const parsed = codec.parse(from);
-  const value = c.kind === 'map' ? withSignedAssumptions(c, parsed as MapDoc, entry) : parsed;
+  const value = c.kind === 'map' ? withSignedMapText(c, parsed as MapDoc, entry) : parsed;
   return codec.serialize(codec.apply(value, c.counts!));
 }
 

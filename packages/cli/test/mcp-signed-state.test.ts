@@ -69,6 +69,7 @@ async function start(call: Awaited<ReturnType<typeof connect>>) {
       { ref: 'look', title: 'Check the v2 API', type: 'research' },
       { ref: 'pick', title: 'Pick the queue', type: 'junction' },
       { ref: 'batch', title: 'Batch writes', type: 'execute', blockedBy: ['look'] },
+      { ref: 'ship', title: 'Ship it', type: 'task', hitl: true },
     ],
     assumptions: [{ text: 'The v2 API supports batch writes', tickets: ['batch'] }],
   });
@@ -143,5 +144,26 @@ describe('signed state over MCP', () => {
     );
     expect(fs.readFileSync(file, 'utf8')).toMatch(/^state: closed$/m);
     expect(outsideChanges(root).changes.map((c) => c.fields)).toEqual([['state']]);
+  });
+
+  it('#62: a HITL junction edited to a task, or a task with its hitl label removed, still needs the human to close', async () => {
+    const call = await connect();
+    const { mapId, key } = await start(call);
+    const fileOf = (ref: string) => path.join(root, mapId, 'tickets', `${key(ref).slice(1)}.md`);
+    const editFile = (ref: string, from: RegExp, to: string) =>
+      fs.writeFileSync(fileOf(ref), fs.readFileSync(fileOf(ref), 'utf8').replace(from, to));
+    await call('claim_ticket', { ticket: key('pick') });
+    editFile('pick', /^type: junction$/m, 'type: task');
+    await expect(call('close_ticket', { ticket: key('pick'), resolution: 'Redis.' })).rejects.toThrow(
+      /human|answer|trail lead|blocked/i,
+    );
+    expect(fs.readFileSync(fileOf('pick'), 'utf8')).toMatch(/^state: open$/m);
+    await call('claim_ticket', { ticket: key('ship') });
+    editFile('ship', /, teamtrail:hitl/, '');
+    expect(fs.readFileSync(fileOf('ship'), 'utf8')).not.toMatch(/teamtrail:hitl/);
+    await expect(call('close_ticket', { ticket: key('ship'), resolution: 'Shipped.' })).rejects.toThrow(
+      /human|answer|trail lead|blocked/i,
+    );
+    expect(fs.readFileSync(fileOf('ship'), 'utf8')).toMatch(/^state: open$/m);
   });
 });

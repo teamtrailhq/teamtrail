@@ -3,7 +3,7 @@ import { cachedFields } from './cachedFields';
 import { codecOf } from './itemCodec';
 import { judgeItem, type Judged } from './judgeItem';
 import { projectSigned } from './projectSigned';
-import { withSignedAssumptions } from './signedAssumptions';
+import { withSignedMapText } from './signedMapText';
 import { changedKeys } from './stateFields';
 import type { StateItem } from './stateItem';
 import { readStateRecord, type StateEntry } from './stateRecord';
@@ -46,7 +46,7 @@ export function signedText(item: StateItem, raw: string, entry: StateEntry | und
   const codec = codecOf(item);
   const reworded = item.kind === 'decision' && judged.outside.includes('words') && entry?.text;
   const parsed = codec.parse(reworded ? entry.text! : raw);
-  const value = item.kind === 'map' ? withSignedAssumptions(item, parsed as MapDoc, entry) : parsed;
+  const value = item.kind === 'map' ? withSignedMapText(item, parsed as MapDoc, entry) : parsed;
   return codec.serialize(codec.apply(value, judged.shown!));
 }
 

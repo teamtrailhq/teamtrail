@@ -336,3 +336,48 @@ test('9: with its record unreadable, a decision is never offered for deletion; d
   assert.throws(() => revertState({ root, key: real.key, hash: real.hash, by: 'trail lead', remove: [real.file!] }));
   assert.ok(existsSync(path.join(root, `${mapId}/decisions/${d.id}.md`)));
 });
+
+test('#62: a trail’s mode set to plan-only in its file is held as an outside change; the signed mode applies', async () => {
+  const root = tmpRoot();
+  const { adapter, mapId } = await trail(root);
+  edit(root, `${mapId}/map.md`, /^mode: plan\+execute$/m, 'mode: plan-only');
+  assert.equal((await adapter.loadMap(mapId)).map.mode, 'plan+execute');
+  const change = outsideChanges(root).changes.find((c) => c.kind === 'map')!;
+  assert.deepEqual(change.fields, ['mode']);
+});
+
+test('#62: a destination rewritten in map.md is held: it reads as signed, shows before and after, and reverts', async () => {
+  const root = tmpRoot();
+  const { adapter, mapId } = await trail(root);
+  const rel = `${mapId}/map.md`;
+  edit(root, rel, /^D$/m, 'Somewhere else entirely');
+  assert.equal((await adapter.loadMap(mapId)).map.sections.destination, 'D');
+  const change = outsideChanges(root).changes.find((c) => c.kind === 'map')!;
+  assert.deepEqual(change.fields, ['destination']);
+  const item = pendingTrust(root).find((i) => i.kind === 'state' && i.key.endsWith(':map'))!;
+  assert.match(item.lines.join('\n'), /destination:\n- D\n\+ Somewhere else entirely/);
+  revertState({ root, key: item.key, hash: item.hash, by: 'trail lead' });
+  assert.match(readFileSync(path.join(root, rel), 'utf8'), /^D$/m);
+  assert.deepEqual(outsideChanges(root).changes, []);
+  // accepted instead, the new destination is the signed one from then on
+  edit(root, rel, /^D$/m, 'Accepted elsewhere');
+  const again = pendingTrust(root).find((i) => i.kind === 'state' && i.key.endsWith(':map'))!;
+  approveTrust({ root, items: [{ key: again.key, hash: again.hash }], by: 'trail lead' });
+  assert.equal((await adapter.loadMap(mapId)).map.sections.destination, 'Accepted elsewhere');
+  assert.deepEqual(outsideChanges(root).changes, []);
+});
+
+test('#62: a ticket’s type and hitl label edited in its file: gates read the signed ones', async () => {
+  const root = tmpRoot();
+  const { adapter, mapId, j, t } = await trail(root);
+  edit(root, `${mapId}/tickets/${j}.md`, /^type: junction$/m, 'type: task');
+  edit(root, `${mapId}/tickets/${t}.md`, /, teamtrail:hitl/, '');
+  const snap = await adapter.loadMap(mapId);
+  assert.equal(snap.tickets.find((x) => x.id === j)!.type, 'junction');
+  assert.equal(snap.tickets.find((x) => x.id === t)!.hitl, true);
+  const fields = outsideChanges(root).changes.map((c) => [c.id, c.fields]);
+  assert.deepEqual(fields.sort(), [
+    [j, ['type']],
+    [t, ['hitl']],
+  ]);
+});

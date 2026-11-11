@@ -83,11 +83,28 @@ test('a LAN device cannot write what records the human’s approval: decisions, 
     assert.equal(await put(rel, '---\nstatus: accepted\ndecided_by: trail lead\n---\n'), 403, rel);
 });
 
-test('the same device still edits what is not trust: a comment, a title, the map body', async () => {
+test('a LAN device cannot change a ticket’s type, hitl, blockers or assignee, a trail’s mode or destination, or add one', async () => {
+  for (const [rel, from, to] of [
+    ['trail/tickets/1.md', 'type: task', 'type: junction'],
+    ['trail/tickets/1.md', 'labels: [teamtrail]', 'labels: [teamtrail, teamtrail:hitl]'],
+    ['trail/tickets/1.md', 'type: task', 'type: task\nblocked_by: ["2"]'],
+    ['trail/tickets/1.md', 'type: task', 'type: task\nassignee: claude-07'],
+    ['trail/map.md', 'mode: auto', 'mode: plan-only'],
+    ['trail/map.md', 'Somewhere', 'Somewhere else'],
+  ] as const) {
+    const before = read(rel);
+    assert.equal(await put(rel, before.replace(from, to)), 403, `${rel}: ${to}`);
+    assert.equal(read(rel), before);
+  }
+  assert.equal(await put('trail/tickets/9.md', TICKET.replace('id: 1', 'id: 9')), 403, 'a new ticket');
+});
+
+test('the same device still edits what is not trust: a comment, a title, and moves a ticket along', async () => {
   const ticket = read('trail/tickets/1.md');
   assert.equal(await put('trail/tickets/1.md', ticket.replace('The body', 'The body, edited from a phone')), 200);
-  const map = read('trail/map.md');
-  assert.equal(await put('trail/map.md', map.replace('Somewhere', 'Somewhere else')), 200);
+  const moved = read('trail/tickets/1.md').replace('state: open', 'state: closed\nclose_reason: completed');
+  assert.equal(await put('trail/tickets/1.md', moved), 200);
+  assert.match(read('trail/tickets/1.md'), /^state: closed$/m);
   // And this machine changes anything, as before.
   assert.equal(
     await put('trail/map.md', read('trail/map.md').replace('verification: checks', 'verification: off'), {}),

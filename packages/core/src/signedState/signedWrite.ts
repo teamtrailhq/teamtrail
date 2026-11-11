@@ -46,7 +46,7 @@ function entryFor(w: SignedWrite, f: Fields, written: string, was?: StateEntry):
   const value = codec.parse(written);
   const entry: StateEntry = { f, h: fieldsHash(f), file: contentHash(written), by: w.by, at: Date.now() };
   if (w.item.kind === 'ticket') entry.title = (value as { title: string }).title;
-  // a trail's text, for its assumption lines (signedAssumptions.ts)
+  // a trail's text, for its assumption lines (signedMapText.ts)
   if (w.item.kind === 'map') entry.text = written;
   if (w.item.kind === 'decision') {
     const exact = !changedKeys(codec.fields(value), f).length;

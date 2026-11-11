@@ -1,3 +1,4 @@
+import { parseMapFile } from '../adapters/markdown/mapFile';
 import { parseDecision } from '../planning/decisions/decisionFile';
 import { lineDiff } from '../trust/lineDiff';
 import type { OutsideChange } from './outsideChanges';
@@ -58,20 +59,34 @@ function trailGone(c: OutsideChange): string[] {
   ];
 }
 
+/** A trail's destination rewritten: as signed (`- `) and as the file has it now (`+ `). */
+function destinationLines(c: OutsideChange): string[] {
+  const of = (text?: string) => (text ? parseMapFile(c.mapId, text).sections.destination : undefined);
+  const was = of(c.signedText);
+  const now = of(c.text);
+  if (was === undefined || now === undefined) return ['destination: rewritten'];
+  return ['destination:', ...lineDiff(was, now)];
+}
+
+/** The lines of one field of a change. */
+function fieldLines(c: OutsideChange, k: string): string[] {
+  if (k === 'words') return reworded(c);
+  if (k === 'destination') return destinationLines(c);
+  return [`${k}: ${show(c.counts?.[k])} → ${show(c.file?.[k])}`];
+}
+
 /** The lines of one outside change. */
 export function changeLines(c: OutsideChange): string[] {
   if (c.trail) return trailGone(c);
   if (c.fields.includes('oversized')) return [`${c.rel} is larger than 1 MB, so Teamtrail doesn't read it`];
   if (c.fields.includes('removed')) return [`${c.rel} was deleted`];
   if (c.kind === 'decision' && !c.signed) return addedDecision(c);
-  return c.fields.flatMap((k) =>
-    k === 'words' ? reworded(c) : [`${k}: ${show(c.counts?.[k])} → ${show(c.file?.[k])}`],
-  );
+  return c.fields.flatMap((k) => fieldLines(c, k));
 }
 
 const claims = (f: Fields | undefined) =>
   Object.entries(f ?? {})
-    .filter(([, v]) => v !== null && v !== false && !(Array.isArray(v) && !v.length))
+    .filter(([k, v]) => k !== 'destination' && v !== null && v !== false && !(Array.isArray(v) && !v.length))
     .map(([k, v]) => `${k} ${show(v)}`)
     .join(' · ');
 

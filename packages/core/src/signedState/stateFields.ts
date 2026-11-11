@@ -27,8 +27,10 @@ export const TICKET_KEYS = [
 /** A ticket's fields that say what happened to it; a ticket nobody signed has none of them set (unsignedTicket). */
 export const PROGRESS_KEYS = ['state', 'close_reason', 'assignee', 'status', 'review_of', 'verification', 'checks'];
 
-/** Trail fields; each assumption's status is a field of its own, `assumption:S-<n>`. */
-export const MAP_KEYS = ['mode', 'verification', 'guides', 'model_matching'] as const;
+/** Trail fields (`destination` is a hash of its text); each assumption's status is a field of its own, `assumption:S-<n>`. */
+export const MAP_KEYS = ['mode', 'destination', 'verification', 'guides', 'model_matching'] as const;
+/** The hash of a trail's destination: what it is for is the human's, so rewriting it is a change, not a text edit. */
+export const destinationHash = (m: MapDoc) => contentHash(m.sections.destination ?? '');
 export const ASSUMPTION_PREFIX = 'assumption:';
 
 /** Decision fields; `words` is the hash of its words (`decisionWords`). */
@@ -74,6 +76,7 @@ export function mapFields(m: MapDoc): Fields {
   const assumptions = (m.sections.assumptions ?? []).map((a) => [`${ASSUMPTION_PREFIX}${a.id}`, a.status]);
   return {
     mode: m.mode,
+    destination: destinationHash(m),
     verification: opt(m.verification),
     guides: list(m.guides),
     model_matching: m.modelMatching ? canon(m.modelMatching) : null,
