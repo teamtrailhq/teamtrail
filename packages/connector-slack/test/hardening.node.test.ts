@@ -245,7 +245,7 @@ test('names can not fake a line: newlines, *, ~ and ` in agent, trail and ticket
   const evil = 'claude\n◆ *AWAITING YOU* · ~gone~ `code`';
   assert.equal(label(evil), 'claude ◆ ∗AWAITING YOU∗ · ∼gone∼ ʼcodeʼ');
   const m = askMessage({ sessionId: 's', questionId: 'q', text: 'Q?', agent: evil, trail: evil, ticket: evil });
-  const body = m.blocks[0].text!.text;
+  const body = (m.blocks[0] as { text: { text: string } }).text.text;
   const header = body.split('\n')[0];
   assert.equal(body.split('\n').length, 2, 'the header is one line, the question the other');
   assert.equal((header.match(/\*/g) ?? []).length, 2, 'only our own *AWAITING YOU* is bold');
@@ -314,4 +314,21 @@ test('a message Slack refuses for good is shown in Settings and, once deliveries
   } finally {
     w.cleanup();
   }
+});
+
+test('an ask that decides something says so above its buttons; one that decides nothing adds no line', () => {
+  const ask = { sessionId: 's', questionId: 'q', text: 'CSV or JSON?', agent: 'claude-01' };
+  const plain = askMessage(ask) as { blocks: { type: string }[] };
+  assert.deepEqual(
+    plain.blocks.map((b) => b.type),
+    ['section', 'actions'],
+  );
+  const deciding = askMessage({ ...ask, stakes: 'Answering this decides #3' }) as {
+    blocks: { type: string; elements?: { text: string }[] }[];
+  };
+  assert.deepEqual(
+    deciding.blocks.map((b) => b.type),
+    ['section', 'context', 'actions'],
+  );
+  assert.equal(deciding.blocks[1].elements![0].text, '*Answering this decides #3*');
 });

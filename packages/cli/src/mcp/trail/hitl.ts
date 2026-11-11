@@ -1,5 +1,6 @@
 import {
   approvesGates,
+  attention,
   chatNote,
   OperationError,
   type AnswerVia,
@@ -10,6 +11,7 @@ import { readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { rankedAttention } from './attention';
 import { CHAT_GUIDES } from './humanAnswer';
+import { aboutText, type QuestionAbout } from './questionAbout';
 import { trailNameFamily } from './trailName';
 import { TRAIL_LEAD, type AskResult, type WaitControl } from './types';
 
@@ -22,6 +24,8 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   const answer = s.ask(input.question, suggestions, { urgency: input.urgency, blocks });
   const q = ctx.activity.snapshot.pending.filter((p) => p.sessionId === s.id).at(-1)!;
   const categories = askedCategories(input);
+  const stakes = stakesOf(ctx, { input, agent: s.info.agent, ticketId: s.info.ticketId });
+  if (stakes) q.stakes = stakes;
   if (categories.length) q.category = categories[0];
   if (categories.length > 1) q.categories = categories;
   ctx.writer.flush();
@@ -53,6 +57,7 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
         transcript: ctx.sessions.transcript(sid) ?? [],
         via,
         chatOf,
+        ...(input.about ? { about: input.about } : {}),
       });
       return { text, author, via };
     }),
@@ -76,6 +81,16 @@ export interface AskInput {
   urgency?: 'blocking' | 'soon' | 'fyi';
   /** Ticket refs that can't move until this is answered. */
   blocks?: string[];
+  /** A trail lead's setting the answer would let the agent change (questionAbout.ts). */
+  about?: QuestionAbout;
+}
+
+/** What the answer lets the agent do, for the Lookout and Slack to show with the question. */
+function stakesOf(ctx: AgentContext, c: { input: AskInput; agent: string; ticketId?: string }) {
+  if (c.input.about) return `Answering this lets ${c.agent} ${aboutText(c.input.about)}`;
+  const t = c.ticketId ? ctx.seen(c.ticketId) : undefined;
+  if (!t || attention(t) !== 'hitl' || c.input.urgency === 'fyi') return undefined;
+  return `Answering this decides ${t.key}`;
 }
 
 /** Ticket refs to ids in the session's trail; none before the trail exists (framing). */
@@ -124,15 +139,20 @@ export async function waitForAnswer(
     questionId: input.questionId,
     answer: res.a.text,
     answeredBy: res.a.author,
-    ...viaOf(res.a.via),
+    ...viaOf(ctx, res.a.via),
     waitedSeconds: waited(),
   };
 }
 
 /** How the answer was given, and for one that can't approve gates, what that means for the agent. */
-function viaOf(via: AnswerVia | undefined) {
+function viaOf(ctx: AgentContext, via: AnswerVia | undefined) {
   if (approvesGates(via)) return { answeredVia: via };
-  return { answeredVia: via ?? 'chat', note: CHAT_GUIDES };
+  if (via) return { answeredVia: via, note: CHAT_GUIDES };
+  // Unlabelled: written by a Teamtrail from before labels, or its label didn't verify. Either way it only guides.
+  const look = ctx.lookout();
+  const skew = 'versionNote' in look ? look.versionNote : undefined;
+  const why = skew ?? 'It carries no label that verifies, so it counts as given in a chat.';
+  return { answeredVia: 'chat' as const, note: `${why} ${CHAT_GUIDES}` };
 }
 
 export function defaultWaitSeconds(ctx: AgentContext) {

@@ -15,7 +15,9 @@ import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
 import { saveCriteria } from './criteria';
 import { briefView, claimable } from './discovery';
 import { assertGuide } from './guides';
+import { humanCallFor, recordHumanCall, releaseHumanCall } from './humanCall';
 import { knowledgeFor } from './knowledge';
+import type { QuestionAbout } from './questionAbout';
 import { ticketInfo } from './ticketInfo';
 import type { TicketPlanInput } from './types';
 
@@ -30,6 +32,8 @@ interface StartInput {
   outOfScope?: string[];
   /** Default on: implementation waits for an accepted discovery brief. Off only when the human says to skip it. */
   discovery?: boolean;
+  /** With `discovery: false`: the question about skipping it the human answered in the Lookout or Slack. */
+  questionId?: string;
   /** What the trail relies on; `tickets` are plan refs. */
   assumptions?: AssumptionPlanInput[];
   /** The trail's team of installed guide ids. */
@@ -48,8 +52,25 @@ const EMPTY_BRIEF = {
   openQuestions: [],
 };
 
-/** `start_trail`: charts the map and its tickets, saves their criteria and opens the discovery brief. */
+const SKIP: QuestionAbout = { kind: 'skip-discovery' };
+
+/**
+ * `start_trail`: charts the map and its tickets, saves their criteria and opens the discovery brief. Without
+ * discovery only on the human's answer about skipping it (humanCall.ts), kept on the trail as their decision.
+ */
 export async function startTrail(ctx: AgentContext, input: StartInput) {
+  const skip = input.discovery === false ? humanCallFor(ctx, SKIP, input.questionId) : undefined;
+  try {
+    const out = await chartTrail(ctx, input);
+    if (skip) await recordHumanCall(ctx, { answer: skip, snap: await ctx.load(out.trail.id), about: SKIP });
+    return out;
+  } catch (e) {
+    releaseHumanCall(skip);
+    throw e;
+  }
+}
+
+async function chartTrail(ctx: AgentContext, input: StartInput) {
   const planned = input.tickets ?? [];
   const withDiscovery = input.discovery !== false;
   const s = await ctx.chartSession();

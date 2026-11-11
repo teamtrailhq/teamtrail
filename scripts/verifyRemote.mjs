@@ -10,7 +10,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { shootThemes } from './e2eHelpers.mjs';
+import { shootThemes, skipDiscoveryInLookout } from './e2eHelpers.mjs';
 
 /** Starts the built CLI and resolves once its output names the URL it serves. */
 async function start(cli, args, cwd, pattern) {
@@ -122,6 +122,7 @@ export async function verifyRemote({ browser, cli, log, shots }) {
     const local = caller(stdio);
     const trail = await local('start_trail', {
       discovery: false,
+      questionId: await skipDiscoveryInLookout({ call: local, page, url: lookout.url }),
       title: 'Remote docs',
       destination: 'The docs build from any machine',
       tickets: [

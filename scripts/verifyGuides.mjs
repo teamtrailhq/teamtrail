@@ -11,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { skipDiscoveryInLookout } from './e2eHelpers.mjs';
 import { PERF, verifyOwnGuides } from './verifyOwnGuides.mjs';
 
 const A11Y = `---
@@ -174,6 +175,7 @@ export async function verifyGuides({ browser, cli, log, shots }) {
 
     await worker.call('start_trail', {
       discovery: false,
+      questionId: await skipDiscoveryInLookout({ call: worker.call, page, url }),
       title: 'Keyboard shortcuts',
       destination: 'Every action has a shortcut',
       tickets: [{ ref: 'keys', title: 'Add the shortcut sheet', type: 'task', guide: 'a11y' }],

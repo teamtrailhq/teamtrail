@@ -148,11 +148,20 @@ describe('bridge /agents API', () => {
       expect(bad.status).toBe(409);
       const ok = await fetch(`${base}/agents/answer`, {
         method: 'POST',
-        body: JSON.stringify({ sessionId: 's_b1', questionId: qid, text: 'Yes, behind a flag' }),
+        // How it was given and who gave it are the route's to say: a body claiming Slack, or someone in it, is
+        // answered by the trail lead in the Lookout all the same.
+        body: JSON.stringify({
+          sessionId: 's_b1',
+          questionId: qid,
+          text: 'Yes, behind a flag',
+          via: 'slack',
+          author: 'slack:U0BOSS',
+        }),
       });
       expect(ok.status).toBe(201);
       await expect(answer).resolves.toBe('Yes, behind a flag');
       expect(activity.snapshot.chats.at(-1)).toMatchObject({ from: 'human', author: 'trail lead', via: 'lookout' });
+      expect(activity.snapshot.answered.at(-1)).toMatchObject({ via: 'lookout' });
 
       // Each report replaces the doc by rename; every state must reach the stream, including the last.
       s.step(2, 'claim');

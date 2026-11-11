@@ -23,7 +23,7 @@ export async function readViolations(input: {
     attempts,
     decisions,
     policy: readPolicy(root).policy,
-    covered: answeredTickets(docs),
+    covered: answeredTickets(docs, root),
     caseInsensitive: caseInsensitiveFs(root),
   });
 }

@@ -14,6 +14,7 @@ import {
   type SessionHandle,
   type SessionMode,
   type Ticket,
+  versionSkew,
 } from '@teamtrail/core';
 import {
   AgentDocWriter,
@@ -86,6 +87,11 @@ export class AgentContext {
     return !!this.opts.remote;
   }
 
+  /** A ticket as this process last loaded it. */
+  seen(ticketId: string) {
+    return this.tickets.get(ticketId);
+  }
+
   /** Display key of a ticket seen in this process (`#3`, `ENG-3`). */
   keyOf(ticketId: string) {
     return this.tickets.get(ticketId)?.key ?? `#${ticketId}`;
@@ -105,8 +111,9 @@ export class AgentContext {
 
   lookout() {
     const lock = readLookoutLock(this.root);
+    const skew = versionSkew({ agentVersion: OWN_VERSION, lookoutVersion: lock?.version });
     return lock
-      ? { running: true, url: lock.url }
+      ? { running: true, url: lock.url, ...(skew ? { versionNote: skew } : {}) }
       : {
           running: false,
           hint: `Run \`npx ${packageSpec(OWN_VERSION)} --dir ${path.relative(process.cwd(), this.root) || '.'}\` in this folder to watch live.`,

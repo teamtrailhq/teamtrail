@@ -188,8 +188,29 @@ await answerInUi('Users of the CLI', { chip: true });
 const f = await framing;
 log(`framing answered in UI: "${f.answer}" by ${f.answeredBy}`);
 
+// Skipping discovery is the trail lead's call: the agent asks, and the inbox says what answering allows.
+const skipAsk = call('ask_human', {
+  question: 'A small page: skip discovery?',
+  about: { kind: 'skip-discovery' },
+  suggestions: ['Yes, skip it'],
+  framing: true,
+});
+await page.locator('.inbox-list li').first().waitFor({ timeout: 15_000 });
+await page.locator('.inbox-list li button').first().click();
+const stakesShown = await page
+  .locator('.open-q', { hasText: /Answering this lets claude-\d+ skip discovery/ })
+  .waitFor({ timeout: 15_000 })
+  .then(
+    () => true,
+    () => false,
+  );
+await answerInUi('Yes, skip it', { chip: true });
+const skip = await skipAsk;
+log(`skip discovery answered in UI (stakes shown: ${stakesShown})`);
+
 const started = await call('start_trail', {
   discovery: false,
+  questionId: skip.questionId,
   title: 'Changelog page',
   destination: 'A public changelog page generated from release notes',
   decided: ['Static page, no backend'],
@@ -574,6 +595,8 @@ if (
   f.answer !== 'Users of the CLI' ||
   h.answer !== 'Grouped by version, newest first' ||
   !chatOk ||
+  !stakesShown ||
+  skip.answeredVia !== 'lookout' ||
   status.trail.progress !== '2/4 decided' ||
   after !== 0 ||
   !handoffOk ||

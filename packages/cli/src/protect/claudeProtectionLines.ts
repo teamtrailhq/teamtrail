@@ -2,7 +2,7 @@ import type { ClaudeProtection } from './protectClaude';
 
 const PAD = '                  ';
 const WHY =
-  "Claude Code's file tools, and its sandboxed commands when the sandbox is on, can't read or change it. Teamtrail's own MCP server is not affected";
+  "Claude Code's own file tools can't read or change it. That is best effort unless Claude Code's sandbox is on: without it, a shell command (cat) can still read the folder; with it, sandboxed commands can't either. Teamtrail's own MCP server is not affected";
 
 /** What `connect` prints about the config folder for Claude Code: exactly what it added, and how to take it out. */
 export function claudeProtectionLines(p: ClaudeProtection, dirs: string[]): string[] {
@@ -19,6 +19,11 @@ export function claudeProtectionLines(p: ClaudeProtection, dirs: string[]): stri
       return [
         `  Config folder   already protected · ${folder} · deny rules in ${p.file}`,
         `${PAD}To remove: delete the entries naming it from ${p.file}; connect with --no-protect-config to skip this.`,
+      ];
+    case 'pattern-path':
+      return [
+        `  Config folder   not protected: its path has characters Claude Code would read as a pattern (* ? [ ] { } ( ) \\ !), so a rule could match something else. Add these by hand, written for your folder:`,
+        ...p.rules.map((r) => `${PAD}+ ${r}`),
       ];
     case 'unreadable':
       return [

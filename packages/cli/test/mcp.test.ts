@@ -9,6 +9,7 @@ import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent, trailNameFamily } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { callTool } from './fakes/callTool';
 
 let root: string;
 const open: { close(): void | Promise<void> }[] = [];
@@ -30,7 +31,7 @@ async function connect(agentName?: string, clientName = 'claude-code') {
   await Promise.all([server.connect(a), client.connect(b)]);
   open.push({ close: () => agent.close() }, client);
   const call = async <T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}) => {
-    const r = (await client.callTool({ name, arguments: args })) as { isError?: boolean; content: { text: string }[] };
+    const r = (await callTool(client, root, name, args)) as { isError?: boolean; content: { text: string }[] };
     if (r.isError) throw new Error(r.content[0].text);
     return JSON.parse(r.content[0].text) as T;
   };
@@ -132,7 +133,8 @@ describe('teamtrail MCP server', () => {
       ],
     });
     expect(started.tickets).toHaveLength(3);
-    expect(started.framingQuestionsAnswered).toBe(1);
+    // Theirs, and the one about skipping discovery (fakes/callTool.ts).
+    expect(started.framingQuestionsAnswered).toBe(2);
     const key = (ref: string) => started.tickets.find((t) => t.ref === ref)!.key;
     expect(started.next.key).toBe(key('src'));
 
@@ -193,6 +195,8 @@ describe('teamtrail MCP server', () => {
     expect(status.trail.progress).toBe('2/3 decided');
     expect(status.trail.ready.map((t) => t.key)).toEqual([key('build')]);
     expect(status.trail.decisions.map((d) => d.summary)).toEqual([
+      // skipping discovery: the trail lead's call, kept with the question as asked (fakes/callTool.ts)
+      'skip discovery · Yes, skip it (asked: Skip discovery for this trail?)',
       'Release notes live in the in-app changelog module.',
       // the human's decision is summarised in their own words, not the agent's
       'By version (asked: Timeline or grouped by version?)',

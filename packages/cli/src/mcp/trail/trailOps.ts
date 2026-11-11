@@ -1,13 +1,16 @@
-import { deriveStates, type MapMode } from '@teamtrail/core';
+import { deriveStates, OperationError, type MapMode, type MapSnapshot } from '@teamtrail/core';
 import { readAgentDocs } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
 import { attentionSummary } from './attention';
 import { deliveryView } from './deliveryView';
 import { briefView, claimable } from './discovery';
+import type { HumanAnswer } from './humanAnswer';
+import { humanCallFor, recordHumanCall, releaseHumanCall } from './humanCall';
 import { knowledgeFor } from './knowledge';
 import { matchingView, pickNext, stampModel } from './models';
 import { parallelView } from './parallel';
+import type { QuestionAbout } from './questionAbout';
 import { adaptiveView, frozenOn } from './reroutes';
 import { ticketInfo } from './ticketInfo';
 import { trailView } from './views';
@@ -78,9 +81,41 @@ export async function updateTrail(
     addOutOfScope?: string[];
     addAssumptions?: AssumptionPlanInput[];
     mode?: MapMode;
+    questionId?: string;
   },
 ) {
   const snap = await ctx.resolveTrail(input.trail);
+  const call = humanChange(snap, input);
+  const answer = call && humanCallFor(ctx, call, input.questionId);
+  try {
+    return await applyUpdate(ctx, { snap, input, answer, call });
+  } catch (e) {
+    releaseHumanCall(answer);
+    throw e;
+  }
+}
+
+/**
+ * The trail lead's setting this update changes, if any: the mode or the destination, when they differ from what the
+ * trail has. One per call, since one answer backs one change.
+ */
+function humanChange(snap: MapSnapshot, input: { mode?: MapMode; destination?: string }): QuestionAbout | undefined {
+  const mode = input.mode && input.mode !== snap.map.mode ? input.mode : undefined;
+  const dest = input.destination?.trim();
+  const destination = dest && dest !== snap.map.sections.destination.trim() ? input.destination : undefined;
+  if (mode && destination)
+    throw new OperationError(
+      'Change the mode and the destination in two calls: each needs its own answer from the human.',
+    );
+  if (mode) return { kind: 'mode', mode };
+  return destination ? { kind: 'destination', destination } : undefined;
+}
+
+async function applyUpdate(
+  ctx: AgentContext,
+  c: { snap: MapSnapshot; input: Parameters<typeof updateTrail>[1]; answer?: HumanAnswer; call?: QuestionAbout },
+) {
+  const { snap, input } = c;
   const s = await ctx.ensureSession();
   const sec = snap.map.sections;
   const patch = {
@@ -96,5 +131,6 @@ export async function updateTrail(
   const added = input.addAssumptions?.length ? await addTrailAssumptions(ctx, snap, input.addAssumptions) : [];
   const changed = [...Object.keys(patch), ...(input.mode ? ['mode'] : []), ...(added.length ? ['assumptions'] : [])];
   s.log(`trail updated · ${changed.join(', ') || 'no change'}`);
+  if (c.answer && c.call) await recordHumanCall(ctx, { answer: c.answer, snap, about: c.call });
   return (await status(ctx, snap.map.id)).trail;
 }

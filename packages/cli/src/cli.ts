@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BRAND } from '@teamtrail/core';
+import { BRAND, setRunningVersion } from '@teamtrail/core';
 import { approveCli } from './approve/approveCli';
 import { fail } from './args/help';
 import { parseArgs, parseSubArgs } from './args/parseArgs';
@@ -90,6 +90,8 @@ async function connectCommand(argv: string[]) {
 }
 
 async function main() {
+  // Said next to what this process hands another one (answers, session docs, the lock): versions can be compared.
+  setRunningVersion(__VERSION__);
   const argv = process.argv.slice(2);
   if (argv[0] === 'mcp') return mcpCommand(argv.slice(1));
   if (argv[0] === 'hook') {

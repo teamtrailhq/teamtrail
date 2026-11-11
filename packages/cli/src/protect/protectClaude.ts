@@ -1,12 +1,20 @@
 import fs from 'node:fs';
-import path from 'node:path';
 import { claudeRules } from './claudeRules';
+import { writeSettings } from './writeSettings';
 
 /** What protecting the config folder did to Claude Code's settings file. */
 export type ClaudeProtection =
   | { kind: 'added'; file: string; added: string[] }
   | { kind: 'unchanged'; file: string }
-  | { kind: 'unreadable'; file: string; rules: string[] };
+  | { kind: 'unreadable'; file: string; rules: string[] }
+  | { kind: 'pattern-path'; file: string; rules: string[] };
+
+/**
+ * Characters Claude Code reads as pattern syntax in a rule's path (globs, rule brackets, escapes). A folder named
+ * with one would be matched as something else, or the rule refused, and the folder left open while connect said it
+ * was protected; such a path is never written, the rules are printed with a warning instead.
+ */
+const PATTERN = /[*?[\]{}()\\!]/;
 
 type Json = Record<string, unknown>;
 
@@ -64,11 +72,11 @@ export function protectClaude(file: string, dirs: string[]): ClaudeProtection {
     ...all.denyRead.map((d) => `sandbox.filesystem.denyRead: ${d}`),
     ...all.denyWrite.map((d) => `sandbox.filesystem.denyWrite: ${d}`),
   ];
+  if (dirs.some((d) => PATTERN.test(d))) return { kind: 'pattern-path', file, rules: byHand };
   const settings = read(file);
   const added = settings && merge(settings, dirs);
   if (!settings || !added) return { kind: 'unreadable', file, rules: byHand };
   if (!added.length) return { kind: 'unchanged', file };
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, `${JSON.stringify(settings, null, 2)}\n`);
+  writeSettings(file, settings);
   return { kind: 'added', file, added };
 }

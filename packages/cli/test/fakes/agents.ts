@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { TrailAgent } from '../../src/mcp/agent';
 import { createMcpServer } from '../../src/mcp/server';
+import { callTool } from './callTool';
 
 export type Call = <T = Record<string, unknown>>(name: string, args?: Record<string, unknown>) => Promise<T>;
 
@@ -21,7 +22,10 @@ export function agents(root: () => string) {
     await Promise.all([server.connect(a), client.connect(b)]);
     open.push({ close: () => agent.close() }, client);
     return async <T>(name: string, args: Record<string, unknown> = {}) => {
-      const r = (await client.callTool({ name, arguments: args })) as {
+      // A remote session can't skip discovery at all: it gets the refusal, not a question.
+      const r = (await (remote
+        ? client.callTool({ name, arguments: args })
+        : callTool(client, root(), name, args))) as {
         isError?: boolean;
         content: { text: string }[];
       };

@@ -79,6 +79,7 @@ describe('connect claude keeps Teamtrail’s config folder out of Claude Code’
     expect(text).toMatch(/sandbox\.filesystem\.denyWrite/);
     expect(text).toMatch(/To remove/);
     expect(text).toMatch(/--no-protect-config/);
+    expect(text).toMatch(/best effort unless Claude Code's sandbox is on/);
   });
 
   it('creates the settings file when there is none', () => {
@@ -117,6 +118,37 @@ describe('connect claude keeps Teamtrail’s config folder out of Claude Code’
     fs.symlinkSync(real, config);
     connect('claude');
     expect(settings().permissions.deny).toEqual([READ(), EDIT(), `Read(/${real}/**)`, `Edit(/${real}/**)`]);
+  });
+
+  it('a folder whose path a rule would read as a pattern is not written: the rules are printed with a warning', () => {
+    config = path.join(tmp, 'home', 'odd [config] (v2)', 'teamtrail');
+    process.env.TEAMTRAIL_CONFIG_DIR = config;
+    const text = connect('claude');
+    expect(fs.existsSync(settingsFile())).toBe(false);
+    expect(text).toMatch(/Config folder\s+not protected: its path has characters .* would read as a pattern/);
+    expect(text).toContain(READ());
+  });
+
+  it('writes in place of the file a symlink points to, keeping its mode and its indentation', () => {
+    const real = path.join(tmp, 'dotfiles', 'claude-settings.json');
+    fs.mkdirSync(path.dirname(real), { recursive: true });
+    fs.writeFileSync(real, '{\n    "model": "opus"\n}\n', { mode: 0o600 });
+    fs.mkdirSync(claudeDir, { recursive: true });
+    fs.symlinkSync(real, settingsFile());
+    connect('claude');
+    expect(fs.lstatSync(settingsFile()).isSymbolicLink()).toBe(true);
+    expect(fs.statSync(real).mode & 0o777).toBe(0o600);
+    const text = fs.readFileSync(real, 'utf8');
+    expect(text).toMatch(/^\{\n {4}"model": "opus",\n {4}"permissions": \{\n {8}"deny"/);
+    expect(JSON.parse(text).permissions.deny).toEqual([READ(), EDIT()]);
+    expect(fs.readdirSync(path.dirname(real))).toEqual(['claude-settings.json']);
+  });
+
+  it('keeps tab indentation', () => {
+    fs.mkdirSync(claudeDir, { recursive: true });
+    fs.writeFileSync(settingsFile(), '{\n\t"model": "opus"\n}\n');
+    connect('claude');
+    expect(fs.readFileSync(settingsFile(), 'utf8')).toMatch(/^\{\n\t"model": "opus",\n\t"permissions": \{\n\t\t"deny"/);
   });
 
   it('connect --url protects it too', async () => {

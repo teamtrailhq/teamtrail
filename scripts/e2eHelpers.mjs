@@ -37,3 +37,32 @@ export async function shootThemes(page, dir, name) {
     else delete document.documentElement.dataset.theme;
   }, was);
 }
+
+/**
+ * Skipping discovery is the trail lead's call: the agent asks about it (`about: skip-discovery`) and the trail lead
+ * says yes through the Lookout's own answer route, from the browser's session. Returns the questionId to pass to
+ * start_trail. `project` is the id of a repo other than the Lookout's home one.
+ */
+export async function skipDiscoveryInLookout({ call, page, url, project }) {
+  const api = (p) => new URL(`__teamtrail${project ? `/p/${project}` : ''}${p}`, url).href;
+  const asked = call('ask_human', {
+    question: 'Skip discovery for this trail?',
+    about: { kind: 'skip-discovery' },
+    framing: true,
+    waitSeconds: 60,
+  });
+  for (let i = 0; i < 300; i++) {
+    const { sessions } = await (await page.request.get(api('/agents'))).json();
+    for (const d of sessions) {
+      const q = d.pending.find((p) => (p.stakes ?? '').includes('skip discovery'));
+      if (!q) continue;
+      const r = await page.request.post(api('/agents/answer'), {
+        data: { sessionId: d.session.id, questionId: q.id, text: 'Yes, skip it' },
+      });
+      if (!r.ok()) throw new Error(`answer refused: ${r.status()} ${await r.text()}`);
+      return (await asked).questionId;
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error('the question about skipping discovery never reached the Lookout');
+}

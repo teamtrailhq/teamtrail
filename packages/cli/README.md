@@ -68,7 +68,7 @@ tool_timeout_sec = 900
 
 ### Keep agents out of Teamtrail's config folder
 
-Teamtrail's config folder (`$TEAMTRAIL_CONFIG_DIR`, else `$XDG_CONFIG_HOME/teamtrail`, else `~/.config/teamtrail`) holds this machine's key, which signs your answers, your approvals and tracker credentials. `connect claude` adds deny rules for it to Claude Code's user settings (`~/.claude/settings.json`): `Read(//<folder>/**)` and `Edit(//<folder>/**)` in `permissions.deny`, and the folder in `sandbox.filesystem.denyRead` and `denyWrite` for sandboxed commands. It keeps what is already there, adds nothing twice, and prints what it added and how to remove it. Codex can deny a folder only through a default permissions profile, which changes how it sandboxes every folder, so `connect codex` prints the profile for you to add. Teamtrail's own MCP server is not affected: agents don't apply these rules to the MCP servers they start. Pass `--no-protect-config` to skip this.
+Teamtrail's config folder (`$TEAMTRAIL_CONFIG_DIR`, else `$XDG_CONFIG_HOME/teamtrail`, else `~/.config/teamtrail`) holds this machine's key, which signs your answers, your approvals and tracker credentials. `connect claude` adds deny rules for it to Claude Code's user settings (`~/.claude/settings.json`): `Read(//<folder>/**)` and `Edit(//<folder>/**)` in `permissions.deny`, and the folder in `sandbox.filesystem.denyRead` and `denyWrite` for sandboxed commands. It keeps what is already there (and the file's indentation, writing atomically and through a symlink), adds nothing twice, and prints what it added and how to remove it. The rules are best effort unless Claude Code's sandbox is on: without it they stop Claude's own file tools, but a shell command such as `cat` can still read the folder. A folder whose path has characters a rule would read as a pattern (`* ? [ ] { } ( ) \ !`) is not written; connect prints the rules to add by hand. Codex can deny a folder only through a default permissions profile, which changes how it sandboxes every folder, so `connect codex` prints the profile for you to add. Teamtrail's own MCP server is not affected: agents don't apply these rules to the MCP servers they start. Pass `--no-protect-config` to skip this.
 
 ### Other agents
 
@@ -94,7 +94,7 @@ The risk policy acts on what an agent declares: a decision is held for you when 
 
 With GitHub Issues or Linear as the tracker, what a remote agent writes (tickets, comments, closing) goes to the tracker with your credentials, as it does for local agents.
 
-A remote agent can't speak for you. Over HTTP there is no `answer_question`; `start_trail` can't skip discovery; `update_trail` can't change the mode or the destination; and a ticket that needs you (junction, prototype, HITL task) closes only after you answered the agent's question in the Lookout or Slack, the same rule as for local agents.
+A remote agent can't speak for you. Over HTTP there is no `answer_question`; `start_trail` can't skip discovery; `update_trail` can't change the mode or the destination; and a ticket that needs you (junction, prototype, HITL task) closes only after you answered the agent's question in the Lookout or Slack, the same rule as for local agents. Local agents also need your answer, given in the Lookout or Slack to a question asked about exactly that change, to skip discovery or change a trail's mode or destination.
 
 A remote agent's files aren't on your machine, so it gets no worktree, and on trails with verification its completions come to you for review instead of running the checks locally.
 

@@ -8,6 +8,8 @@ export interface AskView {
   agent: string;
   trail?: string;
   ticket?: string;
+  /** What answering it lets the agent do ("Answering this decides #3"), so a one-click reply is no surprise. */
+  stakes?: string;
 }
 
 export interface AskRef {
@@ -21,6 +23,10 @@ const askHeader = (a: AskView) =>
     .filter(Boolean)
     .join(' · ');
 
+/** The line saying what answering decides, as quiet context above the buttons. */
+const stakesBlock = (a: AskView) =>
+  a.stakes ? [{ type: 'context', elements: [md(`*${label(clip(a.stakes, 280))}*`)] }] : [];
+
 export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'titles-only' } = {}) {
   const ref = (i?: number) =>
     JSON.stringify({ s: a.sessionId, q: a.questionId, ...(i === undefined ? {} : { i }) } satisfies AskRef);
@@ -32,6 +38,7 @@ export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'tit
     text: `Awaiting you · ${label(a.agent)}: ${label(clip(a.text, 140))}`,
     blocks: [
       { type: 'section', text: md(body) },
+      ...stakesBlock(a),
       {
         type: 'actions',
         block_id: `ask:${a.questionId}`,

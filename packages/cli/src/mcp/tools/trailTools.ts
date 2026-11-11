@@ -86,7 +86,13 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
         .boolean()
         .optional()
         .describe(
-          'Default true: the trail starts with a discovery ticket, and implementation tickets wait until the human accepts your discovery brief. Set false only when the human says to skip discovery.',
+          'Default true: the trail starts with a discovery ticket, and implementation tickets wait until the human accepts your discovery brief. false needs the human: ask with ask_human and about {"kind":"skip-discovery"}, and once they answer in the Lookout or Slack, pass false with that questionId.',
+        ),
+      questionId: z
+        .string()
+        .optional()
+        .describe(
+          'With discovery=false: the question about skipping discovery the human answered in the Lookout or Slack.',
         ),
     },
     (a) => agent.startTrail(a),
@@ -122,14 +128,29 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
     },
     {
       trail,
-      destination: text().optional(),
+      destination: text()
+        .optional()
+        .describe(
+          'The human\'s: a new one needs their answer to ask_human with about {"kind":"destination","destination":<this exact text>}, or propose_reroute.',
+        ),
       notes: text().optional(),
       addUnspecified: z.array(z.string()).optional(),
       addOutOfScope: z.array(z.string()).optional(),
       addAssumptions: z
         .array(z.object({ text: z.string().min(1), tickets: z.array(z.string()).optional().describe('Ticket keys.') }))
         .optional(),
-      mode: z.enum(['plan+execute', 'plan-only']).optional(),
+      mode: z
+        .enum(['plan+execute', 'plan-only'])
+        .optional()
+        .describe(
+          'The human\'s setting: changing it needs their answer to ask_human with about {"kind":"mode","mode":…}.',
+        ),
+      questionId: z
+        .string()
+        .optional()
+        .describe(
+          'For a new mode or destination: the question about exactly that change the human answered in the Lookout or Slack. One change per question.',
+        ),
     },
     (a) => agent.updateTrail(a),
   );

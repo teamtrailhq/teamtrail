@@ -4,6 +4,7 @@ import { writeLocalJson } from '../lib/ensureLocalDir';
 import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
 import type { AnswerVia } from '../model/answerVia';
+import { runningVersion } from '../model/runningVersion';
 import { signAgentAnswer } from './agentAnswerSignature';
 import { SESSION_DOC_PATH, agentPaths, markDisconnected, type AgentAnswer, type AgentSessionDoc } from './agentLink';
 
@@ -33,6 +34,11 @@ export async function readAgentDocs(
 
 export class AnswerError extends Error {}
 
+const writer = () => {
+  const v = runningVersion();
+  return v ? { writer: v } : {};
+};
+
 /** What an answer's writer passes: `via` is the writer's own path (the bridge, Slack, answer_question). */
 export type AnswerInput = Omit<AgentAnswer, 'at' | 'sig' | 'via'> & { via: AnswerVia; at?: number };
 
@@ -56,6 +62,7 @@ export function writeAgentAnswer(root: string, input: AnswerInput): AgentAnswer 
     at: input.at ?? Date.now(),
     via,
     ...chatOf,
+    ...writer(),
   });
   writeLocalJson(root, agentPaths.answer(sessionId, questionId), ans);
   return ans;

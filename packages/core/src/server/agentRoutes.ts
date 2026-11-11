@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { readAgentDocs, writeAgentAnswer } from '../agents/agentDocs';
 import type { AgentAnswer } from '../agents/agentLink';
+import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
 
 /** `/agents` routes over the session docs under `root`; false when none matches. */
@@ -28,8 +29,8 @@ export async function handleAgents(
         sessionId: b.sessionId!,
         questionId: b.questionId!,
         text: b.text!,
-        author: typeof b.author === 'string' && b.author ? b.author : 'trail lead',
-        // Given in the Lookout: this route says so, whatever the body says.
+        // Given in the Lookout, by its trail lead: this route says so, whatever the body says.
+        author: TRAIL_LEAD,
         via: 'lookout',
       }),
     );

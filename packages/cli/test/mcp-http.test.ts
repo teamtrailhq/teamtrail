@@ -24,6 +24,7 @@ import { tokenFileAuth } from '../src/mcp/http/tokenFileAuth';
 import type { McpHttp, McpHttpOptions } from '../src/mcp/http/types';
 import { humanRoles } from '../src/mcp/remoteGate';
 import { createMcpServer } from '../src/mcp/server';
+import { callTool } from './fakes/callTool';
 import { approveAllHere } from './fakes/trailLead';
 
 let repo: string;
@@ -67,7 +68,7 @@ type Call = <T = Record<string, unknown>>(name: string, args?: Record<string, un
 
 function caller(client: Client, timeout = 15_000): Call {
   return async <T>(name: string, args: Record<string, unknown> = {}) => {
-    const r = (await client.callTool({ name, arguments: args }, undefined, { timeout })) as {
+    const r = (await callTool(client, root, name, args, timeout)) as {
       isError?: boolean;
       content: { text: string }[];
     };
@@ -616,7 +617,11 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
       delivered: true,
     });
     await call('start_trail', { discovery: false, title: 'Local', destination: 'Works as before' });
-    await call('update_trail', { mode: 'plan-only', destination: 'Still the local agent\u2019s to edit' });
+    // The trail lead's settings need their answer, for local agents too (mcp-human-settings.test.ts).
+    await expect(call('update_trail', { mode: 'plan-only' })).rejects.toThrow(
+      /switch the trail to plan-only is the human's call/,
+    );
+    await call('update_trail', { notes: 'Still the local agent\u2019s to edit' });
     // The local agent passed on the human's answer with answer_question: it guides, but never makes a decision
     // theirs (mcp-chat-answers.test.ts). Recorded without it, the decision is the agent's own.
     await expect(

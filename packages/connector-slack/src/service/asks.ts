@@ -29,6 +29,7 @@ export async function askView(
     text: q.text,
     suggestions: q.suggestions,
     agent: q.agent,
+    ...(q.stakes ? { stakes: q.stakes } : {}),
     trail,
     ticket,
     mapId: q.mapId,

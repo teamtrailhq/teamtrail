@@ -17,4 +17,6 @@ export interface AnsweredQuestion {
   via?: AnswerVia;
   /** For `chat`: the agent whose chat it was given in. */
   chatOf?: string;
+  /** This machine's signature, added where the session doc is written (agents/answeredSignature.ts). */
+  sig?: string;
 }
