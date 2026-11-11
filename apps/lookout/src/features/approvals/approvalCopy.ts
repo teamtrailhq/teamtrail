@@ -10,7 +10,8 @@ export const KIND_EFFECT: Record<TrustKind, string> = {
   knowledge: 'Agents get it as trusted context with their claims',
   level: 'Completions on it are checked this much',
   type: "The trail's level applies to a ticket by its type",
-  discovery: 'Agents may claim its implementation tickets without a discovery brief, and criteria are no longer required',
+  discovery:
+    'Agents may claim its implementation tickets without a discovery brief, and criteria are no longer required',
 };
 
 /** What approving does not cover, where it matters; shown in full under the item. */
