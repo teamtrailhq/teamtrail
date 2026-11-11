@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { instanceProof, NONCE_SHAPE } from '../signIn/instanceProof';
 import type { LookoutSignIn, PairOutcome } from '../signIn/lookoutSignIn';
+import { normalizePairCode } from '../signIn/pairCodes';
 import { journalSignIn } from '../signIn/signInJournal';
 import { readJson, sendJson } from './http';
 import { crossSite } from './trackerErrors';
@@ -17,8 +18,14 @@ export interface PublicSignInContext {
 
 const LOCKED = 'Too many wrong codes from here. Wait a minute, then try again.';
 const REFUSED = 'That code was already used, has expired, or is wrong. Get a new one.';
+/**
+ * A link's code refused on this machine. The page can't tell whether it came from a page Teamtrail opened (which
+ * anything that can read the config dir could read first), so every such refusal says what that would mean.
+ */
+const REFUSED_LINK_HERE =
+  "This link was already used or has expired. If you didn't sign in just now, someone else may have: check Settings → Browsers & devices in a browser that's signed in, or restart Teamtrail to end every session. Get a new one below.";
 
-function afterPair(res: ServerResponse, done: PairOutcome) {
+function afterPair(res: ServerResponse, done: PairOutcome, linkHere: boolean) {
   switch (done.kind) {
     case 'paired':
       // The only time the session and its verifier leave the server: the page keeps them in its own origin's storage.
@@ -29,7 +36,7 @@ function afterPair(res: ServerResponse, done: PairOutcome) {
     case 'already':
       return sendJson(res, 200, { ok: true, kind: done.session.kind });
     case 'refused':
-      return sendJson(res, 400, { error: REFUSED });
+      return sendJson(res, 400, { error: linkHere ? REFUSED_LINK_HERE : REFUSED });
     case 'locked':
       res.setHeader('Retry-After', String(Math.ceil((done.until - Date.now()) / 1000)));
       return sendJson(res, 429, { error: LOCKED });
@@ -96,6 +103,7 @@ export async function handlePublicSignIn(
   const body = await readJson<{ code?: unknown }>(req, '{}');
   const done = ctx.signIn.pair(req, { code: body.code, local: ctx.local, who: ctx.who });
   if (done.kind === 'paired') journalSignIn(ctx.signIn.root, 'paired', done.session);
-  afterPair(res, done);
+  const linkHere = ctx.local && normalizePairCode(body.code)?.kind === 'link';
+  afterPair(res, done, linkHere);
   return true;
 }

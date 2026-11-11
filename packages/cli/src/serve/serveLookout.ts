@@ -3,7 +3,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { slackPlugin } from '@teamtrail/connector-slack/node';
-import { BRAND, type StoredSignIn } from '@teamtrail/core';
+import { BRAND } from '@teamtrail/core';
 import { writeLookoutLock, writeMcpEndpoint } from '@teamtrail/core/agents';
 import {
   createLookoutSignIn,
@@ -26,6 +26,7 @@ import { listen, type Listening } from './listen';
 import { listenFailure } from './listenFailure';
 import { lookoutHandler } from './lookoutHandler';
 import { lookoutUrl } from './lookoutUrl';
+import { openedPageNotice } from './openedPageNotice';
 import { openSignedIn } from './openSignedIn';
 import { pairLink } from './pairLink';
 
@@ -36,14 +37,6 @@ function firstCode(signIn: LookoutSignIn) {
   } catch (e) {
     return fail(`can't write ${BRAND.name}'s config folder, where sign-in lives (${(e as Error).message})`);
   }
-}
-
-/**
- * Says so when a browser signs in through the page `teamtrail` or `teamtrail pair` opened: anything that can read
- * the config dir can read that page, so a pairing the human didn't make shows here, and in Settings.
- */
-function onPaired(session: StoredSignIn) {
-  if (session.via === 'opened-page') process.stdout.write(`  Signed in a browser (opened page): ${session.name}\n`);
 }
 
 /** The default command: one process serving the lookout bundle and the tracker API, until Ctrl+C. */
@@ -78,7 +71,12 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
     url: () => url,
   });
   // Every API route needs a paired browser; the link below pairs the one this command opens.
-  const signIn = createLookoutSignIn({ root: bridge.root, lanUrls: () => lanUrls(addresses, port), onPaired });
+  const signIn = createLookoutSignIn({
+    root: bridge.root,
+    lanUrls: () => lanUrls(addresses, port),
+    // a pairing through the page this command or `teamtrail pair` opened says so here (openedPageNotice.ts)
+    onPaired: (session) => void process.stdout.write(openedPageNotice(session) ?? ''),
+  });
   // Other registered projects open on first use, at /p/<id>/…, with their own checkout for the GitHub origin; Slack stays with the home project.
   hub = createProjectsHub({
     signIn,

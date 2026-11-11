@@ -62,7 +62,10 @@ function inspect(argv) {
   return { url, file, target, code, mode, clean };
 }
 
-/** Chrome on the page: it reaches the Lookout's "Sign in this browser", and a click signs it in. */
+/**
+ * Chrome on the page: it reaches the Lookout's "Sign in this browser", and a click signs it in. Returns what
+ * Settings → Browsers & devices then lists too.
+ */
 async function signInFrom(browser, url) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   try {
@@ -72,7 +75,40 @@ async function signInFrom(browser, url) {
     await page.getByRole('button', { name: 'Sign in this browser' }).click();
     await page.locator('.dialog.onboarding').waitFor({ timeout: 15_000 });
     const signedIn = await page.evaluate(() => !!localStorage.getItem('teamtrail.session'));
-    return { landed, signedIn };
+    await page.getByRole('button', { name: 'Get started' }).click();
+    await page.goto(`${landed}?settings=devices`);
+    await page.locator('#settings-devices .ra-row').first().waitFor({ timeout: 15_000 });
+    const devices = await page.locator('#settings-devices').innerText();
+    return { landed, signedIn, devices };
+  } finally {
+    await page.close();
+  }
+}
+
+/**
+ * Another program read the page's code first and paired with it (faking the Lookout's Origin, as curl can): the
+ * human's own click then hears the link was used, and that someone else may have.
+ */
+async function stolenFirst(browser, opening) {
+  const origin = new URL(opening.target).origin;
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  try {
+    // the browser has the page open, as the human does, when the other program gets there first
+    await page.goto(opening.url);
+    await page.getByRole('button', { name: 'Sign in this browser' }).waitFor({ timeout: 15_000 });
+    const thief = await fetch(`${origin}/__teamtrail/pair`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: origin,
+        'User-Agent': 'Mozilla/5.0 (Macintosh) Chrome/130',
+      },
+      body: JSON.stringify({ code: opening.code }),
+    });
+    await page.getByRole('button', { name: 'Sign in this browser' }).click();
+    const hint = page.getByText("If you didn't sign in just now, someone else may have");
+    await hint.waitFor({ timeout: 15_000 });
+    return { thief: thief.status, told: await hint.isVisible() };
   } finally {
     await page.close();
   }
@@ -117,15 +153,26 @@ export async function verifyOpenSignedIn({ browser, cli, env }) {
     const pair = inspect(byPair ?? '');
     const second = await signInFrom(browser, pair.url);
 
+    execFileSync(process.execPath, [cli, 'pair'], { cwd: s.top, env: s.env });
+    const [, , byPairAgain] = await opened(s.record, 3);
+    const stolen = await stolenFirst(browser, inspect(byPairAgain ?? ''));
+
     // One more page waits; the Lookout stopping removes it.
     execFileSync(process.execPath, [cli, 'pair'], { cwd: s.top, env: s.env });
-    await opened(s.record, 3);
+    await opened(s.record, 4);
     const waiting = pagesLeft(s.config).length;
     await new Promise((r) => (server.once('exit', r), server.kill('SIGTERM')));
     const leftAfterStop = pagesLeft(s.config).length;
 
     const landedOnLookout = [first, second].every((x) => x.landed === printed.url && x.signedIn);
-    const announced = (out.match(/Signed in a browser \(opened page\)/g) ?? []).length;
+    const notices = [
+      ...out.matchAll(
+        /Signed in a browser \(opened page\) at [^:]+:\d\d:\d\d[^:]*: .+ · (si_[0-9a-f]{6})\. Not you\? Revoke it in Settings → Browsers & devices\./g,
+      ),
+    ];
+    const announced = notices.length;
+    // the first sign-in's short id, as the terminal named it, beside its entry in Settings
+    const listed = !!notices[0] && first.devices.includes(notices[0][1]);
     const ok =
       startClean &&
       pair.clean &&
@@ -134,13 +181,17 @@ export async function verifyOpenSignedIn({ browser, cli, env }) {
       firstGone &&
       waiting === 1 &&
       !leftAfterStop &&
-      announced === 2;
+      announced === 3 &&
+      listed &&
+      stolen.thief === 200 &&
+      stolen.told;
     const said =
       `the browser's launcher got ${start.url ? 'only a page path' : 'NO PAGE'} (${start.mode}, ${startClean ? 'no code in argv' : 'A CODE IN ARGV'}), ` +
       `\`teamtrail pair\` too (${pair.clean ? 'no code in argv' : 'A CODE IN ARGV'}); Chrome went from file:// to ${first.landed} and ` +
       `signed in with one click (${landedOnLookout ? 'both' : 'NOT BOTH'}); the used page ${firstGone ? 'was removed' : 'STAYED'}, ` +
       `${leftAfterStop ? `${leftAfterStop} PAGES LEFT` : 'none left'} after the Lookout stopped; ` +
-      `the terminal announced ${announced} of 2 sign-ins through an opened page`;
+      `the terminal announced ${announced} of 3 sign-ins through an opened page, with a short id ${listed ? 'Settings shows too' : 'SETTINGS DOES NOT SHOW'}; ` +
+      `a code taken first (${stolen.thief}) left the human's click saying ${stolen.told ? 'someone else may have used it' : 'NOTHING OF IT'}`;
     return { ok, said, target: start.target?.split('#')[0] ?? 'nothing opened' };
   } finally {
     server.kill('SIGTERM');

@@ -196,7 +196,7 @@ export async function verifySignIn({ browser, cli, log, shots }) {
     const b = await newPage();
     await b.goto(pair);
     await b.getByRole('button', { name: 'Sign in this browser' }).click();
-    await b.getByText('That code was already used').waitFor({ timeout: 15_000 });
+    await b.getByText('This link was already used').waitFor({ timeout: 15_000 });
     // `teamtrail pair` makes a new one.
     await signInWith(b, pairLink({ cli, cwd: top, env }));
     await getStarted(b);
