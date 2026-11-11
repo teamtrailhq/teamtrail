@@ -1,6 +1,7 @@
-import { mkdirSync, watch } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { watchTree } from '../../lib/watchTree';
 import type { MarkdownFs } from './markdownFs';
 
 /** The tracker folder as plain files, read and written as they are. Teamtrail itself goes through `nodeMarkdownFs`, which signs what it writes; this is for that and for reading what is on disk. */
@@ -39,9 +40,6 @@ export function rawMarkdownFs(root: string): MarkdownFs {
         throw e;
       }
     },
-    watch(cb) {
-      const w = watch(abs, { recursive: true }, (_e, f) => f && cb(String(f).split(path.sep).join('/')));
-      return () => w.close();
-    },
+    watch: (cb) => watchTree(abs, cb),
   };
 }

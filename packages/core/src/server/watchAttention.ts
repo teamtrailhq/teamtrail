@@ -12,16 +12,25 @@ function signature(v: AttentionView) {
   ]);
 }
 
+interface AttentionWatch {
+  /** Stops watching. */
+  stop: () => void;
+  /** A queue `GET /attention` gave a page: one other than the last event means the next tick sends the queue. */
+  served: (view: AttentionView) => void;
+}
+
 /**
  * Recomputes the attention queue every `pollMs` (questions, approvals, flags, leases, knowledge and
  * briefs all live in files other processes write) and sends a named `attention` SSE event with the
- * whole AttentionView when it changed. Returns the stop function.
+ * whole AttentionView when it changed since the last event, or since a page loaded a queue other than that one.
+ * Without the second, a queue that changed and changed back between two ticks (a ticket added, then claimed) stays
+ * on the page that loaded it in between: the tick sees nothing new to send.
  */
 export function watchAttention(
   ctx: RouteContext,
   send: (text: string) => void,
   opts: { pollMs?: number; configDir?: string } = {},
-): () => void {
+): AttentionWatch {
   let last = '';
   let busy = false;
   const tick = async () => {
@@ -39,5 +48,10 @@ export function watchAttention(
       .finally(() => (busy = false));
   }, opts.pollMs ?? 3000);
   timer.unref?.();
-  return () => clearInterval(timer);
+  return {
+    stop: () => clearInterval(timer),
+    served: (view) => {
+      if (signature(view) !== last) last = '';
+    },
+  };
 }

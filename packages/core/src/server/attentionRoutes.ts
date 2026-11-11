@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { readAttentionPrefs, updateAttentionState, writeAttentionPrefs } from '../attention/attentionStore';
 import { attentionView } from '../attention/attentionView';
-import type { AttentionState } from '../model/attention';
+import type { AttentionState, AttentionView } from '../model/attention';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
 
@@ -24,7 +24,7 @@ function snoozeUntil(body: { minutes?: unknown; until?: unknown }, now: number):
  * prefs (GET and PUT `/attention/prefs`, kept in `configDir`). False when none matches.
  */
 export async function handleAttention(
-  { root, active, configDir }: RouteContext & { configDir?: string },
+  { root, active, configDir, served }: RouteContext & { configDir?: string; served?: (view: AttentionView) => void },
   req: IncomingMessage,
   res: ServerResponse,
   url: URL,
@@ -33,7 +33,9 @@ export async function handleAttention(
   if (!p.startsWith('/attention')) return false;
   const now = Date.now();
   if (p === '/attention' && req.method === 'GET') {
-    sendJson(res, 200, await attentionView({ root, adapter: await active(), configDir, now }));
+    const view = await attentionView({ root, adapter: await active(), configDir, now });
+    served?.(view);
+    sendJson(res, 200, view);
     return true;
   }
   if (p === '/attention/prefs' && req.method === 'GET') {
