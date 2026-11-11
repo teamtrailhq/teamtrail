@@ -282,7 +282,7 @@ test('an answer signed for another project is not delivered here', async () => {
   const docA = path.join(a, agentPaths.session('s_1'));
   mkdirSync(path.dirname(docA), { recursive: true });
   writeFileSync(docA, readFileSync(path.join(b, agentPaths.session('s_1'))));
-  writeAgentAnswer(a, { sessionId: 's_1', questionId: q.id, text: 'yes', author: 'trail lead' });
+  writeAgentAnswer(a, { sessionId: 's_1', questionId: q.id, text: 'yes', author: 'trail lead', via: 'lookout' });
   const target = path.join(b, agentPaths.answer('s_1', q.id));
   mkdirSync(path.dirname(target), { recursive: true });
   writeFileSync(target, readFileSync(path.join(a, agentPaths.answer('s_1', q.id))));

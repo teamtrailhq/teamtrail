@@ -55,6 +55,8 @@ export const ACTIONS = {
   trailPick: 'trail_pick',
   approve: 'verify_approve',
   rework: 'verify_rework',
+  settingApprove: 'setting_approve',
+  settingDecline: 'setting_decline',
 } as const;
 
 export const VIEWS = {

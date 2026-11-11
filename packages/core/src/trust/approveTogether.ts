@@ -1,8 +1,7 @@
 import type { MapSnapshot } from '../model/types';
 import { approveTrust } from './approveTrust';
-import { committedFiles } from './committedFiles';
-import { itemFiles } from './itemFiles';
 import { pendingTrust } from './pendingTrust';
+import { gitState } from './withCommitted';
 
 /**
  * Approves the items the page showed, with which of their files are committed (asked of git first, which is
@@ -15,6 +14,6 @@ export async function approveTogether(input: {
   snaps?: MapSnapshot[];
 }) {
   if (input.items.length < 2) return approveTrust(input);
-  const files = pendingTrust(input.root, input.snaps).flatMap(itemFiles);
-  return approveTrust({ ...input, committed: await committedFiles(input.root, [...new Set(files)]) });
+  const state = await gitState(input.root, pendingTrust(input.root, input.snaps));
+  return approveTrust({ ...input, ...state });
 }

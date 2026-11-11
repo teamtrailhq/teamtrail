@@ -76,3 +76,27 @@ export async function sessionHeaders(page) {
   const session = await page.evaluate(() => JSON.parse(localStorage.getItem('teamtrail.session') ?? '{}').secret);
   return { 'X-Teamtrail-Session': session ?? '' };
 }
+
+/**
+ * Skipping discovery is the trail lead's call: `start_trail` with `discovery: false` returns a request, and the trail
+ * lead approves it with the calls the Lookout's Approve button makes (the request as shown, by its hash), from the
+ * browser's session. `project` is the name of a repo other than the Lookout's home one. verify-mcp clicks the button.
+ */
+export async function approveSkipInLookout({ started, page, url, project }) {
+  const headers = await sessionHeaders(page);
+  const id = project
+    ? (await (await page.request.get(new URL('__teamtrail/projects', url).href, { headers })).json()).projects.find(
+        (p) => p.name === project,
+      ).id
+    : undefined;
+  const api = (p) => new URL(`__teamtrail${id ? `/p/${id}` : ''}${p}`, url).href;
+  const request = started.skipDiscovery?.request;
+  if (!request) throw new Error('start_trail with discovery: false returned no request');
+  const shown = await (await page.request.get(api(`/reroutes/${request}?map=${started.trail.id}`), { headers })).json();
+  const r = await page.request.post(api('/reroutes/approve'), {
+    headers,
+    data: { mapId: started.trail.id, id: request, hash: shown.reroute.hash },
+  });
+  if (!r.ok()) throw new Error(`approve refused: ${r.status()} ${await r.text()}`);
+  return started;
+}

@@ -7,6 +7,7 @@ import { approveReroute, rejectReroute } from '../planning/reroute/decideReroute
 import { rerouteHash } from '../planning/reroute/rerouteApproval';
 import { rerouteView, RerouteInvalid, type RerouteEnv } from '../planning/reroute/rerouteFlow';
 import { listAllReroutes, listReroutes, readReroute } from '../planning/reroute/rerouteStore';
+import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
 
@@ -48,7 +49,8 @@ export async function handleReroutes(ctx: RouteContext, req: IncomingMessage, re
   const decision = {
     mapId: b.mapId as string,
     id: b.id as string,
-    by: text(b.by) ? (b.by as string) : 'trail lead',
+    // The Lookout's trail lead: this route says so, whatever the body says.
+    by: TRAIL_LEAD,
     note: typeof b.note === 'string' ? b.note.slice(0, 2000) : undefined,
     ...(text(b.hash) ? { hash: b.hash as string } : {}),
   };

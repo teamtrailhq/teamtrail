@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { lookoutLinks, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
 
 function repo(top, name) {
   const dir = path.join(top, name);
@@ -89,11 +89,17 @@ export async function verifyProjects({ browser, cli, log, shots }) {
     page.on('framenavigated', (f) => f === page.mainFrame() && visited.push(f.url()));
 
     // A ticket item from another project: it opens that project with the ticket selected in the inspector.
-    await two.call('start_trail', {
-      discovery: false,
-      title: 'Usage invoices',
-      destination: 'Invoices explain every line',
-      tickets: [{ ref: 'cur', title: 'Which currency ships first?', type: 'junction' }],
+    // Skipping discovery is a request the trail lead approves: here through billing's own API, as its Lookout would.
+    await approveSkipInLookout({
+      started: await two.call('start_trail', {
+        discovery: false,
+        title: 'Usage invoices',
+        destination: 'Invoices explain every line',
+        tickets: [{ ref: 'cur', title: 'Which currency ships first?', type: 'junction' }],
+      }),
+      page,
+      url,
+      project: 'billing',
     });
     const ticketItem = page.locator('.projects-view .pj-item', { hasText: 'Which currency ships first?' });
     await ticketItem.locator('.ds-row-main').click({ timeout: 20_000 });

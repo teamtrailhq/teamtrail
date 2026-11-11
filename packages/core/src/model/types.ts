@@ -1,3 +1,4 @@
+import type { AnswerVia } from './answerVia';
 import type { Assumption } from './assumption';
 import type { TicketStatus, VerificationLevel } from './lifecycle';
 import type { ModelTier } from './modelTier';
@@ -294,6 +295,9 @@ export interface ChatMessage {
   at: number;
   /** Set on agent questions; the question is open until answered. */
   questionId?: string;
+  /** On the human's answers: how it was given (answerVia.ts), and for `chat` the agent whose chat it was. */
+  via?: AnswerVia;
+  chatOf?: string;
 }
 
 export type { PendingQuestion } from './pendingQuestion';

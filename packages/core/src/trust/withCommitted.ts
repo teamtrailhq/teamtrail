@@ -8,10 +8,18 @@ import type { TrustItem } from './trustItem';
  * only a level at least the approved default (adoptableWithoutFile.ts).
  */
 export async function withCommitted(root: string, items: TrustItem[]): Promise<TrustItem[]> {
+  const state = await gitState(root, items);
+  return items.map((i) => ({ ...i, committed: isCommitted(root, i, state) }));
+}
+
+/** What git says about the items' files: which are committed as they are. */
+export async function gitState(root: string, items: Pick<TrustItem, 'file' | 'files'>[]) {
   const files = [...new Set(items.flatMap(itemFiles))];
-  const committed = await committedFiles(root, files);
-  return items.map((i) => {
-    const own = itemFiles(i);
-    return { ...i, committed: own.length ? own.every((f) => committed.has(f)) : adoptableWithoutFile(root, i) };
-  });
+  return { committed: await committedFiles(root, files) };
+}
+
+/** An item counts as committed when all its files are; with none, see adoptableWithoutFile. */
+export function isCommitted(root: string, i: TrustItem, s: { committed?: Set<string> }) {
+  const files = itemFiles(i);
+  return files.length ? files.every((f) => !!s.committed?.has(f)) : adoptableWithoutFile(root, i);
 }

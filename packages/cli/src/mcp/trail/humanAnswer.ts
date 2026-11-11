@@ -1,6 +1,8 @@
 import {
+  approvesGates,
   oneLine,
   OperationError,
+  type AnswerVia,
   type DecisionRisk,
   type RiskCategory,
   type Ticket,
@@ -30,8 +32,28 @@ export interface HumanAnswer {
   urgency: 'blocking' | 'soon' | 'fyi';
   /** The conversation the answer was given in. */
   transcript: TranscriptEntry[];
+  /**
+   * How it was given (answerVia.ts). Only `lookout` and `slack` answers back the human's decisions; a `chat` one,
+   * or one without a label (from before labels), only guides.
+   */
+  via?: AnswerVia;
+  /** For `chat`: the agent whose chat it was given in. */
+  chatOf?: string;
   /** What it backed, once used. */
   usedFor?: string;
+}
+
+/** What a chat answer is for, as the agent is told when it gets one and when it offers one at a gate. */
+export const CHAT_GUIDES =
+  "Answers given in an agent's chat guide agents but can't approve this; answer in the Lookout or Slack. Use it as guidance; for a decision that is the human's (high risk, a HITL ticket, questionId), ask again with ask_human and have them answer in the Lookout or Slack.";
+
+/** The refusal for an answer given in a chat (or before labels existed) offered at a gate. */
+function chatRefusal(a: HumanAnswer) {
+  const where =
+    a.via === 'chat'
+      ? `in ${a.chatOf ?? 'an agent'}'s chat`
+      : 'before answers recorded where they were given, so it counts as given in a chat';
+  return `Question ${a.questionId} was answered ${where}. ${CHAT_GUIDES}`;
 }
 
 interface Wanted {
@@ -82,6 +104,9 @@ function mismatch(m: { q: string; asked: string; missing: RiskCategory; needs: R
  */
 function refusal(a: HumanAnswer, w: Wanted): string | undefined {
   const q = `Question ${a.questionId}`;
+  // Any local agent can call answer_question, one that answers its own question included: only an answer given in
+  // the Lookout or Slack is the human's word at a gate.
+  if (!approvesGates(a.via)) return chatRefusal(a);
   if (a.usedFor) return `${q} already backs ${a.usedFor}: one answer, one decision. Ask again for another one.`;
   if (w.ticket && a.ticketId !== w.ticket.id)
     return `${q} was not asked on ${w.ticket.key}. Ask the human about ${w.ticket.key} while you hold it.`;

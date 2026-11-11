@@ -39,7 +39,13 @@ describe('agent link files', () => {
     expect(d.session.id).toBe('s_t1');
     expect(d.client).toBe('test-client 1.0');
     expect(d.pending[0]).toMatchObject({ text: 'Ship on Friday?', suggestions: ['Yes', 'No'] });
-    writeAgentAnswer(root, { sessionId: 's_t1', questionId: d.pending[0].id, text: ' Yes ', author: 'trail lead' });
+    writeAgentAnswer(root, {
+      sessionId: 's_t1',
+      questionId: d.pending[0].id,
+      text: ' Yes ',
+      author: 'trail lead',
+      via: 'lookout',
+    });
     await expect(answer).resolves.toBe('Yes');
     writer.flush();
     const [after] = await readAgentDocs(root);
@@ -55,10 +61,22 @@ describe('agent link files', () => {
     activity.startSession({ id: 's_t2', agent: 'claude-01', mode: 'work', mapId: 'm1' });
     writer.flush();
     expect(() =>
-      writeAgentAnswer(root, { sessionId: 's_t2', questionId: 'q_nope', text: 'x', author: 'trail lead' }),
+      writeAgentAnswer(root, {
+        sessionId: 's_t2',
+        questionId: 'q_nope',
+        text: 'x',
+        author: 'trail lead',
+        via: 'lookout',
+      }),
     ).toThrow(/not waiting/);
     expect(() =>
-      writeAgentAnswer(root, { sessionId: 's_missing', questionId: 'q', text: 'x', author: 'trail lead' }),
+      writeAgentAnswer(root, {
+        sessionId: 's_missing',
+        questionId: 'q',
+        text: 'x',
+        author: 'trail lead',
+        via: 'lookout',
+      }),
     ).toThrow(/unknown session/);
     writer.close();
   });
@@ -130,11 +148,20 @@ describe('bridge /agents API', () => {
       expect(bad.status).toBe(409);
       const ok = await fetch(`${base}/agents/answer`, {
         method: 'POST',
-        body: JSON.stringify({ sessionId: 's_b1', questionId: qid, text: 'Yes, behind a flag' }),
+        // How it was given and who gave it are the route's to say: a body claiming Slack, or someone in it, is
+        // answered by the trail lead in the Lookout all the same.
+        body: JSON.stringify({
+          sessionId: 's_b1',
+          questionId: qid,
+          text: 'Yes, behind a flag',
+          via: 'slack',
+          author: 'slack:U0BOSS',
+        }),
       });
       expect(ok.status).toBe(201);
       await expect(answer).resolves.toBe('Yes, behind a flag');
-      expect(activity.snapshot.chats.at(-1)).toMatchObject({ from: 'human', author: 'trail lead' });
+      expect(activity.snapshot.chats.at(-1)).toMatchObject({ from: 'human', author: 'trail lead', via: 'lookout' });
+      expect(activity.snapshot.answered.at(-1)).toMatchObject({ via: 'lookout' });
 
       // Each report replaces the doc by rename; every state must reach the stream, including the last.
       s.step(2, 'claim');

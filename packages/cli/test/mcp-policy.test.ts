@@ -9,8 +9,10 @@ import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { callTool } from './fakes/callTool';
 
 let root: string;
+const HITL = /is the human's to decide: it closes only after they answer/;
 const open: { close(): void | Promise<void> }[] = [];
 
 async function connect() {
@@ -21,7 +23,7 @@ async function connect() {
   await Promise.all([server.connect(a), client.connect(b)]);
   open.push({ close: () => agent.close() }, client);
   return async <T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}) => {
-    const r = (await client.callTool({ name, arguments: args })) as { isError?: boolean; content: { text: string }[] };
+    const r = (await callTool(client, root, name, args)) as { isError?: boolean; content: { text: string }[] };
     if (r.isError) throw new Error(r.content[0].text);
     return JSON.parse(r.content[0].text) as T;
   };
@@ -74,7 +76,13 @@ describe('risk policy over MCP', () => {
         await new Promise((r) => setTimeout(r, 20));
         doc = (await readAgentDocs(root)).find((d) => d.pending.length);
       }
-      writeAgentAnswer(root, { sessionId: doc.session.id, questionId: doc.pending[0].id, text, author: 'trail lead' });
+      writeAgentAnswer(root, {
+        sessionId: doc.session.id,
+        questionId: doc.pending[0].id,
+        text,
+        author: 'trail lead',
+        via: 'lookout',
+      });
     };
     await call('claim_ticket', { ticket: m.tickets[0].key });
     const asked = call<{ questionId: string }>('ask_human', { question: 'Tabs or spaces?', waitSeconds: 30 });
@@ -82,20 +90,23 @@ describe('risk policy over MCP', () => {
     const { questionId } = await asked;
     // The reviewer's sequence: "tabs" spent on dropping a table. High risk, and the answer never carried it.
     const drop = { resolution: 'Drop the users table', category: 'data-deletion' };
-    await expect(call('close_ticket', drop)).rejects.toThrow(/High-risk call \(data-deletion is high risk\)/);
+    // Unnamed, no answer fits a data-deletion call: the junction stays the human's to decide.
+    await expect(call('close_ticket', drop)).rejects.toThrow(HITL);
+    await expect(call('record_decision', { question: 'Drop?', ...drop, answer: 'Drop it' })).rejects.toThrow(
+      /High-risk call \(data-deletion is high risk\)/,
+    );
     await expect(call('close_ticket', { ...drop, questionId })).rejects.toThrow(/asked without a category/);
     const closed = await call<{ decision: { decidedBy: string } }>('close_ticket', { resolution: 'Tabs' });
     expect(closed.decision.decidedBy).toBe('trail lead');
-    // Used up, and not about the other ticket anyway: the next close is the agent's own, so high risk is refused.
+    // Used up, and not about the other ticket anyway: the next junction has no answer of the human's to close on.
     await call('claim_ticket', { ticket: m.tickets[1].key });
-    await expect(call('close_ticket', drop)).rejects.toThrow(/High-risk call/);
+    await expect(call('close_ticket', drop)).rejects.toThrow(HITL);
     await expect(call('close_ticket', { ...drop, questionId })).rejects.toThrow(/already backs the close of/);
     for (let i = 0; i < 3; i++)
       await expect(
         call('record_decision', { question: 'Drop?', answer: 'Drop it', category: 'data-deletion', questionId }),
       ).rejects.toThrow(/already backs/);
-    const own = await call<{ decision: { decidedBy: string } }>('close_ticket', { resolution: 'Keep it' });
-    expect(own.decision.decidedBy).toBe('claude-01');
+    await expect(call('close_ticket', { resolution: 'Keep it' })).rejects.toThrow(HITL);
   });
 
   /** Asks, and answers as the trail lead would in the Lookout. */
@@ -110,7 +121,13 @@ describe('risk policy over MCP', () => {
       await new Promise((r) => setTimeout(r, 20));
       doc = (await readAgentDocs(root)).find((d) => d.pending.length);
     }
-    writeAgentAnswer(root, { sessionId: doc.session.id, questionId: doc.pending[0].id, text, author: 'trail lead' });
+    writeAgentAnswer(root, {
+      sessionId: doc.session.id,
+      questionId: doc.pending[0].id,
+      text,
+      author: 'trail lead',
+      via: 'lookout',
+    });
     const { questionId } = await asked;
     while ((await readAgentDocs(root)).some((d) => d.pending.length)) await new Promise((r) => setTimeout(r, 20));
     return questionId;
@@ -263,9 +280,8 @@ describe('risk policy over MCP', () => {
     await expect(call('close_ticket', { resolution: 'Drop the users table', questionId: lunch })).rejects.toThrow(
       /asked as an fyi/,
     );
-    // Unnamed, it is not picked up either: the close is the agent's own (a local agent may; remote may not).
-    const own = await call<{ decision: { decidedBy: string } }>('close_ticket', { resolution: 'Keep it' });
-    expect(own.decision.decidedBy).toBe('claude-01');
+    // Unnamed, it is not picked up either, and without the human's answer a junction doesn't close.
+    await expect(call('close_ticket', { resolution: 'Keep it' })).rejects.toThrow(HITL);
   });
 
   it('one answer backs one decision, also when two calls race for it; decisions made at once all get an id', async () => {
@@ -325,6 +341,7 @@ describe('risk policy over MCP', () => {
         questionId: doc.pending[0].id,
         text: 'Yes',
         author: 'trail lead',
+        via: 'lookout',
       });
       return (await asked).questionId;
     };

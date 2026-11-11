@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { guideText } from '../../core/test/fakes/guideCatalog';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { callTool } from './fakes/callTool';
 import { approveAllHere } from './fakes/trailLead';
 
 let repo: string;
@@ -23,7 +24,7 @@ async function connect(agentName = 'claude-01') {
   await Promise.all([server.connect(a), client.connect(b)]);
   open.push({ close: () => agent.close() }, client);
   return async <T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}) => {
-    const r = (await client.callTool({ name, arguments: args })) as { isError?: boolean; content: { text: string }[] };
+    const r = (await callTool(client, root, name, args)) as { isError?: boolean; content: { text: string }[] };
     if (r.isError) throw new Error(r.content[0].text);
     return JSON.parse(r.content[0].text) as T;
   };
@@ -106,7 +107,7 @@ describe('guides over MCP', () => {
     await expect(call('add_ticket', { title: 'X', type: 'junction', guide: 'qa' })).rejects.toThrow(/not junction/);
     const added = await call<{ ticket: Info }>('add_ticket', { title: 'Docs', type: 'task', guide: 'docs' });
     expect(added.ticket.guide?.id).toBe('docs');
-    expect(m.tickets).toHaveLength(2);
+    expect(m.tickets).toHaveLength(3); // and discovery, ruled out (fakes/callTool.ts)
   });
 
   it('completing a ticket with a guide needs an answer per checklist item, which is kept', async () => {

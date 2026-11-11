@@ -83,13 +83,15 @@ export function refuseHumanTools(server: McpServer) {
 }
 
 /**
- * A HITL ticket (junction, prototype, a task marked for the human) is the human's to decide. Locally the agent
- * is trusted to have asked; a remote session must show the answer: one given in the Lookout or Slack to a
- * question it asked in this session.
+ * A HITL ticket (junction, prototype, a task marked for the human: whatever `attention` calls hitl) is the human's
+ * to decide, for every agent, local or remote: one rule, so they can't drift. It closes only on the human's answer
+ * to a question asked on it in this connection, given in the Lookout or Slack and not as an fyi (humanAnswer.ts
+ * finds it). An answer given in an agent's chat only guides. The human's own Close and Resolve in the Lookout don't
+ * come through here.
  */
-export function assertHumanDecided(at: { remote: boolean; ticket: Ticket; humanAnswered: boolean }) {
-  if (!at.remote || attention(at.ticket) !== 'hitl' || at.humanAnswered) return;
+export function assertHumanDecided(at: { ticket: Ticket; humanAnswered: boolean }) {
+  if (attention(at.ticket) !== 'hitl' || at.humanAnswered) return;
   throw new OperationError(
-    `${at.ticket.key} is the human's to decide, and over a remote connection their answer has to come through the Lookout or Slack. Ask with ask_human while you hold the ticket, then close it once they've answered (each answer backs one decision).`,
+    `${at.ticket.key} is the human's to decide: it closes only after they answer a question you asked on it, in the Lookout or Slack. Ask with ask_human while you hold the ticket (soon or blocking, not fyi) and wait for the answer, then close it (each answer backs one decision). An answer given in an agent's chat only guides.`,
   );
 }

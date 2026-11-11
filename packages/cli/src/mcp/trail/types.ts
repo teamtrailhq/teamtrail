@@ -1,4 +1,5 @@
 import type {
+  AnswerVia,
   ChecklistAnswer,
   CriterionEvidence,
   CriterionKind,
@@ -55,6 +56,10 @@ export interface AskResult {
   questionId: string;
   answer?: string;
   answeredBy?: string;
+  /** How it was given: `lookout` and `slack` answers can back the human's decisions, `chat` ones only guide. */
+  answeredVia?: AnswerVia;
+  /** Set for a chat answer: what it can't be used for. */
+  note?: string;
   waitedSeconds: number;
 }
 

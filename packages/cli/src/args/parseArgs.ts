@@ -89,6 +89,8 @@ export interface SubOptions {
   tokenStdin?: boolean;
   /** `connect --url`: check the token against a plain-HTTP endpoint on another machine anyway. */
   allowHttp?: boolean;
+  /** `connect`: leave the agent's settings without the rule that keeps it out of Teamtrail's config folder. */
+  noProtectConfig?: boolean;
   rest: string[];
 }
 
@@ -109,6 +111,7 @@ const SUB_FLAGS: Record<string, (o: SubOptions, f: Flag) => void> = {
   '--token': (o, f) => void (o.token = f.value()),
   '--token-stdin': (o) => void (o.tokenStdin = true),
   '--allow-http': (o) => void (o.allowHttp = true),
+  '--no-protect-config': (o) => void (o.noProtectConfig = true),
 };
 
 /** Options of the `mcp` and `connect` subcommands; `allowed` lists the flags the subcommand takes. */

@@ -260,7 +260,10 @@ await seedTimeline({ root, adapter, main, second, history, now });
 
 // 13. The seed stands in for a trail lead who approved all of it on this machine: the check commands, the accepted
 // brief, confirmed criteria and knowledge, the policy. (`npm run dev:fresh` shows the first run, where nothing is.)
-for (const i of pendingTrust(root)) approveTrust({ root, items: [{ key: i.key, hash: i.hash }], by: 'trail lead' });
+// Trails seeded without a brief are adopted as running without discovery, each on its own, as a trail lead would.
+const seededSnaps = await Promise.all((await adapter.listMaps()).map((m) => adapter.loadMap(m.id)));
+for (const i of pendingTrust(root, seededSnaps))
+  approveTrust({ root, items: [{ key: i.key, hash: i.hash }], by: 'trail lead', snaps: seededSnaps });
 
 console.log(`seeded ${root}`);
 console.log(`  ${main.key} ${main.title} · mid-flight`);

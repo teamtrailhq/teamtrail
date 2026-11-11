@@ -1,4 +1,4 @@
-import { deriveStates, type MapMode } from '@teamtrail/core';
+import { deriveStates, type MapMode, type MapSnapshot } from '@teamtrail/core';
 import { readAgentDocs } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
@@ -9,6 +9,7 @@ import { knowledgeFor } from './knowledge';
 import { matchingView, pickNext, stampModel } from './models';
 import { parallelView } from './parallel';
 import { adaptiveView, frozenOn } from './reroutes';
+import { requestSetting } from './settings';
 import { ticketInfo } from './ticketInfo';
 import { trailView } from './views';
 
@@ -78,9 +79,37 @@ export async function updateTrail(
     addOutOfScope?: string[];
     addAssumptions?: AssumptionPlanInput[];
     mode?: MapMode;
+    /** Why the agent asks for a new mode or destination, for the trail lead who decides. */
+    reason?: string;
   },
 ) {
   const snap = await ctx.resolveTrail(input.trail);
+  const requests = await settingRequests(ctx, snap, input);
+  const trail = await applyUpdate(ctx, { snap, input: { ...input, mode: undefined, destination: undefined } });
+  return requests.length ? { ...trail, requests } : trail;
+}
+
+/**
+ * The mode and the destination are the trail lead's: a new value becomes a request they approve or decline
+ * (settings.ts); the same value as now asks nothing.
+ */
+async function settingRequests(
+  ctx: AgentContext,
+  snap: MapSnapshot,
+  input: { mode?: MapMode; destination?: string; reason?: string },
+) {
+  const why = input.reason ?? 'The agent asks for it.';
+  const out = [];
+  if (input.mode && input.mode !== snap.map.mode)
+    out.push(await requestSetting(ctx, { trail: snap.map.id, change: { op: 'set_mode', mode: input.mode }, why }));
+  const dest = input.destination?.trim();
+  if (dest && dest !== snap.map.sections.destination.trim())
+    out.push(await requestSetting(ctx, { trail: snap.map.id, change: { op: 'update_destination', text: dest }, why }));
+  return out;
+}
+
+async function applyUpdate(ctx: AgentContext, c: { snap: MapSnapshot; input: Parameters<typeof updateTrail>[1] }) {
+  const { snap, input } = c;
   const s = await ctx.ensureSession();
   const sec = snap.map.sections;
   const patch = {

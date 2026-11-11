@@ -45,6 +45,7 @@ async function answer(text: string) {
         questionId: doc.pending[0].id,
         text,
         author: 'trail lead',
+        via: 'lookout',
       });
     await new Promise((r) => setTimeout(r, 20));
   }
@@ -82,16 +83,17 @@ describe('ruling a ticket out is the human’s call (close_ticket out_of_scope)'
       });
       expect(proposed).toMatchObject({ outcome: 'proposed', closed: null });
       expect((await ticketOf(m.trail.id, x)).state).toBe('open');
-      const [r1] = listReroutes(root, m.trail.id);
-      expect(r1).toMatchObject({ status: 'pending', changes: [{ op: 'cancel_ticket' }] });
+      // R-1 was the trail lead approving the skip of discovery (fakes/callTool.ts).
+      const r1 = listReroutes(root, m.trail.id).find((p) => p.lane === 'rule-out');
+      expect(r1).toMatchObject({ id: 'R-2', status: 'pending', changes: [{ op: 'cancel_ticket' }] });
       // The proposal freezes it: nobody claims it meanwhile, and ruling it out again is the same proposal.
-      await expect(lead('claim_ticket', { ticket: x })).rejects.toThrow(/frozen by reroute proposal R-1/);
+      await expect(lead('claim_ticket', { ticket: x })).rejects.toThrow(/frozen by reroute proposal R-2/);
       const again = await lead<{ proposal: { id: string } }>('close_ticket', {
         ticket: x,
         resolution: 'x',
         outcome: 'out_of_scope',
       });
-      expect(again.proposal.id).toBe('R-1');
+      expect(again.proposal.id).toBe('R-2');
 
       // Held, but no answer: still only a proposal.
       await call('claim_ticket', { ticket: z });

@@ -4,6 +4,7 @@ import { writeLocalJson } from '../lib/ensureLocalDir';
 import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
 import { announcementSig } from '../machine/announcementSig';
+import { runningVersion } from '../model/runningVersion';
 import { agentPaths, type LookoutLock } from './agentLink';
 
 /** What a Lookout's lock signature is for (projects/elsewhereUrl.ts checks it). */
@@ -13,7 +14,14 @@ export const LOCK_SIG = 'lookout-lock';
 export function writeLookoutLock(root: string, url: string) {
   const startedAt = Date.now();
   const sig = announcementSig(root, LOCK_SIG, [url, process.pid, startedAt]);
-  const lock: LookoutLock = { url, pid: process.pid, startedAt, ...(sig ? { sig } : {}) };
+  const version = runningVersion();
+  const lock: LookoutLock = {
+    url,
+    pid: process.pid,
+    startedAt,
+    ...(version ? { version } : {}),
+    ...(sig ? { sig } : {}),
+  };
   writeLocalJson(root, agentPaths.lock, lock);
   return () => {
     const cur = readJsonFile<LookoutLock>(path.join(root, agentPaths.lock));

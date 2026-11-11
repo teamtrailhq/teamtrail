@@ -108,7 +108,7 @@ async function startClosing(ctx: AgentContext, input: CloseInput): Promise<Closi
     hitl: attention(ticket) === 'hitl',
   });
   try {
-    assertHumanDecided({ remote: ctx.remote, ticket, humanAnswered: !!human });
+    assertHumanDecided({ ticket, humanAnswered: !!human });
     const risk = checkRisk({ ...judged, decidedBy: human?.author ?? agent });
     if (!ticket.assignee) {
       await claimTicket(ctx, { ticket: ticket.id, trail: snap.map.id });

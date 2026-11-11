@@ -205,7 +205,9 @@ test('a member the trail lead allowed may answer; one who was removed from the l
       f.payload.click(RAJ, ask.channel, ask.ts, 'ask_option:0'),
     );
     assert.equal(answered(), true);
-    assert.equal(readJson(path.join(w.root, '.agents', 'answers', 's1', 'q1.json')).author, `slack:${RAJ}`);
+    const given = readJson(path.join(w.root, '.agents', 'answers', 's1', 'q1.json'));
+    assert.equal(given.author, `slack:${RAJ}`);
+    assert.equal(given.via, 'slack', 'labelled as given in Slack');
   } finally {
     w.cleanup();
   }

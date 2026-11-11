@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { lookoutLinks, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
 
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
@@ -67,7 +67,7 @@ function changeShared(ws, who) {
 
 export async function verifyParallel({ browser, cli, log, shots }) {
   const top = scratchRepo();
-  const { server, pair } = await startServer(cli, top);
+  const { server, url, pair } = await startServer(cli, top);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -77,14 +77,18 @@ export async function verifyParallel({ browser, cli, log, shots }) {
     await signInWith(page, pair);
     await page.locator('.dialog.onboarding').waitFor();
     await page.getByRole('button', { name: 'Get started' }).click();
-    await one.call('start_trail', {
-      discovery: false,
-      title: 'Release search',
-      destination: 'Readers find a release in seconds',
-      tickets: [
-        { ref: 'box', title: 'Search box on the changelog', type: 'task' },
-        { ref: 'rank', title: 'Rank results by version', type: 'task' },
-      ],
+    await approveSkipInLookout({
+      started: await one.call('start_trail', {
+        discovery: false,
+        title: 'Release search',
+        destination: 'Readers find a release in seconds',
+        tickets: [
+          { ref: 'box', title: 'Search box on the changelog', type: 'task' },
+          { ref: 'rank', title: 'Rank results by version', type: 'task' },
+        ],
+      }),
+      page,
+      url: url,
     });
     const a = await one.call('claim_ticket', { touches: ['src/search/**'] });
     const b = await two.call('claim_ticket', { touches: ['src/search/index.ts'] });

@@ -9,10 +9,12 @@ import {
   OperationError,
   packageSpec,
   type Journal,
+  type AnswerVia,
   type MapSnapshot,
   type SessionHandle,
   type SessionMode,
   type Ticket,
+  versionSkew,
 } from '@teamtrail/core';
 import {
   AgentDocWriter,
@@ -47,7 +49,7 @@ export class AgentContext {
   /** Every session this connection opened: a reviewer must not be one of the sessions that did the work. */
   readonly sessionIds: string[] = [];
   /** Answers being waited for, by question id. */
-  readonly waits = new Map<string, Promise<{ text: string; author: string }>>();
+  readonly waits = new Map<string, Promise<{ text: string; author: string; via?: AnswerVia }>>();
   /** The human's answers to this agent's questions, by question id: what a decision of theirs rests on. */
   readonly answers = new Map<string, HumanAnswer>();
   /** Knowledge entries this connection proposed: its own words, which it may read back before they are reviewed. */
@@ -93,6 +95,11 @@ export class AgentContext {
     return this.opts.remote ? `${name} (remote, via MCP over HTTP)` : `${name} via MCP`;
   }
 
+  /** A ticket as this process last loaded it. */
+  seen(ticketId: string) {
+    return this.tickets.get(ticketId);
+  }
+
   /** Display key of a ticket seen in this process (`#3`, `ENG-3`). */
   keyOf(ticketId: string) {
     return this.tickets.get(ticketId)?.key ?? `#${ticketId}`;
@@ -112,8 +119,9 @@ export class AgentContext {
 
   lookout() {
     const lock = readLookoutLock(this.root);
+    const skew = versionSkew({ agentVersion: OWN_VERSION, lookoutVersion: lock?.version });
     return lock
-      ? { running: true, url: lock.url }
+      ? { running: true, url: lock.url, ...(skew ? { versionNote: skew } : {}) }
       : {
           running: false,
           hint: `Run \`npx ${packageSpec(OWN_VERSION)} --dir ${path.relative(process.cwd(), this.root) || '.'}\` in this folder to watch live.`,

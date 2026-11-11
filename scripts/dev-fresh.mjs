@@ -76,8 +76,9 @@ console.log(`
   Config:  ${config}
   Lookout: ${url}
 
-  Connect an agent the way a user would, in another terminal:
-    cd ${project} && TEAMTRAIL_CONFIG_DIR=${config} node ${cli} connect
+  Connect an agent the way a user would, in another terminal (--no-protect-config keeps deny rules for this
+  throwaway config folder out of your real ~/.claude/settings.json):
+    cd ${project} && TEAMTRAIL_CONFIG_DIR=${config} node ${cli} connect claude --no-protect-config
 
   Ctrl+C to stop. Everything lives in ${root}; it's removed when you stop.
 `);

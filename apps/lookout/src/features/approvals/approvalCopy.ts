@@ -11,6 +11,8 @@ export const KIND_EFFECT: Record<TrustKind, string> = {
   level: 'Completions on it are checked this much',
   type: "The trail's level applies to a ticket by its type",
   state: 'Accepting signs it as yours on this machine: gates then read the file as it is',
+  discovery:
+    'Agents may claim its implementation tickets without a discovery brief, and criteria are no longer required',
 };
 
 /** What approving does not cover, where it matters; shown in full under the item. */

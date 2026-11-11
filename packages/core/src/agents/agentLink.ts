@@ -1,3 +1,4 @@
+import type { AnswerVia } from '../model/answerVia';
 import type { AnsweredQuestion, ChatMessage, FeedEntry, PendingQuestion, SessionInfo } from '../model/types';
 
 /**
@@ -50,6 +51,8 @@ export interface AgentSessionDoc {
   feed: FeedEntry[];
   /** Client that connected, e.g. `claude-code 2.1.0`. */
   client?: string;
+  /** The Teamtrail version of the process that writes it; absent from versions before it was written. */
+  teamtrail?: string;
   pid: number;
   updatedAt: number;
 }
@@ -61,14 +64,27 @@ export interface AgentAnswer {
   /** Actor id of who answered, e.g. `trail lead`. */
   author: string;
   at: number;
-  /** This machine's signature of the fields above. An answer without a valid one is not the human's. */
+  /**
+   * How it was given: set by the path that wrote it (the Lookout's bridge, Slack, answer_question), never by what
+   * was sent to it, and signed with the rest. Absent on answers written before labels; those count as chat.
+   */
+  via?: AnswerVia;
+  /** For `chat`: the agent whose chat it was given in. */
+  chatOf?: string;
+  /** The Teamtrail version that wrote it, to say so when the asking agent runs another one. Not signed. */
+  writer?: string;
+  /** This machine's signature of the answer (all but the label). An answer without a valid one is not the human's. */
   sig?: string;
+  /** This machine's signature of the answer with its label: without a valid one, the label doesn't count. */
+  sigVia?: string;
 }
 
 export interface LookoutLock {
   url: string;
   pid: number;
   startedAt: number;
+  /** The Teamtrail version the Lookout runs; absent from versions before it was written. */
+  version?: string;
   /** This machine's signature of the lock (machine/announcementSig.ts): only then is its URL offered as a link. */
   sig?: string;
 }

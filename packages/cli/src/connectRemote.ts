@@ -7,6 +7,7 @@ import { fail } from './args/help';
 import type { ConnectTarget } from './connect';
 import { writeIfChanged } from './files';
 import { probeEndpoint, type ProbeResult } from './probeEndpoint';
+import { protectConfig } from './protect/protectConfig';
 
 type Print = (s: string) => void;
 type Run = (bin: string, args: string[]) => { status: number | null; out: string; missing: boolean };
@@ -22,6 +23,8 @@ export interface ConnectRemoteOptions {
   /** Test seams: the client CLI and the endpoint check. */
   run?: Run;
   probe?: (url: string, token: string) => Promise<ProbeResult>;
+  /** Keep this machine's Teamtrail config folder out of the agent's reach; false is `--no-protect-config`. */
+  protectConfig?: boolean;
 }
 
 const PROBE_LINE: Record<ProbeResult, string> = {
@@ -74,6 +77,8 @@ export async function connectRemote(target: ConnectTarget, o: ConnectRemoteOptio
   else if (o.token) print(`  Endpoint        ${PROBE_LINE[await check(url.href, o.token)]}`);
   if (target === 'claude') connectClaude({ ...o, url: url.href, print });
   else connectCodex({ ...o, url: url.href, print });
+  // The server may be elsewhere, but this machine may run Teamtrail too: its key and credentials stay out of reach.
+  protectConfig(target, { print, enabled: o.protectConfig });
 }
 
 function connectClaude(o: ConnectRemoteOptions & { print: Print }) {

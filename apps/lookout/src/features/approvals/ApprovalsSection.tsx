@@ -31,9 +31,10 @@ export function ApprovalsSection() {
     );
   };
   const { items, tracker, oldQueue } = view;
-  // together only on this machine's first run, only what was committed, and never trail state signed here before
+  // together only on this machine's first run, only what was committed, never an item meant for its own look
+  // (alone: a trail without discovery, guide catalogs), and never trail state signed here before
   const adoptable = (i: TrustItem) =>
-    i.kind === 'state' ? view.stateFirstRun && i.standing === 'elsewhere' : view.firstRun;
+    !i.alone && (i.kind === 'state' ? view.stateFirstRun && i.standing === 'elsewhere' : view.firstRun);
   const committed = items.filter((i) => i.committed !== false && adoptable(i));
   const waiting = items.length + (tracker ? 1 : 0) + (oldQueue ? 1 : 0);
   return (

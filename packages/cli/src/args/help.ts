@@ -5,8 +5,9 @@ export const HELP = `${BRAND.name}: ${BRAND.category}
 Usage: ${BRAND.slug} [options]
        ${BRAND.slug} mcp [--dir <path>] [--agent <trailName>] [--lease-minutes <n>] [--no-register]
        ${BRAND.slug} mcp --http [--port <n>] [--host <addr>] [--allow-host <name>] [--dir <path>] [--lease-minutes <n>] [--no-register]
-       ${BRAND.slug} connect claude|codex [--dir <path>] [--no-register]
+       ${BRAND.slug} connect claude|codex [--dir <path>] [--no-register] [--no-protect-config]
        ${BRAND.slug} connect claude|codex --url <http(s)://host:port/mcp> [--token-stdin | --token <token>] [--allow-http]
+                 [--no-protect-config]
        ${BRAND.slug} projects add [path] | list | remove <id|path>
        ${BRAND.slug} connect slack [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
@@ -32,7 +33,11 @@ Commands:
   connect <agent>  Register the MCP server with Claude Code or Codex and add the /scout command.
                  It registers this exact version (npx -y ${BRAND.npm}@<version>), so agents never start a
                  newer one by surprise; run connect again from a newer version to update
-                 (for Claude Code also a SessionStart hook, so usage comes from the transcript)
+                 (for Claude Code also a SessionStart hook, so usage comes from the transcript).
+                 It also keeps the agent out of ${BRAND.name}'s config folder (this machine's key, approvals,
+                 credentials): deny rules in Claude Code's user settings (~/.claude/settings.json), printed
+                 with how to remove them; for Codex it prints the permissions profile to add.
+                 --no-protect-config skips that
   connect <agent> --url <endpoint>
                  Point the agent at a ${BRAND.name} MCP server over HTTP instead of starting one.
                  The token comes from --token-stdin, $${BRAND.tokenEnv} or --token (which lands in
