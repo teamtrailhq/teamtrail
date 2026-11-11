@@ -28,3 +28,4 @@ export { createLookoutSignIn, type LookoutSignIn, type LookoutSignInOptions } fr
 export { mintPairCode } from './signIn/pairCodes';
 export { SESSION_HEADER } from './signIn/signInHeader';
 export { runningLookout, type RunningLookout } from './signIn/runningLookout';
+export { writeSignInRedirect } from './signIn/writeSignInRedirect';

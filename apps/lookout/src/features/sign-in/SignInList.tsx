@@ -1,4 +1,4 @@
-import type { SignInView } from '@teamtrail/core';
+import { BRAND, type SignInView, signInShortId } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
 import { sinceLabel } from '../../lib/sinceLabel';
 import { RevokeSignInButton } from './RevokeSignInButton';
@@ -21,6 +21,8 @@ export function SignInList(props: { sessions: SignInView[]; onRevoke: (id: strin
             <MetaLine
               parts={[
                 WHERE[s.kind],
+                s.via === 'opened-page' ? `From the page ${BRAND.name} opened` : undefined,
+                s.via === 'opened-page' ? { text: signInShortId(s.id), code: true } : undefined,
                 `Paired ${sinceLabel(s.pairedAt, now)}`,
                 `Last used ${sinceLabel(s.lastUsedAt, now)}`,
               ]}

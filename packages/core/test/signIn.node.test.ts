@@ -11,6 +11,7 @@ import { journalFile, journalPath } from '../src/history/journalFile';
 import { machineStore } from '../src/machine/machineStore';
 import { SIGN_IN_JOURNAL } from '../src/model/lifecycle';
 import type { SignInView } from '../src/model/signIn';
+import { signInShortId } from '../src/model/signInShortId';
 import { callerKey } from '../src/signIn/callerKey';
 import { instanceProven } from '../src/signIn/instanceProof';
 import { createLookoutSignIn, type LookoutSignIn } from '../src/signIn/lookoutSignIn';
@@ -468,4 +469,42 @@ test("many addresses don't multiply guesses: an IPv6 /64 is one caller, and all 
   } finally {
     t.close();
   }
+});
+
+test('a link refused on this machine says someone else may have used it; elsewhere, and a typed code, it does not', async () => {
+  const { code } = signIn.mintCode('machine', 'opened-page');
+  assert.equal((await call({ method: 'POST', path: '/pair', body: pairBody(code) })).status, 200);
+  const again = await call({ method: 'POST', path: '/pair', body: pairBody(code) });
+  assert.equal(again.status, 400);
+  assert.match(
+    String(json(again).error),
+    /^This link was already used or has expired\. If you didn't sign in just now, someone else may have: check Settings → Browsers & devices in a browser that's signed in, or restart Teamtrail to end every session\./,
+  );
+  // a printed link's code too: the page can't tell them apart
+  const expired = await call({ method: 'POST', path: '/pair', body: pairBody('Z'.repeat(43)) });
+  assert.match(String(json(expired).error), /someone else may have/);
+  // another device, or a typed code: the plain answer, with the way to a new one
+  const fromLan = await call({
+    method: 'POST',
+    path: '/pair',
+    headers: { ...lan('192.168.1.77'), Origin: `http://192.168.1.5:${port}` },
+    body: pairBody(code),
+  });
+  assert.equal(String(json(fromLan).error), 'That code was already used, has expired, or is wrong. Get a new one.');
+  const typed = await call({ method: 'POST', path: '/pair', body: pairBody('ABCD-EFGH') });
+  assert.doesNotMatch(String(json(typed).error), /someone else/);
+});
+
+test('Settings lists a browser signed in through an opened page with the short id the terminal names', () => {
+  const { code } = signIn.mintCode('machine', 'opened-page');
+  const done = signIn.pair({ headers: {}, socket: {} } as unknown as http.IncomingMessage, {
+    code,
+    local: true,
+    who: 'loopback',
+  });
+  assert.equal(done.kind, 'paired');
+  const view = signIn.views().find((v) => done.kind === 'paired' && v.id === done.session.id);
+  assert.equal(view?.via, 'opened-page');
+  assert.equal(signInShortId(view!.id), view!.id.slice(0, 9));
+  assert.match(signInShortId(view!.id), /^si_[0-9a-f]{6}$/);
 });

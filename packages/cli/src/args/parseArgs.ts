@@ -91,6 +91,8 @@ export interface SubOptions {
   allowHttp?: boolean;
   /** `connect`: leave the agent's settings without the rule that keeps it out of Teamtrail's config folder. */
   noProtectConfig?: boolean;
+  /** `pair`: only print the link, without opening the browser on it. */
+  noOpen?: boolean;
   rest: string[];
 }
 
@@ -112,6 +114,7 @@ const SUB_FLAGS: Record<string, (o: SubOptions, f: Flag) => void> = {
   '--token-stdin': (o) => void (o.tokenStdin = true),
   '--allow-http': (o) => void (o.allowHttp = true),
   '--no-protect-config': (o) => void (o.noProtectConfig = true),
+  '--no-open': (o) => void (o.noOpen = true),
 };
 
 /** Options of the `mcp` and `connect` subcommands; `allowed` lists the flags the subcommand takes. */

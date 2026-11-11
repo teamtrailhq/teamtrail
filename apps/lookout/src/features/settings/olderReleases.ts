@@ -1,7 +1,32 @@
 import type { Release } from './releases';
 
-/** Releases 0.1–0.12, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.1–0.14, kept apart so `releases.ts` stays short. Newest first. */
 export const OLDER_RELEASES: Release[] = [
+  {
+    version: '0.14.0',
+    date: '2026-10-31',
+    items: [
+      'Ticket lifecycle in plain words: Ready, Backlog, Working, Done and Cancelled (with Verifying, Rework and Blocked to come with verification)',
+      'Every claim, release, return to queue, resolution and rule-out goes through one lifecycle engine that records who, why and when in `.miloops/.events/<mission>.jsonl` (local history, never committed)',
+      'Settings → Verification shows the checks in `.miloops/verification.json`: argv commands with timeouts, run without a shell, secrets kept out of their environment. Read-only',
+      'Completion is a claim: on missions started with `verification.json` present, an execute or task ticket is only done once its checks pass. A failed check sends it back for Rework with the failing output (agents see it in close_ticket, next_ticket and claim_ticket, and rework comes first in the queue); after 3 failed attempts, or when the checks cannot run, it waits on you as Blocked',
+      'New MCP tools `report_completion` and `verification_status`; missions started before verification, and research, grilling and prototype tickets, close exactly as before',
+      'Git evidence, no GitHub needed: each claim records HEAD and the uncommitted state, and each completion lists the files changed since then. It flags no changes, overlap with another active ticket, a branch switch or reset, and edits to `verification.json` (which send the ticket to you as Blocked). A pass on code that changed while its checks ran is re-run',
+      'Pull request and CI evidence: with `verification.json` and a GitHub token (Settings, `GITHUB_TOKEN` or `gh auth login`), the command center finds each ticket’s PR (its branch `miloops-<mission>-<ticket>`, a `miloops:<mission>#<ticket>` line in the PR body, or a link you set) and flags mismatches: done with the PR still open, PR merged while the ticket is in progress, PR closed unmerged, required checks failing or unknown, PR head not the verified commit. Flags never change a ticket. A CI chip in the header shows sync health and never shows synced after a failed sync',
+    ],
+  },
+  {
+    version: '0.13.0',
+    date: '2026-10-31',
+    items: [
+      'Crash recovery for claims: an agent’s claim is a lease (15 min by default) that every tool call renews, including waits on your answer',
+      'When an agent crashes or goes silent, its ticket goes back to the queue on its own, and the activity log says so; the next agent picks it up from next_ticket or claim_ticket',
+      'The returned ticket keeps a handoff comment with the previous agent’s progress notes and decisions, so the next agent resumes instead of starting over',
+      'Stalled state on the map, in sessions and in the ticket inspector when a lease is about to run out, with a Release to queue action',
+      'Works with GitHub and Linear: the return is an ordinary comment + unassign, queued in the offline outbox like any other write',
+      'Set the lease with `miloops mcp --lease-minutes <n>` or `MILOOPS_LEASE_MINUTES`',
+    ],
+  },
   {
     version: '0.12.0',
     date: '2026-10-31',

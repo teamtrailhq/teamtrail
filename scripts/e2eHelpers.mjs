@@ -51,7 +51,7 @@ export function lookoutLinks(out) {
 
 /** A new one-time sign-in link for the Lookout running in `cwd`, as `teamtrail pair` prints it: for a second browser. */
 export function pairLink({ cli, cwd, env = process.env }) {
-  const out = execFileSync(process.execPath, [cli, 'pair'], { cwd, env }).toString();
+  const out = execFileSync(process.execPath, [cli, 'pair', '--no-open'], { cwd, env }).toString();
   const link = out.match(/(http:\S+#pair=\S+)/)?.[1];
   if (!link) throw new Error(`teamtrail pair printed no link: ${out}`);
   return link;
