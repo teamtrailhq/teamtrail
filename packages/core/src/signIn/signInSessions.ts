@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { processAlive } from '../lib/processAlive';
 import type { SignInKind, StoredSignIn } from '../model/signIn';
 import { normalizePairCode } from './pairCodes';
 import { findByHash, newSessionSecret, secretHash } from './signInSecrets';
@@ -14,10 +15,11 @@ export type PairResult = { kind: 'paired'; secret: string; session: StoredSignIn
 /**
  * Uses a pairing code, once: the code is gone whatever happens next. A good one opens a new session. `local` is
  * whether the browser pairing is on this machine; only then does a `machine` code give a `machine` session. `instance`
- * is this Lookout's process: codes made for another are refused.
+ * is this Lookout's process: codes made for another are refused. `start`: this Lookout start, which the session is
+ * tied to.
  */
 export function pairWithCode(
-  at: SignInPlace & { code: unknown; name: string; local: boolean; instance: number; now?: number },
+  at: SignInPlace & { code: unknown; name: string; local: boolean; instance: number; start: string; now?: number },
 ): PairResult {
   const now = at.now ?? Date.now();
   const code = normalizePairCode(at.code)?.code;
@@ -35,11 +37,16 @@ export function pairWithCode(
       name: at.name,
       hash: secretHash(secret),
       kind,
+      start: at.start,
+      instance: at.instance,
       pairedAt: now,
       lastUsedAt: now,
       expiresAt: now + SESSION_MS,
     };
-    const live = file.sessions.filter((s) => s.expiresAt > now).sort((a, b) => a.lastUsedAt - b.lastUsedAt);
+    // sessions of a Lookout that has stopped are over: they go with this write (another one running keeps its own)
+    const live = file.sessions
+      .filter((s) => s.expiresAt > now && (s.start === at.start || processAlive(s.instance)))
+      .sort((a, b) => a.lastUsedAt - b.lastUsedAt);
     const sessions = [...live, session].slice(-MAX_SESSIONS);
     return { file: { v: 1, sessions, codes: rest }, result: { kind: 'paired', secret, session } };
   });

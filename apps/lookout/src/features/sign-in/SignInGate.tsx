@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react';
+import { NotRunningPage } from './NotRunningPage';
 import { PairPage } from './PairPage';
 import { sendPairCode } from './sendPairCode';
 import { takePairCode } from './takePairCode';
@@ -22,5 +23,6 @@ export function SignInGate({ children }: { children: ReactNode }) {
   }, [status.kind, code]);
   if (status.kind === 'checking') return null;
   if (status.kind === 'signed-out') return <PairPage local={status.local} code={code} />;
+  if (status.kind === 'not-running') return <NotRunningPage />;
   return <>{children}</>;
 }

@@ -4,8 +4,8 @@ import { BRAND } from '@teamtrail/core';
 export function PairHere() {
   return (
     <p className="t-body pair-step pair-here">
-      On the machine {BRAND.name} runs on, run <code className="t-code">{BRAND.slug} pair</code> and open the link it
-      prints. Starting <code className="t-code">{BRAND.slug}</code> prints one too, and opens it.
+      On the machine {BRAND.name} runs on, open the Sign in link <code className="t-code">{BRAND.slug}</code> printed in
+      its terminal, or run <code className="t-code">{BRAND.slug} pair</code> for a new one.
     </p>
   );
 }

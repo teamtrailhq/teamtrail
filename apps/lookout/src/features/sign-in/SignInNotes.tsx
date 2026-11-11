@@ -9,8 +9,9 @@ export function SignInNotes() {
         agent with <code>curl</code> can’t approve its own work, answer its own questions or change your settings
         through the Lookout. The session lives only in this page’s own storage and is sent only by this page, never as a
         cookie, so another server on this machine (an agent’s dev server on another port) gets nothing from your
-        browser. A device paired here can read, answer and approve, but never change what runs on this machine or whom
-        it trusts.
+        browser; and it goes only to a server that first proves it is this Lookout, so one that takes its port while the
+        Lookout is stopped gets nothing either. A device paired here can read, answer and approve, but never change what
+        runs on this machine or whom it trusts.
       </p>
       <p className="t-meta ra-note">
         <b>What it can’t stop.</b> A program that can read {BRAND.name}’s config folder can make a pairing code, and one

@@ -34,7 +34,7 @@ From the repo root:
 
 ```bash
 npm install
-npm run dev                 # resets the dev project (npm run seed), then Vite with hot reload, http://localhost:5173
+npm run dev                 # resets the dev project (npm run seed), then Vite with hot reload, http://localhost:7477
 npm run dev:keep            # the same server without reseeding, keeping what you changed
 npm run dev:agent           # real MCP agents working the dev project (after npm run build -w teamtrail)
 npm run build               # every workspace; the lookout bundle + CLI land in packages/cli/dist

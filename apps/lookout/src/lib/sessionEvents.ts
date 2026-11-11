@@ -1,5 +1,6 @@
 import { BRAND } from '@teamtrail/core';
 import { apiBase } from './apiBase';
+import { distrustServer, proveServer } from './serverProof';
 
 type Listener = (e: Event) => void;
 const MAX_RETRY_MS = 10_000;
@@ -8,7 +9,7 @@ const MAX_RETRY_MS = 10_000;
  * The server's event stream (`<api>/events`), signed in. EventSource can't send the session header, so each
  * connection first gets a single-use ticket with it (`POST /sign-in/stream`) and opens `/events?ticket=`. A ticket
  * works once, so when the connection drops this opens a new one with a new ticket (backing off to 10 s), instead
- * of EventSource's own retry. Listeners ('message', 'open', 'error' and named events) carry over.
+ * of EventSource's own retry; and before each, the server proves it is the Lookout (serverProof.ts). Listeners ('message', 'open', 'error' and named events) carry over.
  */
 export class SessionEventSource {
   private inner?: EventSource;
@@ -40,6 +41,8 @@ export class SessionEventSource {
 
   private async connect() {
     if (this.closed) return;
+    // the server proves it is this page's Lookout before the session goes out for a ticket
+    if ((await proveServer()) !== 'proven') return this.failed();
     const ticket = await fetch(`${BRAND.apiPrefix}/sign-in/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -56,6 +59,8 @@ export class SessionEventSource {
     es.addEventListener('open', () => (this.retryMs = 1000));
     es.addEventListener('error', () => {
       es.close();
+      // dropped: whoever answers next proves itself first (the Lookout may have stopped and its port been taken)
+      distrustServer();
       this.retry();
     });
   }

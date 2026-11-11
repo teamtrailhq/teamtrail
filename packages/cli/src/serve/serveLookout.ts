@@ -81,12 +81,14 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
     `\n  ${BRAND.name} ${__VERSION__} · ${BRAND.assistant.name} online\n\n` +
       `  Lookout  ${url}\n` +
       `  Sign in  ${signInLink}\n` +
-      `           Opens the Lookout and signs that browser in: once, within 10 minutes. \`${BRAND.slug} pair\` prints another.\n` +
+      `           Click it to sign in the browser: once, within 10 minutes. \`${BRAND.slug} pair\` prints another.\n` +
       `  Tracker         ${path.relative(process.cwd(), bridge.root) || '.'}${path.sep}  (${bridge.root})\n\n` +
       `  Press Ctrl+C to stop.\n\n`,
   );
   if (slackSetup) process.stdout.write(`  Slack setup     ${url}?settings=slack\n\n`);
-  if (opts.open) openBrowser(signInLink);
+  // The browser opens on the Lookout itself, never on the link: a command line is readable by every process of
+  // this user for a moment, and the code would be on it. The link is only in this terminal.
+  if (opts.open) openBrowser(slackSetup ? `${url}?settings=slack` : url);
   const unlock = writeLookoutLock(bridge.root, url);
   const unlist = writeMcpEndpoint(bridge.root, {
     url: endpointUrl('127.0.0.1', port),

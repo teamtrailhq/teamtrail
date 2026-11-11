@@ -20,5 +20,7 @@ const cli = JSON.parse(readFileSync(path.join(repoRoot, 'packages/cli/package.js
 export default defineConfig({
   define: { __CLI_VERSION__: JSON.stringify(cli.version) },
   plugins: [react(), trackerFs({ root: dataDir, prefix: BRAND.apiPrefix, projectsConfigDir })],
-  server: { port: 5173, host: true },
+  // Not 5173: agents' own dev servers commonly take it, and a server squatting this port would get the dev page's
+  // origin (the page checks its server before sending its session, but a stranger's page there reads its storage).
+  server: { port: 7477, host: true },
 });

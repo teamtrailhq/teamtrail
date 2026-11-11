@@ -21,6 +21,8 @@ const isSession = (s: unknown): s is StoredSignIn => {
     typeof x.hash === 'string' &&
     /^[0-9a-f]{64}$/.test(x.hash) &&
     (x.kind === 'machine' || x.kind === 'device') &&
+    typeof x.start === 'string' &&
+    typeof x.instance === 'number' &&
     typeof x.expiresAt === 'number'
   );
 };

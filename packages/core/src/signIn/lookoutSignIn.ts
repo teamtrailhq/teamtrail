@@ -1,8 +1,10 @@
+import { randomBytes } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { SignInFile, SignInKind, SignInView, StoredSignIn } from '../model/signIn';
 import { browserName } from './browserName';
 import { pairAttempts } from './pairAttempts';
 import { mintPairCode, normalizePairCode } from './pairCodes';
+import { servedOrigin, sessionProof, sessionVerifier } from './sessionProof';
 import { sessionOf } from './signInHeader';
 import { findByHash, SESSION_SHAPE } from './signInSecrets';
 import { burnPairCode, pairWithCode, removeSession, touchSessions } from './signInSessions';
@@ -22,7 +24,7 @@ export interface LookoutSignInOptions extends SignInPlace {
 export type SignInCheck = { kind: 'signed-in'; session: StoredSignIn } | { kind: 'signed-out' };
 
 export type PairOutcome =
-  | { kind: 'paired'; session: StoredSignIn; secret: string }
+  | { kind: 'paired'; session: StoredSignIn; secret: string; verifier: string }
   | { kind: 'already'; session: StoredSignIn }
   | { kind: 'refused' }
   | { kind: 'locked'; until: number };
@@ -40,6 +42,8 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
   const place: SignInPlace = { root: o.root, configDir: o.configDir };
   const now = o.now ?? Date.now;
   const instance = o.instance ?? process.pid;
+  // This start: sessions paired now work until this Lookout stops, never for a later one.
+  const start = randomBytes(16).toString('hex');
   const attempts = pairAttempts();
   const tickets = streamTickets(now);
   const streams = new Map<string, Set<ServerResponse>>();
@@ -50,7 +54,7 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
     if (at !== cache.at) cache = { at, file: readSignIns(place) };
     return cache.file;
   };
-  const live = () => current().sessions.filter((s) => s.expiresAt > now());
+  const live = () => current().sessions.filter((s) => s.start === start && s.expiresAt > now());
 
   /** Records a use (to the minute), which moves the session's expiry forward. */
   const used = (session: StoredSignIn) => {
@@ -86,10 +90,22 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
       return { kind: 'already', session: signedIn.session };
     }
     const name = browserName(req.headers['user-agent']);
-    const done = pairWithCode({ ...place, code: at.code, local: at.local, name, instance, now: now() });
-    if (done.kind === 'paired') return done;
+    const done = pairWithCode({ ...place, code: at.code, local: at.local, name, instance, start, now: now() });
+    if (done.kind === 'paired') return { ...done, verifier: sessionVerifier(done.session.id, o.configDir) };
     if (shape.kind === 'typed') attempts.failed(at.who, now());
     return done;
+  }
+
+  /**
+   * The page's check that this is its Lookout (sessionProof.ts): the proof for a live session's id and a nonce, at
+   * the origin this request reached; undefined for a session this start doesn't have.
+   */
+  function prove(req: IncomingMessage, at: { id?: unknown; nonce?: unknown }) {
+    const session = typeof at.id === 'string' ? live().find((s) => s.id === at.id) : undefined;
+    const origin = servedOrigin(req);
+    const nonce = typeof at.nonce === 'string' && /^[0-9a-f]{32,128}$/.test(at.nonce) ? at.nonce : undefined;
+    if (!session || !origin || !nonce) return undefined;
+    return sessionProof(sessionVerifier(session.id, o.configDir), nonce, origin);
   }
 
   function endStreams(id: string) {
@@ -109,6 +125,7 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
     check,
     checkTicket,
     pair,
+    prove,
     streamTicket: (session: StoredSignIn) => tickets.issue(session.id),
     mintCode: (kind: SignInKind) => mintPairCode({ ...place, kind, instance, now: now() }),
     lanUrls: () => o.lanUrls?.() ?? [],

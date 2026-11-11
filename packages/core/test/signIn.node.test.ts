@@ -11,10 +11,12 @@ import { journalFile, journalPath } from '../src/history/journalFile';
 import { machineStore } from '../src/machine/machineStore';
 import { SIGN_IN_JOURNAL } from '../src/model/lifecycle';
 import type { SignInView } from '../src/model/signIn';
+import { callerKey } from '../src/signIn/callerKey';
 import { instanceProven } from '../src/signIn/instanceProof';
 import { createLookoutSignIn, type LookoutSignIn } from '../src/signIn/lookoutSignIn';
 import { mintPairCode } from '../src/signIn/pairCodes';
 import { runningLookout } from '../src/signIn/runningLookout';
+import { sessionProof } from '../src/signIn/sessionProof';
 import { SESSION_MS } from '../src/signIn/signInSessions';
 import { SIGN_IN_FILE } from '../src/signIn/signInStore';
 import { pairSession, sessionHeader } from './fakes/signedIn';
@@ -64,8 +66,17 @@ after(() => {
 });
 
 type Answer = { status: number; text: string; headers: http.IncomingHttpHeaders };
-function call(o: { method?: string; path: string; headers?: Record<string, string>; body?: string }) {
+/** A request as the Lookout page's own fetch makes it: a POST carries Origin, unless `noOrigin`. */
+function call(o: {
+  method?: string;
+  path: string;
+  headers?: Record<string, string>;
+  body?: string;
+  noOrigin?: boolean;
+}) {
   const method = o.method ?? 'GET';
+  const host = o.headers?.Host ?? `127.0.0.1:${port}`;
+  const origin = method === 'GET' || o.noOrigin || o.headers?.Origin ? {} : { Origin: `http://${host}` };
   const body = method === 'GET' ? undefined : (o.body ?? '{}');
   return new Promise<Answer>((resolve, reject) => {
     const req = http.request(
@@ -77,6 +88,7 @@ function call(o: { method?: string; path: string; headers?: Record<string, strin
         headers: {
           'Content-Type': 'application/json',
           ...(body === undefined ? {} : { 'Content-Length': String(Buffer.byteLength(body)) }),
+          ...origin,
           ...o.headers,
         },
       },
@@ -383,5 +395,77 @@ test('`teamtrail pair` trusts a lock only when its process is alive and the serv
     assert.equal((await runningLookout(root)).kind, 'none');
   } finally {
     release();
+  }
+});
+
+test("POST /pair needs the Lookout page's Origin: a program that read a code gets nothing, and the code stays", async () => {
+  const { code } = signIn.mintCode('machine');
+  const bare = await call({ method: 'POST', path: '/pair', body: pairBody(code), noOrigin: true });
+  assert.equal(bare.status, 403);
+  assert.equal((await call({ method: 'POST', path: '/pair', body: pairBody(code) })).status, 200);
+});
+
+test('a session lives as long as its Lookout start: a later start (a restart) refuses it and forgets it', () => {
+  // the earlier start: a Lookout process that has stopped since
+  const earlier = createLookoutSignIn({ root, configDir, instance: 999_999 });
+  const later = createLookoutSignIn({ root, configDir });
+  const secretBefore = pairSession(earlier);
+  const firstId = earlier.views()[0].id;
+  const req = { headers: { 'x-teamtrail-session': secretBefore }, socket: {} } as unknown as http.IncomingMessage;
+  try {
+    assert.equal(earlier.check(req).kind, 'signed-in');
+    assert.equal(later.check(req).kind, 'signed-out');
+    assert.equal(signIn.check(req).kind, 'signed-out', 'nor another Lookout running now');
+    assert.deepEqual(later.views(), []);
+    // the later start pairs its own browser; what the stopped start had is gone from the file
+    pairSession(later);
+    assert.equal(later.views().length, 1);
+    const stored = JSON.parse(readFileSync(machineStore(root, configDir).file(SIGN_IN_FILE), 'utf8')) as {
+      sessions: { id: string }[];
+    };
+    assert.ok(!stored.sessions.some((s) => s.id === firstId));
+    assert.ok(signIn.views().length > 0, 'a Lookout still running keeps its own');
+  } finally {
+    earlier.close();
+    later.close();
+  }
+});
+
+test('the page checks the server before it sends its session: a proof for its id, a nonce and this origin', async () => {
+  const { code } = signIn.mintCode('machine');
+  const paired = json(await call({ method: 'POST', path: '/pair', body: pairBody(code) }));
+  assert.match(String(paired.verifier), /^[0-9a-f]{64}$/);
+  const nonce = randomBytes(16).toString('hex');
+  const ask = (headers: Record<string, string> = {}, id = paired.id) =>
+    call({ method: 'POST', path: '/session/prove', headers, body: JSON.stringify({ id, nonce }) });
+  const proved = json(await ask());
+  assert.equal(proved.proof, sessionProof(String(paired.verifier), nonce, `http://127.0.0.1:${port}`));
+  const byName = json(await ask({ Host: `localhost:${port}`, Origin: `http://localhost:${port}` }));
+  assert.equal(byName.proof, sessionProof(String(paired.verifier), nonce, `http://localhost:${port}`));
+  // the port in the proof is the socket's: a squatter on another port that relays here can't get one for its own
+  const relayed = json(await ask({ Host: '127.0.0.1:9999', Origin: 'http://127.0.0.1:9999' }));
+  assert.notEqual(relayed.proof, sessionProof(String(paired.verifier), nonce, 'http://127.0.0.1:9999'));
+  assert.equal((await ask({}, 'si_000000000000')).status, 404);
+  // the id that goes in the challenge opens nothing
+  assert.equal((await call({ path: '/list', headers: sessionHeader(String(paired.id)) })).status, 401);
+});
+
+test("many addresses don't multiply guesses: an IPv6 /64 is one caller, and all devices share a cap", () => {
+  assert.equal(callerKey('2001:db8:1:2:aaaa::1'), '2001:db8:1:2::/64');
+  assert.equal(callerKey('2001:db8:1:2:bbbb:cccc:dddd:eeee'), '2001:db8:1:2::/64');
+  assert.equal(callerKey('::ffff:192.168.1.9'), '192.168.1.9');
+  assert.equal(callerKey('loopback'), 'loopback');
+  const t = createLookoutSignIn({ root, configDir });
+  const req = { headers: {}, socket: {} } as unknown as http.IncomingMessage;
+  const pair = (code: unknown, who: string, local = false) => t.pair(req, { code, local, who }).kind;
+  try {
+    for (let i = 0; i < 5; i++) pair('ZZZZ-ZZZZ', `2001:db8:1:2::${i + 1}`);
+    assert.equal(pair(t.mintCode('device').code, '2001:db8:1:2::99'), 'locked', 'the same /64');
+    for (let i = 0; i < 20; i++) pair('ZZZZ-ZZZZ', `10.0.${i}.1`);
+    assert.equal(pair(t.mintCode('device').code, '10.9.9.9'), 'locked', 'all devices together');
+    assert.equal(pair(t.mintCode('device').code, 'loopback', true), 'paired', 'never this machine');
+    assert.equal(pair(t.mintCode('machine').code, '10.9.9.9'), 'paired', 'never a link');
+  } finally {
+    t.close();
   }
 });

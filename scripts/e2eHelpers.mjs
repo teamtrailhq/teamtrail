@@ -70,6 +70,6 @@ export async function signInWith(page, link) {
 
 /** The header the page's own API calls carry, for a script's direct calls through `page.request`. */
 export async function sessionHeaders(page) {
-  const session = await page.evaluate(() => localStorage.getItem('teamtrail.session'));
+  const session = await page.evaluate(() => JSON.parse(localStorage.getItem('teamtrail.session') ?? '{}').secret);
   return { 'X-Teamtrail-Session': session ?? '' };
 }

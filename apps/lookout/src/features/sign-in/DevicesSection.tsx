@@ -31,8 +31,9 @@ export function DevicesSection() {
   return (
     <SettingsSection title="Browsers & devices">
       <p className="vf-intro">
-        Every browser that opens this Lookout is paired once, and stays signed in until 30 days after it was last used.
-        Revoke one and it’s signed out at once.
+        Every browser that opens this Lookout is paired, and stays signed in while it runs (up to 30 days after it was
+        last used). Revoke one and it’s signed out at once. When the Lookout restarts, browsers and devices pair again:
+        the link is in the terminal where it starts.
       </p>
       <SignInList sessions={view.sessions} onRevoke={revoke} />
       <PairDevicePanel lan={view.lan} device={device} onPair={pairDevice} onDone={closeDevice} />

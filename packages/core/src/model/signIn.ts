@@ -20,6 +20,13 @@ export interface StoredSignIn {
   /** SHA-256 of the session value, hex. */
   hash: string;
   kind: SignInKind;
+  /**
+   * The Lookout start it was paired with (a random id per start). A session works for that running Lookout only:
+   * when it stops, every session it had ends, so one a server squatting its port later captured opens nothing.
+   */
+  start: string;
+  /** The process of that Lookout; once it is gone, the session is dropped from the file. */
+  instance: number;
   pairedAt: number;
   /** To the minute. */
   lastUsedAt: number;
