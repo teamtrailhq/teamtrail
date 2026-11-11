@@ -63,7 +63,7 @@ function ridgePath(w: number, h: number, base: number, amp: number, seed: number
   return { d: `${d}L${w} ${h}Z`, top };
 }
 
-/** Where the dashed trail runs: across the near ridge and up to the X. */
+/** Where the dashed trail runs: across the near ridge and up to its destination. */
 function trailPoint(w: number, h: number, t: number): [number, number] {
   const x = w * (0.02 + 0.93 * t);
   const y = h * (0.9 - 0.1 * Math.sin(t * 7) * (1 - t * 0.4) - 0.1 * t ** 5);
@@ -72,7 +72,7 @@ function trailPoint(w: number, h: number, t: number): [number, number] {
 
 /**
  * The banners' scene, like the site's hero: contour lines over layered ridges and pines, a moon, and the dashed trail
- * ticking off tickets on its way to the X. `progress` is how far the trail has walked, `wobble` moves the contours.
+ * ticking off tickets on its way to the destination: the orange dot of the logo and wordmark, a ring until the trail reaches it. `progress` is how far the trail has walked, `wobble` moves the contours.
  */
 export function BannerLand({
   w,
@@ -141,16 +141,14 @@ export function BannerLand({
         );
       })}
       {progress < 1 && <circle cx={hx} cy={hy} r={9 * u} fill="#e8833a" />}
-      <g
-        transform={`translate(${ex} ${ey}) scale(${u})`}
-        fill="none"
+      <circle
+        cx={ex}
+        cy={ey}
+        r={20 * u}
+        fill={progress >= 1 ? '#e8833a' : '#101815'}
         stroke="#e8833a"
-        strokeOpacity={progress >= 1 ? 1 : 0.55}
-        strokeWidth="9"
-        strokeLinecap="round"
-      >
-        <path d="M-22 -22L22 22M22 -22L-22 22" />
-      </g>
+        strokeWidth={5 * u}
+      />
     </svg>
   );
 }

@@ -2,7 +2,7 @@
 
 Two marks, one drawing style:
 
-- **The Teamtrail logo** (`src/logo/`): a lowercase t whose stem curves into a path that runs to a connection node, on a dark tile. Favicons use it without the tile. Nav, favicon, npm, GitHub and social images use it.
+- **The Teamtrail logo** (`src/logo/`): a lowercase t whose stem curves into a path that runs to its destination, an orange dot, on a tile. Two versions: `dark` for dark backgrounds (dark tile, light moss; the default) and `light` for light ones (pale tile, deep moss), with the colours in `logoColors.ts`. `<Logo theme="auto">` follows the page's `color-scheme`. Favicons use it without the tile (`bare`); `logoFaviconSvg()` is one SVG that switches with `prefers-color-scheme`. Nav, favicon, npm, GitHub and social images use it.
 - **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. A CRT head with ear cups and a baseball cap, drawn smooth to the proportions of the original sprite, with no frame around it. Guides are symbol badges in a circle (`guideArt.ts`): magnifier, check, shield, book, compass, and a grey plus for Community.
 
 `ScoutAvatar` and `mountScout` draw the same badge from `badgeArt.ts`.
@@ -19,8 +19,12 @@ Two marks, one drawing style:
 
 ```
 src/logo/
-  logoMark.ts      the logo's SVG markup
-  Logo.tsx         React component
+  logoShapes.ts    the mark's geometry
+  logoColors.ts    the light and dark versions' colours
+  logoMark.ts      the logo's SVG markup, with and without the tile, per theme
+  logoFaviconSvg.ts  a standalone favicon SVG that follows prefers-color-scheme
+  logoAutoStyle.ts the light-dark() colours behind theme="auto"
+  Logo.tsx         React component (size, bare, theme)
 src/scout/
   badgeArt.ts      Scout's badge: colours, faces and SVG markup
   guideArt.ts      guide symbol badges
@@ -33,7 +37,7 @@ src/scout/
   mountScout.ts    framework-free renderer with the same markup, classes and timing (for the vanilla landing page)
   ScoutAvatar.css  panel frame; all colors are --scout-* vars with lookout fallbacks
   index.ts         React exports (import mountScout from './mountScout' directly)
-preview/           preview page (?view=options | states | demo | square | favicon | banner); App.tsx
+preview/           preview page (?view=options | states | demo | square | favicon | lockup | banner, &theme=light|dark for square and favicon); App.tsx
 tools/
   capture.mjs      writes the PNGs, the banner GIF, the MP4 loop and brand/* (Playwright + system Chrome)
 ```
@@ -75,17 +79,17 @@ scout.destroy();
 
 ## API
 
-| Prop | Default | Notes |
-| --- | --- | --- |
-| `state` | `'idle'` | `idle` \| `speaking` \| `thinking` \| `alert` |
-| `size` | `'md'` | `xs` is the simple badge at 32px. `sm` is 80px, `md` 160px and `lg` 240px. A number sets the size in units of 40px. |
-| `speaking` | none | A non-empty string switches `idle`/`speaking` to speaking. `alert` and `thinking` keep priority. Once the line has played, the caption stays and the status returns to `ONLINE`. |
-| `variant` | `'crt'` | `crt` \| `night` |
-| `framed` | `true` (except `xs`) | HUD panel with the `Scout // ONLINE` label. |
-| `caption` | `true` for md/lg | Shows the spoken line under the waveform. |
-| `label` | `'Scout'` | Panel name and accessible name. |
-| `onSpeakEnd` | none | Fires about 350ms after the line has played. It also fires under reduced motion. |
-| `at` | none | Freezes the clock at N ms. Used for screenshots and tests. |
+| Prop         | Default              | Notes                                                                                                                                                                            |
+| ------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state`      | `'idle'`             | `idle` \| `speaking` \| `thinking` \| `alert`                                                                                                                                    |
+| `size`       | `'md'`               | `xs` is the simple badge at 32px. `sm` is 80px, `md` 160px and `lg` 240px. A number sets the size in units of 40px.                                                              |
+| `speaking`   | none                 | A non-empty string switches `idle`/`speaking` to speaking. `alert` and `thinking` keep priority. Once the line has played, the caption stays and the status returns to `ONLINE`. |
+| `variant`    | `'crt'`              | `crt` \| `night`                                                                                                                                                                 |
+| `framed`     | `true` (except `xs`) | HUD panel with the `Scout // ONLINE` label.                                                                                                                                      |
+| `caption`    | `true` for md/lg     | Shows the spoken line under the waveform.                                                                                                                                        |
+| `label`      | `'Scout'`            | Panel name and accessible name.                                                                                                                                                  |
+| `onSpeakEnd` | none                 | Fires about 350ms after the line has played. It also fires under reduced motion.                                                                                                 |
+| `at`         | none                 | Freezes the clock at N ms. Used for screenshots and tests.                                                                                                                       |
 
 `mountScout(host, options)` takes the same options except `at`, `className` and `style`. It returns `{ update(partial), destroy() }`.
 
@@ -105,7 +109,7 @@ scout.destroy();
 
 ## Colours and changing the art
 
-All colours and shapes are in `badgeArt.ts` and `logoMark.ts`. `--tt-keyline` puts a cream edge around the logo on dark backgrounds. After changing either, re-run the capture and copy the results to `brand/`.
+All colours and shapes are in `badgeArt.ts`, `logoShapes.ts` and `logoColors.ts`. After changing them, re-run the capture and copy the results where they are used: the Lookout's favicon (`apps/lookout/index.html`, pinned by `apps/lookout/test/favicon.test.ts`) and the landing site's `public/media/brand/` (see below).
 
 ## Preview, captures and brand kit
 
@@ -118,16 +122,19 @@ npm run capture              # needs Chrome (CHROME=...) and ffmpeg
 
 `capture` also renders `brand/` at exact sizes:
 
-- `github-org-avatar.png` (1000²)
+- `github-org-avatar.png` (1000², the logo tile) and `github-org-avatar-wordmark.png` (1000², the wordmark on a dark square)
 - `github-social-preview.png` (1280×640) and `github-social-preview.gif` (640×320, animated, under GitHub's 1 MB limit)
-- `teamtrail-banner.gif` (960×480): the README banner, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
+- `teamtrail-banner.gif` (960×480): the README banner, the `teamtrail.` wordmark while the trail walks to its destination, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
 - `og-image-1200x630.png`
 - `x-header-1500x500.png`
-- `wordmark-lockup.png`: the logo lockup, mini Scout beside the wordmark
+- `wordmark-lockup.png`, `wordmark-lockup-light.png`: the `teamtrail.` wordmark alone, on dark and on light
 - `x-avatar-400.png`
 - `slack-icon-512.png`
 - `linkedin-discord-avatar-512.png`
-- `favicon-64.png`, `favicon-32.png`
+- `logo-light-512.png`: the light version on a light background
+- `favicon-64.png`, `favicon-32.png` (the bare mark, light version) and `favicon-64-dark.png`, `favicon-32-dark.png`
 - `social-kit-overview.png`: a contact sheet with checks at 16 to 48px
 
-The banner copy is agent-agnostic. The brand views are `?view=square&n=`, `?view=favicon&px=` and `?view=banner&w=&h=&layout=card|header`.
+The banner copy is agent-agnostic. The brand views are `?view=square&n=&who=logo|wordmark|scout&theme=dark|light`, `?view=favicon&px=&theme=light|dark`, `?view=lockup&w=&h=&light=1` and `?view=banner&w=&h=&layout=card|header`.
+
+The landing site (`teamtrailhq/teamtrail-landing`) copies from `brand/` into its `public/media/brand/`: `og-image-1200x630.png` (banner), `linkedin-discord-avatar-512.png` (square, also its apple-touch-icon), `slack-icon-512.png` (Scout) and `favicon-32.png`, `favicon-64.png` (favicon). Its `favicon.ico` and SVG favicon are built from the same mark.

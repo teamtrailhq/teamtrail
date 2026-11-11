@@ -18,8 +18,15 @@ export function App() {
   if (view === 'states') return <States variant={variant} />;
   if (view === 'demo') return <Demo variant={variant} />;
   if (view === 'square')
-    return <BrandSquare n={Number(q.get('n') || 512)} who={q.get('who') === 'scout' ? 'scout' : 'logo'} />;
-  if (view === 'favicon') return <Favicon px={Number(q.get('px') || 64)} />;
+    return (
+      <BrandSquare
+        n={Number(q.get('n') || 512)}
+        who={(['scout', 'wordmark'] as const).find((w) => w === q.get('who')) ?? 'logo'}
+        theme={q.get('theme') === 'light' ? 'light' : 'dark'}
+      />
+    );
+  if (view === 'favicon')
+    return <Favicon px={Number(q.get('px') || 64)} theme={q.get('theme') === 'dark' ? 'dark' : 'light'} />;
   if (view === 'lockup')
     return (
       <Lockup

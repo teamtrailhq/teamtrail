@@ -276,8 +276,13 @@ body {
   justify-content: center;
   overflow: hidden;
   --tt-keyline: #f1e8d3;
-  --tt-logo-edge: #33473b;
   background: #101815;
+}
+.wordmark-square {
+  --text-hi: #eef0e4;
+}
+.brand-square.light {
+  background: #f3f1e7;
 }
 .favicon {
   display: flex;
@@ -286,7 +291,6 @@ body {
   --text-hi: #eef0e4;
   --text: #c3cdc1;
   --tt-keyline: #f1e8d3;
-  --tt-logo-edge: #33473b;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -295,27 +299,12 @@ body {
   padding: 0 calc(var(--u) * 88) calc(var(--u) * 90);
   background: #101815;
 }
-/* The animated banner: a small Scout on the name's line, the lines below under the name, the block centred. */
-.banner.with-scout {
-  justify-content: center;
-}
-.banner.with-scout .banner-copy {
-  display: grid;
-  grid-template-columns: auto auto;
-  column-gap: calc(var(--u) * 44);
-  row-gap: calc(var(--u) * 16);
-}
-.banner.with-scout .banner-copy > :not(.banner-badge) {
-  grid-column: 2;
-}
-.banner-badge {
-  grid-row: 1;
-  align-self: center;
-  line-height: 0;
-}
 .banner.header {
   justify-content: flex-end;
   padding: 0 calc(var(--u) * 210) calc(var(--u) * 90) 0;
+}
+.banner.card .wordmark {
+  font-size: calc(var(--u) * 190);
 }
 .banner-land {
   position: absolute;
@@ -328,22 +317,8 @@ body {
   position: absolute;
   line-height: 0;
 }
-.banner-feed,
-.banner-copy,
-.banner-sprite {
-  position: relative;
-}
-.banner-sprite {
-  align-self: center;
-  line-height: 0;
-}
-.banner .scout-head {
-  font-size: 13px;
-}
-.banner .scout-name {
-  font-size: 14px;
-}
 .banner-copy {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: calc(var(--u) * 16);
@@ -362,7 +337,6 @@ body {
   justify-content: center;
   --text-hi: #eef0e4;
   --tt-keyline: #f1e8d3;
-  --tt-logo-edge: #33473b;
   background: #101815;
 }
 .lockup.light {
@@ -372,6 +346,17 @@ body {
 }
 .lockup .wordmark {
   line-height: 1;
+}
+.lockup.light .wordmark-dot {
+  background: #e07a2f;
+}
+.wordmark-dot {
+  display: inline-block;
+  width: 0.24em;
+  height: 0.24em;
+  margin-left: 0.042em;
+  border-radius: 50%;
+  background: #e8833a;
 }
 .social-cat {
   font-family: var(--sans);

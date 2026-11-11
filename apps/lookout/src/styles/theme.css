@@ -4,7 +4,6 @@
 :root {
   color-scheme: light;
   --tt-keyline: transparent;
-  --tt-logo-edge: #17211c;
   --bg: #f3f1e7;
   --panel: #fbfaf4;
   --panel2: #f2efe2;
@@ -55,7 +54,6 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='day']) {
     --tt-keyline: #f1e8d3;
-    --tt-logo-edge: #33473b;
     color-scheme: dark;
     --bg: #101815;
     --panel: #17211c;
@@ -100,7 +98,6 @@
 }
 :root[data-theme='night'] {
   --tt-keyline: #f1e8d3;
-  --tt-logo-edge: #33473b;
   color-scheme: dark;
   --bg: #101815;
   --panel: #17211c;
