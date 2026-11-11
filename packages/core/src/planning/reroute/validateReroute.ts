@@ -1,12 +1,14 @@
 import type { RerouteChange, RerouteError, RerouteProposal } from '../../model/reroute';
 import { TICKET_TYPES, type DecisionRecord, type MapSnapshot, type Ticket } from '../../model/types';
 import { cycleChanges } from './rerouteEdges';
+import { settingShapeError } from './settingShape';
 
 /** What validation needs from a proposal. */
 export type RerouteDraft = Pick<
   RerouteProposal,
   'kind' | 'destinationReason' | 'reason' | 'evidence' | 'invalidates' | 'changes'
->;
+> &
+  Partial<Pick<RerouteProposal, 'lane'>>;
 
 /** What the changes are checked against. */
 interface Scope {
@@ -46,6 +48,8 @@ function proposalErrors(snap: MapSnapshot, draft: RerouteDraft): RerouteError[] 
   if (!draft.reason.trim()) errors.push('"reason" is required');
   if (!draft.evidence.trim()) errors.push('"evidence" is required: what you found, with paths or output');
   if (!draft.changes.length) errors.push('a proposal needs at least one change');
+  const shape = settingShapeError(draft);
+  if (shape) errors.push(shape);
   const known = new Set((snap.map.sections.assumptions ?? []).map((a) => a.id));
   for (const id of draft.invalidates.filter((x) => !known.has(x))) errors.push(`unknown assumption ${id}`);
   if (draft.kind === 'challenge-destination') {

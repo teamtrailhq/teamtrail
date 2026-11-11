@@ -1,4 +1,5 @@
 import type { RerouteProposal } from '../../model/reroute';
+import { settingShapeError } from '../../planning/reroute/settingShape';
 import { settingAsk } from '../../planning/reroute/settingText';
 import type { AttentionSource, Candidate } from '../types';
 import { clip } from './clip';
@@ -15,7 +16,8 @@ export const rerouteSource: AttentionSource = {
   kind: 'reroute',
   collect({ reroutes = [] }) {
     return reroutes.map(({ proposal: p, frozen }): Candidate => {
-      if (p.lane === 'setting') return settingCandidate(p);
+      // a setting request shown as one line only when it is one setting change (settingShape.ts)
+      if (p.lane === 'setting' && !settingShapeError(p)) return settingCandidate(p);
       const notes = [p.kind === 'challenge-destination' ? 'wrong mountain?' : 'proposes a new plan'];
       if (p.destinationReason) notes.push(DESTINATION_REASON[p.destinationReason]);
       if (frozen.length) notes.push(`closes ${frozen.length} ticket${frozen.length === 1 ? '' : 's'}`);

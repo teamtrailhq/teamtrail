@@ -59,6 +59,7 @@ export {
 } from './planning/reroute/rerouteFlow';
 export { approveReroute, rejectReroute, type RerouteDecision } from './planning/reroute/decideReroute';
 export { settingAsk, settingText } from './planning/reroute/settingText';
+export { settingShapeError } from './planning/reroute/settingShape';
 export {
   blobHash,
   approveKnowledgeHere,

@@ -1,7 +1,7 @@
 import type { MapSnapshot } from '../model/types';
 import { approveTrust } from './approveTrust';
-import { gitState } from './withCommitted';
 import { pendingTrust } from './pendingTrust';
+import { gitState } from './withCommitted';
 
 /**
  * Approves the items the page showed, with which of their files are committed (asked of git first, which is

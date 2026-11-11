@@ -1,11 +1,11 @@
 import { journalFile } from '../history/journalFile';
 import { TRUST_JOURNAL } from '../model/lifecycle';
 import type { MapSnapshot } from '../model/types';
-import { isCommitted } from './withCommitted';
 import { firstRun } from './firstRun';
 import { pendingTrust } from './pendingTrust';
 import { recordShown } from './recordShown';
 import type { TrustItem } from './trustItem';
+import { isCommitted } from './withCommitted';
 
 export interface ApproveTrustInput {
   root: string;

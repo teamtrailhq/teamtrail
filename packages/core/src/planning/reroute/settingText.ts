@@ -17,4 +17,4 @@ export function settingText(c: RerouteChange | undefined): string {
 
 /** What a setting request asks, as its card and its decision record put it: "claude-01 asks to skip discovery". */
 export const settingAsk = (p: Pick<RerouteProposal, 'by' | 'changes'>) =>
-  `${p.by} asks to ${settingText(p.changes[0])}`;
+  `${p.by} asks to ${p.changes.map(settingText).join(' and ') || settingText(undefined)}`;

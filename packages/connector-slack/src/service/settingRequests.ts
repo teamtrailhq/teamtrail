@@ -7,6 +7,7 @@ import {
   rejectReroute,
   rerouteHash,
   settingAsk,
+  settingShapeError,
 } from '@teamtrail/core/agents';
 import { postResponse } from '../api';
 import { label, mention } from '../blocks';
@@ -32,6 +33,13 @@ const cardOf = (p: RerouteProposal, trail: string): SettingCard => ({
   why: p.evidence,
 });
 
+/**
+ * A card shows one setting change; a pending request that is anything else (a hand-written file with several
+ * changes, say) is never posted: Approve could apply more than the card says. It waits in the Lookout, where every
+ * change is listed, and approving there refuses it too (settingShape.ts).
+ */
+const postable = (p: RerouteProposal) => p.lane === 'setting' && p.status === 'pending' && !settingShapeError(p);
+
 const OUTCOME: Record<RerouteProposal['status'], string> = {
   pending: 'Still waiting on you.',
   approved: 'No longer waiting on you: approved.',
@@ -51,7 +59,7 @@ export async function syncSettingRequests(ctx: SlackContext, snaps: MapSnapshot[
   const now = new Map<string, SettingCard>();
   for (const s of snaps)
     for (const p of listReroutes(ctx.o.root, s.map.id))
-      if (p.lane === 'setting' && p.status === 'pending') now.set(`${p.mapId}/${p.id}`, cardOf(p, s.map.title));
+      if (postable(p)) now.set(`${p.mapId}/${p.id}`, cardOf(p, s.map.title));
   const stored = ctx.settingRequests.read();
   for (const [key, posted] of Object.entries(stored)) {
     if (now.has(key)) continue;
@@ -95,7 +103,7 @@ export async function decideSetting(
       ? postResponse(responseUrl, { response_type: 'ephemeral', replace_original: false, text }, ctx.o.fetch)
       : Promise.resolve();
   const p = readReroute(ctx.o.root, ref.m, ref.id);
-  if (!p || p.status !== 'pending' || rerouteHash(p) !== ref.h)
+  if (!p || !postable(p) || rerouteHash(p) !== ref.h)
     return say('Nothing changed: this request is out of date (decided, or changed since this message).');
   const env = { root: ctx.o.root, adapter: await ctx.o.active(), journal: journalFile(ctx.o.root) };
   const d = { mapId: ref.m, id: ref.id, by: `slack:${user}` };

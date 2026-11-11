@@ -115,3 +115,24 @@ test('a request changed since the card was posted is not approved from it', asyn
     w.cleanup();
   }
 });
+
+test('a hand-written setting request with several changes is never posted: the card could not show them all', async () => {
+  const { w, svc, calls, map, id, posted } = await requested();
+  try {
+    const p = readReroute(w.root, map.id, id)!;
+    writeReroute(w.root, {
+      ...p,
+      id: 'R-9',
+      changes: [
+        { op: 'set_mode', mode: 'plan-only' },
+        { op: 'update_destination', text: 'Something else' },
+      ],
+    });
+    const before = calls('chat.postMessage').length;
+    await svc.tick();
+    assert.equal(calls('chat.postMessage').length, before, 'no card for R-9');
+    assert.deepEqual(Object.keys(posted()), [`${map.id}/${id}`], 'the well-formed one stays the only card');
+  } finally {
+    w.cleanup();
+  }
+});
