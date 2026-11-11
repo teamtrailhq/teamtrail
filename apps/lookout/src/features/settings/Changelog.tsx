@@ -24,7 +24,7 @@ export function Changelog() {
           </div>
         ))}
       </SettingsSection>
-      {RELEASES.map((r) => (
+      {RELEASES.filter((r) => r.items.length > 0).map((r) => (
         <SettingsSection key={r.version} title={`${r.version} · ${r.date}`}>
           <ul>
             {r.items.map((i) => (
