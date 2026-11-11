@@ -1,12 +1,16 @@
 import type { InstalledGuide } from '@teamtrail/core';
-import { Button } from '../../components/ui';
+import { CheckApprove } from './CheckApprove';
 import { argvText } from './guideLabels';
 
 /**
  * The checks a guide requires and the commands it proposes, each as its exact argv. A proposed command only runs
  * once the trail lead approves it into verification.json; a changed argv needs approval again.
  */
-export function GuideChecks(props: { r: InstalledGuide; onApprove: (name: string) => void; busy?: boolean }) {
+export function GuideChecks(props: {
+  r: InstalledGuide;
+  onApprove: (name: string, acknowledged: boolean) => void;
+  busy?: boolean;
+}) {
   const guide = props.r.guide;
   if (!guide) return null;
   const proposed = Object.entries(guide.proposedChecks);
@@ -27,9 +31,7 @@ export function GuideChecks(props: { r: InstalledGuide; onApprove: (name: string
               {name}: {argvText(spec.run)}
             </code>
             {pending && canApprove && (
-              <Button size="sm" disabled={props.busy} onClick={() => props.onApprove(name)}>
-                Approve check {name}
-              </Button>
+              <CheckApprove name={name} spec={spec} busy={props.busy} onApprove={props.onApprove} />
             )}
             {pending && !canApprove && <span className="t-meta">approve the guide first</span>}
             {!pending && <span className="t-meta">approved</span>}

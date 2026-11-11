@@ -1,6 +1,8 @@
-import type { GuideDoc } from '@teamtrail/core';
+import { checkNotice, type GuideDoc } from '@teamtrail/core';
 import { approveCheck } from '@teamtrail/core/agents';
+import { argvLine } from './argvLine';
 import { journalGuide } from './journalGuide';
+import { printable } from './printable';
 import type { GuidesIo } from './types';
 
 /**
@@ -18,13 +20,15 @@ export async function approvePending(input: {
   const left: string[] = [];
   for (const name of input.pending) {
     const spec = guide.proposedChecks[name];
-    io.out(`  check ${name}: ${JSON.stringify(spec.run)}${spec.cwd ? ` in ${spec.cwd}` : ''}\n`);
-    const yes = await decide(input, name);
+    io.out(printable(`  check ${name}: ${argvLine(spec)}\n`));
+    const notice = checkNotice(spec);
+    if (notice) io.out(`    ${notice.toUpperCase()}. Approve it only if you know what it does.\n`);
+    const yes = await decide(input, name, !!notice);
     if (!yes) {
       left.push(name);
       continue;
     }
-    approveCheck({ root: input.root, id: guide.id, name });
+    approveCheck({ root: input.root, id: guide.id, name, acknowledged: !!notice });
     journalGuide(input.root, { action: 'check-approved', guide: guide.id, version: guide.version, check: name });
     io.out(`    approved: written to verification.json\n`);
   }
@@ -35,8 +39,12 @@ export async function approvePending(input: {
   return left;
 }
 
-async function decide(input: { io: GuidesIo; approveAll: boolean; guide: GuideDoc }, name: string) {
-  if (input.approveAll) return true;
+/** A yes at the terminal, or --approve-checks; an unknown program is never approved in bulk, only at the terminal. */
+async function decide(input: { io: GuidesIo; approveAll: boolean; guide: GuideDoc }, name: string, unknown: boolean) {
+  if (input.approveAll && !unknown) return true;
   if (!input.io.interactive) return false;
-  return input.io.confirm(`    Approve ${name} for ${input.guide.id}? [y/N] `);
+  const ask = unknown
+    ? `    I know what it runs: approve ${name} for ${input.guide.id}? [y/N] `
+    : `    Approve ${name} for ${input.guide.id}? [y/N] `;
+  return input.io.confirm(ask);
 }

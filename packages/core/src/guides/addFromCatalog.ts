@@ -22,13 +22,16 @@ export function assertNotBuiltin(entry: CatalogEntry) {
 
 /**
  * Adds (or updates) a guide from a catalog: fetched, sha-checked against the index, linted, copied into `guides/` and
- * pinned with the catalog's review (display only). Its proposed checks wait for the trail lead's approval (approveCheck.ts); nothing runs before that.
+ * pinned with the catalog's review (display only). `sha256` is the file the person was shown. Its proposed checks wait for the trail lead's approval (approveCheck.ts); nothing runs before that.
  */
 export async function addFromCatalog(
-  input: { root: string; registry: Registry; id: string; by: string } & CatalogFetch,
+  input: { root: string; registry: Registry; id: string; by: string; sha256?: string } & CatalogFetch,
 ): Promise<Installed & { catalog: CatalogEntry }> {
   const { entry, text } = await previewCatalogGuide(input);
   assertNotBuiltin(entry);
+  // the person approved the file they were shown: one the catalog changed since is shown again, never added unseen
+  if (input.sha256 && input.sha256 !== entry.sha256)
+    throw new OperationError(`${entry.id} changed in the catalog since it was shown to you; look at it again`);
   const commit = entry.history.at(-1)?.commit;
   const source = { registry: input.registry.url, path: entry.path, ...(commit ? { commit } : {}) };
   const review = { verified: entry.verified, reviewedBy: entry.reviewedBy };

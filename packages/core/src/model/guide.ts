@@ -111,6 +111,11 @@ export interface InstalledGuide {
   pendingChecks: string[];
   /** A local file with a built-in guide's id. */
   overridesBuiltin: boolean;
+  /**
+   * On a built-in guide: a local file with its id that the trail lead hasn't approved on this machine yet. The
+   * built-in stays active until they do; the file then replaces it.
+   */
+  override?: InstalledGuide;
 }
 
 /** An agent's answer to one checklist item. Presence is checked, not truth. */
@@ -154,6 +159,11 @@ export interface GuidesConfig {
 
 /** The official guide catalog's repo, and its guide to contributing a guide. */
 export const GUIDE_CATALOG_REPO = 'https://github.com/teamtrailhq/teamtrail-guides';
+/**
+ * The official catalog's address. Its Verified is the Teamtrail maintainers' review; any other catalog's Verified is
+ * only what that catalog says about itself, and is shown with its host.
+ */
+export const OFFICIAL_CATALOG_URL = 'https://raw.githubusercontent.com/teamtrailhq/teamtrail-guides/main';
 export const GUIDE_CATALOG_CONTRIBUTING = `${GUIDE_CATALOG_REPO}/blob/main/CONTRIBUTING.md`;
 
 /** One guide in a catalog's `index.json`. */

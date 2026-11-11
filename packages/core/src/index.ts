@@ -129,7 +129,8 @@ export { webUrl } from './model/webUrl';
 export type * from './model/remoteToken';
 export type * from './model/signIn';
 export { parseGuide, splitGuideFile } from './guides/guideFile';
-export { argvProblems, lintGuide, type GuideLint } from './guides/guideLint';
+export { lintGuide, type GuideLint } from './guides/guideLint';
+export { checkArgv, checkNotice, UNKNOWN_PROGRAM } from './guides/checkArgv';
 export { BUILTIN_GUIDES } from './guides/builtin/builtinGuides';
 export {
   effectiveChecks,

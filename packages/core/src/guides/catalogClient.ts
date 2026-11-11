@@ -2,6 +2,7 @@ import type { CatalogEntry, CatalogIndex } from '../model/guide';
 import { OperationError } from '../planning/operations/operationError';
 import { parseCatalogIndex } from './catalogIndex';
 import { guideSha } from './guideHash';
+import { isRegistryUrl } from './guidesConfig';
 
 export interface Registry {
   name: string;
@@ -15,6 +16,16 @@ export interface CatalogFetch {
 
 const join = (base: string, rel: string) => `${base.replace(/\/+$/, '')}/${rel}`;
 
+/**
+ * Where a guide file is read from: its path under the catalog's address, the same branch its index.json came from.
+ * Not the commit the index names: raw.githubusercontent.com serves any commit of the repo's fork network under the
+ * repo's own path, so a commit SHA can deliver text that was never on the catalog's branch. The text is checked
+ * against the index's sha256 before anything uses it, which is what ties it to the index.
+ */
+export function guideUrl(registry: Registry, entry: CatalogEntry): string {
+  return join(registry.url, entry.path);
+}
+
 /** The most a catalog's index.json may be; a guide file has its own, smaller cap (guideLint's size rule). */
 export const MAX_INDEX_BYTES = 1_048_576;
 export const MAX_GUIDE_BYTES = 262_144;
@@ -26,8 +37,11 @@ export const MAX_GUIDE_BYTES = 262_144;
 const SERVED_AS = /^(application\/(json|octet-stream)|text\/(plain|markdown|x-markdown))\b/i;
 
 async function get(url: string, opts: CatalogFetch & { maxBytes: number }): Promise<string> {
+  // guides.json is approved by the human, but a lock or an index can name an address too: only HTTPS leaves this machine
+  if (!isRegistryUrl(url)) throw new OperationError(`${url} is not an https address; catalogs are read over HTTPS`);
   const f = opts.fetch ?? fetch;
-  // One deadline for the answer and its body: a server that trickles bytes is cut off with it.
+  // One deadline for the answer and its body: a server that trickles bytes is cut off with it. No redirects at all:
+  // a catalog answers at its own address, so a redirect can't take a request somewhere else (or to plain http).
   const signal = AbortSignal.timeout(opts.timeoutMs ?? 15_000);
   let res: Response;
   try {
@@ -82,9 +96,9 @@ export async function fetchCatalog(registry: Registry, opts: CatalogFetch = {}):
   return index;
 }
 
-/** One guide file from a catalog, refused unless its sha256 matches the index. */
+/** One guide file from a catalog (guideUrl), refused unless its sha256 matches the index. */
 export async function fetchCatalogGuide(registry: Registry, entry: CatalogEntry, opts: CatalogFetch = {}) {
-  const text = await get(join(registry.url, entry.path), { ...opts, maxBytes: MAX_GUIDE_BYTES });
+  const text = await get(guideUrl(registry, entry), { ...opts, maxBytes: MAX_GUIDE_BYTES });
   if (guideSha(text) !== entry.sha256)
     throw new OperationError(
       `${entry.id} ${entry.version}: the file doesn't match the catalog's sha256; not installed`,
