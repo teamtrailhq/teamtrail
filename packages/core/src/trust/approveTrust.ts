@@ -16,8 +16,6 @@ export interface ApproveTrustInput {
   snaps?: MapSnapshot[];
   /** The pending files committed to git as they are (committedFiles.ts); needed to approve several at once. */
   committed?: Set<string>;
-  /** The files git confirms were never committed (`absentFile` of an item). */
-  absent?: Set<string>;
 }
 
 /** Why an item can't be approved in this request, or undefined when it can. */

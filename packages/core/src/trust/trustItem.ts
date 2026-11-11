@@ -24,14 +24,15 @@ export interface TrustItem {
   warnings: string[];
   /** The file it comes from, relative to the tracker folder; none for a tracker that isn't files. */
   file?: string;
-  /** A file that must never have been committed for the item to count as committed (a trail's brief, for `discovery`). */
-  absentFile?: string;
   /**
    * The file is in git's HEAD as it is now: someone committed it. Only such items can be approved together; anything
    * an agent wrote since is approved one at a time, read whole. Set where it is shown (trustRoutes.ts).
    */
   committed?: boolean;
-  /** Approved only on its own, never in a bulk adoption: guide catalogs, check commands Teamtrail can't place. */
+  /**
+   * Approved only on its own, never in a bulk adoption: guide catalogs, check commands Teamtrail can't place, a trail
+   * that runs without discovery.
+   */
   alone?: boolean;
   mapId?: string;
   ticketId?: string;

@@ -1,5 +1,5 @@
 import { adoptableWithoutFile } from './adoptableWithoutFile';
-import { absentFromHead, committedFiles } from './committedFiles';
+import { committedFiles } from './committedFiles';
 import type { TrustItem } from './trustItem';
 
 /**
@@ -11,16 +11,13 @@ export async function withCommitted(root: string, items: TrustItem[]): Promise<T
   return items.map((i) => ({ ...i, committed: isCommitted(root, i, state) }));
 }
 
-/** What git says about the items' files: which are committed as they are, which were never committed. */
-export async function gitState(root: string, items: Pick<TrustItem, 'file' | 'absentFile'>[]) {
+/** What git says about the items' files: which are committed as they are. */
+export async function gitState(root: string, items: Pick<TrustItem, 'file'>[]) {
   const files = [...new Set(items.flatMap((i) => (i.file ? [i.file] : [])))];
-  const absent = [...new Set(items.flatMap((i) => (i.absentFile ? [i.absentFile] : [])))];
-  return { committed: await committedFiles(root, files), absent: await absentFromHead(root, absent) };
+  return { committed: await committedFiles(root, files) };
 }
 
-/** An item counts as committed: its file is, and the file it needs absent never was; no file, see adoptableWithoutFile. */
-export function isCommitted(root: string, i: TrustItem, s: { committed?: Set<string>; absent?: Set<string> }) {
-  if (!i.file) return adoptableWithoutFile(root, i);
-  if (i.absentFile && !s.absent?.has(i.absentFile)) return false;
-  return !!s.committed?.has(i.file);
+/** An item counts as committed when its file is; with no file, see adoptableWithoutFile. */
+export function isCommitted(root: string, i: TrustItem, s: { committed?: Set<string> }) {
+  return i.file ? !!s.committed?.has(i.file) : adoptableWithoutFile(root, i);
 }

@@ -31,7 +31,8 @@ export function ApprovalsSection() {
   };
   const { items, tracker, oldQueue } = view;
   // together only on this machine's first run, and only what was committed; after that, each on its own
-  const committed = view.firstRun ? items.filter((i) => i.committed !== false) : [];
+  // an item meant for its own look (alone: a trail without discovery, guide catalogs) is never in "approve all"
+  const committed = view.firstRun ? items.filter((i) => !i.alone && i.committed !== false) : [];
   const waiting = items.length + (tracker ? 1 : 0) + (oldQueue ? 1 : 0);
   return (
     <SettingsSection title="Approvals">

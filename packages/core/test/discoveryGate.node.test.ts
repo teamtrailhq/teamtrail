@@ -106,34 +106,59 @@ test('an approved skip request is recorded here with who, when and the requestâ€
   assert.equal(requiresDiscovery(t.root, t.mapId), false);
 });
 
-test('first run: a trail adopted in bulk only when its map is committed and no brief ever was', async () => {
-  const git = (cwd: string, ...a: string[]) =>
-    execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd });
-  const plain = await trail(false);
-  git(plain.repo, 'init', '-q');
-  git(plain.repo, 'add', '.');
-  git(plain.repo, 'commit', '-qm', 'trail');
-  const snaps = [await plain.adapter.loadMap(plain.mapId)];
-  const [ok] = (await withCommitted(plain.root, pendingTrust(plain.root, snaps))).filter((i) => i.kind === 'discovery');
-  assert.equal(ok.committed, true, 'charted without discovery, committed: may come along');
+/** A repo whose tracker folder is committed, and a git helper for it. */
+async function committed(withBrief: boolean) {
+  const t = await trail(withBrief);
+  const git = (...a: string[]) =>
+    execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd: t.repo, stdio: 'pipe' });
+  git('init', '-q');
+  git('add', '.');
+  git('commit', '-qm', 'trail');
+  return { ...t, git };
+}
 
-  const gated = await trail(true);
-  git(gated.repo, 'init', '-q');
-  git(gated.repo, 'add', '.');
-  git(gated.repo, 'commit', '-qm', 'trail');
-  rmSync(briefPath(gated.root, gated.mapId));
-  const later = [await gated.adapter.loadMap(gated.mapId)];
-  const [rm] = (await withCommitted(gated.root, pendingTrust(gated.root, later))).filter((i) => i.kind === 'discovery');
-  assert.equal(rm.committed, false, 'a committed brief deleted since: its own look, never a bulk adoption');
+/** The first run's "approve all": every pending item, as the page would send them together. */
+async function approveAll(t: { root: string; adapter: MarkdownAdapter; mapId: string }) {
+  const snaps = [await t.adapter.loadMap(t.mapId)];
+  const items = await withCommitted(t.root, pendingTrust(t.root, snaps));
+  const discovery = items.find((i) => i.kind === 'discovery')!;
+  const others = [{ key: 'checks', hash: 'not-shown' }];
   const bulk = approveTrust({
-    root: gated.root,
-    items: [
-      { key: rm.key, hash: rm.hash },
-      { key: 'x', hash: 'y' },
-    ],
+    root: t.root,
+    items: [{ key: discovery.key, hash: discovery.hash }, ...others],
     by: 'trail lead',
-    snaps: later,
+    snaps,
+    committed: new Set(items.flatMap((i) => (i.file ? [i.file] : []))),
   });
-  assert.deepEqual(bulk.refused, [rm.key]);
-  assert.equal(requiresDiscovery(gated.root, gated.mapId), true);
+  return { discovery, bulk, snaps };
+}
+
+test('first run, the attack: git rm of a committed brief and a commit; the trail is never adopted in bulk', async () => {
+  const t = await committed(true);
+  t.git('rm', '-q', path.relative(t.repo, briefPath(t.root, t.mapId)));
+  t.git('commit', '-qm', 'no brief');
+  const { discovery, bulk } = await approveAll(t);
+  assert.equal(discovery.alone, true);
+  assert.deepEqual(bulk.refused, [discovery.key]);
+  assert.equal(requiresDiscovery(t.root, t.mapId), true);
+});
+
+test('first run, the attack: an agent commits a trail folder of its own with no brief; never adopted in bulk', async () => {
+  const t = await committed(false);
+  const { discovery, bulk } = await approveAll(t);
+  assert.deepEqual(bulk.refused, [discovery.key]);
+  assert.equal(requiresDiscovery(t.root, t.mapId), true);
+});
+
+test('an explicit approval of that one item adopts the trail as running without discovery', async () => {
+  const t = await committed(false);
+  const { discovery, snaps } = await approveAll(t);
+  const one = approveTrust({
+    root: t.root,
+    items: [{ key: discovery.key, hash: discovery.hash }],
+    by: 'trail lead',
+    snaps,
+  });
+  assert.deepEqual(one.approved, [discovery.key]);
+  assert.equal(requiresDiscovery(t.root, t.mapId), false);
 });
