@@ -15,7 +15,7 @@ type Ledger = Record<string, TrustRecord>;
 function checksItem(root: string): TrustItem[] {
   const a = checksApproval(root);
   if (!a.waiting) return [];
-  const { lines, warnings, unknown } = checksDiff(a.approved?.content || undefined, a.text);
+  const { lines, warnings } = checksDiff(a.approved?.content || undefined, a.text);
   const standing = a.state === 'first' ? 'elsewhere' : 'changed';
   const title = `Check commands in ${VERIFICATION_FILE}`;
   const content = a.text ?? '';
@@ -30,8 +30,8 @@ function checksItem(root: string): TrustItem[] {
       lines,
       warnings,
       file: VERIFICATION_FILE,
-      // a program Teamtrail can't place is looked at on its own, never adopted with the rest
-      ...(unknown ? { alone: true } : {}),
+      // a command the lint refuses, or one Teamtrail can't place, is looked at on its own, never adopted with the rest
+      ...(warnings.length ? { alone: true } : {}),
     },
   ];
 }

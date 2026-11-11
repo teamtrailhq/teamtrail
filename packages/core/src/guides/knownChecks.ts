@@ -7,13 +7,19 @@
  *   needs    one of these arguments must be present (`prettier --check`)
  *   script   a relative path to a script in the repo may come first (`node checks/a11y.js`)
  *   modules  `-m <module>` with one of these modules (`python -m pytest`)
+ *   exempt   flags that usually mean "run this code" but are data for this tool (`pytest -c pytest.ini`), so the
+ *            generic run-this-code check (argRules.ts) skips them for it
  */
-interface Shape {
+export interface Shape {
   sub?: string[];
   needs?: string[];
   script?: RegExp;
   modules?: string[];
+  exempt?: string[];
 }
+
+/** A relative path to a script inside the repo: no option, no absolute path, no `..`, no home folder. */
+const inRepo = (ext: string) => new RegExp(`^(?![-/~\\\\])(?!.*\\.\\.)(?![a-zA-Z]:)[\\w./-]+\\.(${ext})$`);
 
 const ANY: Shape = {};
 const words = (s: string) => s.split(/\s+/).filter(Boolean);
@@ -27,9 +33,10 @@ export const KNOWN_CHECKS: Record<string, Shape> = {
   cargo: { sub: words('test check clippy build fmt') },
   go: { sub: words('test vet build') },
   deno: { sub: words('test lint check') },
-  node: { script: /^(?!-)(?!.*\.\.)[\w./-]+\.(c|m)?(j|t)s$/, sub: ['--test'] },
-  python: { script: /^(?!-)(?!.*\.\.)[\w./-]+\.py$/, modules: words('pytest unittest mypy ruff black flake8 pylint') },
-  pytest: ANY,
+  node: { script: inRepo('[cm]?[jt]s'), sub: ['--test'] },
+  // python's own -c is caught by inlineCode.ts, which reads flags up to the module; after it, -c is the module's
+  python: { script: inRepo('py'), modules: words('pytest unittest mypy ruff black flake8 pylint'), exempt: ['-c'] },
+  pytest: { exempt: ['-c'] },
   ruff: { sub: words('check format') },
   mypy: ANY,
   pyright: ANY,
@@ -37,15 +44,16 @@ export const KNOWN_CHECKS: Record<string, Shape> = {
   flake8: ANY,
   pylint: ANY,
   tsc: ANY,
-  eslint: ANY,
+  eslint: { exempt: ['-c'] },
+  'pa11y-ci': ANY,
   prettier: { needs: words('--check -c --list-different -l') },
   biome: { sub: words('check lint ci') },
-  jest: ANY,
+  jest: { exempt: ['-c'] },
   vitest: ANY,
   mocha: ANY,
   playwright: { sub: ['test'] },
   rubocop: ANY,
-  rspec: ANY,
+  rspec: { exempt: ['-e'] },
   phpunit: ANY,
   phpstan: ANY,
   'golangci-lint': { sub: ['run'] },
@@ -57,8 +65,8 @@ export const KNOWN_CHECKS: Record<string, Shape> = {
   git: { sub: ['diff'] },
 };
 
-/** A tool installed in the repo's node_modules: its own code, which the repo's lockfile pins. */
-const LOCAL_BIN = /^(\.\/)?node_modules\/\.bin\/[\w.-]+$/;
+/** A tool installed in the repo's node_modules: known only when the tool itself is on the list above. */
+const LOCAL_BIN = /^(\.\/)?node_modules\/\.bin\/([\w.-]+)$/;
 
 function fitsShape(shape: Shape, args: string[]): boolean {
   const first = args[0] ?? '';
@@ -69,9 +77,12 @@ function fitsShape(shape: Shape, args: string[]): boolean {
   return true;
 }
 
-/** Whether argv is one of the known check shapes. */
-export function isKnownCheck(input: { argv0: string; program: string; args: string[] }): boolean {
-  if (LOCAL_BIN.test(input.argv0)) return true;
-  const shape = KNOWN_CHECKS[input.program];
-  return !!shape && fitsShape(shape, input.args);
+/** The known shape argv fits, if any: by the program, or by the tool a node_modules/.bin path names. */
+export function knownShape(input: { argv0: string; program: string; args: string[] }): Shape | undefined {
+  const bin = LOCAL_BIN.exec(input.argv0)?.[2];
+  const shape = KNOWN_CHECKS[bin ?? input.program];
+  return shape && fitsShape(shape, input.args) ? shape : undefined;
 }
+
+/** Whether argv is one of the known check shapes. */
+export const isKnownCheck = (input: { argv0: string; program: string; args: string[] }) => !!knownShape(input);

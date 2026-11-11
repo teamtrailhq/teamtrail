@@ -2,7 +2,7 @@ import type { ProposedCheck } from '../model/guide';
 import { argsProblem, genericCodeProblem } from './argRules';
 import { gitProblem } from './gitArgv';
 import { inlineCodeProblem } from './inlineCode';
-import { isKnownCheck } from './knownChecks';
+import { isKnownCheck, knownShape } from './knownChecks';
 import { NETWORK_TOOLS, PACKAGE_MANAGERS, programOf, RUNNERS, SHELLS, WRAPPERS } from './programRules';
 
 /** The first argument that isn't a flag: the subcommand, wherever the global flags put it. */
@@ -50,13 +50,13 @@ function parts(spec: ProposedCheck) {
  */
 export function checkArgv(spec: ProposedCheck): string[] {
   const { argv0, program, args } = parts(spec);
-  const known = isKnownCheck({ argv0, program, args });
+  const known = knownShape({ argv0, program, args });
   const problems = [
     programProblem(program, args),
     inlineCodeProblem(program, args),
     program === 'git' ? gitProblem(args) : undefined,
     argsProblem(program, args),
-    known ? undefined : genericCodeProblem(args),
+    genericCodeProblem(args, known),
   ].filter((p): p is string => !!p);
   if (spec.cwd && (spec.cwd.startsWith('/') || spec.cwd.split(/[\\/]/).includes('..')))
     problems.push('cwd must stay inside the repo');
