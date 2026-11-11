@@ -63,9 +63,12 @@ export function pairLink({ cli, cwd, env = process.env }) {
  */
 export async function signInWith(page, link) {
   await page.goto(link);
+  // The page reloads once it has stored the session: wait for that load itself, not the one already done (a
+  // `goto` started before the reload is otherwise cut short by it).
+  const reloaded = page.waitForEvent('load', { timeout: 15_000 });
   await page.getByRole('button', { name: 'Sign in this browser' }).click();
   await page.waitForFunction(() => !!localStorage.getItem('teamtrail.session'));
-  await page.waitForLoadState('load');
+  await reloaded;
 }
 
 /** The header the page's own API calls carry, for a script's direct calls through `page.request`. */
