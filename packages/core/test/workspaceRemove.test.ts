@@ -94,7 +94,7 @@ describe('removing a finished workspace', () => {
     const main = await removeWorkspace({ root, mapId: 'm1', ticketId: '1' });
     expect(main).toMatchObject({
       kind: 'refused',
-      reason: expect.stringMatching(/not one of this repo's worktree folders/),
+      reason: expect.stringMatching(/isn't a worktree Teamtrail prepared/),
     });
     expect(fs.existsSync(path.join(top, 'a.txt'))).toBe(true);
     expect(fs.existsSync(ws.path)).toBe(true);

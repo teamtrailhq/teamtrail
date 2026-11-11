@@ -1,4 +1,5 @@
 import { MAP_LABEL, BRAND, HITL_LABEL, PLAN_ONLY_LABEL } from '@teamtrail/core';
+import { ApprovalsSection } from '../approvals';
 import { GuidesSection } from '../guides';
 import { RemoteAgentsSection } from '../remote-agents';
 import { TrackerConnectors } from '../trackers';
@@ -8,10 +9,13 @@ import { SettingsSlot } from './SettingsSlot';
 import type { SettingsData, SettingsRoute } from './types';
 import { WorkspacesSection } from './WorkspacesSection';
 
-/** Settings → Project: the tracker, workspaces, remote agents, risk policy, guides and the labels Teamtrail uses. */
+/** Settings → Project: what this machine approved, the tracker, workspaces, remote agents, risk policy, guides and the labels Teamtrail uses. */
 export function ProjectGroup({ data, route }: { data: SettingsData; route: SettingsRoute }) {
   return (
     <>
+      <SettingsSlot id="approvals" storage="machine">
+        <ApprovalsSection />
+      </SettingsSlot>
       <SettingsSlot id="tracker">
         <SettingsSection title="Tracker">
           <TrackerConnectors activeTracker={data.activeTracker} location={data.location} update={data.update} />

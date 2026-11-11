@@ -1,5 +1,6 @@
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile } from '../lib/jsonFile';
 import type { VerificationAttempt, VerificationVerdict } from '../model/verification';
 
@@ -39,9 +40,8 @@ function numbered(root: string, mapId: string, ticketId: string, prefix: 'A' | '
 
 /** Creates `file` and fails if it exists: evidence is never rewritten. */
 export function writeOnce(root: string, rel: string, value: unknown) {
-  const ignore = path.join(root, EVIDENCE_DIR, '.gitignore');
+  ensureLocalDir(path.join(root, EVIDENCE_DIR));
   mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
-  if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
   writeFileSync(path.join(root, rel), JSON.stringify(value, null, 2), { flag: 'wx' });
 }
 

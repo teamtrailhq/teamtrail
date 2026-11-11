@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { ACCEPTED_DIR, acceptedSettingsFile } from '../src/adapters/remote/acceptedSettingsFile';
+import { acceptedSettingsFile, acceptedSettingsPath } from '../src/adapters/remote/acceptedSettingsFile';
 import { decisionComment, parseDecisionComment } from '../src/adapters/remote/decisionComment';
 import { GitHubAdapter } from '../src/adapters/remote/github';
 import { LinearAdapter } from '../src/adapters/remote/linear';
@@ -187,12 +187,13 @@ test('5 / N2: with nothing accepted, a teammate’s settings are never weakened,
   const config = { ...DEFAULT_CONFIG, run: ['lint', 'test'], default: 'checks' as const };
   for (const setup of ['missing', 'corrupt', 'another account']) {
     const root = tmpRoot();
-    mkdirSync(path.join(root, ACCEPTED_DIR), { recursive: true });
-    const file = path.join(root, ACCEPTED_DIR, 'github-test.json');
+    mkdirSync(path.dirname(acceptedSettingsPath(root, 'github-test')), { recursive: true });
+    const file = acceptedSettingsPath(root, 'github-test');
     if (setup === 'corrupt') writeFileSync(file, '{ not json');
     const other = { viewer: 'someone-else', ok: '{"checks":[],"verification":"off"}' };
-    const entry = { v: 1, target: 'github-test', issues: { [String(sub.number)]: other } };
-    if (setup === 'another account') writeFileSync(file, JSON.stringify(entry));
+    // written by this machine's Teamtrail (signed), but under another tracker account
+    if (setup === 'another account')
+      await acceptedSettingsFile(root, 'github-test').update(() => ({ [String(sub.number)]: other }));
     const opts = { repo: fake.repo, token: 'x', fetch: fake.fetch, manual: true, ...noSleep };
     const a = new GitHubAdapter({ ...opts, accepted: acceptedSettingsFile(root, 'github-test') });
     const snap = await a.loadMap(String(seed.number));
@@ -224,7 +225,7 @@ test('N2: on Linear, losing the record never drops a trail to the defaults', asy
   const a = new LinearAdapter({ ...opts, accepted: acceptedSettingsFile(root, 'linear-test') });
   const map = await a.createMap({ title: 'Trail', sections: SECTIONS, verification: 'checks+review+human' });
   const t = await a.createTicket(map.id, { title: 'T', type: 'task', body: 'B' });
-  rmSync(path.join(root, ACCEPTED_DIR), { recursive: true, force: true }); // an agent deletes it
+  rmSync(path.dirname(acceptedSettingsPath(root, 'linear-test')), { recursive: true, force: true }); // an agent deletes it
   const b = new LinearAdapter({ ...opts, accepted: acceptedSettingsFile(root, 'linear-test') });
   const snap = await b.loadMap(map.id);
   const info = verificationFor(

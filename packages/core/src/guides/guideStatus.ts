@@ -5,6 +5,10 @@ import { lintGuide } from './guideLint';
 export const LOCK_CHANGED =
   'guides.lock.json changed outside Teamtrail (by an agent, or pulled with git); waiting for your approval';
 
+/** Its lock entry came with the repo: a clone, a teammate's install, a repo that moved, or an approval from an earlier version. */
+export const NOT_APPROVED_HERE =
+  'approved elsewhere, not on this machine yet; approvals are kept per machine, outside the repo, and a repo that moved is asked again';
+
 /** Proposed checks of `guide` the lock has no approval for at their current argv. */
 export const pendingChecks = (guide: GuideDoc, lock?: GuideLockEntry) =>
   Object.entries(guide.proposedChecks)
@@ -46,6 +50,7 @@ export function guideStatus(file: {
       reason: `its id "${lint.guide?.id}" doesn't match the file name ${file.id}.md`,
     };
   if (file.origin === 'builtin') return { ...base, status: 'active' };
+  if (file.lockChanged && !file.lock) return { ...base, status: 'unapproved', reason: NOT_APPROVED_HERE };
   if (file.lockChanged) return { ...base, status: 'tampered', reason: LOCK_CHANGED };
   if (!file.lock) return { ...base, status: 'unapproved', reason: 'not approved by the trail lead yet' };
   if (file.lock.sha256 !== sha256)

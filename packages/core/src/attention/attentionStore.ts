@@ -1,5 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
 import type { AttentionPolicy, AttentionPrefs, AttentionState } from '../model/attention';
 import { parseJsonSafe } from '../model/safeKey';
@@ -57,10 +58,7 @@ export function readAttentionState(root: string): AttentionState {
 
 /** Local and gitignored: snoozes are one person's, on one machine. */
 function writeAttentionState(root: string, s: AttentionState) {
-  const dir = path.join(root, STATE_DIR);
-  mkdirSync(dir, { recursive: true });
-  const ignore = path.join(dir, '.gitignore');
-  if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
+  ensureLocalDir(path.join(root, STATE_DIR));
   writeJsonAtomic(stateFile(root), s);
 }
 

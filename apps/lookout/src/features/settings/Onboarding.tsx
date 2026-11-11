@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Panel, ScoutBadge, TeamtrailLogo, Wordmark, Choice, Button, Loading } from '../../components/ui';
 import type { Prefs, TrackerChoice } from '../../lib';
 import { GitHubSetup, LinearSetup, useTrackerSettings, trackerApi, switchTracker } from '../trackers';
@@ -17,6 +17,12 @@ export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) =>
   // Polled, so `gh auth login` in a terminal shows up here without a reload.
   const [trackers, , reloadTrackers] = useTrackerSettings(5000);
   const [busy, setBusy] = useState(false);
+  // The repo already names a tracker this machine hasn't approved (a clone of a team's repo): offer that one first.
+  const asked = trackers?.pending?.target.split(':')[0] as TrackerChoice | undefined;
+  const [picked, setPicked] = useState(false);
+  useEffect(() => {
+    if (asked && !picked && prefs.tracker !== asked) update({ tracker: asked });
+  }, [asked, picked, prefs.tracker, update]);
   const choices = onboardingChoices(trackers ?? undefined, prefs.tracker);
   /** GitHub and Linear connect with their own Connect button, which finishes onboarding; nothing connects on choice. */
   const remote = prefs.tracker === 'github' || prefs.tracker === 'linear';
@@ -28,7 +34,9 @@ export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) =>
   };
   const start = async () => {
     setBusy(true);
-    if (prefs.tracker === 'markdown' && trackers) await trackerApi.connect({ active: 'markdown' }).catch(() => {});
+    // Local files here never rewrite the team's trackers.json: that choice is made in Settings → Approvals.
+    const ownFile = trackers && !trackers.pending;
+    if (prefs.tracker === 'markdown' && ownFile) await trackerApi.connect({ active: 'markdown' }).catch(() => {});
     update({ onboarded: true });
     if (prefs.tracker !== props.activeTracker) switchTracker(update, prefs.tracker);
   };
@@ -52,10 +60,16 @@ export function Onboarding(props: { prefs: Prefs; update: (p: Partial<Prefs>) =>
                 on={prefs.tracker === c.id}
                 title={c.title}
                 sub={c.sub}
-                onClick={() => update({ tracker: c.id })}
+                onClick={() => (setPicked(true), update({ tracker: c.id }))}
               />
             ))}
           </div>
+          {trackers?.pending && (
+            <p className="t-meta onb-repo-tracker">
+              This repo keeps its trails in {trackers.pending.label}. Connect it here, or keep local files on this
+              machine; the team's choice in the repo isn't changed either way.
+            </p>
+          )}
           {trackers === undefined && remote && <Loading label={CHECKING[prefs.tracker] ?? 'Checking…'} />}
           {trackers && prefs.tracker === 'github' && !connectedHere && (
             <GitHubSetup s={trackers} reload={reloadTrackers} onConnected={() => finish('github')} />

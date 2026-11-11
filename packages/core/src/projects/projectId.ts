@@ -2,10 +2,10 @@ import { createHash } from 'node:crypto';
 import { realpathSync } from 'node:fs';
 import path from 'node:path';
 
-/** The real path of a folder, or its resolved path when it doesn't exist (a removed repo keeps its id). */
+/** The real path of a folder as the file system spells it, or its resolved path when it doesn't exist (a removed repo keeps its id). */
 export function realRoot(root: string): string {
   try {
-    return realpathSync(root);
+    return realpathSync.native(root);
   } catch {
     return path.resolve(root);
   }

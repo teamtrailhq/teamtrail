@@ -1,6 +1,7 @@
-import { appendFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { JOURNAL_DIR } from '../history/journalFile';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
 import type { FlagEntry, PrSyncStatus, TicketSync } from '../model/prEvidence';
 import { EVIDENCE_DIR, evidencePaths } from '../verification/evidenceStore';
@@ -18,12 +19,7 @@ const safe = (s: string) => s.replace(/[^\w.-]/g, '_');
 const ticketFile = (root: string, mapId: string, ticketId: string) =>
   path.join(root, evidencePaths.ticket(mapId, ticketId), SYNC_FILE);
 
-function ignored(root: string, dir: string) {
-  const abs = path.join(root, dir);
-  mkdirSync(abs, { recursive: true });
-  const ignore = path.join(abs, '.gitignore');
-  if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
-}
+const ignored = (root: string, dir: string) => ensureLocalDir(path.join(root, dir));
 
 export function readTicketSync(root: string, mapId: string, ticketId: string) {
   const s = readJsonFile<TicketSync>(ticketFile(root, mapId, ticketId));

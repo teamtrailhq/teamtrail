@@ -1,6 +1,7 @@
 import { mkdirSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { AGENTS_DIR } from '../agents/agentLink';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
 import type { VerificationAttempt } from '../model/verification';
@@ -88,6 +89,7 @@ export function acquireRunLock(
   const file = lockFile(root, lock.mapId, lock.ticketId);
   const mine: RunLock = { ...lock, pid: process.pid, startedAt: now };
   let recovered: VerificationAttempt | undefined;
+  ensureLocalDir(path.join(root, AGENTS_DIR));
   mkdirSync(path.dirname(file), { recursive: true });
   for (let i = 0; i < 3; i++) {
     try {

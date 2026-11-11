@@ -1,5 +1,6 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import type {
   GuideEntry,
   Journal,
@@ -7,6 +8,7 @@ import type {
   RemoteAgentEntry,
   SlackOwnerEntry,
   TransitionEntry,
+  TrustEntry,
 } from '../model/lifecycle';
 
 /*
@@ -21,7 +23,7 @@ import type {
  * `readSlack` the Slack owner changes.
  */
 const TRAIL_KINDS = new Set<string>(['transition', 'reroute']);
-type AnyEntry = JournalEntry | GuideEntry | RemoteAgentEntry | SlackOwnerEntry;
+type AnyEntry = JournalEntry | GuideEntry | RemoteAgentEntry | SlackOwnerEntry | TrustEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -36,15 +38,13 @@ export function journalFile(root: string): Journal & {
   readGuides(mapId: string): GuideEntry[];
   readRemoteAgents(mapId: string): RemoteAgentEntry[];
   readSlack(mapId: string): SlackOwnerEntry[];
+  readTrust(mapId: string): TrustEntry[];
 } {
   const raw = (mapId: string) => readEntries(root, mapId) as AnyEntry[];
   const readAll = (mapId: string) => raw(mapId).filter((e): e is JournalEntry => TRAIL_KINDS.has(e.kind));
   return {
     append(entry: AnyEntry) {
-      const dir = path.join(root, JOURNAL_DIR);
-      mkdirSync(dir, { recursive: true });
-      const ignore = path.join(dir, '.gitignore');
-      if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
+      ensureLocalDir(path.join(root, JOURNAL_DIR));
       const line = { ...entry, ...(entry.reason ? { reason: entry.reason.slice(0, MAX_REASON) } : {}) };
       appendFileSync(journalPath(root, entry.mapId), JSON.stringify(line) + '\n');
     },
@@ -53,6 +53,7 @@ export function journalFile(root: string): Journal & {
     readGuides: (mapId) => raw(mapId).filter((e): e is GuideEntry => e.kind === 'guide'),
     readRemoteAgents: (mapId) => raw(mapId).filter((e): e is RemoteAgentEntry => e.kind === 'remote-agent'),
     readSlack: (mapId) => raw(mapId).filter((e): e is SlackOwnerEntry => e.kind === 'slack'),
+    readTrust: (mapId) => raw(mapId).filter((e): e is TrustEntry => e.kind === 'trust'),
   };
 }
 

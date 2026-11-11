@@ -8,7 +8,7 @@ import type { AttentionView } from '../model/attention';
 import type { ProjectEntry, ProjectPhases, ProjectState, ProjectSummary, ProjectTracker } from '../model/project';
 import type { MapSnapshot } from '../model/types';
 import { derivePhases } from '../planning/lifecycle/phase';
-import { projectConfig } from '../server/trackerConfig';
+import { trackerPin } from '../server/trackerPin';
 
 export interface SummaryInput {
   entry: ProjectEntry;
@@ -32,7 +32,7 @@ function countPhases(snaps: MapSnapshot[]): ProjectPhases {
 }
 
 function trackerOf(input: SummaryInput): ProjectTracker {
-  const cfg = projectConfig(input.entry.root).read();
+  const cfg = trackerPin(input.entry.root, input.configDir).read().config;
   const cached = !!input.adapter;
   if (cfg.active === 'github') return { kind: 'github', cached, repo: cfg.github?.repo };
   if (cfg.active === 'linear') return { kind: 'linear', cached, team: cfg.linear?.teamKey, org: cfg.linear?.orgName };

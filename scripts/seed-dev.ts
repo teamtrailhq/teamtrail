@@ -13,7 +13,7 @@ import {
   setMapMode,
   type KnowledgeEntry,
 } from '@teamtrail/core';
-import { writeBrief, writeKnowledge, writeTicketCriteria } from '@teamtrail/core/agents';
+import { approveTrust, pendingTrust, writeBrief, writeKnowledge, writeTicketCriteria } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { seedGuides } from './seedGuides';
 import { seedHistory } from './seedHistory';
@@ -257,6 +257,10 @@ const projects = await seedProjects({ repoRoot, homeRoot: root, now });
 
 // 12. A lived-in day: the trails were charted hours ago, and the finished work has claims to time it by.
 await seedTimeline({ root, adapter, main, second, history, now });
+
+// 13. The seed stands in for a trail lead who approved all of it on this machine: the check commands, the accepted
+// brief, confirmed criteria and knowledge, the policy. (`npm run dev:fresh` shows the first run, where nothing is.)
+for (const i of pendingTrust(root)) approveTrust({ root, items: [{ key: i.key, hash: i.hash }], by: 'trail lead' });
 
 console.log(`seeded ${root}`);
 console.log(`  ${main.key} ${main.title} · mid-flight`);

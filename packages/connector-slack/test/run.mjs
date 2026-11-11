@@ -3,7 +3,8 @@
 //   node test/run.mjs record          re-record fixtures against the fake (see record.ts)
 //   node test/run.mjs serve [port]    fake Slack (Web API + Socket Mode) over HTTP for browser runs (see serve-fake.ts)
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
@@ -34,5 +35,13 @@ await build({
 
 const files = entries.map((f) => path.join(out, f.replace(/\.ts$/, '.mjs')));
 const args = script ? [files[0], ...rest] : ['--test', '--enable-source-maps', ...files];
-const r = spawnSync(process.execPath, args, { stdio: 'inherit' });
+// Tests never use the credentials or the config dir of whoever runs them: answers are signed with the machine key
+// kept there, so a run gets its own.
+const env = {
+  ...process.env,
+  TEAMTRAIL_NO_GH_CLI: '1',
+  TEAMTRAIL_CONFIG_DIR: mkdtempSync(path.join(os.tmpdir(), 'teamtrail-test-config-')),
+};
+for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) delete env[k];
+const r = spawnSync(process.execPath, args, { stdio: 'inherit', env });
 process.exit(r.status ?? 1);

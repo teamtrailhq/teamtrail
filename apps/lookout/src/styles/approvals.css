@@ -1,0 +1,49 @@
+/* Approvals: what the repo asks this machine to trust (Settings → Project → Approvals). */
+.ap-list {
+  list-style: none;
+  margin: var(--sp-6) 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.ap-below {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.ap-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.ap-lines {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+  padding: var(--sp-6) var(--sp-10);
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
+  color: var(--text-hi);
+}
+.ap-warnings {
+  margin: 0;
+  padding-left: var(--sp-12);
+}
+.ap-adopt,
+.ap-none {
+  margin: var(--sp-6) 0;
+}
+.ap-changed {
+  align-items: center;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+.ap-note {
+  margin: 0;
+  max-width: 64ch;
+}

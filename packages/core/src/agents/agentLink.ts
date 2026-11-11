@@ -6,7 +6,8 @@ import type { AnsweredQuestion, ChatMessage, FeedEntry, PendingQuestion, Session
  * document per session; the Lookout mirrors them and writes answers back:
  *
  *   <tracker>/.agents/sessions/<sessionId>.json             AgentSessionDoc, written only by the owning process
- *   <tracker>/.agents/answers/<sessionId>/<questionId>.json AgentAnswer, written by whoever answers
+ *   <tracker>/.agents/answers/<sessionId>/<questionId>.json AgentAnswer, written by whoever answers and signed with
+ *                                                           this machine's key (agentAnswerSignature.ts)
  *   <tracker>/.agents/server.json                           LookoutLock, while `teamtrail` is serving
  *   <tracker>/.agents/hosts/<agent>-<hostSessionId>.json    HostSessionLink, written by the agent's session hook
  *
@@ -60,12 +61,16 @@ export interface AgentAnswer {
   /** Actor id of who answered, e.g. `trail lead`. */
   author: string;
   at: number;
+  /** This machine's signature of the fields above. An answer without a valid one is not the human's. */
+  sig?: string;
 }
 
 export interface LookoutLock {
   url: string;
   pid: number;
   startedAt: number;
+  /** This machine's signature of the lock (machine/announcementSig.ts): only then is its URL offered as a link. */
+  sig?: string;
 }
 
 /** A doc whose process is gone while the session still claims to run: show it as ended, with nothing left pending. */

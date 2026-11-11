@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
 import type { ChecklistRecord } from '../model/guide';
 import { EVIDENCE_DIR, evidencePaths } from '../verification/evidenceStore';
@@ -9,9 +9,7 @@ const fileOf = (root: string, mapId: string, ticketId: string) =>
   path.join(root, evidencePaths.ticket(mapId, ticketId), 'checklist.json');
 
 export function writeChecklist(root: string, rec: ChecklistRecord) {
-  const ignore = path.join(root, EVIDENCE_DIR, '.gitignore');
-  mkdirSync(path.dirname(ignore), { recursive: true });
-  if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
+  ensureLocalDir(path.join(root, EVIDENCE_DIR));
   writeJsonAtomic(fileOf(root, rec.mapId, rec.ticketId), rec);
 }
 

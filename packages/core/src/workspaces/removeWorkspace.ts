@@ -2,7 +2,9 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { readLease } from '../agents/leaseStore';
 import { git, gitText } from '../evidence/git';
+import { BRAND } from '../model/brand';
 import { ownWorktree } from './ownWorktree';
+import { trustedWorkspace } from './trustedWorkspace';
 import type { WorkspaceRecord } from './workspace';
 import { dropWorkspace, readWorkspace } from './workspaceStore';
 
@@ -31,8 +33,12 @@ export const isClaimed = (root: string, mapId: string, ticketId: string) => {
  * ticket is claimed, for the main checkout, and for uncommitted changes unless `force`.
  */
 export async function removeWorkspace(i: RemoveWorkspaceInput): Promise<RemoveWorkspaceResult> {
-  const ws = readWorkspace(i.root, i.mapId, i.ticketId);
-  if (!ws) return refused('This ticket has no workspace.');
+  const record = readWorkspace(i.root, i.mapId, i.ticketId);
+  if (!record) return refused('This ticket has no workspace.');
+  // only a worktree Teamtrail prepared here: a record an agent wrote can't point removal at another folder
+  const ws = existsSync(record.path) ? trustedWorkspace(i.root, i.mapId, i.ticketId) : record;
+  if (!ws)
+    return refused(`${record.path} isn't a worktree ${BRAND.name} prepared for this ticket, so it won't remove it.`);
   if (isClaimed(i.root, i.mapId, i.ticketId))
     return refused(`${ws.ticketKey} is still claimed. Finish it or release it to the queue first.`);
   if (typeof ws.path !== 'string' || !path.isAbsolute(ws.path))

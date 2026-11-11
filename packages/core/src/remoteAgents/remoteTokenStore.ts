@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { AGENTS_DIR } from '../agents/agentLink';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
 import type { RemoteToken } from '../model/remoteToken';
 
@@ -20,11 +20,7 @@ const isToken = (t: Partial<RemoteToken> | null): t is RemoteToken =>
   !!t && TOKEN_FIELDS.every((k) => typeof t[k] === 'string' && t[k]) && typeof t.createdAt === 'number';
 
 /** Keeps `.agents/` out of git even when this is the first file written there. */
-function ignoreAgentsDir(root: string) {
-  const ignore = path.join(root, AGENTS_DIR, '.gitignore');
-  mkdirSync(path.dirname(ignore), { recursive: true });
-  if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
-}
+const ignoreAgentsDir = (root: string) => ensureLocalDir(path.join(root, AGENTS_DIR));
 
 /** The live tokens; none when the file is missing or unreadable, so a damaged file closes the endpoint. */
 export function readRemoteTokens(root: string): RemoteToken[] {

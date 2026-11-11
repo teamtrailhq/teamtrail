@@ -1,7 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
+import { writeLocalJson } from '../lib/ensureLocalDir';
+import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
+import { signAgentAnswer } from './agentAnswerSignature';
 import { SESSION_DOC_PATH, agentPaths, markDisconnected, type AgentAnswer, type AgentSessionDoc } from './agentLink';
 
 /** One session doc by tracker-relative path, with dead processes shown as disconnected. */
@@ -30,14 +32,24 @@ export async function readAgentDocs(
 
 export class AnswerError extends Error {}
 
-/** Deliver an answer to a question a session is waiting on. Rejects questions that are not open. */
+/**
+ * Deliver an answer to a question a session is waiting on, signed with this machine's key so the asking process
+ * knows Teamtrail wrote it. Rejects questions that are not open.
+ */
 export function writeAgentAnswer(root: string, input: Omit<AgentAnswer, 'at'> & { at?: number }): AgentAnswer {
   const doc = readAgentDoc(root, agentPaths.session(input.sessionId));
   if (!doc) throw new AnswerError(`unknown session "${input.sessionId}"`);
   if (!doc.pending.some((q) => q.id === input.questionId))
     throw new AnswerError(`question "${input.questionId}" is not waiting for an answer`);
   if (!input.text.trim()) throw new AnswerError('answer is empty');
-  const ans: AgentAnswer = { ...input, text: input.text.trim(), at: input.at ?? Date.now() };
-  writeJsonAtomic(path.join(root, agentPaths.answer(ans.sessionId, ans.questionId)), ans);
+  const { sessionId, questionId, author } = input;
+  const ans = signAgentAnswer(root, {
+    sessionId,
+    questionId,
+    author,
+    text: input.text.trim(),
+    at: input.at ?? Date.now(),
+  });
+  writeLocalJson(root, agentPaths.answer(sessionId, questionId), ans);
   return ans;
 }

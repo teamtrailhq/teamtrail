@@ -110,7 +110,13 @@ export async function verifyRemote({ browser, cli, log, shots }) {
     // A stdio agent starts the trail, as today.
     const stdio = new Client({ name: 'claude-code', version: '2.1.0' });
     await stdio.connect(
-      new StdioClientTransport({ command: process.execPath, args: [cli, 'mcp'], cwd: top, stderr: 'pipe' }),
+      new StdioClientTransport({
+        command: process.execPath,
+        args: [cli, 'mcp'],
+        cwd: top,
+        stderr: 'pipe',
+        env: { ...process.env },
+      }),
     );
     closers.push(() => stdio.close());
     const local = caller(stdio);

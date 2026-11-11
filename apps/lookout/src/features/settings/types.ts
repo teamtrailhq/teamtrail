@@ -10,6 +10,7 @@ export type SettingsSectionId =
   | 'verification'
   | 'models'
   | 'team'
+  | 'approvals'
   | 'tracker'
   | 'workspaces'
   | 'remote-agents'

@@ -16,6 +16,7 @@ import {
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { agents, type Call } from './fakes/agents';
+import { approveAllHere, confirmCriteriaHereNow } from './fakes/trailLead';
 
 let repo: string;
 let root: string;
@@ -193,6 +194,7 @@ describe('ruling out never touches a review or a ticket being verified', () => {
         run: ['c'],
       }),
     );
+    approveAllHere(root);
     const a = await hub.connect({ name: 'claude-01' });
     const m = await a<Started>('start_trail', {
       discovery: false,
@@ -248,7 +250,8 @@ describe('agent A vs agent B: nobody changes another agent’s claim', () => {
 });
 
 describe('acceptance criteria: who writes them, and what counts as proof', () => {
-  const config = (level: string) =>
+  /** verification.json as the trail lead wrote and approved it on this machine. */
+  const config = (level: string) => {
     fs.writeFileSync(
       path.join(root, 'verification.json'),
       JSON.stringify({
@@ -258,6 +261,8 @@ describe('acceptance criteria: who writes them, and what counts as proof', () =>
         run: ['check'],
       }),
     );
+    approveAllHere(root);
+  };
 
   it('the assignee, or the charting agent before anyone claims; confirmed criteria only take a proposal', async () => {
     config('checks');
@@ -281,6 +286,7 @@ describe('acceptance criteria: who writes them, and what counts as proof', () =>
     });
     // The human confirms them.
     writeTicketCriteria(root, { id: m.trail.id, title: 'Exports' }, { id: x.slice(1), key: x }, { confirmed: true });
+    confirmCriteriaHereNow(root, m.trail.id, x.slice(1));
     await b('claim_ticket', { ticket: x });
     await expect(a('set_criteria', { ticket: x, criteria: one })).rejects.toThrow(/not claimed by you/);
     const proposal = await b<{ proposed: unknown[]; note: string }>('set_criteria', { ticket: x, criteria: one });
@@ -377,6 +383,7 @@ describe('acceptance criteria: who writes them, and what counts as proof', () =>
       // Confirmed, a change is a proposal: kept on this machine, not in the committed criteria folder.
       const ticket = { id: k.slice(1), key: k };
       writeTicketCriteria(root, { id: m.trail.id, title: 'Exports' }, ticket, { confirmed: true });
+      confirmCriteriaHereNow(root, m.trail.id, ticket.id);
       await again('set_criteria', { trail: m.trail.id, ticket: k, criteria: [{ text: 'Less', kind: 'unit' }] });
     }
     expect(fs.readdirSync(path.join(root, 'criteria')).filter((f) => !f.endsWith('.md'))).toEqual([]);

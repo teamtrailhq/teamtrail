@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { ACCEPTED_DIR, acceptedSettingsFile } from '../src/adapters/remote/acceptedSettingsFile';
+import { acceptedSettingsFile, acceptedSettingsPath } from '../src/adapters/remote/acceptedSettingsFile';
 import { GitHubAdapter } from '../src/adapters/remote/github';
 import { LinearAdapter } from '../src/adapters/remote/linear';
 import { SettingsLedger } from '../src/adapters/remote/settingsLedger';
@@ -96,8 +96,8 @@ test('N4: two Linear users whose names slug alike keep separate decision ids', a
 
 test('N5: a lock someone holds never blocks the event loop; the change is skipped', async () => {
   const root = tmpRoot();
-  mkdirSync(path.join(root, ACCEPTED_DIR), { recursive: true });
-  writeFileSync(path.join(root, ACCEPTED_DIR, 'github-test.json.lock'), '');
+  mkdirSync(path.dirname(acceptedSettingsPath(root, 'github-test')), { recursive: true });
+  writeFileSync(`${acceptedSettingsPath(root, 'github-test')}.lock`, '');
   const store = acceptedSettingsFile(root, 'github-test');
   let ticks = 0;
   const timer = setInterval(() => ticks++, 5);
@@ -115,8 +115,8 @@ test('N5: a lock someone holds never blocks the event loop; the change is skippe
 
 test('N5: a stale lock is taken over', async () => {
   const root = tmpRoot();
-  mkdirSync(path.join(root, ACCEPTED_DIR), { recursive: true });
-  const lock = path.join(root, ACCEPTED_DIR, 'github-test.json.lock');
+  mkdirSync(path.dirname(acceptedSettingsPath(root, 'github-test')), { recursive: true });
+  const lock = `${acceptedSettingsPath(root, 'github-test')}.lock`;
   writeFileSync(lock, '');
   const old = new Date(Date.now() - 60_000);
   utimesSync(lock, old, old);
@@ -147,4 +147,25 @@ test('decision stats: a teammate’s record never counts as this machine’s hum
   const transcript = [{ from: 'human' as const, author: '@mona', text: 'ok', at: 1 }];
   const theirs = { ...buildDecision('D-1@mona', 'm', { ...base, transcript }), postedBy: '@mona' };
   assert.equal(decisionStats([theirs], 0).human, 0);
+});
+
+test('#60: the accepted-settings record is outside the repo, and one this machine did not sign holds nothing', async () => {
+  const root = tmpRoot();
+  const store = acceptedSettingsFile(root, 'github-test');
+  assert.equal(await store.update(() => ({ '1': { viewer: 'octo-dev', ok: '{"verification":"checks"}' } })), true);
+  assert.deepEqual(Object.keys(store.read()), ['1']);
+  const file = acceptedSettingsPath(root, 'github-test');
+  assert.ok(!file.startsWith(root), 'not in the repo');
+  // an edit by anything but this machine's Teamtrail (the signature no longer matches): nothing is accepted
+  const doc = JSON.parse(readFileSync(file, 'utf8'));
+  doc.issues['1'].ok = '{"verification":"off"}';
+  writeFileSync(file, JSON.stringify(doc));
+  assert.deepEqual(store.read(), {});
+  // and a record planted where earlier versions kept it, in the repo, is never read
+  mkdirSync(path.join(root, '.agents', 'tracker-settings'), { recursive: true });
+  writeFileSync(
+    path.join(root, '.agents', 'tracker-settings', 'github-test.json'),
+    JSON.stringify({ v: 1, target: 'github-test', issues: { '2': { viewer: 'octo-dev', ok: '{}' } } }),
+  );
+  assert.deepEqual(store.read(), {});
 });

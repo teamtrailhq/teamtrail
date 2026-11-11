@@ -64,6 +64,12 @@ export interface KnowledgeEntry {
   updatedAt: number;
   /** An agent's report that it may be outdated, until the trail lead resolves it. */
   flag?: { by: string; reason: string; at: number };
+  /**
+   * The file says confirmed (or assumption), but the trail lead never made that call on this machine for this
+   * content: `elsewhere` or `changed`. The entry then reads as suggested, so it doesn't reach agents until they
+   * review it. `claimed` is the status the file has. Never written to the file.
+   */
+  approval?: { standing: 'elsewhere' | 'changed'; claimed: KnowledgeStatus };
 }
 
 export const KNOWLEDGE_DIR = 'knowledge';

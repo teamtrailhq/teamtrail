@@ -8,6 +8,8 @@ import {
   type LevelInfo,
 } from '@teamtrail/core';
 import {
+  checksApproval,
+  checksWaitReason,
   levelFor,
   readAttempts,
   readRunLock,
@@ -91,6 +93,10 @@ export async function submitVerified(
   wait: { seconds: number; ctl: WaitControl },
 ) {
   const { snap, ticket: t, info, sub } = job;
+  // Checks run only from the verification.json approved on this machine. Until then the completion waits: the
+  // ticket stays the agent's, nothing runs, and the human is asked (attention item, Settings → Approvals).
+  const approval = sub.remote ? undefined : checksApproval(ctx.root);
+  if (approval?.waiting) return waitingForApproval(ctx, t.key, checksWaitReason(approval));
   await transition(ctx.adapter, snap.map.id, t.id, {
     event: 'submit',
     actor: sub.agent,
@@ -109,6 +115,12 @@ export async function submitVerified(
     await verify(ctx.verifyEnv(), { mapId: snap.map.id, ticket: t, info, sub }),
   );
   return awaitRun(ctx, run, wait.seconds, wait.ctl);
+}
+
+/** A completion held back because the check commands wait for the trail lead's approval on this machine. */
+function waitingForApproval(ctx: AgentContext, key: string, note: string) {
+  ctx.activity.push({ source: 'system', level: 'warn', text: `${key} waits: check commands need your approval` });
+  return { status: 'waiting-approval' as const, pending: true as const, note };
 }
 
 /** `verification_status`: the attempts and verdicts of a ticket; with `wait`, until a running check finishes. */

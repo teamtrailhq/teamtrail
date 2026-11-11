@@ -4,7 +4,7 @@ import {
   readIntegrationScan,
   readLease,
   readLeases,
-  readWorkspace,
+  trustedWorkspace,
   readWorkspaceSettings,
   repoRootOf,
   repoRootSpellings,
@@ -85,7 +85,8 @@ export async function withReview<R extends object>(
  * posted once as a ticket comment. Teamtrail never merges it.
  */
 export async function branchForReview(ctx: AgentContext, mapId: string, t: Ticket, agent: string) {
-  const ws = readWorkspace(ctx.root, mapId, t.id);
+  // the worktree Teamtrail prepared, never a path an agent wrote into the record
+  const ws = trustedWorkspace(ctx.root, mapId, t.id);
   if (!ws) return {};
   const line = `Work for review on branch \`${ws.branch}\` (worktree ${ws.path}). Teamtrail never merges it.`;
   const fresh = (await ctx.load(mapId)).tickets.find((x) => x.id === t.id);

@@ -15,9 +15,9 @@ import {
   type RerouteProposal,
   type TrackerAdapter,
 } from '../src';
-import { readBrief, writeBrief } from '../src/discovery/briefStore';
-import { contentHash } from '../src/lib/contentHash';
+import { readBrief, writeBrief, readBriefFile } from '../src/discovery/briefStore';
 import { handleBriefs } from '../src/server/briefRoutes';
+import { contentHash } from '../src/trust/trustLedger';
 
 const now = Date.UTC(2026, 10, 4, 12);
 
@@ -159,8 +159,10 @@ describe('accepting a brief', () => {
       loadMap: () => Promise.reject(new Error('tracker unreachable')),
     } as unknown as TrackerAdapter;
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const hash = contentHash(readBrief(root, 'm1')!.sections);
-    const req = Object.assign(Readable.from([Buffer.from(JSON.stringify({ mapId: 'm1', hash }))]), { method: 'POST' });
+    // the hash of the brief as the page showed it
+    const hash = contentHash(readBriefFile(root, 'm1')!.text);
+    const body = JSON.stringify({ mapId: 'm1', hash });
+    const req = Object.assign(Readable.from([Buffer.from(body)]), { method: 'POST' });
     const res = {
       statusCode: 0,
       body: '',

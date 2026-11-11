@@ -22,6 +22,7 @@ import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { fakeGitHub } from './fakes/github';
 import { fakeGuideCatalog, guideText } from './fakes/guideCatalog';
 import { fakeLinear } from './fakes/linear';
+import { approveAllHere } from './fakes/trailLead';
 import { noSleep } from './scenarios';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
@@ -82,6 +83,7 @@ test('review tickets take the reviewer guide only when the trail team has one', 
       path.join(root, 'verification.json'),
       JSON.stringify({ v: 1, checks: { ok: { run: [process.execPath, '-e', '0'] } }, run: ['ok'] }),
     );
+    approveAllHere(root);
     const map = await adapter.createMap({ title: 'R', sections: SECTIONS, verification: 'checks+review' });
     await setTrailTeam(adapter, map.id, team, 'trail lead');
     const t = await adapter.createTicket(map.id, { title: 'Build', type: 'execute', body: '' });

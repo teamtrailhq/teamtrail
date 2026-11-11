@@ -4,7 +4,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { MarkdownAdapter } from '@teamtrail/core';
-import { readAgentDocs } from '@teamtrail/core/agents';
+import { readAgentDocs, trackerPin } from '@teamtrail/core/agents';
 import { activeTracker } from '@teamtrail/core/bridge';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -36,11 +36,12 @@ async function connect(env: Record<string, string | undefined>, fetch: typeof gl
   };
 }
 
-const useGitHub = () =>
-  fs.writeFileSync(
-    path.join(root, 'trackers.json'),
-    JSON.stringify({ active: 'github', github: { repo: 'octo-org/launchpad' } }),
-  );
+/** Connecting GitHub in Settings on this machine: trackers.json for the team, and this machine's approval. */
+const useGitHub = () => {
+  const config = { active: 'github' as const, github: { repo: 'octo-org/launchpad' } };
+  fs.writeFileSync(path.join(root, 'trackers.json'), JSON.stringify(config));
+  trackerPin(root, configDir).approve(config);
+};
 
 beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-mcp-gh-'));

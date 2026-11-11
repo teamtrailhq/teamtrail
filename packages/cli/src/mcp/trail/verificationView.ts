@@ -1,5 +1,12 @@
 import type { GitBaseline, GitEvidence, MapSnapshot, Ticket, VerificationAttempt } from '@teamtrail/core';
-import { checkPassed, levelFor, readAttempts, type Settled } from '@teamtrail/core/agents';
+import {
+  checkPassed,
+  checksApproval,
+  checksWaitReason,
+  levelFor,
+  readAttempts,
+  type Settled,
+} from '@teamtrail/core/agents';
 
 /** Failing checks of an attempt, as an agent needs them to fix the work. */
 export const feedbackOf = (a: VerificationAttempt) =>
@@ -12,6 +19,12 @@ export const feedbackOf = (a: VerificationAttempt) =>
       ...(c.error ? { error: c.error } : {}),
       tail: c.tail,
     }));
+
+/** Whether the check commands wait for the trail lead's approval on this machine, said plainly. */
+function waiting(root: string) {
+  const a = checksApproval(root);
+  return a.waiting ? { waitingForApproval: checksWaitReason(a) } : {};
+}
 
 export const checksOf = (a: VerificationAttempt) =>
   a.checks.map((c) => ({ name: c.name, ok: checkPassed(c), exitCode: c.exitCode, durationMs: c.durationMs }));
@@ -35,6 +48,7 @@ export function verificationView(root: string, snap: MapSnapshot, t: Ticket) {
         return { name, run: spec?.run, ...(spec?.cwd ? { cwd: spec.cwd } : {}) };
       }),
       ...(config.errors.length ? { configErrors: config.errors } : {}),
+      ...waiting(root),
       howTo:
         'close_ticket (or report_completion) runs these checks before the ticket is done. Run them yourself first.',
     },

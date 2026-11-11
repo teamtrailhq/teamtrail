@@ -15,9 +15,15 @@ import {
 } from '../src';
 import { writeLease } from '../src/agents/leaseStore';
 import { readCriteriaProposals, writeCriteriaProposal } from '../src/criteria/criteriaProposals';
-import { readCriteria, writeTicketCriteria } from '../src/criteria/criteriaStore';
-import { contentHash } from '../src/lib/contentHash';
+import {
+  confirmCriteriaHere,
+  criteriaContent,
+  readCriteria,
+  readCriteriaFile,
+  writeTicketCriteria,
+} from '../src/criteria/criteriaStore';
 import { handleCriteriaProposals } from '../src/server/criteriaProposalRoutes';
+import { contentHash } from '../src/trust/trustLedger';
 import { writeAttempt } from '../src/verification/evidenceStore';
 import { reviewConflict } from '../src/verification/reviewIndependence';
 
@@ -174,6 +180,12 @@ describe('proposed criteria', () => {
     const ticket = { id: '1', key: '#1' };
     writeTicketCriteria(root, map, ticket, { criteria: numbered([{ text: 'Real', kind: 'unit' }]) });
     writeTicketCriteria(root, map, ticket, { confirmed: true });
+    // confirmed by the trail lead on this machine: the flag in the file alone confirms nothing (PR #60)
+    confirmCriteriaHere(
+      root,
+      { mapId: 'm1', ticketId: '1', content: criteriaContent(readCriteriaFile(root, 'm1')[0]) },
+      'tl',
+    );
     const criteria = numbered([{ text: 'Trivial', kind: 'unit' }]);
     writeCriteriaProposal(root, 'm1', { ticketId: '1', ticketKey: '#1', criteria, by: 'claude-01', at: 1 });
     expect(readCriteria(root, 'm1')[0]).toMatchObject({ confirmed: true, criteria: [{ text: 'Real' }] });
@@ -181,7 +193,9 @@ describe('proposed criteria', () => {
     expect(readCriteriaProposals(root, 'm1')).toEqual([]);
     expect(readCriteria(root, 'm1')[0].criteria[0].text).toBe('Real');
     writeCriteriaProposal(root, 'm1', { ticketId: '1', ticketKey: '#1', criteria, by: 'claude-01', at: 2 });
-    await post('/criteria-proposals/accept', { mapId: 'm1', ticketId: '1', title: 'M', hash: contentHash(criteria) });
+    // the hash the GET served for the proposal, as the page sends it
+    const shown = contentHash(criteriaContent({ ticketId: '1', ticketKey: '#1', criteria }));
+    await post('/criteria-proposals/accept', { mapId: 'm1', ticketId: '1', title: 'M', hash: shown });
     expect(readCriteria(root, 'm1')[0]).toMatchObject({ confirmed: true, criteria: [{ text: 'Trivial' }] });
   });
 });

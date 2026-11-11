@@ -1,6 +1,7 @@
 import { ticketPhase } from '../planning/lifecycle/phase';
 import { transition } from '../planning/lifecycle/transition';
 import { OperationError } from '../planning/operations/operationError';
+import { checksApproval, checksWaitReason, ChecksNotApproved } from './checksApproval';
 import { readAttempts } from './evidenceStore';
 import { submissionOf } from './resubmit';
 import { levelFor, verify, type VerifyEnv } from './verifyCompletion';
@@ -18,6 +19,9 @@ export async function rerunChecks(
   const snap = await env.adapter.loadMap(mapId);
   const t = snap.tickets.find((x) => x.id === ticketId);
   if (!t) throw new OperationError(`ticket ${ticketId} not found`);
+  // nothing moves while the commands wait: the trail lead approves them first, then re-runs
+  const approval = checksApproval(env.root);
+  if (approval.waiting) throw new ChecksNotApproved(checksWaitReason(approval));
   const last = readAttempts(env.root, mapId, ticketId).at(-1);
   if (!last) throw new OperationError(`${t.key} has no submission to verify again`);
   const phase = ticketPhase(t, new Map(snap.tickets.map((x) => [x.id, x])), snap.map.mode);

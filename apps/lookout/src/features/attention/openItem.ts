@@ -13,6 +13,8 @@ export interface AttentionHandlers {
   openGuides: () => void;
   /** A connector whose messages are refused (`slack`): its Settings section. */
   openConnector: (channel: string) => void;
+  /** What the repo's files ask this machine to trust: Settings → Approvals. */
+  openApprovals: () => void;
 }
 
 function openTicketOrTrail(item: AttentionItem, h: AttentionHandlers) {
@@ -48,6 +50,8 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
       return h.openGuides();
     case 'delivery':
       return h.openConnector(item.ref);
+    case 'trust':
+      return h.openApprovals();
     default: {
       const never: never = item.kind;
       return never;

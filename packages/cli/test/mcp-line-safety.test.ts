@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { TrailAgent } from '../src/mcp/agent';
 import { assertLineSafe, stringFields, toolShapes } from '../src/mcp/lineSafety';
 import { createMcpServer } from '../src/mcp/server';
+import { approveAllHere } from './fakes/trailLead';
 
 /*
  * A line break in a single-line input used to write fields the agent may not set: `title: "x\nverification:off"`
@@ -246,6 +247,7 @@ describe('text that gets past the tools still writes no field', () => {
       path.join(root, 'verification.json'),
       JSON.stringify({ v: 1, checks: { check: { run: [process.execPath, '-e', 'process.exit(1)'] } }, run: ['check'] }),
     );
+    approveAllHere(root);
     await connect();
     // Straight into the operations, as if the tool check were not there.
     const started = await agent.startTrail({

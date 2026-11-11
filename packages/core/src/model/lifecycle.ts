@@ -206,8 +206,32 @@ export interface SlackOwnerEntry {
   reason?: string;
 }
 
+export type TrustAction = 'approved' | 'adopted' | 'tracker-approved' | 'tracker-kept';
+
+/**
+ * The trail lead approving, on this machine, something the repo's files ask it to trust: the check commands, an
+ * accepted brief, confirmed criteria or knowledge, a lowered risk policy, another tracker. In the project-wide
+ * `TRUST_JOURNAL` file. The approval itself lives outside the repo (machine/machineStore.ts); this is its history.
+ */
+export interface TrustEntry {
+  v: 1;
+  kind: 'trust';
+  at: number;
+  mapId: string;
+  action: TrustAction;
+  /** What was approved, in words: "check commands", "brief of trail 3", "GitHub Issues in octo-org/launchpad". */
+  subject: string;
+  /** The content hash approved, or what it replaced. */
+  detail?: string;
+  actor: string;
+  actorKind: ActorKind;
+  reason?: string;
+}
+
 /** The journal "trail" that holds changes to the Slack owner. */
 export const SLACK_JOURNAL = '_slack';
+/** The journal "trail" that holds this machine's approvals. */
+export const TRUST_JOURNAL = '_trust';
 
 export type JournalEntry = TransitionEntry | RerouteEntry;
 

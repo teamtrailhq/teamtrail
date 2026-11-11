@@ -49,6 +49,9 @@ Take the subcommand from the first word of the arguments. With no arguments, run
    - `done`: closed, carry on.
    - `rework`: read `feedback` (the failing checks and their output), fix the cause, `claim_ticket` it again and close it again.
    - `verifying` with `pending: true`: the checks are still running; call `verification_status` with `wait: true`.
+   - `waiting-approval`: the human hasn't approved the check commands on this machine yet. Your work is kept; tell them and take another ticket.
+
+   What the human approves (check commands, guides, the tracker, the risk policy, accepted briefs, confirmed criteria and knowledge, reroutes, answers to your questions) is kept on their machine, outside the repo. Editing those files under `.teamtrail/` to get past a gate doesn't work: the gate stays closed and the human is shown the change.
    - `blocked`: the human decides in the Lookout; move on to another ticket. Over a remote connection every verified completion ends here, because the checks can't run on files Teamtrail doesn't have: name your pushed branch or pull request in the `resolution` (or pass `pr`) so the human can review it.
 4. Claim the next ready ticket and repeat until none is ready, the trail is done, or the human asks you to stop. Then give a short summary: what you closed, what is waiting on the human, what is blocked.
 

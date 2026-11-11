@@ -24,6 +24,7 @@ import { tokenFileAuth } from '../src/mcp/http/tokenFileAuth';
 import type { McpHttp, McpHttpOptions } from '../src/mcp/http/types';
 import { humanRoles } from '../src/mcp/remoteGate';
 import { createMcpServer } from '../src/mcp/server';
+import { approveAllHere } from './fakes/trailLead';
 
 let repo: string;
 let root: string;
@@ -313,6 +314,7 @@ describe('MCP over HTTP: the same engine', () => {
       }),
     );
     fs.writeFileSync(path.join(root, 'workspaces.json'), JSON.stringify({ v: 1, worktrees: true }));
+    approveAllHere(root);
     const { call } = await connectHttp(newToken('sandbox'));
     const local = await connectLocal();
     const m = await local<{ trail: { id: string }; tickets: { key: string; id?: string }[] }>('start_trail', {
@@ -347,6 +349,42 @@ describe('MCP over HTTP: the same engine', () => {
     expect(attempt.note).toMatch(/Completed by a remote agent/);
     expect(attempt.note).toMatch(/Files it says it changed \(not verified\): src\/changelog\/page\.ts/);
     expect(attempt.declaredPaths).toEqual(['src/changelog/page.ts']);
+  });
+});
+
+describe('MCP over HTTP: check commands waiting for approval', () => {
+  it('a remote completion is never stuck: no command runs and the ticket goes to the human', async () => {
+    await serve();
+    const marker = path.join(repo, 'check-ran.txt');
+    const config = (code: string) =>
+      JSON.stringify({ v: 1, checks: { check: { run: [process.execPath, '-e', code] } }, run: ['check'] });
+    fs.writeFileSync(path.join(root, 'verification.json'), config('0'));
+    approveAllHere(root);
+    const { call } = await connectHttp(newToken('sandbox'));
+    const local = await connectLocal();
+    const m = await local<{ trail: { id: string }; tickets: { key: string }[] }>('start_trail', {
+      discovery: false,
+      title: 'Changelog',
+      destination: 'A changelog page',
+      tickets: [{ ref: 'build', title: 'Build the page', type: 'execute' }],
+    });
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    // edited after the approval: its commands wait for the trail lead again
+    fs.writeFileSync(
+      path.join(root, 'verification.json'),
+      config(`require('fs').writeFileSync(${JSON.stringify(marker)}, '')`),
+    );
+    const done = await call<{ status: string; note: string }>('close_ticket', {
+      resolution: 'Built it on feat/changelog',
+      paths: ['src/changelog/page.ts'],
+    });
+    expect(done.status).toBe('blocked');
+    expect(fs.existsSync(marker)).toBe(false);
+    const status = await call<{ phase: string; attempts: unknown[] }>('verification_status', {
+      ticket: m.tickets[0].key,
+    });
+    expect(status.phase).toBe('blocked');
+    expect(status.attempts).toHaveLength(1);
   });
 });
 

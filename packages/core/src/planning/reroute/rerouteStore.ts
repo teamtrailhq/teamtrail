@@ -1,5 +1,6 @@
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { ensureLocalDir } from '../../lib/ensureLocalDir';
 import { readJsonFile, writeJsonAtomic } from '../../lib/jsonFile';
 import type { RerouteProposal } from '../../model/reroute';
 
@@ -46,8 +47,8 @@ export const readReroute = (root: string, mapId: string, id: string) =>
 /** Stores a new proposal under the next free id and returns it with that id. */
 export function createReroute(root: string, draft: Omit<RerouteProposal, 'id'>): RerouteProposal {
   const dir = mapDir(root, draft.mapId);
+  ensureLocalDir(path.join(root, REROUTES_DIR));
   mkdirSync(dir, { recursive: true });
-  ensureIgnored(root);
   let n = Math.max(0, ...listReroutes(root, draft.mapId).map((p) => idNumber(p.id))) + 1;
   for (;;) {
     const p: RerouteProposal = { ...draft, id: `R-${n}` };
@@ -62,10 +63,6 @@ export function createReroute(root: string, draft: Omit<RerouteProposal, 'id'>):
 }
 
 export function writeReroute(root: string, p: RerouteProposal) {
+  ensureLocalDir(path.join(root, REROUTES_DIR));
   writeJsonAtomic(fileOf(root, p.mapId, p.id), p);
-}
-
-function ensureIgnored(root: string) {
-  const ignore = path.join(root, REROUTES_DIR, '.gitignore');
-  if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
 }

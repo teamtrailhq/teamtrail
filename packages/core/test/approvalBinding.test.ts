@@ -63,7 +63,7 @@ describe('confirming criteria binds to what was shown', () => {
     writeTicketCriteria(root, map, ticket, { criteria: numbered([{ text: 'Exports every row', kind: 'unit' }]) });
     const read = await call(h, 'GET', '/criteria?mapId=m1');
     const hash = read.body.tickets[0].hash;
-    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(hash).toMatch(/^sha256:[0-9a-f]{64}$/);
     writeTicketCriteria(root, map, ticket, { criteria: numbered([{ text: 'Trivially true', kind: 'unit' }]) });
     const confirm = (extra: object) =>
       call(h, 'POST', '/criteria/confirm', { mapId: 'm1', ticketId: '1', ticketKey: '#1', ...extra });

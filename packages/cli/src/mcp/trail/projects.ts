@@ -17,7 +17,7 @@ export async function projectsStatus(input: { root: string; configDir?: string; 
   const summaries = await Promise.all(
     others.map(async (entry) => {
       const state = projectState(entry.root);
-      const adapter = state.kind === 'missing' ? undefined : fileAdapter(entry.root);
+      const adapter = state.kind === 'missing' ? undefined : fileAdapter(entry.root, dir);
       const { summary } = await projectSummary({ entry, home: false, state, adapter, configDir: dir });
       return {
         project: summary.name,

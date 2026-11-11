@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { AGENTS_DIR } from '../agents/agentLink';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
 import type { IntegrationScan } from './workspace';
 
@@ -12,5 +13,6 @@ export function readIntegrationScan(root: string): IntegrationScan {
 }
 
 export function writeIntegrationScan(root: string, s: IntegrationScan) {
+  ensureLocalDir(path.join(root, AGENTS_DIR));
   writeJsonAtomic(file(root), s);
 }

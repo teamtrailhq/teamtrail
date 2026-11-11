@@ -4,17 +4,43 @@ export { TRAIL_NAMES_DIR, claimTrailName, releaseTrailName } from './agents/trai
 export { AnswerError, readAgentDoc, readAgentDocs, writeAgentAnswer } from './agents/agentDocs';
 export { readLookoutLock, writeLookoutLock } from './agents/lookoutLock';
 export { gitConfigValue } from './evidence/gitConfigValue';
+export { ensureLocalDir, writeLocalJson } from './lib/ensureLocalDir';
 export { writeJsonAtomic } from './lib/jsonFile';
 export { dropLease, readLease, readLeases, renewLease, writeLease } from './agents/leaseStore';
 export { LEASE_REAPER, reclaimExpired, returnToQueue, type ReturnOutcome } from './agents/returnToQueue';
 export { journalFile, journalPath, JOURNAL_DIR } from './history/journalFile';
-export { briefPath, readBrief, writeBrief } from './discovery/briefStore';
-export { criteriaOf, readCriteria, writeTicketCriteria } from './criteria/criteriaStore';
+export { approveBriefHere, briefPath, readBrief, readBriefFile, writeBrief } from './discovery/briefStore';
+export { approveTrust } from './trust/approveTrust';
+export { recordWorktree, trustedWorkspace } from './workspaces/trustedWorkspace';
+export { pendingTrust } from './trust/pendingTrust';
+export { withCommitted } from './trust/withCommitted';
+export { approveTogether } from './trust/approveTogether';
+export { committedFiles } from './trust/committedFiles';
+export type { TrustItem, TrustKind } from './trust/trustItem';
+export { contentHash, trustKey, trustLedger, type TrustRecord } from './trust/trustLedger';
+export { machineStore } from './machine/machineStore';
+export { rerouteHash } from './planning/reroute/rerouteApproval';
+export { trackerPin } from './server/trackerPin';
+export {
+  confirmCriteriaHere,
+  criteriaContent,
+  criteriaOf,
+  readCriteria,
+  readCriteriaFile,
+  writeTicketCriteria,
+} from './criteria/criteriaStore';
 export { dropCriteriaProposal, readCriteriaProposals, writeCriteriaProposal } from './criteria/criteriaProposals';
 export { caseInsensitiveFs } from './policy/caseInsensitiveFs';
 export { repoRootSpellings } from './policy/repoRootSpellings';
 export { chartedBy, recordCharted, type ChartedBy } from './agents/chartedStore';
-export { POLICY_FILE, policyPath, readPolicy, writePolicy, type PolicyRead } from './policy/policyStore';
+export {
+  approvePolicyHere,
+  POLICY_FILE,
+  policyPath,
+  readPolicy,
+  writePolicy,
+  type PolicyRead,
+} from './policy/policyStore';
 export {
   createReroute,
   listAllReroutes,
@@ -33,6 +59,7 @@ export {
 export { approveReroute, rejectReroute, type RerouteDecision } from './planning/reroute/decideReroute';
 export {
   blobHash,
+  approveKnowledgeHere,
   listKnowledge,
   createKnowledge,
   nextKnowledgeId,
@@ -41,6 +68,16 @@ export {
   writeKnowledge,
 } from './knowledge/knowledgeStore';
 export { configHash, readVerificationConfig, VERIFICATION_FILE, type ConfigRead } from './verification/configFile';
+export { levelFloor, recordLevel, recordTypes, withApprovedLevel } from './verification/approvedLevel';
+export { firstRun } from './trust/firstRun';
+export {
+  approveChecksHere,
+  checksApproval,
+  checksWaitReason,
+  ChecksNotApproved,
+  trustedChecks,
+  type ChecksApproval,
+} from './verification/checksApproval';
 export { checkPassed, runCheck, MAX_LOG_BYTES, type CheckRun } from './verification/runCheck';
 export { runChecks, type ChecksOutcome } from './verification/runChecks';
 export {
@@ -67,13 +104,13 @@ export {
   CHECK_RUNNER,
   levelFor,
   repoRootOf,
-  rerun,
   verify,
   type Settled,
   type Submission,
   type VerifyEnv,
 } from './verification/verifyCompletion';
 export { assertConfirmed } from './verification/assertConfirmed';
+export { rerun } from './verification/rerunInterrupted';
 export { operatorAction, type OperatorAction, type OperatorRequest } from './verification/operatorActions';
 export { approvalItems, type ApprovalItem } from './verification/approvals';
 export { rerunChecks } from './verification/operatorRerun';

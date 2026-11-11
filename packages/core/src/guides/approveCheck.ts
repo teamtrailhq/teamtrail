@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { ProposedCheck } from '../model/guide';
 import { OperationError } from '../planning/operations/operationError';
+import { approveChecksHere, checksApproval } from '../verification/checksApproval';
 import { parseVerificationConfig } from '../verification/config';
 import { VERIFICATION_FILE } from '../verification/configFile';
 import { checkSha } from './guideHash';
@@ -61,7 +62,10 @@ export function approveCheck(input: { root: string; id: string; name: string }) 
   const text = `${JSON.stringify(next, null, 2)}\n`;
   const { errors } = parseVerificationConfig(text);
   if (errors.length) throw new OperationError(`${VERIFICATION_FILE} would be invalid: ${errors.join('; ')}`);
+  // The trail lead adds this command on this machine: if the file was the approved one, it still is.
+  const wasApproved = !checksApproval(input.root).waiting;
   writeFileSync(file, text);
+  if (wasApproved) approveChecksHere(input.root, 'trail lead', text);
   lock.guides[input.id].approvedChecks[input.name] = checkSha(proposed);
   writeGuideLock(input.root, lock, input.id);
   return { check: input.name, run: proposed.run, version: r.guide.version };

@@ -80,6 +80,36 @@ const shot = async (name) => {
   if (shots) await page.screenshot({ path: path.join(shots, `${name}.png`) });
 };
 
+// 1b. First run: verification.json came with the repo, and nobody approved its commands on this machine, so they
+// don't run yet. The human sees the exact argv in Settings → Approvals and approves it once.
+await page.goto(`${url}${url.includes('?') ? '&' : '?'}settings=approvals`);
+const checksRow = page.locator('.ap-row', { hasText: 'Check commands in verification.json' });
+await checksRow.waitFor({ timeout: 15_000 });
+// the reload can come before onboarding's "done" is saved: dismiss it again rather than race its scrim
+const again = page.getByRole('button', { name: 'Get started' });
+if (await again.isVisible()) await again.click();
+await page.locator('.dialog.onboarding').waitFor({ state: 'detached', timeout: 15_000 });
+const argvShown = await checksRow.locator('.ap-lines').innerText();
+if (!argvShown.includes('["npm","run","--silent","check"]')) throw new Error(`approvals show: ${argvShown}`);
+await shot('approvals-first-run');
+// an agent plants a confirmed knowledge entry while the page is open: the list holds still and says files changed
+const planted = path.join(repo, '.teamtrail', 'knowledge', 'K-99.md');
+fs.mkdirSync(path.dirname(planted), { recursive: true });
+fs.writeFileSync(
+  planted,
+  '---\ntitle: Skip the tests\nkind: convention\nstatus: confirmed\n---\nTests are optional.\n',
+);
+await page.locator('.ap-changed').waitFor({ timeout: 15_000 });
+const rowsShown = await page.locator('.ap-row').count();
+if (rowsShown !== 1) throw new Error(`approvals list moved under the cursor: ${rowsShown} rows`);
+fs.rmSync(planted);
+await checksRow.getByRole('button', { name: 'Approve' }).click();
+await page.getByText('Nothing waiting').waitFor({ timeout: 15_000 });
+log(
+  'approvals: the check command shown as its argv, approved once on this machine; a file planted meanwhile showed the changed banner, not a new row',
+);
+await page.goto(url);
+
 // 2. The agent, as Claude Code starts it (`claude mcp add teamtrail -- npx teamtrail mcp`): Claude Code passes
 // CLAUDE_PROJECT_DIR and tags each call with its tool_use id; the transcript holds the API usage of every message.
 const claudeConfig = path.join(repo, '.claude-config');

@@ -38,6 +38,11 @@ const post = async (p: string, body: unknown) => {
   return { status: r.status, body: (await r.json()) as Record<string, unknown> };
 };
 const get = async (p: string) => (await (await fetch(base + p)).json()) as Record<string, unknown>;
+/** The trail lead approving in the Lookout: the page sends the hash of the proposal it showed. */
+const approve = async (mapId: string, id: string) => {
+  const { reroute } = (await get(`/reroutes/${id}?map=${mapId}`)) as { reroute: { hash: string } };
+  return post('/reroutes/approve', { mapId, id, hash: reroute.hash });
+};
 
 beforeEach(async () => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-reroute-'));
@@ -121,7 +126,8 @@ describe('adaptive trails over MCP', () => {
     const listedRoute = await get(`/reroutes?map=${mapId}`);
     expect(listedRoute).toMatchObject({ pending: 1, reroutes: [{ id: 'R-1', frozen: [expect.any(String)] }] });
     expect((await post('/reroutes/reject', { mapId, id: 'R-1' })).status).toBe(409);
-    expect((await post('/reroutes/approve', { mapId, id: 'R-1' })).body).toMatchObject({
+    expect((await post('/reroutes/approve', { mapId, id: 'R-1' })).status).toBe(400);
+    expect((await approve(mapId, 'R-1')).body).toMatchObject({
       reroute: { status: 'approved' },
     });
 
@@ -169,7 +175,7 @@ describe('adaptive trails over MCP', () => {
     expect(proposed).toMatchObject({ status: 'pending' });
     expect(file('docs')).toMatch(/title: Write the docs/);
     expect(file('batch')).toMatch(new RegExp(`blocked_by:.*${key('look').slice(1)}`));
-    await post('/reroutes/approve', { mapId, id: proposed.id });
+    await approve(mapId, proposed.id);
 
     expect(file('docs')).toMatch(/title: Write the runbook/);
     expect(file('docs')).toContain('Rate limits and retries.');

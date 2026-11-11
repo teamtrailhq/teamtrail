@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { parsePolicy } from '../policy/policyFile';
-import { readPolicy, writePolicy } from '../policy/policyStore';
+import { approvePolicyHere, readPolicy, writePolicy } from '../policy/policyStore';
 import { readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
 
@@ -25,6 +25,8 @@ export async function handlePolicy(
     const { policy, errors } = parsePolicy(JSON.stringify(body));
     if (!policy) return (sendJson(res, 400, { error: errors.join('; '), errors }), true);
     writePolicy(ctx.root, policy);
+    // Saved by the trail lead on this machine (the route answers nowhere else): what it lowers is approved.
+    approvePolicyHere(ctx.root, 'trail lead', policy);
     sendJson(res, 200, readPolicy(ctx.root));
     return true;
   }

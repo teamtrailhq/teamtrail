@@ -24,6 +24,8 @@ export function useAttentionUi(input: {
   openGuides: () => void;
   /** A connector's Settings section (Slack), for its delivery problems. */
   openConnector: (channel: string) => void;
+  /** Settings → Approvals: what the repo asks this machine to trust. */
+  openApprovals: () => void;
   /** Settings → Attention, where the quiet hours are set. */
   openFocusSettings: () => void;
 }) {
@@ -41,6 +43,7 @@ export function useAttentionUi(input: {
     selectTrail,
     openGuides: input.openGuides,
     openConnector: input.openConnector,
+    openApprovals: input.openApprovals,
   };
   const view = attention.view;
   const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers, showChat: nav.showChat });

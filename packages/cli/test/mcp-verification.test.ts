@@ -4,11 +4,12 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { MarkdownAdapter, type TransitionEntry } from '@teamtrail/core';
-import { journalFile, readAttempts, RUNS_DIR } from '@teamtrail/core/agents';
+import { journalFile, readAttempts, RUNS_DIR, trustLedger } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { approveAllHere } from './fakes/trailLead';
 
 let repo: string;
 let root: string;
@@ -43,6 +44,7 @@ function writeConfig(
       ...extra,
     }),
   );
+  approveAllHere(root);
 }
 
 async function trail(call: Call) {
@@ -171,6 +173,7 @@ describe('verified completion over MCP', () => {
     const call = await connect();
     const m = await trail(call);
     fs.writeFileSync(path.join(root, 'verification.json'), '{"v":1,"run":"npm test"}');
+    approveAllHere(root);
     await call('claim_ticket', { ticket: m.tickets[1].key });
     const r = await call<Done>('close_ticket', { resolution: 'Built' });
     expect(r.status).toBe('blocked');
@@ -251,5 +254,14 @@ describe('verified completion over MCP', () => {
     const done = await call<Done>('verification_status', { ticket: t.key, wait: true, waitSeconds: 10 });
     expect(done).toMatchObject({ status: 'done', attempt: 'A-2' });
     expect(readAttempts(root, m.trail.id, id).map((a) => a.result)).toEqual(['interrupted', 'pass']);
+  });
+
+  it('records the type a ticket was added as, so an edit before its first claim does not move it out of the level (N3)', async () => {
+    writeConfig();
+    const call = await connect();
+    const m = await trail(call);
+    const added = await call<{ ticket: { key: string } }>('add_ticket', { title: 'Later work', type: 'execute' });
+    const id = added.ticket.key.replace('#', '');
+    expect(trustLedger(root).get(`type:${m.trail.id}:${id}`)?.content).toBe('execute');
   });
 });

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import type { GitEvidence, StaleCheck } from '../model/evidence';
 import type { VerificationAttempt, VerificationConfig } from '../model/verification';
-import { readVerificationConfig } from '../verification/configFile';
+import { trustedChecks } from '../verification/checksApproval';
 import { findWorktree, readTreeState } from './treeState';
 
 const short = (sha?: string | null) => sha?.slice(0, 8) ?? 'none';
@@ -12,7 +12,7 @@ const short = (sha?: string | null) => sha?.slice(0, 8) ?? 'none';
  * evidence nothing is compared and the result is `checked: false`.
  */
 export async function staleness(root: string, ev: GitEvidence | undefined): Promise<StaleCheck> {
-  const hash = readVerificationConfig(root).hash;
+  const hash = trustedChecks(root).config.hash;
   if (ev && (ev.configHash ?? null) !== (hash ?? null))
     return { checked: true, stale: true, reason: 'verification.json changed since the checks ran' };
   if (!ev?.tree || !existsSync(ev.tree.toplevel)) return { checked: false, stale: false };

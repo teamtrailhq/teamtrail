@@ -2,8 +2,9 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { git, gitText } from '../evidence/git';
 import { isBranchName, isTicketSlug } from './gitNames';
+import { recordWorktree, trustedWorkspace } from './trustedWorkspace';
 import type { Workspace, WorkspaceSettings } from './workspace';
-import { readWorkspace, writeWorkspace } from './workspaceStore';
+import { writeWorkspace } from './workspaceStore';
 import { worktreeDir } from './worktreeDir';
 
 export interface PrepareInput {
@@ -50,8 +51,8 @@ export function worktreeLocation(top: string, settings: WorkspaceSettings, mapId
  * Never merges, pushes or deletes anything. When there's no repo (or no commit, or git fails), says why instead.
  */
 export async function prepareWorktree(i: PrepareInput): Promise<Prepared> {
-  const known = readWorkspace(i.root, i.mapId, i.ticket.id);
-  if (known && existsSync(known.path)) return { workspace: pick(known) };
+  const known = trustedWorkspace(i.root, i.mapId, i.ticket.id);
+  if (known) return { workspace: pick(known) };
   const top = await gitText(i.repoRoot, ['rev-parse', '--show-toplevel']);
   if (!top) return { note: 'No workspace: this folder is not a git repository (or git is missing). Work in the repo.' };
   const head = await gitText(top, ['rev-parse', 'HEAD']);
@@ -69,6 +70,7 @@ export async function prepareWorktree(i: PrepareInput): Promise<Prepared> {
     createdAt: i.now ?? Date.now(),
     ...made.workspace,
   });
+  recordWorktree(i.root, { mapId: i.mapId, ticketId: i.ticket.id, path: made.workspace.path });
   return made;
 }
 

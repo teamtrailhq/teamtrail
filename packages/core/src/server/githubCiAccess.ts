@@ -4,14 +4,15 @@ import type { TrackerContext } from './trackerContext';
 import type { CiAccess } from './watchVerification';
 
 /**
- * The reconciler's GitHub reader: the repo from `trackers.json`, else the
+ * The reconciler's GitHub reader: the repo approved as this machine's tracker (trackerPin.ts), else the
  * `origin` remote; the token from Settings, the environment or `gh auth
  * token`. The token stays in this process's memory, never in evidence files.
  */
 export function githubCiAccess(ctx: TrackerContext): CiAccess {
   let cached: { key: string; provider: CiProvider } | undefined;
   return async () => {
-    const repo = ctx.project.read().github?.repo ?? (await ctx.detectedRepo());
+    const approved = ctx.pin.read().config;
+    const repo = (approved.active === 'github' ? approved.github?.repo : undefined) ?? (await ctx.detectedRepo());
     if (!repo) return 'no GitHub repository: connect one in Settings or add a github.com origin remote';
     const t = await ctx.githubToken();
     if (!t) return 'no GitHub token: run `gh auth login`, set GITHUB_TOKEN, or paste one in Settings';

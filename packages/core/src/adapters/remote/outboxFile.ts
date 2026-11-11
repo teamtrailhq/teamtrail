@@ -1,27 +1,47 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { readFileSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import path from 'node:path';
+import { machineStore } from '../../machine/machineStore';
+import { writePrivateFile } from '../../machine/writePrivateFile';
+import { legacyTargetKey } from './legacyTargetKey';
+import { isQueuedWrite } from './sync/isQueuedWrite';
 import type { OutboxStore, QueuedWrite } from './sync/types';
 import type { RemoteKind } from './types';
 
 /*
  * Queued tracker writes on disk, so they survive an exit or crash:
- *   <tracker dir>/.outbox/<kind>-<target>.<pid>-<n>.json    one file per live adapter, `{ v: 1, writes }`
- *   <tracker dir>/.outbox/.gitignore                          `*`: local state, never committed
+ *   <config dir>/projects/<project id>/outbox/<kind>-<target>.<pid>-<n>.json    one file per live adapter, 0600
  * A file whose process is gone (or whose adapter was disposed) is adopted by
  * the next adapter for the same tracker and target: it is claimed with an
  * atomic rename, so two processes starting together never both replay it.
+ *
+ * The queue is sent with the user's tracker token, whatever it says, so it lives outside the repo
+ * (machine/machineStore.ts): only Teamtrail on this machine writes there, after the write passed its gates. Earlier
+ * versions kept it in `<tracker dir>/.outbox/`, where an agent or a push could plant a file. That folder is never
+ * read again.
  */
 export const OUTBOX_DIR = '.outbox';
+
+/** Where a project's queued writes live on this machine. */
+export const outboxDir = (root: string, configDir?: string) => path.join(machineStore(root, configDir).dir, 'outbox');
 
 export const isOutboxPath = (rel: string) =>
   rel === OUTBOX_DIR || rel.startsWith(`${OUTBOX_DIR}/`) || rel.startsWith(`${OUTBOX_DIR}\\`);
 
-/** `github-owner_name`, `linear-<team>[-<project>]`: a queue only replays into the tracker it was written for. */
+/**
+ * `github-owner_name-<hash>`, `linear-<team>[-<project>]-<hash>`: a queue (and an accepted-settings record) belongs
+ * to exactly one tracker target. The readable part folds characters together (`org/a.b` and `org/a_b` look alike),
+ * so the key ends in a hash of the raw target. Files under the old key (the readable part alone) are moved on first
+ * use (legacyTargetKey.ts).
+ */
 export function outboxKey(kind: RemoteKind, ...target: (string | undefined)[]) {
-  return [kind, ...target.filter(Boolean)]
+  const parts = [kind, ...target.filter(Boolean)];
+  const readable = parts
     .join('-')
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '_');
+  const hash = createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 16);
+  return `${readable}-${hash}`;
 }
 
 /** Adapters of this process that own their file. */
@@ -46,6 +66,12 @@ function owned(owner: string) {
 }
 
 /** Queue files for `key` that no live adapter owns. */
+/** Orphaned queues for `key`, and those an earlier version wrote under its old key (adopted, then renamed). */
+function mine(dir: string, key: string) {
+  const legacy = legacyTargetKey(key);
+  return legacy === key ? orphans(dir, key) : [...orphans(dir, key), ...orphans(dir, legacy)];
+}
+
 function orphans(dir: string, key: string) {
   let names: string[];
   try {
@@ -64,22 +90,19 @@ function readWrites(file: string): QueuedWrite[] {
       v?: number;
       writes?: QueuedWrite[];
     };
-    return doc.v === 1 && Array.isArray(doc.writes)
-      ? doc.writes.filter((w) => w && typeof w.id === 'string' && typeof w.mapId === 'string' && w.change)
-      : [];
+    return doc.v === 1 && Array.isArray(doc.writes) ? doc.writes.filter(isQueuedWrite) : [];
   } catch {
     return [];
   }
 }
 
 /** Unsent writes left for `key` by earlier runs (shown before an adapter adopts them). */
-export function orphanedWrites(root: string, key: string) {
-  const dir = path.join(root, OUTBOX_DIR);
-  return orphans(dir, key).reduce((n, f) => n + readWrites(path.join(dir, f)).length, 0);
+export function orphanedWrites(dir: string, key: string) {
+  return mine(dir, key).reduce((n, f) => n + readWrites(path.join(dir, f)).length, 0);
 }
 
-export function outboxFile(root: string, key: string): OutboxStore & { file: string } {
-  const dir = path.join(root, OUTBOX_DIR);
+/** The queue of one adapter in `dir` (see `outboxDir`). */
+export function outboxFile(dir: string, key: string): OutboxStore & { file: string } {
   const owner = `${process.pid}-${++instances}`;
   const file = path.join(dir, `${key}.${owner}.json`);
   let released = false;
@@ -87,12 +110,7 @@ export function outboxFile(root: string, key: string): OutboxStore & { file: str
   const save = (writes: QueuedWrite[]) => {
     if (released) return;
     if (!writes.length) return void rmSync(file, { force: true });
-    mkdirSync(dir, { recursive: true });
-    const ignore = path.join(dir, '.gitignore');
-    if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
-    const tmp = `${file}.tmp`;
-    writeFileSync(tmp, JSON.stringify({ v: 1, writes }, null, 2) + '\n');
-    renameSync(tmp, file);
+    writePrivateFile(file, JSON.stringify({ v: 1, writes }, null, 2) + '\n');
   };
 
   return {
@@ -100,7 +118,7 @@ export function outboxFile(root: string, key: string): OutboxStore & { file: str
     load() {
       live.add(owner);
       const claimed: string[] = [];
-      for (const [i, name] of orphans(dir, key).entries()) {
+      for (const [i, name] of mine(dir, key).entries()) {
         const to = path.join(dir, `${key}.${owner}.claim-${i}.json`);
         try {
           renameSync(path.join(dir, name), to);

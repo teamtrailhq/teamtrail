@@ -3,8 +3,8 @@ import type { MapSnapshot } from '../model/types';
 import { frozenTickets } from '../planning/reroute/frozenTickets';
 import { listReroutes } from '../planning/reroute/rerouteStore';
 import { rerouteTriggers } from '../planning/reroute/rerouteTriggers';
+import { trustedChecks } from '../verification/checksApproval';
 import { DEFAULT_CONFIG } from '../verification/config';
-import { readVerificationConfig } from '../verification/configFile';
 import { readAttempts } from '../verification/evidenceStore';
 import type { AttentionInput } from './types';
 
@@ -20,7 +20,7 @@ export async function rerouteInputs(input: {
 }): Promise<Pick<AttentionInput, 'reroutes' | 'suggestions'>> {
   const { root, adapter, snaps, syncs } = input;
   const reroutes = snaps.flatMap((s) => pendingReroutes(root, s.map.id));
-  const maxAttempts = (readVerificationConfig(root).config ?? DEFAULT_CONFIG).maxAttempts;
+  const maxAttempts = (trustedChecks(root).config.config ?? DEFAULT_CONFIG).maxAttempts;
   const closedUnmerged = syncs
     .filter((s) => s.flags.some((f) => f.kind === 'pr-closed-unmerged'))
     .map((s) => s.ticketId);

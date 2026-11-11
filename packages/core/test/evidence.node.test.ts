@@ -16,6 +16,7 @@ import { DEFAULT_CONFIG } from '../src/verification/config';
 import { readVerificationConfig } from '../src/verification/configFile';
 import { readAttempts } from '../src/verification/evidenceStore';
 import { verify } from '../src/verification/verifyCompletion';
+import { approveAllHere } from './fakes/trailLead';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
@@ -223,7 +224,13 @@ test('stale fingerprints: unchanged code is fresh; an edit, a commit or a config
   commit(r.dir);
   assert.match((await staleness(r.root, ev)).reason ?? '', /HEAD moved/);
   write(r.root, 'verification.json', '{"v":1}');
-  assert.match((await staleness(r.root, ev)).reason ?? '', /verification.json/);
+  assert.doesNotMatch(
+    (await staleness(r.root, ev)).reason ?? '',
+    /verification.json/,
+    'an unapproved edit counts for nothing',
+  );
+  approveAllHere(r.root);
+  assert.match((await staleness(r.root, ev)).reason ?? '', /verification.json/, 'once approved, the config changed');
 });
 
 test('a resumed claim keeps its baseline; a fresh claim takes a new one', async () => {
@@ -242,6 +249,7 @@ async function verifying(r: { dir: string; root: string }, checkRun: string[], s
     'verification.json',
     JSON.stringify({ v: 1, checks: { gen: { run: checkRun, timeoutSec: 30 } }, run: ['gen'], stale }),
   );
+  approveAllHere(r.root);
   const { a, mapId, tickets } = await trail();
   const t = tickets[0];
   await a.assign(mapId, t.id, 'claude-07');
@@ -303,6 +311,8 @@ test('verify: verification.json edited since the claim blocks the ticket without
     'verification.json',
     JSON.stringify({ v: 1, checks: { ok: { run: [node, '-e', ''], timeoutSec: 30 } }, run: ['ok'] }),
   );
+  // approved by the trail lead on this machine; the edit since the claim still sends the ticket to them
+  approveAllHere(r.root);
   await a.setMeta(mapId, t.id, { status: 'verifying' });
   const snap = await a.loadMap(mapId);
   const run = await verify(

@@ -78,7 +78,7 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     if (entry.id === homeId) return o.home.active();
     const open = bridges.peek(entry.id);
     if (open) return open.active();
-    return state.kind === 'missing' ? undefined : fileAdapter(entry.root);
+    return state.kind === 'missing' ? undefined : fileAdapter(entry.root, configDir);
   };
   const view = () => {
     const { entries: list, autoRegister } = projectEntries(configDir, o.home.root);

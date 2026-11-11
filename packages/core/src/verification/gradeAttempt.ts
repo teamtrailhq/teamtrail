@@ -1,9 +1,10 @@
 import path from 'node:path';
 import type { CriteriaResult, CriterionEvidence } from '../criteria/criteria';
 import { flagIfStale, gateOutcome } from '../evidence/completionEvidence';
+import { ensureLocalDir } from '../lib/ensureLocalDir';
 import type { GitEvidence } from '../model/evidence';
 import type { ConfigRead } from './configFile';
-import { evidencePaths } from './evidenceStore';
+import { EVIDENCE_DIR, evidencePaths } from './evidenceStore';
 import { gradeCriteria } from './gradeCriteria';
 import type { LevelInfo } from './policy';
 import { runChecks, type ChecksOutcome } from './runChecks';
@@ -47,6 +48,7 @@ async function checksOrError(i: GradeInput): Promise<ChecksOutcome> {
     return { checks: [], result: 'error', note };
   }
   const rel = evidencePaths.logs(i.mapId, i.ticketId, i.attemptId);
+  ensureLocalDir(path.join(i.root, EVIDENCE_DIR));
   return runChecks(config.config, i.info.checks, {
     repoRoot: i.repoRoot,
     logDir: path.join(i.root, rel),

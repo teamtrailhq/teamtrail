@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { ACCEPTED_DIR, acceptedSettingsFile } from '../src/adapters/remote/acceptedSettingsFile';
+import { acceptedSettingsFile, acceptedSettingsPath } from '../src/adapters/remote/acceptedSettingsFile';
 import { GitHubAdapter } from '../src/adapters/remote/github';
 import { LinearAdapter } from '../src/adapters/remote/linear';
 import type { SyncedAdapter } from '../src/adapters/remote/sync/syncedAdapter';
@@ -167,8 +167,9 @@ test('N5-a: a record that can’t be written shows in the queue, and the trail l
   const opts = { apiKey: 'lin_api_x', teamId: fake.team.id, fetch: fake.fetch, manual: true, ...noSleep };
   const first = new LinearAdapter({ ...opts, accepted: acceptedSettingsFile(tmpRoot(), 'linear-test') });
   const map = await first.createMap({ title: 'Trail', sections: SECTIONS, verification: 'checks' });
-  mkdirSync(path.join(root, ACCEPTED_DIR), { recursive: true });
-  writeFileSync(path.join(root, ACCEPTED_DIR, 'linear-test.json.lock'), ''); // an agent keeps it fresh
+  mkdirSync(path.dirname(acceptedSettingsPath(root, 'linear-test')), { recursive: true });
+  // a lock someone holds (only this machine's processes can write there now; the behaviour is the same)
+  writeFileSync(`${acceptedSettingsPath(root, 'linear-test')}.lock`, '');
   const warn = console.warn;
   console.warn = () => {};
   try {

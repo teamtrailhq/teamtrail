@@ -7,9 +7,11 @@ import { after, before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { writeLease } from '../src/agents/leaseStore';
+import { LOCK_SIG } from '../src/agents/lookoutLock';
 import { createProjectsHub, createTrackerBridge, type ProjectsHub, type TrackerBridge } from '../src/bridge';
 import { writeTicketSync } from '../src/evidence/syncStore';
 import { writeJsonAtomic } from '../src/lib/jsonFile';
+import { announcementSig } from '../src/machine/announcementSig';
 import type { AttentionView } from '../src/model/attention';
 import type { ProjectEntry, ProjectsView } from '../src/model/project';
 import { claim } from '../src/planning/operations';
@@ -22,6 +24,7 @@ import { projectsPath, readProjects } from '../src/projects/projectsFile';
 import { projectState } from '../src/projects/projectState';
 import { projectSummary } from '../src/projects/projectSummary';
 import { registerProject, unregisterProject } from '../src/projects/registerProject';
+import { trackerPin } from '../src/server/trackerPin';
 
 const tmp = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-projects-')));
 const configDir = path.join(tmp, 'config');
@@ -292,8 +295,11 @@ test('hub: a project another live Lookout serves is only read, and links there o
   });
   await new Promise<void>((r) => other.listen(0, '127.0.0.1', r));
   const at = `http://localhost:${(other.address() as { port: number }).port}/`;
-  const lock = (url: string) =>
-    writeJsonAtomic(path.join(gamma, '.agents', 'server.json'), { url, pid: process.ppid, startedAt: now });
+  // as a Teamtrail of this machine writes it: signed with the machine key (unsigned: see below)
+  const lock = (url: string, signed = true) => {
+    const sig = signed ? announcementSig(gamma, LOCK_SIG, [url, process.ppid, now]) : undefined;
+    writeJsonAtomic(path.join(gamma, '.agents', 'server.json'), { url, pid: process.ppid, startedAt: now, sig });
+  };
   lock(at);
   const { entry } = registerProject({ configDir, root: gamma });
   const stateOf = async () =>
@@ -317,6 +323,9 @@ test('hub: a project another live Lookout serves is only read, and links there o
       assert.equal(refused.status, 409);
       assert.equal(refused.json.url, undefined, forged);
     }
+    // the right URL, but a lock this machine's Teamtrail didn't sign: any local process could have written it
+    lock(at, false);
+    assert.deepEqual(await stateOf(), { kind: 'elsewhere' }, 'unsigned');
   } finally {
     other.close();
   }
@@ -341,10 +350,10 @@ test('hub: adding a path creates its tracker folder; a missing one reads as miss
 test('summary: a GitHub project names the repo its issues live in', async () => {
   const root = path.join(tmp, 'gh-project', '.teamtrail');
   mkdirSync(root, { recursive: true });
-  writeFileSync(
-    path.join(root, 'trackers.json'),
-    JSON.stringify({ active: 'github', github: { repo: 'octo-org/ops' } }),
-  );
+  // connected in Settings on this machine: the file for the team, and this machine's approval
+  const gh = { active: 'github' as const, github: { repo: 'octo-org/ops' } };
+  writeFileSync(path.join(root, 'trackers.json'), JSON.stringify(gh));
+  trackerPin(root, configDir).approve(gh);
   const entry: ProjectEntry = { id: 'abc123', name: 'gh-project', path: path.dirname(root), root, addedAt: now };
   const { summary } = await projectSummary({ entry, home: false, state: { kind: 'ok' }, configDir, now });
   assert.deepEqual(summary.tracker, { kind: 'github', cached: false, repo: 'octo-org/ops' });
@@ -355,6 +364,7 @@ test('summary: a Linear project names its team and organization', async () => {
   mkdirSync(root, { recursive: true });
   const linear = { teamId: 'team-eng', teamKey: 'ENG', teamName: 'Engineering', orgName: 'Octo Inc' };
   writeFileSync(path.join(root, 'trackers.json'), JSON.stringify({ active: 'linear', linear }));
+  trackerPin(root, configDir).approve({ active: 'linear', linear });
   const entry: ProjectEntry = { id: 'lin123', name: 'linear-project', path: path.dirname(root), root, addedAt: now };
   const { summary } = await projectSummary({ entry, home: false, state: { kind: 'ok' }, configDir, now });
   assert.deepEqual(summary.tracker, { kind: 'linear', cached: false, team: 'ENG', org: 'Octo Inc' });

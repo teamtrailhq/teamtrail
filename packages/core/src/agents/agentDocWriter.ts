@@ -1,7 +1,11 @@
 import { rmSync } from 'node:fs';
 import path from 'node:path';
 import type { ActivityStream } from '../activity/activityStream';
-import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
+import { writeLocalJson } from '../lib/ensureLocalDir';
+import { readJsonFile } from '../lib/jsonFile';
+import { machineAccess } from '../machine/machineAccess';
+import { BRAND } from '../model/brand';
+import { agentAnswerSigned } from './agentAnswerSignature';
 import { agentPaths, type AgentAnswer, type AgentSessionDoc } from './agentLink';
 
 /**
@@ -13,6 +17,7 @@ export class AgentDocWriter {
   private poll: ReturnType<typeof setInterval> | undefined;
   private off: () => void;
   private written = new Map<string, string>();
+  private blocked = false;
 
   constructor(
     private root: string,
@@ -52,19 +57,47 @@ export class AgentDocWriter {
       const key = JSON.stringify(doc);
       if (this.written.get(sid) === key) continue;
       this.written.set(sid, key);
-      writeJsonAtomic(path.join(this.root, agentPaths.session(sid)), { ...doc, updatedAt: Date.now() });
+      writeLocalJson(this.root, agentPaths.session(sid), { ...doc, updatedAt: Date.now() });
     }
   }
 
-  /** Apply answer files for questions this process is waiting on. */
+  /**
+   * Apply answer files for questions this process is waiting on. Only an answer signed with this machine's key
+   * counts: a file written by anything else (the asking agent, a teammate's push) is removed, flagged in the
+   * activity feed, and the question keeps waiting for the human. When the key can't be read (a sandbox that blocks
+   * the config folder), nothing is delivered or removed, and that is said once.
+   */
   pullAnswers() {
     for (const q of this.activity.snapshot.pending) {
       const file = path.join(this.root, agentPaths.answer(q.sessionId, q.id));
       const ans = readJsonFile<AgentAnswer>(file);
-      if (!ans) continue;
-      rmSync(file, { force: true });
-      this.activity.answer(q.id, ans.text, ans.author || 'trail lead');
+      if (ans) this.take(file, ans, q);
     }
+  }
+
+  private take(file: string, ans: AgentAnswer, q: { id: string; sessionId: string; agent: string }) {
+    let signed: boolean;
+    try {
+      signed = agentAnswerSigned(this.root, ans, { sessionId: q.sessionId, questionId: q.id });
+    } catch {
+      return this.cannotVerify(q.sessionId);
+    }
+    rmSync(file, { force: true });
+    if (signed) return this.activity.answer(q.id, ans.text, ans.author || 'trail lead');
+    this.activity.push({
+      source: 'system',
+      level: 'alert',
+      sessionId: q.sessionId,
+      text: `An answer file for ${q.agent}'s question was not written by ${BRAND.name} on this machine. It was ignored; the question still waits for you.`,
+    });
+  }
+
+  /** Said once per process: answers wait until the config folder can be read. */
+  private cannotVerify(sessionId: string) {
+    if (this.blocked) return;
+    this.blocked = true;
+    const why = machineAccess() ?? `${BRAND.name} can't read this machine's answer key.`;
+    this.activity.push({ source: 'system', level: 'alert', sessionId, text: `${why} Answers wait until it can.` });
   }
 
   close() {

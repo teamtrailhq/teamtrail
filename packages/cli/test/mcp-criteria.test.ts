@@ -9,6 +9,7 @@ import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
+import { approveAllHere } from './fakes/trailLead';
 
 let repo: string;
 let root: string;
@@ -40,12 +41,14 @@ function writeConfig(level = 'checks') {
       run: ['check'],
     }),
   );
+  approveAllHere(root);
 }
 
 const acceptBrief = (mapId: string, call: (n: string, a?: Record<string, unknown>) => Promise<unknown>) =>
-  call('submit_brief', { summary: 'Search page.', existing: '- `src/search.ts`' }).then(() =>
-    writeBrief(root, decided(readBrief(root, mapId)!, { kind: 'accept' })),
-  );
+  call('submit_brief', { summary: 'Search page.', existing: '- `src/search.ts`' }).then(() => {
+    writeBrief(root, decided(readBrief(root, mapId)!, { kind: 'accept' }));
+    approveAllHere(root);
+  });
 
 beforeEach(() => {
   repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-criteria-'));
