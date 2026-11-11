@@ -128,6 +128,8 @@ async function agent(n) {
       await call('close_ticket', {
         trail,
         resolution: `Decided with the trail lead: ${a.answer}.`,
+        // A HITL ticket closes only on the human's answer in the Lookout or Slack to a question asked on it.
+        questionId: a.questionId,
         rationale: 'The trail lead made the call in the Lookout.',
         alternatives: q.suggestions.filter((x) => x !== a.answer),
         ...checklistOf(claimed),

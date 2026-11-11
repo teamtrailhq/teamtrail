@@ -80,7 +80,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Close a ticket',
       description:
-        'Resolve a ticket (default: the one you claimed): posts the resolution, closes it, records a DecisionRecord (with the HITL transcript of this session) and unblocks dependants. When the ticket lists `verification` checks, completing is a claim: the checks run first, and the result says done, rework (with the failing output to fix) or verifying (still running). outcome "out_of_scope" never cancels it: it becomes a rule-out proposal the human approves or dismisses.',
+        'Resolve a ticket (default: the one you claimed): posts the resolution, closes it, records a DecisionRecord (with the HITL transcript of this session) and unblocks dependants. When the ticket lists `verification` checks, completing is a claim: the checks run first, and the result says done, rework (with the failing output to fix) or verifying (still running). outcome "out_of_scope" never cancels it: it becomes a rule-out proposal the human approves or dismisses. A HITL ticket (junction, prototype, HITL task) closes only after the human answered a question you asked on it (ask_human, not fyi) in the Lookout or Slack.',
     },
     { ...completion, outcome: z.enum(['completed', 'out_of_scope']).optional() },
     (a, extra) => agent.closeTicket(a, waitControl(extra, CHECKS_WAIT)),
@@ -92,7 +92,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Report completion',
       description:
-        "Claim a ticket is done (default: the one you claimed). Without verification it closes like close_ticket. With verification, the repo's checks run and the result is done, rework (fix the `feedback`, then claim and complete again), blocked (a human decides) or verifying with pending=true (call verification_status with wait=true).",
+        "Claim a ticket is done (default: the one you claimed). Without verification it closes like close_ticket. With verification, the repo's checks run and the result is done, rework (fix the `feedback`, then claim and complete again), blocked (a human decides) or verifying with pending=true (call verification_status with wait=true). A HITL ticket completes only after the human answered a question you asked on it (ask_human, not fyi) in the Lookout or Slack.",
     },
     {
       ...completion,

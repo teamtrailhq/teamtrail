@@ -27,6 +27,7 @@ afterEach(async () => {
 
 const CHAT = /answered in (claude-0\d)'s chat.*guide agents but can't approve this; answer in the Lookout or Slack/s;
 type Asked = { questionId: string };
+const HITL = /is the human's to decide: it closes only after they answer.*in the Lookout or Slack.*ask_human/s;
 type Got = { answered: boolean; answer?: string; answeredVia?: string; note?: string };
 type Closed = { decision: { id: string; decidedBy: string } };
 
@@ -73,10 +74,8 @@ async function everyGateRefuses(call: Call, questionId: string, chatOf: string) 
     await expect(refused).rejects.toThrow(CHAT);
     await expect(refused).rejects.toThrow(new RegExp(`${chatOf}'s chat`));
   }
-  // Unnamed, the close never picks a chat answer up: high risk is refused as the agent's own call.
-  await expect(call('close_ticket', { resolution: 'Drop it', category: 'data-deletion' })).rejects.toThrow(
-    /High-risk call.*in the Lookout or Slack/s,
-  );
+  // Unnamed, the close never picks a chat answer up: the junction stays the human's to decide.
+  await expect(call('close_ticket', { resolution: 'Drop it', category: 'data-deletion' })).rejects.toThrow(HITL);
   await expect(call('record_decision', { ...drop })).rejects.toThrow(/High-risk call/);
 }
 
@@ -93,11 +92,8 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
     expect(got).toMatchObject({ answered: true, answer: 'Yes, drop it', answeredVia: 'chat' });
     expect(got.note).toMatch(/Lookout or Slack/);
     await everyGateRefuses(call, questionId, 'claude-01');
-    // The close that is left is the agent's own, with the chat answer in its transcript, marked as such.
-    const own = await call<Closed>('close_ticket', { resolution: 'Keep it' });
-    expect(own.decision.decidedBy).toBe('claude-01');
-    const kept = await record(own.decision.id);
-    expect(kept.transcript.find((e) => e.text === 'Yes, drop it')?.author).toBe("trail lead (in claude-01's chat)");
+    // Nor does it close as the agent's own call: a junction is the human's to decide.
+    await expect(call('close_ticket', { resolution: 'Keep it' })).rejects.toThrow(HITL);
   });
 
   it('another local agent answering for the human: delivered as chat, refused at every gate', async () => {
@@ -151,5 +147,84 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
     await expect(
       call('close_ticket', { resolution: 'Drop it', category: 'data-deletion', questionId }),
     ).rejects.toThrow(/guide agents but can't approve this/);
+  });
+});
+
+/** The human answers the question waiting, in the Lookout (the bridge's path). */
+async function answerInLookout(questionId: string, text: string) {
+  const doc = (await readAgentDocs(root)).find((d) => d.pending.some((q) => q.id === questionId))!;
+  writeAgentAnswer(root, { sessionId: doc.session.id, questionId, text, author: 'trail lead', via: 'lookout' });
+}
+
+/** claude-01 holds a fresh ticket of this kind. */
+async function holding(call: Call, ticket: Record<string, unknown>) {
+  const m = await call<{ tickets: { key: string }[] }>('start_trail', {
+    discovery: false,
+    title: 'Layout',
+    destination: 'One layout',
+    tickets: [{ ref: 't', title: 'The ticket', ...ticket }],
+  });
+  await call('claim_ticket', { ticket: m.tickets[0].key });
+  return m.tickets[0].key;
+}
+
+describe('a ticket that needs the human closes only on their answer in the Lookout or Slack (local agents too)', () => {
+  for (const kind of [{ type: 'junction' }, { type: 'prototype' }, { type: 'task', hitl: true }])
+    it(`${kind.type}${kind.hitl ? ' (hitl)' : ''}: no answer → refused, with how to get one`, async () => {
+      const call = await hub.connect({ name: 'claude-01' });
+      await holding(call, kind);
+      await expect(call('close_ticket', { resolution: 'Grouped by version' })).rejects.toThrow(HITL);
+      await expect(call('report_completion', { resolution: 'Grouped by version' })).rejects.toThrow(HITL);
+    });
+
+  it('a chat answer → refused; an fyi answer in the Lookout → refused; a Lookout answer on that ticket → closes', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    await holding(call, { type: 'junction' });
+    const chat = await call<Asked>('ask_human', { question: 'Timeline or by version?', waitSeconds: 0 });
+    await call('answer_question', { questionId: chat.questionId, answer: 'By version' });
+    await call('wait_for_answer', { questionId: chat.questionId, waitSeconds: 5 });
+    await expect(call('close_ticket', { resolution: 'By version' })).rejects.toThrow(HITL);
+    await expect(call('close_ticket', { resolution: 'By version', questionId: chat.questionId })).rejects.toThrow(CHAT);
+
+    const fyi = await call<Asked>('ask_human', { question: 'By version, OK?', urgency: 'fyi', waitSeconds: 0 });
+    await answerInLookout(fyi.questionId, 'Yes');
+    await call('wait_for_answer', { questionId: fyi.questionId, waitSeconds: 5 });
+    await expect(call('close_ticket', { resolution: 'By version' })).rejects.toThrow(HITL);
+    await expect(call('close_ticket', { resolution: 'By version', questionId: fyi.questionId })).rejects.toThrow(
+      /asked as an fyi/,
+    );
+
+    const asked = await call<Asked>('ask_human', { question: 'Timeline or by version?', waitSeconds: 0 });
+    await answerInLookout(asked.questionId, 'By version, newest first');
+    await call('wait_for_answer', { questionId: asked.questionId, waitSeconds: 5 });
+    const closed = await call<Closed>('close_ticket', { resolution: 'By version, newest first' });
+    expect(closed.decision.decidedBy).toBe('trail lead');
+  });
+
+  it('an answer to a question asked on another ticket doesn’t close this one', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    const m = await call<{ tickets: { key: string }[] }>('start_trail', {
+      discovery: false,
+      title: 'Two',
+      destination: 'Two calls',
+      tickets: [
+        { ref: 'a', title: 'First call', type: 'junction' },
+        { ref: 'b', title: 'Second call', type: 'junction' },
+      ],
+    });
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const asked = await call<Asked>('ask_human', { question: 'First?', waitSeconds: 0 });
+    await answerInLookout(asked.questionId, 'Yes');
+    await call('wait_for_answer', { questionId: asked.questionId, waitSeconds: 5 });
+    await call('release_ticket', { ticket: m.tickets[0].key });
+    await call('claim_ticket', { ticket: m.tickets[1].key });
+    await expect(call('close_ticket', { resolution: 'Yes' })).rejects.toThrow(HITL);
+  });
+
+  it('a ticket that doesn’t need the human closes as before, as the agent’s own call', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    await holding(call, { type: 'research' });
+    const closed = await call<Closed>('close_ticket', { resolution: 'Notes live in RELEASES' });
+    expect(closed.decision.decidedBy).toBe('claude-01');
   });
 });
