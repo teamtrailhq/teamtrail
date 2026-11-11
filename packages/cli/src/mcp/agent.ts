@@ -51,6 +51,11 @@ export class TrailAgent {
     return this.ctx.agentId();
   }
 
+  /** Who this agent's tracker writes are signed as on this machine (signed state). */
+  get signedBy() {
+    return this.ctx.signedBy;
+  }
+
   lookout() {
     return this.ctx.lookout();
   }

@@ -8,6 +8,7 @@ import { TicketGuide } from '../guides';
 import { KnowledgePreview, PromoteButton } from '../knowledge';
 import { ModelWaitNote } from '../models';
 import { PrFlagBadges } from '../pr-sync';
+import { OutsideChangeNote } from '../signed-state';
 import { VerificationPanel } from '../verification';
 import { TicketWorkspace } from '../workspaces';
 import { LeaseFacts } from './LeaseFacts';
@@ -48,6 +49,7 @@ export function TicketDetail(props: {
   return (
     <div className="detail">
       <TicketFacts t={t} state={state} tickets={snap.tickets} />
+      <OutsideChangeNote mapId={snap.map.id} kind="ticket" id={t.id} />
       {description && (
         <section className="d-section ticket-body">
           <span className="t-label">Description</span>

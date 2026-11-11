@@ -66,7 +66,9 @@ export class AgentContext {
   private offTracker: () => void;
 
   constructor(readonly opts: AgentOptions) {
-    this.adapter = opts.tracker ?? new MarkdownAdapter({ ...nodeMarkdownFs(opts.root), watch: undefined }, opts.root);
+    this.adapter =
+      opts.tracker ??
+      new MarkdownAdapter({ ...nodeMarkdownFs(opts.root, { by: () => this.signedBy }), watch: undefined }, opts.root);
     this.writer = new AgentDocWriter(opts.root, this.activity, { client: opts.client, pollMs: opts.pollMs });
     this.sessions = new AgentSessions(this.activity, opts.usage, opts.usagePollMs);
     this.journal = journalFile(opts.root);
@@ -85,6 +87,12 @@ export class AgentContext {
   /** Connected over HTTP, possibly from another machine: its files are not this machine's. */
   get remote() {
     return !!this.opts.remote;
+  }
+
+  /** Who this agent's tracker writes are signed as on this machine: its trail name once it has one. */
+  get signedBy() {
+    const name = this.trailName ? `agent ${this.trailName}` : 'an agent';
+    return this.opts.remote ? `${name} (remote, via MCP over HTTP)` : `${name} via MCP`;
   }
 
   /** A ticket as this process last loaded it. */

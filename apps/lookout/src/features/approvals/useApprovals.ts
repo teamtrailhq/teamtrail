@@ -13,6 +13,8 @@ export interface ApprovalsView {
   items: TrustItem[];
   /** Nothing approved here yet: committed items may be adopted together. */
   firstRun: boolean;
+  /** No outside change to a trail accepted here yet: committed trail files may be adopted together. */
+  stateFirstRun: boolean;
   tracker?: PendingTracker;
   oldQueue?: OldQueue;
 }
@@ -34,13 +36,14 @@ async function fetchView(): Promise<ApprovalsView | null> {
   const [trust, trackers, queue] = await Promise.all(
     ['/trust', '/trackers', '/trackers/legacy-outbox'].map((p) => fetch(`${apiBase()}${p}`)),
   );
-  const listed = await json<{ items: TrustItem[]; firstRun?: boolean }>(trust);
+  const listed = await json<{ items: TrustItem[]; firstRun?: boolean; stateFirstRun?: boolean }>(trust);
   if (!listed) return null;
   const { items } = listed;
   const tracker = (await json<{ pending?: PendingTracker }>(trackers))?.pending;
   const oldQueue = await json<OldQueue>(queue);
   const firstRun = listed.firstRun === true;
-  return { items, firstRun, ...(tracker ? { tracker } : {}), ...(oldQueue?.writes ? { oldQueue } : {}) };
+  const stateFirstRun = listed.stateFirstRun === true;
+  return { items, firstRun, stateFirstRun, ...(tracker ? { tracker } : {}), ...(oldQueue?.writes ? { oldQueue } : {}) };
 }
 
 /** Two views list the same things, with the same content. */
@@ -69,32 +72,47 @@ export function useApprovals() {
   /** The view as shown, for comparing without re-subscribing. */
   const shown = useRef<ApprovalsView | null>();
   useEffect(() => void (shown.current = view), [view]);
+  /** Actions of this page in flight: the file events they cause are not news to the human. */
+  const acting = useRef(0);
   const load = useCallback(() => {
     setChanged(false);
-    fetchView().then(setView, () => setView(null));
+    // `shown` at once, not after the render: a file event right after an action compares against the new list.
+    const show = (v: ApprovalsView | null) => ((shown.current = v), setView(v));
+    return fetchView().then(show, () => show(null));
   }, []);
   /** A file changed: compare what the server lists now with what is shown, and only say so. */
   const recheck = useCallback(async () => {
+    if (acting.current) return;
     const next = await fetchView().catch(() => null);
     const was = shown.current;
     if (!next || !was || !sameView(next, was)) setChanged(true);
   }, []);
-  useEffect(load, [load]);
+  useEffect(() => void load(), [load]);
   useEffect(() => onTrackerChange((p) => void (p.startsWith('.') || recheck())), [recheck]);
-  const approve = useCallback(
-    async (items: TrustItem[]) => {
-      const r = await send('/trust/approve', { items: items.map((i) => ({ key: i.key, hash: i.hash })) });
-      load();
-      return note(r);
+  /** Runs one of this page's actions, then shows the list as it is now. */
+  const during = useCallback(
+    async <T>(work: () => Promise<T>) => {
+      acting.current++;
+      try {
+        const r = await work();
+        await load();
+        return r;
+      } finally {
+        acting.current--;
+      }
     },
     [load],
   );
+  const approve = useCallback(
+    async (items: TrustItem[]) =>
+      note(await during(() => send('/trust/approve', { items: items.map((i) => ({ key: i.key, hash: i.hash })) }))),
+    [during],
+  );
   const act = useCallback(
     async (path: string, body: unknown) => {
-      await send(path, body);
-      load();
+      await during(() => send(path, body));
     },
-    [load],
+    [during],
   );
   return { view, changed, load, approve, act };
 }

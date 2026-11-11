@@ -2,8 +2,6 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { MarkdownAdapter } from '../adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../adapters/markdown/nodeMarkdownFs';
-import { insideRoot } from '../projects/confinePath';
-import { symlinkFree } from '../projects/symlinkFree';
 import { handleAgents } from './agentRoutes';
 import { handleAttention } from './attentionRoutes';
 import { sendBridgeError } from './bridgeErrors';
@@ -12,11 +10,11 @@ import { handleBriefs } from './briefRoutes';
 import { handleCriteriaProposals } from './criteriaProposalRoutes';
 import { handleCriteria } from './criteriaRoutes';
 import { handleDecisions } from './decisionRoutes';
+import { handleFileRoute } from './fileRoute';
 import { handleGuides } from './guideRoutes';
-import { BadRequest, openEventStream, readText, refuseEarly, requestUrl, sendJson } from './http';
+import { openEventStream, refuseEarly, requestUrl, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
 import { handleKnowledge } from './knowledgeRoutes';
-import { lanFileRefusal } from './lanFileRefusal';
 import { lanPlaces } from './lanPlaces';
 import { handleLeases } from './leaseRoutes';
 import { handleModels } from './modelRoutes';
@@ -59,7 +57,9 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     ...trackers
   } = options;
   const abs = path.resolve(root);
-  const fs = nodeMarkdownFs(abs);
+  // What the Lookout writes is signed as the trail lead's (or Teamtrail's for them); see signedState/.
+  const fs = nodeMarkdownFs(abs, { by: 'lookout' });
+  const lanFs = nodeMarkdownFs(abs, { by: 'lookout on another device' });
   const markdown = new MarkdownAdapter({ ...fs, watch: undefined }, abs);
   // The Lookout stays on the approved tracker while a change to trackers.json waits for the human.
   const routes = createTrackerRoutes({ unapproved: 'stay', ...trackers, root: abs, markdown, peer });
@@ -107,11 +107,14 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
-    (req, res, url) => handleTrust(ctx, req, res, url),
+    (req, res, url) =>
+      handleTrust({ ...ctx, changed: (rel) => send(`data: ${JSON.stringify({ path: rel })}\n\n`) }, req, res, url),
     (req, res, url) => handleRemoteAgents({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
   ];
 
-  /** The live event stream and raw file access to the tracker folder. */
+  const files = { root: abs, fs, lanFs, local: (req: IncomingMessage) => fromThisMachine(req, peer) };
+
+  /** The live event stream, and raw file access to the tracker folder (fileRoute.ts). */
   async function fileRoute(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
     if (url.pathname === '/events') {
       const who = req.socket.remoteAddress ?? '';
@@ -127,36 +130,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       });
       return true;
     }
-    if (url.pathname === '/list') {
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ root: abs, files: await fs.list() }));
-      return true;
-    }
-    if (url.pathname !== '/file') return false;
-    const p = url.searchParams.get('path') ?? '';
-    // Inside the tracker folder once links are resolved, and written only where no link stands on the way.
-    if (!isTrackerFile(p) || !insideRoot(abs, p)) throw new BadRequest('not a tracker file');
-    if (req.method === 'PUT' && !symlinkFree(abs, p)) throw new BadRequest('not a tracker file');
-    if (req.method === 'PUT') {
-      const text = await readText(req);
-      if (!fromThisMachine(req, peer)) {
-        const before = await fs.read(p).catch(() => undefined);
-        const refused = lanFileRefusal(p, before, text);
-        if (refused) return (sendJson(res, 403, { error: refused, elsewhere: true }), true);
-      }
-      await fs.write(p, text);
-      res.end('ok');
-      return true;
-    }
-    const text = await fs.read(p).catch((e: NodeJS.ErrnoException) => {
-      // A missing file is a plain 404: the error's own text names the absolute path.
-      if (e.code === 'ENOENT' || e.code === 'EISDIR') return undefined;
-      throw e;
-    });
-    if (text === undefined) return (sendJson(res, 404, { error: 'not found' }), true);
-    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
-    res.end(text);
-    return true;
+    return handleFileRoute(files, req, res, url);
   }
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
@@ -195,15 +169,4 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       clients.clear();
     },
   };
-}
-
-/**
- * What the raw file route may touch: the tracker's markdown (trails, tickets, decisions, briefs, criteria,
- * knowledge, guides). Never a dot folder (`.agents/` holds tokens, leases and answers; `.events/`, `.evidence/`),
- * and never a config file such as verification.json, whose commands run on this machine: those have their own
- * routes, which validate what they write.
- */
-function isTrackerFile(rel: string) {
-  const parts = rel.split(/[\\/]/);
-  return rel.endsWith('.md') && parts.every((part) => part !== '' && !part.startsWith('.'));
 }

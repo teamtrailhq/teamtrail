@@ -98,10 +98,11 @@ test("N3: changing a ticket's type in its file does not drop it below the trail'
   writeFileSync(file, readFileSync(file, 'utf8').replace(/^type: execute$/m, 'type: research'));
   const snap = await adapter.loadMap(mapId);
   const t = snap.tickets.find((x) => x.id === ticketId)!;
-  assert.equal(t.type, 'research', 'the edit landed');
+  // The edit doesn't count on this machine: the signed type applies (signedState/), and the change waits.
+  assert.equal(t.type, 'execute');
   assert.equal(levelFor(root, snap, t).info.level, 'checks');
   assert.ok(
-    pendingTrust(root, [snap]).some((i) => i.key === `type:${mapId}:${ticketId}`),
+    pendingTrust(root, [snap]).some((i) => i.kind === 'state' && i.ticketId === ticketId && /type/.test(i.lines[0])),
     'the change waits',
   );
 });

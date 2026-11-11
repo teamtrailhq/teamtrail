@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { MapDoc, TrackerAdapter, TransitionEntry } from '@teamtrail/core';
 import { journalFile } from '@teamtrail/core/agents';
+import { nodeMarkdownFs } from '@teamtrail/core/node';
 
 const MIN = 60_000;
 
@@ -48,7 +49,19 @@ export async function seedTimeline({ root, adapter, main, second, history, now }
   const tickets = path.join(root, history.id, 'tickets');
   for (const f of fs.readdirSync(tickets))
     backdate(path.join(tickets, f), { created: started, updated: ended, closed: ended });
+  await signBackdated(root);
   await journalFinishedWork({ root, adapter, main, now });
+}
+
+const backdated: string[] = [];
+
+/** The backdated files written again through Teamtrail, so they read as its own writes, not as edited outside it. */
+async function signBackdated(root: string) {
+  const signed = nodeMarkdownFs(root, { by: 'seed' });
+  for (const file of backdated.splice(0)) {
+    const rel = path.relative(root, file).split(path.sep).join('/');
+    await signed.write(rel, fs.readFileSync(file, 'utf8'));
+  }
 }
 
 /**
@@ -80,6 +93,7 @@ function backdate(file: string, times: Record<string, number>) {
   for (const [field, at] of Object.entries(times))
     text = text.replace(new RegExp(`^${field}: .*$`, 'm'), `${field}: ${new Date(at).toISOString()}`);
   fs.writeFileSync(file, text);
+  backdated.push(file);
 }
 
 /** A claim for every ticket the seed closed as done, dated before it closed so the work took a believable time. */

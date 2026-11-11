@@ -24,8 +24,9 @@ export function remoteAgentOpener(o: {
       const v = server?.server.getClientVersion();
       return v ? `${v.name} ${v.version}` : undefined;
     };
-    const markdown = new MarkdownAdapter({ ...nodeMarkdownFs(o.root), watch: undefined }, o.root);
-    const agent = new TrailAgent({
+    const by = () => agent.signedBy;
+    const markdown = new MarkdownAdapter({ ...nodeMarkdownFs(o.root, { by }), watch: undefined }, o.root);
+    const agent: TrailAgent = new TrailAgent({
       root: o.root,
       client,
       tracker: activeTracker({ root: o.root, markdown }),

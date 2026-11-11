@@ -12,6 +12,8 @@ import { Pill, Meta, MetaLine, Button, Card, Field, Empty } from '../../componen
 import type { LookoutApi } from '../../hooks';
 import { stamp, ago, day, hm } from '../../lib';
 import { PromoteButton } from '../knowledge';
+import { OutsideChangeNote } from '../signed-state';
+import { UnverifiedNote } from './UnverifiedNote';
 
 export function DecisionDetail(props: {
   d: AuditDecision;
@@ -48,6 +50,8 @@ export function DecisionDetail(props: {
         <MetaLine parts={[stamp(d.decidedAt), `${ago(now - d.decidedAt)} ago`]} />
       </div>
       <h3 className="t-heading">{d.question}</h3>
+      <OutsideChangeNote mapId={d.mapId} kind="decision" id={d.id} />
+      <UnverifiedNote d={d} />
       <div className="resolution">
         <Meta parts={['Decision']} />
         <p>{d.answer}</p>

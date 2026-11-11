@@ -343,6 +343,8 @@ test('another device on the network reads, answers and approves, but changes not
     ['POST', '/guides/team'],
     // the raw file route: anything but a trail's map or tickets, and their trust fields, is this machine's
     ['PUT', '/file?path=trail/notes.md'],
+    // ... and a new trail or ticket: the phone moves existing work along, it doesn't add any
+    ['PUT', '/file?path=trail/map.md'],
     ['POST', '/guides/remove'],
     ['PUT', '/file?path=verification.json'],
   ];
@@ -362,7 +364,6 @@ test('another device on the network reads, answers and approves, but changes not
     ['POST', '/criteria/confirm'],
     ['POST', '/attention/snooze'],
     ['POST', '/journal'],
-    ['PUT', '/file?path=trail/map.md'],
   ];
   try {
     for (const [method, p] of REFUSED) {

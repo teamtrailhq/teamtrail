@@ -128,6 +128,12 @@ Sessions, questions and usage reach the Lookout through `.teamtrail/.agents/`, s
 
 A claim lasts 15 minutes and every tool call from the claiming agent renews it (so do waits on `ask_human`). If the agent crashes or goes silent, the lease expires and the ticket goes back to the queue: the Lookout checks every 15 s, and so does any agent calling `next_ticket` or `claim_ticket`. The ticket gets a **Returned to queue** comment with the agent's `report_progress` notes and decisions, and the next agent's `claim_ticket` returns it as `resume`. The return is an ordinary tracker write (comment + unassign), so on GitHub and Linear it goes through the offline outbox like any other write. Tickets close to expiry show as **Stalled** in the Lookout, which can also release them by hand. Set the length with `--lease-minutes <n>` or `$TEAMTRAIL_LEASE_MINUTES`.
 
+### Edits outside Teamtrail
+
+With the default markdown tracker, a trail is plain files in `.teamtrail/`. What decides how work moves (a ticket's type, state, claim, blockers and verification level, a trail's mode and level, assumption statuses, decision records) counts only as Teamtrail wrote it on your machine, through the Lookout or an agent's MCP tools. Teamtrail keeps a signed record of it in your config folder, outside the repo.
+
+If an agent or a teammate edits those fields in the files directly, the edit doesn't count yet: the ticket is held, the signed values apply, and Settings → Approvals shows what changed (old → new) with **Accept this change** and **Revert**. Titles, bodies and comments can be edited freely; the Lookout only marks them as edited outside Teamtrail. On a fresh clone, a new machine or the upgrade, existing trails are adopted with the other committed approvals in one step; after that, a teammate's pushed changes wait for you on this machine. An agent that can write your config folder can still forge that record.
+
 ### Usage
 
 Tokens and cost per session are measured from the agent's own local logs, priced at list rates, and tagged `LOG` in the sessions area:

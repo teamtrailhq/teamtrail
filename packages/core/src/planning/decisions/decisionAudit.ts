@@ -5,13 +5,27 @@ import type {
   DecisionSourceKind,
   DecisionStatus,
 } from '../../model/types';
-import { firstSentence, decisionStatus, DECISION_SOURCE_KINDS, madeBy } from './decisionRecord';
+import { firstSentence, decisionStatus, DECISION_SOURCE_KINDS, madeBy, UNVERIFIED } from './decisionRecord';
 
 /* ---------- audit view ---------- */
 
 export interface AuditDecision extends DecisionRecord {
-  /** Derived from a closed ticket's resolution comment; not a persisted record. */
+  /**
+   * Derived from text (a closed ticket's resolution comment, the map's "Decisions so far"); not a persisted record.
+   * Unverified: anyone who can edit that text wrote it, so it is never the human's call (`madeBy`), and its
+   * transcript never holds the human's words.
+   */
   derived?: boolean;
+}
+
+/** A `**HITL transcript**` comment's turns: text in a comment, so each is only who it names, never the human. */
+function commentTranscript(body: string, at: number): TranscriptEntry[] {
+  return body
+    .replace(/^\*\*HITL transcript\*\*\s*/, '')
+    .split(/\n\n(?=\*\*[^*]+:\*\* )/)
+    .map((p) => p.match(/^\*\*([^*]+):\*\* ([\s\S]*)$/))
+    .filter((m): m is RegExpMatchArray => !!m)
+    .map((m) => ({ from: 'agent' as const, author: m[1], text: m[2].trim(), at }));
 }
 
 /**
@@ -29,19 +43,7 @@ export function auditDecisions(snap: MapSnapshot, records: DecisionRecord[]): Au
         : (snap.map.sections.decisions.find((d) => d.ticketId === t.id || d.ticketKey === t.key)?.text ?? '');
       const author = c?.author ?? t.assignee ?? 'unknown';
       const posted = t.comments.find((x) => x.body.startsWith('**HITL transcript**'));
-      const transcript: TranscriptEntry[] = posted
-        ? posted.body
-            .replace(/^\*\*HITL transcript\*\*\s*/, '')
-            .split(/\n\n(?=\*\*[^*]+:\*\* )/)
-            .map((p) => p.match(/^\*\*([^*]+):\*\* ([\s\S]*)$/))
-            .filter((m): m is RegExpMatchArray => !!m)
-            .map((m) => ({
-              from: m[1] === author ? 'agent' : 'human',
-              author: m[1],
-              text: m[2].trim(),
-              at: posted.createdAt,
-            }))
-        : [];
+      const transcript = posted ? commentTranscript(posted.body, posted.createdAt) : [];
       return {
         id: `T${t.key}`,
         mapId: snap.map.id,
@@ -52,10 +54,15 @@ export function auditDecisions(snap: MapSnapshot, records: DecisionRecord[]): Au
         summary: firstSentence(answer),
         alternatives: [],
         rationale: '',
-        decidedBy: author,
+        // never the human's role: the author is only who the text names (kept when the record is persisted)
+        decidedBy: `${author}${UNVERIFIED}`,
         decidedAt: t.closedAt ?? c?.createdAt ?? t.updatedAt,
         participants: [...new Set([author, ...transcript.map((e) => e.author)])].map((id) => ({ id })),
-        source: { kind: 'tracker', ref: `${snap.map.id}/tickets/${t.id}`, label: `${t.key} resolution comment` },
+        source: {
+          kind: 'tracker',
+          ref: `${snap.map.id}/tickets/${t.id}`,
+          label: `unverified, from text: ${c ? `${t.key} resolution comment` : 'the map’s Decisions so far'}`,
+        },
         transcript,
         derived: true,
       };

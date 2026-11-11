@@ -1,47 +1,19 @@
-import { mkdirSync, watch } from 'node:fs';
-import fs from 'node:fs/promises';
 import path from 'node:path';
+import { signedFs } from '../../signedState/signedFs';
 import type { MarkdownFs } from './markdownFs';
+import { rawMarkdownFs } from './rawMarkdownFs';
 
-/** node:fs-backed MarkdownFs, for a CLI / MCP server running next to the repo. */
-export function nodeMarkdownFs(root: string): MarkdownFs {
+export interface NodeMarkdownFsOptions {
+  /** Who writes through it, kept with each signed change: `lookout`, `agent claude-01`, … */
+  by?: string | (() => string);
+}
+
+/**
+ * The tracker folder for Teamtrail running next to the repo (the CLI, the Lookout's server, MCP servers): what it
+ * writes to a trail is signed on this machine, and what it reads counts only as signed (signedState/signedFs.ts).
+ */
+export function nodeMarkdownFs(root: string, opts: NodeMarkdownFsOptions = {}): MarkdownFs {
   const abs = path.resolve(root);
-  mkdirSync(abs, { recursive: true });
-  const safe = (p: string) => {
-    const full = path.resolve(abs, p);
-    if (full !== abs && !full.startsWith(abs + path.sep)) throw new Error('path escapes root');
-    return full;
-  };
-  async function walk(dir: string): Promise<string[]> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
-    const out: string[] = [];
-    for (const e of entries) {
-      const full = path.join(dir, e.name);
-      if (e.isDirectory()) out.push(...(await walk(full)));
-      else if (e.name.endsWith('.md')) out.push(path.relative(abs, full).split(path.sep).join('/'));
-    }
-    return out;
-  }
-  return {
-    list: () => walk(abs),
-    read: (p) => fs.readFile(safe(p), 'utf8'),
-    async write(p, text) {
-      await fs.mkdir(path.dirname(safe(p)), { recursive: true });
-      await fs.writeFile(safe(p), text);
-    },
-    async create(p, text) {
-      await fs.mkdir(path.dirname(safe(p)), { recursive: true });
-      try {
-        await fs.writeFile(safe(p), text, { flag: 'wx' });
-        return true;
-      } catch (e) {
-        if ((e as NodeJS.ErrnoException).code === 'EEXIST') return false;
-        throw e;
-      }
-    },
-    watch(cb) {
-      const w = watch(abs, { recursive: true }, (_e, f) => f && cb(String(f).split(path.sep).join('/')));
-      return () => w.close();
-    },
-  };
+  const { by = 'teamtrail' } = opts;
+  return signedFs(abs, rawMarkdownFs(abs), typeof by === 'function' ? by : () => by);
 }

@@ -6,10 +6,14 @@ const TITLES = {
   changed: (title: string) => `Changed since you approved it: ${title}`,
 };
 
+/** Kinds that hold work up: the check commands, and trail files changed outside Teamtrail (held until settled). */
+const BLOCKING = new Set(['checks', 'state']);
+const OUTSIDE = 'changed by a teammate or an agent outside Teamtrail; accept or revert it in Settings → Approvals';
+
 /**
  * What the repo's files ask this machine to trust that the trail lead hasn't approved here (trust/pendingTrust.ts),
  * and a trackers.json that names another tracker. Nothing of it opens a gate or runs until they approve. The check
- * commands and the tracker hold work up, so they block; the rest is asked soon.
+ * commands, the tracker and trail files changed outside Teamtrail hold work up, so they block; the rest is asked soon.
  */
 export const trustSource: AttentionSource = {
   kind: 'trust',
@@ -18,12 +22,14 @@ export const trustSource: AttentionSource = {
       kind: 'trust',
       mapId: t.mapId ?? '',
       ...(t.ticketId ? { ticketId: t.ticketId } : {}),
-      title: clip(TITLES[t.standing](t.title)),
+      title: clip(t.kind === 'state' ? t.title : TITLES[t.standing](t.title)),
       since: now,
-      urgency: t.kind === 'checks' ? 'blocking' : 'soon',
+      urgency: BLOCKING.has(t.kind) ? 'blocking' : 'soon',
       ref: t.key,
       holds: [],
-      notes: [...t.lines.slice(0, 2), ...t.warnings.slice(0, 1)].map((l) => clip(l, 120)),
+      notes: [...(t.kind === 'state' ? [OUTSIDE] : []), ...t.lines.slice(0, 2), ...t.warnings.slice(0, 1)].map((l) =>
+        clip(l, 120),
+      ),
       batchKey: 'trust',
     }));
     if (legacyOutbox)

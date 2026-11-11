@@ -176,3 +176,6 @@ export {
   touchRemoteToken,
   verifyRemoteToken,
 } from './remoteAgents/remoteTokens';
+export { outsideChanges, type OutsideChange, type OutsideChanges } from './signedState/outsideChanges';
+export { readStateRecord, stateRecordFile, type StateEntry } from './signedState/stateRecord';
+export { revertState } from './signedState/revertState';

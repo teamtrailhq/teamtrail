@@ -13,6 +13,8 @@ import {
   rejectReroute,
   requiresDiscovery,
   journalFile,
+  outsideChanges,
+  readStateRecord,
   writeAgentAnswer,
 } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
@@ -183,6 +185,24 @@ describe('the trail’s mode and destination', () => {
     expect(asked.requests[0].note).toMatch(/switch the trail to plan\+execute is the trail lead's call/);
     await approveInLookout({ root, mapId: s.trail.id, id: asked.requests[0].request });
     expect((await adapter().loadMap(s.trail.id)).map.mode).toBe('plan+execute');
+  });
+
+  it('an approved mode or destination request is signed: nothing waits as an outside change', async () => {
+    const call = await connect();
+    const s = await call<Started>('start_trail', { ...TRAIL, mode: 'plan-only' });
+    const mode = await call<{ requests: { request: string }[] }>('update_trail', {
+      mode: 'plan+execute',
+      reason: 'The decisions are made',
+    });
+    await approveInLookout({ root, mapId: s.trail.id, id: mode.requests[0].request });
+    const destination = await call<{ requests: { request: string }[] }>('update_trail', {
+      destination: 'Clients export and import',
+    });
+    await approveInLookout({ root, mapId: s.trail.id, id: destination.requests[0].request });
+    const map = (await adapter().loadMap(s.trail.id)).map;
+    expect([map.mode, map.sections.destination]).toEqual(['plan+execute', 'Clients export and import']);
+    expect(outsideChanges(root).changes).toEqual([]);
+    expect(readStateRecord(root, s.trail.id).entries.map.f.mode).toBe('plan+execute');
   });
 
   it('a new destination is a request: declined, the destination stays', async () => {

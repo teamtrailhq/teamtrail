@@ -14,6 +14,7 @@ export {
   decisionStatus,
   firstSentence,
   madeBy,
+  UNVERIFIED,
   postedNote,
   supersessionChain,
 } from './decisionRecord';

@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { linkSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { configDir } from '../server/trackerConfig';
 import { writePrivateFile } from './writePrivateFile';
@@ -14,20 +14,42 @@ export const MACHINE_KEY_FILE = 'machine.key';
 
 const KEY = /^[0-9a-f]{64}$/;
 
+/**
+ * The key in `file`; undefined when the file is missing or isn't a key (damaged), which may be replaced. Any other
+ * read error (EACCES, EMFILE, EIO…) throws: a key that can't be read right now is never replaced, or everything it
+ * signed would read as forged.
+ */
 function readKey(file: string): string | undefined {
+  let text: string;
   try {
-    const text = readFileSync(file, 'utf8').trim();
-    return KEY.test(text) ? text : undefined;
-  } catch {
-    return undefined;
+    text = readFileSync(file, 'utf8').trim();
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw e;
   }
+  return KEY.test(text) ? text : undefined;
 }
 
-/** The key, created when missing. Two processes starting together may both write; the second read settles on one. */
+/**
+ * The key, created when missing. Created exclusively: two processes starting together both end up with the first
+ * one's key, never one each (a second key would make everything the first signed read as forged, signedState/).
+ */
 export function machineKey(dir: string = configDir()): string {
   const file = path.join(dir, MACHINE_KEY_FILE);
   const known = readKey(file);
   if (known) return known;
+  const draft = `${file}.${process.pid}.${randomBytes(4).toString('hex')}`;
+  writePrivateFile(draft, `${randomBytes(32).toString('hex')}\n`);
+  try {
+    linkSync(draft, file);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+  } finally {
+    rmSync(draft, { force: true });
+  }
+  const made = readKey(file);
+  if (made) return made;
+  // missing after the link (a dangling link) or a file that isn't a key (damaged): replaced, as before
   writePrivateFile(file, `${randomBytes(32).toString('hex')}\n`);
   return readKey(file)!;
 }
