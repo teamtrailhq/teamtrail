@@ -41,7 +41,14 @@ async function connect(agentName?: string, clientName = 'claude-code') {
 async function answerNext(text: string, match?: RegExp) {
   for (let i = 0; i < 200; i++) {
     const q = (await readAgentDocs(root)).flatMap((d) => d.pending).find((p) => !match || match.test(p.text));
-    if (q) return writeAgentAnswer(root, { sessionId: q.sessionId, questionId: q.id, text, author: 'trail lead' });
+    if (q)
+      return writeAgentAnswer(root, {
+        sessionId: q.sessionId,
+        questionId: q.id,
+        text,
+        author: 'trail lead',
+        via: 'lookout',
+      });
     await new Promise((r) => setTimeout(r, 20));
   }
   throw new Error('no question showed up');

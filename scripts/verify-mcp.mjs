@@ -523,6 +523,28 @@ const remoteOk = await verifyRemote({ browser, cli, log, shots });
 // The page's Content-Security-Policy in a real browser, API headers, and a frame from another origin refused.
 const headersOk = await verifyHeaders({ browser, url, log });
 
+// Answered in the agent's own chat (/scout inbox): delivered as guidance, never the human's word at a gate.
+const side = await call('ask_human', { question: 'Show dates in UTC?', urgency: 'fyi', waitSeconds: 0 });
+const given = await call('answer_question', { questionId: side.questionId, answer: 'Yes, UTC' });
+const chatAnswer = await call('wait_for_answer', { questionId: side.questionId, waitSeconds: 10 });
+const chatRefused = await call('record_decision', {
+  question: 'Show dates in UTC?',
+  answer: 'UTC',
+  questionId: side.questionId,
+}).then(
+  () => '',
+  (e) => e.message,
+);
+const chatOk =
+  f.answeredVia === 'lookout' &&
+  h.answeredVia === 'lookout' &&
+  d2.decision.decidedBy === 'trail lead' &&
+  given.via === 'chat' &&
+  chatAnswer.answer === 'Yes, UTC' &&
+  chatAnswer.answeredVia === 'chat' &&
+  /guide agents but can't approve this; answer in the Lookout or Slack/.test(chatRefused);
+log(`answers: Lookout ones back decisions, a chat one guides only: ${chatOk ? 'ok' : `FAILED (${chatRefused})`}`);
+
 await client.close();
 await page.waitForTimeout(1500);
 const after = await page.locator('.sessions-list li:not(.claim)').count();
@@ -551,6 +573,7 @@ if (
   !/Measured from the Claude Code session transcript/.test(ui.usageSource ?? '') ||
   f.answer !== 'Users of the CLI' ||
   h.answer !== 'Grouped by version, newest first' ||
+  !chatOk ||
   status.trail.progress !== '2/4 decided' ||
   after !== 0 ||
   !handoffOk ||

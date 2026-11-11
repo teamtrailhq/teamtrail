@@ -16,7 +16,7 @@ const completion = {
     .string()
     .optional()
     .describe(
-      'When the human decided this: the ask_human question they answered, asked on this ticket. Default: your latest unused one on it. The record then keeps their answer as given.',
+      "When the human decided this: the ask_human question they answered in the Lookout or Slack, asked on this ticket. Default: your latest unused one on it. The record then keeps their answer as given. An answer given in an agent's chat is refused.",
     ),
   category: riskCategory.optional(),
   paths: riskPaths.optional(),
@@ -177,7 +177,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
         .string()
         .optional()
         .describe(
-          'For a decision the human made: the ask_human question they answered. The record keeps the question as asked and their answer word for word, yours as its reading; each answer backs one decision.',
+          "For a decision the human made: the ask_human question they answered in the Lookout or Slack (an answer given in an agent's chat is refused). The record keeps the question as asked and their answer word for word, yours as its reading; each answer backs one decision.",
         ),
       appendToTrail: z.boolean().optional(),
       category: riskCategory.optional(),

@@ -46,7 +46,7 @@ Then, in Claude Code:
 | `/scout new "<idea>"` | Frames the idea with you, then charts a trail |
 | `/scout resume [trail]` | Picks up the trail and works ready tickets |
 | `/scout status` | Progress, running sessions, what's waiting and blocked, spend |
-| `/scout inbox` | Questions waiting on you; answer them in the chat |
+| `/scout inbox` | Questions waiting on you; answer them in the chat (a chat answer guides the agent; a high-risk call or a junction needs your answer in the Lookout or Slack) |
 
 ### Codex
 
@@ -65,6 +65,10 @@ tool_timeout_sec = 900
 ```
 
 `npx teamtrail connect codex` prints this and installs the same command as a Codex prompt (`~/.codex/prompts/scout.md`): `/prompts:scout new "<idea>"`, `/prompts:scout resume`, and so on.
+
+### Keep agents out of Teamtrail's config folder
+
+Teamtrail's config folder (`$TEAMTRAIL_CONFIG_DIR`, else `$XDG_CONFIG_HOME/teamtrail`, else `~/.config/teamtrail`) holds this machine's key, which signs your answers, your approvals and tracker credentials. `connect claude` adds deny rules for it to Claude Code's user settings (`~/.claude/settings.json`): `Read(//<folder>/**)` and `Edit(//<folder>/**)` in `permissions.deny`, and the folder in `sandbox.filesystem.denyRead` and `denyWrite` for sandboxed commands. It keeps what is already there, adds nothing twice, and prints what it added and how to remove it. Codex can deny a folder only through a default permissions profile, which changes how it sandboxes every folder, so `connect codex` prints the profile for you to add. Teamtrail's own MCP server is not affected: agents don't apply these rules to the MCP servers they start. Pass `--no-protect-config` to skip this.
 
 ### Other agents
 
@@ -109,7 +113,7 @@ A remote agent's files aren't on your machine, so it gets no worktree, and on tr
 | `close_ticket` | Resolve (or rule out) a ticket: resolution comment, close, DecisionRecord, unblocked tickets |
 | `record_decision` | Keep any other decision as a DecisionRecord |
 | `ask_human` / `wait_for_answer` | Ask the human through the Lookout inbox and wait for the answer |
-| `list_inbox` / `answer_question` | Questions from every agent; answer one with the human's words from the chat |
+| `list_inbox` / `answer_question` | Questions from every agent; answer one with the human's words from the chat (it guides the agent; only answers given in the Lookout or Slack back a decision that needs the human) |
 
 Sessions, questions and usage reach the Lookout through `.teamtrail/.agents/`, so the agent and the Lookout can start in any order.
 

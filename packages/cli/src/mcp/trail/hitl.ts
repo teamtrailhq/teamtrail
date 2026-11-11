@@ -1,7 +1,15 @@
-import { OperationError, type AttentionKind, type RiskCategory } from '@teamtrail/core';
+import {
+  approvesGates,
+  chatNote,
+  OperationError,
+  type AnswerVia,
+  type AttentionKind,
+  type RiskCategory,
+} from '@teamtrail/core';
 import { readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { rankedAttention } from './attention';
+import { CHAT_GUIDES } from './humanAnswer';
 import { trailNameFamily } from './trailName';
 import { TRAIL_LEAD, type AskResult, type WaitControl } from './types';
 
@@ -26,8 +34,12 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
       const author =
         [...ctx.activity.snapshot.chats].reverse().find((c) => c.sessionId === sid && c.from === 'human')?.author ??
         TRAIL_LEAD;
+      // How it was given, as the path that delivered it recorded (answerVia.ts); none on an older, unlabelled one.
+      const { via, chatOf } = ctx.activity.snapshot.answered.find((a) => a.id === q.id) ?? {};
       const at = Date.now();
-      ctx.sessions.transcript(sid)?.push({ from: 'human', author, text, at });
+      const where = chatNote({ via, chatOf });
+      const said = where ? `${author} (${where})` : author;
+      ctx.sessions.transcript(sid)?.push({ from: 'human', author: said, text, at });
       ctx.answers.set(q.id, {
         questionId: q.id,
         question: input.question,
@@ -39,8 +51,10 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
         categories,
         urgency: input.urgency ?? 'soon',
         transcript: ctx.sessions.transcript(sid) ?? [],
+        via,
+        chatOf,
       });
-      return { text, author };
+      return { text, author, via };
     }),
   );
   return waitForAnswer(ctx, { questionId: q.id, waitSeconds: input.waitSeconds }, ctl);
@@ -110,8 +124,15 @@ export async function waitForAnswer(
     questionId: input.questionId,
     answer: res.a.text,
     answeredBy: res.a.author,
+    ...viaOf(res.a.via),
     waitedSeconds: waited(),
   };
+}
+
+/** How the answer was given, and for one that can't approve gates, what that means for the agent. */
+function viaOf(via: AnswerVia | undefined) {
+  if (approvesGates(via)) return { answeredVia: via };
+  return { answeredVia: via ?? 'chat', note: CHAT_GUIDES };
 }
 
 export function defaultWaitSeconds(ctx: AgentContext) {
@@ -144,11 +165,17 @@ export async function inbox(ctx: AgentContext, input: { kinds?: AttentionKind[] 
   };
 }
 
+/**
+ * The human's words from this agent's chat, passed on to the agent that asked. Labelled `chat` here, whatever was
+ * passed: it guides that agent, and never stands in for the human at a gate (answerVia.ts).
+ */
 export async function answerQuestion(ctx: AgentContext, input: { questionId: string; answer: string }) {
+  const chatOf = await ctx.agentId();
+  const given = { via: 'chat' as const, note: CHAT_GUIDES };
   const own = ctx.activity.snapshot.pending.find((p) => p.id === input.questionId);
   if (own) {
-    ctx.activity.answer(own.id, input.answer.trim(), TRAIL_LEAD);
-    return { delivered: true, to: own.agent };
+    ctx.activity.answer(own.id, input.answer.trim(), TRAIL_LEAD, { via: 'chat', chatOf });
+    return { delivered: true, to: own.agent, ...given };
   }
   const doc = (await readAgentDocs(ctx.root)).find((d) => d.pending.some((q) => q.id === input.questionId));
   if (!doc) throw new OperationError(`No open question ${input.questionId}. Call list_inbox for the current ones.`);
@@ -157,6 +184,8 @@ export async function answerQuestion(ctx: AgentContext, input: { questionId: str
     questionId: input.questionId,
     text: input.answer,
     author: TRAIL_LEAD,
+    via: 'chat',
+    chatOf,
   });
-  return { delivered: true, to: doc.session.agent };
+  return { delivered: true, to: doc.session.agent, ...given };
 }

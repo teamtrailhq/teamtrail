@@ -17,6 +17,9 @@ export default defineConfig({
       GH_TOKEN: '',
       LINEAR_API_KEY: '',
       TEAMTRAIL_CONFIG_DIR: mkdtempSync(path.join(os.tmpdir(), 'teamtrail-test-config-')),
+      // Nor the agents' own config: `connect` writes Claude Code's and Codex's settings there.
+      CLAUDE_CONFIG_DIR: mkdtempSync(path.join(os.tmpdir(), 'teamtrail-test-claude-')),
+      CODEX_HOME: mkdtempSync(path.join(os.tmpdir(), 'teamtrail-test-codex-')),
     },
   },
 });

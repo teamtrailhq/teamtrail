@@ -6,6 +6,7 @@ import { configDir } from '@teamtrail/core/bridge';
 import { autoRegister } from '@teamtrail/core/node';
 import SCOUT_COMMAND from '../commands/scout.md';
 import { writeIfChanged } from './files';
+import { protectConfig } from './protect/protectConfig';
 import type { SelfCommand } from './selfCommand';
 import { installClaudeHook } from './usage/hook';
 
@@ -22,6 +23,8 @@ export interface ConnectOptions {
   print?: Print;
   /** Test seam: the agent's own CLI. */
   run?: RunCli;
+  /** Keep Teamtrail's config folder out of the agent's reach in its own settings; false is `--no-protect-config`. */
+  protectConfig?: boolean;
 }
 
 const runCli = (cwd: string): RunCli => {
@@ -56,6 +59,7 @@ export function runConnect(target: ConnectTarget, opts: ConnectOptions) {
   if (target === 'claude') connectClaude(o);
   else connectCodex(o);
   print(versionLine(opts.self, target));
+  protectConfig(target, { print, enabled: opts.protectConfig });
   const prefix = target === 'claude' ? '/scout' : '/prompts:scout';
   const where = target === 'claude' ? 'Claude Code' : 'Codex';
   print(`\n  In ${where}: ${prefix} new "<idea>", ${prefix} resume, ${prefix} status, ${prefix} inbox`);

@@ -74,7 +74,13 @@ describe('risk policy over MCP', () => {
         await new Promise((r) => setTimeout(r, 20));
         doc = (await readAgentDocs(root)).find((d) => d.pending.length);
       }
-      writeAgentAnswer(root, { sessionId: doc.session.id, questionId: doc.pending[0].id, text, author: 'trail lead' });
+      writeAgentAnswer(root, {
+        sessionId: doc.session.id,
+        questionId: doc.pending[0].id,
+        text,
+        author: 'trail lead',
+        via: 'lookout',
+      });
     };
     await call('claim_ticket', { ticket: m.tickets[0].key });
     const asked = call<{ questionId: string }>('ask_human', { question: 'Tabs or spaces?', waitSeconds: 30 });
@@ -110,7 +116,13 @@ describe('risk policy over MCP', () => {
       await new Promise((r) => setTimeout(r, 20));
       doc = (await readAgentDocs(root)).find((d) => d.pending.length);
     }
-    writeAgentAnswer(root, { sessionId: doc.session.id, questionId: doc.pending[0].id, text, author: 'trail lead' });
+    writeAgentAnswer(root, {
+      sessionId: doc.session.id,
+      questionId: doc.pending[0].id,
+      text,
+      author: 'trail lead',
+      via: 'lookout',
+    });
     const { questionId } = await asked;
     while ((await readAgentDocs(root)).some((d) => d.pending.length)) await new Promise((r) => setTimeout(r, 20));
     return questionId;
@@ -325,6 +337,7 @@ describe('risk policy over MCP', () => {
         questionId: doc.pending[0].id,
         text: 'Yes',
         author: 'trail lead',
+        via: 'lookout',
       });
       return (await asked).questionId;
     };

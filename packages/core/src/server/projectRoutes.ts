@@ -57,7 +57,12 @@ async function answer(ctx: ProjectRoutesContext, entry: ProjectEntry, req: Incom
   const sessionId =
     typeof b.sessionId === 'string' && b.sessionId ? b.sessionId : await sessionOf(entry.root, b.questionId!);
   const author = typeof b.author === 'string' && b.author ? b.author : 'trail lead';
-  sendJson(res, 201, writeAgentAnswer(entry.root, { sessionId, questionId: b.questionId!, text: b.text!, author }));
+  // Given in the Lookout (All projects): this route says so, whatever the body says.
+  sendJson(
+    res,
+    201,
+    writeAgentAnswer(entry.root, { sessionId, questionId: b.questionId!, text: b.text!, author, via: 'lookout' }),
+  );
   ctx.changed();
 }
 

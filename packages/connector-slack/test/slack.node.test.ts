@@ -119,11 +119,11 @@ test('asks: DM to the owner, buttons answer the waiting agent, late and unauthor
   const unsigned = ({ sig, ...a }: Record<string, unknown>) => (assert.match(String(sig), /^[0-9a-f]{64}$/), a);
   assert.deepEqual(
     { ...unsigned(r.answer1), at: 0 },
-    { sessionId: 's1', questionId: 'q1', text: 'Postgres', author: `slack:${ANA}`, at: 0 },
+    { sessionId: 's1', questionId: 'q1', text: 'Postgres', author: `slack:${ANA}`, at: 0, via: 'slack' },
   );
   assert.deepEqual(
     { ...unsigned(r.answer3), at: 0 },
-    { sessionId: 's3', questionId: 'q3', text: 'event_log', author: `slack:${ANA}`, at: 0 },
+    { sessionId: 's3', questionId: 'q3', text: 'event_log', author: `slack:${ANA}`, at: 0, via: 'slack' },
   );
   assert.deepEqual(r.answers.sort(), ['s1', 's3'], 'refused, late and UI answers write nothing');
   assert.ok(

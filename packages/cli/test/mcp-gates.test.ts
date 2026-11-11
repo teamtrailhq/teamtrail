@@ -45,6 +45,7 @@ async function answer(text: string) {
         questionId: doc.pending[0].id,
         text,
         author: 'trail lead',
+        via: 'lookout',
       });
     await new Promise((r) => setTimeout(r, 20));
   }

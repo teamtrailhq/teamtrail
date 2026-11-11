@@ -29,6 +29,8 @@ export async function handleAgents(
         questionId: b.questionId!,
         text: b.text!,
         author: typeof b.author === 'string' && b.author ? b.author : 'trail lead',
+        // Given in the Lookout: this route says so, whatever the body says.
+        via: 'lookout',
       }),
     );
     return true;

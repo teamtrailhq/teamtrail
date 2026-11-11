@@ -42,6 +42,7 @@ export { parseKnowledge, serializeKnowledge } from './knowledge/knowledgeFile';
 export * from './knowledge/select';
 export * from './knowledge/staleness';
 export * from './model/risk';
+export * from './model/answerVia';
 export { DEFAULT_POLICY } from './policy/defaultPolicy';
 export { parsePolicy, serializePolicy } from './policy/policyFile';
 export { riskLevelFor, type RiskSubject } from './policy/riskLevelFor';

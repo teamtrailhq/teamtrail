@@ -49,7 +49,15 @@ async function mcpCommand(argv: string[]) {
 
 /** `teamtrail connect claude|codex`: a local stdio server, or a remote one with `--url`. */
 async function connectCommand(argv: string[]) {
-  const o = parseSubArgs(argv, ['--dir', '--no-register', '--url', '--token', '--token-stdin', '--allow-http']);
+  const o = parseSubArgs(argv, [
+    '--dir',
+    '--no-register',
+    '--url',
+    '--token',
+    '--token-stdin',
+    '--allow-http',
+    '--no-protect-config',
+  ]);
   const target = o.rest[0];
   if (target !== 'claude' && target !== 'codex') fail('connect needs an agent: claude or codex');
   if (!o.url && (o.token || o.tokenStdin)) fail('--token and --token-stdin need --url <the MCP endpoint>');
@@ -66,10 +74,17 @@ async function connectCommand(argv: string[]) {
       url: o.url,
       token: await connectToken(o),
       allowHttp: o.allowHttp,
+      protectConfig: !o.noProtectConfig,
     });
   else {
     const self = selfCommand({ version: __VERSION__, file: fileURLToPath(import.meta.url) });
-    runConnect(target, { cwd: process.cwd(), dir: o.dir, noRegister: o.noRegister, self });
+    runConnect(target, {
+      cwd: process.cwd(),
+      dir: o.dir,
+      noRegister: o.noRegister,
+      self,
+      protectConfig: !o.noProtectConfig,
+    });
   }
   process.stdout.write('\n');
 }

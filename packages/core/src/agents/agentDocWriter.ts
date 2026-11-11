@@ -83,7 +83,9 @@ export class AgentDocWriter {
       return this.cannotVerify(q.sessionId);
     }
     rmSync(file, { force: true });
-    if (signed) return this.activity.answer(q.id, ans.text, ans.author || 'trail lead');
+    // An unlabelled answer (written before labels) keeps no label: gates count it as chat (model/answerVia.ts).
+    const how = { via: ans.via, chatOf: ans.via === 'chat' ? ans.chatOf : undefined };
+    if (signed) return this.activity.answer(q.id, ans.text, ans.author || 'trail lead', how);
     this.activity.push({
       source: 'system',
       level: 'alert',

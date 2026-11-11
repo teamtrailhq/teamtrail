@@ -136,6 +136,7 @@ describe('an answer covers only the risk it was asked about, judged on every fil
           questionId: doc.pending[0].id,
           text: 'ok',
           author: 'trail lead',
+          via: 'lookout',
         });
         break;
       }

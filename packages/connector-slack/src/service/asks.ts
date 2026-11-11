@@ -48,7 +48,7 @@ export function writeAnswer(ctx: SlackContext, ref: AskRef, text: string, user: 
   if (ctx.answering.has(ref.q)) return false;
   ctx.answering.add(ref.q);
   try {
-    writeAgentAnswer(ctx.o.root, { sessionId: ref.s, questionId: ref.q, text, author: `slack:${user}` });
+    writeAgentAnswer(ctx.o.root, { sessionId: ref.s, questionId: ref.q, text, author: `slack:${user}`, via: 'slack' });
   } catch (e) {
     if (e instanceof AnswerError) return false;
     ctx.answering.delete(ref.q);

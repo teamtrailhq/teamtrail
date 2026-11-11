@@ -1,3 +1,4 @@
+import type { AnswerVia } from '../model/answerVia';
 import type { AnsweredQuestion, ChatMessage, FeedEntry, PendingQuestion, SessionInfo } from '../model/types';
 
 /**
@@ -61,6 +62,13 @@ export interface AgentAnswer {
   /** Actor id of who answered, e.g. `trail lead`. */
   author: string;
   at: number;
+  /**
+   * How it was given: set by the path that wrote it (the Lookout's bridge, Slack, answer_question), never by what
+   * was sent to it, and signed with the rest. Absent on answers written before labels; those count as chat.
+   */
+  via?: AnswerVia;
+  /** For `chat`: the agent whose chat it was given in. */
+  chatOf?: string;
   /** This machine's signature of the fields above. An answer without a valid one is not the human's. */
   sig?: string;
 }

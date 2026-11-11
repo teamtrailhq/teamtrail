@@ -9,6 +9,7 @@ import {
   OperationError,
   packageSpec,
   type Journal,
+  type AnswerVia,
   type MapSnapshot,
   type SessionHandle,
   type SessionMode,
@@ -47,7 +48,7 @@ export class AgentContext {
   /** Every session this connection opened: a reviewer must not be one of the sessions that did the work. */
   readonly sessionIds: string[] = [];
   /** Answers being waited for, by question id. */
-  readonly waits = new Map<string, Promise<{ text: string; author: string }>>();
+  readonly waits = new Map<string, Promise<{ text: string; author: string; via?: AnswerVia }>>();
   /** The human's answers to this agent's questions, by question id: what a decision of theirs rests on. */
   readonly answers = new Map<string, HumanAnswer>();
   /** Knowledge entries this connection proposed: its own words, which it may read back before they are reviewed. */

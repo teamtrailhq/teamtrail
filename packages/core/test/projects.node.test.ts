@@ -277,10 +277,15 @@ test('hub: refuses unregistered ids, paths out of the project and credential fil
 
 test("hub: answering from the overview writes that project's answer file", async () => {
   const id = projectId(other);
-  const r = await call<{ sessionId: string }>('POST', `/projects/${id}/answer`, { questionId: 'q1', text: 'Push' });
+  const r = await call<{ sessionId: string }>('POST', `/projects/${id}/answer`, {
+    questionId: 'q1',
+    text: 'Push',
+    via: 'chat',
+  });
   assert.equal(r.status, 201);
   const file = path.join(other, '.agents', 'answers', 's-beta', 'q1.json');
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).text, 'Push');
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).via, 'lookout', 'given in the Lookout, whatever the body says');
   assert.equal(existsSync(path.join(home, '.agents', 'answers', 's-beta')), false);
   assert.equal((await call('POST', '/projects/0123456789/answer', { questionId: 'q1', text: 'x' })).status, 404);
 });

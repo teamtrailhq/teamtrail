@@ -3,6 +3,7 @@ import path from 'node:path';
 import { writeLocalJson } from '../lib/ensureLocalDir';
 import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
+import type { AnswerVia } from '../model/answerVia';
 import { signAgentAnswer } from './agentAnswerSignature';
 import { SESSION_DOC_PATH, agentPaths, markDisconnected, type AgentAnswer, type AgentSessionDoc } from './agentLink';
 
@@ -32,23 +33,29 @@ export async function readAgentDocs(
 
 export class AnswerError extends Error {}
 
+/** What an answer's writer passes: `via` is the writer's own path (the bridge, Slack, answer_question). */
+export type AnswerInput = Omit<AgentAnswer, 'at' | 'sig' | 'via'> & { via: AnswerVia; at?: number };
+
 /**
  * Deliver an answer to a question a session is waiting on, signed with this machine's key so the asking process
- * knows Teamtrail wrote it. Rejects questions that are not open.
+ * knows Teamtrail wrote it, and how it was given. Rejects questions that are not open.
  */
-export function writeAgentAnswer(root: string, input: Omit<AgentAnswer, 'at'> & { at?: number }): AgentAnswer {
+export function writeAgentAnswer(root: string, input: AnswerInput): AgentAnswer {
   const doc = readAgentDoc(root, agentPaths.session(input.sessionId));
   if (!doc) throw new AnswerError(`unknown session "${input.sessionId}"`);
   if (!doc.pending.some((q) => q.id === input.questionId))
     throw new AnswerError(`question "${input.questionId}" is not waiting for an answer`);
   if (!input.text.trim()) throw new AnswerError('answer is empty');
-  const { sessionId, questionId, author } = input;
+  const { sessionId, questionId, author, via } = input;
+  const chatOf = via === 'chat' && input.chatOf ? { chatOf: input.chatOf } : {};
   const ans = signAgentAnswer(root, {
     sessionId,
     questionId,
     author,
     text: input.text.trim(),
     at: input.at ?? Date.now(),
+    via,
+    ...chatOf,
   });
   writeLocalJson(root, agentPaths.answer(sessionId, questionId), ans);
   return ans;
