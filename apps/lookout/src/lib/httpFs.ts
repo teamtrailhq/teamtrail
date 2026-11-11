@@ -40,6 +40,13 @@ export const httpFs: MarkdownFs = {
     if (!r.ok) throw await failure(r, `write ${path}`);
     loaded.delete(path);
   },
+  /** A new numbered file, only if none has the name: false when one does (412), and the caller takes the next. */
+  async create(path, text) {
+    const r = await fetch(fileUrl(path), { method: 'PUT', body: text, headers: { 'If-None-Match': '*' } });
+    if (r.status === 412) return false;
+    if (!r.ok) throw await failure(r, `create ${path}`);
+    return true;
+  },
   watch(cb) {
     return onTrackerChange(cb);
   },

@@ -4,8 +4,11 @@ import { LAN_TICKET_CHANGES, TRUST_REFUSED } from './trustFields';
 const READS = new Set(['listMaps', 'loadMap', 'listDecisions']);
 /** Calls that change only free text: a comment, a ticket's title or body. */
 const TEXT = new Set(['comment', 'editTicket']);
-/** Map sections that count (signedState/stateFields.ts): what the trail is for, and its assumptions. */
-const COUNTED_SECTIONS = ['destination', 'assumptions'];
+/**
+ * Map sections that count: what the trail is for and its assumptions (signedState/stateFields.ts), and the decisions
+ * so far, which the Decisions view reads (decisionAudit.ts).
+ */
+const COUNTED_SECTIONS = ['destination', 'assumptions', 'decisions'];
 
 const changes = Object.values(LAN_TICKET_CHANGES);
 /** The calls that make a change a device on the network may make, from the one definition (trustFields.ts). */

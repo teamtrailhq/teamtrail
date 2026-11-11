@@ -15,6 +15,8 @@ export interface Judged {
   textEdited: boolean;
   /** Nobody signed it here, and the project has signed state: added outside Teamtrail, it waits as a whole. */
   held?: boolean;
+  /** A signed trail's assumptions nobody signed: added outside Teamtrail, each read as `holding` until accepted. */
+  unsigned?: string[];
 }
 
 export interface JudgeInput {
@@ -51,11 +53,19 @@ function unsignedMap(raw: Fields): Fields {
   return Object.fromEntries(undecided) as Fields;
 }
 
-/** The signed fields of a trail; an assumption new in the file counts as unsigned, one deleted from it still counts. */
+/** A signed trail's assumptions that its record doesn't have: added outside Teamtrail. */
+const unsignedAssumptions = (signed: Fields, raw: Fields) =>
+  Object.keys(raw).filter((k) => k.startsWith(ASSUMPTION_PREFIX) && !(k in signed));
+
+/**
+ * The signed fields of a trail. An assumption new in the file counts as no more than `holding` (`unsignedAssumptions`
+ * lists it as a change); one deleted from it still counts.
+ */
 function signedMap(signed: Fields, raw: Fields): Fields {
   const keep = (k: string) => (MAP_KEYS as readonly string[]).includes(k) || k.startsWith(ASSUMPTION_PREFIX);
   const kept = Object.fromEntries(Object.entries(signed).filter(([k]) => keep(k)));
-  return { ...unsignedMap(raw), ...kept };
+  const added = Object.fromEntries(unsignedAssumptions(signed, raw).map((k) => [k, 'holding']));
+  return { ...unsignedMap(raw), ...added, ...kept };
 }
 
 /** A map or a ticket nobody signed on this machine. */
@@ -85,10 +95,11 @@ export function judgeItem(input: JudgeInput): Judged {
   // A decision nobody signed isn't one.
   if (!entry) return { outside: ['added', ...Object.keys(raw).sort()], textEdited: false, held: !!input.strict };
   const base = kind === 'map' ? signedMap(entry.f, raw) : entry.f;
-  const outside = changedKeys(raw, base);
+  const unsigned = kind === 'map' ? unsignedAssumptions(entry.f, raw) : [];
+  const outside = [...new Set([...changedKeys(raw, base), ...unsigned])].sort();
   const held = kind === 'ticket' && outside.length > 0;
   const shown = held ? { ...base, status: 'blocked' } : base;
   const textEdited =
     !outside.length && !!entry.file && input.text !== undefined && entry.file !== contentHash(input.text);
-  return { base, shown, outside, textEdited };
+  return { base, shown, outside, textEdited, ...(unsigned.length ? { unsigned } : {}) };
 }

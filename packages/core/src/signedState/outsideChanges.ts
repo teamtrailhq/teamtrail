@@ -22,6 +22,8 @@ export interface OutsideChange extends StateItem {
   text?: string;
   /** A decision's or trail's file as Teamtrail last wrote it: what a rewording is shown against. */
   signedText?: string;
+  /** A signed trail's assumptions nobody signed (`assumption:S-<n>`): added outside Teamtrail. */
+  unsigned?: string[];
   /** Its trail's record can't be read, so a signed item may show as one nobody signed. */
   unreadable?: boolean;
   /** A whole trail removed (`fields: ['removed']` on its map): how many tickets and decisions its record holds. */
@@ -71,7 +73,17 @@ function judgeFile(root: string, item: StateItem, strict: boolean, out: OutsideC
   const signedText = entry?.text ? { signedText: entry.text } : {};
   const keep = item.kind !== 'ticket' && text !== undefined ? { text, ...signedText } : {};
   const signed = !!entry;
-  out.changes.push({ ...item, fields: judged.outside, counts: judged.base, file, signed, ...keep, ...unreadable });
+  const unsigned = judged.unsigned ? { unsigned: judged.unsigned } : {};
+  out.changes.push({
+    ...item,
+    fields: judged.outside,
+    counts: judged.base,
+    file,
+    signed,
+    ...keep,
+    ...unreadable,
+    ...unsigned,
+  });
 }
 
 /** A trail whose map is gone, as one change: its record holds what it had. */

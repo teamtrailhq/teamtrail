@@ -94,6 +94,8 @@ function plan(w: SignedWrite, raw: string | undefined, was: StateEntry | undefin
     if (k in after) fields[k] = after[k];
     else delete fields[k];
   }
+  // an assumption added outside Teamtrail stays unsigned (pending) unless this write itself sets it
+  for (const k of judged.unsigned ?? []) if (!changed.includes(k)) delete fields[k];
   return { written, fields };
 }
 

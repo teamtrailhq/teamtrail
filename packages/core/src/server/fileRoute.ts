@@ -35,6 +35,14 @@ export interface FileRouteContext {
   local: (req: IncomingMessage) => boolean;
 }
 
+/** `PUT /file` with `If-None-Match: *`: written only if no file has the name (412 otherwise), for numbered files. */
+async function create(c: { ctx: FileRouteContext; res: ServerResponse; p: string; text: string; local: boolean }) {
+  const fs = c.local ? c.ctx.fs : c.ctx.lanFs;
+  if (!fs.create) throw new Error('the tracker folder has no exclusive create');
+  if (await fs.create(c.p, c.text)) return void c.res.end('ok');
+  sendJson(c.res, 412, { error: `${c.p} exists: pick the next number.`, exists: true });
+}
+
 /** `PUT /file`: refused from another device when it changes more than it may; 409 when the file moved on. */
 async function put(ctx: FileRouteContext, req: IncomingMessage, res: ServerResponse, p: string) {
   const text = await readText(req);
@@ -42,6 +50,7 @@ async function put(ctx: FileRouteContext, req: IncomingMessage, res: ServerRespo
   const before = await readOrMissing(ctx.fs, p);
   const refused = local ? undefined : lanFileRefusal(p, before, text);
   if (refused) return sendJson(res, 403, { error: refused, elsewhere: true });
+  if (req.headers['if-none-match'] === '*') return create({ ctx, res, p, text, local });
   const match = ifMatch(req);
   if (match && match !== contentHash(before ?? ''))
     return sendJson(res, 409, { error: `${p} changed since it was loaded: reload it and try again.`, stale: true });
@@ -58,7 +67,9 @@ async function put(ctx: FileRouteContext, req: IncomingMessage, res: ServerRespo
  * Raw file access to the tracker folder: `GET /list`, and `GET`/`PUT /file?path=` for its markdown, inside the
  * folder once links are resolved and written only where no link stands on the way. A PUT may carry `If-Match`, the
  * hash of the file as the writer loaded it (the Lookout always sends it): a file that changed since answers 409
- * (`stale`), and the gate fields it changes are judged against that version (signedState/signedWrite.ts).
+ * (`stale`), and the gate fields it changes are judged against that version (signedState/signedWrite.ts). With
+ * `If-None-Match: *` it creates the file only if none is there (412 otherwise), so two writers that pick the same
+ * next number never overwrite each other (createNumbered.ts).
  */
 export async function handleFileRoute(ctx: FileRouteContext, req: IncomingMessage, res: ServerResponse, url: URL) {
   if (url.pathname === '/list') {

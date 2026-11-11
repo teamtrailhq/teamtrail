@@ -2,7 +2,7 @@ import { parseMapFile } from '../adapters/markdown/mapFile';
 import { parseDecision } from '../planning/decisions/decisionFile';
 import { lineDiff } from '../trust/lineDiff';
 import type { OutsideChange } from './outsideChanges';
-import { decisionWords, type FieldValue, type Fields } from './stateFields';
+import { ASSUMPTION_PREFIX, decisionWords, type FieldValue, type Fields } from './stateFields';
 
 /*
  * What an outside change says, line by line, for Settings → Approvals and `teamtrail approve`: each gate field
@@ -68,8 +68,16 @@ function destinationLines(c: OutsideChange): string[] {
   return ['destination:', ...lineDiff(was, now)];
 }
 
+/** An assumption added to a signed trail outside Teamtrail: its words, and what its file claims. */
+function addedAssumption(c: OutsideChange, k: string): string {
+  const id = k.slice(ASSUMPTION_PREFIX.length);
+  const line = c.text ? parseMapFile(c.mapId, c.text).sections.assumptions?.find((a) => a.id === id) : undefined;
+  return `${id} added outside Teamtrail: “${line?.text ?? ''}” (${show(c.file?.[k])}; counts as holding until you accept it)`;
+}
+
 /** The lines of one field of a change. */
 function fieldLines(c: OutsideChange, k: string): string[] {
+  if (c.unsigned?.includes(k)) return [addedAssumption(c, k)];
   if (k === 'words') return reworded(c);
   if (k === 'destination') return destinationLines(c);
   return [`${k}: ${show(c.counts?.[k])} → ${show(c.file?.[k])}`];

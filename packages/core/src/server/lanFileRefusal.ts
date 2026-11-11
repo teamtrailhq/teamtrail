@@ -1,3 +1,4 @@
+import { parseMapFile } from '../adapters/markdown/mapFile';
 import { parseFront, type Front } from '../model/frontmatter';
 import { fieldsOfText } from '../signedState/itemCodec';
 import { changedKeys } from '../signedState/stateFields';
@@ -25,10 +26,16 @@ function gateFieldsAllowed(rel: string, before: string, after: string): boolean 
   return changedKeys(was, now).every((k) => allowed.includes(k));
 }
 
+/** Whether a map's "Decisions so far" is the same in both: the Decisions view reads it (decisionAudit.ts). */
+function sameDecisionsSoFar(mapId: string, before: string, after: string) {
+  const of = (text: string) => JSON.stringify(parseMapFile(mapId, text).sections.decisions ?? []);
+  return of(before) === of(after);
+}
+
 /**
  * Why a device on the network may not write this tracker file, or undefined when it may. The Lookout on a phone
  * keeps a markdown tracker in step through this route, so an existing trail's map and its tickets stay writable:
- * their text and comments, and a ticket's state, status and close (trustFields.ts `LAN_TICKET_FIELDS`). Every other
+ * their text and comments (not a trail's Decisions so far), and a ticket's state, status and close (trustFields.ts `LAN_TICKET_FIELDS`). Every other
  * gate field, and the trust fields (trustFields.ts), must come through unchanged; a new trail or ticket can't be
  * written from there. Every other file records the human's approval (decisions, a brief's status, confirmed criteria
  * or knowledge) or what agents run (guides), and has a route of its own that checks who asks.
@@ -37,6 +44,7 @@ export function lanFileRefusal(rel: string, before: string | undefined, after: s
   const item = stateItemOf(rel);
   if (!item || item.kind === 'decision' || before === undefined) return TRUST_REFUSED;
   if (!gateFieldsAllowed(rel, before, after)) return TRUST_REFUSED;
+  if (item.kind === 'map' && !sameDecisionsSoFar(item.mapId, before, after)) return TRUST_REFUSED;
   const keys = item.kind === 'map' ? MAP_TRUST_KEYS : TICKET_TRUST_KEYS;
   return changedTrust(parseFront(before).front, parseFront(after).front, keys) ? TRUST_REFUSED : undefined;
 }

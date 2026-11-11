@@ -12,12 +12,20 @@ export const DECISION_SOURCE_KINDS = Object.keys(DECISION_SOURCES) as DecisionSo
 
 export const isSourceKind = (v: string): v is DecisionSourceKind => v in DECISION_SOURCES;
 
+/** Appended to who a decision derived from text names: it says who, it never proves it (decisionAudit.ts). */
+export const UNVERIFIED = ' (unverified, from text)';
+
 /**
  * Who made the call. Agents also record the human's HITL answers (`decidedBy: trail lead`), so the source alone
  * isn't enough: an agent decision is one an agent recorded and made itself. A record another tracker account
- * posted (`postedBy`) is that person's, whatever it says: never this machine's human, nor one of its agents.
+ * posted (`postedBy`) is that person's, whatever it says: never this machine's human, nor one of its agents. One
+ * derived from text (`derived`: a resolution comment, the map's "Decisions so far") is unverified: anyone who can
+ * edit that text wrote it.
  */
-export function madeBy(d: Pick<DecisionRecord, 'decidedBy' | 'source' | 'postedBy'>): 'agent' | 'human' | 'teammate' {
+export function madeBy(
+  d: Pick<DecisionRecord, 'decidedBy' | 'source' | 'postedBy'> & { derived?: boolean },
+): 'agent' | 'human' | 'teammate' | 'unverified' {
+  if (d.derived || d.decidedBy.endsWith(UNVERIFIED)) return 'unverified';
   if (d.postedBy) return 'teammate';
   return d.source.kind === 'agent' && d.decidedBy !== 'trail lead' && !d.decidedBy.startsWith('slack:')
     ? 'agent'

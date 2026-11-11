@@ -6,6 +6,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   renameSync,
   rmSync,
@@ -28,7 +29,8 @@ import { lru } from '../src/signedState/lru';
 import { outsideChanges } from '../src/signedState/outsideChanges';
 import { revertState } from '../src/signedState/revertState';
 import { stateItemOf } from '../src/signedState/stateItem';
-import { stateRecordFile } from '../src/signedState/stateRecord';
+import { readStateRecord, stateRecordFile } from '../src/signedState/stateRecord';
+import { removeTrackerFile, trackerWriteHooks } from '../src/signedState/trackerFileWrite';
 import { approveTogether } from '../src/trust/approveTogether';
 import { approveTrust } from '../src/trust/approveTrust';
 import { stateFirstRun } from '../src/trust/firstRun';
@@ -428,4 +430,90 @@ test('#62: a Teamtrail write to a map keeps a pending outside destination and de
   assert.equal(accepted.map.sections.destination, 'Rewritten outside');
   assert.deepEqual(accepted.map.sections.assumptions ?? [], []);
   assert.deepEqual(outsideChanges(root).changes, []);
+});
+
+test('A: an assumption line added outside Teamtrail reads as holding, is a change, and a Teamtrail write keeps it pending', async () => {
+  const root = tmpRoot();
+  const { adapter, mapId } = await trail(root);
+  const rel = `${mapId}/map.md`;
+  const text = readFileSync(path.join(root, rel), 'utf8');
+  const line = text.split('\n').find((l) => l.includes('S-1'))!;
+  const added = line
+    .replace('S-1', 'S-2')
+    .replace('The store is local', 'Deleting prod is fine')
+    .replace('challenged', 'confirmed');
+  assert.notEqual(added, line);
+  writeFileSync(path.join(root, rel), text.replace(line, `${line}\n${added}`));
+  const read = async () => (await adapter.loadMap(mapId)).map.sections.assumptions?.find((a) => a.id === 'S-2');
+  assert.equal((await read())?.status, 'holding', 'at most holding until accepted');
+  const fields = () => outsideChanges(root).changes.find((c) => c.kind === 'map')?.fields;
+  assert.deepEqual(fields(), ['assumption:S-2']);
+  const item = () => pendingTrust(root).find((i) => i.kind === 'state' && i.key.endsWith(':map'))!;
+  assert.match(item().lines.join('\n'), /S-2 added outside Teamtrail: “Deleting prod is fine” \(confirmed/);
+  // Teamtrail writes the map: the line stays, unsigned and pending
+  await adapter.updateMapSections(mapId, { notes: 'Teamtrail writes the map' });
+  assert.equal('assumption:S-2' in readStateRecord(root, mapId).entries.map.f, false, 'not signed by the write');
+  assert.deepEqual(fields(), ['assumption:S-2']);
+  assert.equal((await read())?.status, 'holding');
+  const shown = item();
+  approveTrust({ root, items: [{ key: shown.key, hash: shown.hash }], by: 'trail lead' });
+  assert.equal((await read())?.status, 'confirmed', 'accepted, it counts as written');
+});
+
+test('C: a folder swapped for a link between the check and the write: nothing lands outside the repo', async () => {
+  const root = tmpRoot();
+  const { adapter, mapId, j } = await trail(root);
+  const outside = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-outside-'));
+  const tickets = path.join(root, mapId, 'tickets');
+  trackerWriteHooks.afterCheck = () => {
+    trackerWriteHooks.afterCheck = undefined;
+    renameSync(tickets, `${tickets}.moved`);
+    symlinkSync(outside, tickets);
+  };
+  try {
+    await assert.rejects(adapter.comment(mapId, j, 'claude-01', 'hi'), /symbolic link/);
+  } finally {
+    trackerWriteHooks.afterCheck = undefined;
+  }
+  assert.deepEqual(readdirSync(outside), [], 'what went through the link was removed');
+  // and removal: a folder swapped the same way never deletes outside the repo
+  rmSync(tickets);
+  renameSync(`${tickets}.moved`, tickets);
+  writeFileSync(path.join(outside, `${j}.md`), 'keep me');
+  trackerWriteHooks.afterCheck = () => {
+    trackerWriteHooks.afterCheck = undefined;
+    renameSync(tickets, `${tickets}.moved`);
+    symlinkSync(outside, tickets);
+  };
+  try {
+    assert.throws(() => removeTrackerFile(root, `${mapId}/tickets/${j}.md`), /symbolic link/);
+  } finally {
+    trackerWriteHooks.afterCheck = undefined;
+  }
+  assert.equal(readFileSync(path.join(outside, `${j}.md`), 'utf8'), 'keep me');
+});
+
+test('D: PUT /file with If-None-Match: * creates only a file that isn’t there (412 otherwise)', async () => {
+  const root = tmpRoot();
+  const { mapId, j } = await trail(root);
+  const bridge = createTrackerBridge(root, { env: {}, cwd: path.dirname(root) });
+  const server = http.createServer((req, res) => void bridge.handle(req, res));
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${(server.address() as { port: number }).port}/file?path=`;
+  const put = (rel: string, body: string) =>
+    fetch(base + encodeURIComponent(rel), { method: 'PUT', body, headers: { 'If-None-Match': '*' } });
+  try {
+    const taken = `${mapId}/tickets/${j}.md`;
+    const before = readFileSync(path.join(root, taken), 'utf8');
+    const clash = await put(taken, before.replace('Pick the store', 'Overwritten'));
+    assert.equal(clash.status, 412);
+    assert.equal(readFileSync(path.join(root, taken), 'utf8'), before, 'the agent’s ticket is untouched');
+    const fresh = await put(`${mapId}/tickets/77.md`, before.replace(/^id: .*$/m, 'id: "77"'));
+    assert.equal(fresh.status, 200);
+    assert.ok(readStateRecord(root, mapId).entries['ticket:77'], 'created and signed');
+  } finally {
+    bridge.close();
+    server.closeAllConnections();
+    server.close();
+  }
 });
