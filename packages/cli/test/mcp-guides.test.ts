@@ -135,7 +135,7 @@ describe('guides over MCP', () => {
     const a11y = guideText({
       id: 'a11y',
       checklist: [],
-      extra: 'requiresChecks: [a11y]\nproposedChecks:\n  a11y:\n    run: [npx, pa11y-ci]',
+      extra: 'requiresChecks: [a11y]\nproposedChecks:\n  a11y:\n    run: [node_modules/.bin/pa11y-ci]',
     });
     installGuide({ root, text: a11y, source: 'local', by: 'trail lead' });
     const call = await connect();

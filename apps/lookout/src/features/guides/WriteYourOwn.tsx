@@ -10,16 +10,16 @@ import { GuideRow } from './GuideRow';
 export function WriteYourOwn(props: {
   guides: InstalledGuide[];
   busy?: boolean;
-  onAct: (path: string, body: Record<string, string>) => void;
+  onAct: (path: string, body: Record<string, string | boolean>) => void;
   error?: string;
 }) {
   return (
     <SettingsSection title="Write your own">
       <p className="vf-intro">
         Write a guide for your team in your repo with <code className="t-code">{BRAND.slug} guides new &lt;id&gt;</code>
-        . It starts from a template in <code className="t-code">{BRAND.dataDir}/guides/</code> that passes the safety
-        lint. Fill in the instructions and checklist, then approve it here: agents can only use it once you have, and
-        again after every edit.
+        . It starts from a template in <code className="t-code">{BRAND.dataDir}/guides/</code> that passes the lint.
+        Fill in the instructions and checklist, then approve it here: agents can only use it once you have, and again
+        after every edit.
       </p>
       {props.guides.length > 0 ? (
         <ul className="guides-list own-guides">

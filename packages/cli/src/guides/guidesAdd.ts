@@ -9,16 +9,17 @@ const isFile = (ref: string) => ref.endsWith('.md') || existsSync(path.resolve(r
 
 /**
  * `guides add <id>|<catalog/id>|<file.md>`: from a local file, or from the catalogs in guides.json, searched in order
- * (sha-checked against the index). An id in more than one catalog is refused until the person names one.
+ * (sha-checked against the index). An id in more than one catalog is refused until the person names one. The whole
+ * guide is shown and added only once the person approves it (installText.ts).
  */
 export async function guidesAdd(a: GuidesArgs, io: GuidesIo): Promise<number> {
   const ref = a.rest[0];
   if (!ref) {
-    io.err('usage: guides add <id>|<catalog/id>|<file.md> [--registry <name>] [--approve-checks]\n');
+    io.err('usage: guides add <id>|<catalog/id>|<file.md> [--registry <name>] [--sha256 <hash>] [--approve-checks]\n');
     return 2;
   }
   const root = path.resolve(a.dir);
-  const common = { root, io, approveAll: a.approveChecks };
+  const common = { root, io, approveAll: a.approveChecks, ...(a.sha256 ? { sha256: a.sha256 } : {}) };
   if (isFile(ref)) {
     const text = readFileSync(path.resolve(ref), 'utf8');
     return installText({ ...common, text, source: 'local', where: ref });

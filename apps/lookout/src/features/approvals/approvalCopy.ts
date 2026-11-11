@@ -3,6 +3,7 @@ import type { TrustItem, TrustKind } from '@teamtrail/core';
 /** What approving each kind does, in one line. */
 export const KIND_EFFECT: Record<TrustKind, string> = {
   checks: 'Completions run these commands on this machine',
+  catalogs: 'Guides can then be searched for and added from these addresses',
   policy: 'Agents may then decide these alone',
   brief: 'Implementation tickets of the trail open up',
   criteria: 'These criteria define done for the ticket',
@@ -15,6 +16,8 @@ export const KIND_EFFECT: Record<TrustKind, string> = {
 export const KIND_CAVEAT: Partial<Record<TrustKind, string>> = {
   checks:
     'Approval covers these commands, not what they run: npm run check runs package.json scripts, and an agent can edit those.',
+  catalogs:
+    'Approval covers where guides come from, not the guides: each one is still shown whole and approved on its own.',
 };
 
 /** Why an item waits, said once. */

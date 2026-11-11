@@ -10,6 +10,7 @@ import { readTicketSyncs } from '../evidence/syncStore';
 import { listGuides } from '../guides/guideStore';
 import { listKnowledge } from '../knowledge/knowledgeStore';
 import type { AttentionPolicy } from '../model/attention';
+import type { InstalledGuide } from '../model/guide';
 import { trackerPin, trackerTargetKey, trackerTargetLabel } from '../server/trackerPin';
 import { pendingTrust } from '../trust/pendingTrust';
 import { approvalItems } from '../verification/approvals';
@@ -18,6 +19,12 @@ import { readAttentionState } from './attentionStore';
 import { readViolations } from './readViolations';
 import { rerouteInputs } from './rerouteInputs';
 import type { AttentionInput } from './types';
+
+/** The guide files of the project: installed ones, and a file waiting to replace a built-in. */
+function guideFiles(r: InstalledGuide): InstalledGuide[] {
+  if (r.origin === 'local') return [r];
+  return r.override ? [r.override] : [];
+}
 
 /** Reads everything the queue is built from: the tracker, agent session docs and the local evidence. */
 export async function gatherAttention(input: {
@@ -44,7 +51,7 @@ export async function gatherAttention(input: {
     ...(await rerouteInputs({ root, adapter, snaps, syncs })),
     violations: await readViolations({ root, adapter, snaps, docs }),
     integrations: integrationsOf(root),
-    guides: listGuides(root).filter((r) => r.origin === 'local'),
+    guides: listGuides(root).flatMap(guideFiles),
     ...(reportsSettings(adapter)
       ? { trackerSettings: adapter.unacceptedSettings(), trackerSettingsSkipped: adapter.settingsSkipped() }
       : {}),

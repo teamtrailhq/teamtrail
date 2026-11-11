@@ -23,7 +23,7 @@ handles:
 requiresChecks: [a11y]
 proposedChecks:
   a11y:
-    run: [npx, pa11y-ci, --config, .pa11yci.json]
+    run: [node_modules/.bin/pa11y-ci, --config, .pa11yci.json]
     timeoutSec: 300
 checklist:
   - Every new control can be reached and used with the keyboard alone

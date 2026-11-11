@@ -29,8 +29,8 @@ export function useCatalog(registry?: string) {
     [registry],
   );
   const add = useCallback(
-    async (id: string) => {
-      const r = await postGuides<AddResult>('/guides/catalog/add', { registry, id });
+    async (id: string, sha256: string) => {
+      const r = await postGuides<AddResult>('/guides/catalog/add', { registry, id, sha256 });
       setGuidesView(r);
       return r.installed;
     },

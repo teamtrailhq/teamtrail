@@ -22,7 +22,7 @@ export interface ApproveTrustInput {
 function why(item: TrustItem | undefined, want: { hash: string }, bulk: { on: boolean; first: boolean }) {
   if (!item) return 'gone';
   if (item.hash !== want.hash) return 'changed';
-  if (bulk.on && !(bulk.first && item.committed)) return 'refused';
+  if (bulk.on && (item.alone || !(bulk.first && item.committed))) return 'refused';
   return undefined;
 }
 

@@ -1,10 +1,14 @@
-import type { ProposedCheck, GuideDoc, GuideFinding } from '../model/guide';
+import type { GuideDoc, GuideFinding } from '../model/guide';
+import { checkArgv, checkNotice } from './checkArgv';
 import { parseGuide } from './guideFile';
-import { INLINE_CODE, NETWORK_TOOLS, SHELLS, TEXT_RULES } from './injectionRules';
+import { lintText } from './textLint';
 
 export interface GuideLint {
   guide?: GuideDoc;
-  /** Errors and warnings, by line. A guide with any error can't be installed or used. */
+  /**
+   * Errors and warnings, by line. A guide with any error can't be installed or used. A clean lint is not a review:
+   * it looks for common problems, and the human still reads the guide and its checks before approving them.
+   */
   findings: GuideFinding[];
   ok: boolean;
 }
@@ -24,36 +28,20 @@ export function lintGuide(text: string): GuideLint {
   return { ...(parsed.guide ? { guide: parsed.guide } : {}), findings, ok: !findings.some((f) => f.level === 'error') };
 }
 
-function lintText(text: string): GuideFinding[] {
-  const out: GuideFinding[] = [];
-  text.split(/\r?\n/).forEach((line, i) => {
-    for (const r of TEXT_RULES) {
-      if (r.rule === 'link' && /^homepage\s*:/.test(line)) continue;
-      if (r.re.test(line)) out.push({ line: i + 1, rule: r.rule, level: r.level, message: r.message });
-    }
-  });
-  return out;
-}
-
 /** A proposed check runs only after approval, and even then must be a plain program with arguments. */
 function lintChecks(text: string, guide: GuideDoc): GuideFinding[] {
   return Object.entries(guide.proposedChecks).flatMap(([name, spec]) => {
     const line = checkLine(text, name);
-    return argvProblems(spec).map((message) => ({ line, rule: 'check-command', level: 'error' as const, message }));
+    const errors = checkArgv(spec).map((message) => ({
+      line,
+      rule: 'check-command',
+      level: 'error' as const,
+      message,
+    }));
+    const notice = checkNotice(spec);
+    // not refused, but not a check Teamtrail knows: approved only with an acknowledgement
+    return notice ? [...errors, { line, rule: 'check-unknown', level: 'warn' as const, message: notice }] : errors;
   });
-}
-
-/** Why an argv is unsafe to propose, if it is. */
-export function argvProblems(spec: ProposedCheck): string[] {
-  const program = (spec.run[0] ?? '').split(/[\\/]/).pop()!.toLowerCase();
-  const problems: string[] = [];
-  if (SHELLS.has(program)) problems.push(`runs a shell (${program}); name the program and its arguments instead`);
-  if (NETWORK_TOOLS.has(program)) problems.push(`runs ${program}, which reaches the network`);
-  if (spec.run.slice(1).some((a) => INLINE_CODE.test(a)))
-    problems.push('runs code given inline; point at a script in the repo instead');
-  if (spec.cwd && (spec.cwd.startsWith('/') || spec.cwd.split(/[\\/]/).includes('..')))
-    problems.push('cwd must stay inside the repo');
-  return problems;
 }
 
 function checkLine(text: string, name: string) {

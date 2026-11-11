@@ -152,6 +152,7 @@ export { scanIntegrations } from './workspaces/scanIntegrations';
 export { attentionView } from './attention/attentionView';
 export { activeGuideIds, listGuides, readGuideFiles, guideFilePath, guidesDir } from './guides/guideStore';
 export { readGuideLock, guideLockPath, writeGuideLock } from './guides/guideLock';
+export { readApprovedLock } from './guides/approvedLock';
 export { checkSha, guideSha } from './guides/guideHash';
 export { approveGuide, installGuide, lintRefusal, type Installed } from './guides/installGuide';
 export { approveCheck } from './guides/approveCheck';
