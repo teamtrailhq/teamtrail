@@ -10,6 +10,7 @@ import { findByHash, SESSION_SHAPE } from './signInSecrets';
 import { burnPairCode, pairWithCode, removeSession, touchSessions } from './signInSessions';
 import { readSignIns, type SignInPlace, signInsVersion } from './signInStore';
 import { streamTickets } from './streamTickets';
+import { sweepSignInRedirects } from './sweepSignInRedirects';
 
 export interface LookoutSignInOptions extends SignInPlace {
   /** The addresses other devices reach this Lookout at (`http://192.168.1.5:7420/`); none when it listens on loopback only. */
@@ -48,6 +49,9 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
   const tickets = streamTickets(now);
   const streams = new Map<string, Set<ServerResponse>>();
   let cache: { at: string; file: SignInFile } = { at: '', file: { v: 1, sessions: [], codes: [] } };
+  // The one-time pages that open a browser on a link: a stopped Lookout's are stale; ours go once used or expired.
+  sweepSignInRedirects({ ...place, keep: 'none' });
+  const sweepPages = () => sweepSignInRedirects({ ...place, keep: 'pending', now: now() });
 
   const current = (): SignInFile => {
     const at = signInsVersion(place);
@@ -87,11 +91,15 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
     if (signedIn.kind === 'signed-in') {
       // A browser already signed in: the code is spent, the browser keeps its session (nothing is overwritten).
       burnPairCode({ ...place, code: at.code });
+      sweepPages();
       return { kind: 'already', session: signedIn.session };
     }
     const name = browserName(req.headers['user-agent']);
     const done = pairWithCode({ ...place, code: at.code, local: at.local, name, instance, start, now: now() });
-    if (done.kind === 'paired') return { ...done, verifier: sessionVerifier(done.session.id, o.configDir) };
+    if (done.kind === 'paired') {
+      sweepPages();
+      return { ...done, verifier: sessionVerifier(done.session.id, o.configDir) };
+    }
     if (shape.kind === 'typed') attempts.failed(at.who, now());
     return done;
   }
@@ -116,6 +124,7 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
   const sweep = setInterval(() => {
     const ids = new Set(live().map((s) => s.id));
     for (const id of [...streams.keys()]) if (!ids.has(id)) endStreams(id);
+    sweepPages();
   }, o.sweepMs ?? 5_000);
   sweep.unref?.();
 
@@ -151,6 +160,7 @@ export function createLookoutSignIn(o: LookoutSignInOptions) {
     },
     close() {
       clearInterval(sweep);
+      sweepSignInRedirects({ ...place, keep: 'none' });
       for (const id of [...streams.keys()]) endStreams(id);
     },
   };

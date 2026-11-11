@@ -1,5 +1,6 @@
 // Sign-in, end to end against the built CLI: the API answers nobody without a paired browser, the link `teamtrail`
-// prints works once, `teamtrail pair` makes another, a revoked browser drops to "Pair this browser" while open, and
+// prints works once, the browser `teamtrail` and `teamtrail pair` open signs in with one click (and no code on a
+// command line), `teamtrail pair` makes another, a revoked browser drops to "Pair this browser" while open, and
 // a device on the network pairs with the short code from Settings and gets no more than a device may.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -8,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { lookoutLinks, pairLink, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
 import { verifyLoopback } from './verifyLoopback.mjs';
+import { verifyOpenSignedIn } from './verifyOpenSignedIn.mjs';
 
 async function startLookout(cli, cwd, env, port = '0') {
   // On every interface, so a "device" can come in by the network address.
@@ -175,7 +177,8 @@ export async function verifySignIn({ browser, cli, log, shots }) {
     const bare = await Promise.all(['list', 'events', 'remote-agents'].map((p) => fetch(`${url}__teamtrail/${p}`)));
     const session = await (await fetch(`${url}__teamtrail/session`)).json();
     const closed = bare.every((r) => r.status === 401) && session.signedIn === false;
-    const address = await verifyLoopback({ cli, env, url, pair });
+    const opened = await verifyOpenSignedIn({ browser, cli, env });
+    const address = await verifyLoopback({ url, pair, opened: opened.target });
 
     const a = await newPage();
     await a.goto(url);
@@ -218,9 +221,9 @@ export async function verifySignIn({ browser, cli, log, shots }) {
 
     const squat = await squatterGetsNothing({ cli, top, env, server, url, page: a, shots });
     server = squat.server;
-    const ok = closed && address.ok && codeGone && listed === 2 && device.ok && otherPort.ok && squat.ok;
+    const ok = closed && opened.ok && address.ok && codeGone && listed === 2 && device.ok && otherPort.ok && squat.ok;
     log(
-      `sign-in ${ok ? 'ok' : 'WRONG'}: ${address.said}; API without a session ${bare.map((r) => r.status).join('/')}; link used once${codeGone ? ', code gone from the address bar' : ', code LEFT in the URL'}; teamtrail pair signed in a second browser; ${listed} paired browsers listed; ${device.said}; the revoked browser dropped to Pair this browser; ${otherPort.said}; ${squat.said}`,
+      `sign-in ${ok ? 'ok' : 'WRONG'}: ${opened.said}; ${address.said}; API without a session ${bare.map((r) => r.status).join('/')}; link used once${codeGone ? ', code gone from the address bar' : ', code LEFT in the URL'}; teamtrail pair signed in a second browser; ${listed} paired browsers listed; ${device.said}; the revoked browser dropped to Pair this browser; ${otherPort.said}; ${squat.said}`,
     );
     return ok;
   } catch (e) {

@@ -3,6 +3,7 @@ import { BRAND } from '@teamtrail/core';
 import { mintPairCode, runningLookout } from '@teamtrail/core/bridge';
 import { fail } from './args/help';
 import { parseSubArgs } from './args/parseArgs';
+import { openSignedIn } from './serve/openSignedIn';
 import { pairLink } from './serve/pairLink';
 
 const WHY: Record<'none' | 'other-folder' | 'unsigned' | 'not-answering', string> = {
@@ -13,13 +14,14 @@ const WHY: Record<'none' | 'other-folder' | 'unsigned' | 'not-answering', string
 };
 
 /**
- * `teamtrail pair [--dir <path>]`: a new one-time link that signs a browser in to the Lookout running for this
+ * `teamtrail pair [--dir <path>] [--no-open]`: a new one-time link that signs a browser in to the Lookout running for this
  * folder, once that Lookout proved it is the process its signed lock names (signIn/runningLookout.ts). The code is
  * written straight into the machine store (signIn/pairCodes.ts) for that process only, which the Lookout reads. So whoever can write the user's config dir can make one, as with approvals; that is
- * why `teamtrail connect` keeps agents out of that folder.
+ * why `teamtrail connect` keeps agents out of that folder. It opens the browser on the link through a one-time page
+ * in that same store (openSignedIn.ts), never with the link on a command line; `--no-open` only prints it.
  */
 export async function pairCli(argv: string[]) {
-  const o = parseSubArgs(argv, ['--dir']);
+  const o = parseSubArgs(argv, ['--dir', '--no-open']);
   if (o.rest.length) fail(`unexpected argument: ${o.rest[0]}`);
   const root = path.resolve(process.cwd(), o.dir);
   const lookout = await runningLookout(root);
@@ -30,8 +32,17 @@ export async function pairCli(argv: string[]) {
   } catch (e) {
     fail(`Couldn't write to ${BRAND.name}'s config folder (${(e as Error).message}). Run this in your own terminal.`);
   }
-  process.stdout.write(
-    `\n  ${BRAND.name} · sign in a browser\n\n  ${pairLink(lookout.url, code)}\n\n` +
-      `  Open it in the browser you use for the Lookout. It works once, for 10 minutes.\n\n`,
-  );
+  const link = pairLink(lookout.url, code);
+  process.stdout.write(`\n  ${BRAND.name} · sign in a browser\n\n  ${link}\n\n`);
+  if (o.noOpen) {
+    process.stdout.write(`  Open it in the browser you use for the Lookout. It works once, for 10 minutes.\n\n`);
+    return;
+  }
+  const opened = openSignedIn({ root, link });
+  if (opened.kind === 'sign-in-page') {
+    process.stdout.write(
+      `  Your browser opens a tab ready to sign in, with one click. For another browser, open the link above\n` +
+        `  instead: it works once, for 10 minutes. \`${BRAND.slug} pair --no-open\` only prints a link.\n\n`,
+    );
+  }
 }

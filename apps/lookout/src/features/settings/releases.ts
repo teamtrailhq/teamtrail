@@ -17,6 +17,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.27.0',
+    date: '2026-11-11',
+    items: [
+      'Teamtrail opens your browser ready to sign in with one click; `teamtrail pair` does the same for another tab',
+    ],
+  },
+  {
     version: '0.26.1',
     date: '2026-11-11',
     items: [

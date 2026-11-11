@@ -12,11 +12,11 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} connect slack [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
        ${BRAND.slug} approve [--hash <hash>]… [--dir <path>]
-       ${BRAND.slug} pair [--dir <path>]
+       ${BRAND.slug} pair [--dir <path>] [--no-open]
        ${BRAND.slug} guides list|search|add|new|update|remove|lint … [--dir <path>]
 
-Starts the Lookout for the current folder and opens it in your browser, signed in: it prints a one-time
-link that pairs the browser that opens it. Every other browser needs a link of its own.
+Starts the Lookout for the current folder and opens your browser on it, ready to sign in with one click.
+It also prints a one-time Sign in link for another browser. Every browser needs a link of its own.
 
 Commands:
   mcp            Serve the MCP server for coding agents over stdio
@@ -54,7 +54,8 @@ Commands:
                  exactly what changed and asks y/N for each. Without a terminal it approves only
                  what --hash names exactly. The Lookout's Settings → Approvals does the same
   pair           A new one-time link that signs a browser in to the Lookout running for this folder
-                 (works once, for 10 minutes). Phones and other computers pair from the Lookout:
+                 (works once, for 10 minutes), and a browser tab opened on it, ready to sign in;
+                 --no-open only prints the link. Phones and other computers pair from the Lookout:
                  Settings → You → Browsers & devices
   knowledge import <file.md>  Seed project knowledge from a markdown document: one suggestion per
                  ## heading, for you to review in the Lookout

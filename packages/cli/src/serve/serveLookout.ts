@@ -26,7 +26,7 @@ import { listen, type Listening } from './listen';
 import { listenFailure } from './listenFailure';
 import { lookoutHandler } from './lookoutHandler';
 import { lookoutUrl } from './lookoutUrl';
-import { openBrowser } from './openBrowser';
+import { openSignedIn } from './openSignedIn';
 import { pairLink } from './pairLink';
 
 /** The code of the link this command prints and opens; without the user's config folder nobody could sign in. */
@@ -80,19 +80,27 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
   });
   keepServing();
   printGreeting();
-  const signInLink = pairLink(url, firstCode(signIn), slackSetup ? '?settings=slack' : '');
+  const next = slackSetup ? '?settings=slack' : '';
+  const signInLink = pairLink(url, firstCode(signIn), next);
+  const howToSignIn = opts.open
+    ? 'Your browser opens ready to sign in, with one click. For another browser, open this link'
+    : 'Open it to sign in the browser';
   process.stdout.write(
     `\n  ${BRAND.name} ${__VERSION__} · ${BRAND.assistant.name} online\n\n` +
       `  Lookout  ${url}\n` +
       `  Sign in  ${signInLink}\n` +
-      `           Click it to sign in the browser: once, within 10 minutes. \`${BRAND.slug} pair\` prints another.\n` +
+      `           ${howToSignIn}: once, within 10 minutes. \`${BRAND.slug} pair\` makes another.\n` +
       `  Tracker         ${path.relative(process.cwd(), bridge.root) || '.'}${path.sep}  (${bridge.root})\n\n` +
       `  Press Ctrl+C to stop.\n\n`,
   );
   if (slackSetup) process.stdout.write(`  Slack setup     ${url}?settings=slack\n\n`);
-  // The browser opens on the Lookout itself, never on the link: a command line is readable by every process of
-  // this user for a moment, and the code would be on it. The link is only in this terminal.
-  if (opts.open) openBrowser(slackSetup ? `${url}?settings=slack` : url);
+  // The browser gets a link of its own, so the printed one stays for another browser. No link is ever on the
+  // opener's command line (openSignedIn.ts): the browser opens a one-time page in the machine store that sends it
+  // on, or the bare Lookout when that store can't be written.
+  if (opts.open) {
+    const link = pairLink(url, firstCode(signIn), next);
+    openSignedIn({ root: bridge.root, link, fallback: `${url}${next}` });
+  }
   const unlock = writeLookoutLock(bridge.root, url);
   for (const w of await agentVersionWarnings(bridge.root, __VERSION__))
     process.stdout.write(`  Heads up        ${w}\n`);
