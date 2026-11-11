@@ -1,6 +1,6 @@
 import { BRAND } from '@teamtrail/core';
 import { useEffect } from 'react';
-import { Panel, TeamtrailLogo, Wordmark } from '../../components/ui';
+import { Panel, Wordmark } from '../../components/ui';
 import { proveServer } from '../../lib/serverProof';
 
 /**
@@ -17,7 +17,6 @@ export function NotRunningPage() {
     <div className="pair-page">
       <Panel as="main" className="pair-card">
         <div className="onb-brand">
-          <TeamtrailLogo size={22} bare />
           <Wordmark className="onb-title" />
         </div>
         <h1 className="t-heading pair-title">{BRAND.name} isn’t running here</h1>

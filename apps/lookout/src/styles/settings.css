@@ -491,12 +491,11 @@
 .onb-title {
   font-family: var(--display);
   font-weight: 900;
-  font-size: var(--fs-title);
+  /* The lowercase wordmark reads smaller than the capitals it replaced. */
+  font-size: calc(var(--fs-title) * 1.4);
   line-height: 1;
   letter-spacing: var(--ls-brand);
   margin-right: calc(-1 * var(--ls-brand));
-  text-transform: uppercase;
-  color: var(--text-hi);
 }
 .onb-tagline {
   margin: 0;
@@ -526,7 +525,6 @@
   font-weight: 900;
   font-size: var(--fs-heading);
   letter-spacing: var(--ls-brand);
-  color: var(--text-hi);
 }
 .about p {
   margin: 0;

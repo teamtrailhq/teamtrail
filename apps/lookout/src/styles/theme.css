@@ -4,6 +4,8 @@
 :root {
   color-scheme: light;
   --tt-keyline: transparent;
+  --wordmark-ink: #16302a;
+  --wordmark-dot: #e07a2f;
   --bg: #f3f1e7;
   --panel: #fbfaf4;
   --panel2: #f2efe2;
@@ -54,6 +56,8 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='day']) {
     --tt-keyline: #f1e8d3;
+    --wordmark-ink: #eef0e4;
+    --wordmark-dot: #e8833a;
     color-scheme: dark;
     --bg: #101815;
     --panel: #17211c;
@@ -98,6 +102,8 @@
 }
 :root[data-theme='night'] {
   --tt-keyline: #f1e8d3;
+  --wordmark-ink: #eef0e4;
+  --wordmark-dot: #e8833a;
   color-scheme: dark;
   --bg: #101815;
   --panel: #17211c;
