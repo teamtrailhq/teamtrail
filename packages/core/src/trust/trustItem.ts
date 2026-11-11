@@ -1,5 +1,6 @@
 /** What a pending approval is about. */
-export type TrustKind = 'checks' | 'catalogs' | 'brief' | 'criteria' | 'knowledge' | 'policy' | 'level' | 'type';
+export type TrustKind =
+  'checks' | 'catalogs' | 'brief' | 'criteria' | 'knowledge' | 'policy' | 'level' | 'type' | 'discovery';
 
 /**
  * Something the repo's files ask this machine to trust that the trail lead hasn't approved here, as it is now.
@@ -23,6 +24,8 @@ export interface TrustItem {
   warnings: string[];
   /** The file it comes from, relative to the tracker folder; none for a tracker that isn't files. */
   file?: string;
+  /** A file that must never have been committed for the item to count as committed (a trail's brief, for `discovery`). */
+  absentFile?: string;
   /**
    * The file is in git's HEAD as it is now: someone committed it. Only such items can be approved together; anything
    * an agent wrote since is approved one at a time, read whole. Set where it is shown (trustRoutes.ts).

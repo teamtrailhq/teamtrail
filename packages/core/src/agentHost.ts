@@ -10,6 +10,7 @@ export { dropLease, readLease, readLeases, renewLease, writeLease } from './agen
 export { LEASE_REAPER, reclaimExpired, returnToQueue, type ReturnOutcome } from './agents/returnToQueue';
 export { journalFile, journalPath, JOURNAL_DIR } from './history/journalFile';
 export { approveBriefHere, briefPath, readBrief, readBriefFile, writeBrief } from './discovery/briefStore';
+export { claimableNow, discoveryRefusal, discoverySkipped, requiresDiscovery } from './discovery/discoveryGate';
 export { approveTrust } from './trust/approveTrust';
 export { recordWorktree, trustedWorkspace } from './workspaces/trustedWorkspace';
 export { pendingTrust } from './trust/pendingTrust';

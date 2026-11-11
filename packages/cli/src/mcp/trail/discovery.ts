@@ -1,6 +1,4 @@
 import {
-  claimableTypes,
-  gateReason,
   OperationError,
   submitted,
   type BriefSections,
@@ -8,7 +6,7 @@ import {
   type MapSnapshot,
   type Ticket,
 } from '@teamtrail/core';
-import { readBrief, writeBrief } from '@teamtrail/core/agents';
+import { claimableNow, discoveryRefusal, readBrief, writeBrief } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 
 /** What the agent should do next, per brief status. */
@@ -35,11 +33,11 @@ export function briefView(root: string, snap: MapSnapshot) {
 }
 
 /** Ticket types an agent may pick on this trail right now (`undefined`: any). */
-export const claimable = (root: string, mapId: string) => claimableTypes(readBrief(root, mapId));
+export const claimable = (root: string, mapId: string) => claimableNow(root, mapId);
 
-/** Throws when the discovery gate holds `t` back. */
+/** Throws when the discovery gate holds `t` back: every trail, unless the trail lead skipped discovery here. */
 export function assertClaimable(root: string, mapId: string, t: Ticket) {
-  const reason = gateReason(readBrief(root, mapId), t.type);
+  const reason = discoveryRefusal(root, mapId, t.type);
   if (reason) throw new OperationError(reason);
 }
 

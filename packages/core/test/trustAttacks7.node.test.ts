@@ -5,8 +5,8 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { MemoryAdapter } from '../src/adapters/memoryAdapter';
 import { readCriteria, writeTicketCriteria } from '../src/criteria/criteriaStore';
-import { claimableTypes } from '../src/discovery/brief';
-import { readBrief, writeBrief } from '../src/discovery/briefStore';
+import { claimableNow } from '../src/discovery/discoveryGate';
+import { writeBrief } from '../src/discovery/briefStore';
 import { journalFile } from '../src/history/journalFile';
 import { listKnowledge, writeKnowledge } from '../src/knowledge/knowledgeStore';
 import { chartMap } from '../src/planning/operations/chart';
@@ -45,7 +45,7 @@ test('brief: setting the status to accepted in the file does not open the discov
   // the attack: the agent flips its own brief to accepted
   const file = path.join(root, 'briefs', 'm1.md');
   writeFileSync(file, readFileSync(file, 'utf8').replace('status: submitted', 'status: accepted'));
-  assert.deepEqual(claimableTypes(readBrief(root, 'm1')), ['research', 'junction', 'review'], 'still gated');
+  assert.deepEqual(claimableNow(root, 'm1'), ['research', 'junction', 'review'], 'still gated');
 });
 
 test('criteria: "· confirmed" written into the file is not the human\'s confirmation', () => {

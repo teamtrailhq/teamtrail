@@ -1,7 +1,7 @@
 import { journalFile } from '../history/journalFile';
 import { TRUST_JOURNAL } from '../model/lifecycle';
 import type { MapSnapshot } from '../model/types';
-import { adoptableWithoutFile } from './adoptableWithoutFile';
+import { isCommitted } from './withCommitted';
 import { firstRun } from './firstRun';
 import { pendingTrust } from './pendingTrust';
 import { recordShown } from './recordShown';
@@ -16,6 +16,8 @@ export interface ApproveTrustInput {
   snaps?: MapSnapshot[];
   /** The pending files committed to git as they are (committedFiles.ts); needed to approve several at once. */
   committed?: Set<string>;
+  /** The files git confirms were never committed (`absentFile` of an item). */
+  absent?: Set<string>;
 }
 
 /** Why an item can't be approved in this request, or undefined when it can. */
@@ -40,7 +42,7 @@ export function approveTrust(input: ApproveTrustInput) {
   const { root, by } = input;
   const bulk = { on: input.items.length > 1, first: firstRun(root) };
   const all = pendingTrust(root, input.snaps);
-  const committed = (i: TrustItem) => (i.file ? !!input.committed?.has(i.file) : adoptableWithoutFile(root, i));
+  const committed = (i: TrustItem) => isCommitted(root, i, input);
   const shown = bulk.on ? all.map((i) => ({ ...i, committed: committed(i) })) : all;
   const pending = new Map(shown.map((i) => [i.key, i]));
   const out = { approved: [] as TrustItem[], changed: [] as string[], refused: [] as string[] };

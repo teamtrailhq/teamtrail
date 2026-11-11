@@ -1,4 +1,4 @@
-import { dropBrief } from '../../discovery/briefStore';
+import { skipDiscoveryHere } from '../../discovery/skipDiscoveryHere';
 import { createKnowledge, listKnowledge } from '../../knowledge/knowledgeStore';
 import type { Assumption } from '../../model/assumption';
 import type { RerouteProposal } from '../../model/reroute';
@@ -60,8 +60,8 @@ export async function approveReroute(env: RerouteEnv, d: RerouteDecision): Promi
     keepRerouteProgress(env.root, x, d.by);
     writeReroute(env.root, x);
   };
-  const dropping = { dropBrief: (mapId: string) => dropBrief(env.root, mapId) };
-  p = await applyReroute({ adapter: env.adapter, actor: d.by, journal: env.journal, save, ...dropping }, p);
+  const skipping = { dropBrief: (mapId: string) => skipDiscoveryHere(env.root, { mapId, request: p, by: d.by }) };
+  p = await applyReroute({ adapter: env.adapter, actor: d.by, journal: env.journal, save, ...skipping }, p);
   // the tickets it added keep the type they were created with, for their trail's level (approvedLevel.ts)
   const created = new Set(Object.values(p.created));
   if (created.size)

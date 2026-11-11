@@ -5,11 +5,13 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { MarkdownAdapter } from '@teamtrail/core';
 import {
+  briefPath,
   journalPath,
   readAgentDocs,
   readBrief,
   readReroute,
   rejectReroute,
+  requiresDiscovery,
   journalFile,
   writeAgentAnswer,
 } from '@teamtrail/core/agents';
@@ -149,6 +151,22 @@ describe('skipping discovery is a request the trail lead approves', () => {
       approveReroute(env(), { mapId: started.trail.id, id, by: 'trail lead', hash: 'not-what-was-shown' }),
     ).rejects.toThrow(/changed since you looked at it/);
   });
+});
+
+describe('the discovery gate is this machine’s fact, not the brief file’s', () => {
+  for (const attack of ['deletes the brief file', 'puts a folder where the brief file was'] as const)
+    it(`an agent that ${attack} still can't claim implementation, and criteria stay required`, async () => {
+      const call = await connect();
+      const s = await call<Started>('start_trail', TRAIL);
+      const file = briefPath(root, s.trail.id);
+      fs.rmSync(file);
+      if (attack !== 'deletes the brief file') fs.mkdirSync(file);
+      const build = s.tickets.find((t) => t.type === 'execute')!;
+      await expect(call('claim_ticket', { ticket: build.key })).rejects.toThrow(
+        /the brief file is missing; only the trail lead can skip discovery/,
+      );
+      expect(requiresDiscovery(root, s.trail.id)).toBe(true);
+    });
 });
 
 describe('the trail’s mode and destination', () => {
