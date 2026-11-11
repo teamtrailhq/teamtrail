@@ -151,6 +151,28 @@ describe('connect claude keeps Teamtrail’s config folder out of Claude Code’
     expect(fs.readFileSync(settingsFile(), 'utf8')).toMatch(/^\{\n\t"model": "opus",\n\t"permissions": \{\n\t\t"deny"/);
   });
 
+  it('a config folder not created yet, under a symlinked ~/.config: the rule names where it will really be', () => {
+    const dotfiles = path.join(tmp, 'dotfiles-config');
+    fs.mkdirSync(dotfiles);
+    fs.mkdirSync(path.join(tmp, 'home'), { recursive: true });
+    fs.symlinkSync(dotfiles, path.join(tmp, 'home', '.config'));
+    connect('claude');
+    expect(settings().permissions.deny).toEqual([
+      READ(),
+      EDIT(),
+      `Read(/${dotfiles}/teamtrail/**)`,
+      `Edit(/${dotfiles}/teamtrail/**)`,
+    ]);
+  });
+
+  it('a custom config folder: the default ~/.config/teamtrail is denied too', () => {
+    config = path.join(tmp, 'elsewhere', 'tt-config');
+    process.env.TEAMTRAIL_CONFIG_DIR = config;
+    connect('claude');
+    const def = path.join(tmp, 'home', '.config', 'teamtrail');
+    expect(settings().permissions.deny).toEqual([READ(), EDIT(), `Read(/${def}/**)`, `Edit(/${def}/**)`]);
+  });
+
   it('connect --url protects it too', async () => {
     const lines: string[] = [];
     await connectRemote('claude', {
