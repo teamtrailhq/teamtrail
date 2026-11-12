@@ -83,7 +83,7 @@ cd your-repo
 npx teamtrail@next      # or install it: npm i -g teamtrail@next, then run `teamtrail`
 ```
 
-Use `@next` for now: it's the current version, while npm's `latest` tag still points to an early release.
+Use `@next` until launch: npm's `latest` tag is still a placeholder that only says Teamtrail isn't released yet.
 
 `teamtrail` opens the Lookout in your browser. Run `teamtrail --help` for options.
 
