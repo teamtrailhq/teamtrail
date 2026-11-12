@@ -1,13 +1,15 @@
-import { AS_WRITTEN, SlackApi } from '@teamtrail/connector-slack/api';
+import { AS_WRITTEN } from '@teamtrail/connector-slack/api';
 import type { Envelope } from '@teamtrail/connector-slack/node';
 import type { ServiceContext } from '../serviceContext';
+import { botApi } from './botApi';
 
-export type Unreachable = 'not-linked' | 'offline';
+export type Unreachable = 'not-linked' | 'offline' | 'stale';
 
 const TEXT: Record<Unreachable, string> = {
   'not-linked':
     "Scout isn't connected to your Teamtrail yet. In the Lookout, open Settings → Slack and choose Add Scout to Slack.",
   offline: "Your Teamtrail isn't running, so Scout can't reach it. Start it and try again.",
+  stale: 'This Scout message is no longer connected to a Teamtrail, so nothing was done.',
 };
 
 type Obj = Record<string, unknown>;
@@ -35,13 +37,10 @@ async function respond(ctx: ServiceContext, url: unknown, text: string) {
 
 /** The Home tab says why Scout has nothing to show, published with the workspace's bot token. */
 async function publishHome(ctx: ServiceContext, o: { teamId: string; userId: string; text: string }) {
-  const workspace = await ctx.store.workspace(o.teamId);
-  if (!workspace) return;
-  const token = ctx.cipher.open(workspace.botToken, workspace.teamId);
-  const api = new SlackApi({ token, apiUrl: ctx.config.slackApiUrl, fetch: ctx.fetch });
-  await api
-    .call('views.publish', { user_id: o.userId, view: { type: 'home', blocks: [section(o.text)] } })
-    .catch(() => {});
+  const api = await botApi(ctx, o.teamId);
+  if (!api) return;
+  const view = { type: 'home', blocks: [section(o.text)] };
+  await api.call('views.publish', { user_id: o.userId, view }).catch(() => {});
 }
 
 const modal = (text: string) => ({
@@ -65,6 +64,7 @@ export async function offlineReply(
       return { response_type: 'ephemeral', text };
     case 'interactive':
       if (payload.type === 'view_submission') return modal(text);
+      if (payload.type === 'view_closed') return undefined;
       await respond(ctx, payload.response_url, text);
       return undefined;
     case 'events_api': {

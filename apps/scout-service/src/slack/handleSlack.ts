@@ -4,10 +4,14 @@ import { BodyTooLarge, readBody } from '../http/readBody';
 import { reply } from '../http/reply';
 import { LIMITS } from '../limits';
 import type { ServiceContext } from '../serviceContext';
+import { isReplay } from './isReplay';
 import { offlineReply } from './offlineReply';
+import { resolveRoute } from './resolveRoute';
+import { safeAck } from './safeAck';
 import { toEnvelope, type SlackPath, type SlackRequest } from './toEnvelope';
 
 type Delivery = Extract<SlackRequest, { kind: 'deliver' }>;
+type Obj = Record<string, unknown>;
 
 /** Whether this event was already passed on: Slack retries an event it thinks was missed; it must not act twice. */
 function seen(recent: Set<string>, eventId: string | undefined) {
@@ -18,24 +22,35 @@ function seen(recent: Set<string>, eventId: string | undefined) {
   return false;
 }
 
-/**
- * The links Slack's request goes to: the link that posted the message clicked on, when it is in the same
- * workspace, otherwise the links of the Slack account that acted.
- */
-async function targets(ctx: ServiceContext, d: Delivery) {
-  const poster = d.link ? await ctx.store.link(d.link) : undefined;
-  if (poster && poster.teamId === d.teamId) return [poster.id];
-  return (await ctx.store.linksOf(d.teamId, d.userId)).map((l) => l.id);
+/** A "Save as decision" shortcut lets the link that got it read that thread for a few minutes. */
+async function grantThread(ctx: ServiceContext, d: Delivery, linkId: string) {
+  const p = d.envelope.payload as Obj;
+  if (p.type !== 'message_action') return;
+  const channel = (p.channel as Obj | undefined)?.id;
+  const message = (p.message ?? {}) as Obj;
+  const expiresAt = ctx.now() + LIMITS.threadMs;
+  for (const ts of new Set([message.ts, message.thread_ts]))
+    if (typeof channel === 'string' && typeof ts === 'string')
+      await ctx.store.mark({ kind: 'thread', key: `${channel}:${ts}`, linkId, expiresAt });
+}
+
+function unreachable(stale: boolean, links: number) {
+  if (stale) return 'stale';
+  return links ? 'offline' : 'not-linked';
 }
 
 async function deliver(ctx: ServiceContext, d: Delivery) {
   if (seen(ctx.recentEvents, d.eventId)) return undefined;
-  const workspace = await ctx.store.workspace(d.teamId);
-  if (!workspace) return undefined;
-  const links = await targets(ctx, d);
-  const pending = links.length ? ctx.hub.deliver(links, d.envelope) : undefined;
-  if (pending) return pending;
-  const why = links.length ? 'offline' : 'not-linked';
+  if (!(await ctx.store.workspace(d.teamId))) return undefined;
+  const targets = await resolveRoute(ctx, d);
+  const ids = targets.kind === 'links' ? targets.ids : [];
+  const socket = ctx.hub.pick(ids);
+  if (socket?.link) {
+    await grantThread(ctx, d, socket.link.id);
+    ctx.log('deliver', { link: socket.link.id, type: d.envelope.type });
+    return safeAck(d.envelope, await socket.deliver(d.envelope));
+  }
+  const why = unreachable(targets.kind === 'stale', ids.length);
   ctx.log('unreachable', { team: d.teamId, type: d.envelope.type, why });
   return offlineReply(ctx, { envelope: d.envelope, teamId: d.teamId, userId: d.userId, why });
 }
@@ -66,8 +81,9 @@ async function answer(ctx: ServiceContext, r: SlackRequest): Promise<unknown> {
 }
 
 /**
- * Slack's request URLs. Every request must carry Slack's signature for this app; events are acked at once and
- * passed on, commands and clicks wait for the Teamtrail's ack (Slack allows 3 s).
+ * Slack's request URLs. Every request must carry Slack's signature for this app, and a command or click is
+ * handled once; events are acked at once and passed on, commands and clicks wait for the Teamtrail's ack
+ * (Slack allows 3 s), which is filtered before it goes back to Slack (`safeAck`).
  */
 export async function handleSlack(ctx: ServiceContext, req: IncomingMessage, res: ServerResponse, path: SlackPath) {
   let body: string;
@@ -76,16 +92,21 @@ export async function handleSlack(ctx: ServiceContext, req: IncomingMessage, res
   } catch (e) {
     return reply.empty(res, e instanceof BodyTooLarge ? 413 : 400);
   }
+  const signature = req.headers['x-slack-signature'] as string | undefined;
   const signed = verifySlackSignature({
     body,
     timestamp: req.headers['x-slack-request-timestamp'] as string | undefined,
-    signature: req.headers['x-slack-signature'] as string | undefined,
+    signature,
     signingSecret: ctx.config.slackSigningSecret,
     now: ctx.now(),
   });
   if (!signed) {
     ctx.log('slack.unsigned', { path });
     return reply.empty(res, 401);
+  }
+  if (path !== 'events' && isReplay(ctx, signature!)) {
+    ctx.log('slack.replay', { path });
+    return reply.empty(res);
   }
   const ack = await answer(ctx, toEnvelope(path, body)).catch(() => undefined);
   if (ack === undefined || ack === null) return reply.empty(res);

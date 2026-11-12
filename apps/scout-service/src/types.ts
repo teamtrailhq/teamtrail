@@ -13,8 +13,10 @@ export interface ServiceConfig {
   tokenKey: Buffer;
   /** Postgres; undefined only with the in-memory store (dev and tests). */
   databaseUrl?: string;
-  /** Read the client address from `X-Forwarded-For` (behind Railway's proxy). */
+  /** Read the client address from `X-Forwarded-For` (behind Railway's proxy). Required in production. */
   trustProxy: boolean;
+  /** TLS to Postgres: verified, without verifying the certificate, or off (Railway's private network). */
+  databaseSsl: 'verify' | 'no-verify' | 'off';
   /** Slack's Web API base, ending in `/api`. */
   slackApiUrl: string;
   slackAuthorizeUrl: string;
@@ -63,6 +65,23 @@ export interface PendingCode {
   expiresAt: number;
 }
 
+/**
+ * What a link owns, so its calls and Slack's clicks can be checked against it. Every link in a workspace shares
+ * one bot, so "Scout posted it" proves nothing about which Teamtrail did:
+ * - `message`: `<channel>:<ts>` of a message the link posted (chat.update, clicks on it);
+ * - `view`: a modal or Home tab view id the link opened or published (views.update, clicks and submissions in it);
+ * - `dm`: the owner's DM channel id, as `conversations.open` answered it for the link (posts to it);
+ * - `thread`: `<channel>:<ts>` of a message a "Save as decision" shortcut delivered to the link (reading the thread).
+ */
+export type MarkKind = 'message' | 'view' | 'dm' | 'thread';
+
+export interface Mark {
+  kind: MarkKind;
+  key: string;
+  linkId: string;
+  expiresAt: number;
+}
+
 export interface ServiceStore {
   saveWorkspace(w: Workspace): Promise<void>;
   workspace(teamId: string): Promise<Workspace | undefined>;
@@ -80,7 +99,11 @@ export interface ServiceStore {
   saveCode(c: PendingCode): Promise<void>;
   /** Single use, like `takeInstall`. */
   takeCode(codeHash: string, now: number): Promise<PendingCode | undefined>;
-  /** Drops expired installs and codes. */
+  /** Remembers that a link owns something (a message it posted, a view it opened…) until the mark expires. */
+  mark(m: Mark): Promise<void>;
+  /** The links holding an unexpired mark of this kind on this key. */
+  marked(kind: MarkKind, key: string, now: number): Promise<string[]>;
+  /** Drops expired installs, codes and marks. */
   purge(now: number): Promise<void>;
   close(): Promise<void>;
 }

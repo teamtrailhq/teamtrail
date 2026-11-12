@@ -13,6 +13,7 @@ export class SlackApiError extends Error {
 const READS = new Set([
   'auth.test',
   'bots.info',
+  'conversations.members',
   'conversations.replies',
   'chat.getPermalink',
   'users.info',

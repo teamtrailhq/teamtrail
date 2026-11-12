@@ -1,8 +1,22 @@
 import pg from 'pg';
-import type { Link, PendingCode, PendingInstall, ServiceStore, Workspace } from '../types';
+import type {
+  Link,
+  Mark,
+  MarkKind,
+  PendingCode,
+  PendingInstall,
+  ServiceConfig,
+  ServiceStore,
+  Workspace,
+} from '../types';
 import { SCHEMA } from './schema';
 
 type Row = Record<string, unknown>;
+
+/** An arbitrary constant: the advisory lock the schema is applied under. */
+const MIGRATION_LOCK = 7_211_017;
+
+const SSL = { verify: { rejectUnauthorized: true }, 'no-verify': { rejectUnauthorized: false }, off: false } as const;
 
 const num = (v: unknown) => (v === null || v === undefined ? undefined : Number(v));
 
@@ -29,9 +43,17 @@ const toLink = (r: Row): Link => ({
 export class PostgresStore implements ServiceStore {
   private constructor(private pool: pg.Pool) {}
 
-  static async open(connectionString: string) {
-    const pool = new pg.Pool({ connectionString, max: 10 });
-    await pool.query(SCHEMA);
+  static async open(connectionString: string, ssl: ServiceConfig['databaseSsl'] = 'verify') {
+    const pool = new pg.Pool({ connectionString, max: 10, ssl: SSL[ssl] });
+    const client = await pool.connect();
+    try {
+      // Two instances starting together (a deploy overlapping the old one) never migrate at once.
+      await client.query('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK]);
+      await client.query(SCHEMA);
+    } finally {
+      await client.query('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK]).catch(() => {});
+      client.release();
+    }
     return new PostgresStore(pool);
   }
 
@@ -131,7 +153,25 @@ export class PostgresStore implements ServiceStore {
     };
   }
 
+  async mark(m: Mark) {
+    await this.rows(
+      `INSERT INTO scout_marks (kind, key, link_id, expires_at) SELECT $1, $2, $3, $4
+       WHERE EXISTS (SELECT 1 FROM scout_links WHERE id = $3)
+       ON CONFLICT (kind, key, link_id) DO UPDATE SET expires_at = $4`,
+      [m.kind, m.key, m.linkId, m.expiresAt],
+    );
+  }
+
+  async marked(kind: MarkKind, key: string, now: number) {
+    const rows = await this.rows(
+      'SELECT link_id FROM scout_marks WHERE kind = $1 AND key = $2 AND expires_at > $3 ORDER BY link_id',
+      [kind, key, now],
+    );
+    return rows.map((r) => String(r.link_id));
+  }
+
   async purge(now: number) {
+    await this.rows('DELETE FROM scout_marks WHERE expires_at <= $1', [now]);
     await this.rows('DELETE FROM scout_installs WHERE expires_at <= $1', [now]);
     await this.rows('DELETE FROM scout_codes WHERE expires_at <= $1', [now]);
   }

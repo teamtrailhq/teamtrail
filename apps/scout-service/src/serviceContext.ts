@@ -16,4 +16,8 @@ export interface ServiceContext {
   httpLimit: RateLimit;
   /** Slack event ids already passed on (bounded). */
   recentEvents: Set<string>;
+  /** Hashes of the signatures of commands and clicks already handled, with when they can be forgotten. */
+  replays: Map<string, number>;
+  /** Whether an owner is in a channel (`<team>:<channel>:<user>`), until when. */
+  members: Map<string, { ok: boolean; until: number }>;
 }

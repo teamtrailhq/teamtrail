@@ -44,7 +44,9 @@
         "groups:history",
         "im:history",
         "mpim:history",
-        "users:read"
+        "users:read",
+        "channels:read",
+        "groups:read"
       ]
     }
   },

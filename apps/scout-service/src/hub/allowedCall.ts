@@ -16,27 +16,24 @@ const METHODS = new Set([
   'views.update',
 ]);
 
-/** Messages carry the link that posted them, so a click on one is routed back to it. */
+/** Messages carry the link that posted them; a click is routed by the service's own record, which must agree. */
 const STAMPED = new Set(['chat.postMessage', 'chat.update']);
 
 export const LINK_METADATA_TYPE = 'scout_link';
 
-type Verdict = { ok: true; args: Record<string, unknown> } | { ok: false; error: string };
-
-const isUserId = (v: unknown) => typeof v === 'string' && /^[UW]/.test(v);
+export type Verdict = { ok: true; args: Record<string, unknown> } | { ok: false; error: string };
 
 /** A call that would act on another person's DM or Home tab than the link's own Slack account. */
 function aimsAtSomeoneElse(link: Link, method: string, args: Record<string, unknown>) {
   if (method === 'views.publish') return args.user_id !== link.userId;
   if (method === 'conversations.open') return args.users !== link.userId;
-  if (method === 'chat.postMessage') return isUserId(args.channel) && args.channel !== link.userId;
   return false;
 }
 
 /**
- * Whether a linked Teamtrail may make this call, and the arguments to send. The bot token is always the link's
- * own workspace's, added by the service: a `token` in the arguments is dropped, so a link can never reach
- * another workspace. DMs and the Home tab are the link owner's only.
+ * The checks that need no lookup: the method is one the connector uses, the arguments are an object, and the
+ * Home tab and DM it opens are its owner's. The bot token is always the link's own workspace's, added by the
+ * service: a `token` in the arguments is dropped. What the call touches is checked next (`ownsTarget`).
  */
 export function allowedCall(link: Link, method: string, raw: unknown): Verdict {
   if (!METHODS.has(method)) return { ok: false, error: 'method_not_allowed' };

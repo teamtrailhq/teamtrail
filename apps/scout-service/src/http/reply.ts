@@ -1,7 +1,8 @@
 import type { ServerResponse } from 'node:http';
 
-/** Headers on every answer: nothing cached, no referrer, no sniffing. The service sets no cookies. */
+/** Headers on every answer: https only, nothing cached, no referrer, no sniffing. The service sets no cookies. */
 const COMMON = {
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
   'Cache-Control': 'no-store',
   'Referrer-Policy': 'no-referrer',
   'X-Content-Type-Options': 'nosniff',

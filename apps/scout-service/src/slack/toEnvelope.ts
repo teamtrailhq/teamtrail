@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Envelope } from '@teamtrail/connector-slack/node';
-import { LINK_METADATA_TYPE } from '../hub/allowedCall';
+import { interactionRoute, type Route } from './interactionRoute';
 
 /** The three request URLs Slack calls. */
 export type SlackPath = 'events' | 'interactions' | 'commands';
@@ -9,7 +9,7 @@ export type SlackPath = 'events' | 'interactions' | 'commands';
 export type SlackRequest =
   | { kind: 'challenge'; challenge: string }
   | { kind: 'uninstall'; teamId: string }
-  | { kind: 'deliver'; envelope: Envelope; teamId: string; userId: string; link?: string; eventId?: string }
+  | { kind: 'deliver'; envelope: Envelope; teamId: string; userId: string; route: Route; eventId?: string }
   | { kind: 'ignore' };
 
 type Obj = Record<string, unknown>;
@@ -40,7 +40,14 @@ function fromEvent(body: Obj): SlackRequest {
   if (event.type === 'tokens_revoked') return { kind: 'ignore' };
   const userId = str(event.user);
   if (!userId) return { kind: 'ignore' };
-  return { kind: 'deliver', envelope: envelope('events_api', body), teamId, userId, eventId: str(body.event_id) };
+  return {
+    kind: 'deliver',
+    envelope: envelope('events_api', body),
+    teamId,
+    userId,
+    route: { by: 'user' },
+    eventId: str(body.event_id),
+  };
 }
 
 function fromCommand(form: URLSearchParams): SlackRequest {
@@ -48,14 +55,7 @@ function fromCommand(form: URLSearchParams): SlackRequest {
   const teamId = str(payload.team_id);
   const userId = str(payload.user_id);
   if (!teamId || !userId) return { kind: 'ignore' };
-  return { kind: 'deliver', envelope: envelope('slash_commands', payload), teamId, userId };
-}
-
-/** The link that posted the message clicked on, from the metadata the service stamps on Scout's messages. */
-function postedBy(payload: Obj) {
-  const metadata = obj(obj(payload.message).metadata);
-  if (metadata.event_type !== LINK_METADATA_TYPE) return undefined;
-  return str(obj(metadata.event_payload).link);
+  return { kind: 'deliver', envelope: envelope('slash_commands', payload), teamId, userId, route: { by: 'user' } };
 }
 
 function fromInteraction(form: URLSearchParams): SlackRequest {
@@ -68,7 +68,13 @@ function fromInteraction(form: URLSearchParams): SlackRequest {
   const teamId = str(obj(payload.team).id);
   const userId = str(obj(payload.user).id);
   if (!teamId || !userId) return { kind: 'ignore' };
-  return { kind: 'deliver', envelope: envelope('interactive', payload), teamId, userId, link: postedBy(payload) };
+  return {
+    kind: 'deliver',
+    envelope: envelope('interactive', payload),
+    teamId,
+    userId,
+    route: interactionRoute(payload),
+  };
 }
 
 /** Turns a verified Slack request into what to do with it, in the shape Socket Mode delivers. */

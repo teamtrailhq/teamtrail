@@ -7,7 +7,9 @@ import { PostgresStore } from './store/PostgresStore';
 /** Starts the Scout service from its environment (see README.md). */
 async function main() {
   const config = loadConfig(process.env);
-  const store = config.databaseUrl ? await PostgresStore.open(config.databaseUrl) : new MemoryStore();
+  const store = config.databaseUrl
+    ? await PostgresStore.open(config.databaseUrl, config.databaseSsl)
+    : new MemoryStore();
   const service = createService({ config, store });
   service.server.listen(config.port, () => log('listening', { port: config.port, memory: !config.databaseUrl }));
   const stop = () => {

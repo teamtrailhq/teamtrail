@@ -24,4 +24,26 @@ export const LIMITS = {
   /** Slack event ids remembered to drop retries. */
   recentEvents: 5000,
   purgeMs: 10 * 60_000,
+  /** The hello frame: a link token and little else. */
+  helloBytes: 4096,
+  /** Messages per socket after the hello (acks and calls together); past it the socket closes `too-fast`. */
+  socketBurst: 100,
+  socketPerMinute: 600,
+  /** Sockets that haven't said hello yet: in all, and per client address (/64 for IPv6). */
+  pendingSockets: 200,
+  pendingPerAddress: 10,
+  /** WebSocket upgrades per client address. */
+  upgradeBurst: 20,
+  upgradePerMinute: 30,
+  /** Commands and clicks are dropped when their signature was seen within Slack's five-minute window. */
+  replayMs: 5 * 60_000,
+  replayEntries: 50_000,
+  /** How long a link owns what it made: posts (chat.update, clicks), views, the owner's DM, a shortcut's thread. */
+  messageMs: 30 * 24 * 60 * 60_000,
+  viewMs: 7 * 24 * 60 * 60_000,
+  dmMs: 365 * 24 * 60 * 60_000,
+  threadMs: 10 * 60_000,
+  /** Whether the owner is in a channel, cached briefly; members read in pages of 1000, at most this many. */
+  memberCacheMs: 2 * 60_000,
+  memberPages: 20,
 } as const;

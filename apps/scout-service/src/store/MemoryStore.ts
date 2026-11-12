@@ -1,4 +1,4 @@
-import type { Link, PendingCode, PendingInstall, ServiceStore, Workspace } from '../types';
+import type { Link, Mark, MarkKind, PendingCode, PendingInstall, ServiceStore, Workspace } from '../types';
 
 /** Everything in memory: for tests and local development. A restart forgets every install and link. */
 export class MemoryStore implements ServiceStore {
@@ -6,6 +6,7 @@ export class MemoryStore implements ServiceStore {
   private links = new Map<string, Link>();
   private installs = new Map<string, PendingInstall>();
   private codes = new Map<string, PendingCode>();
+  private marks = new Map<string, Mark>();
 
   async saveWorkspace(w: Workspace) {
     this.workspaces.set(w.teamId, { ...w });
@@ -19,7 +20,7 @@ export class MemoryStore implements ServiceStore {
   async removeWorkspace(teamId: string) {
     this.workspaces.delete(teamId);
     const removed = [...this.links.values()].filter((l) => l.teamId === teamId).map((l) => l.id);
-    for (const id of removed) this.links.delete(id);
+    for (const id of removed) await this.removeLink(id);
     return removed;
   }
 
@@ -46,6 +47,7 @@ export class MemoryStore implements ServiceStore {
 
   async removeLink(id: string) {
     this.links.delete(id);
+    for (const [k, m] of this.marks) if (m.linkId === id) this.marks.delete(k);
   }
 
   async touchLink(id: string, at: number) {
@@ -73,7 +75,18 @@ export class MemoryStore implements ServiceStore {
     return c && c.expiresAt > now ? c : undefined;
   }
 
+  async mark(m: Mark) {
+    if (this.links.has(m.linkId)) this.marks.set(`${m.kind}|${m.key}|${m.linkId}`, { ...m });
+  }
+
+  async marked(kind: MarkKind, key: string, now: number) {
+    return [...this.marks.values()]
+      .filter((m) => m.kind === kind && m.key === key && m.expiresAt > now)
+      .map((m) => m.linkId);
+  }
+
   async purge(now: number) {
+    for (const [k, m] of this.marks) if (m.expiresAt <= now) this.marks.delete(k);
     for (const [k, p] of this.installs) if (p.expiresAt <= now) this.installs.delete(k);
     for (const [k, c] of this.codes) if (c.expiresAt <= now) this.codes.delete(k);
   }

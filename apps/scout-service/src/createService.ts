@@ -1,6 +1,7 @@
 import { createServer, type Server } from 'node:http';
 import { WebSocketServer } from 'ws';
 import { TokenCipher } from './crypto/TokenCipher';
+import { clientAddress } from './http/clientAddress';
 import { RateLimit } from './http/RateLimit';
 import { reply } from './http/reply';
 import { Hub } from './hub/Hub';
@@ -35,10 +36,12 @@ export function createService(o: Options): ScoutService {
     log,
     now,
     fetch: o.fetch ?? fetch,
+    members: new Map<string, { ok: boolean; until: number }>(),
   };
   const hub = new Hub(base);
   const httpLimit = new RateLimit({ burst: LIMITS.httpBurst, perMinute: LIMITS.httpPerMinute, now });
-  const ctx: ServiceContext = { ...base, hub, httpLimit, recentEvents: new Set() };
+  const ctx: ServiceContext = { ...base, hub, httpLimit, recentEvents: new Set(), replays: new Map() };
+  const upgrades = new RateLimit({ burst: LIMITS.upgradeBurst, perMinute: LIMITS.upgradePerMinute, now });
 
   const server = createServer((req, res) => {
     route(ctx, req, res).catch(() => {
@@ -49,8 +52,13 @@ export function createService(o: Options): ScoutService {
   });
   const sockets = new WebSocketServer({ noServer: true, maxPayload: LIMITS.socketMessageBytes });
   server.on('upgrade', (req, socket, head) => {
+    const address = clientAddress(req, o.config.trustProxy);
     if (req.url !== '/connect') return socket.destroy();
-    sockets.handleUpgrade(req, socket, head, (ws) => hub.attach(ws));
+    if (!upgrades.take(address)) {
+      socket.end('HTTP/1.1 429 Too Many Requests\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
+      return;
+    }
+    sockets.handleUpgrade(req, socket, head, (ws) => hub.attach(ws, address));
   });
   const purge = setInterval(() => void o.store.purge(now()).catch(() => {}), LIMITS.purgeMs);
   purge.unref();

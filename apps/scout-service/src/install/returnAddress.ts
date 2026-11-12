@@ -1,4 +1,5 @@
-const LOOPBACK = new Set(['127.0.0.1', '[::1]', 'localhost']);
+/** The Lookout serves on 127.0.0.1 and [::1] only, never `localhost` (which a hosts file can point anywhere). */
+const LOOPBACK = new Set(['127.0.0.1', '[::1]']);
 
 /**
  * The address a finished install sends the browser back to, or undefined when it isn't allowed: only a Lookout

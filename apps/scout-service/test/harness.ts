@@ -16,11 +16,16 @@ export interface World {
   service: ScoutService;
   store: MemoryStore;
   logs: { event: string; fields?: Record<string, unknown> }[];
+  /** The service's clock: `Date.now()` moved by `clock.offset` ms. */
+  clock: { offset: number };
+  now(): number;
   close(): Promise<void>;
 }
 
 export async function world(): Promise<World> {
   const slack = await fakeSlack();
+  const clock = { offset: 0 };
+  const now = () => Date.now() + clock.offset;
   const store = new MemoryStore();
   const logs: World['logs'] = [];
   const config: ServiceConfig = {
@@ -31,11 +36,12 @@ export async function world(): Promise<World> {
     slackSigningSecret: SIGNING_SECRET,
     tokenKey: randomBytes(32),
     trustProxy: false,
+    databaseSsl: 'off',
     slackApiUrl: `${slack.url}/api`,
     slackAuthorizeUrl: 'https://slack.test/oauth/v2/authorize',
     slackHooksOrigin: slack.url,
   };
-  const service = createService({ config, store, log: (event, fields) => logs.push({ event, fields }) });
+  const service = createService({ config, store, now, log: (event, fields) => logs.push({ event, fields }) });
   await new Promise<void>((r) => service.server.listen(0, '127.0.0.1', r));
   const { port } = service.server.address() as AddressInfo;
   return {
@@ -44,6 +50,8 @@ export async function world(): Promise<World> {
     service,
     store,
     logs,
+    clock,
+    now,
     async close() {
       await service.close();
       await slack.close();
@@ -100,7 +108,7 @@ export async function linked(w: World, o: { team: string; user: string }) {
 
 /** A signed request to one of Slack's URLs. */
 export async function fromSlack(w: World, o: { path: string; body: string; form?: boolean; at?: number }) {
-  const ts = String(Math.floor((o.at ?? Date.now()) / 1000));
+  const ts = String(Math.floor((o.at ?? w.now()) / 1000));
   const sig = `v0=${createHmac('sha256', SIGNING_SECRET).update(`v0:${ts}:${o.body}`).digest('hex')}`;
   const res = await fetch(`${w.base}${o.path}`, {
     method: 'POST',

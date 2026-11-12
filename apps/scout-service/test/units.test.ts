@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { TokenCipher } from '../src/crypto/TokenCipher';
 import { verifySlackSignature } from '../src/crypto/verifySlackSignature';
+import { addressKey } from '../src/http/addressKey';
 import { parseClientMessage } from '../src/hub/parseClientMessage';
 import { returnAddress } from '../src/install/returnAddress';
 import { loadConfig } from '../src/loadConfig';
@@ -39,14 +40,24 @@ describe('TokenCipher', () => {
     expect(() => new TokenCipher(key).open(sealed, 'T2')).toThrow();
     expect(() => new TokenCipher(randomBytes(32)).open(sealed, 'T1')).toThrow();
     expect(() => new TokenCipher(randomBytes(16))).toThrow();
+    const truncated = `v1:${Buffer.from(sealed.slice(3), 'base64url').subarray(0, 28).toString('base64url')}`;
+    expect(() => new TokenCipher(key).open(truncated, 'T1')).toThrow(/too short/);
+    const shortTag = `v1:${Buffer.from(sealed.slice(3), 'base64url').subarray(0, 20).toString('base64url')}`;
+    expect(() => new TokenCipher(key).open(shortTag, 'T1')).toThrow(/too short/);
   });
 });
 
 test('returnAddress keeps loopback Lookouts with a port only', () => {
   expect(returnAddress('http://127.0.0.1:7477/?settings=slack')).toBe('http://127.0.0.1:7477/?settings=slack');
   expect(returnAddress('http://[::1]:7477/')).toBe('http://[::1]:7477/');
-  expect(returnAddress('http://localhost:7477')).toBe('http://localhost:7477/');
-  for (const bad of ['http://127.0.0.1/', 'http://10.0.0.2:7477/', 'http://127.0.0.1:7477/#a', 7477, undefined])
+  for (const bad of [
+    'http://localhost:7477/',
+    'http://127.0.0.1/',
+    'http://10.0.0.2:7477/',
+    'http://127.0.0.1:7477/#a',
+    7477,
+    undefined,
+  ])
     expect(returnAddress(bad)).toBeUndefined();
 });
 
@@ -74,6 +85,26 @@ describe('loadConfig', () => {
     expect(c.trustProxy).toBe(false);
   });
 
+  test('in production TRUST_PROXY and a database are required', () => {
+    const railway = { ...env, RAILWAY_ENVIRONMENT_NAME: 'production' };
+    expect(() => loadConfig(railway)).toThrow(/TRUST_PROXY=1 is required/);
+    expect(() => loadConfig({ ...env, NODE_ENV: 'production' })).toThrow(/TRUST_PROXY/);
+    expect(loadConfig({ ...railway, TRUST_PROXY: '1' }).trustProxy).toBe(true);
+    const memory = { ...railway, TRUST_PROXY: '1', DATABASE_URL: '', SCOUT_MEMORY_STORE: '1' };
+    expect(() => loadConfig(memory)).toThrow(/DATABASE_URL is required in production/);
+  });
+
+  test('Postgres TLS: off on the private network, verified elsewhere, or as DATABASE_SSL says', () => {
+    expect(loadConfig({ ...env, DATABASE_URL: 'postgres://u@postgres.railway.internal:5432/db' }).databaseSsl).toBe(
+      'off',
+    );
+    expect(loadConfig({ ...env, DATABASE_URL: 'postgres://u@roundhouse.proxy.rlwy.net:4/db' }).databaseSsl).toBe(
+      'verify',
+    );
+    expect(loadConfig({ ...env, DATABASE_SSL: 'no-verify' }).databaseSsl).toBe('no-verify');
+    expect(() => loadConfig({ ...env, DATABASE_SSL: 'maybe' })).toThrow(/DATABASE_SSL/);
+  });
+
   test('refuses missing secrets, a short key, plain http elsewhere and no database', () => {
     expect(() => loadConfig({ ...env, SLACK_SIGNING_SECRET: '' })).toThrow(/SLACK_SIGNING_SECRET/);
     expect(() => loadConfig({ ...env, SCOUT_TOKEN_KEY: 'c2hvcnQ=' })).toThrow(/32 bytes/);
@@ -98,4 +129,14 @@ test('parseClientMessage takes the three shapes only', () => {
     '{"type":"call","id":"a","method":"../x"}',
   ])
     expect(parseClientMessage(bad)).toBeUndefined();
+});
+
+test('addressKey counts IPv4 as is and IPv6 by its /64', () => {
+  expect(addressKey('203.0.113.7')).toBe('203.0.113.7');
+  expect(addressKey('::ffff:203.0.113.7')).toBe('203.0.113.7');
+  expect(addressKey('2001:db8:aa:bb:1:2:3:4')).toBe('2001:db8:aa:bb::/64');
+  expect(addressKey('2001:db8:aa:bb::9')).toBe(addressKey('2001:0db8:00aa:00bb:ffff::1'));
+  expect(addressKey('2001:db8::1')).toBe('2001:db8:0:0::/64');
+  expect(addressKey('fe80::1%en0')).toBe('fe80:0:0:0::/64');
+  expect(addressKey('::1')).toBe('0:0:0:0::/64');
 });
