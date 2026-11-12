@@ -20,7 +20,7 @@ Teamtrail is a local trail map for planning and executing big work with your AI 
 - **Waiting on you:** every question from every agent, in one inbox, answered in-window.
 - **Decision records:** each call is written down with its alternatives, rationale and transcript.
 - **Live spend:** per-session and per-trail tokens and cost.
-- **Your data stays yours:** trails are plain markdown in `./.teamtrail/` in your repo. Nothing leaves your machine.
+- **Your data stays yours:** trails are plain markdown in `./.teamtrail/` in your repo. Nothing leaves your machine unless you connect Slack.
 
 Works with any coding agent that connects over MCP. Claude Code and Codex are the primary supported agents.
 
@@ -29,40 +29,72 @@ Works with any coding agent that connects over MCP. Claude Code and Codex are th
 Your agents can already write the code. What's missing is a place to run them like a team: one where you set the direction, they do the work, and you make the calls that matter.
 
 - **Bring any agent.** Everything runs through MCP tools. Claude Code today, Codex tomorrow, both at once. Teamtrail never calls a model itself and never locks you into a vendor.
-- **Local-first, for real.** Trails live as plain files in your repo's `.teamtrail/` folder, or in the GitHub Issues or Linear tracker you already use. There is no Teamtrail server, and there never will be.
+- **Local-first, for real.** Trails live as plain files in your repo's `.teamtrail/` folder, or in the GitHub Issues or Linear tracker you already use. Nothing needs a Teamtrail server. Slack is optional: its questions, answers and digests pass through Teamtrail's Scout service, but your trails, decisions and approvals never leave your machine.
 - **A deterministic core.** Lifecycle, state and ranking are code, not prompts. The same inputs always give the same result, so you can trust what the map tells you.
 - **Evidence over claims.** Agents bring the decisions that matter to you, with the alternatives and the reasoning, and you decide. Less babysitting, not less judgment.
 - **Not another activity feed.** Teamtrail isn't a prettier log of what agents did. It's where work gets steered.
 
-## Roadmap
+## Features
 
-Where Teamtrail is heading, in the order we plan to build it:
+**Plan and steer**
 
-1. **Multi-repository supervision.** Run trails across all your repos from one Lookout, with a single merged queue.
-2. **Agent roles and guides.** Give agents roles (reviewer, researcher, builder) and bring in guides for focused jobs, starting with a built-in reviewer that wraps today's independent review.
+- **Trails and decision tickets:** research, prototype, junction, task, execute and review tickets with blocking edges, on a live map.
+- **Discovery first:** by default, agents write a brief you accept before implementation starts, and each ticket's acceptance criteria need evidence when the work is done.
+- **Plans that adapt:** a trail lists the assumptions it relies on. When an agent finds one is wrong, it shows the evidence and proposes a new route; nothing changes until you approve.
+- **Project knowledge:** what agents learn about your product is kept as entries you confirm, committed so your team shares them.
 
-Already shipped from this roadmap: one ranked queue of what needs you, project knowledge, trails that adapt when an assumption breaks, safe parallel work (a separate workspace per task, and a warning before two agents change the same files), and Trail stats (delivery across trails by vendor, agent and ticket type).
+**Only what needs you**
 
-Coming alongside: **model-aware claiming**, a per-trail switch that sends hard decisions to stronger models and routine work to cheaper ones. With roles, a role can set its own model tier.
+- **Waiting on you:** one ranked list of questions, approvals, blocked work, briefs and new plans, each with the reason it's there. Focus for an hour, set quiet hours, and the rest waits in a digest.
+- **Risk policy:** you decide what always needs you (database changes, auth, billing, deleting data, new dependencies). Agents can't make those calls on their own.
+- **Away briefing:** Scout tells you what changed while you were away.
+- **Scout in Slack:** answer agents' questions and approve work from Slack, and ask Scout things like “what's blocking #12?”, “what did we decide about retention?” or “who's working?”. High-risk calls are answered in the Lookout only.
+
+**Many agents at once**
+
+- **Separate workspaces:** each claimed ticket can get its own git worktree and branch. Agents say which files they'll change, you're warned before two collide, and a ticket to bring the work together is one click away. Teamtrail never merges or pushes for you.
+- **Model matching:** per trail, each agent gets the tickets that fit the model it runs on, from research on fast models to junctions on the strongest. Teamtrail never picks or switches a model.
+- **Guides:** a ticket can ask for a reviewer, QA, security, docs or architect guide, with a checklist the agent must answer before the work counts. Add more from a moderated catalog, or write your own with `teamtrail guides new`.
+- **Remote agents:** agents on other machines or in cloud sandboxes join over HTTP (`teamtrail mcp --http`), each with a token you can revoke.
+
+**Evidence you can trust**
+
+- **Checks before done:** completions run your project's checks and collect git evidence; PR and CI status sync back to the ticket.
+- **Decision records:** the question, answer, alternatives, rationale and transcript, and who actually decided. An agent's own call is never shown as yours.
+- **Approvals on this machine:** check commands, briefs, criteria, guides and settings only take effect once you approve them here, and edits to trail files made outside Teamtrail wait until you accept them.
+- **Signed-in Lookout:** the browser signs in with a one-time link, and you can pair your phone with a QR code.
+
+**Across projects**
+
+- **All projects:** every repo you supervise in one Lookout, with one list of what needs you across them.
+- **Your tracker:** local markdown files, GitHub Issues or Linear.
+- **Trail stats and live spend:** delivery by vendor, agent and ticket type, and tokens and cost per session and trail.
+
+## What's next
+
+**Teamtrail Cloud:** agents that run in the cloud, steered from the same Lookout. It will be optional: everything local keeps working without it.
 
 ## Install
 
 Requires Node 20+.
 
 ```bash
-npm i -g teamtrail      # or, without installing: npx teamtrail
 cd your-repo
-teamtrail
+npx teamtrail@next      # or install it: npm i -g teamtrail@next, then run `teamtrail`
 ```
+
+Use `@next` for now: it's the current version, while npm's `latest` tag still points to an early release.
 
 `teamtrail` opens the Lookout in your browser. Run `teamtrail --help` for options.
 
 Connect your agent once, then use `/scout new "<idea>"`, `/scout resume`, `/scout status` and `/scout inbox`:
 
 ```bash
-claude mcp add teamtrail -- npx -y teamtrail mcp   # Claude Code; `npx teamtrail connect claude` also adds /scout
-codex mcp add teamtrail -- npx -y teamtrail mcp    # Codex; see packages/cli for the config.toml entry
+npx teamtrail@next connect claude   # Claude Code: the MCP server and the /scout command
+npx teamtrail@next connect codex    # Codex: the MCP server and the /prompts:scout prompt
 ```
+
+`connect` pins your agent to the version you ran it with.
 
 Details for both agents are in [`packages/cli/README.md`](packages/cli/README.md#connect-your-coding-agent).
 
