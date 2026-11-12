@@ -91,19 +91,25 @@ describe('mentions and DMs', () => {
     expect(w.slack.calls.find((c) => c.method === 'chat.postMessage')!.args).toMatchObject({ channel: 'D7' });
   });
 
-  test('a person who keeps writing to Scout while their Teamtrail is away is told once a minute, not every time', async () => {
+  test('a person who writes to Scout again while their Teamtrail is away is told again, but not on every one of many', async () => {
     await linked(w, { team: 'T1', user: 'U1' });
     const told = () =>
       w.slack.calls.filter((c) => c.method === 'chat.postEphemeral' || c.method === 'chat.postMessage');
-    for (let i = 0; i < 5; i++)
+    for (let i = 0; i < 2; i++)
+      await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: `${i}.1` }) });
+    await expect.poll(() => told().length).toBe(2);
+    for (let i = 2; i < 6; i++)
       await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: `${i}.1` }) });
     await fromSlack(w, { path: '/slack/events', body: dm({ user: 'U7', channel: 'D7' }) });
-    await expect.poll(() => told().length).toBe(1);
-    await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U9', ts: '7.1' }) });
-    await expect.poll(() => told().length).toBe(2);
-    w.clock.offset += 61_000;
-    await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: '8.1' }) });
     await expect.poll(() => told().length).toBe(3);
+    await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U9', ts: '7.1' }) });
+    await expect.poll(() => told().length).toBe(4);
+    w.clock.offset += 11_000;
+    await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: '8.1' }) });
+    await expect.poll(() => told().length).toBe(5);
+    await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: '9.1' }) });
+    await new Promise((r) => setTimeout(r, 100));
+    expect(told().length).toBe(5);
   });
 
   test('Scout not in the channel: the offline answer to a mention goes to the person’s DM, and the failure is logged by code', async () => {

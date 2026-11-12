@@ -46,7 +46,7 @@ export function createService(o: Options): ScoutService {
     httpLimit,
     recentEvents: new Set(),
     replays: new Map(),
-    offlineSaid: new Map(),
+    offlineSaid: new RateLimit({ burst: LIMITS.offlineReplyBurst, perMinute: LIMITS.offlineRepliesPerMinute, now }),
   };
   const upgrades = new RateLimit({ burst: LIMITS.upgradeBurst, perMinute: LIMITS.upgradePerMinute, now });
 
