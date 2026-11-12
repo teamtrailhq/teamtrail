@@ -44,7 +44,7 @@ export function allowedCall(link: Link, method: string, raw: unknown): Verdict {
   if (!plain) return { ok: false, error: 'invalid_arguments' };
   const { token: _token, ...args } = (raw ?? {}) as Record<string, unknown>;
   if (aimsAtSomeoneElse(link, method, args)) return { ok: false, error: 'not_the_link_owner' };
-  // Seen only by the link's own Slack account, whatever the call names: @Scout inbox and status in a channel.
+  // Seen only by the link's own Slack account, whatever the call names: Scout's answers about the trails in a channel.
   if (method === 'chat.postEphemeral') args.user = link.userId;
   if (STAMPED.has(method)) args.metadata = { event_type: LINK_METADATA_TYPE, event_payload: { link: link.id } };
   return { ok: true, args };

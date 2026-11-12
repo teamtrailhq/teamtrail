@@ -19,13 +19,25 @@ import { inboxMessage, statusMessage } from './commands';
 import { REFUSED, ALREADY, SAVE_DECISION_CALLBACK } from './constants';
 import { decideApproval } from './decideApproval';
 import { changeTrail, openDecision } from './decisionModal';
+import { decisionsMessage } from './decisionsMessage';
 import { publishHome } from './home';
 import { onMessage } from './mentions';
 import { ownMessage } from './ownMessage';
 import { decideSetting } from './settingRequests';
 import type { SlackContext } from './slackContext';
 import { onSubmit } from './submissions';
+import { ticketMessage } from './ticketMessage';
 import type { Payload, DecisionMeta } from './types';
+import { whoMessage } from './whoMessage';
+
+type Read = (ctx: SlackContext, arg: string) => Promise<{ text: string; blocks?: unknown[] }>;
+/** `/scout` questions that only read, answered to the asker alone. */
+const READS: Record<string, Read | undefined> = {
+  inbox: (ctx) => inboxMessage(ctx),
+  ticket: ticketMessage,
+  decisions: decisionsMessage,
+  who: (ctx) => whoMessage(ctx),
+};
 
 /**
  * Everything people do in Slack arrives here, from the Scout service, which checked Slack's signature. Each handler
@@ -69,10 +81,11 @@ export function onCommand(ctx: SlackContext, p: Payload): EnvelopeResult {
           ctx.o.fetch,
         ),
     };
-  if (sub === 'inbox')
+  const read = READS[sub];
+  if (read)
     return {
       after: async () =>
-        postResponse(p.response_url, { response_type: 'ephemeral', ...(await inboxMessage(ctx)) }, ctx.o.fetch),
+        postResponse(p.response_url, { response_type: 'ephemeral', ...(await read(ctx, arg)) }, ctx.o.fetch),
     };
   return reply(`Unknown command \`${label(sub)}\`.\n${helpText(command)}`);
 }

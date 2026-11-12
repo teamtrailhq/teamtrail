@@ -1,9 +1,12 @@
 import type { EnvelopeResult } from '../link/types';
 import { inboxMessage, statusMessage } from './commands';
 import { REFUSED } from './constants';
+import { decisionsMessage } from './decisionsMessage';
 import { mentionCommand } from './mentionCommand';
 import type { SlackContext } from './slackContext';
+import { ticketMessage } from './ticketMessage';
 import type { Payload } from './types';
+import { whoMessage } from './whoMessage';
 
 /**
  * Where Scout answers: in the mention's thread, or in the DM. `user` is who asked: in a channel, what's waiting on
@@ -23,8 +26,8 @@ interface Place {
   user: string;
 }
 
-/** Inbox and status are private: in a channel they are shown to the asker only. */
-const PRIVATE = new Set(['inbox', 'status']);
+/** Everything about the trails is private: in a channel it is shown to the asker only. Only help is public. */
+const PRIVATE = new Set(['inbox', 'status', 'ticket', 'decisions', 'who']);
 
 /** An ephemeral message can't be clicked through (Slack drops it), so it carries no buttons at all. */
 const withoutButtons = (r: Reply): Reply =>
@@ -37,7 +40,11 @@ export const mentionHelp = (command: string) =>
   [
     '*@Scout inbox*  questions waiting on you',
     '*@Scout status [trail]*  trip report',
+    "*@Scout ticket #12*  a ticket's state, what blocks it and who's on it (no key: what's blocked)",
+    '*@Scout decisions [trail or words]*  decisions in force, newest first',
+    '*@Scout who*  agents working now',
     '*@Scout help*  this list',
+    'Ask in your own words too: “what’s blocking #12?”, “what did we decide about retention?”.',
     `To record a decision, use *${command} decide* or *Save as decision* on a message.`,
     'Scout answers from the Teamtrail of whoever mentions it: each person connects their own in Settings → Slack.',
     'Scout answers only while that Teamtrail is running on their computer.',
@@ -46,6 +53,9 @@ export const mentionHelp = (command: string) =>
 async function replyFor(ctx: SlackContext, o: { sub: string; arg: string; command: string }) {
   if (o.sub === 'inbox') return inboxMessage(ctx);
   if (o.sub === 'status') return statusMessage(ctx, o.arg, o.command, { fallback: true });
+  if (o.sub === 'ticket') return ticketMessage(ctx, o.arg);
+  if (o.sub === 'decisions') return decisionsMessage(ctx, o.arg);
+  if (o.sub === 'who') return whoMessage(ctx);
   const help = mentionHelp(o.command);
   if (o.sub === 'help') return { text: help };
   // Anything else ("hi", a question Scout can't read) gets the help, pointing at the one most people want.
@@ -64,7 +74,7 @@ function placeOf(ev: Payload): Place | undefined {
   return undefined;
 }
 
-/** Help and errors go in the thread or DM; inbox and status in a channel go to the asker alone. */
+/** Help and errors go in the thread or DM; everything about the trails, in a channel, goes to the asker alone. */
 function poster(ctx: SlackContext, place: Place) {
   const thread = place.thread ? { thread_ts: place.thread } : {};
   return (r: Reply, o: { private: boolean }) => {
@@ -82,7 +92,7 @@ function poster(ctx: SlackContext, place: Place) {
 /**
  * @Scout in a channel, and a DM to Scout. The service passes these on only from the person who wrote them, to
  * their own Teamtrail (an allowed teammate without a connection of their own gets "not connected" from the
- * service); the same owner and allowed-user check as `/scout` applies. Inbox and status in a channel are shown to
+ * service); the same owner and allowed-user check as `/scout` applies. Everything but help in a channel is shown to
  * the asker alone; help and errors are a plain post in the thread, and everything in a DM is. No answer buttons
  * anywhere; anything a person typed comes back escaped.
  */
