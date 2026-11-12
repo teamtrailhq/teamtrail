@@ -33,8 +33,9 @@ async function toTheirDm(ctx: ServiceContext, api: Api, o: { userId: string; tex
 }
 
 async function replyToMention(ctx: ServiceContext, api: Api, o: { userId: string; event: Obj; text: string }) {
-  const thread = o.event.thread_ts ?? o.event.ts;
-  const args = { channel: o.event.channel, user: o.userId, text: o.text, thread_ts: thread, ...AS_WRITTEN };
+  // Only in a thread the mention was already in: Slack never shows an ephemeral reply in a thread nobody can open.
+  const thread = typeof o.event.thread_ts === 'string' ? { thread_ts: o.event.thread_ts } : {};
+  const args = { channel: o.event.channel, user: o.userId, text: o.text, ...thread, ...AS_WRITTEN };
   try {
     await api.call('chat.postEphemeral', args);
   } catch (e) {

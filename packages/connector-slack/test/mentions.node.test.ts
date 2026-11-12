@@ -56,11 +56,13 @@ test('@Scout inbox and status in a channel are seen only by the person who asked
     const [inbox, status] = calls('chat.postEphemeral').slice(-2);
     assert.equal(inbox.channel, 'C0INFRA01');
     assert.equal(inbox.user, ANA, 'only Ana sees it');
-    assert.equal(inbox.thread_ts, '100.1', 'in the mention’s thread');
+    assert.equal(inbox.thread_ts, undefined, 'in the channel: a mention with no replies has no thread to open');
     assert.match(inbox.text, /1 waiting on you/);
     assert.equal(status.user, ANA);
     for (const p of [inbox, status])
       assert.ok(!(p.blocks ?? []).some((b: { type: string }) => b.type === 'actions'), 'no buttons');
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT> inbox', thread: '90.0' }));
+    assert.equal(calls('chat.postEphemeral').at(-1)!.thread_ts, '90.0', 'a mention inside a thread is answered there');
     await event(mention({ user: ANA, text: '<@B0SCOUT> help', thread: '90.0' }));
     const help = posts().at(-1)!;
     assert.equal(help.thread_ts, '90.0', 'help is public, in the thread the mention was in');

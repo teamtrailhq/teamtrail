@@ -84,7 +84,8 @@ describe('mentions and DMs', () => {
     await fromSlack(w, { path: '/slack/events', body: dm({ user: 'U8', channel: 'D7' }) });
     await expect.poll(() => w.slack.calls.filter((c) => c.method === 'chat.postEphemeral').length).toBe(1);
     const eph = w.slack.calls.find((c) => c.method === 'chat.postEphemeral')!;
-    expect(eph.args).toMatchObject({ channel: 'C1', user: 'U7', thread_ts: '9.9' });
+    expect(eph.args).toMatchObject({ channel: 'C1', user: 'U7' });
+    expect(eph.args.thread_ts).toBeUndefined();
     expect(String(eph.args.text)).toContain('Add Scout to Slack');
     await expect.poll(() => w.slack.calls.filter((c) => c.method === 'chat.postMessage').length).toBe(1);
     expect(w.slack.calls.find((c) => c.method === 'chat.postMessage')!.args).toMatchObject({ channel: 'D7' });
