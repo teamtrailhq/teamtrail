@@ -17,6 +17,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.30.0',
+    date: '2026-11-12',
+    items: [
+      "Ask Scout more in Slack: “what's blocking #12?”, “what did we decide about retention?”, “who's working?”, as @Scout, a DM or /scout ticket, decisions and who",
+      'In a channel, the answers are seen only by you',
+    ],
+  },
+  {
     version: '0.29.3',
     date: '2026-11-12',
     items: ['@Scout inbox and status in a channel now show up right away, seen only by you'],

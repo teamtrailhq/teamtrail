@@ -1,6 +1,7 @@
 /** @Scout in a channel and DMs to Scout: answered in place, read-only, owner-checked, escaped. */
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
+import { recordDecision } from '@teamtrail/core';
 import { ANA, EVE, agentDoc, connected, freezeTime, liveWorld, until } from './harness';
 import { eventStore } from './scenarios';
 
@@ -10,7 +11,8 @@ after(() => thaw());
 
 async function setup() {
   const l = liveWorld();
-  const { a, map } = await eventStore();
+  const trail = await eventStore();
+  const { a } = trail;
   connected(l.w, { notify: { target: 'dm', events: ['awaiting'], detail: 'full' } });
   const svc = l.w.service(a);
   await until(() => svc.status().state === 'online');
@@ -23,7 +25,7 @@ async function setup() {
     await r?.after?.();
   };
   const posts = () => l.calls('chat.postMessage');
-  return { ...l, svc, map, event, posts };
+  return { ...trail, ...l, svc, event, posts };
 }
 
 const mention = (o: { user: string; text: string; thread?: string }) => ({
@@ -158,5 +160,90 @@ test('Settings knows whether @Scout mentions can reach this Teamtrail: the works
     assert.equal(fresh.status().mentions, true);
   } finally {
     l.w.cleanup();
+  }
+});
+
+test('a ticket, the decisions and who is working are answered to the asker alone, read-only and escaped', async () => {
+  const { w, map, a, db, migrate, event, posts, calls } = await setup();
+  try {
+    agentDoc(w.root, {
+      sid: 's1',
+      mapId: map.id,
+      ticketId: db.id,
+      agent: 'claude-07',
+      pending: [{ id: 'q1', ticketId: db.id, text: 'Postgres?', at: Date.now() }],
+    });
+    await recordDecision(a, map.id, {
+      ticketId: db.id,
+      ticketKey: db.key,
+      question: 'Pick DB',
+      answer: 'Postgres, for <!channel> durability. Long rationale that stays out of Slack.',
+      summary: 'Postgres, for <!channel> durability.',
+      decidedBy: 'claude-07',
+      source: { kind: 'agent', ref: 's1' },
+    });
+    const before = posts().length;
+    const ephemeral = () => JSON.stringify(calls('chat.postEphemeral').at(-1));
+
+    await event(mention({ user: ANA, text: `<@U0ScoutBOT> what's blocking ${migrate.key}?` }));
+    const ticket = ephemeral();
+    assert.match(ticket, /Migrate schema/);
+    assert.match(ticket, new RegExp(`Blocked by: ${db.key} Pick DB`));
+    assert.equal(calls('chat.postEphemeral').at(-1)!.user, ANA);
+
+    await event(mention({ user: ANA, text: `<@U0ScoutBOT> ${db.key}` }));
+    const card = ephemeral();
+    assert.match(card, /On it: claude-07/);
+    assert.match(card, /Waiting on you: 1 question/);
+    assert.match(card, /Blocks: .*Migrate schema/);
+    assert.match(card, /agent claude-07/, 'an agent’s own call is never shown as the human’s');
+
+    await event(mention({ user: ANA, text: "<@U0ScoutBOT> what's blocked?" }));
+    assert.match(ephemeral(), /Migrate schema · Event store · blocked by/);
+
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT> what did we decide about postgres?' }));
+    const decisions = ephemeral();
+    assert.match(decisions, /D-1/);
+    assert.doesNotMatch(decisions, /<!channel>/, 'escaped');
+    assert.doesNotMatch(decisions, /Long rationale/, 'the summary only');
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT> decisions about kafka' }));
+    assert.match(ephemeral(), /No decision mentions/);
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT> decisions on Mobile sync' }));
+    assert.match(ephemeral(), /No decisions on Mobile sync yet/);
+
+    await event(mention({ user: ANA, text: "<@U0ScoutBOT> who's working?" }));
+    assert.match(ephemeral(), /claude-07.*Pick DB.*waiting on you/);
+
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT> ticket nothing like it' }));
+    assert.match(ephemeral(), /No ticket matches/);
+    assert.equal(posts().length, before, 'nothing about the trails is posted where the channel can read it');
+  } finally {
+    w.cleanup();
+  }
+});
+
+test('/scout ticket, decisions and who, as words or sentences, answer like @Scout, to the person who typed them', async () => {
+  const { w, svc, migrate, replies } = await setup();
+  try {
+    const slash = async (text: string) => {
+      const ack = await w.send(svc, `/scout ${text}`, (f) => f.payload.command(ANA, 'C0INFRA01', text));
+      if (ack !== undefined && JSON.stringify(ack).includes('ephemeral')) return JSON.stringify(ack);
+      const last = replies().at(-1)!;
+      assert.equal(last.response_type, 'ephemeral', 'only the person who typed it sees it');
+      return JSON.stringify(last);
+    };
+    assert.match(await slash(`ticket ${migrate.key}`), /Migrate schema.*Blocked by/);
+    assert.match(await slash('decisions'), /No decisions yet/);
+    assert.match(await slash('who'), /No agents are working/);
+    assert.match(await slash(`what's blocking ${migrate.key}?`), /Migrate schema.*Blocked by/, 'a sentence, as @Scout');
+    assert.match(await slash(migrate.key), /Migrate schema/);
+    assert.match(await slash("who's working?"), /No agents are working/);
+    assert.match(await slash('what did we decide about retention?'), /No decision mentions/);
+    assert.match(await slash('constructor'), /Unknown command/);
+    const help = await slash('help');
+    assert.match(help, /\/scout ticket #12/);
+    assert.match(help, /\/scout decisions/);
+  } finally {
+    w.cleanup();
   }
 });

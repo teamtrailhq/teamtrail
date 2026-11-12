@@ -2,6 +2,7 @@ import { readAgentDocs } from '@teamtrail/core/bridge';
 import { askMessage, label } from '../blocks';
 import { briefTrail, trailListBlocks, statusBlocks } from '../status';
 import { askView } from './asks';
+import { findTrail } from './findTrail';
 import type { SlackContext } from './slackContext';
 
 /** `/scout inbox`: a reply only its reader sees, so no answer buttons (Slack drops clicks on those); open each. */
@@ -17,16 +18,6 @@ export async function inboxMessage(ctx: SlackContext) {
     )
   ).flat();
   return { text: `${pending.length} waiting on you`, blocks };
-}
-
-/** A trail by its key (`#1`), id or title, ignoring case; the first whose title contains the words otherwise. */
-function findTrail(maps: { id: string; key: string; title: string }[], arg: string) {
-  const a = arg.toLowerCase().replace(/^#/, '');
-  return (
-    maps.find((x) => x.key.toLowerCase().replace(/^#/, '') === a || x.id.toLowerCase() === a) ??
-    maps.find((x) => x.title.toLowerCase() === a) ??
-    maps.find((x) => x.title.toLowerCase().includes(a))
-  );
 }
 
 /**

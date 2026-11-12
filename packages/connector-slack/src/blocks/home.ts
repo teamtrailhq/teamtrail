@@ -48,6 +48,10 @@ export const helpText = (command: string) =>
     `*${command} decide [text]*  record a decision (or use *Save as decision* on a message)`,
     `*${command} status [trail]*  trip report`,
     `*${command} inbox*  questions waiting on you`,
+    `*${command} ticket #12*  a ticket's state, what blocks it and who's on it (no key: what's blocked)`,
+    `*${command} decisions [trail or words]*  decisions in force, newest first`,
+    `*${command} who*  agents working now`,
+    `Or ask in a sentence: *${command} what's blocking #12?*, the same as @Scout.`,
     `*${command} help*  this list`,
     `${BRAND.assistant.name} answers only while ${BRAND.name} is running on your computer.`,
   ].join('\n');
