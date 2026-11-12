@@ -18,8 +18,8 @@ export interface ServiceContext {
   recentEvents: Set<string>;
   /** Hashes of the signatures of commands and clicks already handled, with when they can be forgotten. */
   replays: Map<string, number>;
-  /** When Scout last told a person in a workspace that their Teamtrail can't take a mention or DM (`team:user`). */
-  offlineSaid: Map<string, number>;
+  /** How often Scout may still tell a person in a workspace that their Teamtrail can't take a mention or DM (`team:user`). */
+  offlineSaid: RateLimit;
   /** Whether an owner is in a channel (`<team>:<channel>:<user>`), until when. */
   members: Map<string, { ok: boolean; until: number }>;
 }
