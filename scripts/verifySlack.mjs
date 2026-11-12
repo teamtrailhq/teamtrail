@@ -192,17 +192,18 @@ export async function verifySlack({ browser, cli, log, shots }) {
     await control('click', [ANA, DM, own.ts, 'ask_option:0']);
     const waited = await waiting;
 
-    // @Scout inbox in a channel: answered in its thread to Ana alone, never posted where the channel reads it; a
+    // @Scout inbox in a channel: answered to Ana alone in the channel (no thread: Slack never shows an ephemeral
+    // reply in a thread nobody can open), never posted where the channel reads it; a
     // DM to Scout answers in the DM. Read-only: no answer buttons.
     const CHANNEL = 'C0INFRA01';
     await control('mention', [ANA, CHANNEL, 'inbox']);
-    const inThread = await until('the reply to @Scout inbox', async () =>
+    const inChannel = await until('the reply to @Scout inbox', async () =>
       (await control('ephemerals')).find(
-        (m) => m.channel === CHANNEL && m.thread_ts && /^(\d+ waiting on you|Nothing is waiting on you)/.test(m.text),
+        (m) => m.channel === CHANNEL && !m.thread_ts && /^(\d+ waiting on you|Nothing is waiting on you)/.test(m.text),
       ),
     );
     const leaked = (await control(`messages?channel=${CHANNEL}`)).some((m) => /^\d+ waiting on you/.test(m.text));
-    const mentionButtons = JSON.stringify(inThread.blocks ?? []);
+    const mentionButtons = JSON.stringify(inChannel.blocks ?? []);
     await control('dm', [ANA, 'hello']);
     const dmHelp = await until('the reply to a DM', async () =>
       (await messages()).find((m) => m.text.includes('@Scout inbox')),
@@ -236,7 +237,7 @@ export async function verifySlack({ browser, cli, log, shots }) {
       ordinary.decision.decidedBy === `slack:${ANA}` &&
       waited.answered &&
       waited.answer === 'JSON' &&
-      inThread.user === ANA &&
+      inChannel.user === ANA &&
       !leaked &&
       !mentionButtons.includes('"actions"') &&
       !!dmHelp &&
@@ -248,7 +249,7 @@ export async function verifySlack({ browser, cli, log, shots }) {
         `a button in Slack answered the agent ("${got.answer}", via ${got.answeredVia}); the high-risk question shows ${highButtons.join(', ')}; ` +
         `a Slack answer refused for a high-risk decision (${!!highRefused}) and kept for an ordinary one (${ordinary.decision.decidedBy}); ` +
         `two questions from one agent, the waited-on one posted with buttons and answered "${waited.answer}"; ` +
-        `@Scout inbox answered in its thread to ${inThread.user} alone (posted to the channel: ${leaked}), the DM answered with help (${!!dmHelp}); ` +
+        `@Scout inbox answered in the channel to ${inChannel.user} alone (posted to the channel: ${leaked}), the DM answered with help (${!!dmHelp}); ` +
         `Disconnect forgot the link (${!after.slack}); journal ${journal.join(' → ')}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;

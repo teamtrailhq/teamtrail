@@ -17,6 +17,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.29.3',
+    date: '2026-11-12',
+    items: ['@Scout inbox and status in a channel now show up right away, seen only by you'],
+  },
+  {
     version: '0.29.2',
     date: '2026-11-12',
     items: [
@@ -183,17 +188,6 @@ export const RELEASES: Release[] = [
       'Challenge the destination: an agent can tell you the work already exists, the mission targets the wrong problem, or it should be rescoped, with evidence and a suggested new goal',
       'Assumptions on the Plan tab (confirm the ones you know are true) and an assumptions field when you create a mission',
       'Fix: when an agent asks two questions at once, your answer goes to the one you opened; the inbox stats line no longer gets covered by the list',
-    ],
-  },
-  {
-    version: '0.18.0',
-    date: '2026-11-04',
-    items: [
-      'Acceptance criteria: agents write down what done means before they start (required on missions with a discovery brief). When they finish, each point needs proof: one of your checks, a named test, the pull request, or your sign-off',
-      'Work whose criteria lack proof goes back with the reason; points only you can confirm come to your inbox to sign off',
-      'Business rules from your project knowledge are suggested as criteria, and the ticket shows any rule no criterion covers yet. Confirm a ticket’s criteria in the inspector',
-      'Cross-vendor review: when Claude and Codex agents both run, each reviews the other’s work first',
-      'Fix: answers from the command center could hang when too many live updates were open; all updates now share one connection',
     ],
   },
   ...OLDER_RELEASES,

@@ -12,7 +12,14 @@ import type { Payload } from './types';
  */
 interface Place {
   channel: string;
+  /** The thread public replies go in: the one the mention was in, or a new one under it. */
   thread?: string;
+  /**
+   * The thread the mention was written in, if any. A private (ephemeral) reply goes there, or else in the channel:
+   * Slack shows an ephemeral reply in a thread only once that thread is opened, and a mention with no replies has
+   * no thread to open, so it would never be seen.
+   */
+  inThread?: string;
   user: string;
 }
 
@@ -49,7 +56,10 @@ async function replyFor(ctx: SlackContext, o: { sub: string; arg: string; comman
 function placeOf(ev: Payload): Place | undefined {
   if (ev.bot_id !== undefined || ev.subtype !== undefined || typeof ev.channel !== 'string') return undefined;
   if (typeof ev.user !== 'string') return undefined;
-  if (ev.type === 'app_mention') return { channel: ev.channel, thread: String(ev.thread_ts ?? ev.ts), user: ev.user };
+  if (ev.type === 'app_mention') {
+    const inThread = ev.thread_ts === undefined ? undefined : String(ev.thread_ts);
+    return { channel: ev.channel, thread: inThread ?? String(ev.ts), inThread, user: ev.user };
+  }
   if (ev.type === 'message' && ev.channel_type === 'im') return { channel: ev.channel, user: ev.user };
   return undefined;
 }
@@ -62,7 +72,7 @@ function poster(ctx: SlackContext, place: Place) {
       return ctx.call('chat.postEphemeral', {
         channel: place.channel,
         user: place.user,
-        ...thread,
+        ...(place.inThread ? { thread_ts: place.inThread } : {}),
         ...withoutButtons(r),
       });
     return ctx.call('chat.postMessage', { channel: place.channel, ...thread, ...r });

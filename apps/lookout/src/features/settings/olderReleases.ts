@@ -1,7 +1,19 @@
+import { EARLIEST_RELEASES } from './earliestReleases';
 import type { Release } from './releases';
 
-/** Releases 0.1–0.17, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.7–0.18 (0.1–0.6 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
 export const OLDER_RELEASES: Release[] = [
+  {
+    version: '0.18.0',
+    date: '2026-11-04',
+    items: [
+      'Acceptance criteria: agents write down what done means before they start (required on missions with a discovery brief). When they finish, each point needs proof: one of your checks, a named test, the pull request, or your sign-off',
+      'Work whose criteria lack proof goes back with the reason; points only you can confirm come to your inbox to sign off',
+      'Business rules from your project knowledge are suggested as criteria, and the ticket shows any rule no criterion covers yet. Confirm a ticket’s criteria in the inspector',
+      'Cross-vendor review: when Claude and Codex agents both run, each reviews the other’s work first',
+      'Fix: answers from the command center could hang when too many live updates were open; all updates now share one connection',
+    ],
+  },
   {
     version: '0.17.0',
     date: '2026-11-03',
@@ -135,63 +147,5 @@ export const OLDER_RELEASES: Release[] = [
       'Packages renamed to @miloops-hq/core and @miloops-hq/command-center',
     ],
   },
-  {
-    version: '0.6.0',
-    date: '2026-10-31',
-    items: [
-      'Named MILOOPS; MILO speaks for the platform in the activity log and onboarding',
-      'Tracker sync status, last-write latency and event pulse',
-      'Inbox: oldest question age and average wait',
-      'Critical path, decided per hour with burndown, type mix',
-      'Per-session tokens and cost, mission totals, claims per agent',
-    ],
-  },
-  {
-    version: '0.5.0',
-    date: '2026-10-31',
-    items: [
-      'Status counters and resolution bar on the map',
-      'Current step tracker with step pipeline',
-      'Sessions with live timers',
-      'Activity log with time and source columns',
-      'Out-of-scope quarantine zone on the map',
-    ],
-  },
-  {
-    version: '0.4.0',
-    date: '2026-10-31',
-    items: [
-      'Missions: switcher with progress and waiting count, New mission in the switcher',
-      'Inbox collects questions from every mission',
-      'Elapsed time and progress per mission',
-      'Responsive layout with progressive disclosure (wide, laptop, phone)',
-      'Map graph pans and zooms by drag, pinch and wheel',
-      'Changelog',
-    ],
-  },
-  {
-    version: '0.3.0',
-    date: '2026-10-31',
-    items: ['Fixed-zone layout', 'Plan + execute and plan-only mission modes', 'Execute tickets'],
-  },
-  {
-    version: '0.2.0',
-    date: '2026-10-31',
-    items: [
-      'Local markdown tracker (default)',
-      'Onboarding',
-      'HITL transcript: summary or full',
-      'Settings with tracker connectors',
-    ],
-  },
-  {
-    version: '0.1.0',
-    date: '2026-10-31',
-    items: [
-      'Live map graph',
-      'HITL vs AFK tickets',
-      'In-window HITL conversations',
-      'Demo tracker with simulated sessions',
-    ],
-  },
+  ...EARLIEST_RELEASES,
 ];
