@@ -1,10 +1,23 @@
-import { BOT_SCOPES, OPTIONAL_SCOPES } from '../../src/manifest';
+/** The bot scopes the official Scout app has (apps/scout-service/src/slack/botScopes.ts). */
+export const BOT_SCOPES = [
+  'commands',
+  'chat:write',
+  'im:write',
+  'channels:history',
+  'groups:history',
+  'im:history',
+  'mpim:history',
+  'users:read',
+  'channels:read',
+  'groups:read',
+] as const;
 
 /**
  * In-memory stand-in for the slice of the Slack Web API the connector uses.
  * Response shapes and error codes follow api.slack.com/methods, trimmed to the
- * fields read. Also builds the Socket Mode payloads Slack would send for the
- * user's clicks, so flows read like what happens in the Slack client.
+ * fields read. Also builds the payloads Slack would send for the user's clicks
+ * (which the Scout service passes on as envelopes), so flows read like what
+ * happens in the Slack client.
  */
 
 export interface FakeMessage {
@@ -14,6 +27,8 @@ export interface FakeMessage {
   text: string;
   thread_ts?: string;
   blocks?: Record<string, unknown>[];
+  /** The message metadata it was posted with (the Scout service stamps the link that posted it). */
+  metadata?: Record<string, unknown>;
   /** Earlier block versions: a client that has not refreshed yet can still click them. */
   history?: Record<string, unknown>[][];
 }
@@ -40,23 +55,21 @@ export function fakeSlack(opts: { start?: number } = {}) {
   const team = { id: 'T0EFIKA01', name: 'efika', domain: 'efika', url: 'https://efika.slack.com/' };
   const app = { id: 'A0Scout0001', botId: 'B0Scout0001', botUser: 'U0ScoutBOT' };
   const tokens = {
-    app: `xapp-1-${app.id}-1001-6d696c6f6170706c6576656c`,
     bot: 'xoxb-1001-2002-fakebottokenscout',
-    user: 'xoxp-1001-2002-fakeusertoken',
   };
   const state = {
-    scopes: [...BOT_SCOPES, ...OPTIONAL_SCOPES] as string[],
-    socketMode: true,
+    scopes: [...BOT_SCOPES] as string[],
     installed: true,
     /** A test's way to make one call fail: return an error code for it. */
     reject: undefined as ((method: string, args: Record<string, unknown>) => string | undefined) | undefined,
+    /** Who goes through the consent screen when the Scout service exchanges an install code (`oauth.v2.access`). */
+    oauthUser: 'U0ANA0001',
   };
   let clock = Math.floor((opts.start ?? Date.UTC(2026, 9, 31, 12, 0, 0)) / 1000);
   let seq = 0;
   let viewSeq = 0;
   let triggerSeq = 0;
   let responseSeq = 0;
-  let ticket = 0;
   const ts = () => `${clock++}.${String(++seq).padStart(6, '0')}`;
 
   const users = new Map(
@@ -122,12 +135,17 @@ export function fakeSlack(opts: { start?: number } = {}) {
       },
       body: { ok: true, ...b },
     });
-    if (method === 'apps.connections.open') {
-      if (token === tokens.bot || token === tokens.user) return err('not_allowed_token_type');
-      if (token !== tokens.app) return err('invalid_auth');
-      return ok({ url: `wss://wss-primary.slack.test/link/?ticket=${++ticket}&app_id=${app.id}` });
-    }
-    if (token === tokens.app) return err('not_allowed_token_type');
+    if (method === 'oauth.v2.access')
+      return ok({
+        access_token: tokens.bot,
+        token_type: 'bot',
+        scope: state.scopes.join(','),
+        bot_user_id: app.botUser,
+        app_id: app.id,
+        team: { id: team.id, name: team.name },
+        authed_user: { id: state.oauthUser },
+        is_enterprise_install: false,
+      });
     if (token !== tokens.bot || !state.installed) return err('invalid_auth');
     const rejected = state.reject?.(method, args);
     if (rejected) return err(rejected);
@@ -165,6 +183,11 @@ export function fakeSlack(opts: { start?: number } = {}) {
       }
       case 'users.list':
         return ok({ members: [...users.values()].map(userJson), response_metadata: { next_cursor: '' } });
+      case 'conversations.members': {
+        const c = channel(args.channel);
+        if (!c) return err('channel_not_found');
+        return ok({ members: [...c.members], response_metadata: { next_cursor: '' } });
+      }
       case 'conversations.open': {
         if (!users.has(args.users)) return err('user_not_found');
         return ok({ channel: { id: im(args.users) } });
@@ -210,6 +233,7 @@ export function fakeSlack(opts: { start?: number } = {}) {
           text: args.text,
           ...(args.thread_ts ? { thread_ts: args.thread_ts } : {}),
           ...(args.blocks ? { blocks: args.blocks } : {}),
+          ...(args.metadata ? { metadata: args.metadata } : {}),
         };
         c.messages.push(m);
         return ok({ channel: c.id, ts: m.ts, message: { type: 'message', bot_id: app.botId, text: m.text, ts: m.ts } });
@@ -273,6 +297,13 @@ export function fakeSlack(opts: { start?: number } = {}) {
     return undefined;
   }
 
+  /** A read's query, a write's JSON, or OAuth's form body. */
+  const argsOf = (url: URL, init: RequestInit) => {
+    if (!init.body) return Object.fromEntries(url.searchParams);
+    const form = new Headers(init.headers).get('content-type')?.startsWith('application/x-www-form-urlencoded');
+    return form ? Object.fromEntries(new URLSearchParams(String(init.body))) : JSON.parse(String(init.body));
+  };
+
   const fetchFn = async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {
     const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
     if (url.hostname === 'hooks.slack.test') {
@@ -284,7 +315,7 @@ export function fakeSlack(opts: { start?: number } = {}) {
     }
     const method = url.pathname.replace(/^.*\/api\//, '');
     const auth = new Headers(init.headers).get('authorization') ?? '';
-    const args = init.body ? JSON.parse(String(init.body)) : Object.fromEntries(url.searchParams);
+    const args = argsOf(url, init);
     const r = api(method, auth.replace(/^Bearer /, ''), args);
     return new Response(JSON.stringify(r.body), { status: r.status, headers: r.headers });
   };
@@ -415,7 +446,7 @@ export function fakeSlack(opts: { start?: number } = {}) {
             trigger_id: trigger(user),
             team: { id: team.id, domain: team.domain },
             channel: { id: channel, name: channels.get(channel)!.name },
-            message: { type: 'message', ts: m.ts, text: m.text },
+            message: { type: 'message', ts: m.ts, text: m.text, ...(m.metadata ? { metadata: m.metadata } : {}) },
             response_url: responseUrl(),
             actions: [
               {

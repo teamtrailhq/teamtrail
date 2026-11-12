@@ -5,19 +5,20 @@ import path from 'node:path';
 import type { AgentSessionDoc, ChatMessage, PendingQuestion, TrackerAdapter } from '@teamtrail/core';
 import { writeJsonAtomic } from '@teamtrail/core/bridge';
 import { FIXTURES, recorder, replay, type Fixture } from '../../core/test/fixtures';
-import { BOT_SCOPES, OPTIONAL_SCOPES } from '../src/manifest';
 import { SlackService, type SlackServiceOptions } from '../src/service';
-import { fakeSlack, type FakeSlack } from './fakes/slack';
-import { socketHub } from './fakes/socket';
+import { LINK, scoutHub } from './fakes/scoutHub';
+import { BOT_SCOPES, fakeSlack, type FakeSlack } from './fakes/slack';
 
 export { FROZEN, freezeTime } from '../../core/test/scenarios';
 
-/** The fake's tokens: test values only, never real credentials. */
+/** The fake's tokens: test values only, never real credentials. The bot token is the fake service's, never ours. */
 export const TOKENS = {
-  app: 'xapp-1-A0Scout0001-1001-6d696c6f6170706c6576656c',
   bot: 'xoxb-1001-2002-fakebottokenscout',
-  user: 'xoxp-1001-2002-fakeusertoken',
+  link: LINK.token,
 };
+export { LINK };
+/** Where the tests' Teamtrail finds the Scout service (the fake hub answers its socket). */
+export const SCOUT_ENV = { TEAMTRAIL_SCOUT_SERVICE: 'https://scout.test' };
 export const ANA = 'U0ANA0001';
 export const RAJ = 'U0RAJ0001';
 export const EVE = 'U0EVE0001';
@@ -28,7 +29,7 @@ export interface SlackFixture extends Fixture {
   envelopes: (Env & { label: string; ack?: unknown })[];
 }
 
-/** One flow's world: a temp tracker + config dir, Slack (fake when recording, fixture when replaying) and a socket hub. */
+/** One flow's world: a temp tracker + config dir, Slack (fake when recording, fixture when replaying) and a Scout hub. */
 export function world(mode: 'record' | 'replay', name: string) {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-slack-'));
   const root = path.join(dir, 'tracker');
@@ -38,7 +39,8 @@ export function world(mode: 'record' | 'replay', name: string) {
   const rec = fake ? recorder(fake.fetch) : undefined;
   const rp = mode === 'replay' ? replay(name) : undefined;
   const fx = rp?.fixture as SlackFixture | undefined;
-  const hub = socketHub();
+  const f = (rec?.fetch ?? rp!.fetch) as typeof fetch;
+  const hub = scoutHub({ fetch: f, botToken: TOKENS.bot });
   const envelopes: SlackFixture['envelopes'] = [];
   let next = 0;
   const services: SlackService[] = [];
@@ -47,7 +49,7 @@ export function world(mode: 'record' | 'replay', name: string) {
     hub,
     root,
     configDir,
-    fetch: (rec?.fetch ?? rp!.fetch) as typeof fetch,
+    fetch: f,
     /** Every Web API call and response_url post so far (while recording against the fake). */
     exchanges: () => rec?.exchanges ?? [],
     service(adapter: TrackerAdapter, extra: Partial<SlackServiceOptions> = {}) {
@@ -56,18 +58,15 @@ export function world(mode: 'record' | 'replay', name: string) {
         configDir,
         active: async () => adapter,
         url: () => URL_,
-        env: {},
+        env: { ...SCOUT_ENV },
         fetch: this.fetch,
         WebSocket: hub.WebSocket,
-        apiUrl: 'https://slack.test/api',
         pollMs: 0,
         batchMs: 0,
         trailEvery: 1,
         backoffMs: () => 0,
         sleep: async () => {},
         lockOwner: `${name}:${services.length}`,
-        ownerEmail: () => undefined,
-        ownerCode: () => CODE,
         ...extra,
       });
       services.push(s);
@@ -116,34 +115,15 @@ export function world(mode: 'record' | 'replay', name: string) {
 }
 export type World = ReturnType<typeof world>;
 
-/** The code the trail lead reads in the Lookout, fixed so recorded envelopes replay. */
-export const CODE = 'K7QF2M9X';
-
-/** A finished setup, as `pasteToken` + the confirmed owner leave it. `legacy` writes owners as older versions did. */
-export function connected(
-  w: World,
-  o: {
-    owners?: string[];
-    allow?: string[];
-    notify?: Record<string, unknown>;
-    legacy?: 'home' | 'git-email' | 'unmarked';
-  } = {},
-) {
-  const how = (): Record<string, unknown> => {
-    if (o.legacy === 'unmarked') return {};
-    if (o.legacy) return { via: o.legacy };
-    return { via: 'code', confirmedAt: 1 };
-  };
-  writeJsonAtomic(path.join(w.configDir, 'credentials.json'), {
-    slack: { appToken: TOKENS.app, botToken: TOKENS.bot },
-  });
+/** A finished Add Scout to Slack, as `finishConnect` leaves it: the link stored, ANA (or `owners`) the owner. */
+export function connected(w: World, o: { owners?: string[]; allow?: string[]; notify?: Record<string, unknown> } = {}) {
+  writeJsonAtomic(path.join(w.configDir, 'credentials.json'), { slack: { link: LINK } });
   writeJsonAtomic(path.join(w.configDir, 'slack.json'), {
     enabled: true,
-    created: true,
-    appId: 'A0Scout0001',
     workspace: { id: 'T0EFIKA01', name: 'efika', url: 'https://efika.slack.com/' },
     bot: { userId: 'U0ScoutBOT', name: 'scout' },
-    owners: (o.owners ?? [ANA]).map((id) => ({ id, name: id === ANA ? 'ana' : id, ...how() })),
+    appId: 'A0Scout0001',
+    owners: (o.owners ?? [ANA]).map((id) => ({ id, name: id === ANA ? 'ana' : id, via: 'oauth', confirmedAt: 1 })),
     allow: (o.allow ?? []).map((id) => ({ id })),
     ...(o.notify ? { notify: o.notify } : {}),
   });
@@ -225,4 +205,4 @@ export function agentDoc(
 }
 
 export const readJson = (file: string) => JSON.parse(readFileSync(file, 'utf8'));
-export const ALL_SCOPES: string[] = [...BOT_SCOPES, ...OPTIONAL_SCOPES];
+export const ALL_SCOPES: string[] = [...BOT_SCOPES];

@@ -1,4 +1,4 @@
-import { ACTIONS, VIEWS, clip, label, md, openButton, plain, quote } from './kit';
+import { ACTIONS, VIEWS, answerBlocks, clip, label, md, plain, quote, type AnswerMode } from './kit';
 
 export interface AskView {
   sessionId: string;
@@ -27,7 +27,7 @@ const askHeader = (a: AskView) =>
 const stakesBlock = (a: AskView) =>
   a.stakes ? [{ type: 'context', elements: [md(`*${label(clip(a.stakes, 280))}*`)] }] : [];
 
-export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'titles-only' } = {}) {
+export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'titles-only'; mode?: AnswerMode } = {}) {
   const ref = (i?: number) =>
     JSON.stringify({ s: a.sessionId, q: a.questionId, ...(i === undefined ? {} : { i }) } satisfies AskRef);
   const body = o.detail === 'titles-only' ? askHeader(a) : `${askHeader(a)}\n${quote(clip(a.text, 2800))}`;
@@ -39,15 +39,12 @@ export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'tit
     blocks: [
       { type: 'section', text: md(body) },
       ...stakesBlock(a),
-      {
-        type: 'actions',
-        block_id: `ask:${a.questionId}`,
-        elements: [
-          ...options,
-          { type: 'button', action_id: ACTIONS.reply, text: plain('Reply…'), value: ref() },
-          ...openButton(o.url),
-        ],
-      },
+      ...answerBlocks({
+        mode: o.mode,
+        blockId: `ask:${a.questionId}`,
+        buttons: [...options, { type: 'button', action_id: ACTIONS.reply, text: plain('Reply…'), value: ref() }],
+        url: o.url,
+      }),
     ],
   };
 }

@@ -1,29 +1,17 @@
 /**
  * Re-records the fixtures:  node packages/connector-slack/test/run.mjs record
  * Flows run against test/fakes (deterministic; no network, no tokens). Each
- * fixture keeps the Web API exchanges (method, path, body; never headers with
- * tokens) and the Socket Mode envelopes with the acks Scout sent back.
+ * fixture keeps the Web API exchanges the Scout service makes for this
+ * Teamtrail (method, path, body; never headers with tokens) and the envelopes
+ * with the acks Scout sent back.
  */
 import { freezeTime, world } from './harness';
-import {
-  approvalFlow,
-  approvalRestartFlow,
-  askFlow,
-  decisionFlow,
-  notifyFlow,
-  setupFlow,
-  statusFlow,
-} from './scenarios';
+import { approvalFlow, approvalRestartFlow, askFlow, decisionFlow, notifyFlow, statusFlow } from './scenarios';
 
 const NOTE =
-  'Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads).';
+  'Recorded against test/fakes/slack.ts through test/fakes/scoutHub.ts; request and response shapes follow api.slack.com (Web API methods, interaction payloads, Block Kit).';
 
 const flows: [string, (w: ReturnType<typeof world>) => Promise<unknown>, string][] = [
-  [
-    'slack-setup.json',
-    setupFlow,
-    'Guided setup: wrong token type, app-level token, bot token missing a scope, bot token, Home tab, owner claim.',
-  ],
   [
     'slack-ask.json',
     askFlow,

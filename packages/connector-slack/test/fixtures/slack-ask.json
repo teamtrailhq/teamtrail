@@ -1,22 +1,79 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T19:54:54.083Z",
-  "notes": "Recorded against test/fakes/slack.ts; request and response shapes follow api.slack.com (Web API methods, Socket Mode envelopes, Block Kit payloads). Agent questions as DMs: refused click, button answer, late click, answer in the Lookout, Reply… modal, agent gone.",
+  "recordedAt": "2026-11-12T09:39:52.710Z",
+  "notes": "Recorded against test/fakes/slack.ts through test/fakes/scoutHub.ts; request and response shapes follow api.slack.com (Web API methods, interaction payloads, Block Kit). Agent questions as DMs: refused click, button answer, late click, answer in the Lookout, Reply… modal, agent gone.",
   "exchanges": [
     {
       "req": {
-        "method": "POST",
-        "url": "/api/apps.connections.open",
-        "body": {}
+        "method": "GET",
+        "url": "/api/auth.test"
       },
       "res": {
         "status": 200,
         "headers": {
-          "content-type": "application/json; charset=utf-8"
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
-          "url": "wss://wss-primary.slack.test/link/?ticket=1&app_id=A0Scout0001"
+          "url": "https://efika.slack.com/",
+          "team": "efika",
+          "user": "scout",
+          "team_id": "T0EFIKA01",
+          "user_id": "U0ScoutBOT",
+          "bot_id": "B0Scout0001",
+          "is_enterprise_install": false
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "GET",
+        "url": "/api/bots.info?bot=B0Scout0001"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+        },
+        "body": {
+          "ok": true,
+          "bot": {
+            "id": "B0Scout0001",
+            "deleted": false,
+            "name": "Scout",
+            "app_id": "A0Scout0001",
+            "user_id": "U0ScoutBOT"
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "GET",
+        "url": "/api/users.info?user=U0ANA0001"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+        },
+        "body": {
+          "ok": true,
+          "user": {
+            "id": "U0ANA0001",
+            "team_id": "T0EFIKA01",
+            "name": "ana",
+            "deleted": false,
+            "real_name": "Ana Silva",
+            "is_bot": false,
+            "profile": {
+              "display_name": "ana",
+              "real_name": "Ana Silva"
+            }
+          }
         }
       }
     },
@@ -32,7 +89,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -108,14 +165,20 @@
           "parse": "none",
           "link_names": false,
           "unfurl_links": false,
-          "unfurl_media": false
+          "unfurl_media": false,
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         }
       },
       "res": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -185,14 +248,20 @@
           "parse": "none",
           "link_names": false,
           "unfurl_links": false,
-          "unfurl_media": false
+          "unfurl_media": false,
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         }
       },
       "res": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -272,14 +341,20 @@
           "parse": "none",
           "link_names": false,
           "unfurl_links": false,
-          "unfurl_media": false
+          "unfurl_media": false,
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         }
       },
       "res": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -325,14 +400,20 @@
           "parse": "none",
           "link_names": false,
           "unfurl_links": false,
-          "unfurl_media": false
+          "unfurl_media": false,
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         }
       },
       "res": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -388,14 +469,20 @@
           "parse": "none",
           "link_names": false,
           "unfurl_links": false,
-          "unfurl_media": false
+          "unfurl_media": false,
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         }
       },
       "res": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -476,7 +563,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -570,14 +657,20 @@
           "parse": "none",
           "link_names": false,
           "unfurl_links": false,
-          "unfurl_media": false
+          "unfurl_media": false,
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         }
       },
       "res": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -633,14 +726,20 @@
           "parse": "none",
           "link_names": false,
           "unfurl_links": false,
-          "unfurl_media": false
+          "unfurl_media": false,
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         }
       },
       "res": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -686,14 +785,20 @@
           "parse": "none",
           "link_names": false,
           "unfurl_links": false,
-          "unfurl_media": false
+          "unfurl_media": false,
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         }
       },
       "res": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,users:read.email"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
         },
         "body": {
           "ok": true,
@@ -759,7 +864,13 @@
         "message": {
           "type": "message",
           "ts": "1793448000.000001",
-          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store? Postgres needs a container in CI."
+          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store? Postgres needs a container in CI.",
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         },
         "response_url": "https://hooks.slack.test/actions/T0EFIKA01/1/fakeresponse1",
         "actions": [
@@ -809,7 +920,13 @@
         "message": {
           "type": "message",
           "ts": "1793448000.000001",
-          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store? Postgres needs a container in CI."
+          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store? Postgres needs a container in CI.",
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         },
         "response_url": "https://hooks.slack.test/actions/T0EFIKA01/2/fakeresponse2",
         "actions": [
@@ -859,7 +976,13 @@
         "message": {
           "type": "message",
           "ts": "1793448000.000001",
-          "text": "✓ Answered by <@U0ANA0001> via Slack: “Postgres”. claude-07 resumed."
+          "text": "✓ Answered by <@U0ANA0001> via Slack: “Postgres”. claude-07 resumed.",
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         },
         "response_url": "https://hooks.slack.test/actions/T0EFIKA01/3/fakeresponse3",
         "actions": [
@@ -909,7 +1032,13 @@
         "message": {
           "type": "message",
           "ts": "1793448002.000003",
-          "text": "Awaiting you · claude-09: Name for the events table?"
+          "text": "Awaiting you · claude-09: Name for the events table?",
+          "metadata": {
+            "event_type": "scout_link",
+            "event_payload": {
+              "link": "L0TEST00001"
+            }
+          }
         },
         "response_url": "https://hooks.slack.test/actions/T0EFIKA01/4/fakeresponse4",
         "actions": [

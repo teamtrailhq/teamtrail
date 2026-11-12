@@ -88,8 +88,12 @@ export class SlackApi {
 /** Every message Scout posts, edits or replies with goes out as written: no names or links parsed, no unfurls. */
 export const AS_WRITTEN = { parse: 'none', link_names: false, unfurl_links: false, unfurl_media: false } as const;
 
-/** POST to a `response_url` (ephemeral replies to commands, shortcuts and button clicks), as written. */
-export async function postResponse(url: string, body: object, f: typeof fetch = fetch) {
+/**
+ * POST to a `response_url` (ephemeral replies to commands, shortcuts and button clicks), as written. The Scout
+ * service leaves it out of what it doesn't let this Teamtrail answer, and then there is nothing to post.
+ */
+export async function postResponse(url: string | undefined, body: object, f: typeof fetch = fetch) {
+  if (!url) return;
   await f(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=utf-8' },

@@ -134,6 +134,50 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
     expect(kept.transcript.find((e) => e.text === 'Yes, drop it')?.author).toBe('trail lead');
   });
 
+  it('a Slack answer backs an ordinary call but never a high-risk one: those need the Lookout', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    const questionId = await askOnJunction(call);
+    const doc = (await readAgentDocs(root)).find((d) => d.pending.length)!;
+    writeAgentAnswer(root, {
+      sessionId: doc.session.id,
+      questionId,
+      text: 'Yes, drop it',
+      author: 'slack:U0ANA',
+      via: 'slack',
+    });
+    const got = await call<Got>('wait_for_answer', { questionId, waitSeconds: 5 });
+    expect(got).toMatchObject({ answered: true, answeredVia: 'slack' });
+    const lookout = /answered in Slack, and this decision is high risk: only an answer given in the Lookout counts/;
+    await expect(
+      call('close_ticket', { resolution: 'Drop it', category: 'data-deletion', questionId }),
+    ).rejects.toThrow(lookout);
+    await expect(
+      call('record_decision', { question: 'Drop?', answer: 'Drop it', category: 'data-deletion', questionId }),
+    ).rejects.toThrow(lookout);
+
+    const medium = await call<Asked>('ask_human', {
+      question: 'Show deleted users greyed out?',
+      category: 'product-behaviour',
+      urgency: 'blocking',
+      waitSeconds: 0,
+    });
+    const asked = (await readAgentDocs(root)).find((d) => d.pending.some((q) => q.id === medium.questionId))!;
+    writeAgentAnswer(root, {
+      sessionId: asked.session.id,
+      questionId: medium.questionId,
+      text: 'Greyed out',
+      author: 'slack:U0ANA',
+      via: 'slack',
+    });
+    await call('wait_for_answer', { questionId: medium.questionId, waitSeconds: 5 });
+    const closed = await call<Closed>('close_ticket', {
+      resolution: 'Greyed out',
+      category: 'product-behaviour',
+      questionId: medium.questionId,
+    });
+    expect(closed.decision.decidedBy).toBe('slack:U0ANA');
+  });
+
   it('an answer from before answers were labelled counts as chat at the gates (fail closed)', async () => {
     const call = await hub.connect({ name: 'claude-01' });
     const questionId = await askOnJunction(call);

@@ -1,6 +1,7 @@
 /**
  * The bridge's `/slack` routes. A page on another site (DNS rebinding, a cross-site request) and another device on
- * the network must not read tokens, take the owner's place or change where questions go; and no GET holds a secret.
+ * the network must not read the link token, connect someone else's Slack or change where questions go; and no GET
+ * holds a secret.
  */
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -9,22 +10,19 @@ import { after, before, test } from 'node:test';
 import { createTrackerBridge } from '@teamtrail/core/bridge';
 import { thisMachineOnly } from '../../core/src/server/thisMachineRoutes';
 import { slackPlugin } from '../src/node';
-import { ANA, CODE, EVE, TOKENS, connected, freezeTime, liveWorld, readJson } from './harness';
+import { ANA, EVE, LINK, SCOUT_ENV, TOKENS, connected, freezeTime, liveWorld, readJson } from './harness';
 
 let thaw: () => void;
 before(() => (thaw = freezeTime()));
 after(() => thaw());
 
 const WRITES: [string, string, unknown?][] = [
-  ['POST', '/slack/owner/reset', {}],
-  ['POST', '/slack/owner/code', {}],
-  ['POST', '/slack/owner/confirm', { id: EVE }],
+  ['POST', '/slack/connect/start', {}],
+  ['POST', '/slack/connect/finish', { code: 'c'.repeat(43) }],
+  ['DELETE', '/slack/connect'],
   ['PUT', '/slack/settings', { allow: [{ id: EVE }], notify: { target: 'C0RANDOM1' }, enabled: false }],
-  ['POST', '/slack/token', { token: TOKENS.bot }],
-  ['POST', '/slack/created', {}],
-  ['DELETE', '/slack'],
 ];
-const READS = ['/slack', '/slack/members', '/slack/owner/code', '/slack/token', '/slack/settings', '/slack/owner'];
+const READS = ['/slack', '/slack/members', '/slack/connect', '/slack/connect/start', '/slack/settings'];
 
 type Answer = { status: number; body: string };
 
@@ -37,13 +35,10 @@ async function served(o: { owners?: boolean } = {}) {
     plugins: [
       slackPlugin({
         configDir: l.w.configDir,
-        env: {},
+        env: { ...SCOUT_ENV },
         fetch: l.w.fetch,
         WebSocket: l.w.hub.WebSocket,
-        apiUrl: 'https://slack.test/api',
         pollMs: 0,
-        ownerEmail: () => undefined,
-        ownerCode: () => CODE,
       }),
     ],
   });
@@ -80,7 +75,7 @@ async function served(o: { owners?: boolean } = {}) {
   };
 }
 
-const SECRETS = [TOKENS.app, TOKENS.bot, 'xoxb-', 'xapp-', CODE, `${CODE.slice(0, 4)}-${CODE.slice(4)}`];
+const SECRETS = [LINK.token, TOKENS.bot, 'xoxb-', 'stl_'];
 const holdsSecret = (body: string) => SECRETS.find((s) => body.includes(s));
 
 test('a rebinding page (its own domain as Host) or a cross-site page (its own Origin) gets nothing from /slack', async () => {
@@ -106,7 +101,7 @@ test('a rebinding page (its own domain as Host) or a cross-site page (its own Or
         assert.equal(holdsSecret(r.body), undefined);
       }
     }
-    assert.deepEqual([s.config(), s.creds()], before, 'the owner, the settings and the tokens are untouched');
+    assert.deepEqual([s.config(), s.creds()], before, 'the owner, the settings and the link are untouched');
   } finally {
     s.close();
   }
@@ -147,17 +142,9 @@ test('the list of this-machine-only Slack routes, as the predicate reads it', ()
   assert.equal(thisMachineOnly('GET', '/slackers'), false);
 });
 
-test('on this machine: no GET returns a token or the code; the code is in the answer that made it, once', async () => {
-  const s = await served({ owners: false });
+test('on this machine: no GET returns the link token; Add Scout to Slack starts with an address and nothing secret', async () => {
+  const s = await served();
   try {
-    for (const token of [TOKENS.app, TOKENS.bot]) {
-      const r = await s.request('POST', '/slack/token', { body: { token } });
-      assert.equal(r.status, 200);
-      assert.equal(holdsSecret(r.body), undefined, 'the pasted token is not echoed');
-    }
-    const made = await s.request('POST', '/slack/owner/code', { body: {} });
-    assert.equal(JSON.parse(made.body).code, 'K7QF-2M9X');
-    assert.equal(holdsSecret(JSON.stringify(JSON.parse(made.body).status)), undefined);
     for (const p of READS) {
       const r = await s.request('GET', p);
       assert.equal(holdsSecret(r.body), undefined, `GET ${p}`);
@@ -166,18 +153,21 @@ test('on this machine: no GET returns a token or the code; the code is in the an
         `GET ${p}: ${r.status}`,
       );
     }
-    const status = JSON.parse((await s.request('GET', '/slack')).body);
-    assert.deepEqual([status.step, status.ownerCode], [5, { expiresAt: Date.now() + 10 * 60_000, wrongTries: [] }]);
-    assert.equal(holdsSecret(JSON.stringify(s.config())), undefined, 'slack.json holds neither tokens nor the code');
-    const none = await s.request('POST', '/slack/owner/confirm', { body: { id: EVE } });
-    assert.deepEqual([none.status, s.config().owners], [400, []], 'nobody can be confirmed who did not enter the code');
-    assert.equal((await s.request('POST', '/slack/owner/confirm', { body: {} })).status, 400);
+    const started = await s.request('POST', '/slack/connect/start', { body: {} });
+    assert.equal(started.status, 200);
+    const url = new URL(JSON.parse(started.body).url);
+    assert.equal(url.origin, 'https://scout.test');
+    assert.equal(url.searchParams.get('return'), `http://127.0.0.1:${s.port}/?settings=slack`);
+    assert.equal(holdsSecret(started.body), undefined);
+    assert.equal(holdsSecret(JSON.stringify(s.config())), undefined, 'slack.json holds no token');
+    const bad = await s.request('POST', '/slack/connect/finish', { body: {} });
+    assert.equal(bad.status, 400, 'a code is required');
   } finally {
     s.close();
   }
 });
 
-test('there is no HTTP way in for Slack events: an Events API or interactivity request is not a route', async () => {
+test('there is no HTTP way in for Slack events here: they reach this machine only through the Scout service', async () => {
   const s = await served();
   try {
     const before = s.methods().length;

@@ -51,7 +51,7 @@ export async function openDecision(ctx: SlackContext, trigger: string, meta: Dec
     ).permalink;
   } else {
     const ws = ctx.store.read().workspace;
-    if (ws) meta.l = `${ws.url.replace(/\/$/, '')}/archives/${meta.c}`;
+    if (ws?.url) meta.l = `${ws.url.replace(/\/$/, '')}/archives/${meta.c}`;
   }
   const summary = deterministicSummary(messages, meta.m);
   const asks = ctx.asks.read();

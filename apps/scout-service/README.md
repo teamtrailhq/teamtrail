@@ -37,6 +37,7 @@ Plan and decisions: `docs/plans/scout-slack-app.md` in teamtrail-cloud.
 | `DELETE /link` (bearer link token) | The Lookout's server, on Disconnect. |
 | `GET /connect` (WebSocket) | A linked Teamtrail. Its first message is `{ "type": "hello", "token": "<link token>" }`; then `ready`, `envelope` (Slack's request, in Socket Mode's shape) and `result` from the service, `ack` and `call` from the Teamtrail. Types in `src/types.ts`. |
 | `GET /health` | Railway. |
+| `GET /` | A browser: a 302 to Scout's page on the site, https://teamtrail.app/slack. |
 
 ## Environment
 
@@ -68,7 +69,7 @@ Plan and decisions: `docs/plans/scout-slack-app.md` in teamtrail-cloud.
 ## Create the Slack app (once, by a maintainer)
 
 1. At https://api.slack.com/apps choose **Create New App → From a manifest**, pick a workspace you develop in, and paste `slack-manifest.json`. If the service won't be at `scout.teamtrail.app`, replace that host in the four URLs first.
-2. **Basic Information → Display Information**: upload `brand/scout-badge-1000.png` as the app icon (Slack wants 512–2000 px, square). The background colour is already `#101815`, the badge's own.
+2. **Basic Information → Display Information**: upload `brand/scout-badge-1000.png` as the app icon (Slack wants 512–2000 px, square). The background colour is already `#16302A`, the trail green: the badge's own dark tile stands out on it.
 3. Copy the Client ID, Client Secret and Signing Secret into the service's variables.
 4. **Manage Distribution**: activate public distribution once the service is deployed, so other workspaces can install. Listing in the Slack Marketplace is a separate review (it lifts Slack's throttling of `conversations.replies` for unlisted apps, which Save as decision uses).
 

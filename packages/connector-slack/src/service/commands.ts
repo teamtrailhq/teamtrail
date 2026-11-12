@@ -4,6 +4,7 @@ import { briefTrail, trailListBlocks, statusBlocks } from '../status';
 import { askView } from './asks';
 import type { SlackContext } from './slackContext';
 
+/** `/scout inbox`: a reply only its reader sees, so no answer buttons (Slack drops clicks on those); open each. */
 export async function inboxMessage(ctx: SlackContext) {
   const docs = await readAgentDocs(ctx.o.root);
   const pending = docs.flatMap((d) => d.pending);
@@ -11,7 +12,9 @@ export async function inboxMessage(ctx: SlackContext) {
   const adapter = await ctx.o.active();
   const url = ctx.o.url();
   const blocks = (
-    await Promise.all(pending.slice(0, 10).map(async (q) => askMessage(await askView(ctx, q, adapter), { url }).blocks))
+    await Promise.all(
+      pending.slice(0, 10).map(async (q) => askMessage(await askView(ctx, q, adapter), { url, mode: 'read' }).blocks),
+    )
   ).flat();
   return { text: `${pending.length} waiting on you`, blocks };
 }

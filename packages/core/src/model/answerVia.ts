@@ -17,6 +17,13 @@ export const ANSWER_VIAS: readonly AnswerVia[] = ['lookout', 'slack', 'chat'];
  */
 export const approvesGates = (via: AnswerVia | undefined): boolean => via === 'lookout' || via === 'slack';
 
+/**
+ * Whether an answer given this way can stand in for the human on a high-risk call (by the risk policy's category or
+ * path rules). Slack answers reach this machine through Teamtrail's Scout service: a compromised service could make
+ * one up, so on the riskiest calls only the Lookout's answer counts (policy/needsLookout.ts).
+ */
+export const approvesHighRisk = (via: AnswerVia | undefined): boolean => via === 'lookout';
+
 /** Where the answer was given, for transcripts: "in claude-01's chat", or nothing for the Lookout and Slack. */
 export const chatNote = (a: { via?: AnswerVia; chatOf?: string }): string | undefined =>
   a.via === 'chat' ? `in ${a.chatOf ?? 'an agent'}'s chat` : undefined;

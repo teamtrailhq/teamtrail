@@ -1,5 +1,5 @@
 import type { ApprovalItem, TrackerAdapter } from '@teamtrail/core';
-import type { WebSocketCtor } from '../socket';
+import type { WebSocketCtor } from '../link/types';
 
 export type Env = Record<string, string | undefined>;
 export type Payload = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -14,8 +14,6 @@ export interface SlackServiceOptions {
   env?: Env;
   fetch?: typeof fetch;
   WebSocket?: WebSocketCtor;
-  /** Slack Web API base; defaults to $TEAMTRAIL_SLACK_API, else https://slack.com/api. */
-  apiUrl?: string;
   /** How often to look for new agent questions and trail changes; 0 = only on `tick()` (tests). */
   pollMs?: number;
   /** Trail changes are checked every n-th tick. */
@@ -37,10 +35,6 @@ export interface SlackServiceOptions {
   sleep?: (ms: number) => Promise<void>;
   /** Lock owner id; distinct per service so tests can run several in one process. */
   lockOwner?: string;
-  /** The one-time owner code, eight characters; random unless a test fixes it. */
-  ownerCode?: () => string;
-  /** The local user's email; a workspace member with it is put forward as the owner. Defaults to `git config user.email`. */
-  ownerEmail?: () => string | undefined;
 }
 
 /** What the decision modal carries between open, trail change and submit. Thread text is never stored here. */

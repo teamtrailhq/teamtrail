@@ -255,7 +255,8 @@
   color: var(--text-hi);
   user-select: all;
 }
-.tracker-setup a.btn {
+.tracker-setup a.btn,
+.slack-settings a.btn {
   text-decoration: none;
 }
 .repo-picker {
@@ -307,117 +308,13 @@
   color: var(--dim);
   font-size: var(--fs-sm);
 }
-.slack-setup {
-  gap: var(--sp-12);
-  padding: var(--sp-12);
-  background: var(--sunken);
-}
-.slack-setup p {
-  margin: 0;
-  font-size: var(--fs-sm);
-  color: var(--text);
-}
-.slack-setup a:not(.btn) {
-  color: var(--accent);
-  text-decoration: none;
-}
-.slack-setup a:not(.btn):hover {
-  text-decoration: underline;
-}
-.slack-setup code {
-  font-family: var(--mono);
-  font-size: var(--fs-label);
-  color: var(--text-hi);
-}
-.sl-pipeline {
-  margin: 0;
-}
-.sl-steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-6);
-}
-.sl-steps > li {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-8);
-  padding: var(--sp-6) 0;
-  border-top: 1px solid var(--line);
-}
-.sl-steps > li:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-.sl-step-h {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-8);
-  font-size: var(--fs-sm);
-  color: var(--faint);
-}
-.sl-step-h b {
-  color: var(--text);
-}
-.sl-step-h .mono-label {
-  margin-left: auto;
-}
-.sl-n {
-  width: 18px;
-  height: 18px;
-  flex: none;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid var(--line2);
-  font-family: var(--mono);
-  font-size: var(--fs-xs);
-}
-.sl-steps > li.done .sl-step-h {
-  color: var(--dim);
-}
-.sl-steps > li.done .sl-n {
-  border-color: var(--st-decided);
-  color: var(--st-decided);
-}
-.sl-steps > li.cur .sl-step-h {
-  color: var(--text-hi);
-}
-.sl-steps > li.cur .sl-n {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.sl-step-b {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-8);
-  padding-left: calc(18px + var(--sp-8));
-}
-.sl-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-8);
-}
-.sl-actions a.btn {
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-}
-.sl-paste {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-8);
-}
-.sl-paste-field {
+.sl-field {
   display: flex;
   gap: var(--sp-6);
   flex: 1;
   min-width: 220px;
 }
-.sl-paste-field input {
+.sl-field input {
   flex: 1;
   min-width: 0;
 }
@@ -436,29 +333,6 @@
   align-items: baseline;
   gap: var(--sp-10);
   font-size: var(--fs-sm);
-}
-.sl-who {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  padding-left: var(--sp-10);
-  border-left: 2px solid var(--line2);
-}
-.slack-setup p.sl-redo {
-  padding-left: var(--sp-10);
-  border-left: 2px solid var(--amber);
-}
-.sl-code {
-  align-self: flex-start;
-  padding: var(--sp-8) var(--sp-12);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--panel);
-  color: var(--text-hi);
-  font-family: var(--mono);
-  font-size: var(--fs-heading);
-  letter-spacing: 0.12em;
-  user-select: all;
 }
 .label-codes {
   display: flex;

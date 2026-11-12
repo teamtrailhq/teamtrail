@@ -1,5 +1,5 @@
 import type { ApprovalItem } from '@teamtrail/core';
-import { ACTIONS, VIEWS, clip, label, md, openButton, plain, quote } from './kit';
+import { ACTIONS, VIEWS, answerBlocks, clip, label, md, plain, quote, type AnswerMode } from './kit';
 
 /** Button and modal value: trail, ticket and the attempt the approval is about. */
 export interface ApprovalRef {
@@ -13,8 +13,11 @@ const header = (trail: string, i: ApprovalItem) =>
     ' · ',
   );
 
-/** A ticket waiting on the trail lead: Approve (reviewed passes only), Rework…, Open. */
-export function approvalMessage(trail: string, i: ApprovalItem, url?: string) {
+/**
+ * A ticket waiting on the trail lead: Approve (reviewed passes only), Rework…, Open. A completion that touched
+ * high-risk files (`mode: 'lookout'`) is approved only in the Lookout.
+ */
+export function approvalMessage(trail: string, i: ApprovalItem, url?: string, mode?: AnswerMode) {
   const ref = JSON.stringify({
     m: i.mapId,
     t: i.ticketId,
@@ -24,17 +27,17 @@ export function approvalMessage(trail: string, i: ApprovalItem, url?: string) {
     text: `${i.kind === 'approve' ? 'Approve' : 'Held'} · ${label(i.ticketKey)} ${label(clip(i.title, 120))}`,
     blocks: [
       { type: 'section', text: md(`${header(trail, i)}\n${quote(clip(i.reason, 2800))}`) },
-      {
-        type: 'actions',
-        block_id: `approval:${i.mapId}:${i.ticketId}`,
-        elements: [
+      ...answerBlocks({
+        mode,
+        blockId: `approval:${i.mapId}:${i.ticketId}`,
+        buttons: [
           ...(i.kind === 'approve'
             ? [{ type: 'button', action_id: ACTIONS.approve, style: 'primary', text: plain('Approve'), value: ref }]
             : []),
           { type: 'button', action_id: ACTIONS.rework, text: plain('Rework…'), value: ref },
-          ...openButton(url),
         ],
-      },
+        url,
+      }),
     ],
   };
 }

@@ -1,5 +1,6 @@
 import {
   approvesGates,
+  approvesHighRisk,
   oneLine,
   OperationError,
   type AnswerVia,
@@ -54,6 +55,11 @@ function chatRefusal(a: HumanAnswer) {
       ? `in ${a.chatOf ?? 'an agent'}'s chat`
       : 'before answers recorded where they were given, so it counts as given in a chat';
   return `Question ${a.questionId} was answered ${where}. ${CHAT_GUIDES}`;
+}
+
+/** The refusal for a Slack answer offered for a high-risk call: only the Lookout's answer counts for those. */
+function lookoutOnly(a: HumanAnswer) {
+  return `Question ${a.questionId} was answered in Slack, and this decision is high risk: only an answer given in the Lookout counts for it (Slack answers pass through Teamtrail's Scout service). Ask again with ask_human and have the human answer in the Lookout.`;
 }
 
 interface Wanted {
@@ -111,6 +117,7 @@ function refusal(a: HumanAnswer, w: Wanted): string | undefined {
   if (w.ticket && a.ticketId !== w.ticket.id)
     return `${q} was not asked on ${w.ticket.key}. Ask the human about ${w.ticket.key} while you hold it.`;
   const high = w.risk?.level === 'high';
+  if (high && !approvesHighRisk(a.via)) return lookoutOnly(a);
   const asked = askedWith(a.categories);
   const needs = categoriesNeeded(w, high);
   const missing = needs.find((c) => !a.categories.includes(c));

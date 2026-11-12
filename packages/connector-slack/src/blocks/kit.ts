@@ -48,7 +48,6 @@ export const quote = (s: string) =>
     .join('\n');
 
 export const ACTIONS = {
-  claim: 'claim_owner',
   option: 'ask_option',
   reply: 'ask_reply',
   open: 'open_teamtrail',
@@ -63,8 +62,31 @@ export const VIEWS = {
   decision: 'decision_modal',
   reply: 'ask_reply_modal',
   rework: 'verify_rework_modal',
-  ownerCode: 'owner_code_modal',
 } as const;
 
 export const openButton = (url: string | undefined): Block[] =>
   url ? [{ type: 'button', action_id: ACTIONS.open, text: plain(`Open in ${BRAND.name}`), url }] : [];
+
+/**
+ * How a message with answer buttons is shown:
+ * - `buttons`: answer in Slack;
+ * - `lookout`: a high-risk call, answered only in the Lookout (the gate refuses a Slack answer to it);
+ * - `read`: no buttons, for a reply only its reader sees (Slack drops clicks on those).
+ */
+export type AnswerMode = 'buttons' | 'lookout' | 'read';
+
+/** The line and button in place of answer buttons on a high-risk call. */
+export const LOOKOUT_ONLY = "High risk: answer this in the Lookout. Answers given in Slack don't count for it.";
+export const lookoutButton = (url: string | undefined): Block[] =>
+  url ? [{ type: 'button', action_id: ACTIONS.open, style: 'primary', text: plain('Open in Lookout'), url }] : [];
+
+/** The blocks under a question or approval, by mode: its buttons, the Lookout only, or just the link. */
+export function answerBlocks(o: { mode?: AnswerMode; blockId: string; buttons: Block[]; url?: string }): Block[] {
+  if (o.mode === 'lookout')
+    return [
+      { type: 'context', elements: [md(`*${LOOKOUT_ONLY}*`)] },
+      ...(o.url ? [{ type: 'actions', block_id: o.blockId, elements: lookoutButton(o.url) }] : []),
+    ];
+  if (o.mode === 'read') return o.url ? [{ type: 'actions', block_id: o.blockId, elements: openButton(o.url) }] : [];
+  return [{ type: 'actions', block_id: o.blockId, elements: [...o.buttons, ...openButton(o.url)] }];
+}

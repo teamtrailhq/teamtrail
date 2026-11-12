@@ -4,16 +4,13 @@ import type { DeliveryProblem } from '@teamtrail/core';
 
 export type SlackState = 'off' | 'connecting' | 'online' | 'offline' | 'auth-error' | 'elsewhere' | 'unsupported';
 
-/** Where a token came from. Values never leave the machine running `teamtrail`. */
-export type SlackTokenSource = 'stored' | 'TEAMTRAIL_SLACK_APP_TOKEN' | 'TEAMTRAIL_SLACK_BOT_TOKEN';
-
 export type SlackNotifyEvent = 'awaiting' | 'blocked' | 'trail.done' | 'resolved';
 export const SLACK_NOTIFY_EVENTS: SlackNotifyEvent[] = ['awaiting', 'blocked', 'trail.done', 'resolved'];
 export const DEFAULT_NOTIFY_EVENTS: SlackNotifyEvent[] = ['awaiting', 'blocked', 'trail.done'];
 
 export interface SlackUser {
   id: string;
-  /** The handle: for an owner put forward, the unique Slack username (`name`); elsewhere the name Slack shows. */
+  /** The unique Slack username, when Slack said; elsewhere the name Slack shows. */
   name?: string;
   /** The full name on the Slack profile. */
   realName?: string;
@@ -22,25 +19,10 @@ export interface SlackUser {
    * unique username, never as the handle.
    */
   displayName?: string;
-  /**
-   * How the account was put forward as the owner: its email is this machine's git email, it entered the one-time
-   * code from Settings → Slack, or it clicked "This is me" on the Home tab (versions before the code).
-   */
-  via?: 'git-email' | 'code' | 'home';
-  /** When the trail lead confirmed this account in the Lookout, on the machine Teamtrail runs on. */
+  /** How the owner was set: through Add Scout to Slack, from this machine's Lookout. */
+  via?: 'oauth';
+  /** When this machine connected the account as the owner. */
   confirmedAt?: number;
-  /**
-   * Put forward only: whether this account's Slack email is this machine's git email. A hint for the trail lead,
-   * never a proof (an address can be shared, and a workspace admin can set anyone's email). Unknown when undefined.
-   */
-  gitEmail?: boolean;
-}
-
-/** A Slack account that typed a wrong code, and how many times. */
-export interface SlackWrongTry {
-  id: string;
-  name?: string;
-  count: number;
 }
 
 export interface SlackNotify {
@@ -51,59 +33,35 @@ export interface SlackNotify {
   detail: 'full' | 'titles-only';
 }
 
-/** 1 create app · 2 pick workspace (Slack) · 3 app-level token · 4 install + bot token · 5 confirm the owner. */
-export type SlackSetupStep = 1 | 2 | 3 | 4 | 5 | 'done';
-
 /** `GET <api>/slack`. */
 export interface SlackStatus {
   state: SlackState;
   error?: string;
   enabled: boolean;
-  step: SlackSetupStep;
-  setup: {
-    created: boolean;
-    appId?: string;
-    appToken: SlackTokenSource | null;
-    botToken: SlackTokenSource | null;
-  };
-  workspace?: { id: string; name: string; url: string };
-  bot?: { userId: string; name?: string };
-  /** The confirmed owner. Empty until the trail lead confirms one; until then nothing is sent in Slack. */
-  owners: SlackUser[];
-  /** A Slack account put forward as the owner, waiting for the trail lead to confirm or refuse it here. */
-  pendingOwner?: SlackUser;
-  /** Set while a one-time code can be entered in Slack. The code itself is only in the answer that created it. */
-  ownerCode?: { expiresAt: number; wrongTries: SlackWrongTry[] };
-  /** The last code was dropped after too many wrong tries, and these accounts made them. */
-  ownerCodeDropped?: { by: SlackWrongTry[] };
+  /** Linked to the Scout service: Add Scout to Slack finished on this machine. */
+  connected: boolean;
   /**
-   * An owner an earlier version set without a code from this machine ("This is me", or a git-email match). It was
-   * dropped on upgrade; the trail lead sets the owner again with a code.
+   * Settings from a version where you made your own Slack app. Nothing of it is used; its tokens are deleted when
+   * you connect Scout or remove Slack.
    */
-  ownerRedo?: { was: SlackUser; via: 'home' | 'git-email' };
+  legacy?: boolean;
+  workspace?: { id: string; name: string; url?: string };
+  bot?: { userId: string; name?: string };
+  /** The owner: the Slack account that went through Add Scout to Slack from this machine. */
+  owners: SlackUser[];
   allow: SlackUser[];
   notify: SlackNotify;
   command: string;
-  links: { create: string; app?: string; install?: string; home?: string; homeWeb?: string };
+  links: { home?: string; homeWeb?: string };
   /** The last message Slack refused for good (an archived channel, the bot removed), until one gets through. */
   delivery?: DeliveryProblem;
   /** Tracker folder of the other `teamtrail` that holds this machine's Slack connection. */
   heldBy?: string;
 }
 
-export interface SlackTokenResult {
-  ok: boolean;
-  kind?: 'app' | 'bot';
-  error?: string;
-  code?: string;
-  status: SlackStatus;
-}
-
-/** `POST <api>/slack/owner/code`: the one-time code to enter in Slack. Answered once; no GET returns it. */
-export interface SlackOwnerCode {
-  code: string;
-  expiresAt: number;
-  status: SlackStatus;
+/** `POST <api>/slack/connect/start`: where to send the browser to add Scout (the service, then Slack's consent). */
+export interface SlackConnectStart {
+  url: string;
 }
 
 export interface SlackSettingsPatch {

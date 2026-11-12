@@ -18,7 +18,7 @@ Take the subcommand from the first word of the arguments. With no arguments, run
    - what is out of scope,
    - what is already decided.
 
-   Each question also appears in the Lookout inbox, and the human can answer in either place. If they interrupt the wait and answer here in chat, call `list_inbox`, then `answer_question` with their exact words so the Lookout shows the answer too. An answer given in chat guides agents; it can't approve anything that needs the human (a high-risk call, a junction or other HITL ticket): those need their answer in the Lookout or Slack. (Over a remote connection there is no `answer_question`: the human answers in the Lookout or Slack.)
+   Each question also appears in the Lookout inbox, and the human can answer in either place. If they interrupt the wait and answer here in chat, call `list_inbox`, then `answer_question` with their exact words so the Lookout shows the answer too. An answer given in chat guides agents; it can't approve anything that needs the human (a high-risk call, a junction or other HITL ticket): those need their answer in the Lookout or Slack, and a high-risk call needs it in the Lookout. (Over a remote connection there is no `answer_question`: the human answers in the Lookout or Slack.)
 2. Look around the repo as much as you need, then draft the trail map:
    - `destination`: what "done" looks like, in one or two sentences.
    - `decided`, `unspecified` (known unknowns) and `outOfScope`, from the answers.

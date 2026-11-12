@@ -3,7 +3,7 @@ import path from 'node:path';
 import { MemoryAdapter, chartMap, claim, transition, type MapSections, type Ticket } from '@teamtrail/core';
 import { operatorAction, readVerdicts, writeAttempt, writeVerdict } from '@teamtrail/core/agents';
 import type { FakeSlack } from './fakes/slack';
-import { ALL_SCOPES, ANA, EVE, RAJ, TOKENS, agentDoc, connected, readJson, until, type World } from './harness';
+import { ANA, EVE, RAJ, agentDoc, connected, readJson, until, type World } from './harness';
 
 const SECTIONS: MapSections = {
   destination: 'A durable event store.',
@@ -33,57 +33,6 @@ export async function eventStore() {
   const [bench, db, retention, migrate] = tickets;
   await claim(a, map.id, db.id, { assignee: 'claude-07' });
   return { a, map, bench, db, retention, migrate, second };
-}
-
-/** Steps 1–5 of the guided setup, including the mistakes the panel explains. */
-export async function setupFlow(w: World) {
-  const svc = w.service(new MemoryAdapter({ latency: [0, 0] }));
-  const s0 = svc.status();
-  const s1 = svc.markCreated();
-  const userToken = await svc.pasteToken(TOKENS.user);
-  const app = await svc.pasteToken(TOKENS.app);
-  if (w.fake) w.fake.state.scopes = ALL_SCOPES.filter((s) => s !== 'users:read');
-  const missingScope = await svc.pasteToken(TOKENS.bot);
-  if (w.fake) w.fake.state.scopes = [...ALL_SCOPES];
-  const bot = await svc.pasteToken(TOKENS.bot);
-  await until(() => svc.status().state === 'online', 'socket online');
-  const beforeClaim = svc.status();
-  const lastView = (f: { views: Map<string, unknown> }) => [...f.views.keys()].at(-1)!;
-  await w.send(svc, 'ana opens the Home tab before a code exists', (f) => f.payload.homeOpened(ANA));
-  await w.send(svc, 'raj clicks the old claim button with no code waiting', (f) =>
-    f.payload.clickHome(RAJ, 'claim_owner'),
-  );
-  const noCode = svc.status();
-  const code = svc.startOwnerCode();
-  await w.send(svc, 'eve opens the Home tab while a code waits', (f) => f.payload.homeOpened(EVE));
-  await w.send(svc, 'eve clicks Enter code', (f) => f.payload.clickHome(EVE, 'claim_owner'));
-  const wrong = await w.send(svc, 'eve guesses a code', (f) =>
-    f.payload.submit(EVE, lastView(f), { code: 'AAAA-AAAA' }),
-  );
-  await w.send(svc, 'ana clicks Enter code', (f) => f.payload.clickHome(ANA, 'claim_owner'));
-  await w.send(svc, 'ana enters the code', (f) => f.payload.submit(ANA, lastView(f), { code: code.code }));
-  await w.send(svc, 'raj clicks Enter code after it was used', (f) => f.payload.clickHome(RAJ, 'claim_owner'));
-  const pending = svc.status();
-  const after = await svc.confirmOwner(ANA);
-  const creds = readJson(path.join(w.configDir, 'credentials.json'));
-  const settings = readJson(path.join(w.configDir, 'slack.json'));
-  return {
-    s0,
-    s1,
-    userToken,
-    app,
-    missingScope,
-    bot,
-    beforeClaim,
-    noCode,
-    code,
-    wrong,
-    pending,
-    after,
-    creds,
-    settings,
-    socketConnections: w.hub.connections,
-  };
 }
 
 /** Agent asks reach the owner as DMs; answers from buttons or the reply modal reach the agent; UI answers close the DM. */
@@ -266,8 +215,11 @@ export function posted(f: FakeSlack, prefix: string): [string, string] {
   throw new Error(`no message starting "${prefix}"`);
 }
 
-/** A trail at checks+review+human: #2 is a reviewed pass to approve, #3 failed its checks and is held. */
-export async function approvalTrail(w: World) {
+/**
+ * A trail at checks+review+human: #2 is a reviewed pass to approve (`changed`: the files git saw it change), #3
+ * failed its checks and is held.
+ */
+export async function approvalTrail(w: World, o: { changed?: string[] } = {}) {
   const a = new MemoryAdapter({ latency: [0, 0] });
   writeFileSync(
     path.join(w.root, 'verification.json'),
@@ -283,6 +235,12 @@ export async function approvalTrail(w: World) {
     ],
   });
   const [api, mig] = tickets;
+  const git = o.changed && {
+    v: 1 as const,
+    changed: o.changed.map((p) => ({ path: p, add: 1, del: 0 })),
+    stats: { files: o.changed.length, add: o.changed.length, del: 0 },
+    flags: [],
+  };
   const attempt = (t: Ticket, result: 'pass' | 'fail') =>
     writeAttempt(w.root, {
       v: 1,
@@ -298,6 +256,7 @@ export async function approvalTrail(w: World) {
       resolution: `Did ${t.title}`,
       checks: [],
       result,
+      ...(git && t.id === api.id ? { git } : {}),
     });
   for (const t of [api, mig]) {
     await transition(a, map.id, t.id, { event: 'claim', actor: 'claude-07', actorKind: 'agent' });

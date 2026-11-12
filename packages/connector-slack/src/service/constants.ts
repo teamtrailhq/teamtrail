@@ -1,5 +1,9 @@
 import { BRAND, type Ticket } from '@teamtrail/core';
 
+export const SAVE_DECISION_CALLBACK = 'save_decision';
+/** Scout's one slash command, as the official app's manifest declares it. */
+export const DEFAULT_COMMAND = `/${BRAND.assistant.name.toLowerCase()}`;
+
 export const AUTH_CODES = new Set([
   'invalid_auth',
   'not_authed',

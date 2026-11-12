@@ -6,7 +6,7 @@ export function ChannelTarget(props: { value: string; onSave: (id: string) => vo
   const valid = /^[CG][A-Z0-9]{6,}$/.test(v.trim());
   return (
     <form
-      className="sl-paste-field"
+      className="sl-field"
       onSubmit={(e) => {
         e.preventDefault();
         if (valid) props.onSave(v.trim());

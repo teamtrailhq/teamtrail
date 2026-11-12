@@ -1,33 +1,35 @@
-import { BRAND, overrideUrl } from '@teamtrail/core';
-import { AS_WRITTEN, SlackApi, SlackApiError } from '../api';
+import { AS_WRITTEN, SlackApiError } from '../api';
+import { ScoutLink } from '../link/scoutLink';
+import { scoutService } from '../link/scoutService';
+import type { LinkReady, WebSocketCtor } from '../link/types';
 import { settingStore } from '../settingStore';
-import { SocketMode, type WebSocketCtor } from '../socket';
-import { socketUrl } from '../socketUrl';
 import { approvalStore, askStore, slackLock, slackStore } from '../store';
 import type { SlackState } from '../types';
+import type { PendingConnect } from './connectState';
 import { AUTH_CODES } from './constants';
 import { deliveryLog } from './deliveryLog';
 import { onEnvelope } from './interactions';
-import type { OwnerCode } from './ownerCode';
 import { refusedForGood } from './refusedForGood';
 import type { Batch, Env, TrailNotes, Payload, SlackServiceOptions } from './types';
+import { learnWorkspace } from './workspace';
 
 /** Every message Scout posts or edits goes out as written (`AS_WRITTEN`). */
 const POSTS = new Set(['chat.postMessage', 'chat.update']);
 
-/** State of the Slack connection shared by the service modules: config, socket, bot client and caches. */
+/** State of the Slack connection shared by the service modules: config, the link to the Scout service and caches. */
 export class SlackContext {
   readonly store;
   readonly lock;
   readonly asks;
   readonly env: Env;
-  readonly apiUrl?: string;
+  readonly scout;
   readonly WS?: WebSocketCtor;
-  socket?: SocketMode;
+  link?: ScoutLink;
+  /** Who this Teamtrail is at the Scout service, once its link is ready. */
+  ready?: LinkReady;
   state: SlackState = 'off';
   error?: string;
   heldBy?: string;
-  bot?: SlackApi;
   readonly dms = new Map<string, string>();
   readonly names = new Map<string, string>();
   readonly handles = new Map<string, string>();
@@ -49,33 +51,29 @@ export class SlackContext {
   readonly capped = new Set<string>();
   /** When each agent's questions were posted as their own message, for the limit (askLimit.ts). */
   readonly askLog: { agent: string; at: number }[] = [];
-  /** The one-time code the trail lead reads in the Lookout, while it can be entered. Never written to disk. */
-  ownerCode?: OwnerCode;
-  /** The wrong tries that dropped the last code, for the Lookout, until a new code is made. */
-  ownerCodeDropped?: Map<string, number>;
+  /** Add Scout to Slack, started here and waiting for the browser to come back: the PKCE verifier, in memory only. */
+  connecting?: PendingConnect;
+  /** Just connected: greet the owner in their DM once the link is ready. */
+  greetOwner = false;
   ticks = 0;
   ticking?: Promise<void>;
 
   constructor(readonly o: SlackServiceOptions) {
     this.env = o.env ?? process.env;
-    this.store = slackStore(o.configDir, this.env);
+    this.store = slackStore(o.configDir);
     this.lock = slackLock(o.configDir, o.lockOwner ?? `${process.pid}:${o.root}`);
     this.asks = askStore(o.root);
     this.approvals = approvalStore(o.root);
     this.settingRequests = settingStore(o.root);
     this.delivery = deliveryLog(o.root, () => o.now?.() ?? Date.now());
-    this.apiUrl = o.apiUrl ?? overrideUrl(this.env, `${BRAND.slug.toUpperCase()}_SLACK_API`);
+    this.scout = scoutService(this.env);
     this.WS = o.WebSocket ?? (globalThis as { WebSocket?: WebSocketCtor }).WebSocket;
   }
 
-  api(token: string) {
-    return new SlackApi({ token, apiUrl: this.apiUrl, fetch: this.o.fetch, sleep: this.o.sleep });
-  }
-
   start() {
-    if (this.socket) return;
-    const t = this.store.tokens();
-    if (!t.app || !t.bot) {
+    if (this.link) return;
+    const linked = this.store.link();
+    if (!linked || !this.store.read().enabled) {
       this.state = 'off';
       return;
     }
@@ -92,35 +90,35 @@ export class SlackContext {
     }
     this.heldBy = undefined;
     this.error = undefined;
-    this.bot = this.api(t.bot.token);
-    const app = this.api(t.app.token);
-    this.socket = new SocketMode({
-      open: async () => socketUrl((await app.call<{ url: string }>('apps.connections.open')).url, this.apiUrl),
+    this.link = new ScoutLink({
+      url: this.scout.connect,
+      token: linked.token,
       WebSocket: this.WS,
       onEnvelope: (e) => onEnvelope(this, e),
+      onReady: (r) => {
+        this.ready = r;
+        void learnWorkspace(this).catch(() => {});
+      },
       onState: (s, err) => {
         this.state = s;
         this.error = err;
-        if (s === 'auth-error') this.authFailed(err);
+        if (s === 'auth-error') this.linkClosed(err);
       },
-      fatal: (e) =>
-        e instanceof SlackApiError && (AUTH_CODES.has(e.code) || e.code === 'not_allowed_token_type')
-          ? 'Slack rejected the app-level token; reconnect in Settings'
-          : undefined,
       backoffMs: this.o.backoffMs,
     });
-    this.socket.start();
+    this.link.start();
   }
 
   stop() {
-    this.socket?.stop();
-    this.socket = undefined;
-    this.bot = undefined;
+    this.link?.stop();
+    this.link = undefined;
+    this.ready = undefined;
     this.lock.release();
     if (this.state !== 'auth-error') this.state = 'off';
   }
 
-  authFailed(error = 'Slack rejected the bot token; reconnect in Settings') {
+  /** The service closed the link for good (disconnected elsewhere, Scout uninstalled): turned off until reconnected. */
+  linkClosed(error: string | undefined) {
     this.store.update({ enabled: false });
     this.stop();
     this.state = 'auth-error';
@@ -128,14 +126,15 @@ export class SlackContext {
   }
 
   async call<T = Payload>(method: string, args: Record<string, unknown> = {}): Promise<T> {
-    if (!this.bot) throw new SlackApiError('not_connected', method);
+    if (!this.link) throw new SlackApiError('not_connected', method);
     try {
-      const r = await this.bot.call<T>(method, POSTS.has(method) ? { ...args, ...AS_WRITTEN } : args);
+      const r = await this.link.call<T>(method, POSTS.has(method) ? { ...args, ...AS_WRITTEN } : args);
       if (method === 'chat.postMessage') this.delivery.delivered();
       return r;
     } catch (e) {
       if (method === 'chat.postMessage' && refusedForGood(e)) this.delivery.refused((e as SlackApiError).code);
-      if (e instanceof SlackApiError && AUTH_CODES.has(e.code)) this.authFailed();
+      if (e instanceof SlackApiError && AUTH_CODES.has(e.code))
+        this.linkClosed('Slack no longer accepts Scout in this workspace. Add Scout to Slack again.');
       throw e;
     }
   }

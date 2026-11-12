@@ -5,11 +5,6 @@ import type { SlackContext } from './slackContext';
 import { journalSlack } from './slackJournal';
 import type { Payload } from './types';
 
-export function markCreated(ctx: SlackContext) {
-  ctx.store.update({ created: true });
-  return statusOf(ctx);
-}
-
 export function updateSettings(ctx: SlackContext, patch: SlackSettingsPatch) {
   const c = ctx.store.read();
   const next: Partial<SlackConfig> = {};
@@ -38,20 +33,9 @@ function journalAllow(ctx: SlackContext, before: SlackUser[], after: SlackUser[]
   for (const u of before) if (!has.has(u.id)) journalSlack(ctx, { action: 'allow-removed', who: u, by: 'lead' });
 }
 
-export function remove(ctx: SlackContext) {
-  journalSlack(ctx, { action: 'removed', by: 'lead' });
-  ctx.stop();
-  ctx.store.clear();
-  ctx.dms.clear();
-  ctx.ownerCode = undefined;
-  ctx.ownerCodeDropped = undefined;
-  ctx.state = 'off';
-  ctx.error = undefined;
-  return statusOf(ctx);
-}
-
 export async function members(ctx: SlackContext): Promise<SlackUser[]> {
-  if (!ctx.bot) return [];
+  // Until the link is ready there is no one to ask; Settings asks again once it is online.
+  if (!ctx.link || ctx.state !== 'online') return [];
   const r = await ctx.call<{ members: Payload[] }>('users.list', { limit: 200 });
   return r.members
     .filter((m) => !m.deleted && !m.is_bot && m.id !== 'USLACKBOT')

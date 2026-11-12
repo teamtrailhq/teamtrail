@@ -32,6 +32,7 @@ export {
 } from './criteria/criteriaStore';
 export { dropCriteriaProposal, readCriteriaProposals, writeCriteriaProposal } from './criteria/criteriaProposals';
 export { caseInsensitiveFs } from './policy/caseInsensitiveFs';
+export { needsLookout } from './policy/needsLookout';
 export { repoRootSpellings } from './policy/repoRootSpellings';
 export { chartedBy, recordCharted, type ChartedBy } from './agents/chartedStore';
 export {

@@ -10,7 +10,7 @@ import { AgentDocWriter } from '../src/agents/agentDocWriter';
 import { agentPaths, type AgentSessionDoc } from '../src/agents/agentLink';
 import { answeredSigned, signAnswered } from '../src/agents/answeredSignature';
 import { answeredTickets } from '../src/attention/answeredTickets';
-import { approvesGates } from '../src/model/answerVia';
+import { approvesGates, approvesHighRisk } from '../src/model/answerVia';
 import { setRunningVersion } from '../src/model/runningVersion';
 import { versionSkew } from '../src/model/versionSkew';
 
@@ -41,6 +41,13 @@ test('only answers given in the Lookout or Slack approve gates; unlabelled (olde
   assert.equal(approvesGates('slack'), true);
   assert.equal(approvesGates('chat'), false);
   assert.equal(approvesGates(undefined), false);
+});
+
+test('only answers given in the Lookout stand in for the human on a high-risk call; Slack ones pass the service', () => {
+  assert.equal(approvesHighRisk('lookout'), true);
+  assert.equal(approvesHighRisk('slack'), false);
+  assert.equal(approvesHighRisk('chat'), false);
+  assert.equal(approvesHighRisk(undefined), false);
 });
 
 test('a chat answer is delivered, labelled chat and with the agent whose chat it was', async () => {
@@ -201,7 +208,7 @@ test('writeAgentAnswer signs the label it is given by its caller', () => {
   assert.equal(ans.via, 'slack');
 });
 
-test('a risky-files flag is cleared only by an answer given in the Lookout or Slack, not in a chat', () => {
+test('a risky-files flag is cleared only by an answer given in the Lookout, not in Slack or a chat', () => {
   const answered = (via?: 'lookout' | 'slack' | 'chat') => ({
     id: `q-${via}`,
     mapId: 'm1',
@@ -220,7 +227,7 @@ test('a risky-files flag is cleared only by an answer given in the Lookout or Sl
   } as unknown as AgentSessionDoc;
   assert.deepEqual(
     answeredTickets([doc], root).map((c) => c.ticketId),
-    ['lookout', 'slack'],
+    ['lookout'],
   );
 });
 

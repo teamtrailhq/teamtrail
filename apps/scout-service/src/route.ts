@@ -8,6 +8,9 @@ import { handleInstall } from './install/handleInstall';
 import type { ServiceContext } from './serviceContext';
 import { handleSlack } from './slack/handleSlack';
 
+/** The service's own address in a browser leads to Scout's page on the site. */
+const HOME = 'https://teamtrail.app/slack';
+
 const SLACK_PATHS = {
   '/slack/events': 'events',
   '/slack/interactions': 'interactions',
@@ -38,5 +41,6 @@ export async function route(ctx: ServiceContext, req: IncomingMessage, res: Serv
     if (method === 'DELETE') return deleteLink(ctx, req, res);
   }
   if (url.pathname === '/health' && method === 'GET') return reply.json(res, 200, { ok: true });
+  if (url.pathname === '/' && method === 'GET') return reply.redirect(res, HOME, 302);
   reply.json(res, 404, { error: 'not_found' });
 }

@@ -4,7 +4,8 @@ The Teamtrail logo, the `teamtrail.` wordmark and Scout's badge, rendered at exa
 
 ## Which mark where
 
-- **Square or squarish spaces** (avatars, favicons, app icons, the Slack, GitHub and X avatars): the `t.` logo, as the tile or the bare mark.
+- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the `t.` logo, as the tile or the bare mark.
+- **Scout's Slack app icon** is Scout's badge, not the logo: Scout is who talks in Slack. Its app card's background is `#16302A`.
 - **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail.` wordmark, lowercase in Londrina Solid 900 with the orange dot.
 - Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
 

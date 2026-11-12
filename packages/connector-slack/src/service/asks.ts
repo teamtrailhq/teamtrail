@@ -1,4 +1,5 @@
 import { BRAND, type AgentSessionDoc, type PendingQuestion, type TrackerAdapter } from '@teamtrail/core';
+import { needsLookout } from '@teamtrail/core/agents';
 import { AnswerError, attentionView, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/bridge';
 import { askClosedMessage, askMessage, clip, label, mention, type AskRef, type AskView } from '../blocks';
 import type { SlackConfig } from '../store';
@@ -43,6 +44,10 @@ export async function pendingAsk(ctx: SlackContext, ref: AskRef) {
   const q = docs.find((d) => d.session.id === ref.s)?.pending.find((x) => x.id === ref.q);
   return q ? { q, view: await askView(ctx, q) } : undefined;
 }
+
+/** A question the risk policy makes high risk is answered in the Lookout only: no answer buttons in Slack. */
+export const askMode = (ctx: SlackContext, q: PendingQuestion) =>
+  needsLookout.question(ctx.o.root, q) ? ('lookout' as const) : ('buttons' as const);
 
 /** Compare-and-set: only the first answer to an open question is delivered. */
 export function writeAnswer(ctx: SlackContext, ref: AskRef, text: string, user: string) {
@@ -133,7 +138,7 @@ async function postAsks(ctx: SlackContext, fresh: PendingQuestion[], c: SlackCon
     try {
       const r = await ctx.call<{ channel: string; ts: string }>('chat.postMessage', {
         channel,
-        ...askMessage(view, { url: ctx.o.url(), detail: c.notify.detail }),
+        ...askMessage(view, { url: ctx.o.url(), detail: c.notify.detail, mode: askMode(ctx, q) }),
       });
       const asks = ctx.asks.read();
       asks[q.id] = { sessionId: q.sessionId, channel: r.channel, ts: r.ts, view };
