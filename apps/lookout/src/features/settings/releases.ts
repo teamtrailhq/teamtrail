@@ -20,7 +20,7 @@ export const RELEASES: Release[] = [
     version: '0.29.0',
     date: '2026-11-12',
     items: [
-      'Ask Scout in Slack: @Scout inbox, @Scout status or a DM to Scout answers right there; Scout added before this asks you to reconnect once',
+      'Ask Scout in Slack: @Scout inbox or @Scout status in a channel answers only you, or DM Scout; if you added Scout before, Settings asks you to reconnect once',
       'A question your agent waits on gets its own Slack message with answer buttons, even right after it asked another one',
       'Scout can be installed straight from Slack (scout.teamtrail.app/install-slack); each person then connects in Settings → Slack',
     ],

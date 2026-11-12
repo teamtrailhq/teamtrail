@@ -3,7 +3,7 @@
 // Settings goes through the service and Slack's (fake) consent screen, asks "Connect as @ana in efika?" and connects; an agent's question
 // is answered with a button in Slack; a high-risk question shows Open in Lookout and a Slack answer can't back a
 // high-risk decision; a second agent's waited-on question gets its own message right after another question; @Scout
-// in a channel and a DM to Scout are answered in place; Disconnect forgets it all. Waits on what the user sees and what the servers answer, never sleeps.
+// inbox in a channel is answered to the asker alone and a DM to Scout in the DM; Disconnect forgets it all. Waits on what the user sees and what the servers answer, never sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -192,12 +192,16 @@ export async function verifySlack({ browser, cli, log, shots }) {
     await control('click', [ANA, DM, own.ts, 'ask_option:0']);
     const waited = await waiting;
 
-    // @Scout in a channel answers in its thread; a DM to Scout answers in the DM. Read-only: no answer buttons.
+    // @Scout inbox in a channel: answered in its thread to Ana alone, never posted where the channel reads it; a
+    // DM to Scout answers in the DM. Read-only: no answer buttons.
     const CHANNEL = 'C0INFRA01';
     await control('mention', [ANA, CHANNEL, 'inbox']);
     const inThread = await until('the reply to @Scout inbox', async () =>
-      (await control(`messages?channel=${CHANNEL}`)).find((m) => m.thread_ts && /waiting on you/.test(m.text)),
+      (await control('ephemerals')).find(
+        (m) => m.channel === CHANNEL && m.thread_ts && /^(\d+ waiting on you|Nothing is waiting on you)/.test(m.text),
+      ),
     );
+    const leaked = (await control(`messages?channel=${CHANNEL}`)).some((m) => /^\d+ waiting on you/.test(m.text));
     const mentionButtons = JSON.stringify(inThread.blocks ?? []);
     await control('dm', [ANA, 'hello']);
     const dmHelp = await until('the reply to a DM', async () =>
@@ -232,8 +236,9 @@ export async function verifySlack({ browser, cli, log, shots }) {
       ordinary.decision.decidedBy === `slack:${ANA}` &&
       waited.answered &&
       waited.answer === 'JSON' &&
-      !!inThread &&
-      !/"action_id":"(ask_option|answer|reply)/.test(mentionButtons) &&
+      inThread.user === ANA &&
+      !leaked &&
+      !mentionButtons.includes('"actions"') &&
       !!dmHelp &&
       !after.slack &&
       journal.join() === 'connected,disconnected' &&
@@ -243,7 +248,7 @@ export async function verifySlack({ browser, cli, log, shots }) {
         `a button in Slack answered the agent ("${got.answer}", via ${got.answeredVia}); the high-risk question shows ${highButtons.join(', ')}; ` +
         `a Slack answer refused for a high-risk decision (${!!highRefused}) and kept for an ordinary one (${ordinary.decision.decidedBy}); ` +
         `two questions from one agent, the waited-on one posted with buttons and answered "${waited.answer}"; ` +
-        `@Scout inbox answered in its thread, the DM answered with help (${!!dmHelp}); ` +
+        `@Scout inbox answered in its thread to ${inThread.user} alone (posted to the channel: ${leaked}), the DM answered with help (${!!dmHelp}); ` +
         `Disconnect forgot the link (${!after.slack}); journal ${journal.join(' → ')}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;

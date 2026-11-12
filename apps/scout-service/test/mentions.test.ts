@@ -81,13 +81,28 @@ describe('mentions and DMs', () => {
     expect(w.slack.calls.filter((c) => c.method === 'chat.postEphemeral')).toHaveLength(0);
     await linked(w, { team: 'T1', user: 'U1' });
     await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: '9.9' }) });
-    await fromSlack(w, { path: '/slack/events', body: dm({ user: 'U7', channel: 'D7' }) });
+    await fromSlack(w, { path: '/slack/events', body: dm({ user: 'U8', channel: 'D7' }) });
     await expect.poll(() => w.slack.calls.filter((c) => c.method === 'chat.postEphemeral').length).toBe(1);
     const eph = w.slack.calls.find((c) => c.method === 'chat.postEphemeral')!;
     expect(eph.args).toMatchObject({ channel: 'C1', user: 'U7', thread_ts: '9.9' });
     expect(String(eph.args.text)).toContain('Add Scout to Slack');
     await expect.poll(() => w.slack.calls.filter((c) => c.method === 'chat.postMessage').length).toBe(1);
     expect(w.slack.calls.find((c) => c.method === 'chat.postMessage')!.args).toMatchObject({ channel: 'D7' });
+  });
+
+  test('a person who keeps writing to Scout while their Teamtrail is away is told once a minute, not every time', async () => {
+    await linked(w, { team: 'T1', user: 'U1' });
+    const told = () =>
+      w.slack.calls.filter((c) => c.method === 'chat.postEphemeral' || c.method === 'chat.postMessage');
+    for (let i = 0; i < 5; i++)
+      await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: `${i}.1` }) });
+    await fromSlack(w, { path: '/slack/events', body: dm({ user: 'U7', channel: 'D7' }) });
+    await expect.poll(() => told().length).toBe(1);
+    await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U9', ts: '7.1' }) });
+    await expect.poll(() => told().length).toBe(2);
+    w.clock.offset += 61_000;
+    await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: '8.1' }) });
+    await expect.poll(() => told().length).toBe(3);
   });
 
   test('ready tells the Teamtrail which scopes its workspace granted', async () => {

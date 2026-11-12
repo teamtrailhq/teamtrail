@@ -16,6 +16,8 @@ export const LIMITS = {
    * <workspace>?" and choose Connect, short enough that a code seen later is useless.
    */
   codeMs: 3 * 60_000,
+  /** "Not connected" or "offline" for a mention or DM: once a minute per person, whatever they keep writing. */
+  offlineReplyMs: 60_000,
   linksPerUser: 5,
   socketsPerLink: 2,
   /** Slack API calls per link: a burst, then this many per minute. */

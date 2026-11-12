@@ -44,18 +44,27 @@ const dm = (o: { user: string; text: string; extra?: Record<string, unknown> }) 
   ...o.extra,
 });
 
-test('@Scout inbox answers in the thread, read-only: no answer buttons', async () => {
-  const { w, map, event, posts } = await setup();
+test('@Scout inbox and status in a channel are seen only by the person who asked, never posted to the channel', async () => {
+  const { w, map, event, posts, calls } = await setup();
   try {
     agentDoc(w.root, { sid: 's1', mapId: map.id, pending: [{ id: 'q1', text: 'Which client?', at: Date.now() }] });
-    await event(mention({ user: ANA, text: '<@B0SCOUT> inbox' }));
-    const p = posts().at(-1)!;
-    assert.equal(p.channel, 'C0INFRA01');
-    assert.equal(p.thread_ts, '100.1', 'a reply in the mention’s thread');
-    assert.match(p.text, /1 waiting on you/);
-    assert.doesNotMatch(JSON.stringify(p.blocks), /"action_id":"(answer|reply)/);
+    const before = posts().length;
+    // Whatever the bot's id looks like (the fake's has lowercase letters), the mention itself isn't the command.
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT> inbox' }));
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT|scout> status' }));
+    assert.equal(posts().length, before, 'nothing about the trails is posted where the channel can read it');
+    const [inbox, status] = calls('chat.postEphemeral').slice(-2);
+    assert.equal(inbox.channel, 'C0INFRA01');
+    assert.equal(inbox.user, ANA, 'only Ana sees it');
+    assert.equal(inbox.thread_ts, '100.1', 'in the mention’s thread');
+    assert.match(inbox.text, /1 waiting on you/);
+    assert.equal(status.user, ANA);
+    for (const p of [inbox, status])
+      assert.ok(!(p.blocks ?? []).some((b: { type: string }) => b.type === 'actions'), 'no buttons');
     await event(mention({ user: ANA, text: '<@B0SCOUT> help', thread: '90.0' }));
-    assert.equal(posts().at(-1)!.thread_ts, '90.0', 'a mention inside a thread is answered in that thread');
+    const help = posts().at(-1)!;
+    assert.equal(help.thread_ts, '90.0', 'help is public, in the thread the mention was in');
+    assert.match(help.text, /@Scout inbox/);
   } finally {
     w.cleanup();
   }

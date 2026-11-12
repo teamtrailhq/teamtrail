@@ -40,7 +40,14 @@ export function createService(o: Options): ScoutService {
   };
   const hub = new Hub(base);
   const httpLimit = new RateLimit({ burst: LIMITS.httpBurst, perMinute: LIMITS.httpPerMinute, now });
-  const ctx: ServiceContext = { ...base, hub, httpLimit, recentEvents: new Set(), replays: new Map() };
+  const ctx: ServiceContext = {
+    ...base,
+    hub,
+    httpLimit,
+    recentEvents: new Set(),
+    replays: new Map(),
+    offlineSaid: new Map(),
+  };
   const upgrades = new RateLimit({ burst: LIMITS.upgradeBurst, perMinute: LIMITS.upgradePerMinute, now });
 
   const server = createServer((req, res) => {
