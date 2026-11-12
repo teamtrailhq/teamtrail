@@ -4,6 +4,14 @@
 
 > You pick the destination. Your agents walk the trail.
 
+[![CI](https://img.shields.io/github/actions/workflow/status/teamtrailhq/teamtrail/ci.yml?branch=main&label=CI)](https://github.com/teamtrailhq/teamtrail/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/teamtrail/next?label=npm%40next)](https://www.npmjs.com/package/teamtrail?activeTab=versions)
+[![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![MCP](https://img.shields.io/badge/MCP-server-555)](https://modelcontextprotocol.io)
+[![Works with Claude Code and Codex](https://img.shields.io/badge/works%20with-Claude%20Code%20%C2%B7%20Codex-555)](packages/cli/README.md#connect-your-coding-agent)
+[![License: FSL-1.1-ALv2](https://img.shields.io/badge/license-FSL--1.1--ALv2-blue)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/teamtrailhq/teamtrail?style=social)](https://github.com/teamtrailhq/teamtrail/stargazers)
+
 **[teamtrail.app](https://teamtrail.app)** · [Docs](https://teamtrail.app/docs/) · [Try it: `npx teamtrail@next`](https://www.npmjs.com/package/teamtrail?activeTab=versions)
 
 Teamtrail is a local trail map for planning and executing big work with your AI coding agents. You describe a trail; your agents chart it as decision tickets, work through them, and bring the calls that need you to a single inbox. Scout, the Lookout's trail lead, briefs you on what changed while you were away and keeps spend and token usage in view.
