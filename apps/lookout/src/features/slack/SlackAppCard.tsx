@@ -27,6 +27,7 @@ export function SlackAppCard(props: {
       </div>
       {s.connected && <div className="c-loc">{workspaceLine(s)}</div>}
       {s.connected && <SlackStateLine s={s} />}
+      {s.connected && <div className="t-meta">Scout answers in Slack only while this Teamtrail is running.</div>}
       {s.delivery && <DeliveryLine problem={s.delivery} />}
       {s.connected && s.mentions === false && !confirming && <MentionsHint onError={props.onError} />}
       {!s.connected && !confirming && <ScoutIntro s={s} connecting={back.busy} />}

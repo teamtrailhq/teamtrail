@@ -1,8 +1,8 @@
 {
   "display_information": {
     "name": "Scout",
-    "description": "Teamtrail's agent questions, approvals and decisions in Slack",
-    "long_description": "Scout is the voice of Teamtrail, a local trail map for big work done by AI coding agents. Connect Scout to the Teamtrail running on your machine and answer your agents' questions, approve finished work and record decisions without leaving Slack. Scout talks only to the person who connected it, and only while their Teamtrail is running. Trails, decisions and approvals stay on your machine: the Scout service passes questions and answers through and keeps no message content.",
+    "description": "Agent questions and approvals from Teamtrail running on your computer",
+    "long_description": "Scout is the voice of Teamtrail, a local trail map for big work done by AI coding agents. Scout works with Teamtrail running on your own computer: connect it from Teamtrail's Settings and answer your agents' questions, approve finished work and record decisions without leaving Slack. Scout talks only to the person who connected it, and only while their Teamtrail is running. Trails, decisions and approvals stay on your machine: the Scout service passes questions and answers through and keeps no message content.",
     "background_color": "#16302A"
   },
   "features": {

@@ -84,6 +84,21 @@ describe('delivery', () => {
     expect(publish?.token).toBe('xoxb-T1-secret');
     expect(publish?.args.user_id).toBe('U1');
     expect(JSON.stringify(publish?.args)).toContain("isn't running");
+    const blocks = (publish?.args.view as { blocks: { type: string }[] }).blocks;
+    expect(blocks[0]).toMatchObject({ type: 'header' });
+    expect(JSON.stringify(blocks)).toContain('npx teamtrail@next');
+    expect(JSON.stringify(blocks)).toContain('https://teamtrail.app/docs/slack/');
+  });
+
+  test('a Home tab nobody can show is logged by Slack’s code', async () => {
+    await linked(w, { team: 'T1', user: 'U1' });
+    w.slack.failing.set('views.publish', 'invalid_blocks');
+    await fromSlack(w, { path: '/slack/events', body: event({ team: 'T1', user: 'U1', id: 'Ev3' }) });
+    await expect.poll(() => w.logs.some((l) => l.event === 'offline.failed')).toBe(true);
+    expect(w.logs).toContainEqual({
+      event: 'offline.failed',
+      fields: { method: 'views.publish', error: 'invalid_blocks' },
+    });
   });
 
   test('uninstalling removes the workspace and its links, and closes their sockets', async () => {

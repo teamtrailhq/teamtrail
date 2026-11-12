@@ -105,6 +105,34 @@ describe('mentions and DMs', () => {
     await expect.poll(() => told().length).toBe(3);
   });
 
+  test('Scout not in the channel: the offline answer to a mention goes to the person’s DM, and the failure is logged by code', async () => {
+    await linked(w, { team: 'T1', user: 'U1' });
+    w.slack.failing.set('chat.postEphemeral', 'not_in_channel');
+    await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: '9.9' }) });
+    await expect.poll(() => w.slack.calls.filter((c) => c.method === 'chat.postMessage').length).toBe(1);
+    expect(w.slack.calls.find((c) => c.method === 'conversations.open')!.args).toMatchObject({ users: 'U7' });
+    const dm = w.slack.calls.find((c) => c.method === 'chat.postMessage')!;
+    expect(dm.args).toMatchObject({ channel: 'D7' });
+    expect(String(dm.args.text)).toContain('npx teamtrail@next');
+    expect(w.logs).toContainEqual({
+      event: 'offline.failed',
+      fields: { method: 'chat.postEphemeral', error: 'not_in_channel' },
+    });
+    expect(JSON.stringify(w.logs)).not.toContain('npx teamtrail');
+  });
+
+  test('another failure is logged by its code, with no DM instead', async () => {
+    await linked(w, { team: 'T1', user: 'U1' });
+    w.slack.failing.set('chat.postEphemeral', 'ratelimited');
+    await fromSlack(w, { path: '/slack/events', body: mention({ user: 'U7', ts: '9.9' }) });
+    await expect.poll(() => w.logs.some((l) => l.event === 'offline.failed')).toBe(true);
+    expect(w.logs).toContainEqual({
+      event: 'offline.failed',
+      fields: { method: 'chat.postEphemeral', error: 'ratelimited' },
+    });
+    expect(w.slack.calls.filter((c) => c.method === 'chat.postMessage')).toHaveLength(0);
+  });
+
   test('ready tells the Teamtrail which scopes its workspace granted', async () => {
     const ana = await connect(w.base, (await linked(w, { team: 'T1', user: 'U1' })).token);
     expect(ana.messages[0]).toMatchObject({ type: 'ready', scopes: ['commands', 'chat:write'] });

@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-12T09:39:52.729Z",
+  "recordedAt": "2026-11-12T12:30:42.908Z",
   "notes": "Recorded against test/fakes/slack.ts through test/fakes/scoutHub.ts; request and response shapes follow api.slack.com (Web API methods, interaction payloads, Block Kit). /scout help, status (all and one trail), inbox, unknown subcommand, refusal.",
   "exchanges": [
     {
@@ -12,7 +12,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -35,7 +35,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -58,7 +58,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -262,7 +262,7 @@
       },
       "ack": {
         "response_type": "ephemeral",
-        "text": "*/scout decide [text]*  record a decision (or use *Save as decision* on a message)\n*/scout status [trail]*  trip report\n*/scout inbox*  questions waiting on you\n*/scout help*  this list"
+        "text": "*/scout decide [text]*  record a decision (or use *Save as decision* on a message)\n*/scout status [trail]*  trip report\n*/scout inbox*  questions waiting on you\n*/scout help*  this list\nScout answers only while Teamtrail is running on your computer."
       }
     },
     {
@@ -384,7 +384,7 @@
       },
       "ack": {
         "response_type": "ephemeral",
-        "text": "Unknown command `dance`.\n*/scout decide [text]*  record a decision (or use *Save as decision* on a message)\n*/scout status [trail]*  trip report\n*/scout inbox*  questions waiting on you\n*/scout help*  this list"
+        "text": "Unknown command `dance`.\n*/scout decide [text]*  record a decision (or use *Save as decision* on a message)\n*/scout status [trail]*  trip report\n*/scout inbox*  questions waiting on you\n*/scout help*  this list\nScout answers only while Teamtrail is running on your computer."
       }
     }
   ]

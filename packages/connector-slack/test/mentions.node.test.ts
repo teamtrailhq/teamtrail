@@ -86,6 +86,33 @@ test('a DM to Scout is answered in the DM, and anything else gets the help', asy
   }
 });
 
+test('mentions and DMs written as sentences are understood: inbox, status of a trail, help, and anything else', async () => {
+  const { w, fake, map, event, posts, calls } = await setup();
+  try {
+    fake.im(ANA);
+    agentDoc(w.root, { sid: 's1', mapId: map.id, pending: [{ id: 'q1', text: 'Which client?', at: Date.now() }] });
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT> whats in the inbox?' }));
+    assert.match(calls('chat.postEphemeral').at(-1)!.text, /1 waiting on you/);
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT> inbox please' }));
+    assert.match(calls('chat.postEphemeral').at(-1)!.text, /1 waiting on you/);
+    await event(mention({ user: ANA, text: "<@U0ScoutBOT> what's the status of Event store?" }));
+    assert.match(JSON.stringify(calls('chat.postEphemeral').at(-1)), /Event store/);
+    await event(mention({ user: ANA, text: '<@U0ScoutBOT> status of nothing like it' }));
+    const missed = JSON.stringify(calls('chat.postEphemeral').at(-1));
+    assert.match(missed, /No trail matches/);
+    assert.match(missed, /Event store/, 'all trails instead of nothing');
+    await event(dm({ user: ANA, text: 'hi' }));
+    assert.match(posts().at(-1)!.text, /Try \*@Scout inbox\*/);
+    await event(dm({ user: ANA, text: 'HELP!' }));
+    assert.doesNotMatch(posts().at(-1)!.text, /Try/);
+    assert.match(posts().at(-1)!.text, /@Scout status/);
+    await event(dm({ user: ANA, text: 'whats in the inbox?' }));
+    assert.match(posts().at(-1)!.text, /1 waiting on you/, 'the same parsing in a DM');
+  } finally {
+    w.cleanup();
+  }
+});
+
 test('someone who is not the owner or allowed is refused politely, and nothing is read', async () => {
   const { w, event, posts } = await setup();
   try {
@@ -106,7 +133,7 @@ test("bots, edits and Scout's own messages get no answer, and typed text comes b
     assert.equal(posts().length, before);
     await event(mention({ user: ANA, text: '<@B0SCOUT> <!channel>' }));
     const text = posts().at(-1)!.text as string;
-    assert.match(text, /I don't know/);
+    assert.match(text, /Try \*@Scout inbox\*/);
     assert.doesNotMatch(text, /<!channel>/);
   } finally {
     w.cleanup();

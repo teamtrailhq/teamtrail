@@ -49,4 +49,5 @@ export const helpText = (command: string) =>
     `*${command} status [trail]*  trip report`,
     `*${command} inbox*  questions waiting on you`,
     `*${command} help*  this list`,
+    `${BRAND.assistant.name} answers only while ${BRAND.name} is running on your computer.`,
   ].join('\n');

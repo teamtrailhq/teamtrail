@@ -19,19 +19,35 @@ export async function inboxMessage(ctx: SlackContext) {
   return { text: `${pending.length} waiting on you`, blocks };
 }
 
-export async function statusMessage(ctx: SlackContext, arg: string, command: string) {
+/** A trail by its key (`#1`), id or title, ignoring case; the first whose title contains the words otherwise. */
+function findTrail(maps: { id: string; key: string; title: string }[], arg: string) {
+  const a = arg.toLowerCase().replace(/^#/, '');
+  return (
+    maps.find((x) => x.key.toLowerCase().replace(/^#/, '') === a || x.id.toLowerCase() === a) ??
+    maps.find((x) => x.title.toLowerCase() === a) ??
+    maps.find((x) => x.title.toLowerCase().includes(a))
+  );
+}
+
+/**
+ * `/scout status [trail]`: one trail's report, or all trails. A name no trail has answers so, unless `fallback`
+ * (a mention or DM, written as a sentence), which lists all trails under a note instead.
+ */
+export async function statusMessage(ctx: SlackContext, arg: string, command: string, o: { fallback?: boolean } = {}) {
   const adapter = await ctx.o.active();
   const maps = await adapter.listMaps();
   const docs = await readAgentDocs(ctx.o.root);
   const now = Date.now();
-  if (arg) {
-    const a = arg.toLowerCase().replace(/^#/, '');
-    const m =
-      maps.find((x) => x.key.toLowerCase().replace(/^#/, '') === a || x.id === arg) ??
-      maps.find((x) => x.title.toLowerCase().includes(a));
-    if (!m) return { text: `No trail matches “${label(arg)}”.` };
-    return statusBlocks(briefTrail(await adapter.loadMap(m.id), docs), { now, url: ctx.o.url() });
-  }
+  const m = arg ? findTrail(maps, arg) : undefined;
+  if (m) return statusBlocks(briefTrail(await adapter.loadMap(m.id), docs), { now, url: ctx.o.url() });
+  if (arg && !o.fallback) return { text: `No trail matches “${label(arg)}”.` };
   const briefs = await Promise.all(maps.slice(0, 20).map(async (m) => briefTrail(await adapter.loadMap(m.id), docs)));
-  return trailListBlocks(briefs, command);
+  const list = trailListBlocks(briefs, command);
+  if (!arg) return list;
+  // No trail by that name: all of them, saying so, rather than nothing.
+  const missed = {
+    type: 'context',
+    elements: [{ type: 'mrkdwn', text: `No trail matches “${label(arg)}”. All trails:` }],
+  };
+  return { ...list, blocks: [missed, ...list.blocks] };
 }
