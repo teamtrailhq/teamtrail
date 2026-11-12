@@ -17,6 +17,8 @@ const fields = (root: string, a: AnsweredQuestion) => [
   a.category ?? '',
   a.urgency ?? '',
   a.via ?? '',
+  // only on entries that have them, so a record signed before categories were kept still verifies
+  ...(a.categories?.length ? [a.categories.join(',')] : []),
 ];
 
 /** The entry with this machine's signature; as it was when the key can't be read (it then counts for nothing). */

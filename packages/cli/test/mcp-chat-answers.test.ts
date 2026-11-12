@@ -2,7 +2,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { agentPaths, MarkdownAdapter } from '@teamtrail/core';
-import { LookoutOnlyAnswer, readAgentDocs, writeAgentAnswer, writeLocalJson } from '@teamtrail/core/agents';
+import {
+  LookoutOnlyAnswer,
+  lookoutOnlyTickets,
+  readAgentDocs,
+  ticketNeedsLookout,
+  writeAgentAnswer,
+  writeLocalJson,
+} from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { signAgentAnswer } from '../../core/src/agents/agentAnswerSignature';
@@ -190,6 +197,24 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
       questionId: medium.questionId,
     });
     expect(closed.decision.decidedBy).toBe('slack:U0ANA');
+  });
+
+  it('a high-risk question marks its ticket for good, where the repo can’t reach; an ordinary one doesn’t', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    await askOnJunction(call);
+    const [map] = await new MarkdownAdapter(nodeMarkdownFs(root), root).listMaps();
+    const { tickets } = await new MarkdownAdapter(nodeMarkdownFs(root), root).loadMap(map.id);
+    expect(lookoutOnlyTickets.has(root, map.id, tickets[0].id)).toBe(true);
+    // the session docs go (a month on, or deleted by an agent): the mark still holds
+    fs.rmSync(path.join(root, '.agents', 'sessions'), { recursive: true, force: true });
+    expect(await ticketNeedsLookout(root, map.id, tickets[0].id)).toBe(true);
+    const plain = await call<{ trail: { id: string }; tickets: { id: string; key: string }[] }>('start_trail', {
+      discovery: false,
+      title: 'Copy',
+      destination: 'Button copy',
+      tickets: [{ ref: 'c', title: 'Which label?', type: 'junction' }],
+    });
+    expect(lookoutOnlyTickets.has(root, plain.trail.id, plain.tickets[0].id)).toBe(false);
   });
 
   it('an answer from before answers were labelled counts as chat at the gates (fail closed)', async () => {

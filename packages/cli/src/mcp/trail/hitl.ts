@@ -7,7 +7,7 @@ import {
   type AttentionKind,
   type RiskCategory,
 } from '@teamtrail/core';
-import { needsLookout, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
+import { lookoutOnlyTickets, needsLookout, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { rankedAttention } from './attention';
 import { CHAT_GUIDES, SLACK_HIGH_RISK } from './humanAnswer';
@@ -31,6 +31,9 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   const sid = s.id;
   // The ticket the question is about: the one this session holds as it asks.
   const askedOn = s.info.ticketId;
+  // A high-risk question marks its ticket for good, in the machine store: it is decided in the Lookout only.
+  if (askedOn && needsLookout.question(ctx.root, { categories }))
+    lookoutOnlyTickets.mark(ctx.root, { mapId: s.info.mapId, ticketId: askedOn, categories });
   ctx.waits.set(
     q.id,
     answer.then((text) => {

@@ -9,9 +9,11 @@ import { mkdirSync, mkdtempSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
+import { ActivityStream } from '../src/activity/activityStream';
 import { MemoryAdapter } from '../src/adapters/memoryAdapter';
 import { LookoutOnlyAnswer, writeAgentAnswer } from '../src/agents/agentDocs';
 import { agentPaths, type AgentSessionDoc } from '../src/agents/agentLink';
+import { answeredSigned, signAnswered } from '../src/agents/answeredSignature';
 import { journalFile } from '../src/history/journalFile';
 import { writeLocalJson } from '../src/lib/ensureLocalDir';
 import type { RiskCategory } from '../src/model/risk';
@@ -20,6 +22,7 @@ import { recordDecision } from '../src/planning/operations/decisionOps';
 import { resolve } from '../src/planning/operations/resolve';
 import { approveReroute, rejectReroute } from '../src/planning/reroute/decideReroute';
 import { proposeReroute } from '../src/planning/reroute/rerouteFlow';
+import { lookoutOnlyTickets } from '../src/policy/lookoutOnlyTickets';
 import { needsLookout } from '../src/policy/needsLookout';
 import { ticketNeedsLookout } from '../src/policy/ticketNeedsLookout';
 
@@ -167,4 +170,53 @@ test('an approval with no evidence of what changed fails closed while the policy
   const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-no-evidence-'));
   assert.equal(needsLookout.approval(root, { mapId: 'm', ticketId: 't' }), true, 'no attempt');
   assert.equal(needsLookout.approval(root, { mapId: 'm', ticketId: 't', attemptId: 'A-9' }), true, 'unreadable');
+});
+
+test('an answered question keeps every category it was asked with, and still marks its ticket', async () => {
+  const t = await trail();
+  const activity = new ActivityStream();
+  const s = activity.startSession({ id: 's1', agent: 'claude-01', mode: 'work', mapId: t.mapId, ticketId: t.risky.id });
+  void s.ask('Rename the column and bill the change?');
+  const q = activity.snapshot.pending[0];
+  q.ticketId = t.risky.id;
+  q.category = 'product-behaviour';
+  q.categories = ['product-behaviour', 'schema'];
+  activity.answer(q.id, 'Yes', 'trail lead', { via: 'lookout' });
+  const [answered] = activity.snapshot.answered;
+  assert.deepEqual(answered.categories, ['product-behaviour', 'schema']);
+  // signed with its categories; a record from before they were kept still verifies
+  assert.equal(answeredSigned(t.root, signAnswered(t.root, answered)), true);
+  const { categories: _gone, ...older } = answered;
+  assert.equal(answeredSigned(t.root, signAnswered(t.root, older)), true);
+  // the session doc as the agent's process writes it, with the question answered and nothing pending
+  writeLocalJson(t.root, agentPaths.session('s1'), {
+    v: 1,
+    session: {
+      id: 's1',
+      agent: 'claude-01',
+      mode: 'work',
+      mapId: t.mapId,
+      ticketId: t.risky.id,
+      step: 1,
+      total: 1,
+      stepLabel: 'Ask',
+      status: 'running',
+      startedAt: Date.now(),
+    },
+    chats: [],
+    pending: [],
+    answered: [answered],
+    feed: [],
+    pid: process.pid,
+    updatedAt: Date.now(),
+  });
+  assert.equal(await ticketNeedsLookout(t.root, t.mapId, t.risky.id), true, 'high by a category only in `categories`');
+});
+
+test('a durable mark keeps a ticket the Lookout’s after its question has left every session doc', async () => {
+  const t = await trail();
+  assert.equal(await ticketNeedsLookout(t.root, t.mapId, t.risky.id), false);
+  lookoutOnlyTickets.mark(t.root, { mapId: t.mapId, ticketId: t.risky.id, categories: ['schema'] });
+  assert.equal(await ticketNeedsLookout(t.root, t.mapId, t.risky.id), true, 'no session doc names it');
+  assert.equal(await ticketNeedsLookout(t.root, t.mapId, t.plain.id), false);
 });

@@ -15,7 +15,10 @@ export interface LookoutGuard {
 /**
  * Refuses a decision on a ticket that only the Lookout may make. A record whose source is Slack counts as given
  * in Slack even when the caller says nothing, and a caller that can't say whether the ticket is high risk is
- * refused: it fails closed. Decisions about the trail as a whole (no ticket) are never high risk by a ticket.
+ * refused: it fails closed. Decisions about the trail as a whole (no ticket) are never high risk by a ticket, by
+ * design: a high-risk question asked on the trail as a whole (no ticket held, such as framing) marks no ticket.
+ * Such a question is still answered in the Lookout only (agents/agentDocs.ts refuses a Slack answer to it), and a
+ * decision an agent records from it is high risk by its category at the decision gate.
  */
 export async function assertLookoutGuard(
   g: LookoutGuard & { sourceKind?: string },

@@ -33,6 +33,7 @@ export {
 export { dropCriteriaProposal, readCriteriaProposals, writeCriteriaProposal } from './criteria/criteriaProposals';
 export { caseInsensitiveFs } from './policy/caseInsensitiveFs';
 export { needsLookout } from './policy/needsLookout';
+export { lookoutOnlyTickets } from './policy/lookoutOnlyTickets';
 export { ticketNeedsLookout } from './policy/ticketNeedsLookout';
 export { repoRootSpellings } from './policy/repoRootSpellings';
 export { chartedBy, recordCharted, type ChartedBy } from './agents/chartedStore';
