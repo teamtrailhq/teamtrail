@@ -10,6 +10,7 @@ export const BOT_SCOPES = [
   'users:read',
   'channels:read',
   'groups:read',
+  'app_mentions:read',
 ] as const;
 
 /**
@@ -110,6 +111,8 @@ export function fakeSlack(opts: { start?: number } = {}) {
   const triggers = new Map<string, string>();
   /** Bodies POSTed to response_url, i.e. ephemeral replies. */
   const responses: { url: string; body: any }[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
+  /** `chat.postEphemeral` calls: seen by one person, kept apart from the channel's messages. */
+  const ephemerals: Record<string, unknown>[] = [];
 
   const userJson = (u: ReturnType<typeof users.get> & {}) => ({
     id: u.id,
@@ -270,6 +273,14 @@ export function fakeSlack(opts: { start?: number } = {}) {
       case 'views.publish':
         if (!users.has(args.user_id)) return err('user_not_found');
         return ok({ view: { id: `VH${args.user_id}`, ...args.view } });
+      case 'chat.postEphemeral': {
+        // Seen by one person only and gone on reload, so it isn't kept with the channel's messages.
+        const c = channel(args.channel);
+        if (!c) return err('channel_not_found');
+        if (!c.members.has(args.user)) return err('user_not_in_channel');
+        ephemerals.push({ ...args });
+        return ok({ message_ts: ts() });
+      }
       default:
         return err('unknown_method');
     }
@@ -359,6 +370,7 @@ export function fakeSlack(opts: { start?: number } = {}) {
     channels,
     views,
     responses,
+    ephemerals,
     fetch: fetchFn as typeof fetch,
     im,
     /** What people do in the Slack client. */
@@ -371,6 +383,39 @@ export function fakeSlack(opts: { start?: number } = {}) {
     },
     /** Socket Mode payloads for user actions. */
     payload: {
+      /** @Scout in a channel (a thread reply when `thread` is given), as Slack's Events API sends it. */
+      mention: (user: string, channel: string, text: string, thread?: string) => ({
+        type: 'events_api' as const,
+        payload: {
+          token: 'legacy',
+          team_id: team.id,
+          api_app_id: app.id,
+          type: 'event_callback',
+          event_id: `Ev0${++seq}`,
+          event_time: clock,
+          event: {
+            type: 'app_mention',
+            user,
+            channel,
+            text: `<@${app.botUser}> ${text}`,
+            ts: ts(),
+            ...(thread ? { thread_ts: thread } : {}),
+          },
+        },
+      }),
+      /** A person's message in their DM with Scout. */
+      dm: (user: string, text: string) => ({
+        type: 'events_api' as const,
+        payload: {
+          token: 'legacy',
+          team_id: team.id,
+          api_app_id: app.id,
+          type: 'event_callback',
+          event_id: `Ev0${++seq}`,
+          event_time: clock,
+          event: { type: 'message', channel_type: 'im', user, channel: im(user), text, ts: ts() },
+        },
+      }),
       homeOpened: (user: string, tab = 'home') => ({
         type: 'events_api' as const,
         payload: {

@@ -2,7 +2,8 @@
 // Slack and the real Scout service in memory (packages/connector-slack/test/serve-fake.ts): Add Scout to Slack from
 // Settings goes through the service and Slack's (fake) consent screen, asks "Connect as @ana in efika?" and connects; an agent's question
 // is answered with a button in Slack; a high-risk question shows Open in Lookout and a Slack answer can't back a
-// high-risk decision; Disconnect forgets it all. Waits on what the user sees and what the servers answer, never sleeps.
+// high-risk decision; a second agent's waited-on question gets its own message right after another question; @Scout
+// inbox in a channel is answered to the asker alone and a DM to Scout in the DM; Disconnect forgets it all. Waits on what the user sees and what the servers answer, never sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -163,6 +164,50 @@ export async function verifySlack({ browser, cli, log, shots }) {
       questionId: asked.questionId,
     });
 
+    // Two questions from one agent, the second waited on: the second still gets its own message with buttons.
+    const second = new Client({ name: 'codex', version: '1.0.0' });
+    await second.connect(
+      new StdioClientTransport({ command: process.execPath, args: [cli, 'mcp'], cwd: top, stderr: 'pipe', env }),
+    );
+    closers.push(() => second.close());
+    const call2 = caller(second);
+    await call2('resume_trail', { trail: trail.trail.id });
+    await call2('ask_human', {
+      question: 'Purge events older than a year?',
+      category: 'data-deletion',
+      urgency: 'blocking',
+      waitSeconds: 0,
+    });
+    const waiting = call2('ask_human', {
+      question: 'Keep event payloads as JSON?',
+      suggestions: ['JSON', 'Binary'],
+      urgency: 'blocking',
+      waitSeconds: 30,
+    });
+    const own = await until('the waited-on question as its own message', async () =>
+      (await messages()).find(
+        (m) => m.text.includes('Keep event payloads') && m.blocks?.some((b) => b.type === 'actions'),
+      ),
+    );
+    await control('click', [ANA, DM, own.ts, 'ask_option:0']);
+    const waited = await waiting;
+
+    // @Scout inbox in a channel: answered in its thread to Ana alone, never posted where the channel reads it; a
+    // DM to Scout answers in the DM. Read-only: no answer buttons.
+    const CHANNEL = 'C0INFRA01';
+    await control('mention', [ANA, CHANNEL, 'inbox']);
+    const inThread = await until('the reply to @Scout inbox', async () =>
+      (await control('ephemerals')).find(
+        (m) => m.channel === CHANNEL && m.thread_ts && /^(\d+ waiting on you|Nothing is waiting on you)/.test(m.text),
+      ),
+    );
+    const leaked = (await control(`messages?channel=${CHANNEL}`)).some((m) => /^\d+ waiting on you/.test(m.text));
+    const mentionButtons = JSON.stringify(inThread.blocks ?? []);
+    await control('dm', [ANA, 'hello']);
+    const dmHelp = await until('the reply to a DM', async () =>
+      (await messages()).find((m) => m.text.includes('@Scout inbox')),
+    );
+
     // Disconnect: revoked at the service, forgotten here.
     await page.goto(`${lookout.url}?settings=slack`);
     await card.getByRole('button', { name: 'Disconnect', exact: true }).click();
@@ -189,6 +234,12 @@ export async function verifySlack({ browser, cli, log, shots }) {
       highButtons.join() === 'Open in Lookout' &&
       /answered in Slack, and this decision is high risk/.test(highRefused) &&
       ordinary.decision.decidedBy === `slack:${ANA}` &&
+      waited.answered &&
+      waited.answer === 'JSON' &&
+      inThread.user === ANA &&
+      !leaked &&
+      !mentionButtons.includes('"actions"') &&
+      !!dmHelp &&
       !after.slack &&
       journal.join() === 'connected,disconnected' &&
       !errors.length;
@@ -196,6 +247,8 @@ export async function verifySlack({ browser, cli, log, shots }) {
       `Slack ${ok ? 'ok' : 'WRONG'}: Add Scout to Slack asked "Connect as @ana in efika?" (nothing saved before: ${!savedEarly}), then connected (owner @ana, greeted ${!!greeted}, code gone from the address ${!address.includes('slack-link')}); ` +
         `a button in Slack answered the agent ("${got.answer}", via ${got.answeredVia}); the high-risk question shows ${highButtons.join(', ')}; ` +
         `a Slack answer refused for a high-risk decision (${!!highRefused}) and kept for an ordinary one (${ordinary.decision.decidedBy}); ` +
+        `two questions from one agent, the waited-on one posted with buttons and answered "${waited.answer}"; ` +
+        `@Scout inbox answered in its thread to ${inThread.user} alone (posted to the channel: ${leaked}), the DM answered with help (${!!dmHelp}); ` +
         `Disconnect forgot the link (${!after.slack}); journal ${journal.join(' → ')}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;

@@ -36,7 +36,7 @@ async function mayPostTo(ctx: TargetContext, link: Link, channel: string | undef
  * - `chat.update`: a message it posted;
  * - `views.update`: a view it opened or published (never by `external_id`);
  * - `conversations.replies`, `chat.getPermalink`: a message it posted, or one a shortcut gave it minutes ago;
- * - `chat.postMessage`: see `mayPostTo`.
+ * - `chat.postMessage`, `chat.postEphemeral` (shown only to the owner, `allowedCall`): see `mayPostTo`.
  */
 export async function ownsTarget(
   ctx: TargetContext,
@@ -54,6 +54,7 @@ export async function ownsTarget(
     case 'chat.getPermalink':
       return holds(ctx, link, { kinds: ['thread', 'message'], key: at(a.channel, a.message_ts) });
     case 'chat.postMessage':
+    case 'chat.postEphemeral':
       return mayPostTo(ctx, link, str(a.channel));
     default:
       return true;

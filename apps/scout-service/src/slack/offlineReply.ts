@@ -1,5 +1,6 @@
 import { AS_WRITTEN } from '@teamtrail/connector-slack/api';
 import type { Envelope } from '@teamtrail/connector-slack/node';
+import { LIMITS } from '../limits';
 import type { ServiceContext } from '../serviceContext';
 import { botApi } from './botApi';
 
@@ -43,6 +44,35 @@ async function publishHome(ctx: ServiceContext, o: { teamId: string; userId: str
   await api.call('views.publish', { user_id: o.userId, view }).catch(() => {});
 }
 
+/** Whether this person may be told again now: once a minute, so writing @Scout over and over gets one answer. */
+function firstThisMinute(ctx: ServiceContext, key: string) {
+  const now = ctx.now();
+  const last = ctx.offlineSaid.get(key);
+  if (last !== undefined && now - last < LIMITS.offlineReplyMs) return false;
+  ctx.offlineSaid.set(key, now);
+  if (ctx.offlineSaid.size > LIMITS.recentEvents) ctx.offlineSaid.delete(ctx.offlineSaid.keys().next().value as string);
+  return true;
+}
+
+/**
+ * A mention or DM whose Teamtrail can't take it: answered where it was asked, the mention privately in its thread,
+ * the DM in that DM.
+ */
+async function replyToMessage(ctx: ServiceContext, o: { teamId: string; userId: string; event: Obj; text: string }) {
+  if (!firstThisMinute(ctx, `${o.teamId}:${o.userId}`)) return;
+  const api = await botApi(ctx, o.teamId);
+  const channel = o.event.channel;
+  if (!api || typeof channel !== 'string') return;
+  if (o.event.type === 'app_mention') {
+    const thread = o.event.thread_ts ?? o.event.ts;
+    await api
+      .call('chat.postEphemeral', { channel, user: o.userId, text: o.text, thread_ts: thread, ...AS_WRITTEN })
+      .catch(() => {});
+    return;
+  }
+  await api.call('chat.postMessage', { channel, text: o.text, ...AS_WRITTEN }).catch(() => {});
+}
+
 const modal = (text: string) => ({
   response_action: 'update',
   view: { type: 'modal', title: { type: 'plain_text', text: 'Scout' }, blocks: [section(text)] },
@@ -71,6 +101,8 @@ export async function offlineReply(
       const event = (payload.event ?? {}) as Obj;
       const home = event.type === 'app_home_opened' && event.tab === 'home';
       if (home) await publishHome(ctx, { teamId: o.teamId, userId: o.userId, text });
+      if (event.type === 'app_mention' || event.type === 'message')
+        await replyToMessage(ctx, { teamId: o.teamId, userId: o.userId, event, text });
       return undefined;
     }
     default: {

@@ -239,6 +239,22 @@ describe('attention queue', () => {
     expect(q.items[1].score).toBeLessThan(q.items[0].score);
   });
 
+  it('the question an agent waits on keeps its full score, beside its other open questions', () => {
+    // Live test: a high-risk question asked without waiting, then an ordinary blocking one the agent waits on.
+    // The second scored 30 + 25 + 15 = 70, minus 2 for "2 questions" = 68, under the interrupt: it never reached Slack.
+    const qs = [
+      question('risky', { sessionId: 's-1', urgency: 'blocking', category: 'data-deletion' }),
+      question('plain', { sessionId: 's-1', urgency: 'blocking' }),
+    ];
+    const q = buildAttention(input({ questions: qs, sessions: [session('s-1', { waitingOn: 'plain' })] }));
+    const plain = q.items.find((i) => i.ref === 'plain')!;
+    const risky = q.items.find((i) => i.ref === 'risky')!;
+    expect(plain.score).toBe(70);
+    expect(isInterrupting(plain, DEFAULT_ATTENTION_POLICY, { v: 1, channel: 'slack-channel' }, now)).toBe(true);
+    expect(plain.reasons).not.toContain('2 questions from claude-01');
+    expect(risky.reasons).toContain('2 questions from claude-01');
+  });
+
   it('orders equal scores the same way every time', () => {
     const qs = ['q3', 'q1', 'q2'].map((id) => question(id, { mapId: id, sessionId: id }));
     const a = buildAttention(input({ questions: qs }));

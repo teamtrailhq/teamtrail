@@ -176,6 +176,8 @@ export function agentDoc(
     pending?: Omit<PendingQuestion, 'sessionId' | 'mapId' | 'agent'>[];
     chats?: Omit<ChatMessage, 'sessionId'>[];
     status?: 'running' | 'done';
+    /** The question the agent sits waiting on (ask_human with waitSeconds). */
+    waitingOn?: string;
   },
 ) {
   const agent = o.agent ?? 'claude-07';
@@ -192,6 +194,7 @@ export function agentDoc(
       stepLabel: 'Ask',
       status: o.status ?? 'running',
       startedAt: Date.now(),
+      ...(o.waitingOn ? { waitingOn: o.waitingOn } : {}),
       usage: { inputTokens: 1_200_000, outputTokens: 600_000, costUsd: 4.12 },
     },
     chats: (o.chats ?? []).map((c) => ({ ...c, sessionId: o.sid })),

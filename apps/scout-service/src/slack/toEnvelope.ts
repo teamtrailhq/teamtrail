@@ -30,6 +30,17 @@ const botTokenRevoked = (event: Obj) =>
   Array.isArray(obj(event.tokens).bot) &&
   (obj(event.tokens).bot as unknown[]).length > 0;
 
+/**
+ * The events passed on to a Teamtrail: the Home tab, @Scout in a channel, and a DM to Scout written by a person.
+ * Anything a bot wrote (Scout's own posts too, which would loop) and every message subtype (edits, joins,
+ * deletions) is dropped here.
+ */
+function passedOn(event: Obj) {
+  if (event.bot_id !== undefined || event.bot_profile !== undefined || event.subtype !== undefined) return false;
+  if (event.type === 'app_home_opened' || event.type === 'app_mention') return true;
+  return event.type === 'message' && event.channel_type === 'im';
+}
+
 function fromEvent(body: Obj): SlackRequest {
   if (body.type === 'url_verification') return { kind: 'challenge', challenge: String(body.challenge ?? '') };
   if (body.type !== 'event_callback') return { kind: 'ignore' };
@@ -37,7 +48,7 @@ function fromEvent(body: Obj): SlackRequest {
   const teamId = str(body.team_id);
   if (!teamId) return { kind: 'ignore' };
   if (event.type === 'app_uninstalled' || botTokenRevoked(event)) return { kind: 'uninstall', teamId };
-  if (event.type === 'tokens_revoked') return { kind: 'ignore' };
+  if (event.type === 'tokens_revoked' || !passedOn(event)) return { kind: 'ignore' };
   const userId = str(event.user);
   if (!userId) return { kind: 'ignore' };
   return {

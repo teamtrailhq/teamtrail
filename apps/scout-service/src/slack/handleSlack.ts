@@ -35,6 +35,18 @@ async function grantThread(ctx: ServiceContext, d: Delivery, linkId: string) {
       await ctx.store.mark({ kind: 'thread', key: `${channel}:${ts}`, linkId, expiresAt });
 }
 
+/**
+ * A DM to Scout comes from Slack, signed, naming the person and the DM channel: that channel is this person's DM
+ * with Scout, so their link may answer there (`mayPostTo`). In a channel the membership rule applies as before.
+ */
+async function grantDm(ctx: ServiceContext, d: Delivery, linkId: string) {
+  const event = ((d.envelope.payload as Obj).event ?? {}) as Obj;
+  const channel = event.channel;
+  if (event.type !== 'message' || event.channel_type !== 'im' || typeof channel !== 'string') return;
+  if (!channel.startsWith('D') || event.user !== d.userId) return;
+  await ctx.store.mark({ kind: 'dm', key: channel, linkId, expiresAt: ctx.now() + LIMITS.dmMs });
+}
+
 function unreachable(stale: boolean, links: number) {
   if (stale) return 'stale';
   return links ? 'offline' : 'not-linked';
@@ -48,6 +60,7 @@ async function deliver(ctx: ServiceContext, d: Delivery) {
   const socket = ctx.hub.pick(ids);
   if (socket?.link) {
     await grantThread(ctx, d, socket.link.id);
+    await grantDm(ctx, d, socket.link.id);
     ctx.log('deliver', { link: socket.link.id, type: d.envelope.type });
     return safeAck(d.envelope, await socket.deliver(await forTarget(ctx, d.envelope, socket.link.id)));
   }

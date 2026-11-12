@@ -50,7 +50,10 @@ export interface Link {
 /** An install started from a Lookout, waiting for Slack's OAuth callback (keyed by the state's hash). */
 export interface PendingInstall {
   stateHash: string;
-  /** The Lookout's PKCE challenge: base64url SHA-256 of a verifier only that Lookout's server holds. */
+  /**
+   * The Lookout's PKCE challenge: base64url SHA-256 of a verifier only that Lookout's server holds. Empty, with an
+   * empty `returnUrl`, for an install started from Slack (`/install-slack`), which installs Scout and links no one.
+   */
   challenge: string;
   returnUrl: string;
   expiresAt: number;
@@ -122,7 +125,7 @@ export type ClientMessage =
 
 /** Messages the service sends to a linked Teamtrail. */
 export type ServerMessage =
-  | { type: 'ready'; linkId: string; teamId: string; userId: string; botUserId: string }
+  | { type: 'ready'; linkId: string; teamId: string; userId: string; botUserId: string; scopes: string[] }
   | { type: 'envelope'; id: string; envelope: Envelope }
   | { type: 'result'; id: string; ok: true; response: unknown }
   | { type: 'result'; id: string; ok: false; error: string }

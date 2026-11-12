@@ -14,7 +14,7 @@ import type { Batch, Env, TrailNotes, Payload, SlackServiceOptions } from './typ
 import { learnWorkspace } from './workspace';
 
 /** Every message Scout posts or edits goes out as written (`AS_WRITTEN`). */
-const POSTS = new Set(['chat.postMessage', 'chat.update']);
+const POSTS = new Set(['chat.postMessage', 'chat.postEphemeral', 'chat.update']);
 
 /** State of the Slack connection shared by the service modules: config, the link to the Scout service and caches. */
 export class SlackContext {

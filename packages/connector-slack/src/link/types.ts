@@ -31,6 +31,8 @@ export interface LinkReady {
   teamId: string;
   userId: string;
   botUserId: string;
+  /** The bot scopes the workspace granted (services before 0.29 didn't say). */
+  scopes?: string[];
 }
 
 /** Why the service closed the link for good: Teamtrail stops reconnecting and says so. */

@@ -7,7 +7,7 @@ import type { ServerMessage } from '../types';
 import { LinkSocket } from './LinkSocket';
 import { proxyCall } from './proxyCall';
 
-type HubContext = Omit<ServiceContext, 'hub' | 'httpLimit' | 'recentEvents' | 'replays'>;
+type HubContext = Omit<ServiceContext, 'hub' | 'httpLimit' | 'recentEvents' | 'replays' | 'offlineSaid'>;
 type Closing = Extract<ServerMessage, { type: 'closed' }>['reason'];
 
 /**
@@ -75,6 +75,7 @@ export class Hub {
       teamId: link.teamId,
       userId: link.userId,
       botUserId: workspace.botUserId,
+      scopes: workspace.scopes,
     });
   }
 

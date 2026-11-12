@@ -151,7 +151,7 @@
   background: var(--urgent-bg);
   color: var(--text-hi);
 }
-/* Open question: 32px Scout beside the text column; suggestions and the answer row use the full width below. */
+/* Open question: a 24px Scout beside the text column; suggestions and the answer row use the full width below. */
 .comms {
   container-type: inline-size;
 }
@@ -169,7 +169,7 @@
   max-width: none;
   min-width: 0;
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr);
   column-gap: var(--sp-10);
   overflow: hidden;
 }
@@ -181,7 +181,7 @@
   min-height: 0;
   overflow: auto;
 }
-/* The frame is a real border inside the 46px column so nothing paints outside the scrolling log. */
+/* The frame is a real border inside the 28px column (24px Scout, 1px padding, 1px border) so nothing paints outside the scrolling log. */
 .msg.open-q .q-avatar {
   grid-column: 1;
   grid-row: 2;
@@ -196,10 +196,10 @@
 .msg.open-q .q-avatar::after {
   content: '';
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 5px;
-  height: 5px;
+  top: 1px;
+  right: 1px;
+  width: 4px;
+  height: 4px;
   background: var(--urgent);
 }
 @media (prefers-reduced-motion: no-preference) {

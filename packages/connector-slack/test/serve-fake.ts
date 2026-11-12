@@ -10,7 +10,7 @@
  * People in Slack are simulated with `POST /control/<payload builder>` and a JSON array of arguments, e.g.
  * `curl -XPOST 127.0.0.1:7499/control/homeOpened -d '["U0ANA0001"]'`: the payload is signed and sent to the
  * service as Slack would, and the service's answer comes back as `ack`. `GET /control/messages?channel=D00ANA0001`
- * lists what Scout posted, `GET /control/responses` what was posted to response URLs.
+ * lists what Scout posted, `GET /control/responses` what was posted to response URLs, `GET /control/ephemerals` what only one person saw.
  */
 import { createHmac, randomBytes } from 'node:crypto';
 import http from 'node:http';
@@ -123,6 +123,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     return json(res, c ? 200 : 404, c ? c.messages : { error: 'channel_not_found' });
   }
   if (url.pathname === '/control/responses') return json(res, 200, fake.responses);
+  if (url.pathname === '/control/ephemerals') return json(res, 200, fake.ephemerals);
   if (url.pathname === '/control/state' && req.method === 'POST') {
     Object.assign(fake.state, JSON.parse(body || '{}'));
     return json(res, 200, fake.state);
