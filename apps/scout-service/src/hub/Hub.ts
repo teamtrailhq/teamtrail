@@ -75,6 +75,7 @@ export class Hub {
       teamId: link.teamId,
       userId: link.userId,
       botUserId: workspace.botUserId,
+      scopes: workspace.scopes,
     });
   }
 

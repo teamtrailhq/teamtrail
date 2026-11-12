@@ -28,13 +28,16 @@ export const reply = {
     res.writeHead(status, COMMON);
     res.end();
   },
-  page(res: ServerResponse, status: number, o: { title: string; text: string }) {
+  /** `link` is a fixed address of ours (never from a request), shown under the text. */
+  page(res: ServerResponse, status: number, o: { title: string; text: string; link?: { href: string; text: string } }) {
     res.writeHead(status, { ...COMMON, ...PAGE, 'Content-Type': 'text/html; charset=utf-8' });
     const title = escapeHtml(o.title);
     const style = 'font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;line-height:1.5';
     res.end(
       `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title>` +
-        `<body style="${style}"><h1>${title}</h1><p>${escapeHtml(o.text)}</p></body>`,
+        `<body style="${style}"><h1>${title}</h1><p>${escapeHtml(o.text)}</p>` +
+        (o.link ? `<p><a href="${escapeHtml(o.link.href)}">${escapeHtml(o.link.text)}</a></p>` : '') +
+        '</body>',
     );
   },
   redirect(res: ServerResponse, location: string, status: 302 | 303 = 303) {

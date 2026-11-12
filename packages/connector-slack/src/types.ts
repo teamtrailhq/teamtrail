@@ -62,6 +62,11 @@ export interface SlackStatus {
   delivery?: DeliveryProblem;
   /** Tracker folder of the other `teamtrail` that holds this machine's Slack connection. */
   heldBy?: string;
+  /**
+   * False when the workspace was installed before Scout asked for `app_mentions:read`: @Scout in a channel can't
+   * reach this Teamtrail until someone adds Scout again. Unknown (absent) until the link is ready.
+   */
+  mentions?: boolean;
 }
 
 /** `POST <api>/slack/connect/preview`: who the code belongs to, for "Connect as @user in <workspace>?". */

@@ -46,14 +46,15 @@
         "mpim:history",
         "users:read",
         "channels:read",
-        "groups:read"
+        "groups:read",
+        "app_mentions:read"
       ]
     }
   },
   "settings": {
     "event_subscriptions": {
       "request_url": "https://scout.teamtrail.app/slack/events",
-      "bot_events": ["app_home_opened", "app_uninstalled", "tokens_revoked"]
+      "bot_events": ["app_home_opened", "app_uninstalled", "tokens_revoked", "app_mention", "message.im"]
     },
     "interactivity": {
       "is_enabled": true,

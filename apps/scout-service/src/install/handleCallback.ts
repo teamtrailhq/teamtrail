@@ -17,10 +17,23 @@ function failed(res: ServerResponse, code: string) {
   reply.page(res, 400, { title: 'Scout was not added', text: `${reason} ${START_AGAIN}` });
 }
 
+const DOCS = { href: 'https://teamtrail.app/docs/slack/', text: 'How to connect Teamtrail to Scout' };
+
+/** An install started from Slack (`/install-slack`) ends here: Scout is in the workspace, and nobody is linked. */
+function installedPage(res: ServerResponse, ctx: ServiceContext, teamId: string, teamName: string) {
+  ctx.log('install.done', { team: teamId, from: 'slack' });
+  reply.page(res, 200, {
+    title: 'Scout is installed',
+    text: `Scout is installed in ${teamName}. Now open Teamtrail → Settings → Slack → Add Scout to Slack to connect your account.`,
+    link: DOCS,
+  });
+}
+
 /**
  * `GET /oauth/callback`: Slack sends the browser back with a code. The state must be one this service issued
  * and is used once. The workspace's bot token is sealed and stored; the browser goes back to the Lookout that
- * started the install with a one-minute code in the fragment, which only that Lookout can exchange.
+ * started the install with a one-minute code in the fragment, which only that Lookout can exchange. An install
+ * started from Slack has no Lookout behind it: it stops at a page that says how to connect.
  */
 export async function handleCallback(ctx: ServiceContext, url: URL, res: ServerResponse) {
   const state = url.searchParams.get('state') ?? '';
@@ -46,6 +59,7 @@ export async function handleCallback(ctx: ServiceContext, url: URL, res: ServerR
     installedBy: installed.userId,
     installedAt: ctx.now(),
   });
+  if (!pending.challenge) return installedPage(res, ctx, installed.teamId, installed.teamName);
   const linkCode = secrets.random();
   await ctx.store.saveCode({
     codeHash: secrets.hash(linkCode),

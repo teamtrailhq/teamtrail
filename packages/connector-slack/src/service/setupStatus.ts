@@ -1,6 +1,9 @@
 import type { SlackStatus } from '../types';
 import type { SlackContext } from './slackContext';
 
+/** The scope @Scout mentions need; workspaces installed before 0.29 lack it. */
+const MENTIONS_SCOPE = 'app_mentions:read';
+
 /** Scout's Home tab: in the Slack app, and through the web for a browser without it. */
 function homeLinks(teamId: string, appId: string) {
   return {
@@ -28,5 +31,6 @@ export function statusOf(ctx: SlackContext): SlackStatus {
     links: connected && c.appId && c.workspace ? homeLinks(c.workspace.id, c.appId) : {},
     ...(ctx.heldBy ? { heldBy: ctx.heldBy } : {}),
     ...(delivery ? { delivery } : {}),
+    ...(ctx.ready?.scopes ? { mentions: ctx.ready.scopes.includes(MENTIONS_SCOPE) } : {}),
   };
 }

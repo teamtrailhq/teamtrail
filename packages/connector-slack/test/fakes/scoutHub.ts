@@ -17,7 +17,14 @@ export function scoutHub(o: {
   user?: string;
   botUser?: string;
 }) {
-  const state = { token: LINK.token, user: o.user ?? 'U0ANA0001', team: o.team ?? 'T0EFIKA01', hello: 0 };
+  const state = {
+    token: LINK.token,
+    user: o.user ?? 'U0ANA0001',
+    team: o.team ?? 'T0EFIKA01',
+    hello: 0,
+    /** The scopes `ready` reports; undefined like a service before 0.29. */
+    scopes: undefined as string[] | undefined,
+  };
   const sockets: FakeSocket[] = [];
   const acks = new Map<string, (ack: unknown) => void>();
   const sent: string[] = [];
@@ -70,6 +77,7 @@ export function scoutHub(o: {
         teamId: state.team,
         userId: state.user,
         botUserId: o.botUser ?? 'U0ScoutBOT',
+        ...(state.scopes ? { scopes: state.scopes } : {}),
       });
     }
     private async call(m: { id: string; method: string; args?: Record<string, unknown> }) {

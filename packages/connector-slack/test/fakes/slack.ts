@@ -10,6 +10,7 @@ export const BOT_SCOPES = [
   'users:read',
   'channels:read',
   'groups:read',
+  'app_mentions:read',
 ] as const;
 
 /**
@@ -371,6 +372,39 @@ export function fakeSlack(opts: { start?: number } = {}) {
     },
     /** Socket Mode payloads for user actions. */
     payload: {
+      /** @Scout in a channel (a thread reply when `thread` is given), as Slack's Events API sends it. */
+      mention: (user: string, channel: string, text: string, thread?: string) => ({
+        type: 'events_api' as const,
+        payload: {
+          token: 'legacy',
+          team_id: team.id,
+          api_app_id: app.id,
+          type: 'event_callback',
+          event_id: `Ev0${++seq}`,
+          event_time: clock,
+          event: {
+            type: 'app_mention',
+            user,
+            channel,
+            text: `<@${app.botUser}> ${text}`,
+            ts: ts(),
+            ...(thread ? { thread_ts: thread } : {}),
+          },
+        },
+      }),
+      /** A person's message in their DM with Scout. */
+      dm: (user: string, text: string) => ({
+        type: 'events_api' as const,
+        payload: {
+          token: 'legacy',
+          team_id: team.id,
+          api_app_id: app.id,
+          type: 'event_callback',
+          event_id: `Ev0${++seq}`,
+          event_time: clock,
+          event: { type: 'message', channel_type: 'im', user, channel: im(user), text, ts: ts() },
+        },
+      }),
       homeOpened: (user: string, tab = 'home') => ({
         type: 'events_api' as const,
         payload: {

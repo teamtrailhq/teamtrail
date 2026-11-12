@@ -297,6 +297,13 @@
 .test-line.warn {
   color: var(--amber);
 }
+/* Reconnect for @Scout mentions: the line, then its button, wrapping on a phone. */
+.test-line.mentions-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+}
 .slack-settings {
   display: flex;
   flex-direction: column;

@@ -172,7 +172,8 @@ export class ScoutLink {
       return this.o.onState('auth-error', 'Scout answered for another Slack workspace. Add Scout to Slack again.');
     }
     this.attempt = 0;
-    this.ready = { linkId: m.linkId, teamId: m.teamId, userId: m.userId, botUserId: m.botUserId };
+    const scopes = Array.isArray(m.scopes) ? m.scopes.filter((x): x is string => typeof x === 'string') : undefined;
+    this.ready = { linkId: m.linkId, teamId: m.teamId, userId: m.userId, botUserId: m.botUserId, scopes };
     this.o.onReady?.(this.ready);
     this.o.onState('online');
   }

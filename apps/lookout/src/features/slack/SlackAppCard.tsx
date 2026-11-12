@@ -2,6 +2,7 @@ import type { SlackStatus } from '@teamtrail/connector-slack';
 import { Card, Pill } from '../../components/ui';
 import { ConfirmConnect } from './ConfirmConnect';
 import { DeliveryLine } from './DeliveryLine';
+import { MentionsHint } from './MentionsHint';
 import { ScoutIntro } from './ScoutIntro';
 import { SlackCardActions } from './SlackCardActions';
 import { SlackStateLine } from './SlackStateLine';
@@ -27,6 +28,7 @@ export function SlackAppCard(props: {
       {s.connected && <div className="c-loc">{workspaceLine(s)}</div>}
       {s.connected && <SlackStateLine s={s} />}
       {s.delivery && <DeliveryLine problem={s.delivery} />}
+      {s.connected && s.mentions === false && !confirming && <MentionsHint onError={props.onError} />}
       {!s.connected && !confirming && <ScoutIntro s={s} connecting={back.busy} />}
       {confirming && <ConfirmConnect who={back.confirm!} onConnect={back.connect} onCancel={back.cancel} />}
       {props.error && <div className="test-line alert">✕ {props.error}</div>}

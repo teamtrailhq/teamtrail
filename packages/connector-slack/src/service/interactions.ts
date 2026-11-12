@@ -20,6 +20,7 @@ import { REFUSED, ALREADY, SAVE_DECISION_CALLBACK } from './constants';
 import { decideApproval } from './decideApproval';
 import { changeTrail, openDecision } from './decisionModal';
 import { publishHome } from './home';
+import { onMessage } from './mentions';
 import { ownMessage } from './ownMessage';
 import { decideSetting } from './settingRequests';
 import type { SlackContext } from './slackContext';
@@ -29,8 +30,8 @@ import type { Payload, DecisionMeta } from './types';
 /**
  * Everything people do in Slack arrives here, from the Scout service, which checked Slack's signature. Each handler
  * below takes the acting user from the payload Slack built (`user.id`, `user_id`), checks `ctx.allowed` before it
- * reads or changes anything, and records that same id as the author. Messages people write in channels and DMs are
- * not subscribed to and do nothing.
+ * reads or changes anything, and records that same id as the author. Of the messages people write, only @Scout
+ * mentions and DMs to Scout arrive (`mentions.ts`); they read, never change anything.
  */
 export async function onEnvelope(ctx: SlackContext, e: Envelope): Promise<EnvelopeResult | void> {
   if (!authentic(ctx, e)) return;
@@ -38,7 +39,7 @@ export async function onEnvelope(ctx: SlackContext, e: Envelope): Promise<Envelo
   if (e.type === 'events_api') {
     const ev = p.event as Payload | undefined;
     if (ev?.type === 'app_home_opened') return { after: () => publishHome(ctx, ev.user) };
-    return;
+    return ev ? onMessage(ctx, ev) : undefined;
   }
   if (e.type === 'slash_commands') return onCommand(ctx, p);
   if (p.type === 'message_action') return onShortcut(ctx, p);

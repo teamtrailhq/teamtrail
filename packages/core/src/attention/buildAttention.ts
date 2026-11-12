@@ -45,8 +45,12 @@ export function buildAttention(input: AttentionInput, sources: AttentionSource[]
       ...(c.agent ? { agent: c.agent } : {}),
     };
   };
-  const all = sources.flatMap((s) => s.collect(input)).map(toItem);
+  const candidates = sources.flatMap((s) => s.collect(input));
+  const all = candidates.map(toItem);
+  const waitedOn = new Set(
+    all.filter((_, n) => candidates[n].kind === 'question' && candidates[n].idleAgent).map((i) => i.id),
+  );
   const unique = [...new Map(all.map((i) => [i.id, i])).values()];
   const shown = unique.filter((i) => !hiddenBy(state, i, input.now));
-  return { items: orderInBatches(shown), hidden: unique.length - shown.length };
+  return { items: orderInBatches(shown, waitedOn), hidden: unique.length - shown.length };
 }

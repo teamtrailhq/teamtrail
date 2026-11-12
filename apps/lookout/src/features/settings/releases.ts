@@ -17,6 +17,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.29.0',
+    date: '2026-11-12',
+    items: [
+      'Ask Scout in Slack: @Scout inbox, @Scout status or a DM to Scout answers right there; Scout added before this asks you to reconnect once',
+      'A question your agent waits on gets its own Slack message with answer buttons, even right after it asked another one',
+      'Scout can be installed straight from Slack (scout.teamtrail.app/install-slack); each person then connects in Settings → Slack',
+    ],
+  },
+  {
     version: '0.28.0',
     date: '2026-11-12',
     items: [
