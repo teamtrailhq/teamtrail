@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-12T09:39:52.751Z",
+  "recordedAt": "2026-11-12T12:30:42.927Z",
   "notes": "Recorded against test/fakes/slack.ts through test/fakes/scoutHub.ts; request and response shapes follow api.slack.com (Web API methods, interaction payloads, Block Kit). A reviewed pass to approve and a held ticket in the owner DM: refused click, Approve, Rework… modal with a reason.",
   "exchanges": [
     {
@@ -12,7 +12,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -35,7 +35,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -58,7 +58,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -89,7 +89,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -169,7 +169,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -243,7 +243,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -326,7 +326,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -394,7 +394,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,
@@ -493,7 +493,7 @@
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8",
-          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read"
+          "x-oauth-scopes": "commands,chat:write,im:write,channels:history,groups:history,im:history,mpim:history,users:read,channels:read,groups:read,app_mentions:read"
         },
         "body": {
           "ok": true,

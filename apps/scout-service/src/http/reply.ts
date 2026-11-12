@@ -28,14 +28,19 @@ export const reply = {
     res.writeHead(status, COMMON);
     res.end();
   },
-  /** `link` is a fixed address of ours (never from a request), shown under the text. */
-  page(res: ServerResponse, status: number, o: { title: string; text: string; link?: { href: string; text: string } }) {
+  /** `steps` is a numbered list under the text; `link` a fixed address of ours (never from a request) below it. */
+  page(
+    res: ServerResponse,
+    status: number,
+    o: { title: string; text: string; steps?: string[]; link?: { href: string; text: string } },
+  ) {
     res.writeHead(status, { ...COMMON, ...PAGE, 'Content-Type': 'text/html; charset=utf-8' });
     const title = escapeHtml(o.title);
     const style = 'font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;line-height:1.5';
     res.end(
       `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title>` +
         `<body style="${style}"><h1>${title}</h1><p>${escapeHtml(o.text)}</p>` +
+        (o.steps?.length ? `<ol>${o.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ol>` : '') +
         (o.link ? `<p><a href="${escapeHtml(o.link.href)}">${escapeHtml(o.link.text)}</a></p>` : '') +
         '</body>',
     );

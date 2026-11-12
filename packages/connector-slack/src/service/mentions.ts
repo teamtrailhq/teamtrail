@@ -1,7 +1,7 @@
-import { label } from '../blocks';
 import type { EnvelopeResult } from '../link/types';
 import { inboxMessage, statusMessage } from './commands';
 import { REFUSED } from './constants';
+import { mentionCommand } from './mentionCommand';
 import type { SlackContext } from './slackContext';
 import type { Payload } from './types';
 
@@ -33,26 +33,16 @@ export const mentionHelp = (command: string) =>
     '*@Scout help*  this list',
     `To record a decision, use *${command} decide* or *Save as decision* on a message.`,
     'Scout answers from the Teamtrail of whoever mentions it: each person connects their own in Settings → Slack.',
+    'Scout answers only while that Teamtrail is running on their computer.',
   ].join('\n');
 
-/** The words after any `<@…>` mention, split into a command and its argument. */
-function parse(text: unknown) {
-  const words = String(text ?? '')
-    .replace(/<@[^>\s]+>/g, ' ')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  const [sub = '', ...rest] = words;
-  return { sub: sub.toLowerCase(), arg: rest.join(' ').trim() };
-}
-
-async function replyFor(ctx: SlackContext, o: { sub: string; arg: string; command: string; dm: boolean }) {
+async function replyFor(ctx: SlackContext, o: { sub: string; arg: string; command: string }) {
   if (o.sub === 'inbox') return inboxMessage(ctx);
-  if (o.sub === 'status') return statusMessage(ctx, o.arg, o.command);
+  if (o.sub === 'status') return statusMessage(ctx, o.arg, o.command, { fallback: true });
   const help = mentionHelp(o.command);
-  // In a DM anything else gets the help: people write "hi" to a bot.
-  if (!o.sub || o.sub === 'help' || o.dm) return { text: help };
-  return { text: `I don't know \`${label(o.sub)}\`.\n${help}` };
+  if (o.sub === 'help') return { text: help };
+  // Anything else ("hi", a question Scout can't read) gets the help, pointing at the one most people want.
+  return { text: `Try *@Scout inbox* for what's waiting on you.\n${help}` };
 }
 
 /** Where to answer this event, or undefined for events Scout doesn't answer (a bot, an edit, a channel message). */
@@ -92,10 +82,10 @@ export function onMessage(ctx: SlackContext, ev: Payload): EnvelopeResult | void
   const post = poster(ctx, place);
   if (!ctx.allowed(place.user)) return { after: async () => void (await post({ text: REFUSED }, { private: false })) };
   const command = ctx.store.read().command;
-  const { sub, arg } = parse(ev.text);
+  const { sub, arg } = mentionCommand(ev.text);
   return {
     after: async () => {
-      const reply = await replyFor(ctx, { sub, arg, command, dm: !place.thread });
+      const reply = await replyFor(ctx, { sub, arg, command });
       await post(reply, { private: PRIVATE.has(sub) });
     },
   };

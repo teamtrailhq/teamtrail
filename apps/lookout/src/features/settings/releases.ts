@@ -17,6 +17,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.29.1',
+    date: '2026-11-12',
+    items: [
+      'Scout says in Slack that it needs Teamtrail running on your computer, and how to start it, when it can’t reach yours',
+      'Ask Scout in your own words: “@Scout what’s in my inbox?” or “status of Slack live test” work, in a channel or a DM',
+    ],
+  },
+  {
     version: '0.29.0',
     date: '2026-11-12',
     items: [
@@ -179,27 +187,6 @@ export const RELEASES: Release[] = [
       'Business rules from your project knowledge are suggested as criteria, and the ticket shows any rule no criterion covers yet. Confirm a ticket’s criteria in the inspector',
       'Cross-vendor review: when Claude and Codex agents both run, each reviews the other’s work first',
       'Fix: answers from the command center could hang when too many live updates were open; all updates now share one connection',
-    ],
-  },
-  {
-    version: '0.17.0',
-    date: '2026-11-03',
-    items: [
-      'Discovery brief: new missions start with an agent mapping the existing system (files, conventions, data and API impact, risks, assumptions, product context). Implementation tickets wait until you accept the brief or ask for changes, from the banner over the map or the card in Communication',
-      'Create mission: start a mission from the New mission dialog without a terminal; any agent picks it up with /milo resume',
-      'Knowledge: what agents need to know about your codebase and product (architecture, conventions, gotchas, dead ends, business rules, personas, UX principles, pricing). Agents propose, you confirm, keep as an assumption or retire. Confirmed entries reach agents with every claim, picked for the ticket with the reason, and the inspector shows what an agent gets',
-      'Knowledge about specific files is flagged for re-confirmation when those files change',
-      'Save decisions, cancelled tickets (as dead ends) and brief sections as knowledge in one click; seed it from a document with miloops knowledge import <file.md>',
-    ],
-  },
-  {
-    version: '0.16.0',
-    date: '2026-11-03',
-    items: [
-      'Mission report (Mission plan → Report): tickets done, mission and median ticket lead time, your interventions, rework, review results and cost per verified ticket. Hover any number to see how it is computed; export it as markdown',
-      'Agents report the same numbers in one line from the status tool',
-      'Agents use missions for big work only, and decide routine calls themselves, keeping each one as a decision record you can review or reverse; they ask you when the call changes product behaviour, data, security, billing, a public API or the schema',
-      'Decisions: filter by who made the call, agents on their own or people. The briefing now counts only the calls agents made themselves, not your answers they recorded',
     ],
   },
   ...OLDER_RELEASES,

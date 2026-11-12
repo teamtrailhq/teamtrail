@@ -17,6 +17,13 @@ function failed(res: ServerResponse, code: string) {
   reply.page(res, 400, { title: 'Scout was not added', text: `${reason} ${START_AGAIN}` });
 }
 
+/** What someone who added Scout from Slack does next, in order. */
+const NEXT = [
+  'In your project, run npx teamtrail@next. It opens the Lookout in your browser.',
+  'In the Lookout, open Settings → Slack and choose Add Scout to Slack to connect your Slack account.',
+  'Keep Teamtrail running while you use Scout.',
+];
+
 const DOCS = { href: 'https://teamtrail.app/docs/slack/', text: 'How to connect Teamtrail to Scout' };
 
 /** An install started from Slack (`/install-slack`) ends here: Scout is in the workspace, and nobody is linked. */
@@ -24,7 +31,8 @@ function installedPage(res: ServerResponse, ctx: ServiceContext, teamId: string,
   ctx.log('install.done', { team: teamId, from: 'slack' });
   reply.page(res, 200, {
     title: 'Scout is installed',
-    text: `Scout is installed in ${teamName}. Now open Teamtrail → Settings → Slack → Add Scout to Slack to connect your account.`,
+    text: `Scout is installed in ${teamName}. Scout works with Teamtrail running on your computer, and answers only while it runs. Next:`,
+    steps: NEXT,
     link: DOCS,
   });
 }
