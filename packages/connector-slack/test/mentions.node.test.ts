@@ -222,7 +222,7 @@ test('a ticket, the decisions and who is working are answered to the asker alone
   }
 });
 
-test('/scout ticket, decisions and who answer the same, to the person who typed them', async () => {
+test('/scout ticket, decisions and who, as words or sentences, answer like @Scout, to the person who typed them', async () => {
   const { w, svc, migrate, replies } = await setup();
   try {
     const slash = async (text: string) => {
@@ -235,6 +235,11 @@ test('/scout ticket, decisions and who answer the same, to the person who typed 
     assert.match(await slash(`ticket ${migrate.key}`), /Migrate schema.*Blocked by/);
     assert.match(await slash('decisions'), /No decisions yet/);
     assert.match(await slash('who'), /No agents are working/);
+    assert.match(await slash(`what's blocking ${migrate.key}?`), /Migrate schema.*Blocked by/, 'a sentence, as @Scout');
+    assert.match(await slash(migrate.key), /Migrate schema/);
+    assert.match(await slash("who's working?"), /No agents are working/);
+    assert.match(await slash('what did we decide about retention?'), /No decision mentions/);
+    assert.match(await slash('constructor'), /Unknown command/);
     const help = await slash('help');
     assert.match(help, /\/scout ticket #12/);
     assert.match(help, /\/scout decisions/);

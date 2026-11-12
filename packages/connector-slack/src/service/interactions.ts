@@ -25,6 +25,7 @@ import { onMessage } from './mentions';
 import { ownMessage } from './ownMessage';
 import { decideSetting } from './settingRequests';
 import type { SlackContext } from './slackContext';
+import { slashCommand } from './slashCommand';
 import { onSubmit } from './submissions';
 import { ticketMessage } from './ticketMessage';
 import type { Payload, DecisionMeta } from './types';
@@ -32,12 +33,12 @@ import { whoMessage } from './whoMessage';
 
 type Read = (ctx: SlackContext, arg: string) => Promise<{ text: string; blocks?: unknown[] }>;
 /** `/scout` questions that only read, answered to the asker alone. */
-const READS: Record<string, Read | undefined> = {
-  inbox: (ctx) => inboxMessage(ctx),
-  ticket: ticketMessage,
-  decisions: decisionsMessage,
-  who: (ctx) => whoMessage(ctx),
-};
+const READS = new Map<string, Read>([
+  ['inbox', (ctx) => inboxMessage(ctx)],
+  ['ticket', ticketMessage],
+  ['decisions', decisionsMessage],
+  ['who', (ctx) => whoMessage(ctx)],
+]);
 
 /**
  * Everything people do in Slack arrives here, from the Scout service, which checked Slack's signature. Each handler
@@ -61,10 +62,7 @@ export async function onEnvelope(ctx: SlackContext, e: Envelope): Promise<Envelo
 
 export function onCommand(ctx: SlackContext, p: Payload): EnvelopeResult {
   const command = p.command as string;
-  const [sub = '', ...rest] = String(p.text ?? '')
-    .trim()
-    .split(/\s+/);
-  const arg = rest.join(' ').trim();
+  const { sub, arg, unknown } = slashCommand(p.text);
   const reply = (text: string) => ({ ack: { response_type: 'ephemeral', text } });
   if (!sub || sub === 'help') return reply(helpText(command));
   if (!ctx.allowed(p.user_id)) return reply(REFUSED);
@@ -81,7 +79,7 @@ export function onCommand(ctx: SlackContext, p: Payload): EnvelopeResult {
           ctx.o.fetch,
         ),
     };
-  const read = READS[sub];
+  const read = unknown ? undefined : READS.get(sub);
   if (read)
     return {
       after: async () =>

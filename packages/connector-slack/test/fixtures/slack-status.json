@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-12T15:07:43.346Z",
+  "recordedAt": "2026-11-12T15:10:47.579Z",
   "notes": "Recorded against test/fakes/slack.ts through test/fakes/scoutHub.ts; request and response shapes follow api.slack.com (Web API methods, interaction payloads, Block Kit). /scout help, status (all and one trail), inbox, unknown subcommand, refusal.",
   "exchanges": [
     {
@@ -262,7 +262,7 @@
       },
       "ack": {
         "response_type": "ephemeral",
-        "text": "*/scout decide [text]*  record a decision (or use *Save as decision* on a message)\n*/scout status [trail]*  trip report\n*/scout inbox*  questions waiting on you\n*/scout ticket #12*  a ticket's state, what blocks it and who's on it (no key: what's blocked)\n*/scout decisions [trail or words]*  decisions in force, newest first\n*/scout who*  agents working now\n*/scout help*  this list\nScout answers only while Teamtrail is running on your computer."
+        "text": "*/scout decide [text]*  record a decision (or use *Save as decision* on a message)\n*/scout status [trail]*  trip report\n*/scout inbox*  questions waiting on you\n*/scout ticket #12*  a ticket's state, what blocks it and who's on it (no key: what's blocked)\n*/scout decisions [trail or words]*  decisions in force, newest first\n*/scout who*  agents working now\nOr ask in a sentence: */scout what's blocking #12?*, the same as @Scout.\n*/scout help*  this list\nScout answers only while Teamtrail is running on your computer."
       }
     },
     {
@@ -384,7 +384,7 @@
       },
       "ack": {
         "response_type": "ephemeral",
-        "text": "Unknown command `dance`.\n*/scout decide [text]*  record a decision (or use *Save as decision* on a message)\n*/scout status [trail]*  trip report\n*/scout inbox*  questions waiting on you\n*/scout ticket #12*  a ticket's state, what blocks it and who's on it (no key: what's blocked)\n*/scout decisions [trail or words]*  decisions in force, newest first\n*/scout who*  agents working now\n*/scout help*  this list\nScout answers only while Teamtrail is running on your computer."
+        "text": "Unknown command `dance`.\n*/scout decide [text]*  record a decision (or use *Save as decision* on a message)\n*/scout status [trail]*  trip report\n*/scout inbox*  questions waiting on you\n*/scout ticket #12*  a ticket's state, what blocks it and who's on it (no key: what's blocked)\n*/scout decisions [trail or words]*  decisions in force, newest first\n*/scout who*  agents working now\nOr ask in a sentence: */scout what's blocking #12?*, the same as @Scout.\n*/scout help*  this list\nScout answers only while Teamtrail is running on your computer."
       }
     }
   ]
