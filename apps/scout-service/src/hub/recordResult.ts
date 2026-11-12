@@ -16,8 +16,9 @@ function madeBy(call: { method: string; args: Obj }, response: Obj): Omit<Mark, 
       return channel && ts ? { kind: 'message', key: `${channel}:${ts}` } : undefined;
     }
     case 'conversations.open': {
+      // Only a direct message counts as the owner's DM.
       const channel = str(obj(response.channel).id);
-      return channel ? { kind: 'dm', key: channel } : undefined;
+      return channel?.startsWith('D') ? { kind: 'dm', key: channel } : undefined;
     }
     case 'views.open':
     case 'views.publish':

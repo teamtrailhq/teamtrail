@@ -19,8 +19,10 @@ Plan and decisions: `docs/plans/scout-slack-app.md` in teamtrail-cloud.
   - A click in a modal or the Home tab, and a modal submission, goes only to the acting user's link that opened that view.
   - Slash commands, shortcuts (Save as decision) and events go to the acting user's most recently connected link. A Save as decision lets that link read the thread for ten minutes.
   - When none is connected the service answers at once that Teamtrail isn't running, or how to connect; nothing is queued.
+- **Passes a `response_url` only to the poster** of the message it came from (`src/slack/forTarget.ts`): it can replace that message, so a Save as decision on someone else's message, or on one nobody posted through the service, arrives without `response_url` and `response_urls`.
+- **A link lasts across reconnects.** A Teamtrail that reconnects says hello with the same link token and gets the same link, so its earlier posts and views stay live; only a new Add Scout to Slack makes a new link (the sixth replaces the oldest, whose posts then stop answering).
 - **Filters acks** before Slack sees them: a command reply is always ephemeral (`in_channel`, `replace_original` and attachments are dropped), a modal submission may only return a response action, and nothing else is passed on (`src/slack/safeAck.ts`).
-- **Calls Slack** for a linked Teamtrail only with that link's own workspace's bot token and only the methods the connector uses (`src/hub/allowedCall.ts`), and only on what the link owns (`src/hub/ownsTarget.ts`): `chat.update` on its own posts, `views.update` on its own views, `conversations.replies` and `chat.getPermalink` on its own posts or a thread a Save as decision gave it, `chat.postMessage` to the owner's own DM or a channel the owner is a member of (`conversations.members`, cached two minutes), `views.publish` and `conversations.open` for the owner only.
+- **Calls Slack** for a linked Teamtrail only with that link's own workspace's bot token and only the methods the connector uses (`src/hub/allowedCall.ts`), and only on what the link owns (`src/hub/ownsTarget.ts`): `chat.update` on its own posts, `views.update` on its own views, `conversations.replies` and `chat.getPermalink` on its own posts or a thread a Save as decision gave it, `chat.postMessage` to the owner's own DM or a channel the owner is a member of (`conversations.members`, cached two minutes), `views.publish` for the owner only, and `conversations.open` with the owner as `users` and no other argument (only a `D…` channel it returns counts as the owner's DM).
 - **Limits** (`src/limits.ts`): per-link call rate; per-socket message rate after the hello (past it the socket closes `too-fast`; junk is dropped); a 4 KB hello; sockets waiting for their hello capped in all and per address; WebSocket upgrades and `/install`, `/oauth/callback`, `/link` rate limited per address (IPv6 by /64); body and message size caps; five links per Slack account and two sockets per link; a signed command or click handled once within Slack's five-minute window.
 - **One instance only.** The connected sockets, the replay and retry records and the membership cache are in memory: run exactly one replica.
 
@@ -50,10 +52,17 @@ Plan and decisions: `docs/plans/scout-slack-app.md` in teamtrail-cloud.
 | `SCOUT_MEMORY_STORE=1` | Development only (refused in production): no database, everything forgotten on restart. |
 | `SLACK_API_URL`, `SLACK_AUTHORIZE_URL`, `SLACK_HOOKS_ORIGIN` | Tests and development only: point Slack at a fake on this machine (https, or http on loopback). |
 
+## Accepted limits
+
+- Channel membership is cached for two minutes: an owner who just left a channel can still be posted to there for that long.
+- Users in a Slack Connect channel from another workspace can't click Scout's messages: the click is dropped.
+- Buttons in ephemeral messages and in pushed views (`views.push`, not an allowed method) are dropped.
+
 ## What the connector must do (PR 3)
 
 - Accept a click only when the message's `scout_link` stamp is its own link id (the `ready` message's `linkId`), as a second check behind the service's routing.
-- Put buttons only in messages it posts with `chat.postMessage` and in views it opens or publishes, never in ephemeral replies or `response_url` posts: clicks on those are dropped.
+- Put buttons only in messages it posts with `chat.postMessage` and in views it opens or publishes, never in ephemeral replies, `response_url` posts or pushed views: clicks on those are dropped.
+- Not rely on a Save as decision's `response_url` (it arrives only when the link posted that message); reply in the modal or the owner's DM instead.
 - Post to the owner's DM through the channel `conversations.open` returns, or to a channel the owner is in.
 
 ## Create the Slack app (once, by a maintainer)

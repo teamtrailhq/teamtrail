@@ -149,3 +149,49 @@ describe("3. shortcuts never send someone else's message or trigger to the poste
     expect(envelopes(a)).toHaveLength(0);
   });
 });
+
+describe('A. a response_url goes only to the poster of the message it can replace', () => {
+  test("Alice's Save as decision on Bob's message reaches Alice without a response_url", async () => {
+    const posted = (await b.call('chat.postMessage', { channel: 'C1', text: 'Approve?' })).response;
+    await interaction(messageAction({ team: 'T1', user: 'U1', ...posted, stamp: bLink.id }));
+    const payload = envelopes(a)[0].envelope.payload;
+    expect(payload.type).toBe('message_action');
+    expect(payload.response_url).toBeUndefined();
+    expect(payload.response_urls).toBeUndefined();
+    expect(payload.trigger_id).toBe('trigger-2');
+    expect(envelopes(b)).toHaveLength(0);
+  });
+
+  test("Bob's Save as decision on his own message keeps its response_url", async () => {
+    const posted = (await b.call('chat.postMessage', { channel: 'C1', text: 'Approve?' })).response;
+    await interaction(messageAction({ team: 'T1', user: 'U2', ...posted }));
+    expect(envelopes(b)[0].envelope.payload.response_url).toBe('https://hooks.example/shortcut');
+  });
+
+  test('a Save as decision on a message nobody posted through the service carries no response_url', async () => {
+    await interaction(messageAction({ team: 'T1', user: 'U1', channel: 'C1', ts: '1.5' }));
+    expect(envelopes(a)[0].envelope.payload.response_url).toBeUndefined();
+  });
+
+  test("a click's response_url reaches only the poster: Bob clicking Alice's message never gets one back", async () => {
+    const m = await alicePosts();
+    const hook = `${w.slack.url}/hooks/bob-click`;
+    await interaction(clickOnMessage({ team: 'T1', user: 'U2', ...m, responseUrl: hook }));
+    expect(envelopes(b)).toHaveLength(0);
+    expect(envelopes(a)[0].envelope.payload.response_url).toBe(hook);
+  });
+});
+
+describe('a reconnect keeps the link', () => {
+  test("after Alice's Teamtrail reconnects, clicks on her earlier posts still reach her", async () => {
+    const m = await alicePosts();
+    a.ws.close();
+    await a.closed;
+    const again = await connect(w.base, aLink.token);
+    again.answer(() => undefined);
+    expect(again.messages[0]).toMatchObject({ type: 'ready', linkId: aLink.id });
+    await interaction(clickOnMessage({ team: 'T1', user: 'U2', ...m }));
+    expect(envelopes(again)).toHaveLength(1);
+    expect((await w.store.linksOf('T1', 'U1')).map((l) => l.id)).toEqual([aLink.id]);
+  });
+});

@@ -4,6 +4,7 @@ import { BodyTooLarge, readBody } from '../http/readBody';
 import { reply } from '../http/reply';
 import { LIMITS } from '../limits';
 import type { ServiceContext } from '../serviceContext';
+import { forTarget } from './forTarget';
 import { isReplay } from './isReplay';
 import { offlineReply } from './offlineReply';
 import { resolveRoute } from './resolveRoute';
@@ -48,7 +49,7 @@ async function deliver(ctx: ServiceContext, d: Delivery) {
   if (socket?.link) {
     await grantThread(ctx, d, socket.link.id);
     ctx.log('deliver', { link: socket.link.id, type: d.envelope.type });
-    return safeAck(d.envelope, await socket.deliver(d.envelope));
+    return safeAck(d.envelope, await socket.deliver(await forTarget(ctx, d.envelope, socket.link.id)));
   }
   const why = unreachable(targets.kind === 'stale', ids.length);
   ctx.log('unreachable', { team: d.teamId, type: d.envelope.type, why });

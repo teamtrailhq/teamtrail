@@ -56,6 +56,8 @@ export const messageAction = (o: Who & { channel: string; ts: string; threadTs?:
     user: { id: o.user },
     channel: { id: o.channel },
     trigger_id: 'trigger-2',
+    response_url: 'https://hooks.example/shortcut',
+    response_urls: [{ response_url: 'https://hooks.example/shortcut-2' }],
     message: {
       ts: o.ts,
       thread_ts: o.threadTs,

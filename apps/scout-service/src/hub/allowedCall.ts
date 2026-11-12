@@ -26,7 +26,9 @@ export type Verdict = { ok: true; args: Record<string, unknown> } | { ok: false;
 /** A call that would act on another person's DM or Home tab than the link's own Slack account. */
 function aimsAtSomeoneElse(link: Link, method: string, args: Record<string, unknown>) {
   if (method === 'views.publish') return args.user_id !== link.userId;
-  if (method === 'conversations.open') return args.users !== link.userId;
+  // Only the owner's own DM: `channel` (reopen any conversation by id) and every other argument are refused.
+  if (method === 'conversations.open')
+    return Object.keys(args).some((k) => k !== 'users') || args.users !== link.userId;
   return false;
 }
 

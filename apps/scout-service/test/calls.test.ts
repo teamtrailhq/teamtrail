@@ -95,6 +95,15 @@ describe('2. a link touches only what is its own', () => {
     expect(await alice.call('views.publish', { user_id: 'U1', view: {} })).toMatchObject({ ok: true });
   });
 
+  test('conversations.open takes only the owner as users: no channel, no other argument', async () => {
+    for (const args of [{ channel: 'C1' }, { users: 'U1', channel: 'C1' }, { users: 'U1', return_im: true }, {}])
+      expect(await alice.call('conversations.open', args), JSON.stringify(args)).toMatchObject({
+        error: 'not_the_link_owner',
+      });
+    expect(w.slack.calls.filter((c) => c.method === 'conversations.open')).toHaveLength(0);
+    expect(await alice.call('conversations.open', { users: 'U1' })).toMatchObject({ ok: true });
+  });
+
   test("chat.update only on the link's own posts", async () => {
     const posted = (await bob.call('chat.postMessage', { channel: 'C1', text: 'Approve?' })).response;
     const edit = { channel: posted.channel, ts: posted.ts, text: 'Approved by Alice' };

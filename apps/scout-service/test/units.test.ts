@@ -6,9 +6,11 @@ import { TokenCipher } from '../src/crypto/TokenCipher';
 import { verifySlackSignature } from '../src/crypto/verifySlackSignature';
 import { addressKey } from '../src/http/addressKey';
 import { parseClientMessage } from '../src/hub/parseClientMessage';
+import { recordResult } from '../src/hub/recordResult';
 import { returnAddress } from '../src/install/returnAddress';
 import { loadConfig } from '../src/loadConfig';
 import { BOT_SCOPES } from '../src/slack/botScopes';
+import { MemoryStore } from '../src/store/MemoryStore';
 
 const sign = (body: string, ts: string, secret = 's') =>
   `v0=${createHmac('sha256', secret).update(`v0:${ts}:${body}`).digest('hex')}`;
@@ -139,4 +141,20 @@ test('addressKey counts IPv4 as is and IPv6 by its /64', () => {
   expect(addressKey('2001:db8::1')).toBe('2001:db8:0:0::/64');
   expect(addressKey('fe80::1%en0')).toBe('fe80:0:0:0::/64');
   expect(addressKey('::1')).toBe('0:0:0:0::/64');
+});
+
+test("only a direct message (D…) becomes the owner's DM", async () => {
+  const store = new MemoryStore();
+  const link = { id: 'L1', teamId: 'T1', userId: 'U1', tokenHash: 'h', createdAt: 1 };
+  await store.saveLink(link);
+  const ctx = { store, now: () => 1 };
+  for (const id of ['C1', 'G1', 'D9'])
+    await recordResult(ctx, link, {
+      method: 'conversations.open',
+      args: { users: 'U1' },
+      response: { channel: { id } },
+    });
+  expect(await store.marked('dm', 'C1', 1)).toEqual([]);
+  expect(await store.marked('dm', 'G1', 1)).toEqual([]);
+  expect(await store.marked('dm', 'D9', 1)).toEqual(['L1']);
 });
