@@ -131,6 +131,7 @@ export class ActivityStream {
       source: 'trail lead',
       agent: author,
       level: 'ok',
+      kind: 'answered',
       ticketId: q.ticketId,
       sessionId: q.sessionId,
       text: `Answered ${q.agent}`,

@@ -1,7 +1,15 @@
 import { uid } from '../lib/emitter';
 import type { ModelTier } from '../model/modelTier';
 import { STEPS, stepTag } from '../model/steps';
-import type { ChatMessage, FeedEntry, PendingQuestion, SessionInfo, SessionMode, SessionUsage } from '../model/types';
+import type {
+  ChatMessage,
+  FeedEntry,
+  FeedKind,
+  PendingQuestion,
+  SessionInfo,
+  SessionMode,
+  SessionUsage,
+} from '../model/types';
 import { addUsage, subUsage } from './usage';
 import type { UsageLedger } from './usageLedger';
 
@@ -9,12 +17,12 @@ export interface SessionHandle {
   readonly id: string;
   readonly info: SessionInfo;
   step(n: number, detail?: string, ticketId?: string): void;
-  log(text: string, level?: FeedEntry['level']): void;
+  log(text: string, level?: FeedEntry['level'], kind?: FeedKind): void;
   /** Post an agent message into the session's conversation. */
   say(text: string): void;
   /** Ask the human a question and wait for the answer. `extra` ranks it in the attention queue. */
   ask(text: string, suggestions?: string[], extra?: Pick<PendingQuestion, 'urgency' | 'blocks'>): Promise<string>;
-  done(ok?: boolean, text?: string, opts?: { signal?: boolean }): void;
+  done(ok?: boolean, text?: string, opts?: { signal?: boolean; kind?: FeedKind }): void;
   /** Attach the session to a map created mid-session (chart). */
   bindMap(mapId: string): void;
   /** Add model usage reported by the agent. */
@@ -59,8 +67,8 @@ export function createSessionHandle(host: SessionHost, info: SessionInfo, mode: 
         ticketId: ticketId ?? current().ticketId,
       });
     },
-    log(text, level = 'info') {
-      feed({ level, text, ticketId: current().ticketId });
+    log(text, level = 'info', kind) {
+      feed({ level, text, ticketId: current().ticketId, ...(kind ? { kind } : {}) });
     },
     say(text) {
       host.chat({ sessionId: info.id, ticketId: current().ticketId, from: 'agent', author: info.agent, text });
@@ -88,7 +96,13 @@ export function createSessionHandle(host: SessionHost, info: SessionInfo, mode: 
       });
       host.addPending(q);
       host.patchSession(info.id, { waitingOn: q.id });
-      feed({ level: 'alert', ticketId: q.ticketId, text: 'Decision request · waiting on you', signal: true });
+      feed({
+        level: 'alert',
+        kind: 'asks-you',
+        ticketId: q.ticketId,
+        text: 'Decision request · waiting on you',
+        signal: true,
+      });
       return host.awaitAnswer(q.id);
     },
     done(ok = true, text, opts) {
@@ -98,6 +112,7 @@ export function createSessionHandle(host: SessionHost, info: SessionInfo, mode: 
         level: ok ? 'ok' : 'alert',
         text: text ?? (ok ? 'Session closed' : 'Session aborted'),
         signal: opts?.signal,
+        ...(opts?.kind ? { kind: opts.kind } : {}),
       });
     },
     bindMap(mapId) {

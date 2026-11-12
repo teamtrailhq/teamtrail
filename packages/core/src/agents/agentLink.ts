@@ -105,6 +105,7 @@ export function markDisconnected(doc: AgentSessionDoc): AgentSessionDoc {
         sessionId: doc.session.id,
         agent: doc.session.agent,
         level: 'alert',
+        kind: 'disconnected',
         text: 'Agent disconnected',
       },
     ],

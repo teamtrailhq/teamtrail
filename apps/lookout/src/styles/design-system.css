@@ -47,6 +47,7 @@
   /* Status edge: red only for "needs you now"; amber for work held up or at risk; neutral for everything else. */
   --edge-urgent: var(--urgent);
   --edge-attention: var(--amber);
+  --edge-good: rgb(var(--decided-rgb));
   --edge-neutral: var(--line2);
   --edge-w: 2px;
 }

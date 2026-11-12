@@ -95,7 +95,7 @@ export async function setCriteria(
       by: agent,
       at: Date.now(),
     });
-    ctx.sessions.current?.log(`${t.key}: proposed new acceptance criteria for the human`, 'warn');
+    ctx.sessions.current?.log(`${t.key}: proposed new acceptance criteria for the human`, 'warn', 'asks-you');
     return {
       ticket: t.key,
       proposed: criteria,

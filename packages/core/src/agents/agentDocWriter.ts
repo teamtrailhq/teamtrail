@@ -111,6 +111,7 @@ export class AgentDocWriter {
     this.activity.push({
       source: 'system',
       level: 'alert',
+      kind: 'problem',
       sessionId: q.sessionId,
       text: `An answer file for ${q.agent}'s question was not written by ${BRAND.name} on this machine. It was ignored; the question still waits for you.`,
     });
@@ -129,6 +130,7 @@ export class AgentDocWriter {
     this.activity.push({
       source: 'system',
       level: 'alert',
+      kind: 'problem',
       sessionId,
       text: `An answer waits that this agent can't read. ${text}`,
     });
@@ -139,7 +141,13 @@ export class AgentDocWriter {
     if (this.blocked) return;
     this.blocked = true;
     const why = machineAccess() ?? `${BRAND.name} can't read this machine's answer key.`;
-    this.activity.push({ source: 'system', level: 'alert', sessionId, text: `${why} Answers wait until it can.` });
+    this.activity.push({
+      source: 'system',
+      level: 'alert',
+      kind: 'problem',
+      sessionId,
+      text: `${why} Answers wait until it can.`,
+    });
   }
 
   close() {

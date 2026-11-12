@@ -10,9 +10,10 @@ import {
 import { useState, useEffect, type FormEvent } from 'react';
 import { Pill, Meta, MetaLine, Button, Card, Field, Empty } from '../../components/ui';
 import type { LookoutApi } from '../../hooks';
-import { stamp, ago, day, hm } from '../../lib';
+import { actorLabel, stamp, ago, day, hm } from '../../lib';
 import { PromoteButton } from '../knowledge';
 import { OutsideChangeNote } from '../signed-state';
+import { useSlackPeople } from '../slack';
 import { UnverifiedNote } from './UnverifiedNote';
 
 export function DecisionDetail(props: {
@@ -24,6 +25,7 @@ export function DecisionDetail(props: {
   onSupersede: LookoutApi['actions']['supersede'];
 }) {
   const { d, snap } = props;
+  const people = useSlackPeople();
   const [form, setForm] = useState(false);
   const [answer, setAnswer] = useState('');
   const [rationale, setRationale] = useState('');
@@ -71,7 +73,7 @@ export function DecisionDetail(props: {
           )}
         </dd>
         <dt>Decided by</dt>
-        <dd>{[d.decidedBy, postedNote(d)].filter(Boolean).join(', ')}</dd>
+        <dd>{[actorLabel(d.decidedBy, people), postedNote(d)].filter(Boolean).join(', ')}</dd>
         {d.participants.length > 1 && (
           <>
             <dt>Participants</dt>
@@ -121,7 +123,7 @@ export function DecisionDetail(props: {
                   <i />
                   <span className="id">{c.id}</span>
                   <span className="a">{c.summary}</span>
-                  <MetaLine parts={[c.decidedBy, day(c.decidedAt)]} />
+                  <MetaLine parts={[actorLabel(c.decidedBy, people), day(c.decidedAt)]} />
                 </button>
               </li>
             ))}
@@ -189,7 +191,7 @@ export function DecisionDetail(props: {
           <div className="dv-transcript comms-log">
             {d.transcript.map((m, i) => (
               <div key={i} className={`msg from-${m.from} voice-${m.from === 'human' ? 'human' : 'agent'}`}>
-                <Meta parts={[m.author, hm(m.at)]} />
+                <Meta parts={[actorLabel(m.author, people), hm(m.at)]} />
                 <div className="msg-text">{m.text}</div>
               </div>
             ))}

@@ -107,7 +107,7 @@ async function chartTrail(ctx: AgentContext, input: StartInput) {
     writeBrief(ctx.root, { mapId: map.id, status: 'draft', ticketId: discoveryTicket.id, sections: EMPTY_BRIEF });
   s.step(5, 'ready for agents');
   const framing = ctx.sessions.transcript(s.id) ?? [];
-  ctx.sessions.end(true, `Trail launched · ${tickets.length} tickets`, true);
+  ctx.sessions.end(true, `Trail launched · ${tickets.length} tickets`, { signal: true, kind: 'launched' });
   const snap = await ctx.load(map.id);
   const next = chooseNext(snap, { types: claimable(ctx.root, map.id) });
   return {

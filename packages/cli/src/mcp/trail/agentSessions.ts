@@ -1,4 +1,4 @@
-import type { ActivityStream, SessionHandle, SessionMode, TranscriptEntry } from '@teamtrail/core';
+import type { ActivityStream, FeedKind, SessionHandle, SessionMode, TranscriptEntry } from '@teamtrail/core';
 import type { AgentOptions } from './types';
 
 interface UsageWindow {
@@ -87,14 +87,14 @@ export class AgentSessions {
     }
   }
 
-  end(ok: boolean, text?: string, signal?: boolean) {
+  end(ok: boolean, text?: string, opts?: { signal?: boolean; kind?: FeedKind }) {
     const s = this.running();
     if (s) {
       this.lastEnd = Date.now();
       const w = this.windows.get(s.id);
       if (w) w.to = this.lastEnd;
       this.measure(s);
-      s.done(ok, text, { signal });
+      s.done(ok, text, opts);
     }
     this.current = undefined;
   }

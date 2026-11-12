@@ -278,9 +278,18 @@ export interface FeedEntry {
   text: string;
   level: 'info' | 'step' | 'ok' | 'warn' | 'alert';
   ticketId?: string;
-  /** Rare, high-signal moments (a decision request arriving, a trail launch); rendered in the dot-matrix face. */
+  /** Rare, high-signal moments (a decision request arriving, a trail launch). */
   signal?: boolean;
+  /** What the entry means for the human, when it matters: the Lookout marks these and only these. */
+  kind?: FeedKind;
 }
+
+/**
+ * Entries the Activity log marks: `asks-you` needs the human now; `answered`, `launched`, `done` and `verified` went
+ * well; `checks-failed`, `stalled`, `disconnected` and `problem` are held up or at risk. Everything else is routine.
+ */
+export type FeedKind =
+  'asks-you' | 'answered' | 'launched' | 'done' | 'verified' | 'checks-failed' | 'stalled' | 'disconnected' | 'problem';
 
 /** Who a ticket needs: a human in the loop, or an agent away from keyboard. */
 export type Attention = 'hitl' | 'afk';

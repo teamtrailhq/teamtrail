@@ -204,7 +204,7 @@ export class AgentContext {
     const s = this.sessions.running()?.info;
     const lost = this.leases.renew(this.trailName, { ticketId: s?.ticketId, sessionId: s?.id, ...extra });
     const gone = lost.find((h) => h.ticketId === s?.ticketId && h.mapId === s?.mapId);
-    if (gone) this.sessions.end(false, `${gone.key} returned to the queue · claim no longer held`);
+    if (gone) this.sessions.end(false, `${gone.key} returned to the queue · claim no longer held`, { kind: 'stalled' });
   }
 
   /** Write pending session state now, so a tool result never runs ahead of the Lookout. */

@@ -34,6 +34,7 @@ export function describeTrackerEvent(
       return {
         source: 'tracker',
         level: e.reason === 'completed' ? 'ok' : 'alert',
+        ...(e.reason === 'completed' ? { kind: 'done' as const } : {}),
         ticketId: e.ticketId,
         text: `Closed ${k(e.ticketId)} · ${e.reason === 'completed' ? 'completed' : 'not planned'}`,
       };

@@ -1,6 +1,7 @@
 import { type AuditDecision, decisionStatus, DECISION_SOURCES, postedNote } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
-import { day, hm } from '../../lib';
+import { actorLabel, day, hm } from '../../lib';
+import { useSlackPeople } from '../slack';
 
 /** Where the decision stands in a supersession chain, when it's part of one. */
 function chainNote(d: AuditDecision) {
@@ -19,6 +20,7 @@ export function DecisionRow(props: {
   onClick: () => void;
 }) {
   const { d } = props;
+  const people = useSlackPeople();
   const status = decisionStatus(d);
   return (
     <>
@@ -37,7 +39,7 @@ export function DecisionRow(props: {
               { text: d.id, code: true },
               d.ticketKey && { text: d.ticketKey, code: true },
               props.showTrail && props.trail,
-              d.decidedBy,
+              actorLabel(d.decidedBy, people),
               postedNote(d) ?? DECISION_SOURCES[d.source.kind].label,
               chainNote(d),
             ]}

@@ -171,10 +171,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.log-row.src-operator .src,
-.log-row.src-system .src {
-  color: var(--text);
-}
 .log-row .msg {
   max-width: none;
   color: var(--text);
@@ -182,24 +178,30 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* One text style for every message (`.log` sets the size, the body face here). The tag, the step's "Chart 3/5",
+   reads as part of the line, not in a second style. */
+.log-row .msg,
 .log-row .tag {
-  color: var(--dim);
+  font-family: var(--sans);
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  font-style: normal;
 }
-/* Warnings and alerts carry the status edge, not coloured text: amber held up or at risk, red needs you now. */
-.log-row.lv-warn,
-.log-row.lv-alert {
+/* The left bar is the only mark of importance (feedEdge.ts): red needs you now, green went well, amber held up or at
+   risk. Rows without one keep their text in line with those that have one. */
+.log-row.edge-urgent,
+.log-row.edge-good,
+.log-row.edge-attention {
   margin-left: calc(-1 * var(--sp-6));
   padding-left: calc(var(--sp-6) - var(--edge-w));
   border-left: var(--edge-w) solid var(--edge-attention);
 }
-.log-row.lv-alert {
+.log-row.edge-urgent {
   border-left-color: var(--edge-urgent);
 }
-.log-row.lv-alert .msg {
-  color: var(--text-hi);
-}
-.log-row.lv-ok .msg {
-  color: var(--text-hi);
+.log-row.edge-good {
+  border-left-color: var(--edge-good);
 }
 .activity-stack .log-row {
   grid-template-columns: 58px 74px minmax(0, 1fr);
