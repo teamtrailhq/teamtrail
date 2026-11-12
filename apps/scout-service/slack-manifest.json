@@ -1,0 +1,66 @@
+{
+  "display_information": {
+    "name": "Scout",
+    "description": "Teamtrail's agent questions, approvals and decisions in Slack",
+    "long_description": "Scout is the voice of Teamtrail, a local trail map for big work done by AI coding agents. Connect Scout to the Teamtrail running on your machine and answer your agents' questions, approve finished work and record decisions without leaving Slack. Scout talks only to the person who connected it, and only while their Teamtrail is running. Trails, decisions and approvals stay on your machine: the Scout service passes questions and answers through and keeps no message content.",
+    "background_color": "#101815"
+  },
+  "features": {
+    "app_home": {
+      "home_tab_enabled": true,
+      "messages_tab_enabled": true,
+      "messages_tab_read_only_enabled": false
+    },
+    "bot_user": {
+      "display_name": "Scout",
+      "always_online": true
+    },
+    "slash_commands": [
+      {
+        "command": "/scout",
+        "url": "https://scout.teamtrail.app/slack/commands",
+        "description": "Record a decision, check a trail, answer agents",
+        "usage_hint": "decide [text] | status [trail] | inbox | help",
+        "should_escape": false
+      }
+    ],
+    "shortcuts": [
+      {
+        "name": "Save as decision",
+        "type": "message",
+        "callback_id": "save_decision",
+        "description": "Record this thread as a Teamtrail decision"
+      }
+    ]
+  },
+  "oauth_config": {
+    "redirect_urls": ["https://scout.teamtrail.app/oauth/callback"],
+    "scopes": {
+      "bot": [
+        "commands",
+        "chat:write",
+        "im:write",
+        "channels:history",
+        "groups:history",
+        "im:history",
+        "mpim:history",
+        "users:read",
+        "channels:read",
+        "groups:read"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "request_url": "https://scout.teamtrail.app/slack/events",
+      "bot_events": ["app_home_opened", "app_uninstalled", "tokens_revoked"]
+    },
+    "interactivity": {
+      "is_enabled": true,
+      "request_url": "https://scout.teamtrail.app/slack/interactions"
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false
+  }
+}
