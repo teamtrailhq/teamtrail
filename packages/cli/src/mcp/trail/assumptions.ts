@@ -52,7 +52,7 @@ export async function challengeAssumptionOp(
     by: await ctx.agentId(),
     ticketId: t?.id ?? ctx.sessions.running()?.info.ticketId,
   });
-  (await ctx.ensureSession()).log(`challenged ${r.assumption.id} · ${r.assumption.text}`, 'warn');
+  (await ctx.ensureSession()).log(`challenged ${r.assumption.id} · ${r.assumption.text}`, 'warn', 'problem');
   return {
     assumption: assumptionView(snap, r.assumption),
     dependents: { tickets: r.tickets.map((id) => ctx.keyOf(id)), decisions: r.decisions },

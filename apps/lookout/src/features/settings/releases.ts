@@ -17,6 +17,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.29.2',
+    date: '2026-11-12',
+    items: [
+      'The Activity log reads in one style: a coloured bar marks what needs you (red), what went well (green) and what is held up (amber), and Slack answers show who gave them',
+    ],
+  },
+  {
     version: '0.29.1',
     date: '2026-11-12',
     items: [

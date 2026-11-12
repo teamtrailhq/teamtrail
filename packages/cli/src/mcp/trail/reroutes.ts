@@ -49,7 +49,11 @@ export async function proposeRerouteOp(ctx: AgentContext, input: ProposeArgs) {
         ...(input.lane ? { lane: input.lane } : {}),
       },
     );
-    s.log(`proposed ${r.proposal.id} · ${r.proposal.changes.length} changes · waiting on the human`, 'warn');
+    s.log(
+      `proposed ${r.proposal.id} · ${r.proposal.changes.length} changes · waiting on the human`,
+      'warn',
+      'asks-you',
+    );
     return {
       id: r.proposal.id,
       status: r.proposal.status,

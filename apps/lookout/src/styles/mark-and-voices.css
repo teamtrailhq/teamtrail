@@ -41,38 +41,7 @@
 .msg.voice-human .msg-text {
   font-family: var(--voice-human);
 }
-.log-row.src-session .msg,
-.log-row.src-system .msg {
-  font-family: var(--voice-agent);
-  letter-spacing: var(--ls-text);
-}
-.log-row.src-operator .msg {
-  font-family: var(--voice-human);
-  font-style: italic;
-}
-.log-row.src-tracker .msg {
-  font-family: var(--voice-data);
-  font-size: var(--fs-label);
-  letter-spacing: var(--ls-text);
-  color: var(--dim);
-}
-.log-row.src-tracker.lv-ok .msg {
-  color: var(--text);
-}
-/* Scout's lines: its mark carries the accent; the words read as normal text (color is for meaning, not voice). */
-.log-row.src-system .msg {
-  color: var(--text);
-}
-
-/* ---------- Signal moments: mono caps, used sparingly ---------- */
-.log-row.signal .msg {
-  font-family: var(--label);
-  font-size: var(--fs-sm);
-  letter-spacing: var(--ls-label);
-  line-height: var(--lh-snug);
-  text-transform: uppercase;
-  font-weight: 500;
-}
+/* ---------- Signal tag: mono caps, used sparingly ---------- */
 .signal-tag {
   font-family: var(--label);
   font-size: var(--fs-sm);

@@ -1,6 +1,7 @@
 import { chatNote, type ActivityState } from '@teamtrail/core';
 import { MetaLine } from '../../components/ui';
-import { clock } from '../../lib';
+import { actorLabel, clock } from '../../lib';
+import { useSlackPeople } from '../slack';
 
 type Message = ActivityState['chats'][number];
 
@@ -11,10 +12,11 @@ type Message = ActivityState['chats'][number];
  */
 export function ChatMessage(props: { m: Message; stillOpen: boolean; onAnswerThis: () => void }) {
   const { m } = props;
+  const people = useSlackPeople();
   const voice = m.from === 'human' ? 'human' : 'agent';
   return (
     <div className={`msg from-${m.from} voice-${voice}`}>
-      <MetaLine parts={[m.author, chatNote(m), clock(m.at)]} />
+      <MetaLine parts={[actorLabel(m.author, people), chatNote(m), clock(m.at)]} />
       <div className="msg-text">{m.text}</div>
       {props.stillOpen && (
         <button className="answer-this t-meta" onClick={props.onAnswerThis}>

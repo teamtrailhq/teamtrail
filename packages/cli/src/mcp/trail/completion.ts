@@ -38,6 +38,7 @@ function track(ctx: AgentContext, mapId: string, ticketId: string, run: Run) {
         ctx.activity.push({
           source: 'system',
           level: s.phase === 'done' ? 'ok' : 'warn',
+          kind: s.phase === 'done' ? 'verified' : 'checks-failed',
           text: `${s.attempt.ticketKey} ${s.attempt.id} · ${s.phase}`,
           ticketId,
         }),
@@ -45,6 +46,7 @@ function track(ctx: AgentContext, mapId: string, ticketId: string, run: Run) {
         ctx.activity.push({
           source: 'system',
           level: 'alert',
+          kind: 'checks-failed',
           text: `verification of ${ctx.keyOf(ticketId)} failed: ${(e as Error).message}`,
           ticketId,
         }),
@@ -119,7 +121,12 @@ export async function submitVerified(
 
 /** A completion held back because the check commands wait for the trail lead's approval on this machine. */
 function waitingForApproval(ctx: AgentContext, key: string, note: string) {
-  ctx.activity.push({ source: 'system', level: 'warn', text: `${key} waits: check commands need your approval` });
+  ctx.activity.push({
+    source: 'system',
+    level: 'warn',
+    kind: 'asks-you',
+    text: `${key} waits: check commands need your approval`,
+  });
   return { status: 'waiting-approval' as const, pending: true as const, note };
 }
 
