@@ -1,39 +1,29 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MemoryAdapter } from '@teamtrail/core';
 import { createTrackerBridge } from '@teamtrail/core/bridge';
 import { FIXTURES } from '../../core/test/fixtures';
-import { BOT_SCOPES, appIdFromToken, slackLinks, slackManifest, tokenKind } from '../src/manifest';
+import { ScoutLink } from '../src/link/scoutLink';
 import { slackPlugin, slackRoutes } from '../src/node';
-import { SocketMode } from '../src/socket';
 import { deterministicSummary, plainText } from '../src/summary';
-import { fakeSlack } from './fakes/slack';
-import { socketHub } from './fakes/socket';
+import { scoutHub } from './fakes/scoutHub';
 import {
-  ALL_SCOPES,
   ANA,
-  FROZEN,
   RAJ,
+  SCOUT_ENV,
   TOKENS,
   URL_,
   connected,
   freezeTime,
+  liveWorld,
   until,
   world,
   type SlackFixture,
 } from './harness';
-import {
-  approvalFlow,
-  approvalRestartFlow,
-  askFlow,
-  decisionFlow,
-  notifyFlow,
-  setupFlow,
-  statusFlow,
-} from './scenarios';
+import { approvalFlow, approvalRestartFlow, askFlow, decisionFlow, notifyFlow, statusFlow } from './scenarios';
 
 let thaw: () => void;
 before(() => (thaw = freezeTime()));
@@ -55,63 +45,6 @@ async function replayed<T>(name: string, flow: (w: ReturnType<typeof world>) => 
     w.cleanup();
   }
 }
-
-test('setup: tokens are routed by prefix, checked live, stored only in the local credential store; the owner enters a one-time code and is confirmed here', async () => {
-  const r = await replayed('slack-setup.json', setupFlow);
-  assert.equal(r.s0.step, 1);
-  assert.equal(r.s1.step, 2);
-  assert.deepEqual([r.userToken.ok, r.userToken.code], [false, 'user_token']);
-  assert.deepEqual(
-    [r.app.ok, r.app.kind, r.app.status.step, r.app.status.setup.appId],
-    [true, 'app', 4, 'A0Scout0001'],
-  );
-  assert.equal(r.app.status.links.install, 'https://api.slack.com/apps/A0Scout0001/install-on-team');
-  assert.deepEqual([r.missingScope.ok, r.missingScope.code], [false, 'missing_scope']);
-  assert.match(r.missingScope.error!, /users:read/);
-  assert.deepEqual([r.bot.ok, r.bot.kind, r.bot.status.enabled], [true, 'bot', true]);
-  assert.deepEqual([r.beforeClaim.state, r.beforeClaim.step], ['online', 5]);
-  assert.equal(r.beforeClaim.links.home, 'slack://app?team=T0EFIKA01&id=A0Scout0001&tab=home');
-  assert.deepEqual(
-    [r.noCode.step, r.noCode.owners, r.noCode.pendingOwner],
-    [5, [], undefined],
-    'a click claims nothing',
-  );
-  assert.deepEqual(r.wrong, {
-    response_action: 'errors',
-    errors: { code: "That code doesn't match. Check it in Teamtrail → Settings → Slack." },
-  });
-  assert.deepEqual(
-    [r.pending.step, r.pending.owners, r.pending.pendingOwner, r.pending.ownerCode],
-    [5, [], { id: ANA, name: 'ana', displayName: 'ana', realName: 'Ana Silva', via: 'code' }, undefined],
-    'the account that entered the code waits for the trail lead; the code is used up',
-  );
-  assert.deepEqual(
-    [r.after.step, r.after.owners, r.after.pendingOwner],
-    [
-      'done',
-      [{ id: ANA, name: 'ana', displayName: 'ana', realName: 'Ana Silva', via: 'code', confirmedAt: FROZEN }],
-      undefined,
-    ],
-  );
-  assert.deepEqual(r.creds, { slack: { appToken: TOKENS.app, botToken: TOKENS.bot } });
-  assert.ok(
-    !JSON.stringify(r.settings).includes('xox') && !JSON.stringify(r.settings).includes('xapp'),
-    'slack.json holds no secrets',
-  );
-  assert.ok(
-    !JSON.stringify(r.after).includes(TOKENS.bot) && !JSON.stringify(r.after).includes(TOKENS.app),
-    'status never echoes a token',
-  );
-  assert.equal(r.socketConnections, 2, 'one probe socket on paste, then the live one');
-  const fx = fixture('slack-setup.json');
-  assert.deepEqual(
-    posts(fx, 'chat.postMessage').map((m) => [m.channel, m.text]),
-    [['D00ANA0001', 'Connected. Decisions and questions will reach you here.']],
-    'one message, to the confirmed owner, after the confirmation',
-  );
-  assert.equal(posts(fx, 'views.open').length, 2, 'the code modal opens only while a code waits and nobody used it');
-  assert.ok(!JSON.stringify(fx).includes(TOKENS.bot), 'fixtures never contain tokens');
-});
 
 test('asks: DM to the owner, buttons answer the waiting agent, late and unauthorized clicks are refused, UI answers close the DM', async () => {
   const r = await replayed('slack-ask.json', askFlow);
@@ -264,7 +197,11 @@ test('/scout status, inbox and help', async () => {
   assert.match(out[1].blocks[0].text.text, /Sessions {6}claude-07 waiting · \$4\.12 · 1\.8M tok/);
   assert.equal(out[2].text, 'No trail matches “nope”.');
   assert.match(out[3].blocks[0].text.text, /AWAITING YOU\* · Event store · #3 Pick DB/);
-  assert.equal(out[3].blocks[1].elements[0].action_id, 'ask_reply', 'a question without suggestions offers Reply…');
+  assert.deepEqual(
+    out[3].blocks.at(-1).elements.map((e: { action_id: string }) => e.action_id),
+    ['open_teamtrail'],
+    'the inbox is a reply only its reader sees: Slack drops clicks there, so it offers no answer buttons, only Open',
+  );
 });
 
 test('notifications: blocked and trail done reach the DM, batched per trail and threaded under the first of the day', async () => {
@@ -354,50 +291,13 @@ test('approvals survive a restart: stored messages are updated in place, and out
 
 /* ---------- connection, lock, failures ---------- */
 
-function live(o: { hub?: ReturnType<typeof socketHub>; configDir?: string } = {}) {
-  const fake = fakeSlack();
-  const hub = o.hub ?? socketHub();
-  const w = world('record', 'unused.json');
-  connected(w);
-  return {
-    fake,
-    hub,
-    w,
-    make: (extra = {}) =>
-      w.service(new MemoryAdapter({ latency: [0, 0] }), {
-        fetch: fake.fetch,
-        WebSocket: hub.WebSocket,
-        ...(o.configDir ? { configDir: o.configDir } : {}),
-        ...extra,
-      }),
-  };
-}
-
-test('socket: reconnects on refresh_requested and on a dropped socket; link_disabled stops with an explanation', async () => {
-  const { hub, w, make } = live();
+test('one connection to the Scout service per machine: a second teamtrail reports where Slack is connected', async () => {
+  const { w } = liveWorld();
   try {
-    const svc = make();
-    await until(() => svc.status().state === 'online');
-    hub.refresh();
-    await until(() => hub.connections === 2 && svc.status().state === 'online', 'reconnect after refresh');
-    hub.drop();
-    await until(() => hub.connections === 3 && svc.status().state === 'online', 'reconnect after drop');
-    hub.state.linkDisabled = true;
-    hub.drop();
-    await until(() => svc.status().state === 'auth-error', 'link disabled');
-    assert.match(svc.status().error!, /Socket Mode was turned off/);
-    assert.equal(svc.status().enabled, false);
-  } finally {
-    w.cleanup();
-  }
-});
-
-test('one Socket Mode connection per machine: a second teamtrail reports where Slack is connected', async () => {
-  const { w, make } = live();
-  try {
-    const a = make();
+    connected(w);
+    const a = w.service(new MemoryAdapter({ latency: [0, 0] }));
     await until(() => a.status().state === 'online');
-    const b = make({ root: '/other/repo/.teamtrail', lockOwner: 'other' });
+    const b = w.service(new MemoryAdapter({ latency: [0, 0] }), { root: '/other/repo/.teamtrail', lockOwner: 'other' });
     assert.equal(b.status().state, 'elsewhere');
     assert.equal(b.status().heldBy, w.root);
     a.close();
@@ -408,10 +308,11 @@ test('one Socket Mode connection per machine: a second teamtrail reports where S
   }
 });
 
-test('a revoked bot token turns Slack off and asks to reconnect', async () => {
-  const { fake, w, make } = live();
+test('Slack refusing the bot token (Scout uninstalled) turns Slack off and asks to add Scout again', async () => {
+  const { w, fake } = liveWorld();
   try {
-    const svc = make();
+    connected(w);
+    const svc = w.service(new MemoryAdapter({ latency: [0, 0] }));
     await until(() => svc.status().state === 'online');
     fake.state.installed = false;
     const r = await svc.onEnvelope({
@@ -422,167 +323,51 @@ test('a revoked bot token turns Slack off and asks to reconnect', async () => {
     await r?.after?.().catch(() => {});
     assert.equal(svc.status().state, 'auth-error');
     assert.equal(svc.status().enabled, false);
+    assert.match(svc.status().error!, /Add Scout to Slack again/);
   } finally {
     w.cleanup();
-  }
-});
-
-test('env tokens work like GITHUB_TOKEN: reported by source, never stored', async () => {
-  const fake = fakeSlack();
-  const hub = socketHub();
-  const w = world('record', 'unused.json');
-  try {
-    const svc = w.service(new MemoryAdapter({ latency: [0, 0] }), {
-      fetch: fake.fetch,
-      WebSocket: hub.WebSocket,
-      env: { TEAMTRAIL_SLACK_APP_TOKEN: TOKENS.app, TEAMTRAIL_SLACK_BOT_TOKEN: TOKENS.bot },
-    });
-    const s = svc.status();
-    assert.deepEqual([s.setup.appToken, s.setup.botToken], ['TEAMTRAIL_SLACK_APP_TOKEN', 'TEAMTRAIL_SLACK_BOT_TOKEN']);
-    await until(() => svc.status().state === 'online');
-    const on = svc.status();
-    assert.deepEqual(
-      [on.enabled, on.step, on.setup.appId, on.workspace?.name],
-      [true, 5, 'A0Scout0001', 'efika'],
-      'verified on first start, then setup continues at the claim',
-    );
-    const creds = path.join(w.configDir, 'credentials.json');
-    assert.ok(
-      !existsSync(creds) || !readFileSync(creds, 'utf8').includes('xoxb-'),
-      'env tokens are not written to the credential store',
-    );
-    svc.close();
-  } finally {
-    w.cleanup();
-  }
-});
-
-test('a git email alone puts nobody forward; it only tells the trail lead that the account entering the code matches it', async () => {
-  const fake = fakeSlack();
-  const hub = socketHub();
-  const w = world('record', 'unused.json');
-  try {
-    const svc = w.service(new MemoryAdapter({ latency: [0, 0] }), {
-      fetch: fake.fetch,
-      WebSocket: hub.WebSocket,
-      ownerEmail: () => 'Ana@efika.test\n',
-    });
-    await svc.pasteToken(TOKENS.app);
-    const r = await svc.pasteToken(TOKENS.bot);
-    assert.deepEqual([r.ok, r.status.step, r.status.owners, r.status.pendingOwner], [true, 5, [], undefined]);
-    await until(() => svc.status().state === 'online');
-    const enter = async (user: string) => {
-      const { code } = svc.startOwnerCode();
-      await hub.envelope(fake.payload.clickHome(user, 'claim_owner'));
-      await svc.idle();
-      await hub.envelope(fake.payload.submit(user, [...fake.views.keys()].at(-1)!, { code }));
-      await svc.idle();
-      return svc.status().pendingOwner;
-    };
-    assert.deepEqual(await enter(RAJ), {
-      id: RAJ,
-      name: 'raj',
-      displayName: 'raj',
-      realName: 'Raj Patel',
-      via: 'code',
-      gitEmail: false,
-    });
-    svc.resetOwner();
-    assert.deepEqual(await enter(ANA), {
-      id: ANA,
-      name: 'ana',
-      displayName: 'ana',
-      realName: 'Ana Silva',
-      via: 'code',
-      gitEmail: true,
-    });
-    assert.deepEqual(fake.channels.get(fake.im(ANA))?.messages ?? [], [], 'not a word before the confirmation');
-    svc.close();
-  } finally {
-    w.cleanup();
-  }
-});
-
-test('no email match, or an app without users:read.email, leaves nobody put forward: the code is the way', async () => {
-  for (const [email, scopes] of [
-    ['nobody@efika.test', ALL_SCOPES],
-    ['ana@efika.test', [...BOT_SCOPES]],
-  ] as const) {
-    const fake = fakeSlack();
-    fake.state.scopes = [...scopes];
-    const w = world('record', 'unused.json');
-    try {
-      const svc = w.service(new MemoryAdapter({ latency: [0, 0] }), {
-        fetch: fake.fetch,
-        WebSocket: socketHub().WebSocket,
-        ownerEmail: () => email,
-      });
-      await svc.pasteToken(TOKENS.app);
-      const r = await svc.pasteToken(TOKENS.bot);
-      assert.deepEqual([r.ok, r.status.step, r.status.owners, r.status.pendingOwner], [true, 5, [], undefined], email);
-      svc.close();
-    } finally {
-      w.cleanup();
-    }
   }
 });
 
 /* ---------- routes ---------- */
 
-test('routes: status and token endpoints; cross-site requests are refused; the bridge mounts Slack as a plugin', async () => {
-  const fake = fakeSlack();
-  const hub = socketHub();
+test('routes: status and connect endpoints; cross-site requests are refused; the bridge mounts Slack as a plugin', async () => {
   const w = world('record', 'unused.json');
   const bridge = createTrackerBridge(w.root, {
     plugins: [
       slackPlugin({
         configDir: w.configDir,
-        env: {},
-        fetch: fake.fetch,
-        WebSocket: hub.WebSocket,
-        apiUrl: 'https://slack.test/api',
+        env: { ...SCOUT_ENV },
+        fetch: w.fetch,
+        WebSocket: w.hub.WebSocket,
         pollMs: 0,
       }),
     ],
   });
   const server = http.createServer((req, res) => void bridge.handle(req, res));
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
-  const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const port = (server.address() as { port: number }).port;
+  const base = `http://127.0.0.1:${port}`;
+  const post = (p: string, headers: Record<string, string> = {}) =>
+    fetch(`${base}${p}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: '{}' });
   try {
     const status = await (await fetch(`${base}/slack`)).json();
-    assert.equal(status.step, 1);
-    assert.match(status.links.create, /^https:\/\/api\.slack\.com\/apps\?new_app=1&manifest_json=/);
-    const bad = await fetch(`${base}/slack/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: 'hello' }),
-    });
-    assert.equal(bad.status, 400);
-    assert.equal((await bad.json()).code, 'unknown_token');
-    const ok = await fetch(`${base}/slack/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: TOKENS.app }),
-    });
-    const body = await ok.text();
-    assert.equal(ok.status, 200);
-    assert.ok(!body.includes(TOKENS.app), 'the token is not echoed back');
-    const cross = await fetch(`${base}/slack/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Origin: 'https://evil.example' },
-      body: JSON.stringify({ token: TOKENS.app }),
-    });
-    assert.equal(cross.status, 403);
-    const form = await fetch(`${base}/slack/token`, {
+    assert.deepEqual([status.connected, status.state], [false, 'off']);
+    const started = await post('/slack/connect/start');
+    assert.equal(started.status, 200);
+    assert.equal(new URL((await started.json()).url).searchParams.get('return'), `${base}/?settings=slack`);
+    assert.equal((await post('/slack/connect/start', { Origin: 'https://evil.example' })).status, 403);
+    const form = await fetch(`${base}/slack/connect/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ token: TOKENS.app }),
+      body: '{}',
     });
     assert.equal(form.status, 403, 'simple (no-preflight) cross-site posts are refused');
+    assert.equal((await post('/slack/connect/finish')).status, 400, 'a code is required');
     const removed = await (
-      await fetch(`${base}/slack`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } })
+      await fetch(`${base}/slack/connect`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } })
     ).json();
-    assert.deepEqual([removed.step, removed.setup.appToken], [1, null]);
+    assert.deepEqual([removed.connected, removed.state], [false, 'off']);
   } finally {
     server.close();
     bridge.close();
@@ -592,37 +377,6 @@ test('routes: status and token endpoints; cross-site requests are refused; the b
 });
 
 /* ---------- pure parts ---------- */
-
-test('manifest: Socket Mode, /scout, Save as decision, App Home, the planned scopes and nothing more', () => {
-  const m = slackManifest();
-  assert.equal(m.settings.socket_mode_enabled, true);
-  assert.equal(m.settings.interactivity.is_enabled, true);
-  assert.deepEqual(m.settings.event_subscriptions.bot_events, ['app_home_opened']);
-  assert.equal(m.features.slash_commands[0].command, '/scout');
-  assert.deepEqual(m.features.shortcuts[0], {
-    name: 'Save as decision',
-    type: 'message',
-    callback_id: 'save_decision',
-    description: 'Record this thread as a Teamtrail decision',
-  });
-  assert.equal(m.features.app_home.home_tab_enabled, true);
-  assert.deepEqual(m.oauth_config.scopes.bot, [...BOT_SCOPES, 'users:read.email']);
-  assert.ok(!('user' in m.oauth_config.scopes));
-  const url = new URL(slackLinks.create());
-  assert.deepEqual(JSON.parse(url.searchParams.get('manifest_json')!), m);
-});
-
-test('tokens are routed by prefix; the app ID comes from the app-level token', () => {
-  assert.deepEqual(['xapp-1-A1-1-x', 'xoxb-1', 'xoxp-1', 'xoxe.xoxp-1', 'nope'].map(tokenKind), [
-    'app',
-    'bot',
-    'user',
-    'config',
-    'unknown',
-  ]);
-  assert.equal(appIdFromToken('xapp-1-A0123ABCD-4567-deadbeef'), 'A0123ABCD');
-  assert.equal(appIdFromToken('xoxb-1'), undefined);
-});
 
 test('summary: first, clicked and last two messages, trimmed, markup resolved', () => {
   const m = (ts: string, name: string, text: string) => ({ ts, name, text });
@@ -635,11 +389,12 @@ test('summary: first, clicked and last two messages, trimmed, markup resolved', 
   );
 });
 
-test('socket acks within the handler and runs slow work after the ack', async () => {
-  const hub = socketHub();
+test('the link acks within the handler and runs slow work after the ack', async () => {
+  const hub = scoutHub({ fetch, botToken: TOKENS.bot });
   const order: string[] = [];
-  const s = new SocketMode({
-    open: async () => 'wss://x',
+  const s = new ScoutLink({
+    url: 'wss://scout.test/connect',
+    token: TOKENS.link,
     WebSocket: hub.WebSocket,
     onEnvelope: async () => {
       order.push('handled');
@@ -653,5 +408,25 @@ test('socket acks within the handler and runs slow work after the ack', async ()
   await s.idle();
   assert.deepEqual(ack, { ok: 1 });
   assert.deepEqual(order, ['handled', 'after-acked']);
+  s.stop();
+});
+
+test('a call made while the link is down fails at once as offline, and one in flight when it drops fails too', async () => {
+  const hung: typeof fetch = () => new Promise(() => {});
+  const hub = scoutHub({ fetch: hung, botToken: TOKENS.bot });
+  const s = new ScoutLink({
+    url: 'wss://scout.test/connect',
+    token: TOKENS.link,
+    WebSocket: hub.WebSocket,
+    onEnvelope: async () => undefined,
+    onState: () => {},
+    backoffMs: () => 60_000,
+  });
+  await assert.rejects(s.call('auth.test'), /offline/);
+  s.start();
+  await until(() => hub.open === 1);
+  const pending = s.call('auth.test');
+  hub.drop();
+  await assert.rejects(pending, /offline/);
   s.stop();
 });

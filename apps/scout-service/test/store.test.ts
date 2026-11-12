@@ -75,6 +75,9 @@ function contract(name: string, make: () => Promise<ServiceStore>) {
       expect((await s.takeInstall(key, 50))?.challenge).toBe('c');
       expect(await s.takeInstall(key, 50)).toBeUndefined();
       await s.saveCode({ codeHash: key, challenge: 'c', teamId: 'T', userId: 'U', expiresAt: 100 });
+      expect((await s.peekCode(key, 50))?.userId).toBe('U');
+      expect((await s.peekCode(key, 50))?.userId).toBe('U');
+      expect(await s.peekCode(key, 100)).toBeUndefined();
       expect((await s.takeCode(key, 50))?.userId).toBe('U');
       expect(await s.takeCode(key, 50)).toBeUndefined();
       await s.saveCode({ codeHash: `${key}x`, challenge: 'c', teamId: 'T', userId: 'U', expiresAt: 100 });

@@ -20,6 +20,7 @@ import { verifyProjects } from './verifyProjects.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
 import { verifySignedState } from './verifySignedState.mjs';
 import { verifySignIn } from './verifySignIn.mjs';
+import { verifySlack } from './verifySlack.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -563,6 +564,8 @@ const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const headersOk = await verifyHeaders({ browser, url, log, pair: () => pairLink({ cli, cwd: repo }) });
 // Sign-in: pairing links work once, the API answers no one else, a revoked browser is signed out live.
 const signInOk = await verifySignIn({ browser, cli, log, shots });
+// Slack: Add Scout to Slack through the Scout service, an answer from Slack, the high-risk rule and Disconnect.
+const slackOk = await verifySlack({ browser, cli, log, shots });
 
 // Answered in the agent's own chat (/scout inbox): delivered as guidance, never the human's word at a gate.
 const side = await call('ask_human', { question: 'Show dates in UTC?', urgency: 'fyi', waitSeconds: 0 });
@@ -635,7 +638,8 @@ if (
   !guidesOk ||
   !githubOk ||
   !linearOk ||
-  !remoteOk
+  !remoteOk ||
+  !slackOk
 )
   process.exit(1);
 console.log('\nOK');

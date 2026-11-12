@@ -11,8 +11,11 @@ export const LIMITS = {
   pingMs: 30_000,
   /** OAuth state, from /install to the callback. */
   installMs: 10 * 60_000,
-  /** The code handed to the Lookout after the callback. */
-  codeMs: 60_000,
+  /**
+   * The code handed to the Lookout after the callback: long enough for the trail lead to read "Connect as @user in
+   * <workspace>?" and choose Connect, short enough that a code seen later is useless.
+   */
+  codeMs: 3 * 60_000,
   linksPerUser: 5,
   socketsPerLink: 2,
   /** Slack API calls per link: a burst, then this many per minute. */

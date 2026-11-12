@@ -37,8 +37,8 @@ export const reply = {
         `<body style="${style}"><h1>${title}</h1><p>${escapeHtml(o.text)}</p></body>`,
     );
   },
-  redirect(res: ServerResponse, location: string) {
-    res.writeHead(303, { ...COMMON, ...PAGE, Location: location });
+  redirect(res: ServerResponse, location: string, status: 302 | 303 = 303) {
+    res.writeHead(status, { ...COMMON, ...PAGE, Location: location });
     res.end();
   },
 };

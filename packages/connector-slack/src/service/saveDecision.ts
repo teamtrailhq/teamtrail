@@ -1,4 +1,5 @@
 import { BRAND, firstSentence, recordDecision, resolve, type DecisionSource, type Ticket } from '@teamtrail/core';
+import { ticketNeedsLookout } from '@teamtrail/core/agents';
 import { postResponse } from '../api';
 import { ACTIONS, clip, label, md, type SaveMode } from '../blocks';
 import { day } from './constants';
@@ -39,6 +40,8 @@ export async function saveDecision(
     participants.push({ id: decidedBy, name: await ctx.nameOf(s.user) });
   const line = `${firstSentence(s.decision)}${meta.l ? ` ([Slack](${meta.l}), ${day(at)})` : ` (Slack, ${day(at)})`}`;
   const fields = { decidedBy, participants, source, ...(s.summary ? { rationale: s.summary } : {}) };
+  // Given in Slack: a high-risk ticket is decided in the Lookout only, and core checks it (lookoutGuard.ts).
+  const guard = { via: 'slack' as const, highRisk: (m: string, t: string) => ticketNeedsLookout(ctx.o.root, m, t) };
   let resolved: Ticket | undefined;
   let title = s.mapId;
   try {
@@ -54,7 +57,7 @@ export async function saveDecision(
           summary: firstSentence(s.decision),
           ...fields,
         },
-        { trailLine: line },
+        { trailLine: line, guard },
       );
     } else {
       const ticketId =
@@ -73,6 +76,7 @@ export async function saveDecision(
         summary: firstSentence(s.decision),
         decision: fields,
         trailLine: line,
+        guard,
       });
     }
   } catch (e) {

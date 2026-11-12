@@ -6,12 +6,22 @@ import {
   type BridgePlugin,
   type BridgePluginFactory,
 } from '@teamtrail/core/bridge';
-import { OwnerError, SlackService, type SlackServiceOptions } from './service';
+import { ConnectError, SlackService, type SlackServiceOptions } from './service';
 import type { SlackSettingsPatch } from './types';
 
 export { SlackService, type SlackServiceOptions } from './service';
 export { SlackApi, SlackApiError } from './api';
-export { SocketMode, probeSocket, type Envelope, type WebSocketCtor, type WebSocketLike } from './socket';
+export { ScoutLink } from './link/scoutLink';
+export { SCOUT_SERVICE, scoutService } from './link/scoutService';
+export type {
+  ClientMessage,
+  Envelope,
+  EnvelopeResult,
+  LinkReady,
+  ServerMessage,
+  WebSocketCtor,
+  WebSocketLike,
+} from './link/types';
 export * from './index';
 
 class BadRequest extends Error {}
@@ -19,19 +29,17 @@ class BadRequest extends Error {}
 type Reply = { status: number; body: unknown };
 
 /**
- * The Slack routes. Tokens are verified and stored here, in the local process,
- * and never sent back to the browser:
- *   GET    /slack            SlackStatus
- *   POST   /slack/created    step 1 done (Slack's create-from-manifest page was opened)
- *   POST   /slack/token      `{ token }` → SlackTokenResult (xapp- or xoxb-, routed by prefix, checked live)
- *   PUT    /slack/settings   SlackSettingsPatch → SlackStatus
- *   POST   /slack/owner/code     → SlackOwnerCode: a one-time code to enter in Slack; the only answer that holds it
- *   POST   /slack/owner/confirm  `{ id }` → SlackStatus: the Slack account put forward is the trail lead's
- *   POST   /slack/owner/reset    no owner, nobody put forward, no code
- *   GET    /slack/members    `{ members: SlackUser[] }` for the allowlist picker
- *   DELETE /slack            Remove: disconnect and forget tokens and settings
- * Everything but `GET /slack` answers this machine only (core's thisMachineRoutes.ts); owner changes are journaled.
- * There is no route for Slack to call: what happens in Slack arrives over Socket Mode.
+ * The Slack routes. The link token is stored here, in the local process, and never sent back to the browser:
+ *   GET    /slack                  SlackStatus
+ *   POST   /slack/connect/start    → SlackConnectStart: the address that adds Scout to Slack (a PKCE verifier stays here)
+ *   POST   /slack/connect/preview  `{ code }` → SlackConnectPreview: who the code belongs to, nothing saved yet
+ *   POST   /slack/connect/finish   `{ code }` → SlackStatus: the trail lead chose Connect; code and verifier become a link
+ *   POST   /slack/connect/cancel   → SlackStatus: the trail lead chose Cancel; the verifier goes
+ *   DELETE /slack/connect          → SlackStatus: revoke the link at the Scout service, forget Slack on this machine
+ *   PUT    /slack/settings         SlackSettingsPatch → SlackStatus
+ *   GET    /slack/members          `{ members: SlackUser[] }` for the allowlist picker
+ * Everything but `GET /slack` answers this machine only (core's thisMachineRoutes.ts); connecting and
+ * disconnecting are journaled. Slack never calls this server: its requests reach it through the Scout service.
  */
 export function slackRoutes(service: SlackService) {
   const json = (res: ServerResponse, status: number, v: unknown) => {
@@ -49,24 +57,26 @@ export function slackRoutes(service: SlackService) {
     }
   }
   const ok = (v: unknown): Reply => ({ status: 200, body: v });
+  const codeOf = async (req: IncomingMessage) => {
+    const b = await body<{ code?: unknown }>(req);
+    if (typeof b.code !== 'string' || !b.code) throw new BadRequest('"code" is required');
+    return b.code;
+  };
   const routes: Record<string, (req: IncomingMessage) => Reply | Promise<Reply>> = {
     'GET /slack': () => ok(service.status()),
-    'DELETE /slack': () => ok(service.remove()),
-    'POST /slack/created': () => ok(service.markCreated()),
-    'POST /slack/token': async (req) => {
-      const b = await body<{ token?: unknown }>(req);
-      if (typeof b.token !== 'string' || !b.token.trim()) throw new BadRequest('"token" is required');
-      const r = await service.pasteToken(b.token);
-      return { status: r.ok ? 200 : 400, body: r };
+    'POST /slack/connect/start': async (req) => {
+      const b = await body<{ project?: unknown }>(req);
+      const project = typeof b.project === 'string' ? b.project : undefined;
+      return ok(service.startConnect({ port: req.socket.localPort, project }));
     },
+    'POST /slack/connect/preview': async (req) => ok(await service.previewConnect(await codeOf(req))),
+    'POST /slack/connect/finish': async (req) => ok(await service.finishConnect(await codeOf(req))),
+    'POST /slack/connect/cancel': () => {
+      service.cancelConnect();
+      return ok(service.status());
+    },
+    'DELETE /slack/connect': async () => ok(await service.disconnect()),
     'PUT /slack/settings': async (req) => ok(service.updateSettings(await body<SlackSettingsPatch>(req))),
-    'POST /slack/owner/code': () => ok(service.startOwnerCode()),
-    'POST /slack/owner/confirm': async (req) => {
-      const b = await body<{ id?: unknown }>(req);
-      if (typeof b.id !== 'string' || !b.id) throw new BadRequest('"id" is required');
-      return ok(await service.confirmOwner(b.id));
-    },
-    'POST /slack/owner/reset': () => ok(service.resetOwner()),
     'GET /slack/members': async () => ok({ members: await service.members() }),
   };
   return async function handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
@@ -79,7 +89,7 @@ export function slackRoutes(service: SlackService) {
       const r = await route(req);
       json(res, r.status, r.body);
     } catch (err) {
-      const bad = err instanceof BadRequest || err instanceof OwnerError;
+      const bad = err instanceof BadRequest || err instanceof ConnectError;
       json(res, bad ? 400 : 500, { error: String((err as Error)?.message ?? err) });
     }
     return true;

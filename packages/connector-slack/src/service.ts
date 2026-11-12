@@ -1,21 +1,22 @@
+import type { Envelope, EnvelopeResult } from './link/types';
+import { disconnect, finishConnect, startConnect } from './service/connect';
+import { cancelConnect, previewConnect } from './service/connectPreview';
 import { onEnvelope } from './service/interactions';
 import { tick } from './service/notifications';
-import { confirmOwner, resetOwner, startOwnerCode } from './service/owner';
-import { markCreated, members, remove, updateSettings } from './service/settings';
-import { adoptEnvTokens, verifyToken } from './service/setup';
+import { members, updateSettings } from './service/settings';
 import { statusOf } from './service/setupStatus';
 import { SlackContext } from './service/slackContext';
 import type { SlackServiceOptions } from './service/types';
-import type { Envelope, EnvelopeResult } from './socket';
-import type { SlackOwnerCode, SlackSettingsPatch, SlackStatus, SlackTokenResult, SlackUser } from './types';
+import type { SlackConnectPreview, SlackConnectStart, SlackSettingsPatch, SlackStatus, SlackUser } from './types';
 
 export type { AskRecord } from './store';
 export type { SlackServiceOptions } from './service/types';
-export { OwnerError } from './service/owner';
+export { ConnectError } from './service/connect';
 
 /**
- * Slack for one tracker over Socket Mode: setup and settings, decisions saved from threads and
- * `/scout decide`, agent questions delivered as DMs, and batched trail notifications.
+ * Slack for one tracker, through Teamtrail's Scout service: connecting with Add Scout to Slack, settings,
+ * decisions saved from threads and `/scout decide`, agent questions delivered as DMs, and batched trail
+ * notifications.
  */
 export class SlackService {
   private ctx: SlackContext;
@@ -23,9 +24,7 @@ export class SlackService {
 
   constructor(o: SlackServiceOptions) {
     this.ctx = new SlackContext(o);
-    const c = this.ctx.store.read();
-    if (c.enabled) this.ctx.start();
-    else if (!c.workspace) void adoptEnvTokens(this.ctx);
+    if (this.ctx.store.read().enabled) this.ctx.start();
     if (o.pollMs) {
       this.poll = setInterval(() => void this.tick(), o.pollMs);
       this.poll.unref?.();
@@ -34,7 +33,7 @@ export class SlackService {
 
   /** Resolves once acks, follow-up work and the poll in flight are done. */
   async idle() {
-    await this.ctx.socket?.idle();
+    await this.ctx.link?.idle();
     await this.ctx.ticking;
   }
 
@@ -42,35 +41,35 @@ export class SlackService {
     return statusOf(this.ctx);
   }
 
-  markCreated() {
-    return markCreated(this.ctx);
+  /**
+   * Add Scout to Slack: where to send the browser. The PKCE verifier stays in this process. `port` is the one the
+   * Lookout's request came in on and `project` the page's, so the browser comes back to the same Lookout and project.
+   */
+  startConnect(o: { port?: number; project?: string } = {}): SlackConnectStart {
+    return startConnect(this.ctx, o);
   }
 
-  /** Step 3 or 4: routes a pasted token by prefix and verifies it live before saving. */
-  pasteToken(raw: string): Promise<SlackTokenResult> {
-    return verifyToken(this.ctx, raw.trim(), true);
+  /** The browser came back: who the code belongs to, for the trail lead to confirm before anything is saved. */
+  previewConnect(code: string): Promise<SlackConnectPreview> {
+    return previewConnect(this.ctx, code);
+  }
+
+  cancelConnect() {
+    cancelConnect(this.ctx);
+  }
+
+  /** The trail lead chose Connect: trade the service's code for this Teamtrail's link. */
+  finishConnect(code: string): Promise<SlackStatus> {
+    return finishConnect(this.ctx, code);
+  }
+
+  /** Revoke the link at the service and forget everything Slack kept on this machine. */
+  disconnect(): Promise<SlackStatus> {
+    return disconnect(this.ctx);
   }
 
   updateSettings(patch: SlackSettingsPatch) {
     return updateSettings(this.ctx, patch);
-  }
-
-  /** A one-time code for the trail lead to enter in Slack. The code is in this answer only. */
-  startOwnerCode(): SlackOwnerCode {
-    return startOwnerCode(this.ctx);
-  }
-
-  /** The trail lead confirms the Slack account that was put forward (`id`, as the Lookout showed it). */
-  confirmOwner(id: string): Promise<SlackStatus> {
-    return confirmOwner(this.ctx, id);
-  }
-
-  resetOwner() {
-    return resetOwner(this.ctx);
-  }
-
-  remove() {
-    return remove(this.ctx);
   }
 
   /** Workspace members for the allowlist picker. */

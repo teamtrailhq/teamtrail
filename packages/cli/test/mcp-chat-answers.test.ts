@@ -2,7 +2,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { agentPaths, MarkdownAdapter } from '@teamtrail/core';
-import { readAgentDocs, writeAgentAnswer, writeLocalJson } from '@teamtrail/core/agents';
+import {
+  LookoutOnlyAnswer,
+  lookoutOnlyTickets,
+  readAgentDocs,
+  ticketNeedsLookout,
+  writeAgentAnswer,
+  writeLocalJson,
+} from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { signAgentAnswer } from '../../core/src/agents/agentAnswerSignature';
@@ -132,6 +139,82 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
     const kept = await record(closed.decision.id);
     expect(kept).toMatchObject({ decidedBy: 'trail lead', answer: 'Yes, drop it' });
     expect(kept.transcript.find((e) => e.text === 'Yes, drop it')?.author).toBe('trail lead');
+  });
+
+  it('a Slack answer backs an ordinary call but never a high-risk one: those need the Lookout', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    const questionId = await askOnJunction(call);
+    const doc = (await readAgentDocs(root)).find((d) => d.pending.length)!;
+    // asked with a high-risk category: core takes no Slack answer to it at all
+    expect(() =>
+      writeAgentAnswer(root, {
+        sessionId: doc.session.id,
+        questionId,
+        text: 'Drop it',
+        author: 'slack:U0ANA',
+        via: 'slack',
+      }),
+    ).toThrow(LookoutOnlyAnswer);
+
+    const medium = await call<Asked>('ask_human', {
+      question: 'Show deleted users greyed out?',
+      category: 'product-behaviour',
+      urgency: 'blocking',
+      waitSeconds: 0,
+    });
+    const asked = (await readAgentDocs(root)).find((d) => d.pending.some((q) => q.id === medium.questionId))!;
+    writeAgentAnswer(root, {
+      sessionId: asked.session.id,
+      questionId: medium.questionId,
+      text: 'Greyed out',
+      author: 'slack:U0ANA',
+      via: 'slack',
+    });
+    const got = await call<Got>('wait_for_answer', { questionId: medium.questionId, waitSeconds: 5 });
+    expect(got).toMatchObject({ answered: true, answeredVia: 'slack' });
+    const lookout = /answered in Slack, and this decision is high risk: only an answer given in the Lookout counts/;
+    // the decision is high risk by its category: refused
+    await expect(
+      call('record_decision', {
+        question: 'Drop?',
+        answer: 'Greyed out',
+        category: 'data-deletion',
+        questionId: medium.questionId,
+      }),
+    ).rejects.toThrow(lookout);
+    // the policy now makes the question's own category high: a Slack answer to it backs nothing either
+    fs.writeFileSync(
+      path.join(root, 'policy.json'),
+      JSON.stringify({ v: 1, categories: { 'product-behaviour': 'high' }, paths: [] }),
+    );
+    await expect(
+      call('record_decision', { question: 'Greyed?', answer: 'Greyed out', questionId: medium.questionId }),
+    ).rejects.toThrow(lookout);
+    fs.rmSync(path.join(root, 'policy.json'));
+    const closed = await call<Closed>('close_ticket', {
+      resolution: 'Greyed out',
+      category: 'product-behaviour',
+      questionId: medium.questionId,
+    });
+    expect(closed.decision.decidedBy).toBe('slack:U0ANA');
+  });
+
+  it('a high-risk question marks its ticket for good, where the repo can’t reach; an ordinary one doesn’t', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    await askOnJunction(call);
+    const [map] = await new MarkdownAdapter(nodeMarkdownFs(root), root).listMaps();
+    const { tickets } = await new MarkdownAdapter(nodeMarkdownFs(root), root).loadMap(map.id);
+    expect(lookoutOnlyTickets.has(root, map.id, tickets[0].id)).toBe(true);
+    // the session docs go (a month on, or deleted by an agent): the mark still holds
+    fs.rmSync(path.join(root, '.agents', 'sessions'), { recursive: true, force: true });
+    expect(await ticketNeedsLookout(root, map.id, tickets[0].id)).toBe(true);
+    const plain = await call<{ trail: { id: string }; tickets: { id: string; key: string }[] }>('start_trail', {
+      discovery: false,
+      title: 'Copy',
+      destination: 'Button copy',
+      tickets: [{ ref: 'c', title: 'Which label?', type: 'junction' }],
+    });
+    expect(lookoutOnlyTickets.has(root, plain.trail.id, plain.tickets[0].id)).toBe(false);
   });
 
   it('an answer from before answers were labelled counts as chat at the gates (fail closed)', async () => {

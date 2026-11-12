@@ -19,7 +19,6 @@ import {
   homeView,
   mention,
   noticeModal,
-  ownerCodeModal,
   replyModal,
   reworkModal,
 } from '../src/blocks';
@@ -98,10 +97,12 @@ test('every message, modal and Home builder: hostile text in every field comes o
     replyModal: replyModal(ask, '{}'),
     approve: approvalMessage(EVIL, item('approve'), 'http://localhost:7420/'),
     held: approvalMessage(EVIL, item('held')),
+    highRisk: approvalMessage(EVIL, item('approve'), 'http://localhost:7420/', 'lookout'),
+    askLookout: askMessage(ask, { url: 'http://localhost:7420/', mode: 'lookout' }),
+    askRead: askMessage(ask, { url: 'http://localhost:7420/', mode: 'read' }),
     approvalClosed: approvalClosedMessage(EVIL, item('approve'), `✓ Approved by ${mention(ANA)} via Slack.`),
     reworkModal: reworkModal(`${EVIL} ${EVIL}`, '{}'),
     notice: noticeModal('{}', `Couldn't read the thread (${escape(EVIL)}).`),
-    ownerCode: ownerCodeModal(),
     decision: decisionModal(
       {
         trails: [{ id: 'm1', label: EVIL }],
@@ -122,8 +123,6 @@ test('every message, modal and Home builder: hostile text in every field comes o
       '{}',
     ),
     homeIdle: homeView({ kind: 'idle' }, { command: '/scout' }),
-    homeCode: homeView({ kind: 'code' }, { command: '/scout' }),
-    homeConfirm: homeView({ kind: 'confirm' }, { command: '/scout' }),
     homeYours: homeView({ kind: 'yours', owner: ANA }, { command: '/scout', url: 'http://localhost:7420/' }),
     homeOther: homeView({ kind: 'connected', owner: '!channel' }, { command: '/scout' }),
     help: { text: helpText('/scout') },

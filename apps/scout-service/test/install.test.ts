@@ -139,3 +139,47 @@ describe('/link', () => {
     expect(await w.store.link(id)).toBeUndefined();
   });
 });
+
+describe('/link/preview', () => {
+  const preview = async (body: unknown, headers: Record<string, string> = {}) => {
+    const res = await fetch(`${w.base}/link/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(body),
+    });
+    return { status: res.status, body: (await res.json()) as Record<string, unknown> };
+  };
+  const returned = async () => {
+    const { verifier, challenge } = pkce();
+    const back = await installTo(w, { team: 'T1', user: 'U1', challenge });
+    return { verifier, code: new URL(back).hash.replace('#slack-link=', '') };
+  };
+
+  test('says who the code belongs to, without using it up', async () => {
+    const { code, verifier } = await returned();
+    const r = await preview({ code, verifier });
+    expect(r).toEqual({
+      status: 200,
+      body: { team: { id: 'T1', name: 'Team T1' }, user: { id: 'U1', name: 'name-u1' } },
+    });
+    expect((await preview({ code, verifier })).status).toBe(200);
+    const linkedAfter = await postLink(w, { code, verifier });
+    expect(linkedAfter.status).toBe(200);
+    expect((await preview({ code, verifier })).status).toBe(400);
+  });
+
+  test('a wrong verifier gets nothing and uses the code up; a browser is refused', async () => {
+    const { code, verifier } = await returned();
+    expect((await preview({ code, verifier }, { Origin: 'https://evil.example' })).status).toBe(403);
+    const wrong = await preview({ code, verifier: pkce().verifier });
+    expect(wrong).toEqual({ status: 400, body: { error: 'invalid_code' } });
+    expect((await preview({ code, verifier })).status).toBe(400);
+    expect((await postLink(w, { code, verifier })).status).toBe(400);
+  });
+
+  test('an expired code says nothing', async () => {
+    const { code, verifier } = await returned();
+    w.clock.offset += 3 * 60_000 + 1;
+    expect((await preview({ code, verifier })).status).toBe(400);
+  });
+});

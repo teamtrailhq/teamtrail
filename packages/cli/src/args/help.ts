@@ -88,8 +88,8 @@ Commands:
   guides lint [dir|file...] [--json]
                  Schema and lint for common problems (default: the project's own guides); in a catalog
                  checkout also a test example per guide (examples/<id>/). Exits 1 on any error
-  connect slack  Start the Lookout on the Slack setup (Socket Mode from this machine;
-                 tokens stay in your local credential store)
+  connect slack  Start the Lookout on Settings → Slack, to add Scout to Slack (through
+                 Teamtrail's Scout service; your trails stay on this machine)
   hook claude    The SessionStart hook itself (reads the hook payload on stdin)
 
 Options:

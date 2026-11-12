@@ -12,6 +12,8 @@ export interface AnsweredQuestion {
   /** What the question was asked on and with: what the answer can cover (policy/policyViolations.ts). */
   ticketId?: string;
   category?: RiskCategory;
+  /** Every category it was asked with, when more than one (`category` is the first); absent on older records. */
+  categories?: RiskCategory[];
   urgency?: 'blocking' | 'soon' | 'fyi';
   /** How it was given; none on answers from before labels, which count as chat (answerVia.ts). */
   via?: AnswerVia;

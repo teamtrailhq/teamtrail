@@ -1,10 +1,8 @@
-import { ACTIONS, VIEWS, type ApprovalRef, type AskRef, type SaveMode } from '../blocks';
-import type { EnvelopeResult } from '../socket';
-import { decideApproval } from './approvals';
+import { ACTIONS, LOOKOUT_ONLY, VIEWS, type ApprovalRef, type AskRef, type SaveMode } from '../blocks';
+import type { EnvelopeResult } from '../link/types';
 import { closeAsk, writeAnswer } from './asks';
 import { ALREADY, REFUSED } from './constants';
-import { afterClaim, claimWithCode } from './owner';
-import type { Redeemed } from './ownerCode';
+import { decideApproval } from './decideApproval';
 import { saveDecision } from './saveDecision';
 import type { SlackContext } from './slackContext';
 import type { DecisionMeta, Payload } from './types';
@@ -18,31 +16,14 @@ const fieldError = (field: string, message: string): EnvelopeResult => ({
 });
 const textOf = (values: Values, block: string) => String(values[block]?.value?.value ?? '').trim();
 
-/** A submitted modal. `user` is who Slack says pressed Submit; every modal but the code checks it may act. */
+/** A submitted modal. `user` is who Slack says pressed Submit; every modal checks it may act. */
 export function onSubmit(ctx: SlackContext, p: Payload): EnvelopeResult | void {
   const view = p.view as Payload;
   const values = (view.state?.values ?? {}) as Values;
   const s: Submitted = { view, values, user: p.user.id as string };
-  if (view.callback_id === VIEWS.ownerCode) return submitOwnerCode(ctx, s);
   if (view.callback_id === VIEWS.rework) return submitRework(ctx, s);
   if (view.callback_id === VIEWS.reply) return submitReply(ctx, s);
   if (view.callback_id === VIEWS.decision) return submitDecision(ctx, s);
-}
-
-const CODE_ERRORS: Record<Exclude<Redeemed, 'ok'>, string> = {
-  wrong: "That code doesn't match. Check it in Teamtrail → Settings → Slack.",
-  expired: 'No code is waiting. Get a new one in Teamtrail → Settings → Slack.',
-  locked: 'Too many tries. Get a new code in Teamtrail → Settings → Slack.',
-};
-
-/** The one-time code: anyone in the workspace may try, only the one who has it gets through, and only once. */
-function submitOwnerCode(ctx: SlackContext, { values, user }: Submitted): EnvelopeResult {
-  const result = claimWithCode(ctx, user, textOf(values, 'code'));
-  // A wrong try is shown in the Lookout with the name Slack has for the account.
-  if (result === 'wrong')
-    return { ...fieldError('code', CODE_ERRORS.wrong), after: () => ctx.handleOf(user).then(() => {}) };
-  if (result !== 'ok') return fieldError('code', CODE_ERRORS[result]);
-  return { after: () => afterClaim(ctx, user) };
 }
 
 function submitRework(ctx: SlackContext, { view, values, user }: Submitted): EnvelopeResult {
@@ -58,8 +39,9 @@ function submitReply(ctx: SlackContext, { view, values, user }: Submitted): Enve
   const ref = JSON.parse(view.private_metadata) as AskRef;
   const text = textOf(values, 'answer');
   if (!text) return fieldError('answer', 'Enter an answer');
-  const ok = writeAnswer(ctx, ref, text, user);
-  if (!ok) return fieldError('answer', ALREADY);
+  const r = writeAnswer(ctx, ref, text, user);
+  if (r === 'lookout') return fieldError('answer', LOOKOUT_ONLY);
+  if (r === 'taken') return fieldError('answer', ALREADY);
   return { after: () => closeAsk(ctx, ref.q) };
 }
 

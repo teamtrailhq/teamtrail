@@ -17,6 +17,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.28.0',
+    date: '2026-11-12',
+    items: [
+      'Scout is now one Slack app: Settings → Slack → Add Scout to Slack, no app to create and no tokens to paste',
+      'You confirm which Slack account becomes Scout’s owner before it connects; if you made your own Slack app before, add Scout again',
+      'High-risk calls are answered in the Lookout only, and so is approving an agent’s request to change your settings: Slack shows Open in Lookout, and Decline still works there',
+    ],
+  },
+  {
     version: '0.27.3',
     date: '2026-11-11',
     items: [
@@ -182,20 +191,6 @@ export const RELEASES: Release[] = [
       'Agents report the same numbers in one line from the status tool',
       'Agents use missions for big work only, and decide routine calls themselves, keeping each one as a decision record you can review or reverse; they ask you when the call changes product behaviour, data, security, billing, a public API or the schema',
       'Decisions: filter by who made the call, agents on their own or people. The briefing now counts only the calls agents made themselves, not your answers they recorded',
-    ],
-  },
-  {
-    version: '0.15.0',
-    date: '2026-10-31',
-    items: [
-      'Verification in the ticket inspector: the level that applies and where it comes from, every attempt newest first with the git evidence (base → head, files changed, flags), its checks, exit codes, durations and the failing output, and the full log on demand',
-      'Verifying, Rework and Blocked on the map, in the legend and as status counters on missions that verify completions',
-      'Operator calls on a verifying or blocked ticket: Approve, Re-run checks, Send to rework with a note, Accept anyway and Unblock. Overrides need a reason, and each call is kept as a verdict next to the attempts and in the mission history. Approve asks for a re-run when the code changed since the checks passed',
-      'Set the verification level of a mission (Settings → Verification) or of one ticket (inspector). Only you can change it; agents cannot',
-      'The inspector updates live while checks run',
-      'Independent review: at Checks + review, a passing completion gets a review ticket that another agent takes and answers with PASS, FAIL (with findings) or NEEDS_HUMAN. The agent that did the work is never given its own review',
-      'Waiting on you lists reviewed work to approve (Checks + review + you) and held tickets, and Slack posts them with Approve and Rework… buttons',
-      'Agents can name their pull request in `report_completion` (`pr`); PR and CI tracking then follows that PR first',
     ],
   },
   ...OLDER_RELEASES,

@@ -120,6 +120,7 @@ export class ActivityStream {
           answeredAt: Date.now(),
           ...(q.ticketId ? { ticketId: q.ticketId } : {}),
           ...(q.category ? { category: q.category } : {}),
+          ...(q.categories?.length ? { categories: q.categories } : {}),
           ...(q.urgency ? { urgency: q.urgency } : {}),
           ...label,
         },

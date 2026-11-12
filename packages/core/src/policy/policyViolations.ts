@@ -3,6 +3,7 @@ import type { DecisionRecord } from '../model/types';
 import type { VerificationAttempt } from '../model/verification';
 import { madeBy } from '../planning/decisions/decisionRecord';
 import { ruleMatches } from './ruleMatches';
+import { touchedBy } from './touchedBy';
 
 /** A completion that changed high-risk files without the human having a say on that ticket. */
 export interface PolicyViolation {
@@ -74,17 +75,6 @@ function latestPerTicket(attempts: VerificationAttempt[]): VerificationAttempt[]
     if (!prev || a.submittedAt > prev.submittedAt) latest.set(key, a);
   }
   return [...latest.values()];
-}
-
-/**
- * The files an attempt touched, as far as anyone can tell: what git saw change (local completions) and what the
- * agent declared (the only thing a remote completion has). `undeclared` are files git saw that the agent left out.
- */
-function touchedBy(a: VerificationAttempt) {
-  const changed = (a.git?.changed ?? []).map((f) => f.path);
-  const declared = a.declaredPaths ?? [];
-  const undeclared = a.declaredPaths ? changed.filter((p) => !declared.includes(p)) : [];
-  return { all: [...new Set([...changed, ...declared])], undeclared };
 }
 
 function violationOf(a: VerificationAttempt, rules: RiskPolicy['paths'], fold: boolean): PolicyViolation[] {

@@ -1,35 +1,36 @@
 import { postResponse } from '../api';
 import {
   ACTIONS,
+  LOOKOUT_ONLY,
   label,
   helpText,
-  ownerCodeModal,
   replyModal,
   reworkModal,
   type ApprovalRef,
   type AskRef,
 } from '../blocks';
 import type { SettingRef } from '../blocks/settingRequests';
-import { SAVE_DECISION_CALLBACK } from '../manifest';
-import type { Envelope, EnvelopeResult } from '../socket';
+import type { Envelope, EnvelopeResult } from '../link/types';
 import { plainText } from '../summary';
-import { decideApproval, waitingApproval } from './approvals';
-import { answer, pendingAsk } from './asks';
+import { waitingApproval } from './approvals';
+import { answer, askMode, pendingAsk } from './asks';
 import { authentic } from './authentic';
 import { inboxMessage, statusMessage } from './commands';
-import { REFUSED, ALREADY } from './constants';
+import { REFUSED, ALREADY, SAVE_DECISION_CALLBACK } from './constants';
+import { decideApproval } from './decideApproval';
 import { changeTrail, openDecision } from './decisionModal';
-import { publishHome } from './owner';
-import { activeCode } from './ownerCode';
+import { publishHome } from './home';
+import { ownMessage } from './ownMessage';
 import { decideSetting } from './settingRequests';
 import type { SlackContext } from './slackContext';
 import { onSubmit } from './submissions';
 import type { Payload, DecisionMeta } from './types';
 
 /**
- * Everything people do in Slack arrives here, over Socket Mode. Each handler below takes the acting user from the
- * payload Slack built (`user.id`, `user_id`), checks `ctx.allowed` before it reads or changes anything, and records
- * that same id as the author. Messages people write in channels and DMs are not subscribed to and do nothing.
+ * Everything people do in Slack arrives here, from the Scout service, which checked Slack's signature. Each handler
+ * below takes the acting user from the payload Slack built (`user.id`, `user_id`), checks `ctx.allowed` before it
+ * reads or changes anything, and records that same id as the author. Messages people write in channels and DMs are
+ * not subscribed to and do nothing.
  */
 export async function onEnvelope(ctx: SlackContext, e: Envelope): Promise<EnvelopeResult | void> {
   if (!authentic(ctx, e)) return;
@@ -41,7 +42,7 @@ export async function onEnvelope(ctx: SlackContext, e: Envelope): Promise<Envelo
   }
   if (e.type === 'slash_commands') return onCommand(ctx, p);
   if (p.type === 'message_action') return onShortcut(ctx, p);
-  if (p.type === 'block_actions') return onAction(ctx, p);
+  if (p.type === 'block_actions') return ownMessage(ctx, p) ? onAction(ctx, p) : undefined;
   if (p.type === 'view_submission') return onSubmit(ctx, p);
 }
 
@@ -75,6 +76,11 @@ export function onCommand(ctx: SlackContext, p: Payload): EnvelopeResult {
   return reply(`Unknown command \`${label(sub)}\`.\n${helpText(command)}`);
 }
 
+/**
+ * Save as decision. The service sends a shortcut to the acting person's own Teamtrail, and passes its
+ * `response_url` only when that Teamtrail posted the message, so nothing here counts on one: the refusal is
+ * skipped without it, and the confirmation goes to the owner's DM (saveDecision.ts).
+ */
 export function onShortcut(ctx: SlackContext, p: Payload): EnvelopeResult | void {
   if (p.callback_id !== SAVE_DECISION_CALLBACK) return;
   if (!ctx.allowed(p.user.id))
@@ -95,7 +101,6 @@ export function onAction(ctx: SlackContext, p: Payload): EnvelopeResult | void {
   const a = (p.actions as Payload[])[0];
   const id = String(a?.action_id ?? '');
   const user = p.user.id as string;
-  if (id === ACTIONS.claim) return { after: () => enterCode(ctx, user, p.trigger_id) };
   if (id === ACTIONS.trailPick && p.view) {
     if (!ctx.allowed(user)) return;
     return { after: () => changeTrail(ctx, p.view, a.selected_option.value) };
@@ -111,6 +116,7 @@ export function onAction(ctx: SlackContext, p: Payload): EnvelopeResult | void {
     after: async () => {
       const found = await pendingAsk(ctx, ref);
       if (!found) return ephemeral(ALREADY);
+      if (askMode(ctx, found.q) === 'lookout') return ephemeral(LOOKOUT_ONLY);
       if (id === ACTIONS.reply) {
         await ctx.call('views.open', {
           trigger_id: p.trigger_id,
@@ -120,20 +126,10 @@ export function onAction(ctx: SlackContext, p: Payload): EnvelopeResult | void {
       }
       const text = found.q.suggestions?.[ref.i ?? -1];
       if (text === undefined) return ephemeral(ALREADY);
-      if (!(await answer(ctx, ref, text, user))) await ephemeral(ALREADY);
+      const r = await answer(ctx, ref, text, user);
+      if (r !== 'ok') await ephemeral(r === 'lookout' ? LOOKOUT_ONLY : ALREADY);
     },
   };
-}
-
-/**
- * "Enter code" on the Home tab. The modal opens only while the trail lead has a code waiting and nobody is put
- * forward yet; a click on a Home tab that is out of date just brings it up to date. Clicking claims nothing.
- */
-async function enterCode(ctx: SlackContext, user: string, trigger: string) {
-  const c = ctx.store.read();
-  const open = !c.owners.length && !c.pendingOwner && !!activeCode(ctx);
-  if (open) await ctx.call('views.open', { trigger_id: trigger, view: ownerCodeModal() });
-  else await publishHome(ctx, user);
 }
 
 function onApproval(ctx: SlackContext, p: Payload, id: string, value: string): EnvelopeResult {

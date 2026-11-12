@@ -262,7 +262,14 @@ test('7: a teammate posting a record’s source first doesn’t stand in for our
   a.subscribe(() => {});
   await a.tick();
   await a.tick();
-  const rec = await recordDecision(a, map.id, { ...decide('Keep the review.', t.id), source: { ...source } });
+  // a Slack-sourced record on a ticket says how its risk was checked (lookoutGuard.ts): here, an ordinary ticket
+  const guard = { highRisk: () => false };
+  const rec = await recordDecision(
+    a,
+    map.id,
+    { ...decide('Keep the review.', t.id), source: { ...source } },
+    { guard },
+  );
   assert.equal(rec.answer, 'Keep the review.');
   assert.equal(rec.postedBy, undefined);
 });

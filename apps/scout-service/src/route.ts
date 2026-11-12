@@ -1,12 +1,14 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { clientAddress } from './http/clientAddress';
 import { reply } from './http/reply';
-import { createLink } from './install/createLink';
-import { deleteLink } from './install/deleteLink';
 import { handleCallback } from './install/handleCallback';
 import { handleInstall } from './install/handleInstall';
+import { linkRoutes } from './install/linkRoutes';
 import type { ServiceContext } from './serviceContext';
 import { handleSlack } from './slack/handleSlack';
+
+/** The service's own address in a browser leads to Scout's page on the site. */
+const HOME = 'https://teamtrail.app/slack';
 
 const SLACK_PATHS = {
   '/slack/events': 'events',
@@ -15,7 +17,7 @@ const SLACK_PATHS = {
 } as const;
 
 /** Routes called by people's browsers and Lookouts, limited per client address. */
-const LIMITED = new Set(['/install', '/oauth/callback', '/link']);
+const LIMITED = new Set(['/install', '/oauth/callback', '/link', '/link/preview']);
 
 function slackPath(pathname: string) {
   return SLACK_PATHS[pathname as keyof typeof SLACK_PATHS];
@@ -31,12 +33,8 @@ export async function route(ctx: ServiceContext, req: IncomingMessage, res: Serv
   if (slack && method === 'POST') return handleSlack(ctx, req, res, slack);
   if (url.pathname === '/install' && method === 'GET') return handleInstall(ctx, url, res);
   if (url.pathname === '/oauth/callback' && method === 'GET') return handleCallback(ctx, url, res);
-  if (url.pathname === '/link') {
-    // Lookouts call this from their server, never a page: a browser's cross-site request carries an Origin.
-    if (req.headers.origin) return reply.json(res, 403, { error: 'browsers_not_allowed' });
-    if (method === 'POST') return createLink(ctx, req, res);
-    if (method === 'DELETE') return deleteLink(ctx, req, res);
-  }
+  if (url.pathname === '/link' || url.pathname === '/link/preview') return linkRoutes(ctx, req, res, url.pathname);
   if (url.pathname === '/health' && method === 'GET') return reply.json(res, 200, { ok: true });
+  if (url.pathname === '/' && method === 'GET') return reply.redirect(res, HOME, 302);
   reply.json(res, 404, { error: 'not_found' });
 }

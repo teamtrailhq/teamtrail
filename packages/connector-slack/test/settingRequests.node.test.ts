@@ -1,7 +1,7 @@
 /**
- * An agent's request to change one of the trail lead's settings reaches Slack as a card with Approve and Decline.
- * Only the confirmed owner's clicks count; approving is bound to the request as the card showed it; nothing changes
- * until they approve, and an approval is kept as their decision, via Slack.
+ * An agent's request to change one of the trail lead's settings reaches Slack as a card with Open in Lookout and
+ * Decline. Approving is the Lookout's only: Slack's word passes Teamtrail's Scout service, which could forge a
+ * click, so core refuses an approval from Slack whatever the card shows. Declining works from Slack, owner-checked.
  */
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -41,20 +41,25 @@ async function requested() {
   return { ...l, svc, a, map, env, id: r.proposal.id, card, posted };
 }
 
-test('a setting request is a card: escaped, Approve and Decline, nothing changed yet', async () => {
+type Fake = ReturnType<typeof liveWorld>['fake'];
+/** An Approve click on the card: no such button any more, so as an older card's, or a forged one, would send it. */
+function approveClick(f: Fake, user: string, card: { channel: string; ts: string }) {
+  const decline = f.payload.click(user, card.channel, card.ts, 'setting_decline');
+  const [action] = decline.payload.actions as Record<string, unknown>[];
+  return { ...decline, payload: { ...decline.payload, actions: [{ ...action, action_id: 'setting_approve' }] } };
+}
+
+test('a setting request is a card: escaped, Open in Lookout and Decline, nothing changed yet', async () => {
   const { w, calls, map, a, id } = await requested();
   try {
     const [msg] = calls('chat.postMessage');
     const text = JSON.stringify(msg.blocks);
     assert.match(text, /claude-07 asks to switch the trail to plan-only/);
-    assert.match(text, /Nothing changes until you approve/);
+    assert.match(text, /Nothing changes until you approve it in the Lookout/);
     assert.doesNotMatch(text, /<!channel>/, 'agent text is escaped');
     assert.deepEqual(
-      msg.blocks
-        .at(-1)
-        .elements.map((e: { text: { text: string } }) => e.text.text)
-        .slice(0, 2),
-      ['Approve', 'Decline'],
+      msg.blocks.at(-1).elements.map((e: { text: { text: string } }) => e.text.text),
+      ['Open in Lookout', 'Decline'],
     );
     assert.equal((await a.loadMap(map.id)).map.mode, 'plan+execute');
     assert.equal(readReroute(w.root, map.id, id)?.status, 'pending');
@@ -66,7 +71,7 @@ test('a setting request is a card: escaped, Approve and Decline, nothing changed
 test('Approve by someone who is not the owner is refused, and changes nothing', async () => {
   const { w, svc, card, replies, a, map, id } = await requested();
   try {
-    await w.send(svc, 'eve presses Approve', (f) => f.payload.click(EVE, card.channel, card.ts, 'setting_approve'));
+    await w.send(svc, 'eve presses Approve', (f) => approveClick(f, EVE, card));
     assert.match(replies().at(-1)!.text, REFUSED);
     assert.equal(readReroute(w.root, map.id, id)?.status, 'pending');
     assert.equal((await a.loadMap(map.id)).map.mode, 'plan+execute');
@@ -75,16 +80,15 @@ test('Approve by someone who is not the owner is refused, and changes nothing', 
   }
 });
 
-test('the owner approves: applied, journaled, kept as their decision via Slack, and the card closes', async () => {
-  const { w, svc, card, calls, a, map, id } = await requested();
+test('attack: an Approve click from Slack, even the owner’s, is refused in core and changes nothing', async () => {
+  const { w, svc, card, replies, a, map, id } = await requested();
   try {
-    await w.send(svc, 'ana presses Approve', (f) => f.payload.click(ANA, card.channel, card.ts, 'setting_approve'));
-    await until(() => readReroute(w.root, map.id, id)?.status === 'approved', 'approved');
-    assert.equal((await a.loadMap(map.id)).map.mode, 'plan-only');
-    const [rec] = (await a.listDecisions(map.id)).filter((d) => d.question.includes('asks to'));
-    assert.equal(rec.decidedBy, `slack:${ANA}`);
-    assert.equal(rec.source.kind, 'slack');
-    assert.match(JSON.stringify(calls('chat.update').at(-1)), /Approved by <@U0ANA0001> via Slack/);
+    await w.send(svc, 'ana presses an Approve from an older card', (f) => approveClick(f, ANA, card));
+    await until(() => replies().length > 0, 'reply');
+    assert.match(replies().at(-1)!.text, /Could not approve: .*approve it in the Lookout/);
+    assert.equal(readReroute(w.root, map.id, id)?.status, 'pending');
+    assert.equal((await a.loadMap(map.id)).map.mode, 'plan+execute');
+    assert.deepEqual(await a.listDecisions(map.id), []);
   } finally {
     w.cleanup();
   }
@@ -107,7 +111,7 @@ test('a request changed since the card was posted is not approved from it', asyn
   try {
     const p = readReroute(w.root, map.id, id)!;
     writeReroute(w.root, { ...p, changes: [{ op: 'set_mode', mode: 'plan+execute' }] });
-    await w.send(svc, 'ana presses Approve', (f) => f.payload.click(ANA, card.channel, card.ts, 'setting_approve'));
+    await w.send(svc, 'ana presses Approve', (f) => approveClick(f, ANA, card));
     await until(() => replies().length > 0, 'reply');
     assert.match(replies().at(-1)!.text, /out of date/);
     assert.equal(readReroute(w.root, map.id, id)?.status, 'pending');

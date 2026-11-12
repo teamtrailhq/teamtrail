@@ -27,8 +27,12 @@ export interface Credentials {
   /** The token from "Sign in with GitHub" (OAuth device flow, `repo` scope), kept apart from a pasted token. */
   githubSignIn?: { token: string; scope?: string; at: string };
   linear?: { apiKey: string };
-  /** Socket Mode app-level token (`xapp-…`) and bot token (`xoxb-…`) of the user's own Slack app. */
-  slack?: { appToken?: string; botToken?: string };
+  /**
+   * Slack: `link`, this Teamtrail's link to Teamtrail's Scout service (its id there, the token it says hello
+   * with, and the service it was made with, the only one the token is sent to). `appToken` / `botToken` are your own Slack app's, from versions before Scout was one app: never used,
+   * deleted when you connect Scout or remove Slack.
+   */
+  slack?: { link?: { id: string; token: string; service?: string }; appToken?: string; botToken?: string };
 }
 
 type Env = Record<string, string | undefined>;

@@ -99,7 +99,7 @@ export async function serveLookout(opts: ServeOptions, slackSetup: boolean) {
       `  Tracker         ${path.relative(process.cwd(), bridge.root) || '.'}${path.sep}  (${bridge.root})\n\n` +
       `  Press Ctrl+C to stop.\n\n`,
   );
-  if (slackSetup) process.stdout.write(`  Slack setup     ${url}?settings=slack\n\n`);
+  if (slackSetup) process.stdout.write(`  Add Scout       ${url}?settings=slack\n\n`);
   // The browser gets a code of its own, for a minute, so the printed one stays for another browser. No code is ever
   // on the opener's command line (openSignedIn.ts): the browser opens a one-time page in the machine store that
   // sends it on, or the bare Lookout when there's no browser for it or the store can't be written.

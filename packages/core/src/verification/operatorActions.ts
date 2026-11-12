@@ -1,4 +1,5 @@
 import { staleAction } from '../evidence/stale';
+import type { AnswerVia } from '../model/answerVia';
 import type { TicketPhase, VerificationLevel } from '../model/lifecycle';
 import type { VerdictKind, VerificationAttempt } from '../model/verification';
 import { withdrawReviews } from '../planning/lifecycle/reviewTicket';
@@ -6,6 +7,8 @@ import { setVerification } from '../planning/lifecycle/setVerification';
 import { transition } from '../planning/lifecycle/transition';
 import { OperationError } from '../planning/operations/operationError';
 import { resolve } from '../planning/operations/resolve';
+import { needsLookout } from '../policy/needsLookout';
+import { ticketNeedsLookout } from '../policy/ticketNeedsLookout';
 import { recordLevel, recordTypes } from './approvedLevel';
 import { trustedChecks } from './checksApproval';
 import { DEFAULT_CONFIG } from './config';
@@ -26,6 +29,8 @@ export interface OperatorRequest {
   to?: Extract<TicketPhase, 'ready' | 'rework'>;
   /** `level`: `null` clears it (the ticket follows the trail, the trail is off). */
   level?: VerificationLevel | null;
+  /** Where the trail lead acted, when not the Lookout: `slack` can't approve high-risk work (lookoutGuard.ts). */
+  via?: AnswerVia;
 }
 
 /** Actions that override what the checks or a reviewer found, so the trail lead must say why. */
@@ -98,12 +103,19 @@ async function decide(a: Act, action: 'approve' | 'accept') {
   if (!answer) throw new OperationError('nothing was submitted: say what is accepted');
   if (action === 'approve' && last) await assertCurrent(env, last);
   const author = last?.agent ?? r.by;
+  // From Slack (said, or by an actor id `slack:…`), work that touched high-risk files or a high-risk question waits
+  // for the Lookout; the guard fails closed when there is no evidence of what changed.
+  const via = r.via ?? (r.by.startsWith('slack:') ? 'slack' : undefined);
+  const highRisk = async (mapId: string, id: string) =>
+    needsLookout.approval(env.root, { mapId, ticketId: id, attemptId: last?.id }) ||
+    (await ticketNeedsLookout(env.root, mapId, id));
   await resolve(env.adapter, r.mapId, ticketId, {
     ...a.operator,
     event: action,
     answer,
     summary: last?.summary,
     author,
+    guard: { via, highRisk },
   });
   verdict(a, 'PASS', reason ?? (action === 'approve' ? 'approved' : 'accepted'));
   await withdraw(a);

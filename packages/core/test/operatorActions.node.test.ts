@@ -7,8 +7,10 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
+import { agentPaths } from '../src/agents/agentLink';
 import { createTrackerBridge } from '../src/bridge';
 import { journalFile } from '../src/history/journalFile';
+import { writeLocalJson } from '../src/lib/ensureLocalDir';
 import type { VerificationLevel } from '../src/model/lifecycle';
 import { derivePhases } from '../src/planning/lifecycle/phase';
 import { setVerification } from '../src/planning/lifecycle/setVerification';
@@ -185,4 +187,56 @@ test('verification events: one per ticket per burst, from evidence and run lock 
   await new Promise((x) => setTimeout(x, 400));
   assert.deepEqual(sent, ['event: verification\ndata: {"kind":"evidence","mapId":"m","ticketId":"3"}\n\n']);
   notify.close();
+});
+
+test('from Slack, approving or accepting work on a high-risk ticket is refused in core; from the Lookout it goes', async () => {
+  const s = await setup('checks', 1);
+  assert.equal(await s.phase(), 'blocked');
+  // an agent asked about this ticket with a category the policy makes high
+  writeLocalJson(s.root, agentPaths.session('s1'), {
+    v: 1,
+    session: {
+      id: 's1',
+      agent: 'Scout-1',
+      mode: 'work',
+      mapId: s.mapId,
+      ticketId: s.id,
+      step: 1,
+      total: 1,
+      stepLabel: 'Ask',
+      status: 'running',
+      startedAt: Date.now(),
+    },
+    chats: [],
+    pending: [
+      {
+        id: 'q1',
+        sessionId: 's1',
+        mapId: s.mapId,
+        ticketId: s.id,
+        agent: 'Scout-1',
+        text: 'Drop it?',
+        at: Date.now(),
+        category: 'schema',
+      },
+    ],
+    answered: [],
+    feed: [],
+    pid: process.pid,
+    updatedAt: Date.now(),
+  });
+  const accept = (by: string, via?: 'slack') =>
+    operatorAction(s.env, {
+      action: 'accept',
+      mapId: s.mapId,
+      ticketId: s.id,
+      by,
+      reason: 'fine',
+      ...(via ? { via } : {}),
+    });
+  await assert.rejects(accept('slack:U1'), /is high risk: decide it in the Lookout/);
+  await assert.rejects(accept('trail lead', 'slack'), /is high risk: decide it in the Lookout/);
+  assert.equal(await s.phase(), 'blocked');
+  await accept('trail lead');
+  assert.equal(await s.phase(), 'done');
 });

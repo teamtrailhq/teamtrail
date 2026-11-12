@@ -7,10 +7,10 @@ import {
   type AttentionKind,
   type RiskCategory,
 } from '@teamtrail/core';
-import { readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
+import { lookoutOnlyTickets, needsLookout, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { rankedAttention } from './attention';
-import { CHAT_GUIDES } from './humanAnswer';
+import { CHAT_GUIDES, SLACK_HIGH_RISK } from './humanAnswer';
 import { trailNameFamily } from './trailName';
 import { TRAIL_LEAD, type AskResult, type WaitControl } from './types';
 
@@ -31,6 +31,9 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   const sid = s.id;
   // The ticket the question is about: the one this session holds as it asks.
   const askedOn = s.info.ticketId;
+  // A high-risk question marks its ticket for good, in the machine store: it is decided in the Lookout only.
+  if (askedOn && needsLookout.question(ctx.root, { categories }))
+    lookoutOnlyTickets.mark(ctx.root, { mapId: s.info.mapId, ticketId: askedOn, categories });
   ctx.waits.set(
     q.id,
     answer.then((text) => {
@@ -134,13 +137,16 @@ export async function waitForAnswer(
     questionId: input.questionId,
     answer: res.a.text,
     answeredBy: res.a.author,
-    ...viaOf(ctx, res.a.via),
+    ...viaOf(ctx, res.a.via, input.questionId),
     waitedSeconds: waited(),
   };
 }
 
 /** How the answer was given, and for one that can't approve gates, what that means for the agent. */
-function viaOf(ctx: AgentContext, via: AnswerVia | undefined) {
+function viaOf(ctx: AgentContext, via: AnswerVia | undefined, questionId: string) {
+  const categories = ctx.answers.get(questionId)?.categories ?? [];
+  if (via === 'slack' && needsLookout.question(ctx.root, { categories }))
+    return { answeredVia: via, note: SLACK_HIGH_RISK };
   if (approvesGates(via)) return { answeredVia: via };
   if (via) return { answeredVia: via, note: CHAT_GUIDES };
   // Unlabelled: written by a Teamtrail from before labels, or its label didn't verify. Either way it only guides.

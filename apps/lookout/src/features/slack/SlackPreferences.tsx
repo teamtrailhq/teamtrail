@@ -2,14 +2,14 @@ import { SLACK_NOTIFY_EVENTS, type SlackNotifyEvent, type SlackStatus } from '@t
 import { useState } from 'react';
 import { Label, Choice, Field, Meta } from '../../components/ui';
 import { ChannelTarget } from './ChannelTarget';
-import { slackApi } from './slackApi';
+import type { slackApi } from './slackApi';
 import { EVENT_LABEL } from './SlackStateLine';
 import { UserPicker } from './UserPicker';
 
 type Patch = Parameters<typeof slackApi.update>[0];
 
-/** A connected Slack app's settings: the owner, who may answer, and where and what Scout notifies. */
-export function SlackPreferences(props: { s: SlackStatus; set: (s: SlackStatus) => void; patch: (p: Patch) => void }) {
+/** Scout's settings once connected: the owner, who may answer, and where and what Scout notifies. */
+export function SlackPreferences(props: { s: SlackStatus; patch: (p: Patch) => void }) {
   const { s, patch } = props;
   const [channel, setChannel] = useState(false);
   const events = new Set(s.notify.events);
@@ -27,17 +27,14 @@ export function SlackPreferences(props: { s: SlackStatus; set: (s: SlackStatus) 
         </Label>
         <div className="sl-owner">
           <b>@{owner?.name ?? owner?.id}</b>
-          <span className="t-meta">Confirmed on this machine</span>
-          <button type="button" className="link" onClick={() => void slackApi.resetOwner().then(props.set, () => {})}>
-            Not you? Reset
-          </button>
+          <span className="t-meta">Added Scout from this machine</span>
         </div>
       </div>
       <div className="sl-group">
         <Label variant="plain" size="sm">
           Allowed users
         </Label>
-        <UserPicker value={s.allow} owners={s.owners} onChange={(allow) => patch({ allow })} />
+        <UserPicker key={s.state} value={s.allow} owners={s.owners} onChange={(allow) => patch({ allow })} />
       </div>
       <div className="sl-group">
         <Label variant="plain" size="sm">

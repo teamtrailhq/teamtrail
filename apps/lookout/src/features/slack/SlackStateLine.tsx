@@ -27,14 +27,16 @@ function stateLine(s: SlackStatus): [string, string] {
     case 'offline':
       return ['warn', 'Offline · reconnecting'];
     case 'auth-error':
-      return ['alert', 'Disconnected · Slack rejected the tokens'];
+      return ['alert', `Disconnected · ${s.error ?? 'add Scout to Slack again'}`];
     case 'elsewhere': {
       const holder = s.heldBy ? ` (${s.heldBy})` : '';
       return ['warn', `Connected from another ${BRAND.slug}${holder}`];
     }
+    case 'other-service':
+      return ['alert', 'Not connected · this Teamtrail points at another Scout service'];
     case 'unsupported':
       return ['alert', s.error ?? 'Not supported here'];
     default:
-      return ['', s.step === 'done' ? 'Off' : 'Not connected'];
+      return ['', s.connected ? 'Off' : 'Not connected'];
   }
 }

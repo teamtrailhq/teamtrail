@@ -1,5 +1,6 @@
 import { skipDiscoveryHere } from '../../discovery/skipDiscoveryHere';
 import { createKnowledge, listKnowledge } from '../../knowledge/knowledgeStore';
+import { approvesHighRisk, type AnswerVia } from '../../model/answerVia';
 import type { Assumption } from '../../model/assumption';
 import type { RerouteProposal } from '../../model/reroute';
 import { recordTypes } from '../../verification/approvedLevel';
@@ -21,6 +22,18 @@ export interface RerouteDecision {
   now?: number;
   /** `rerouteHash` of the proposal the trail lead looked at; the bridge always sends it. A file that differs is refused. */
   hash?: string;
+  /**
+   * Where the trail lead decided, when not the Lookout. Approving changes the plan or a trail lead's setting, so it
+   * is the Lookout's only: Slack's word passes Teamtrail's Scout service. Declining is allowed anywhere.
+   */
+  via?: AnswerVia;
+}
+
+/** Approving from anywhere but the Lookout is refused; an actor id `slack:…` counts as Slack even unsaid. */
+function assertApprovedInLookout(d: RerouteDecision, id: string) {
+  const via = d.via ?? (d.by.startsWith('slack:') ? 'slack' : undefined);
+  if (via && !approvesHighRisk(via))
+    throw new OperationError(`${id} changes the plan or your settings: approve it in the Lookout.`);
 }
 
 /**
@@ -31,6 +44,7 @@ export interface RerouteDecision {
  */
 export async function approveReroute(env: RerouteEnv, d: RerouteDecision): Promise<RerouteProposal> {
   const found = readOrThrow(env, d);
+  assertApprovedInLookout(d, found.id);
   // An approval is this machine's record, not the file's status: without one, "approved" in the file resumes nothing.
   const kept = found.status === 'approved' ? approvedReroute(env.root, found) : undefined;
   if (found.status === 'approved' && !kept)

@@ -1,34 +1,29 @@
 import { readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import { BRAND } from '@teamtrail/core';
 import { credentialStore, writeJsonAtomic, writeLocalJson } from '@teamtrail/core/bridge';
 import type { AskView } from './blocks';
-import { DEFAULT_COMMAND } from './manifest';
-import { settleOwners, type OwnerRedo, type PendingOwner } from './owners';
+import { DEFAULT_COMMAND } from './service/constants';
 import type { PostedApproval } from './service/types';
-import { DEFAULT_NOTIFY_EVENTS, type SlackNotify, type SlackTokenSource, type SlackUser } from './types';
+import { DEFAULT_NOTIFY_EVENTS, type SlackNotify, type SlackUser } from './types';
 
 /*
  * Everything stays on this machine, next to the tracker credentials:
- *   <config dir>/credentials.json   `slack.appToken` / `slack.botToken` (mode 0600, shared with GitHub and Linear)
- *   <config dir>/slack.json         non-secret settings and setup progress
- *   <config dir>/slack.lock         which `teamtrail` process owns the one Socket Mode connection
+ *   <config dir>/credentials.json   `slack.link`: this Teamtrail's link to the Scout service (mode 0600, shared
+ *                                   with GitHub and Linear); `slack.appToken` / `slack.botToken` only from a version
+ *                                   with your own Slack app, until you reconnect or remove Slack
+ *   <config dir>/slack.json         non-secret settings
+ *   <config dir>/slack.lock         which `teamtrail` process holds the one connection to the Scout service
  *   <tracker>/.agents/slack.json    which Slack message carries which agent question (per repo)
  */
 
 export interface SlackConfig {
   enabled: boolean;
-  /** Step 1 done: the user opened Slack's create-from-manifest page. */
-  created: boolean;
-  appId?: string;
-  workspace?: { id: string; name: string; url: string };
+  workspace?: { id: string; name: string; url?: string };
   bot?: { userId: string; name?: string };
-  /** The confirmed owner; see `settleOwners` for what an earlier version saved here. */
+  /** Scout's Slack app id, as Slack answered for its bot: for links to Scout's Home tab. */
+  appId?: string;
+  /** The owner: the Slack account that went through Add Scout to Slack from this machine's Lookout. */
   owners: SlackUser[];
-  /** A Slack account put forward as the owner, until the trail lead confirms or refuses it. */
-  pendingOwner?: PendingOwner;
-  /** Read only: an owner from an earlier version that was dropped (`settleOwners`). */
-  ownerRedo?: OwnerRedo;
   allow: SlackUser[];
   notify: SlackNotify;
   command: string;
@@ -36,9 +31,18 @@ export interface SlackConfig {
   channelTrail: Record<string, string>;
 }
 
+/**
+ * This Teamtrail's link to the Scout service: its id there, the token it says hello with, and the service it was
+ * made with. The token is only ever sent to that service, whatever `$TEAMTRAIL_SCOUT_SERVICE` says later.
+ */
+export interface SlackLink {
+  id: string;
+  token: string;
+  service: string;
+}
+
 const DEFAULTS: SlackConfig = {
   enabled: false,
-  created: false,
   owners: [],
   allow: [],
   notify: { target: 'dm', events: DEFAULT_NOTIFY_EVENTS, detail: 'full' },
@@ -54,21 +58,20 @@ function readJson<T>(file: string): Partial<T> {
   }
 }
 
-type Env = Record<string, string | undefined>;
-const ENV = {
-  app: `${BRAND.slug.toUpperCase()}_SLACK_APP_TOKEN` as SlackTokenSource,
-  bot: `${BRAND.slug.toUpperCase()}_SLACK_BOT_TOKEN` as SlackTokenSource,
-};
+const KEPT = ['enabled', 'workspace', 'bot', 'appId', 'owners', 'allow', 'notify', 'command', 'channelTrail'] as const;
 
-export function slackStore(dir: string, env: Env = process.env) {
+export function slackStore(dir: string) {
   const file = path.join(dir, 'slack.json');
   const creds = credentialStore(dir);
   const read = (): SlackConfig => {
     const c = readJson<SlackConfig>(file);
+    const kept = Object.fromEntries(KEPT.filter((k) => c[k] !== undefined).map((k) => [k, c[k]]));
     return {
       ...DEFAULTS,
-      ...c,
-      ...settleOwners(c),
+      ...kept,
+      owners: c.owners ?? [],
+      allow: c.allow ?? [],
+      command: DEFAULT_COMMAND,
       notify: { ...DEFAULTS.notify, ...c.notify },
       channelTrail: { ...c.channelTrail },
     };
@@ -84,26 +87,25 @@ export function slackStore(dir: string, env: Env = process.env) {
       writeJsonAtomic(file, next);
       return next;
     },
-    /** Saved tokens first, then $TEAMTRAIL_SLACK_APP_TOKEN / $TEAMTRAIL_SLACK_BOT_TOKEN. */
-    tokens(): { app?: { token: string; source: SlackTokenSource }; bot?: { token: string; source: SlackTokenSource } } {
-      const s = creds.read().slack ?? {};
-      const pick = (stored: string | undefined, name: SlackTokenSource) => {
-        if (stored) return { token: stored, source: 'stored' as const };
-        const fromEnv = env[name];
-        if (fromEnv) return { token: fromEnv, source: name };
-        return undefined;
-      };
-      return { app: pick(s.appToken, ENV.app), bot: pick(s.botToken, ENV.bot) };
+    link(): SlackLink | undefined {
+      const l = creds.read().slack?.link;
+      return l?.id && l.token ? { id: l.id, token: l.token, service: l.service ?? '' } : undefined;
     },
-    saveToken(kind: 'app' | 'bot', token: string) {
-      const c = creds.read();
-      creds.write({ ...c, slack: { ...c.slack, [kind === 'app' ? 'appToken' : 'botToken']: token } });
+    /** Tokens of your own Slack app, from a version before Scout was one app; never used, only removed. */
+    legacy(): boolean {
+      const s = creds.read().slack;
+      return !!(s?.appToken || s?.botToken) && !s?.link;
     },
-    /** Remove: tokens and settings. */
+    /** A new link replaces everything Slack kept in the credential store, an old app's tokens included. */
+    saveLink(link: SlackLink) {
+      creds.update((c) => ({ ...c, slack: { link } }));
+    },
+    /** Remove: the link (or an old app's tokens) and the settings. */
     clear() {
-      const c = creds.read();
-      delete c.slack;
-      creds.write(c);
+      creds.update((c) => {
+        const { slack: _gone, ...rest } = c;
+        return rest;
+      });
       rmSync(file, { force: true });
     },
   };
@@ -121,8 +123,9 @@ function alive(pid: number) {
 }
 
 /**
- * Slack spreads events across all of an app's open sockets, so exactly one
- * process per machine connects. `owner` identifies this process (tests run several in one pid).
+ * One process per machine holds the link to the Scout service: the service sends this Teamtrail's Slack events to
+ * whichever of its sockets is open, so two processes would each get some. `owner` identifies this process (tests
+ * run several in one pid).
  */
 export function slackLock(dir: string, owner: string) {
   const file = path.join(dir, 'slack.lock');

@@ -1,4 +1,5 @@
 import { BRAND, type AgentSessionDoc, type MapSnapshot, type Ticket, type TrackerAdapter } from '@teamtrail/core';
+import { ticketNeedsLookout } from '@teamtrail/core/agents';
 import { readAgentDocs } from '@teamtrail/core/bridge';
 import { SlackApiError } from '../api';
 import { clip, decisionModal, label, loadingModal, noticeModal, type DecisionForm } from '../blocks';
@@ -51,7 +52,7 @@ export async function openDecision(ctx: SlackContext, trigger: string, meta: Dec
     ).permalink;
   } else {
     const ws = ctx.store.read().workspace;
-    if (ws) meta.l = `${ws.url.replace(/\/$/, '')}/archives/${meta.c}`;
+    if (ws?.url) meta.l = `${ws.url.replace(/\/$/, '')}/archives/${meta.c}`;
   }
   const summary = deterministicSummary(messages, meta.m);
   const asks = ctx.asks.read();
@@ -83,8 +84,13 @@ export async function decisionForm(
   const { maps, mapId } = target;
   const snap = await adapter.loadMap(mapId);
   const docs = await readAgentDocs(ctx.o.root);
-  const related = relatedTicket(snap, docs, o.related);
-  const tickets = snap.tickets.filter((t) => isDecisionTicket(t) || t.id === related?.id);
+  // High-risk tickets are decided in the Lookout only: they are not offered here (core refuses them too).
+  const candidates = snap.tickets.filter((t) => t.state === 'open');
+  const risky = new Set<string>();
+  for (const t of candidates) if (await ticketNeedsLookout(ctx.o.root, mapId, t.id)) risky.add(t.id);
+  const safe = { ...snap, tickets: snap.tickets.filter((t) => !risky.has(t.id)) };
+  const related = relatedTicket(safe, docs, o.related);
+  const tickets = safe.tickets.filter((t) => isDecisionTicket(t) || t.id === related?.id);
   return {
     trails: maps.map((m) => ({ id: m.id, label: `${m.key} ${m.title}` })),
     mapId,

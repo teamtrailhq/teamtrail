@@ -1,7 +1,7 @@
 import { BRAND, derivePhases, type ApprovalItem, type MapSnapshot } from '@teamtrail/core';
-import { approvalItems, journalFile, operatorAction } from '@teamtrail/core/agents';
+import { approvalItems, needsLookout } from '@teamtrail/core/agents';
 import { postResponse } from '../api';
-import { approvalClosedMessage, approvalMessage, label, mention, type ApprovalRef } from '../blocks';
+import { approvalClosedMessage, approvalMessage, label, type ApprovalRef } from '../blocks';
 import type { SlackConfig } from '../store';
 import { takeAskSlot } from './askLimit';
 import { queueLine } from './queueLine';
@@ -42,7 +42,7 @@ async function close(ctx: SlackContext, posted: PostedApproval, line: string) {
 }
 
 /** Strips the buttons from every stored message of a ticket and forgets them. */
-async function closeTicket(ctx: SlackContext, mapId: string, ticketId: string, line: string) {
+export async function closeTicket(ctx: SlackContext, mapId: string, ticketId: string, line: string) {
   const stored = ctx.approvals.read();
   for (const [key, posted] of Object.entries(stored))
     if (posted.item.mapId === mapId && posted.item.ticketId === ticketId) {
@@ -74,7 +74,8 @@ export async function syncApprovals(ctx: SlackContext, snaps: MapSnapshot[], c: 
   for (const [key, { item, trail }] of now) {
     const posted = stored[key];
     if (posted && ctx.refreshed.has(key)) continue;
-    const message = approvalMessage(trail, item, ctx.o.url());
+    const mode = needsLookout.approval(ctx.o.root, item) ? 'lookout' : 'buttons';
+    const message = approvalMessage(trail, item, ctx.o.url(), mode);
     if (posted) {
       const updated = await ctx.call('chat.update', { channel: posted.channel, ts: posted.ts, ...message }).then(
         () => true,
@@ -143,53 +144,15 @@ export async function waitingApproval(
   const t = snap?.tickets.find((x) => x.id === ref.t);
   const stale = { mapId: ref.m, ticketId: ref.t, ticketKey: t?.key ?? ref.t } as ApprovalItem;
   const line = outcome(snap, stale);
-  if (responseUrl)
-    await postResponse(
-      responseUrl,
-      {
-        response_type: 'ephemeral',
-        replace_original: false,
-        text: `Nothing changed: this message is out of date. ${line.replace('No longer waiting on you: ', '')}`,
-      },
-      ctx.o.fetch,
-    );
+  await postResponse(
+    responseUrl,
+    {
+      response_type: 'ephemeral',
+      replace_original: false,
+      text: `Nothing changed: this message is out of date. ${line.replace('No longer waiting on you: ', '')}`,
+    },
+    ctx.o.fetch,
+  );
   await closeTicket(ctx, ref.m, ref.t, line);
   return undefined;
-}
-
-/** Approve or send back to rework from Slack, as the trail lead would in the Lookout. */
-export async function decideApproval(
-  ctx: SlackContext,
-  by: { ref: ApprovalRef; user: string; responseUrl?: string },
-  d: { action: 'approve' } | { action: 'rework'; reason: string },
-) {
-  const { ref, user, responseUrl } = by;
-  if (!(await waitingApproval(ctx, ref, d.action, responseUrl))) return;
-  const env = { adapter: await ctx.o.active(), root: ctx.o.root, journal: journalFile(ctx.o.root) };
-  try {
-    await operatorAction(env, {
-      action: d.action,
-      mapId: ref.m,
-      ticketId: ref.t,
-      by: `slack:${user}`,
-      ...(d.action === 'rework' ? { reason: d.reason } : {}),
-    });
-  } catch (e) {
-    if (responseUrl)
-      await postResponse(
-        responseUrl,
-        {
-          response_type: 'ephemeral',
-          replace_original: false,
-          text: `Could not ${d.action}: ${label((e as Error).message)}`,
-        },
-        ctx.o.fetch,
-      );
-    return;
-  }
-  const line =
-    d.action === 'approve'
-      ? `✓ Approved by ${mention(user)} via Slack.`
-      : `↺ Sent back to rework by ${mention(user)} via Slack.`;
-  await closeTicket(ctx, ref.m, ref.t, line);
 }

@@ -1,16 +1,7 @@
-import type { SlackOwnerCode, SlackSettingsPatch, SlackStatus, SlackTokenResult, SlackUser } from './types';
+import type { SlackConnectPreview, SlackConnectStart, SlackSettingsPatch, SlackStatus, SlackUser } from './types';
 
 export * from './types';
-export {
-  BOT_SCOPES,
-  OPTIONAL_SCOPES,
-  DEFAULT_COMMAND,
-  SAVE_DECISION_CALLBACK,
-  appIdFromToken,
-  slackLinks,
-  slackManifest,
-  tokenKind,
-} from './manifest';
+export { DEFAULT_COMMAND, SAVE_DECISION_CALLBACK } from './service/constants';
 
 async function req<T>(url: string, method = 'GET', body?: unknown): Promise<T> {
   const r = await fetch(url, {
@@ -28,13 +19,12 @@ export function slackSettingsApi(prefix: string) {
   const base = `${prefix}/slack`;
   return {
     get: () => req<SlackStatus>(base),
-    created: () => req<SlackStatus>(`${base}/created`, 'POST', {}),
-    token: (token: string) => req<SlackTokenResult>(`${base}/token`, 'POST', { token }),
+    connectStart: (project?: string) => req<SlackConnectStart>(`${base}/connect/start`, 'POST', { project }),
+    connectPreview: (code: string) => req<SlackConnectPreview>(`${base}/connect/preview`, 'POST', { code }),
+    connectFinish: (code: string) => req<SlackStatus>(`${base}/connect/finish`, 'POST', { code }),
+    connectCancel: () => req<SlackStatus>(`${base}/connect/cancel`, 'POST', {}),
+    disconnect: () => req<SlackStatus>(`${base}/connect`, 'DELETE'),
     update: (patch: SlackSettingsPatch) => req<SlackStatus>(`${base}/settings`, 'PUT', patch),
-    ownerCode: () => req<SlackOwnerCode>(`${base}/owner/code`, 'POST', {}),
-    confirmOwner: (id: string) => req<SlackStatus>(`${base}/owner/confirm`, 'POST', { id }),
-    resetOwner: () => req<SlackStatus>(`${base}/owner/reset`, 'POST', {}),
     members: () => req<{ members: SlackUser[] }>(`${base}/members`).then((r) => r.members),
-    remove: () => req<SlackStatus>(base, 'DELETE'),
   };
 }

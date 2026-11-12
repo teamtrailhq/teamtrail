@@ -75,6 +75,11 @@ export class MemoryStore implements ServiceStore {
     return c && c.expiresAt > now ? c : undefined;
   }
 
+  async peekCode(codeHash: string, now: number) {
+    const c = this.codes.get(codeHash);
+    return c && c.expiresAt > now ? { ...c } : undefined;
+  }
+
   async mark(m: Mark) {
     if (this.links.has(m.linkId)) this.marks.set(`${m.kind}|${m.key}|${m.linkId}`, { ...m });
   }

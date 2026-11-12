@@ -153,6 +153,18 @@ export class PostgresStore implements ServiceStore {
     };
   }
 
+  async peekCode(codeHash: string, now: number) {
+    const [r] = await this.rows('SELECT * FROM scout_codes WHERE code_hash = $1 AND expires_at > $2', [codeHash, now]);
+    if (!r) return undefined;
+    return {
+      codeHash,
+      challenge: String(r.challenge),
+      teamId: String(r.team_id),
+      userId: String(r.user_id),
+      expiresAt: Number(r.expires_at),
+    };
+  }
+
   async mark(m: Mark) {
     await this.rows(
       `INSERT INTO scout_marks (kind, key, link_id, expires_at) SELECT $1, $2, $3, $4

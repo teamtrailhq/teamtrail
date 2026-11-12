@@ -77,3 +77,14 @@ test('every answer carries Strict-Transport-Security', async () => {
   for (const path of ['/health', '/nope', '/install'])
     expect((await fetch(`${w.base}${path}`)).headers.get('strict-transport-security')).toContain('max-age=');
 });
+
+test('the service’s own address leads to Scout’s page on the site, with the same headers', async () => {
+  const r = await fetch(`${w.base}/`, { redirect: 'manual' });
+  expect(r.status).toBe(302);
+  expect(r.headers.get('location')).toBe('https://teamtrail.app/slack');
+  expect(r.headers.get('strict-transport-security')).toContain('max-age=');
+  expect(r.headers.get('x-content-type-options')).toBe('nosniff');
+  expect(r.headers.get('referrer-policy')).toBe('no-referrer');
+  expect(r.headers.get('cache-control')).toBe('no-store');
+  expect((await fetch(`${w.base}/`, { method: 'POST', redirect: 'manual' })).status).toBe(404);
+});

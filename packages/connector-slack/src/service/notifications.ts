@@ -19,7 +19,7 @@ export function tick(ctx: SlackContext): Promise<void> {
 
 export async function runTick(ctx: SlackContext) {
   const c = ctx.store.read();
-  if (ctx.state !== 'online' || !c.owners.length || !ctx.bot) return;
+  if (ctx.state !== 'online' || !c.owners.length || !ctx.link) return;
   try {
     const docs = await readAgentDocs(ctx.o.root);
     await syncAsks(ctx, docs, c);
