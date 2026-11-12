@@ -32,7 +32,9 @@ type Reply = { status: number; body: unknown };
  * The Slack routes. The link token is stored here, in the local process, and never sent back to the browser:
  *   GET    /slack                  SlackStatus
  *   POST   /slack/connect/start    → SlackConnectStart: the address that adds Scout to Slack (a PKCE verifier stays here)
- *   POST   /slack/connect/finish   `{ code }` → SlackStatus: the browser came back; the code and verifier become a link
+ *   POST   /slack/connect/preview  `{ code }` → SlackConnectPreview: who the code belongs to, nothing saved yet
+ *   POST   /slack/connect/finish   `{ code }` → SlackStatus: the trail lead chose Connect; code and verifier become a link
+ *   POST   /slack/connect/cancel   → SlackStatus: the trail lead chose Cancel; the verifier goes
  *   DELETE /slack/connect          → SlackStatus: revoke the link at the Scout service, forget Slack on this machine
  *   PUT    /slack/settings         SlackSettingsPatch → SlackStatus
  *   GET    /slack/members          `{ members: SlackUser[] }` for the allowlist picker
@@ -55,13 +57,23 @@ export function slackRoutes(service: SlackService) {
     }
   }
   const ok = (v: unknown): Reply => ({ status: 200, body: v });
+  const codeOf = async (req: IncomingMessage) => {
+    const b = await body<{ code?: unknown }>(req);
+    if (typeof b.code !== 'string' || !b.code) throw new BadRequest('"code" is required');
+    return b.code;
+  };
   const routes: Record<string, (req: IncomingMessage) => Reply | Promise<Reply>> = {
     'GET /slack': () => ok(service.status()),
-    'POST /slack/connect/start': (req) => ok(service.startConnect(req.socket.localPort)),
-    'POST /slack/connect/finish': async (req) => {
-      const b = await body<{ code?: unknown }>(req);
-      if (typeof b.code !== 'string' || !b.code) throw new BadRequest('"code" is required');
-      return ok(await service.finishConnect(b.code));
+    'POST /slack/connect/start': async (req) => {
+      const b = await body<{ project?: unknown }>(req);
+      const project = typeof b.project === 'string' ? b.project : undefined;
+      return ok(service.startConnect({ port: req.socket.localPort, project }));
+    },
+    'POST /slack/connect/preview': async (req) => ok(await service.previewConnect(await codeOf(req))),
+    'POST /slack/connect/finish': async (req) => ok(await service.finishConnect(await codeOf(req))),
+    'POST /slack/connect/cancel': () => {
+      service.cancelConnect();
+      return ok(service.status());
     },
     'DELETE /slack/connect': async () => ok(await service.disconnect()),
     'PUT /slack/settings': async (req) => ok(service.updateSettings(await body<SlackSettingsPatch>(req))),

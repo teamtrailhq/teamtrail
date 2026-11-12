@@ -2,7 +2,7 @@ import { SlackApi, SlackApiError } from '../../src/api';
 import type { ClientMessage, LinkClosed, WebSocketLike } from '../../src/link/types';
 
 /** The link the tests' Teamtrail holds: test values only. */
-export const LINK = { id: 'L0TEST00001', token: 'stl_test-link-token-not-a-secret' };
+export const LINK = { id: 'L0TEST00001', token: 'stl_test-link-token-not-a-secret', service: 'https://scout.test' };
 
 /**
  * In-process stand-in for the Scout service's `/connect` socket. A Teamtrail says hello with its link token and gets
@@ -17,7 +17,7 @@ export function scoutHub(o: {
   user?: string;
   botUser?: string;
 }) {
-  const state = { token: LINK.token, user: o.user ?? 'U0ANA0001' };
+  const state = { token: LINK.token, user: o.user ?? 'U0ANA0001', team: o.team ?? 'T0EFIKA01', hello: 0 };
   const sockets: FakeSocket[] = [];
   const acks = new Map<string, (ack: unknown) => void>();
   const sent: string[] = [];
@@ -61,12 +61,13 @@ export function scoutHub(o: {
       if (m.type === 'call') void this.call(m);
     }
     private hello(token: string) {
+      state.hello++;
       if (token !== state.token) return this.reply({ type: 'closed', reason: 'unknown-link' });
       this.ready = true;
       this.reply({
         type: 'ready',
         linkId: LINK.id,
-        teamId: o.team ?? 'T0EFIKA01',
+        teamId: state.team,
         userId: state.user,
         botUserId: o.botUser ?? 'U0ScoutBOT',
       });
@@ -122,6 +123,11 @@ export function scoutHub(o: {
         }),
       });
       return p;
+    },
+    /** Sends any frame to the newest open socket, said hello or not: what a broken or forged service could send. */
+    raw(data: unknown) {
+      const ws = sockets.filter((x) => x.readyState === 1).at(-1);
+      ws?.emit('message', { data });
     },
     /** The service closes the link for good (or `too-fast`, after which the Teamtrail reconnects). */
     closeLink(reason: LinkClosed) {

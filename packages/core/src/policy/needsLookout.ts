@@ -25,8 +25,13 @@ export const needsLookout = {
     return touchedBy(a).all.some((p) => rules.some((r) => ruleMatches(r.glob, p, fold)));
   },
 
-  /** The completion an approval is about, read from its evidence. */
+  /**
+   * The completion an approval is about, read from its evidence. Without evidence (no attempt, or one that can't
+   * be read) nothing says which files it touched: it fails closed whenever the policy has a high-risk path rule.
+   */
   approval(root: string, i: { mapId: string; ticketId: string; attemptId?: string }): boolean {
-    return !!i.attemptId && needsLookout.attempt(root, readAttempt(root, i.mapId, i.ticketId, i.attemptId));
+    const a = i.attemptId ? readAttempt(root, i.mapId, i.ticketId, i.attemptId) : undefined;
+    if (a) return needsLookout.attempt(root, a);
+    return readPolicy(root).policy.paths.some((r) => r.level === 'high');
   },
 };

@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { appendFileSync, mkdirSync, statSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MemoryAdapter } from '@teamtrail/core';
@@ -40,6 +40,11 @@ function scoutLinks(l: ReturnType<typeof liveWorld>, o: { team?: string; user?: 
     if (init?.method === 'DELETE') return new Response(null, { status: 204 });
     const b = JSON.parse(String(init?.body)) as { code: string; verifier: string };
     if (b.code !== CODE) return Response.json({ error: 'invalid_code' }, { status: 400 });
+    if (url.endsWith('/link/preview'))
+      return Response.json({
+        team: { id: o.team ?? 'T0EFIKA01', name: 'efika' },
+        user: { id: o.user ?? ANA, name: 'ana' },
+      });
     return Response.json({
       link: LINK,
       team: { id: o.team ?? 'T0EFIKA01', name: 'efika' },
@@ -296,4 +301,134 @@ test('Home tab: nothing to click until connected; the owner is named; names are 
   assert.deepEqual(buttons(homeView({ kind: 'yours', owner: ANA }, o)), ['open_teamtrail']);
   assert.equal(text(homeView({ kind: 'connected', owner: ANA }, o)), `Connected to Teamtrail for <@${ANA}>.`);
   assert.doesNotMatch(text(homeView({ kind: 'connected', owner: '!channel' }, o)), /<[!@]/);
+});
+
+test('attack: frames that are null, not objects, malformed or huge never take this process down', async () => {
+  const l = liveWorld();
+  try {
+    connected(l.w);
+    const svc = l.w.service(new MemoryAdapter({ latency: [0, 0] }));
+    await until(() => svc.status().state === 'online', 'online');
+    for (const frame of [
+      'null',
+      '[]',
+      '"x"',
+      '1',
+      '{"type":1}',
+      '{"type":"envelope"}',
+      '{"type":"envelope","id":"e","envelope":null}',
+      '{"type":"result"}',
+      'x'.repeat(1_000_001),
+      '{',
+    ])
+      l.w.hub.raw(frame);
+    l.w.hub.raw(
+      JSON.stringify({
+        type: 'envelope',
+        id: 'big',
+        envelope: { type: 'slash_commands', payload: { x: 'y'.repeat(1_000_000) } },
+      }),
+    );
+    await svc.idle();
+    assert.equal(svc.status().state, 'online', 'still connected');
+    assert.equal(l.w.hub.sent.length, 0, 'nothing malformed or oversized was acked');
+  } finally {
+    l.w.cleanup();
+  }
+});
+
+test('an envelope before the service said who this link is is ignored; a ready for another workspace closes the link', async () => {
+  const l = liveWorld();
+  try {
+    connected(l.w);
+    l.w.hub.state.token = 'not-yet'; // the service never says ready
+    const svc = l.w.service(new MemoryAdapter({ latency: [0, 0] }));
+    await until(() => l.w.hub.state.hello > 0, 'hello');
+    l.w.hub.raw(
+      JSON.stringify({
+        type: 'envelope',
+        id: 'early',
+        envelope: {
+          envelope_id: 'early',
+          type: 'slash_commands',
+          payload: { command: '/scout', text: 'help', team_id: 'T0EFIKA01', user_id: ANA },
+        },
+      }),
+    );
+    await svc.idle();
+    assert.deepEqual(l.w.hub.sent, [], 'not handled, not acked');
+    svc.close();
+
+    const other = liveWorld();
+    connected(other.w);
+    other.w.hub.state.team = 'T0OTHER01';
+    const svc2 = other.w.service(new MemoryAdapter({ latency: [0, 0] }));
+    await until(() => svc2.status().state === 'auth-error', 'closed');
+    assert.match(svc2.status().error!, /another Slack workspace/);
+    other.w.cleanup();
+  } finally {
+    l.w.cleanup();
+  }
+});
+
+test('the link token goes only to the service it was made with: another $TEAMTRAIL_SCOUT_SERVICE gets no hello', async () => {
+  const l = liveWorld();
+  try {
+    connected(l.w);
+    const s = scoutLinks(l);
+    const svc = l.w.service(new MemoryAdapter({ latency: [0, 0] }), {
+      env: { TEAMTRAIL_SCOUT_SERVICE: 'https://scout.example' },
+      fetch: s.fetch,
+    });
+    const st = svc.status();
+    assert.equal(st.state, 'other-service');
+    assert.match(
+      st.error!,
+      /Connected through https:\/\/scout\.test, but this Teamtrail now points at https:\/\/scout\.example/,
+    );
+    assert.equal(l.w.hub.connections, 0, 'no socket, no hello');
+    await svc.disconnect();
+    assert.deepEqual(
+      s.calls.map((c) => [c.method, c.url]),
+      [['DELETE', 'https://scout.test/link']],
+      'revoked where it was made, never at the new address',
+    );
+  } finally {
+    l.w.cleanup();
+  }
+});
+
+test('Connect as @user in <workspace>? is asked before anything is saved; Cancel saves nothing', async () => {
+  const l = liveWorld();
+  try {
+    const s = scoutLinks(l);
+    const svc = l.w.service(new MemoryAdapter({ latency: [0, 0] }), { fetch: s.fetch, url });
+    svc.startConnect();
+    const who = await svc.previewConnect(CODE);
+    assert.deepEqual(who, { workspace: { id: 'T0EFIKA01', name: 'efika' }, user: { id: ANA, name: 'ana' } });
+    assert.equal(s.calls[0].url, 'https://scout.test/link/preview');
+    assert.equal(svc.status().connected, false, 'nothing saved yet');
+    assert.equal(existsSync(path.join(l.w.configDir, 'credentials.json')), false);
+    svc.cancelConnect();
+    await assert.rejects(svc.finishConnect(CODE), /Nothing is waiting to connect/, 'Cancel dropped the verifier');
+    svc.startConnect();
+    await svc.previewConnect(CODE);
+    assert.equal((await svc.finishConnect(CODE)).connected, true, 'Connect after the preview links');
+  } finally {
+    l.w.cleanup();
+  }
+});
+
+test('a connect started in another project of this Lookout comes back to that project', async () => {
+  const l = liveWorld();
+  try {
+    const svc = l.w.service(new MemoryAdapter({ latency: [0, 0] }), { url });
+    const back = (project?: string) =>
+      new URL(svc.startConnect({ port: 7461, project }).url).searchParams.get('return');
+    assert.equal(back('a1b2c3d4'), 'http://127.0.0.1:7461/?project=a1b2c3d4&settings=slack');
+    assert.equal(back(), 'http://127.0.0.1:7461/?settings=slack');
+    assert.equal(back('../evil'), 'http://127.0.0.1:7461/?settings=slack', 'only a project id');
+  } finally {
+    l.w.cleanup();
+  }
 });

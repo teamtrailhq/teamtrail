@@ -9,13 +9,13 @@ import { journalSlack } from './slackJournal';
 /** Thrown for a connect step that can't be done as asked; the route answers 400 with the message. */
 export class ConnectError extends Error {}
 
-const now = (ctx: SlackContext) => ctx.o.now?.() ?? Date.now();
+export const now = (ctx: SlackContext) => ctx.o.now?.() ?? Date.now();
 
 /**
  * Only the process that holds this machine's Slack connection connects or disconnects it: the verifier lives in
  * its memory, and its link is the one that changes. Another `teamtrail` here refuses and says where to go.
  */
-function mustHoldConnection(ctx: SlackContext) {
+export function mustHoldConnection(ctx: SlackContext) {
   const other = ctx.lock.elsewhere() ?? (ctx.state === 'elsewhere' ? ctx.heldBy : undefined);
   if (other) throw new ConnectError(`Slack is connected from another ${BRAND.name} (${other}). Change it there.`);
 }
@@ -24,16 +24,21 @@ function mustHoldConnection(ctx: SlackContext) {
  * `POST /slack/connect/start`: a PKCE verifier kept in this process, and the address that starts Add Scout to
  * Slack at the service with its challenge and this Lookout as the place to come back to.
  */
-export function startConnect(ctx: SlackContext, port?: number): SlackConnectStart {
+export function startConnect(ctx: SlackContext, o: { port?: number; project?: string } = {}): SlackConnectStart {
   mustHoldConnection(ctx);
-  const back = returnAddress({ port, lookoutUrl: ctx.o.url() });
+  const back = returnAddress({ ...o, lookoutUrl: ctx.o.url() });
   if (!back) throw new ConnectError(`Open the Lookout on this machine to add ${BRAND.assistant.name} to Slack.`);
   const { pending, challenge } = pkce(now(ctx));
   ctx.connecting = pending;
   return { url: ctx.scout.install({ challenge, returnUrl: back }) };
 }
 
-type Linked = { link: SlackLink; team: { id: string; name: string }; user: { id: string }; botUserId: string };
+type Linked = {
+  link: Omit<SlackLink, 'service'>;
+  team: { id: string; name: string };
+  user: { id: string };
+  botUserId: string;
+};
 
 /** The service trades the code from the browser and our verifier for a link token. */
 async function exchange(ctx: SlackContext, code: string, verifier: string): Promise<Linked> {
@@ -70,7 +75,7 @@ export async function finishConnect(ctx: SlackContext, code: string): Promise<Sl
   const prev = ctx.store.read();
   const owner: SlackUser = { id: linked.user.id, via: 'oauth', confirmedAt: now(ctx) };
   ctx.stop();
-  ctx.store.saveLink(linked.link);
+  ctx.store.saveLink({ ...linked.link, service: ctx.scout.http });
   ctx.store.update({
     ...(prev.workspace?.id === linked.team.id ? {} : freshWorkspace()),
     enabled: true,
@@ -92,12 +97,15 @@ const freshWorkspace = (): Partial<SlackConfig> => ({
   appId: undefined,
 });
 
-/** Tells the service to forget this link. A service that can't be reached still loses it here. */
+/**
+ * Tells the service the link was made with to forget it: the token goes to that service only, never to whatever
+ * `$TEAMTRAIL_SCOUT_SERVICE` says now. A service that can't be reached still loses it here.
+ */
 async function revoke(ctx: SlackContext) {
   const link = ctx.store.link();
-  if (!link) return;
+  if (!link?.service) return;
   const f = ctx.o.fetch ?? fetch;
-  await f(`${ctx.scout.http}/link`, { method: 'DELETE', headers: { Authorization: `Bearer ${link.token}` } }).catch(
+  await f(`${link.service}/link`, { method: 'DELETE', headers: { Authorization: `Bearer ${link.token}` } }).catch(
     () => undefined,
   );
 }

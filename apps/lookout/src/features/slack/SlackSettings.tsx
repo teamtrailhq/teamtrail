@@ -20,7 +20,7 @@ export function SlackSettings(props: { focus?: boolean }) {
     <div ref={ref} className="slack-settings">
       <SlackAppCard
         s={s}
-        connecting={back.busy}
+        back={back}
         error={error ?? back.error}
         onError={setError}
         onToggle={() => void patch({ enabled: !s.enabled })}

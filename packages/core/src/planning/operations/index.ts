@@ -6,6 +6,7 @@
 export { chartMap, type ChartHooks, type ChartPlan, type ChartPlanTicket } from './chart';
 export { chooseNext, claim, orderNext, release, type ActorOptions } from './claims';
 export { recordDecision, supersedeDecision } from './decisionOps';
+export { assertLookoutGuard, type LookoutGuard } from './lookoutGuard';
 export { allowedTypes, setMapMode } from './mapMode';
 export { OperationError } from './operationError';
 export { resolve, type DecisionMeta, type ResolveOptions } from './resolve';

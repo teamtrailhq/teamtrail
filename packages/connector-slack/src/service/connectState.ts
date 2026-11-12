@@ -22,13 +22,19 @@ export function pkce(now: number): { pending: PendingConnect; challenge: string 
 
 /**
  * Where the service sends the browser back to: this Lookout, on 127.0.0.1 at the port the request came in on (or
- * the Lookout's own address), at Settings → Slack. Never `localhost` (a hosts file can point it anywhere), and the
+ * the Lookout's own address), at Settings → Slack of the project the connect was started in. Never `localhost` (a hosts file can point it anywhere), and the
  * service accepts nothing else.
  */
-export function returnAddress(o: { port?: number; lookoutUrl?: string }): string | undefined {
+export function returnAddress(o: { port?: number; lookoutUrl?: string; project?: string }): string | undefined {
   const port = o.port ?? portOf(o.lookoutUrl);
-  return port ? `http://127.0.0.1:${port}/?settings=slack` : undefined;
+  if (!port) return undefined;
+  // a connect started in another project of this Lookout finishes on that project's bridge
+  const project = o.project && PROJECT_ID.test(o.project) ? `project=${o.project}&` : '';
+  return `http://127.0.0.1:${port}/?${project}settings=slack`;
 }
+
+/** A project id as the Lookout's projects hub hands them out: a short hex hash. */
+const PROJECT_ID = /^[0-9a-f]{6,64}$/;
 
 function portOf(lookoutUrl: string | undefined) {
   if (!lookoutUrl) return undefined;

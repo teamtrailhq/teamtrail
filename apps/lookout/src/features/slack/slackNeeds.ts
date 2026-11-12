@@ -2,7 +2,7 @@ import type { SlackStatus } from '@teamtrail/connector-slack';
 
 /**
  * What Slack needs from the trail lead right now, for the header: Scout disconnected (removed from the workspace,
- * or this Teamtrail let go), or a setup from a version with your own Slack app that has to be added again (until
+ * this Teamtrail let go, or now pointed at another Scout service than the one it connected through), or a setup from a version with your own Slack app that has to be added again (until
  * then nothing is sent there). Undefined when nothing is needed.
  */
 export function slackNeeds(s: SlackStatus): { label: string; why: string } | undefined {

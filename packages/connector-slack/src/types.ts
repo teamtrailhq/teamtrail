@@ -2,7 +2,12 @@
 
 import type { DeliveryProblem } from '@teamtrail/core';
 
-export type SlackState = 'off' | 'connecting' | 'online' | 'offline' | 'auth-error' | 'elsewhere' | 'unsupported';
+/**
+ * `other-service`: the link was made with another Scout service than the one this Teamtrail points at now
+ * (`$TEAMTRAIL_SCOUT_SERVICE`), so its token isn't sent.
+ */
+export type SlackState =
+  'off' | 'connecting' | 'online' | 'offline' | 'auth-error' | 'elsewhere' | 'unsupported' | 'other-service';
 
 export type SlackNotifyEvent = 'awaiting' | 'blocked' | 'trail.done' | 'resolved';
 export const SLACK_NOTIFY_EVENTS: SlackNotifyEvent[] = ['awaiting', 'blocked', 'trail.done', 'resolved'];
@@ -57,6 +62,12 @@ export interface SlackStatus {
   delivery?: DeliveryProblem;
   /** Tracker folder of the other `teamtrail` that holds this machine's Slack connection. */
   heldBy?: string;
+}
+
+/** `POST <api>/slack/connect/preview`: who the code belongs to, for "Connect as @user in <workspace>?". */
+export interface SlackConnectPreview {
+  workspace: { id: string; name: string };
+  user: { id: string; name?: string };
 }
 
 /** `POST <api>/slack/connect/start`: where to send the browser to add Scout (the service, then Slack's consent). */

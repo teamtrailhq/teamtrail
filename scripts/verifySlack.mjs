@@ -1,6 +1,6 @@
 // Slack steps of the end-to-end check (verify-mcp.mjs), on their own scratch project and config dir, against a fake
 // Slack and the real Scout service in memory (packages/connector-slack/test/serve-fake.ts): Add Scout to Slack from
-// Settings goes through the service and Slack's (fake) consent screen and comes back connected; an agent's question
+// Settings goes through the service and Slack's (fake) consent screen, asks "Connect as @ana in efika?" and connects; an agent's question
 // is answered with a button in Slack; a high-risk question shows Open in Lookout and a Slack answer can't back a
 // high-risk decision; Disconnect forgets it all. Waits on what the user sees and what the servers answer, never sleeps.
 import { spawn } from 'node:child_process';
@@ -91,6 +91,12 @@ export async function verifySlack({ browser, cli, log, shots }) {
     await page.getByRole('button', { name: 'Get started' }).click();
     const card = page.locator('.slack-settings');
     await card.getByRole('button', { name: 'Add Scout to Slack' }).click();
+    // Back from Slack: nothing is saved until the trail lead has seen whose account it is.
+    await card.getByText(/Connect as @ana in efika\?/).waitFor({ timeout: 20_000 });
+    await shootThemes(page, shots, '39-slack-confirm');
+    const credsFile = path.join(config, 'credentials.json');
+    const savedEarly = fs.existsSync(credsFile) && !!JSON.parse(fs.readFileSync(credsFile, 'utf8')).slack;
+    await card.getByRole('button', { name: 'Connect', exact: true }).click();
     await card.getByText('Online').waitFor({ timeout: 20_000 });
     await card.locator('.sl-owner').getByText('@ana').waitFor({ timeout: 15_000 });
     const address = page.url();
@@ -172,6 +178,7 @@ export async function verifySlack({ browser, cli, log, shots }) {
       .map((l) => JSON.parse(l).action);
 
     const ok =
+      !savedEarly &&
       !address.includes('slack-link') &&
       !!greeted &&
       /^stl_/.test(creds.slack?.link?.token ?? '') &&
@@ -186,7 +193,7 @@ export async function verifySlack({ browser, cli, log, shots }) {
       journal.join() === 'connected,disconnected' &&
       !errors.length;
     log(
-      `Slack ${ok ? 'ok' : 'WRONG'}: Add Scout to Slack connected (owner @ana, greeted ${!!greeted}, code gone from the address ${!address.includes('slack-link')}); ` +
+      `Slack ${ok ? 'ok' : 'WRONG'}: Add Scout to Slack asked "Connect as @ana in efika?" (nothing saved before: ${!savedEarly}), then connected (owner @ana, greeted ${!!greeted}, code gone from the address ${!address.includes('slack-link')}); ` +
         `a button in Slack answered the agent ("${got.answer}", via ${got.answeredVia}); the high-risk question shows ${highButtons.join(', ')}; ` +
         `a Slack answer refused for a high-risk decision (${!!highRefused}) and kept for an ordinary one (${ordinary.decision.decidedBy}); ` +
         `Disconnect forgot the link (${!after.slack}); journal ${journal.join(' → ')}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,

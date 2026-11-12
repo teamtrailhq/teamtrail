@@ -1,5 +1,6 @@
 import type { TrackerAdapter } from '../../adapters/adapter';
 import type { DecisionInput, DecisionRecord } from '../../model/types';
+import { assertLookoutGuard, type LookoutGuard } from './lookoutGuard';
 import { OperationError } from './operationError';
 
 /**
@@ -11,8 +12,13 @@ export async function recordDecision(
   adapter: TrackerAdapter,
   mapId: string,
   input: DecisionInput,
-  opts: { appendToTrail?: boolean; trailLine?: string } = {},
+  opts: { appendToTrail?: boolean; trailLine?: string; guard?: LookoutGuard } = {},
 ) {
+  // A decision on a ticket from anywhere but the Lookout is refused when the ticket is high risk (lookoutGuard.ts).
+  await assertLookoutGuard(
+    { ...opts.guard, sourceKind: input.source.kind },
+    { mapId, ticketId: input.ticketId, key: input.ticketKey },
+  );
   if (input.source.ref) {
     // Only this machine's own records: a teammate's can't pre-empt one by posting its source first.
     const dup = (await adapter.listDecisions(mapId)).find(

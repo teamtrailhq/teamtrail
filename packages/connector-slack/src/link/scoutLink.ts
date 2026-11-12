@@ -22,11 +22,16 @@ export interface ScoutLinkOptions {
   onEnvelope: (e: Envelope) => Promise<EnvelopeResult | void>;
   onState: (s: LinkState, error?: string) => void;
   onReady?: (r: LinkReady) => void;
+  /** The workspace this Teamtrail connected to: a `ready` for another one closes the link. */
+  teamId?: string;
   backoffMs?: (attempt: number) => number;
   callTimeoutMs?: number;
 }
 
 /** What the trail lead reads when the service closed the link for good. */
+/** The largest message the service sends (Slack's payloads are well under it): anything bigger is dropped. */
+export const MAX_FRAME = 1_000_000;
+
 const CLOSED: Record<Exclude<LinkClosed, 'too-fast'>, string> = {
   'unknown-link': 'Scout no longer knows this Teamtrail. Connect again with Add Scout to Slack.',
   uninstalled: 'Scout was removed from this Slack workspace. Add it again to connect.',
@@ -36,8 +41,20 @@ const CLOSED: Record<Exclude<LinkClosed, 'too-fast'>, string> = {
 
 function text(d: unknown) {
   if (typeof d === 'string') return d;
-  if (d instanceof ArrayBuffer) return new TextDecoder().decode(d);
+  if (d instanceof ArrayBuffer) return d.byteLength > MAX_FRAME ? '' : new TextDecoder().decode(d);
   return '';
+}
+
+/** A message from the service, or undefined for anything else: too big, not JSON, not an object with a type. */
+function parse(raw: string): ServerMessage | undefined {
+  if (!raw || raw.length > MAX_FRAME) return undefined;
+  try {
+    const m = JSON.parse(raw) as unknown;
+    if (typeof m !== 'object' || m === null || Array.isArray(m)) return undefined;
+    return typeof (m as { type?: unknown }).type === 'string' ? (m as ServerMessage) : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -126,21 +143,34 @@ export class ScoutLink {
     if (ws.readyState === 1) ws.send(JSON.stringify(m));
   }
 
+  /** Whatever the service sends, nothing it sends can take this process down. */
   private onMessage(ws: WebSocketLike, raw: string) {
-    let m: ServerMessage;
+    const m = parse(raw);
+    if (!m || this.ws !== ws) return;
     try {
-      m = JSON.parse(raw) as ServerMessage;
+      this.handle(ws, m);
     } catch {
-      return;
+      /* a malformed message is dropped */
     }
-    if (this.ws !== ws) return;
+  }
+
+  private handle(ws: WebSocketLike, m: ServerMessage) {
     if (m.type === 'ready') return this.onReady(m);
-    if (m.type === 'result') return this.calls.settle(m);
-    if (m.type === 'envelope') return this.onEnvelope(ws, m.id, m.envelope);
     if (m.type === 'closed') return this.onClosed(m.reason);
+    // Nothing is taken from the service before it said who this link is.
+    if (!this.ready) return;
+    if (m.type === 'result' && typeof m.id === 'string') return this.calls.settle(m);
+    if (m.type === 'envelope' && typeof m.id === 'string' && typeof m.envelope === 'object' && m.envelope)
+      return this.onEnvelope(ws, m.id, m.envelope);
   }
 
   private onReady(m: LinkReady) {
+    if (typeof m.linkId !== 'string' || typeof m.teamId !== 'string') return;
+    if (this.o.teamId && m.teamId !== this.o.teamId) {
+      this.stopped = true;
+      this.drop();
+      return this.o.onState('auth-error', 'Scout answered for another Slack workspace. Add Scout to Slack again.');
+    }
     this.attempt = 0;
     this.ready = { linkId: m.linkId, teamId: m.teamId, userId: m.userId, botUserId: m.botUserId };
     this.o.onReady?.(this.ready);

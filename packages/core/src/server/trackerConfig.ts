@@ -28,11 +28,11 @@ export interface Credentials {
   githubSignIn?: { token: string; scope?: string; at: string };
   linear?: { apiKey: string };
   /**
-   * Slack: `link`, this Teamtrail's link to Teamtrail's Scout service (its id there and the token it says hello
-   * with). `appToken` / `botToken` are your own Slack app's, from versions before Scout was one app: never used,
+   * Slack: `link`, this Teamtrail's link to Teamtrail's Scout service (its id there, the token it says hello
+   * with, and the service it was made with, the only one the token is sent to). `appToken` / `botToken` are your own Slack app's, from versions before Scout was one app: never used,
    * deleted when you connect Scout or remove Slack.
    */
-  slack?: { link?: { id: string; token: string }; appToken?: string; botToken?: string };
+  slack?: { link?: { id: string; token: string; service?: string }; appToken?: string; botToken?: string };
 }
 
 type Env = Record<string, string | undefined>;

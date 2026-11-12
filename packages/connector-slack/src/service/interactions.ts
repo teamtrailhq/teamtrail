@@ -126,7 +126,8 @@ export function onAction(ctx: SlackContext, p: Payload): EnvelopeResult | void {
       }
       const text = found.q.suggestions?.[ref.i ?? -1];
       if (text === undefined) return ephemeral(ALREADY);
-      if (!(await answer(ctx, ref, text, user))) await ephemeral(ALREADY);
+      const r = await answer(ctx, ref, text, user);
+      if (r !== 'ok') await ephemeral(r === 'lookout' ? LOOKOUT_ONLY : ALREADY);
     },
   };
 }

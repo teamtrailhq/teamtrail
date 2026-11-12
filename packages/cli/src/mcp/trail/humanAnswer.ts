@@ -9,6 +9,7 @@ import {
   type Ticket,
   type TranscriptEntry,
 } from '@teamtrail/core';
+import { needsLookout } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 
 /**
@@ -48,6 +49,10 @@ export interface HumanAnswer {
 export const CHAT_GUIDES =
   "Answers given in an agent's chat guide agents but can't approve this; answer in the Lookout or Slack. Use it as guidance; for a decision that is the human's (high risk, a HITL ticket, questionId), ask again with ask_human and have them answer in the Lookout or Slack.";
 
+/** What an agent is told of a Slack answer to a question the risk policy makes high risk. */
+export const SLACK_HIGH_RISK =
+  'Answered in Slack, and the question is high risk: it guides you, but backs no decision. For the decision, ask again with ask_human and have the human answer in the Lookout.';
+
 /** The refusal for an answer given in a chat (or before labels existed) offered at a gate. */
 function chatRefusal(a: HumanAnswer) {
   const where =
@@ -58,7 +63,7 @@ function chatRefusal(a: HumanAnswer) {
 }
 
 /** The refusal for a Slack answer offered for a high-risk call: only the Lookout's answer counts for those. */
-function lookoutOnly(a: HumanAnswer) {
+export function lookoutOnly(a: { questionId: string }) {
   return `Question ${a.questionId} was answered in Slack, and this decision is high risk: only an answer given in the Lookout counts for it (Slack answers pass through Teamtrail's Scout service). Ask again with ask_human and have the human answer in the Lookout.`;
 }
 
@@ -108,7 +113,7 @@ function mismatch(m: { q: string; asked: string; missing: RiskCategory; needs: R
  * and, for a high-risk call (by category or by the files touched) or a ticket that is the human's to decide, a
  * question the human was told mattered: one asked with that risk's category, and not as an fyi.
  */
-function refusal(a: HumanAnswer, w: Wanted): string | undefined {
+function refusal(a: HumanAnswer, w: Wanted, root: string): string | undefined {
   const q = `Question ${a.questionId}`;
   // Any local agent can call answer_question, one that answers its own question included: only an answer given in
   // the Lookout or Slack is the human's word at a gate.
@@ -117,7 +122,9 @@ function refusal(a: HumanAnswer, w: Wanted): string | undefined {
   if (w.ticket && a.ticketId !== w.ticket.id)
     return `${q} was not asked on ${w.ticket.key}. Ask the human about ${w.ticket.key} while you hold it.`;
   const high = w.risk?.level === 'high';
-  if (high && !approvesHighRisk(a.via)) return lookoutOnly(a);
+  // High by the decision, or by what the question itself was asked with: a Slack answer backs neither.
+  if ((high || needsLookout.question(root, { categories: a.categories })) && !approvesHighRisk(a.via))
+    return lookoutOnly(a);
   const asked = askedWith(a.categories);
   const needs = categoriesNeeded(w, high);
   const missing = needs.find((c) => !a.categories.includes(c));
@@ -147,13 +154,13 @@ function named(ctx: AgentContext, w: Wanted) {
     throw new OperationError(
       `No answer on record for question ${w.questionId}. It has to be a question you asked with ask_human on this connection, answered by the human.`,
     );
-  const why = refusal(a, w);
+  const why = refusal(a, w, ctx.root);
   if (why) throw new OperationError(why);
   return a;
 }
 
 const latestFor = (ctx: AgentContext, w: Wanted) =>
-  w.ticket ? [...ctx.answers.values()].filter((a) => refusal(a, w) === undefined).at(-1) : undefined;
+  w.ticket ? [...ctx.answers.values()].filter((a) => refusal(a, w, ctx.root) === undefined).at(-1) : undefined;
 
 /** The answer backed a decision: it is used up, and says for what. */
 export function spend(a: HumanAnswer | undefined, what: string) {

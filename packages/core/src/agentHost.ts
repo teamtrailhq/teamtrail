@@ -1,7 +1,7 @@
 /** Node side of the agent link (agentLink.ts): session docs, answers and the lookout lock under a tracker root. */
 export { AgentDocWriter } from './agents/agentDocWriter';
 export { TRAIL_NAMES_DIR, claimTrailName, releaseTrailName } from './agents/trailNameClaim';
-export { AnswerError, readAgentDoc, readAgentDocs, writeAgentAnswer } from './agents/agentDocs';
+export { AnswerError, LookoutOnlyAnswer, readAgentDoc, readAgentDocs, writeAgentAnswer } from './agents/agentDocs';
 export { readLookoutLock, writeLookoutLock } from './agents/lookoutLock';
 export { gitConfigValue } from './evidence/gitConfigValue';
 export { ensureLocalDir, writeLocalJson } from './lib/ensureLocalDir';
@@ -33,6 +33,7 @@ export {
 export { dropCriteriaProposal, readCriteriaProposals, writeCriteriaProposal } from './criteria/criteriaProposals';
 export { caseInsensitiveFs } from './policy/caseInsensitiveFs';
 export { needsLookout } from './policy/needsLookout';
+export { ticketNeedsLookout } from './policy/ticketNeedsLookout';
 export { repoRootSpellings } from './policy/repoRootSpellings';
 export { chartedBy, recordCharted, type ChartedBy } from './agents/chartedStore';
 export {

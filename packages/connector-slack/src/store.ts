@@ -31,10 +31,14 @@ export interface SlackConfig {
   channelTrail: Record<string, string>;
 }
 
-/** This Teamtrail's link to the Scout service: its id there and the token it says hello with. */
+/**
+ * This Teamtrail's link to the Scout service: its id there, the token it says hello with, and the service it was
+ * made with. The token is only ever sent to that service, whatever `$TEAMTRAIL_SCOUT_SERVICE` says later.
+ */
 export interface SlackLink {
   id: string;
   token: string;
+  service: string;
 }
 
 const DEFAULTS: SlackConfig = {
@@ -85,7 +89,7 @@ export function slackStore(dir: string) {
     },
     link(): SlackLink | undefined {
       const l = creds.read().slack?.link;
-      return l?.id && l.token ? { id: l.id, token: l.token } : undefined;
+      return l?.id && l.token ? { id: l.id, token: l.token, service: l.service ?? '' } : undefined;
     },
     /** Tokens of your own Slack app, from a version before Scout was one app; never used, only removed. */
     legacy(): boolean {

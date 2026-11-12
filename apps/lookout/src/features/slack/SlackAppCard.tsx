@@ -1,22 +1,23 @@
 import type { SlackStatus } from '@teamtrail/connector-slack';
-import { Card, Pill, Button } from '../../components/ui';
-import { AddScout } from './AddScout';
+import { Card, Pill } from '../../components/ui';
+import { ConfirmConnect } from './ConfirmConnect';
 import { DeliveryLine } from './DeliveryLine';
-import { ExtLink } from './ExtLink';
 import { ScoutIntro } from './ScoutIntro';
-import { SlackRemove } from './SlackRemove';
+import { SlackCardActions } from './SlackCardActions';
 import { SlackStateLine } from './SlackStateLine';
+import type { ConnectReturn } from './useConnectReturn';
 
 /** Scout's card: where it's connected and its state, or how to add it, plus its actions. */
 export function SlackAppCard(props: {
   s: SlackStatus;
-  connecting: boolean;
+  back: ConnectReturn;
   error?: string;
   onError: (message: string) => void;
   onChanged: (s: SlackStatus) => void;
   onToggle: () => void;
 }) {
-  const { s } = props;
+  const { s, back } = props;
+  const confirming = !!back.confirm && !s.connected;
   return (
     <Card className={cardClass(s)}>
       <div className="card-row">
@@ -26,23 +27,18 @@ export function SlackAppCard(props: {
       {s.connected && <div className="c-loc">{workspaceLine(s)}</div>}
       {s.connected && <SlackStateLine s={s} />}
       {s.delivery && <DeliveryLine problem={s.delivery} />}
-      {!s.connected && <ScoutIntro s={s} connecting={props.connecting} />}
+      {!s.connected && !confirming && <ScoutIntro s={s} connecting={back.busy} />}
+      {confirming && <ConfirmConnect who={back.confirm!} onConnect={back.connect} onCancel={back.cancel} />}
       {props.error && <div className="test-line alert">✕ {props.error}</div>}
-      <div className="c-actions">
-        {!s.connected && !props.connecting && <AddScout again={s.legacy} onError={props.onError} />}
-        {s.connected && s.state !== 'auth-error' && (
-          <Button size="sm" on={s.enabled} onClick={props.onToggle}>
-            {s.enabled ? 'Turn off' : 'Turn on'}
-          </Button>
-        )}
-        {s.connected && s.state === 'auth-error' && <AddScout again onError={props.onError} />}
-        {s.connected && s.links.homeWeb && (
-          <ExtLink small href={s.links.homeWeb}>
-            Open Scout in Slack
-          </ExtLink>
-        )}
-        {(s.connected || s.legacy) && <SlackRemove onRemoved={props.onChanged} />}
-      </div>
+      {!confirming && (
+        <SlackCardActions
+          s={s}
+          busy={back.busy}
+          onError={props.onError}
+          onChanged={props.onChanged}
+          onToggle={props.onToggle}
+        />
+      )}
     </Card>
   );
 }

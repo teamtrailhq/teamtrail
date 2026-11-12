@@ -91,7 +91,10 @@ async function post(ctx: SlackContext, p: { key: string; card: SettingCard; chan
   }
 }
 
-/** Approve or Decline from Slack, as the trail lead would in the Lookout. The caller checked the owner. */
+/**
+ * Decline from Slack, as the trail lead would in the Lookout. Approve is refused in core (decideReroute.ts): a
+ * click on an Approve button from an older card gets the reason. The caller checked the owner.
+ */
 export async function decideSetting(
   ctx: SlackContext,
   by: { ref: SettingRef; user: string; responseUrl?: string },
@@ -108,7 +111,7 @@ export async function decideSetting(
   const env = { root: ctx.o.root, adapter: await ctx.o.active(), journal: journalFile(ctx.o.root) };
   const d = { mapId: ref.m, id: ref.id, by: `slack:${user}` };
   try {
-    if (action === 'approve') await approveReroute(env, { ...d, hash: ref.h });
+    if (action === 'approve') await approveReroute(env, { ...d, hash: ref.h, via: 'slack' });
     else await rejectReroute(env, { ...d, note: 'Declined in Slack.' });
   } catch (e) {
     return say(`Could not ${action}: ${label((e as Error).message)}`);

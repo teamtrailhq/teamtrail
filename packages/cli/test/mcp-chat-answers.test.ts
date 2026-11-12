@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { agentPaths, MarkdownAdapter } from '@teamtrail/core';
-import { readAgentDocs, writeAgentAnswer, writeLocalJson } from '@teamtrail/core/agents';
+import { LookoutOnlyAnswer, readAgentDocs, writeAgentAnswer, writeLocalJson } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { signAgentAnswer } from '../../core/src/agents/agentAnswerSignature';
@@ -138,22 +138,16 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
     const call = await hub.connect({ name: 'claude-01' });
     const questionId = await askOnJunction(call);
     const doc = (await readAgentDocs(root)).find((d) => d.pending.length)!;
-    writeAgentAnswer(root, {
-      sessionId: doc.session.id,
-      questionId,
-      text: 'Yes, drop it',
-      author: 'slack:U0ANA',
-      via: 'slack',
-    });
-    const got = await call<Got>('wait_for_answer', { questionId, waitSeconds: 5 });
-    expect(got).toMatchObject({ answered: true, answeredVia: 'slack' });
-    const lookout = /answered in Slack, and this decision is high risk: only an answer given in the Lookout counts/;
-    await expect(
-      call('close_ticket', { resolution: 'Drop it', category: 'data-deletion', questionId }),
-    ).rejects.toThrow(lookout);
-    await expect(
-      call('record_decision', { question: 'Drop?', answer: 'Drop it', category: 'data-deletion', questionId }),
-    ).rejects.toThrow(lookout);
+    // asked with a high-risk category: core takes no Slack answer to it at all
+    expect(() =>
+      writeAgentAnswer(root, {
+        sessionId: doc.session.id,
+        questionId,
+        text: 'Drop it',
+        author: 'slack:U0ANA',
+        via: 'slack',
+      }),
+    ).toThrow(LookoutOnlyAnswer);
 
     const medium = await call<Asked>('ask_human', {
       question: 'Show deleted users greyed out?',
@@ -169,7 +163,27 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
       author: 'slack:U0ANA',
       via: 'slack',
     });
-    await call('wait_for_answer', { questionId: medium.questionId, waitSeconds: 5 });
+    const got = await call<Got>('wait_for_answer', { questionId: medium.questionId, waitSeconds: 5 });
+    expect(got).toMatchObject({ answered: true, answeredVia: 'slack' });
+    const lookout = /answered in Slack, and this decision is high risk: only an answer given in the Lookout counts/;
+    // the decision is high risk by its category: refused
+    await expect(
+      call('record_decision', {
+        question: 'Drop?',
+        answer: 'Greyed out',
+        category: 'data-deletion',
+        questionId: medium.questionId,
+      }),
+    ).rejects.toThrow(lookout);
+    // the policy now makes the question's own category high: a Slack answer to it backs nothing either
+    fs.writeFileSync(
+      path.join(root, 'policy.json'),
+      JSON.stringify({ v: 1, categories: { 'product-behaviour': 'high' }, paths: [] }),
+    );
+    await expect(
+      call('record_decision', { question: 'Greyed?', answer: 'Greyed out', questionId: medium.questionId }),
+    ).rejects.toThrow(lookout);
+    fs.rmSync(path.join(root, 'policy.json'));
     const closed = await call<Closed>('close_ticket', {
       resolution: 'Greyed out',
       category: 'product-behaviour',

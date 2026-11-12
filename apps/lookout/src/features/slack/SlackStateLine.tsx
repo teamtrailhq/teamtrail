@@ -32,6 +32,8 @@ function stateLine(s: SlackStatus): [string, string] {
       const holder = s.heldBy ? ` (${s.heldBy})` : '';
       return ['warn', `Connected from another ${BRAND.slug}${holder}`];
     }
+    case 'other-service':
+      return ['alert', 'Not connected · this Teamtrail points at another Scout service'];
     case 'unsupported':
       return ['alert', s.error ?? 'Not supported here'];
     default:

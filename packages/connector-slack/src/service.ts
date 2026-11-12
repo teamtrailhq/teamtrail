@@ -1,12 +1,13 @@
 import type { Envelope, EnvelopeResult } from './link/types';
 import { disconnect, finishConnect, startConnect } from './service/connect';
+import { cancelConnect, previewConnect } from './service/connectPreview';
 import { onEnvelope } from './service/interactions';
 import { tick } from './service/notifications';
 import { members, updateSettings } from './service/settings';
 import { statusOf } from './service/setupStatus';
 import { SlackContext } from './service/slackContext';
 import type { SlackServiceOptions } from './service/types';
-import type { SlackConnectStart, SlackSettingsPatch, SlackStatus, SlackUser } from './types';
+import type { SlackConnectPreview, SlackConnectStart, SlackSettingsPatch, SlackStatus, SlackUser } from './types';
 
 export type { AskRecord } from './store';
 export type { SlackServiceOptions } from './service/types';
@@ -42,13 +43,22 @@ export class SlackService {
 
   /**
    * Add Scout to Slack: where to send the browser. The PKCE verifier stays in this process. `port` is the one the
-   * Lookout's request came in on, so the browser comes back to the same Lookout.
+   * Lookout's request came in on and `project` the page's, so the browser comes back to the same Lookout and project.
    */
-  startConnect(port?: number): SlackConnectStart {
-    return startConnect(this.ctx, port);
+  startConnect(o: { port?: number; project?: string } = {}): SlackConnectStart {
+    return startConnect(this.ctx, o);
   }
 
-  /** The browser came back with the service's code: trade it for this Teamtrail's link. */
+  /** The browser came back: who the code belongs to, for the trail lead to confirm before anything is saved. */
+  previewConnect(code: string): Promise<SlackConnectPreview> {
+    return previewConnect(this.ctx, code);
+  }
+
+  cancelConnect() {
+    cancelConnect(this.ctx);
+  }
+
+  /** The trail lead chose Connect: trade the service's code for this Teamtrail's link. */
   finishConnect(code: string): Promise<SlackStatus> {
     return finishConnect(this.ctx, code);
   }

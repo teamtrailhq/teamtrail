@@ -21,8 +21,8 @@ export const RELEASES: Release[] = [
     date: '2026-11-12',
     items: [
       'Scout is now one Slack app: Settings → Slack → Add Scout to Slack, no app to create and no tokens to paste',
-      'The Slack account that adds Scout is its owner; if you made your own Slack app before, add Scout again',
-      'High-risk calls are answered in the Lookout only: Slack shows them with Open in Lookout',
+      'You confirm which Slack account becomes Scout’s owner before it connects; if you made your own Slack app before, add Scout again',
+      'High-risk calls are answered in the Lookout only, and so is approving an agent’s request to change your settings: Slack shows Open in Lookout, and Decline still works there',
     ],
   },
   {

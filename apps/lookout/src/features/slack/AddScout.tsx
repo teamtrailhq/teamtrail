@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../../components/ui';
+import { activeProject } from '../../lib/apiBase';
 import { slackApi } from './slackApi';
 
 /**
@@ -10,7 +11,7 @@ export function AddScout(props: { again?: boolean; onError: (message: string) =>
   const [going, setGoing] = useState(false);
   const add = () => {
     setGoing(true);
-    slackApi.connectStart().then(
+    slackApi.connectStart(activeProject()).then(
       (r) => location.assign(r.url),
       (e: Error) => {
         setGoing(false);

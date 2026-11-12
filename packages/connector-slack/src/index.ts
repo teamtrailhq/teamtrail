@@ -1,4 +1,4 @@
-import type { SlackConnectStart, SlackSettingsPatch, SlackStatus, SlackUser } from './types';
+import type { SlackConnectPreview, SlackConnectStart, SlackSettingsPatch, SlackStatus, SlackUser } from './types';
 
 export * from './types';
 export { DEFAULT_COMMAND, SAVE_DECISION_CALLBACK } from './service/constants';
@@ -19,8 +19,10 @@ export function slackSettingsApi(prefix: string) {
   const base = `${prefix}/slack`;
   return {
     get: () => req<SlackStatus>(base),
-    connectStart: () => req<SlackConnectStart>(`${base}/connect/start`, 'POST', {}),
+    connectStart: (project?: string) => req<SlackConnectStart>(`${base}/connect/start`, 'POST', { project }),
+    connectPreview: (code: string) => req<SlackConnectPreview>(`${base}/connect/preview`, 'POST', { code }),
     connectFinish: (code: string) => req<SlackStatus>(`${base}/connect/finish`, 'POST', { code }),
+    connectCancel: () => req<SlackStatus>(`${base}/connect/cancel`, 'POST', {}),
     disconnect: () => req<SlackStatus>(`${base}/connect`, 'DELETE'),
     update: (patch: SlackSettingsPatch) => req<SlackStatus>(`${base}/settings`, 'PUT', patch),
     members: () => req<{ members: SlackUser[] }>(`${base}/members`).then((r) => r.members),

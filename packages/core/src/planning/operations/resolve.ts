@@ -5,6 +5,7 @@ import { firstSentence } from '../decisions/decisionRecord';
 import { transition } from '../lifecycle/transition';
 import type { ActorOptions } from './claims';
 import { recordDecision } from './decisionOps';
+import { assertLookoutGuard, type LookoutGuard } from './lookoutGuard';
 import { OperationError } from './operationError';
 
 /** Audit fields a caller can attach when resolving; everything defaults from the ticket and author. */
@@ -45,6 +46,8 @@ export interface ResolveOptions extends ActorOptions {
   event?: 'complete' | 'checks.pass' | 'review.pass' | 'approve' | 'accept';
   /** Who fires the event, when not the author (the engine, the trail lead). */
   actor?: string;
+  /** Where the human's word came from, when not the Lookout or an agent's own call (lookoutGuard.ts). */
+  guard?: LookoutGuard;
 }
 
 /** Resolve: resolution comment, close, decision record + line in the map's "Decisions so far". */
@@ -58,6 +61,10 @@ export async function resolve(
   const t = snap.tickets.find((x) => x.id === ticketId);
   if (!t) throw new OperationError(`ticket ${ticketId} not found`);
   if (t.state === 'closed') throw new OperationError(`${t.key} is already closed`);
+  await assertLookoutGuard(
+    { ...input.guard, sourceKind: input.decision?.source?.kind },
+    { mapId, ticketId: t.id, key: t.key },
+  );
   if (input.transcript)
     await adapter.comment(mapId, ticketId, input.author, `**HITL transcript**\n\n${input.transcript}`);
   await adapter.comment(mapId, ticketId, input.author, `**Resolution**\n\n${input.answer}`);
@@ -70,26 +77,26 @@ export async function resolve(
     journal: input.journal,
     ...(input.event && input.event !== 'complete' ? { to: 'done' as const } : {}),
   });
-  const d = input.decision ?? {};
-  await recordDecision(
-    adapter,
-    mapId,
-    {
-      ticketId: t.id,
-      ticketKey: t.key,
-      question: d.question ?? t.title,
-      answer: d.answer ?? input.answer,
-      summary: d.summary ?? input.summary ?? firstSentence(input.answer),
-      alternatives: d.alternatives,
-      rationale: d.rationale,
-      decidedBy: d.decidedBy ?? input.author,
-      participants: d.participants,
-      source: d.source ?? { kind: 'agent', label: input.author },
-      transcript: d.transcript,
-      ...(d.risk ? { risk: d.risk } : {}),
-      ...(d.assumes?.length ? { assumes: d.assumes } : {}),
-    },
-    { trailLine: input.trailLine },
-  );
+  await recordDecision(adapter, mapId, decisionOf(t, input), { trailLine: input.trailLine, guard: input.guard });
   return t;
+}
+
+/** The decision record a resolution keeps: the caller's audit fields, defaulted from the ticket and the author. */
+function decisionOf(t: { id: string; key: string; title: string }, input: ResolveInput) {
+  const d = input.decision ?? {};
+  return {
+    ticketId: t.id,
+    ticketKey: t.key,
+    question: d.question ?? t.title,
+    answer: d.answer ?? input.answer,
+    summary: d.summary ?? input.summary ?? firstSentence(input.answer),
+    alternatives: d.alternatives,
+    rationale: d.rationale,
+    decidedBy: d.decidedBy ?? input.author,
+    participants: d.participants,
+    source: d.source ?? { kind: 'agent' as const, label: input.author },
+    transcript: d.transcript,
+    ...(d.risk ? { risk: d.risk } : {}),
+    ...(d.assumes?.length ? { assumes: d.assumes } : {}),
+  };
 }

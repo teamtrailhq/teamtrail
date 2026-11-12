@@ -77,6 +77,11 @@ export class SlackContext {
       this.state = 'off';
       return;
     }
+    if (linked.service !== this.scout.http) {
+      this.state = 'other-service';
+      this.error = `Connected through ${linked.service || 'an unknown Scout service'}, but this Teamtrail now points at ${this.scout.http}. Unset $TEAMTRAIL_SCOUT_SERVICE, or disconnect and add Scout again.`;
+      return;
+    }
     if (!this.WS) {
       this.state = 'unsupported';
       this.error = 'Slack needs Node.js 22 or newer';
@@ -93,6 +98,7 @@ export class SlackContext {
     this.link = new ScoutLink({
       url: this.scout.connect,
       token: linked.token,
+      teamId: this.store.read().workspace?.id,
       WebSocket: this.WS,
       onEnvelope: (e) => onEnvelope(this, e),
       onReady: (r) => {

@@ -5,6 +5,7 @@ import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
 import type { AnswerVia } from '../model/answerVia';
 import { runningVersion } from '../model/runningVersion';
+import { needsLookout } from '../policy/needsLookout';
 import { signAgentAnswer } from './agentAnswerSignature';
 import { SESSION_DOC_PATH, agentPaths, markDisconnected, type AgentAnswer, type AgentSessionDoc } from './agentLink';
 
@@ -34,6 +35,9 @@ export async function readAgentDocs(
 
 export class AnswerError extends Error {}
 
+/** An answer refused because the question is high risk and the answer wasn't given in the Lookout. */
+export class LookoutOnlyAnswer extends AnswerError {}
+
 const writer = () => {
   const v = runningVersion();
   return v ? { writer: v } : {};
@@ -49,8 +53,11 @@ export type AnswerInput = Omit<AgentAnswer, 'at' | 'sig' | 'via'> & { via: Answe
 export function writeAgentAnswer(root: string, input: AnswerInput): AgentAnswer {
   const doc = readAgentDoc(root, agentPaths.session(input.sessionId));
   if (!doc) throw new AnswerError(`unknown session "${input.sessionId}"`);
-  if (!doc.pending.some((q) => q.id === input.questionId))
-    throw new AnswerError(`question "${input.questionId}" is not waiting for an answer`);
+  const q = doc.pending.find((x) => x.id === input.questionId);
+  if (!q) throw new AnswerError(`question "${input.questionId}" is not waiting for an answer`);
+  // A high-risk question takes the human's word from the Lookout only: Slack's comes through the Scout service.
+  if (input.via === 'slack' && needsLookout.question(root, q))
+    throw new LookoutOnlyAnswer(`question "${input.questionId}" is high risk: answer it in the Lookout`);
   if (!input.text.trim()) throw new AnswerError('answer is empty');
   const { sessionId, questionId, author, via } = input;
   const chatOf = via === 'chat' && input.chatOf ? { chatOf: input.chatOf } : {};

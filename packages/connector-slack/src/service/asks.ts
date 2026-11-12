@@ -1,6 +1,6 @@
 import { BRAND, type AgentSessionDoc, type PendingQuestion, type TrackerAdapter } from '@teamtrail/core';
 import { needsLookout } from '@teamtrail/core/agents';
-import { AnswerError, attentionView, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/bridge';
+import { AnswerError, LookoutOnlyAnswer, attentionView, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/bridge';
 import { askClosedMessage, askMessage, clip, label, mention, type AskRef, type AskView } from '../blocks';
 import type { SlackConfig } from '../store';
 import { takeAskSlot } from './askLimit';
@@ -49,15 +49,19 @@ export async function pendingAsk(ctx: SlackContext, ref: AskRef) {
 export const askMode = (ctx: SlackContext, q: PendingQuestion) =>
   needsLookout.question(ctx.o.root, q) ? ('lookout' as const) : ('buttons' as const);
 
-/** Compare-and-set: only the first answer to an open question is delivered. */
-export function writeAnswer(ctx: SlackContext, ref: AskRef, text: string, user: string) {
-  if (ctx.answering.has(ref.q)) return false;
+/**
+ * Compare-and-set: only the first answer to an open question is delivered. A high-risk question takes no answer
+ * from Slack (core refuses it, agentDocs.ts): `lookout`.
+ */
+export function writeAnswer(ctx: SlackContext, ref: AskRef, text: string, user: string): 'ok' | 'taken' | 'lookout' {
+  if (ctx.answering.has(ref.q)) return 'taken';
   ctx.answering.add(ref.q);
   try {
     writeAgentAnswer(ctx.o.root, { sessionId: ref.s, questionId: ref.q, text, author: `slack:${user}`, via: 'slack' });
   } catch (e) {
-    if (e instanceof AnswerError) return false;
     ctx.answering.delete(ref.q);
+    if (e instanceof LookoutOnlyAnswer) return 'lookout';
+    if (e instanceof AnswerError) return 'taken';
     throw e;
   }
   const asks = ctx.asks.read();
@@ -65,13 +69,13 @@ export function writeAnswer(ctx: SlackContext, ref: AskRef, text: string, user: 
     asks[ref.q].by = { user, text };
     ctx.asks.write(asks);
   }
-  return true;
+  return 'ok';
 }
 
 export async function answer(ctx: SlackContext, ref: AskRef, text: string, user: string) {
-  if (!writeAnswer(ctx, ref, text, user)) return false;
-  await closeAsk(ctx, ref.q);
-  return true;
+  const r = writeAnswer(ctx, ref, text, user);
+  if (r === 'ok') await closeAsk(ctx, ref.q);
+  return r;
 }
 
 /** Replace the ask's buttons with its outcome. */

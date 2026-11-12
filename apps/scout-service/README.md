@@ -32,7 +32,8 @@ Plan and decisions: `docs/plans/scout-slack-app.md` in teamtrail-cloud.
 | --- | --- |
 | `POST /slack/events`, `/slack/interactions`, `/slack/commands` | Slack. Every request must carry Slack's v0 signature for this app (five-minute window, constant-time compare). |
 | `GET /install?challenge=…&return=…` | A browser, from the Lookout's Add Scout to Slack. `challenge` is the Lookout's PKCE challenge (S256); `return` must be `http://127.0.0.1:<port>` or `http://[::1]:<port>` (never `localhost`). |
-| `GET /oauth/callback` | Slack, after the consent screen. The state is single use; the browser goes back to `return` with `#slack-link=<code>` (one minute, single use). |
+| `GET /oauth/callback` | Slack, after the consent screen. The state is single use; the browser goes back to `return` with `#slack-link=<code>` (three minutes, single use). |
+| `POST /link/preview` `{ code, verifier }` | The Lookout's server, before the exchange: who the code belongs to (`team`, `user`), so the trail lead confirms "Connect as @user in <workspace>?". Doesn't use the code up; a wrong verifier does. Refused with an `Origin`. |
 | `POST /link` `{ code, verifier }` | The Lookout's server: trades the code and the PKCE verifier for a link token. Refused when the request has an `Origin` (browsers can't call it). |
 | `DELETE /link` (bearer link token) | The Lookout's server, on Disconnect. |
 | `GET /connect` (WebSocket) | A linked Teamtrail. Its first message is `{ "type": "hello", "token": "<link token>" }`; then `ready`, `envelope` (Slack's request, in Socket Mode's shape) and `result` from the service, `ack` and `call` from the Teamtrail. Types in `src/types.ts`. |

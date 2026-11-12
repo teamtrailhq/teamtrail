@@ -99,6 +99,8 @@ export interface ServiceStore {
   saveCode(c: PendingCode): Promise<void>;
   /** Single use, like `takeInstall`. */
   takeCode(codeHash: string, now: number): Promise<PendingCode | undefined>;
+  /** The code without using it up, while it is unexpired: for showing who it belongs to before the exchange. */
+  peekCode(codeHash: string, now: number): Promise<PendingCode | undefined>;
   /** Remembers that a link owns something (a message it posted, a view it opened…) until the mark expires. */
   mark(m: Mark): Promise<void>;
   /** The links holding an unexpired mark of this kind on this key. */

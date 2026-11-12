@@ -50,6 +50,8 @@ function answerFor(method: string, args: Record<string, unknown>, n: number, mem
     case 'views.publish':
     case 'views.update':
       return { view: { id: String(args.view_id ?? `V${n}`) } };
+    case 'users.info':
+      return { user: { id: args.user, name: `name-${String(args.user).toLowerCase()}` } };
     case 'conversations.members':
       return { members: members.get(String(args.channel)) ?? [], response_metadata: { next_cursor: '' } };
     default:

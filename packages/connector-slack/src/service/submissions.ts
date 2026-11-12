@@ -1,4 +1,4 @@
-import { ACTIONS, VIEWS, type ApprovalRef, type AskRef, type SaveMode } from '../blocks';
+import { ACTIONS, LOOKOUT_ONLY, VIEWS, type ApprovalRef, type AskRef, type SaveMode } from '../blocks';
 import type { EnvelopeResult } from '../link/types';
 import { closeAsk, writeAnswer } from './asks';
 import { ALREADY, REFUSED } from './constants';
@@ -39,8 +39,9 @@ function submitReply(ctx: SlackContext, { view, values, user }: Submitted): Enve
   const ref = JSON.parse(view.private_metadata) as AskRef;
   const text = textOf(values, 'answer');
   if (!text) return fieldError('answer', 'Enter an answer');
-  const ok = writeAnswer(ctx, ref, text, user);
-  if (!ok) return fieldError('answer', ALREADY);
+  const r = writeAnswer(ctx, ref, text, user);
+  if (r === 'lookout') return fieldError('answer', LOOKOUT_ONLY);
+  if (r === 'taken') return fieldError('answer', ALREADY);
   return { after: () => closeAsk(ctx, ref.q) };
 }
 
