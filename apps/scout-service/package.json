@@ -1,0 +1,36 @@
+{
+  "name": "@teamtrail/scout-service",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Teamtrail",
+  "homepage": "https://teamtrail.app",
+  "bugs": {
+    "url": "https://github.com/teamtrailhq/teamtrail/issues"
+  },
+  "description": "The Scout service: the backend of Teamtrail's official Slack app. Receives Slack's requests, passes them to each person's Teamtrail over an outbound WebSocket, and posts Scout's messages. Stores no trail content.",
+  "type": "module",
+  "license": "FSL-1.1-ALv2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/teamtrailhq/teamtrail.git",
+    "directory": "apps/scout-service"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node dist/main.mjs",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@teamtrail/connector-slack": "*",
+    "@types/pg": "^8.11.10",
+    "@types/ws": "^8.5.12",
+    "esbuild": "^0.21.5"
+  }
+}
