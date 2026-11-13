@@ -1,5 +1,5 @@
 /**
- * Style and timing data. The drawing lives in badge.ts: one badge with eyes, mouth and cap lamp that change with the state.
+ * Style and timing data. The drawing lives in badgeArt.ts: one portrait with eyes, mouth and antenna lamp that change with the state.
  */
 import { type BadgeLamp, LAMP_DAY, LAMP_NIGHT } from './badgeArt';
 import type { Eye, Light, ScoutState, ScoutStyleId, Mouth } from './types';
@@ -18,14 +18,14 @@ export const STYLES: Record<ScoutStyleId, ScoutStyle> = {
   crt: {
     id: 'crt',
     name: 'Day',
-    blurb: 'The original CRT head with ear cups and a baseball cap.',
+    blurb: 'Scout looking to the side: a cap, a headset with a mic, an antenna lamp and a neckerchief.',
     lamp: LAMP_DAY,
     wave: { bar: '#6f8a78', lead: '#c8581e' },
   },
   night: {
     id: 'night',
     name: 'Night',
-    blurb: 'The same Scout, with the cap lamp burning bright, for the night theme.',
+    blurb: 'The same Scout, with the antenna lamp burning brighter, for the night theme.',
     lamp: LAMP_NIGHT,
     wave: { bar: '#66828d', lead: '#e8833a' },
   },

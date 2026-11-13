@@ -1,11 +1,11 @@
 # Teamtrail brand pack
 
-The Teamtrail logo, the `teamtrail.` wordmark and Scout's badge, rendered at exact sizes. Source and re-rendering: [`packages/scout-avatar`](../packages/scout-avatar) (`npm run capture`).
+The Teamtrail logo, the `teamtrail.` wordmark and Scout's avatar, rendered at exact sizes. Source and re-rendering: [`packages/scout-avatar`](../packages/scout-avatar) (`npm run capture`).
 
 ## Which mark where
 
 - **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the `t.` logo, as the tile or the bare mark.
-- **Scout's Slack app icon** is Scout's badge, not the logo: Scout is who talks in Slack. Its app card's background is `#16302A`.
+- **Scout's Slack app icon** is Scout's avatar, not the logo: Scout is who talks in Slack. It fills the square (Slack rounds the corners); its app card's background is `#4F8A48`, the avatar's moss.
 - **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail.` wordmark, lowercase in Londrina Solid 900 with the orange dot.
 - Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
 
@@ -23,8 +23,8 @@ The Teamtrail logo, the `teamtrail.` wordmark and Scout's badge, rendered at exa
 | `wordmark-lockup-light.png`       | 960×240   | The same wordmark on a light background                                                                                                           |
 | `teamtrail-social-loop.mp4`       | 1280×640  | The animated banner as a video, for posts on X, LinkedIn and the like                                                                           |
 | `linkedin-discord-avatar-512.png` | 512×512   | LinkedIn and Discord avatars                                                                                                                    |
-| `slack-icon-512.png`              | 512×512   | Slack app icon, Scout's badge, since Scout is who talks in Slack                                           |
-| `scout-badge-1000.png`            | 1000×1000 | Scout's badge for docs, decks and press                                                                                                         |
+| `slack-icon-512.png`              | 512×512   | Slack app icon, Scout's avatar filling the square, since Scout is who talks in Slack                       |
+| `scout-badge-1000.png`            | 1000×1000 | Scout's avatar for docs, decks and press                                                                                                        |
 | `logo-light-512.png`              | 512×512   | The logo's light version, for light backgrounds                                                                                                 |
 | `favicon-32.png`                  | 32×32     | Browser favicon: the bare mark, light version (for light tabs)                                                                                  |
 | `favicon-64.png`                  | 64×64     | High-DPI browser favicon, light version                                                                                                         |

@@ -3,7 +3,7 @@
 Two marks, one drawing style:
 
 - **The Teamtrail logo** (`src/logo/`): a lowercase t whose stem curves into a path that runs to its destination, an orange dot, on a tile. Two versions: `dark` for dark backgrounds (dark tile, light moss; the default) and `light` for light ones (pale tile, deep moss), with the colours in `logoColors.ts`. `<Logo theme="auto">` follows the page's `color-scheme`. Favicons use it without the tile (`bare`); `logoFaviconSvg()` is one SVG that switches with `prefers-color-scheme`. Nav, favicon, npm, GitHub and social images use it.
-- **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. A CRT head with ear cups and a baseball cap, drawn smooth to the proportions of the original sprite, with no frame around it. Guides are symbol badges in a circle (`guideArt.ts`): magnifier, check, shield, book, compass, and a grey plus for Community.
+- **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. An AI scout companion looking to the side, drawn as a bust on a moss ground: a screen face, a cap, a headset with a mic, an antenna lamp and a neckerchief (`badgeArt.ts`, `shape`: a circle in the app, a full square for Slack). Guides are symbol badges in a circle (`guideArt.ts`): magnifier, check, shield, book, compass, and a grey plus for Community.
 
 **Which mark where**
 

@@ -6,8 +6,9 @@ import { Wordmark } from './Wordmark';
 const WORDMARK_EM = 4.15;
 
 /**
- * Brand exports: the logo tile, the wordmark on a dark square, or Scout's badge for places where Scout is the one
- * talking, like Slack. `theme` picks the logo's version and the background it sits on.
+ * Brand exports: the logo tile, the wordmark on a dark square, or Scout's avatar filling the square for places where
+ * Scout is the one talking, like Slack (which rounds the corners itself). `theme` picks the logo's version and the
+ * background it sits on.
  */
 export function BrandSquare({
   n,
@@ -30,7 +31,7 @@ export function BrandSquare({
     );
   return (
     <div className={`brand-square ${theme}`} data-capture="square" style={{ width: n, height: n }}>
-      {who === 'scout' ? <Badge size={Math.round(n * 0.86)} /> : <Logo size={n} theme={theme} />}
+      {who === 'scout' ? <Badge size={n} shape="square" /> : <Logo size={n} theme={theme} />}
     </div>
   );
 }
