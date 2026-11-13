@@ -17,6 +17,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.32.0',
+    date: '2026-11-13',
+    items: [
+      'Scout has a new look: a scout companion with a cap, a headset and an antenna, looking out along the trail',
+    ],
+  },
+  {
     version: '0.31.1',
     date: '2026-11-13',
     items: ['An archived trail’s held work and changes waiting for your approval stay in your queue'],

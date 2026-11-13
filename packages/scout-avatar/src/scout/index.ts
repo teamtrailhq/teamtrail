@@ -1,6 +1,6 @@
 export { ScoutAvatar, type ScoutAvatarProps } from './ScoutAvatar';
 export { Badge } from './Badge';
-export { type BadgeFace, badgeMarkup } from './badgeArt';
+export { type BadgeFace, type BadgeShape, badgeMarkup } from './badgeArt';
 export { type GuideRole, guideMarkup } from './guideArt';
 export { Logo } from '../logo/Logo';
 export { logoMarkup, logoBareMarkup } from '../logo/logoMark';
