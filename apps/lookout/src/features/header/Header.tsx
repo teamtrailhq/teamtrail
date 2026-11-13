@@ -28,6 +28,9 @@ export function Header(props: {
   trackerLabel: string;
   onSelectMap: (id: string) => void;
   onNewTrail: () => void;
+  /** Archive the trail on screen and open New trail with its idea filled in. */
+  onStartOver?: () => void;
+  onArchive?: (archived: boolean) => void;
   onToggleMode: () => void;
   onSettings: () => void;
   onToggleTheme: (night: boolean) => void;

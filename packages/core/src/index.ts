@@ -2,6 +2,7 @@ export * from './model/brand';
 export * from './model/packageSpec';
 export * from './model/shellQuote';
 export * from './model/types';
+export { activeTrails } from './model/activeTrails';
 export * from './model/lifecycle';
 export type * from './model/verification';
 export type * from './model/evidence';

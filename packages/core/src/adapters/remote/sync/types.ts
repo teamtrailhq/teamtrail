@@ -34,6 +34,7 @@ export interface SyncOptions {
 /** A write that can wait for the tracker, as plain data so a later run can send it. */
 export type QueuedChange =
   | { kind: 'mode'; mode: MapMode }
+  | { kind: 'archived'; archived: boolean }
   | { kind: 'sections'; sections: MapSections }
   | { kind: 'mapMeta'; patch: MapMetaPatch }
   | { kind: 'blocking'; blockerId: string; blockedId: string }

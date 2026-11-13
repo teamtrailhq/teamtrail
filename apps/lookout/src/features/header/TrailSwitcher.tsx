@@ -1,6 +1,8 @@
-import { type MapSnapshot, type MapDoc, type ActivityState, trailProgress } from '@teamtrail/core';
+import type { MapSnapshot, MapDoc, ActivityState } from '@teamtrail/core';
 import { useState, useRef, useEffect } from 'react';
 import { Badge, Label } from '../../components/ui';
+import { TrailActions } from './TrailActions';
+import { TrailItem } from './TrailItem';
 
 export function TrailSwitcher(props: {
   snaps: Record<string, MapSnapshot>;
@@ -8,6 +10,8 @@ export function TrailSwitcher(props: {
   activity: ActivityState;
   onSelectMap: (id: string) => void;
   onNewTrail: () => void;
+  onStartOver?: () => void;
+  onArchive?: (archived: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -23,9 +27,23 @@ export function TrailSwitcher(props: {
       window.removeEventListener('keydown', close);
     };
   }, [open]);
-  const trails = Object.values(props.snaps).sort((a, b) => b.map.createdAt - a.map.createdAt);
+  const all = Object.values(props.snaps).sort((a, b) => b.map.createdAt - a.map.createdAt);
+  const trails = all.filter((s) => !s.map.archived);
+  const archived = all.filter((s) => s.map.archived);
   const waitingIn = (id: string) => props.activity.pending.filter((q) => q.mapId === id).length;
   const otherWaiting = props.activity.pending.filter((q) => q.mapId !== props.map?.id).length;
+  const item = (s: MapSnapshot) => (
+    <TrailItem
+      key={s.map.id}
+      snap={s}
+      on={s.map.id === props.map?.id}
+      waiting={waitingIn(s.map.id)}
+      onSelect={() => {
+        props.onSelectMap(s.map.id);
+        setOpen(false);
+      }}
+    />
+  );
   return (
     <div className="trail-switcher" ref={ref}>
       <button
@@ -36,6 +54,7 @@ export function TrailSwitcher(props: {
         data-tip="Switch trail, or start a new one"
       >
         <span className="trail-title">{props.map ? `${props.map.key} ${props.map.title}` : 'No trail'}</span>
+        {props.map?.archived && <span className="trail-archived">archived</span>}
         {otherWaiting > 0 && <Badge n={otherWaiting} urgent />}
         <span className="caret">▾</span>
       </button>
@@ -44,28 +63,7 @@ export function TrailSwitcher(props: {
           <Label variant="plain" className="menu-h">
             Trails
           </Label>
-          {trails.map((s) => {
-            const p = trailProgress(s);
-            const w = waitingIn(s.map.id);
-            return (
-              <button
-                key={s.map.id}
-                role="menuitem"
-                className={`trail-item ${s.map.id === props.map?.id ? 'on' : ''}`}
-                onClick={() => {
-                  props.onSelectMap(s.map.id);
-                  setOpen(false);
-                }}
-              >
-                <span className="key">{s.map.key}</span>
-                <span className="mi-title">{s.map.title}</span>
-                <span className="mi-progress">
-                  {p.decided}/{p.total}
-                </span>
-                <Badge n={w} urgent={!!w} hideZero />
-              </button>
-            );
-          })}
+          {trails.map(item)}
           <button
             role="menuitem"
             className="trail-item new"
@@ -76,6 +74,24 @@ export function TrailSwitcher(props: {
           >
             + New trail
           </button>
+          {archived.length > 0 && (
+            <>
+              <Label variant="plain" className="menu-h">
+                Archived
+              </Label>
+              {archived.map(item)}
+            </>
+          )}
+          {props.map && props.onStartOver && props.onArchive && (
+            <div className="trail-acts">
+              <TrailActions
+                map={props.map}
+                onStartOver={props.onStartOver}
+                onArchive={props.onArchive}
+                onDone={() => setOpen(false)}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -42,3 +42,5 @@ export const HITL_LABEL = label('hitl');
 /** Types whose HITL flag is a choice (and so a label): junction and prototype are always HITL, research never. */
 export const takesHitlLabel = (type: TicketType) => type === 'task' || type === 'execute';
 export const PLAN_ONLY_LABEL = label('plan-only');
+/** On a trail issue: the trail lead archived the trail (MapDoc.archived). */
+export const ARCHIVED_LABEL = label('archived');

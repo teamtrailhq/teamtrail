@@ -99,6 +99,8 @@ export interface MapDoc {
   modelMatching?: ModelMatching;
   /** Remote trackers: settings someone else wrote that this machine never confirmed (remote/settingsInForce.ts). */
   settingsUnconfirmed?: true;
+  /** Put away by the trail lead: kept as history, read-only, and no agent takes work from it (`setTrailArchived`). */
+  archived?: true;
   sections: MapSections;
   createdAt: number;
   updatedAt: number;
@@ -116,6 +118,8 @@ export interface MapSummary {
   id: string;
   key: string;
   title: string;
+  /** The trail is archived (MapDoc.archived): lists of active trails leave it out. */
+  archived?: true;
 }
 
 /**

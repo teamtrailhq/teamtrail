@@ -377,6 +377,39 @@
       "req": {
         "method": "POST",
         "url": "/graphql",
+        "operation": "Label",
+        "variables": {
+          "input": {
+            "name": "teamtrail:archived",
+            "color": "#9ca3af",
+            "teamId": "team-eng"
+          }
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451600000"
+        },
+        "body": {
+          "data": {
+            "issueLabelCreate": {
+              "issueLabel": {
+                "id": "lbl-archived-fake",
+                "name": "teamtrail:archived"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
         "operation": "Create",
         "variables": {
           "input": {

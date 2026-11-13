@@ -6,8 +6,8 @@
  * network can read the trail, answer questions and edit text; these it can't touch until it has signed in.
  */
 
-/** `map.md` frontmatter keys (mapFile.ts, modelMatchingFront.ts). */
-export const MAP_TRUST_KEYS = ['verification', 'guides', 'model-matching', 'model-tiers'];
+/** `map.md` frontmatter keys (mapFile.ts, modelMatchingFront.ts); `archived` keeps work from being taken. */
+export const MAP_TRUST_KEYS = ['verification', 'guides', 'model-matching', 'model-tiers', 'archived'];
 /** `tickets/<n>.md` frontmatter keys (ticketFile.ts). */
 export const TICKET_TRUST_KEYS = ['verification', 'checks', 'guide', 'review_of'];
 /**

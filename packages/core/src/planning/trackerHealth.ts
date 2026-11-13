@@ -18,6 +18,7 @@ export interface TrackerHealth {
 const WRITES = new Set<keyof TrackerAdapter>([
   'createMap',
   'setMapMode',
+  'setMapArchived',
   'setMapMeta',
   'updateMapSections',
   'createTicket',

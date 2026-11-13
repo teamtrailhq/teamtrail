@@ -1,4 +1,4 @@
-import { HITL_LABEL, MAP_LABEL, PLAN_ONLY_LABEL, label, takesHitlLabel } from '../../model/brand';
+import { ARCHIVED_LABEL, HITL_LABEL, MAP_LABEL, PLAN_ONLY_LABEL, label, takesHitlLabel } from '../../model/brand';
 import { TICKET_STATUSES } from '../../model/lifecycle';
 import { serializeMapBody } from '../../model/mapBody';
 import { leadingMarker, marker, markerJson, trailingMarker } from '../../model/markerText';
@@ -168,6 +168,7 @@ export const ALL_LABELS: { name: string; color: string }[] = [
   { name: PLAN_ONLY_LABEL, color: '7a6f5b' },
   { name: HITL_LABEL, color: 'd97706' },
   ...ALL_TICKET_TYPES.map((t) => ({ name: label(t), color: '4b5563' })),
+  { name: ARCHIVED_LABEL, color: '9ca3af' },
 ];
 
 export interface IssueParts {

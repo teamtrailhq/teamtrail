@@ -1,3 +1,4 @@
+import { activeTrails } from '@teamtrail/core';
 import { readAgentDocs } from '@teamtrail/core/bridge';
 import { askMessage, label } from '../blocks';
 import { briefTrail, trailListBlocks, statusBlocks } from '../status';
@@ -32,7 +33,11 @@ export async function statusMessage(ctx: SlackContext, arg: string, command: str
   const m = arg ? findTrail(maps, arg) : undefined;
   if (m) return statusBlocks(briefTrail(await adapter.loadMap(m.id), docs), { now, url: ctx.o.url() });
   if (arg && !o.fallback) return { text: `No trail matches “${label(arg)}”.` };
-  const briefs = await Promise.all(maps.slice(0, 20).map(async (m) => briefTrail(await adapter.loadMap(m.id), docs)));
+  const briefs = await Promise.all(
+    activeTrails(maps)
+      .slice(0, 20)
+      .map(async (m) => briefTrail(await adapter.loadMap(m.id), docs)),
+  );
   const list = trailListBlocks(briefs, command);
   if (!arg) return list;
   // No trail by that name: all of them, saying so, rather than nothing.

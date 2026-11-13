@@ -1,4 +1,11 @@
-import { BRAND, type AgentSessionDoc, type MapSnapshot, type Ticket, type TrackerAdapter } from '@teamtrail/core';
+import {
+  activeTrails,
+  BRAND,
+  type AgentSessionDoc,
+  type MapSnapshot,
+  type Ticket,
+  type TrackerAdapter,
+} from '@teamtrail/core';
 import { ticketNeedsLookout } from '@teamtrail/core/agents';
 import { readAgentDocs } from '@teamtrail/core/bridge';
 import { SlackApiError } from '../api';
@@ -15,7 +22,7 @@ export async function openDecision(ctx: SlackContext, trigger: string, meta: Dec
   });
   const viewId = opened.view.id;
   const adapter = await ctx.o.active();
-  const maps = await adapter.listMaps();
+  const maps = activeTrails(await adapter.listMaps());
   if (!maps.length) {
     await ctx.call('views.update', {
       view_id: viewId,

@@ -17,6 +17,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.31.0',
+    date: '2026-11-13',
+    items: [
+      'Start a trail over: the trail menu archives the map that went wrong and opens New trail with its idea filled in',
+      'Archive a trail you are done with, or restore it: it stays as history, and no agent takes work from it',
+      'The empty map looks like every other empty zone, with New trail and the agent command under it',
+    ],
+  },
+  {
     version: '0.30.0',
     date: '2026-11-12',
     items: [
@@ -183,19 +192,6 @@ export const RELEASES: Release[] = [
       'When two agents’ branches did change the same files, Waiting on you suggests a ticket to bring the work together. One click adds it, waiting on both tickets, with the files listed',
       'The ticket inspector shows which files an agent expects to change and the branch it works on',
       'Fix: an execute ticket marked as needing you keeps that mark when saved to local files, GitHub Issues or Linear',
-    ],
-  },
-  {
-    version: '0.19.0',
-    date: '2026-11-04',
-    items: [
-      'Risk policy: you decide what always needs you, such as database changes, logins and permissions, billing, deleting data or new dependencies (Settings → Risk policy). Agents can no longer make those calls on their own; they ask you. Their other decisions are labelled by risk in the briefing, and work that touched risky files without asking comes to you to check',
-      'One ranked list of everything that needs you in Waiting on you: questions, approvals, blocked work, briefs, knowledge and new plans, most important first, each with the reason (for example “blocks 3 tickets” or “claude-02 is waiting”). Related items are grouped so you answer them together; snooze what can wait',
-      'Fewer interruptions: agents say how urgent a question is, and only urgent items notify you (browser or Slack). Focus for an hour from the header, set quiet hours in Settings → Attention, and the rest waits in the list and the digest',
-      'Plans that adapt: missions list the assumptions they rely on, starting with the ones in the discovery brief. When an agent finds one is wrong, it shows the evidence and proposes a new plan; the tickets it would change are paused, the map previews the change, and nothing happens until you approve',
-      'Challenge the destination: an agent can tell you the work already exists, the mission targets the wrong problem, or it should be rescoped, with evidence and a suggested new goal',
-      'Assumptions on the Plan tab (confirm the ones you know are true) and an assumptions field when you create a mission',
-      'Fix: when an agent asks two questions at once, your answer goes to the one you opened; the inbox stats line no longer gets covered by the list',
     ],
   },
   ...OLDER_RELEASES,

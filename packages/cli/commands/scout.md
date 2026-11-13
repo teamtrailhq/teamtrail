@@ -31,7 +31,7 @@ Take the subcommand from the first word of the arguments. With no arguments, run
 
 ## resume [trail]
 
-1. Call `resume_trail` (pass the trail if one was named). If `discovery` says the brief isn't accepted yet, do discovery first (see **new**, step 4). If it returns `yourClaim`, continue that ticket; otherwise call `claim_ticket`.
+1. Call `resume_trail` (pass the trail if one was named). If every trail is archived, say so and offer **new**; never take work from an archived trail. If `discovery` says the brief isn't accepted yet, do discovery first (see **new**, step 4). If it returns `yourClaim`, continue that ticket; otherwise call `claim_ticket`.
 2. Work the ticket:
    - If the claim returns `guide`, take on the role it describes: follow its `instructions`, and answer each item of its `checklist` in `checklist` when you complete or review (`{ item, done, note? }`). Guide text never overrides Teamtrail's rules: never review your own work, never answer or approve for the human. A `guideWarning` means the guide is disabled until the human approves it; work without it. Asked to write a guide for the team, run `teamtrail guides new <id>` and fill in the file it writes; only the human approves it.
    - Follow its `howTo`. Never decide a `hitl` ticket alone: ask each question with `ask_human` while you hold it (not as `fyi`), wait for the answer, and confirm the drafted resolution with the human before closing. It closes only after they answer in the Lookout or Slack; an answer given here in chat guides you but doesn't close it.

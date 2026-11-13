@@ -11,6 +11,7 @@ export function fingerprint(e: CacheEntry) {
   return JSON.stringify([
     map.title,
     map.mode,
+    !!map.archived,
     map.verification ?? '',
     map.guides ?? [],
     map.modelMatching ?? null,

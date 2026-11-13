@@ -1,6 +1,7 @@
 import { Emitter } from '../../lib/emitter';
 import { BRAND } from '../../model/brand';
 import type { MapMetaPatch, TicketMetaPatch } from '../../model/lifecycle';
+import { mapSummary } from '../../model/mapSummary';
 import {
   DEFAULT_MAP_MODE,
   type DecisionInput,
@@ -18,6 +19,7 @@ import type { MapInput, TicketEdit, TrackerAdapter } from '../adapter';
 import { withMapMeta } from '../mapMeta';
 import { reopened, withEdit, withoutBlocker } from '../ticketEdits';
 import { withMeta } from '../ticketMeta';
+import { withArchived } from '../withArchived';
 import { createNumbered, newDecisionFile, newTicketFile, type NumberedFile } from './createNumbered';
 import { ExternalChanges } from './externalChanges';
 import { parseMapFile, serializeMapFile } from './mapFile';
@@ -80,12 +82,7 @@ export class MarkdownAdapter implements TrackerAdapter {
   async listMaps() {
     const files = await this.fs.list();
     const ids = files.filter((f) => /^[^/]+\/map\.md$/.test(f)).map((f) => f.split('/')[0]);
-    return Promise.all(
-      ids.map(async (id) => {
-        const m = await this.readMap(id);
-        return { id, key: m.key, title: m.title };
-      }),
-    );
+    return Promise.all(ids.map(async (id) => mapSummary(await this.readMap(id))));
   }
 
   async loadMap(mapId: string): Promise<MapSnapshot> {
@@ -123,6 +120,9 @@ export class MarkdownAdapter implements TrackerAdapter {
   setMapMode(mapId: string, mode: MapMode) {
     return this.editMap(mapId, (m) => ({ ...m, mode }), { kind: 'map.mode', mapId, mode, at: Date.now() });
   }
+
+  setMapArchived = (mapId: string, archived: boolean) =>
+    this.editMap(mapId, (m) => withArchived(m, archived), { kind: 'map.updated', mapId, at: Date.now() });
 
   setMapMeta(mapId: string, patch: MapMetaPatch) {
     return this.editMap(mapId, (m) => withMapMeta(m, patch), { kind: 'map.updated', mapId, at: Date.now() });

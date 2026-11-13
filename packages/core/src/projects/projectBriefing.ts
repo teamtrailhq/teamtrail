@@ -1,6 +1,7 @@
 import { ActivityStream } from '../activity/activityStream';
 import type { TrackerAdapter } from '../adapters/adapter';
 import { readAgentDocs } from '../agents/agentDocs';
+import { activeTrails } from '../model/activeTrails';
 import type { AttentionItem } from '../model/attention';
 import { buildBriefing, type Briefing } from '../planning/briefing';
 
@@ -16,7 +17,7 @@ export async function projectBriefing(input: {
   now?: number;
 }): Promise<Briefing> {
   const { adapter } = input;
-  const maps = await adapter.listMaps();
+  const maps = activeTrails(await adapter.listMaps());
   const snaps = await Promise.all(maps.map((m) => adapter.loadMap(m.id)));
   const decisions = (await Promise.all(maps.map((m) => adapter.listDecisions(m.id)))).flat();
   const activity = new ActivityStream();

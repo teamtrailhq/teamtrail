@@ -66,6 +66,15 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
     await this.change(mapId, `mode ${mode}`, { kind: 'mode', mode }, { kind: 'map.mode', mapId, mode });
   }
 
+  async setMapArchived(mapId: string, archived: boolean) {
+    const label = archived ? 'archive trail' : 'restore trail';
+    await this.change(mapId, label, { kind: 'archived', archived }, { kind: 'map.updated', mapId });
+    // the cached list of trails says so too, without waiting for the next fetch
+    const listed = this.maps?.list.find((m) => m.id === mapId);
+    if (listed && archived) listed.archived = true;
+    else if (listed) delete listed.archived;
+  }
+
   async setMapMeta(mapId: string, patch: MapMetaPatch) {
     await this.change(mapId, 'trail verification', { kind: 'mapMeta', patch }, { kind: 'map.updated', mapId });
   }

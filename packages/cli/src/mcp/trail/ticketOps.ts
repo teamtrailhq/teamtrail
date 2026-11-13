@@ -1,5 +1,6 @@
 import {
   allowedTypes,
+  assertNotArchived,
   attention,
   OperationError,
   promoteToTicket,
@@ -28,6 +29,8 @@ export async function nextTicket(
 ) {
   const recovered = await recoverStalled(ctx);
   const snap = await ctx.resolveTrail(input.trail);
+  if (snap.map.archived)
+    return { ticket: null, reason: `Trail ${snap.map.key} is archived: no work is taken from it.` };
   const gate = claimable(ctx.root, snap.map.id);
   const types = gate ? (input.types ?? gate).filter((x) => gate.includes(x)) : input.types;
   const exclude = [
@@ -89,6 +92,7 @@ export async function addTicket(
   },
 ) {
   const snap = await ctx.resolveTrail(input.trail);
+  assertNotArchived(snap.map);
   if (input.guide) assertGuide(listGuides(ctx.root), input.guide, input.type);
   if (!allowedTypes(snap.map.mode).includes(input.type))
     throw new OperationError(`${input.type} tickets are disabled on plan-only trails`);

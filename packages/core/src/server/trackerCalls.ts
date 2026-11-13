@@ -6,6 +6,7 @@ export const CALL_NAMES = [
   'loadMap',
   'createMap',
   'setMapMode',
+  'setMapArchived',
   'setMapMeta',
   'updateMapSections',
   'createTicket',

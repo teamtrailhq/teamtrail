@@ -1,5 +1,6 @@
 import { Emitter, sleep } from '../lib/emitter';
 import type { MapMetaPatch, TicketMetaPatch } from '../model/lifecycle';
+import { mapSummary } from '../model/mapSummary';
 import {
   DEFAULT_MAP_MODE,
   type DecisionInput,
@@ -17,6 +18,7 @@ import type { MapInput, TicketEdit, TrackerAdapter } from './adapter';
 import { withMapMeta } from './mapMeta';
 import { newTicket, reopened, withEdit, withoutBlocker } from './ticketEdits';
 import { withMeta } from './ticketMeta';
+import { withArchived } from './withArchived';
 
 const updated = (mapId: string, id: string): TrackerEvent => ({
   kind: 'ticket.updated',
@@ -93,7 +95,7 @@ export class MemoryAdapter implements TrackerAdapter {
 
   async listMaps() {
     await this.wait();
-    return [...this.maps.values()].map((m) => ({ id: m.id, key: m.key, title: m.title }));
+    return [...this.maps.values()].map(mapSummary);
   }
 
   async loadMap(mapId: string): Promise<MapSnapshot> {
@@ -122,18 +124,20 @@ export class MemoryAdapter implements TrackerAdapter {
     return structuredClone(map);
   }
 
-  async setMapMode(mapId: string, mode: MapMode) {
+  private async editMap(mapId: string, edit: (m: MapDoc) => MapDoc, event: TrackerEvent) {
     await this.wait();
-    const m = this.maps.get(mapId)!;
-    this.maps.set(mapId, { ...m, mode, updatedAt: Date.now() });
-    this.emit({ kind: 'map.mode', mapId, mode, at: Date.now() });
+    this.maps.set(mapId, { ...edit(this.maps.get(mapId)!), updatedAt: Date.now() });
+    this.emit(event);
   }
 
-  async setMapMeta(mapId: string, patch: MapMetaPatch) {
-    await this.wait();
-    this.maps.set(mapId, { ...withMapMeta(this.maps.get(mapId)!, patch), updatedAt: Date.now() });
-    this.emit({ kind: 'map.updated', mapId, at: Date.now() });
-  }
+  setMapMode = (mapId: string, mode: MapMode) =>
+    this.editMap(mapId, (m) => ({ ...m, mode }), { kind: 'map.mode', mapId, mode, at: Date.now() });
+
+  setMapArchived = (mapId: string, archived: boolean) =>
+    this.editMap(mapId, (m) => withArchived(m, archived), { kind: 'map.updated', mapId, at: Date.now() });
+
+  setMapMeta = (mapId: string, patch: MapMetaPatch) =>
+    this.editMap(mapId, (m) => withMapMeta(m, patch), { kind: 'map.updated', mapId, at: Date.now() });
 
   async updateMapSections(mapId: string, patch: Partial<MapSections>) {
     await this.wait();

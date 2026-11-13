@@ -47,6 +47,7 @@ export function activeTracker(o: TrackerRoutesOptions): TrackerAdapter & { dispo
     loadMap: call('loadMap'),
     createMap: call('createMap'),
     setMapMode: call('setMapMode'),
+    setMapArchived: call('setMapArchived'),
     setMapMeta: call('setMapMeta'),
     updateMapSections: call('updateMapSections'),
     createTicket: call('createTicket'),

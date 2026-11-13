@@ -244,6 +244,28 @@
     {
       "req": {
         "method": "POST",
+        "url": "/repos/octo-org/launchpad/labels",
+        "body": {
+          "name": "teamtrail:archived",
+          "color": "9ca3af"
+        }
+      },
+      "res": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4990",
+          "x-ratelimit-reset": "1793451600"
+        },
+        "body": {
+          "name": "teamtrail:archived"
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
         "url": "/repos/octo-org/launchpad/issues",
         "body": {
           "title": "Charted by an agent",
@@ -518,6 +540,9 @@
           },
           {
             "name": "teamtrail:review"
+          },
+          {
+            "name": "teamtrail:archived"
           }
         ]
       }
