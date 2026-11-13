@@ -1,6 +1,7 @@
 import type { TrackerAdapter } from '../../adapters/adapter';
 import type { TicketType, DecisionSource } from '../../model/types';
 import { transition } from '../lifecycle/transition';
+import { assertNotArchived } from './assertNotArchived';
 import type { ActorOptions } from './claims';
 import { recordDecision } from './decisionOps';
 import { assertTypeAllowed } from './mapMode';
@@ -14,6 +15,7 @@ export async function promoteToTicket(
   input: { type: TicketType; hitl?: boolean; title?: string; body?: string; blockedBy?: string[] },
 ) {
   const snap = await adapter.loadMap(mapId);
+  assertNotArchived(snap.map);
   if (!snap.map.sections.unspecified.includes(entry))
     throw new OperationError(`"${entry}" is not in Not yet specified`);
   assertTypeAllowed(snap.map.mode, input.type);

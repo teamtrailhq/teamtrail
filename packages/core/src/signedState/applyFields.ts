@@ -1,3 +1,4 @@
+import { withArchived } from '../adapters/withArchived';
 import { isAssumptionStatus } from '../model/assumption';
 import { levelOf, TICKET_STATUSES, type TicketStatus } from '../model/lifecycle';
 import type { DecisionRecord, MapDoc, MapMode, ModelMatching, Ticket, TicketType } from '../model/types';
@@ -60,6 +61,7 @@ export function withMapFields(m: MapDoc, f: Fields): MapDoc {
   if (has(f, 'verification')) out.verification = levelOf(str(f.verification));
   if (has(f, 'guides')) out.guides = strs(f.guides)?.length ? strs(f.guides) : undefined;
   if (has(f, 'model_matching')) out.modelMatching = parsed<ModelMatching>(f.model_matching);
+  if (has(f, 'archived')) out = withArchived(out, f.archived === true);
   out = withAssumptions(out, f);
   return tidy(out);
 }

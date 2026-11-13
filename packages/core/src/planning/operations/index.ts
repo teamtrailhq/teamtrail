@@ -4,6 +4,7 @@
  * directly so the rules live in one place.
  */
 export { chartMap, type ChartHooks, type ChartPlan, type ChartPlanTicket } from './chart';
+export { assertNotArchived } from './assertNotArchived';
 export { chooseNext, claim, orderNext, release, type ActorOptions } from './claims';
 export { recordDecision, supersedeDecision } from './decisionOps';
 export { assertLookoutGuard, type LookoutGuard } from './lookoutGuard';

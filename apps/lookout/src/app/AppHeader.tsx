@@ -18,6 +18,7 @@ export function AppHeader(props: {
   onDecisions: () => void;
   onStats: () => void;
   onNewTrail: () => void;
+  onStartOver: () => void;
   onSettings: () => void;
   onSlack: () => void;
   onToggleTheme: (night: boolean) => void;
@@ -35,6 +36,8 @@ export function AppHeader(props: {
       activity={api.activity}
       health={api.health}
       onNewTrail={props.onNewTrail}
+      onStartOver={props.onStartOver}
+      onArchive={actions.setArchived}
       trackerLabel={rt.adapter.label.toLowerCase()}
       onSelectMap={actions.selectMap}
       onToggleMode={() => snap && actions.setMode(snap.map.mode === 'plan-only' ? 'plan+execute' : 'plan-only')}

@@ -1,4 +1,4 @@
-import { BRAND, type AgentSessionDoc, type MapSnapshot } from '@teamtrail/core';
+import { activeTrails, BRAND, type AgentSessionDoc, type MapSnapshot } from '@teamtrail/core';
 import { readAgentDocs } from '@teamtrail/core/bridge';
 import { clipEscaped } from '../blocks';
 import type { SlackConfig } from '../store';
@@ -34,7 +34,7 @@ export async function syncTrails(ctx: SlackContext, docs: AgentSessionDoc[], c: 
   const adapter = await ctx.o.active();
   const ev = new Set(c.notify.events);
   const snaps: MapSnapshot[] = [];
-  for (const m of await adapter.listMaps()) {
+  for (const m of activeTrails(await adapter.listMaps())) {
     const snap = await adapter.loadMap(m.id);
     snaps.push(snap);
     const now = notesOf(snap);

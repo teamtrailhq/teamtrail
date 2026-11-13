@@ -3,6 +3,7 @@ import type { ActorKind } from '../../model/lifecycle';
 import type { MapSnapshot, TicketType } from '../../model/types';
 import { frontier, deriveStates } from '../derive';
 import { transition, type TransitionOptions } from '../lifecycle/transition';
+import { assertNotArchived } from './assertNotArchived';
 import { OperationError } from './operationError';
 
 /** Who is acting, for the journal. Agents are the default actor kind. */
@@ -17,6 +18,7 @@ export interface ActorOptions extends TransitionOptions {
  * then reviews (finished work waits on them), then the frontier, oldest first.
  */
 export function orderNext(snap: MapSnapshot, opts: { types?: TicketType[]; exclude?: string[] } = {}) {
+  if (snap.map.archived) return [];
   const states = deriveStates(snap.tickets, snap.map.mode);
   const rework = snap.tickets.filter((t) => states.get(t.id) === 'rework').sort((a, b) => a.createdAt - b.createdAt);
   const ready = frontier(snap.tickets, snap.map.mode);
@@ -41,6 +43,7 @@ export async function claim(
   const before = await adapter.loadMap(mapId);
   const t = before.tickets.find((x) => x.id === ticketId);
   if (!t) throw new OperationError(`ticket ${ticketId} not found`);
+  assertNotArchived(before.map);
   const state = deriveStates(before.tickets, before.map.mode).get(ticketId);
   if (state !== 'frontier' && state !== 'rework') throw new OperationError(`${t.key} is ${state}, not on the frontier`);
   await transition(adapter, mapId, ticketId, {

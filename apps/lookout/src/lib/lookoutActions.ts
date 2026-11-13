@@ -12,6 +12,7 @@ import {
   type ScopeTarget,
   setMapMode,
   setModelMatching,
+  setTrailArchived,
   supersedeDecision,
   type TicketType,
 } from '@teamtrail/core';
@@ -98,6 +99,12 @@ export function createActions({ rt, guard, setMapId, mapIdRef, snapRef, setChatS
           source: { kind: 'lookout', label: 'Ticket inspector' },
         });
         setSelection(null);
+      }),
+    /** Archive the trail on screen (the Lookout moves to an active one), or restore it. */
+    setArchived: (archived: boolean) =>
+      guard(archived ? 'Archive trail' : 'Restore trail', async () => {
+        await setTrailArchived(rt.adapter, mapIdRef.current!, archived, 'trail lead');
+        if (archived) setMapId(undefined);
       }),
     setMode: (mode: MapMode) => guard(`Trail mode · ${mode}`, () => setMapMode(rt.adapter, mapIdRef.current!, mode)),
     /** Model matching on this trail; applies from the next claim. */

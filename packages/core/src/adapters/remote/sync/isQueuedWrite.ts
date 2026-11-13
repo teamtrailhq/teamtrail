@@ -7,6 +7,7 @@ const obj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isA
 /** What each kind of change must carry to be sent; anything else in a queue file is dropped, never replayed. */
 const SHAPES: Record<QueuedChange['kind'], (c: Obj) => boolean> = {
   mode: (c) => str(c.mode),
+  archived: (c) => typeof c.archived === 'boolean',
   sections: (c) => obj(c.sections),
   mapMeta: (c) => obj(c.patch),
   blocking: (c) => str(c.blockerId) && str(c.blockedId),

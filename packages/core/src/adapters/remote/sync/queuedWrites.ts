@@ -3,6 +3,7 @@ import { OperationError } from '../../../planning/operations/operationError';
 import { withMapMeta } from '../../mapMeta';
 import { reopened, withEdit, withoutBlocker } from '../../ticketEdits';
 import { withMeta } from '../../ticketMeta';
+import { withArchived } from '../../withArchived';
 import type { CacheEntry, QueuedChange, QueuedWrite } from './types';
 
 /** Changes that would duplicate if sent twice; the rest set state, so sending them again is harmless. */
@@ -25,6 +26,9 @@ export function applyWrite(e: CacheEntry, w: QueuedWrite, now: () => number) {
   switch (c.kind) {
     case 'mode':
       e.snap.map.mode = c.mode;
+      break;
+    case 'archived':
+      e.snap.map = withArchived(e.snap.map, c.archived);
       break;
     case 'sections':
       e.snap.map.sections = c.sections;

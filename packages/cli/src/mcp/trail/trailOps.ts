@@ -1,4 +1,4 @@
-import { deriveStates, type MapMode, type MapSnapshot } from '@teamtrail/core';
+import { activeTrails, deriveStates, type MapMode, type MapSnapshot } from '@teamtrail/core';
 import { readAgentDocs } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
@@ -26,6 +26,7 @@ export async function status(ctx: AgentContext, trailRef?: string) {
         title: m.title,
         decided: s.tickets.filter((t) => t.state === 'closed' && t.closeReason === 'completed').length,
         tickets: s.tickets.length,
+        ...(m.archived ? { archived: true } : {}),
       };
     }),
   );
@@ -36,6 +37,8 @@ export async function status(ctx: AgentContext, trailRef?: string) {
     attention: await attentionSummary(ctx),
   };
   if (!maps.length) return { ...base, trail: null, hint: 'No trails yet. Start one with start_trail.' };
+  if (!trailRef && !activeTrails(maps).length)
+    return { ...base, trail: null, hint: 'Every trail is archived. Start a new one with start_trail.' };
   const snap = await ctx.resolveTrail(trailRef);
   const records = await ctx.decisions(snap.map.id);
   return {

@@ -134,16 +134,6 @@
   padding: 16px;
   text-align: center;
 }
-.nomap h2 {
-  font-family: var(--display);
-  font-weight: 900;
-  font-size: var(--fs-display);
-  margin: 0;
-  color: var(--text-hi);
-}
-.nomap .actions {
-  justify-content: center;
-}
 
 /* Status counters: the legend and the numbers in one panel. */
 /* Status strip under the map: the graph gets the full width. */
@@ -457,12 +447,6 @@
   font-size: var(--fs-sm);
   color: var(--text-hi);
 }
-.nomap-lede {
-  margin: 0;
-  max-width: 46ch;
-  color: var(--dim);
-  line-height: var(--lh-body);
-}
 .agent-draft {
   display: flex;
   flex-direction: column;
@@ -471,41 +455,7 @@
   line-height: var(--lh-body);
 }
 
-/* Empty map: Scout floats above "No trail", with a soft shadow that breathes with him. */
-.floating-scout {
-  display: grid;
-  justify-items: center;
-  margin-bottom: var(--sp-4);
-}
-.floating-scout .fm-avatar {
-  margin: 0;
-  animation: fm-float 4s ease-in-out infinite;
-}
-.floating-scout .scout-sprite {
-  outline: none !important;
-}
-.fm-shadow {
-  width: 64px;
-  height: 8px;
-  margin-top: var(--sp-6);
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, var(--shadow-color), transparent 70%);
-  animation: fm-shadow 4s ease-in-out infinite;
-}
-@keyframes fm-float {
-  50% {
-    transform: translateY(-10px);
-  }
-}
-@keyframes fm-shadow {
-  50% {
-    transform: scaleX(0.7);
-    opacity: 0.5;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .floating-scout .fm-avatar,
-  .fm-shadow {
-    animation: none;
-  }
+/* Empty map: the zones' empty state, with the two ways to start a trail under it. */
+.nomap .actions {
+  justify-content: center;
 }

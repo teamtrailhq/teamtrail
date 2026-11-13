@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   AppBriefing,
   AppHeader,
   AppInbox,
-  AppNewTrail,
+  useNewTrail,
   AppSettings,
   LaptopSide,
   MapZone,
@@ -43,7 +43,7 @@ export function App() {
   const [prefs, updatePrefs] = usePrefs();
   useEffect(() => applyTheme(prefs.theme), [prefs.theme]);
   const settings = useSettingsPage();
-  const [newTrail, setNewTrail] = useState(false);
+  const newTrail = useNewTrail(rt, api);
   const repo = useRepoName(rt.kind);
   const bp = useBreakpoint();
   const pending = activity.pending.length;
@@ -71,7 +71,7 @@ export function App() {
       api={api}
       sessions={scoped.sessions}
       onSelect={nav.select}
-      onNewTrail={() => setNewTrail(true)}
+      onNewTrail={newTrail.open}
       compact={bp === 'mobile'}
       minFit={bp === 'mobile' ? 0.7 : 0}
       trail={trail}
@@ -141,7 +141,8 @@ export function App() {
             settings.close();
             nav.toggleStats();
           }}
-          onNewTrail={() => setNewTrail(true)}
+          onNewTrail={newTrail.open}
+          onStartOver={() => snap && newTrail.startOver(snap.map)}
           onSettings={settings.toggle}
           onSlack={() => settings.open('slack')}
           onToggleTheme={(night) => updatePrefs({ theme: night ? 'night' : 'day' })}
@@ -200,9 +201,7 @@ export function App() {
         {briefing}
         {trail.dialog}
         {api.error && <div className="error-toast">{api.error}</div>}
-        {newTrail && (
-          <AppNewTrail rt={rt} onClose={() => setNewTrail(false)} onCreated={(id) => actions.selectMap(id)} />
-        )}
+        {newTrail.dialog}
         {!prefs.onboarded && <Onboarding prefs={prefs} update={updatePrefs} activeTracker={rt.kind} />}
         <KnowledgeView />
       </div>

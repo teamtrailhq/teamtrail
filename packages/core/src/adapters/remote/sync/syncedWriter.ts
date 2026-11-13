@@ -34,6 +34,8 @@ export abstract class SyncedWriter extends SyncedStore {
   protected abstract remoteClose(map: MapDoc, t: Ticket, reason: 'completed' | 'not_planned'): Promise<void>;
   protected abstract remoteUpdateMap(map: MapDoc, o?: { confirm?: boolean }): Promise<void>;
   protected abstract remoteSetMode(map: MapDoc, mode: MapMode): Promise<void>;
+  /** Adds or removes the ARCHIVED_LABEL on the trail issue. */
+  protected abstract remoteSetArchived(map: MapDoc, archived: boolean): Promise<void>;
   /** Post a decision record on its ticket, or on the trail when it has none. */
   protected abstract remotePostDecision(map: MapDoc, d: DecisionRecord, ticket?: Ticket): Promise<void>;
   protected abstract remoteUpdateDecision(map: MapDoc, d: DecisionRecord): Promise<void>;
@@ -47,6 +49,8 @@ export abstract class SyncedWriter extends SyncedStore {
     switch (c.kind) {
       case 'mode':
         return this.remoteSetMode(map, c.mode);
+      case 'archived':
+        return this.remoteSetArchived(map, c.archived);
       case 'sections':
         return this.remoteUpdateMap({ ...map, sections: c.sections });
       case 'mapMeta':

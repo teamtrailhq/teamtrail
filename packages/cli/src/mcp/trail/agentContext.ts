@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import {
+  activeTrails,
   ActivityStream,
   describeTrackerEvent,
   LEASE_MINUTES_ENV,
@@ -134,14 +135,18 @@ export class AgentContext {
     return snap;
   }
 
-  /** By id, key (`#3` or `3`) or title; default the current trail, else the most recently active one. */
+  /**
+   * By id, key (`#3` or `3`) or title, archived trails included (they read as history); default the current trail,
+   * else the most recently active one, never an archived one.
+   */
   async resolveTrail(ref?: string): Promise<MapSnapshot> {
-    const maps = await this.adapter.listMaps();
-    if (!maps.length) throw new OperationError('No trails yet. Start one with start_trail.');
+    const all = await this.adapter.listMaps();
+    if (!all.length) throw new OperationError('No trails yet. Start one with start_trail.');
+    const maps = activeTrails(all);
     const want = ref?.trim();
     if (want) {
       const norm = want.replace(/^#/, '').toLowerCase();
-      const m = maps.find(
+      const m = all.find(
         (x) => x.id === want || x.key.replace(/^#/, '') === norm || x.title.toLowerCase() === want.toLowerCase(),
       );
       if (!m)
@@ -150,6 +155,8 @@ export class AgentContext {
         );
       return this.load(m.id);
     }
+    if (!maps.length)
+      throw new OperationError('Every trail is archived. Start a new one with start_trail, or name one with trail.');
     if (this.trail && maps.some((m) => m.id === this.trail)) return this.load(this.trail);
     const snaps = await Promise.all(maps.map((m) => this.load(m.id)));
     const activeAt = (s: MapSnapshot) => Math.max(s.map.updatedAt, ...s.tickets.map((t) => t.updatedAt));
@@ -188,8 +195,8 @@ export class AgentContext {
   async ensureSession(): Promise<SessionHandle> {
     const s = this.sessions.running();
     if (s) return s;
-    const maps = await this.adapter.listMaps();
-    if (!maps.length && !this.trail) return this.open('chart', '');
+    const maps = activeTrails(await this.adapter.listMaps());
+    if (!maps.length) return this.open('chart', '');
     const snap = await this.resolveTrail();
     this.trail = snap.map.id;
     const w = await this.open('work', snap.map.id);

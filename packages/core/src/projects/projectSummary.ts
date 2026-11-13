@@ -4,6 +4,7 @@ import { readLeases } from '../agents/leaseStore';
 import { leaseHealth } from '../agents/ticketLease';
 import { attentionView } from '../attention/attentionView';
 import { readTicketSyncs } from '../evidence/syncStore';
+import { activeTrails } from '../model/activeTrails';
 import type { AttentionView } from '../model/attention';
 import type { ProjectEntry, ProjectPhases, ProjectState, ProjectSummary, ProjectTracker } from '../model/project';
 import type { MapSnapshot } from '../model/types';
@@ -60,7 +61,9 @@ export async function projectSummary(input: SummaryInput): Promise<{ summary: Pr
   const now = input.now ?? Date.now();
   const docs = await readAgentDocs(root);
   const leases = readLeases(root);
-  const snaps = adapter ? await Promise.all((await adapter.listMaps()).map((m) => adapter.loadMap(m.id))) : [];
+  const snaps = adapter
+    ? await Promise.all(activeTrails(await adapter.listMaps()).map((m) => adapter.loadMap(m.id)))
+    : [];
   const view = adapter ? await attentionView({ root, adapter, configDir: input.configDir, now }) : undefined;
   const touched = [
     ...docs.map((d) => d.updatedAt),

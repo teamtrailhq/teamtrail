@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Panel, Field, Button } from '../../components/ui';
 import { AgentCommand } from './AgentCommand';
+import type { TrailSeed } from './trailSeed';
 
 /**
  * Starts a trail two ways: Create trail charts it here (with its discovery ticket) for any agent to pick up with
  * `/scout resume`, or the `/scout new` command lets Scout frame it in the agent's chat. Teamtrail never runs an agent itself.
  */
 export function NewTrailDialog({
+  seed,
   onClose,
   tracker,
   onCreate,
 }: {
+  /** Filled in to start with: the idea of a trail being started over. */
+  seed?: TrailSeed;
   onClose: () => void;
   tracker: string;
   onCreate: (input: { title: string; destination: string; notes: string; assumptions: string[] }) => Promise<{
@@ -20,10 +24,10 @@ export function NewTrailDialog({
   const [created, setCreated] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
-  const [title, setTitle] = useState('');
-  const [dest, setDest] = useState('');
-  const [notes, setNotes] = useState('');
-  const [assumptions, setAssumptions] = useState('');
+  const [title, setTitle] = useState(seed?.title ?? '');
+  const [dest, setDest] = useState(seed?.destination ?? '');
+  const [notes, setNotes] = useState(seed?.notes ?? '');
+  const [assumptions, setAssumptions] = useState(seed?.assumptions.join('\n') ?? '');
   const idea = [title.trim(), dest.trim(), notes.trim()].filter(Boolean).join('. ').replace(/"/g, "'");
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -34,7 +38,7 @@ export function NewTrailDialog({
     <div className="scrim" onClick={onClose}>
       <Panel as="div" className="dialog" onClick={(e) => e.stopPropagation()}>
         <header>
-          <h2 className="t-heading caps">New trail</h2>
+          <h2 className="t-heading caps">{seed ? 'Start over' : 'New trail'}</h2>
         </header>
         <Field label="Title">
           <input value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />

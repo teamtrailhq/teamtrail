@@ -53,6 +53,8 @@ export interface TrackerAdapter {
   createMap(input: MapInput): Promise<MapDoc>;
   /** Real trackers: add/remove the PLAN_ONLY_LABEL on the map issue. */
   setMapMode(mapId: string, mode: MapMode): Promise<void>;
+  /** Archives or restores a trail (MapDoc.archived). Real trackers: add/remove the ARCHIVED_LABEL. Use `setTrailArchived`. */
+  setMapArchived(mapId: string, archived: boolean): Promise<void>;
   /** Trail fields kept in `map.md` frontmatter or the trail issue's meta marker. Use `setVerification`. */
   setMapMeta(mapId: string, patch: MapMetaPatch): Promise<void>;
   /** Rewrites the named sections of the map issue body. */

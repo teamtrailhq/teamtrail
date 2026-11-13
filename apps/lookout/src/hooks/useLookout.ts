@@ -7,6 +7,7 @@ import {
   type SessionInfo,
   describeTrackerEvent,
   auditDecisions,
+  activeTrails,
 } from '@teamtrail/core';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createActions, TRAIL_LEAD, type Runtime, type Selection, isRunning } from '../lib';
@@ -61,7 +62,7 @@ export function useLookout(rt: Runtime) {
       id = follow;
       if (id !== mapIdRef.current) setMapId(id);
     } else if (!id || !list.some((m) => m.id === id)) {
-      id = list[0]?.id;
+      id = activeTrails(list)[0]?.id;
       setMapId(id);
     }
     const [snaps, recs] = await Promise.all([

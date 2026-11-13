@@ -1,15 +1,7 @@
 import { cachedUntilFailure } from '../../../lib/cachedUntilFailure';
-import { MAP_LABEL, PLAN_ONLY_LABEL } from '../../../model/brand';
+import { ARCHIVED_LABEL, MAP_LABEL, PLAN_ONLY_LABEL } from '../../../model/brand';
 import { guardMarkers } from '../../../model/safeText';
-import type {
-  DecisionRecord,
-  MapDoc,
-  MapMode,
-  MapSnapshot,
-  MapSummary,
-  Ticket,
-  TicketType,
-} from '../../../model/types';
+import type { DecisionRecord, MapDoc, MapMode, MapSnapshot, Ticket, TicketType } from '../../../model/types';
 import type { MapInput } from '../../adapter';
 import { decisionComment } from '../decisionComment';
 import { authoredBody, mapLabels, mapBody, mapSettings, ticketBody, ticketLabels } from '../format';
@@ -21,6 +13,7 @@ import { changedTrails } from './changedTrails';
 import { linearGql, type LinearGql } from './linearGql';
 import { fetchLinearTeam } from './linearTeam';
 import { linearWrites, type LinearWrites } from './linearWrites';
+import { listLinearTrails } from './listLinearTrails';
 import { linearTicket, readTrail, type DecisionFound } from './readTrail';
 import { removeBlocksRelation } from './removeBlocksRelation';
 import { CHANGES_QUERY, TRAIL_QUERY, type LChanges, type LIssue } from './schema';
@@ -100,12 +93,8 @@ export class LinearAdapter extends SyncedAdapter {
     };
   }
 
-  protected async fetchMaps(): Promise<MapSummary[]> {
-    const d = await this.gql<{ issues: { nodes: { id: string; identifier: string; title: string }[] } }>(
-      `query Trails($filter: IssueFilter) { issues(first: 100, filter: $filter) { nodes { id identifier title } } }`,
-      { filter: this.trailFilter() },
-    );
-    return d.issues.nodes.map((i) => ({ id: i.id, key: i.identifier, title: i.title }));
+  protected fetchMaps() {
+    return listLinearTrails(this.gql, this.trailFilter());
   }
 
   protected async fetchMap(mapId: string): Promise<{ snap: MapSnapshot; decisions: DecisionRecord[] }> {
@@ -220,6 +209,11 @@ export class LinearAdapter extends SyncedAdapter {
   protected async remoteSetMode(map: MapDoc, mode: MapMode) {
     const ids = await this.labelIds([PLAN_ONLY_LABEL]);
     await this.mutations.update(map.id, mode === 'plan-only' ? { addedLabelIds: ids } : { removedLabelIds: ids });
+  }
+
+  protected async remoteSetArchived(map: MapDoc, archived: boolean) {
+    const ids = await this.labelIds([ARCHIVED_LABEL]);
+    await this.mutations.update(map.id, archived ? { addedLabelIds: ids } : { removedLabelIds: ids });
   }
 
   protected async remotePostDecision(map: MapDoc, d: DecisionRecord, ticket?: Ticket) {

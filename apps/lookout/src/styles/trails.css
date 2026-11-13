@@ -84,6 +84,39 @@
   font-size: var(--fs-sm);
   font-weight: 500;
 }
+.trail-item.archived .mi-title {
+  color: var(--dim);
+}
+/* The trail on screen: start it over, archive or restore it, below the list. */
+.trail-acts {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--sp-4);
+  border-top: 1px solid var(--line);
+}
+.trail-item.act {
+  display: block;
+  color: var(--dim);
+  font-size: var(--fs-sm);
+}
+.trail-confirm {
+  display: grid;
+  gap: var(--sp-8);
+  padding: var(--sp-8) var(--sp-10);
+}
+.trail-confirm p {
+  margin: 0;
+  line-height: var(--lh-body);
+}
+/* Beside the trail's title in the header when it is archived. */
+.trail-archived {
+  padding: 0 var(--sp-6);
+  border: 1px solid var(--line2);
+  color: var(--dim);
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-label);
+}
 .trail-meta {
   display: inline-flex;
   gap: 16px;

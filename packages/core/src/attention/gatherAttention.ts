@@ -9,6 +9,7 @@ import { readBrief } from '../discovery/briefStore';
 import { readTicketSyncs } from '../evidence/syncStore';
 import { listGuides } from '../guides/guideStore';
 import { listKnowledge } from '../knowledge/knowledgeStore';
+import { activeTrails } from '../model/activeTrails';
 import type { AttentionPolicy } from '../model/attention';
 import type { InstalledGuide } from '../model/guide';
 import { trackerPin, trackerTargetKey, trackerTargetLabel } from '../server/trackerPin';
@@ -34,7 +35,7 @@ export async function gatherAttention(input: {
   now: number;
 }): Promise<AttentionInput> {
   const { root, adapter, policy, now } = input;
-  const maps = await adapter.listMaps();
+  const maps = activeTrails(await adapter.listMaps());
   const snaps = await Promise.all(maps.map((m) => adapter.loadMap(m.id)));
   const docs = await readAgentDocs(root);
   const briefs = snaps.map((s) => readBrief(root, s.map.id)).filter((b) => b !== undefined);

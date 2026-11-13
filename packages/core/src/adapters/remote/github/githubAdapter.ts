@@ -1,15 +1,7 @@
 import { cachedUntilFailure } from '../../../lib/cachedUntilFailure';
-import { BRAND, MAP_LABEL, PLAN_ONLY_LABEL } from '../../../model/brand';
+import { ARCHIVED_LABEL, BRAND, MAP_LABEL, PLAN_ONLY_LABEL } from '../../../model/brand';
 import { guardMarkers } from '../../../model/safeText';
-import type {
-  DecisionRecord,
-  MapDoc,
-  MapMode,
-  MapSnapshot,
-  MapSummary,
-  Ticket,
-  TicketType,
-} from '../../../model/types';
+import type { DecisionRecord, MapDoc, MapMode, MapSnapshot, Ticket, TicketType } from '../../../model/types';
 import type { MapInput } from '../../adapter';
 import { decisionComment } from '../decisionComment';
 import { authoredBody, mapLabels, mapBody, mapSettings, ticketLabels, ticketBody } from '../format';
@@ -24,8 +16,10 @@ import { GitHubClient } from './githubClient';
 import { GitHubPermissions } from './githubPermissions';
 import { githubViewer } from './githubViewer';
 import { loginsToCheck } from './githubWriter';
+import { listGitHubTrails } from './listGitHubTrails';
 import { readTrail } from './readTrail';
 import { labelNames, TRAIL_QUERY, type GqlIssue, type RestIssue } from './schema';
+import { setIssueLabel } from './setIssueLabel';
 
 /*
  * GitHub Issues mapping:
@@ -78,14 +72,8 @@ export class GitHubAdapter extends SyncedAdapter {
 
   private ensureLabels = cachedUntilFailure(() => ensureGitHubLabels(this.gh));
 
-  protected async fetchMaps(): Promise<MapSummary[]> {
-    const r = await this.gh.repo<RestIssue[]>(
-      'GET',
-      `/issues?labels=${encodeURIComponent(MAP_LABEL)}&state=all&per_page=100`,
-    );
-    return r.body
-      .filter((i) => !i.pull_request)
-      .map((i) => ({ id: String(i.number), key: `#${i.number}`, title: i.title }));
+  protected fetchMaps() {
+    return listGitHubTrails(this.gh);
   }
 
   protected async fetchMap(mapId: string): Promise<{ snap: MapSnapshot; decisions: DecisionRecord[] }> {
@@ -219,11 +207,11 @@ export class GitHubAdapter extends SyncedAdapter {
   }
 
   protected async remoteSetMode(map: MapDoc, mode: MapMode) {
-    if (mode === 'plan-only') await this.gh.repo('POST', `/issues/${map.id}/labels`, { labels: [PLAN_ONLY_LABEL] });
-    else
-      await this.gh.repo('DELETE', `/issues/${map.id}/labels/${encodeURIComponent(PLAN_ONLY_LABEL)}`).catch((e) => {
-        if (!(e instanceof TrackerError && e.code === 'not_found')) throw e;
-      });
+    await setIssueLabel(this.gh, map.id, PLAN_ONLY_LABEL, mode === 'plan-only');
+  }
+
+  protected async remoteSetArchived(map: MapDoc, archived: boolean) {
+    await setIssueLabel(this.gh, map.id, ARCHIVED_LABEL, archived);
   }
 
   protected async remotePostDecision(map: MapDoc, d: DecisionRecord, ticket?: Ticket) {

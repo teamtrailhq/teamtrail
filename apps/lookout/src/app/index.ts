@@ -2,6 +2,7 @@ export { AppBriefing } from './AppBriefing';
 export { AppHeader } from './AppHeader';
 export { AppInbox } from './AppInbox';
 export { AppNewTrail } from './AppNewTrail';
+export { useNewTrail } from './useNewTrail';
 export { AppSettings } from './AppSettings';
 export { LaptopSide } from './LaptopSide';
 export { MapZone } from './MapZone';

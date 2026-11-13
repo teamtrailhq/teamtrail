@@ -1,4 +1,4 @@
-import { PLAN_ONLY_LABEL } from '../../model/brand';
+import { ARCHIVED_LABEL, PLAN_ONLY_LABEL } from '../../model/brand';
 import { parseMapBody } from '../../model/mapBody';
 import { DEFAULT_MAP_MODE, type Comment, type DecisionRecord, type MapDoc } from '../../model/types';
 import { settingsOf, type BodySettings } from './bodySettings';
@@ -35,6 +35,7 @@ export function mapFromIssue(p: TrailIssueParts): MapDoc {
     key: p.key,
     title: p.title,
     mode: p.labels.includes(PLAN_ONLY_LABEL) ? 'plan-only' : DEFAULT_MAP_MODE,
+    ...(p.labels.includes(ARCHIVED_LABEL) ? { archived: true as const } : {}),
     ...(verification ? { verification } : {}),
     ...(guides?.length ? { guides } : {}),
     ...(modelMatching ? { modelMatching } : {}),
