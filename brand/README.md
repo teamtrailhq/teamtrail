@@ -25,6 +25,7 @@ The Teamtrail logo, the `teamtrail.` wordmark and Scout's avatar, rendered at ex
 | `linkedin-discord-avatar-512.png` | 512×512   | LinkedIn and Discord avatars                                                                                                                    |
 | `slack-icon-512.png`              | 512×512   | Slack app icon, Scout's avatar filling the square, since Scout is who talks in Slack                       |
 | `scout-badge-1000.png`            | 1000×1000 | Scout's avatar for docs, decks and press                                                                                                        |
+| `scout-plush.jpg`                 | 1448×1086 | Scout as a plush toy, the merch concept, for posts and decks                     |
 | `logo-light-512.png`              | 512×512   | The logo's light version, for light backgrounds                                                                                                 |
 | `favicon-32.png`                  | 32×32     | Browser favicon: the bare mark, light version (for light tabs)                                                                                  |
 | `favicon-64.png`                  | 64×64     | High-DPI browser favicon, light version                                                                                                         |
