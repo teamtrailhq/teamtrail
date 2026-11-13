@@ -128,6 +128,14 @@ npm run check         # lint, typecheck, build, test and verify:mcp; run before 
 
 See [`apps/lookout/README.md`](apps/lookout/README.md) for the architecture, metrics and tracker API, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for code standards.
 
+## Support
+
+<a href="https://www.teamtrail.app/scout/"><img src="brand/scout-plush.jpg" alt="Scout as a plush toy" width="160" align="right"></a>
+
+Teamtrail is free. If it helps you, [sponsor it on GitHub](https://github.com/sponsors/teamtrailhq). At the Scout tier, a handmade Scout plush comes home with you: [adopt a Scout](https://www.teamtrail.app/scout/).
+
+<br clear="right">
+
 ## License
 
 [FSL-1.1-ALv2](LICENSE) (Functional Source License, Apache 2.0 future license): free to use, modify and run, including at work, for anything except a competing product. Each release becomes Apache 2.0 two years after it ships. Third-party credits are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
