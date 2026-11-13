@@ -17,6 +17,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.31.1',
+    date: '2026-11-13',
+    items: ['An archived trail’s held work and changes waiting for your approval stay in your queue'],
+  },
+  {
     version: '0.31.0',
     date: '2026-11-13',
     items: [
@@ -181,17 +186,6 @@ export const RELEASES: Release[] = [
       'New plans can now edit a ticket, remove a dependency and reopen finished work, instead of working around it',
       "Slack digests follow the team's digest setting (digestMinutes in attention.json); 0 turns them off, and everything still waits in Waiting on you",
       "Remove a finished task's workspace from Settings → Workspaces or the ticket; the branch stays, and MILOOPS asks before discarding uncommitted changes",
-    ],
-  },
-  {
-    version: '0.20.0',
-    date: '2026-11-04',
-    items: [
-      'Separate workspaces: switch on Settings → Workspaces and each ticket an agent claims gets its own copy of the repo on its own branch, so agents working at the same time don’t step on each other. When the work is done you get the branch to review; MILOOPS never merges or pushes for you',
-      'Warnings before a clash: agents say which files they expect to change. When two of them plan to change the same files, the second one is warned, and you see it in Waiting on you; open it to release either claim',
-      'When two agents’ branches did change the same files, Waiting on you suggests a ticket to bring the work together. One click adds it, waiting on both tickets, with the files listed',
-      'The ticket inspector shows which files an agent expects to change and the branch it works on',
-      'Fix: an execute ticket marked as needing you keeps that mark when saved to local files, GitHub Issues or Linear',
     ],
   },
   ...OLDER_RELEASES,

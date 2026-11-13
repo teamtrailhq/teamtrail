@@ -35,8 +35,12 @@ export async function gatherAttention(input: {
   now: number;
 }): Promise<AttentionInput> {
   const { root, adapter, policy, now } = input;
-  const maps = activeTrails(await adapter.listMaps());
-  const snaps = await Promise.all(maps.map((m) => adapter.loadMap(m.id)));
+  const all = await adapter.listMaps();
+  const allSnaps = await Promise.all(all.map((m) => adapter.loadMap(m.id)));
+  // Work comes from active trails only; what waits on the human stays in the queue when its trail is archived,
+  // so archiving (or a label someone added on GitHub or Linear) never hides it.
+  const active = new Set(activeTrails(all).map((m) => m.id));
+  const snaps = allSnaps.filter((s) => active.has(s.map.id));
   const docs = await readAgentDocs(root);
   const briefs = snaps.map((s) => readBrief(root, s.map.id)).filter((b) => b !== undefined);
   const syncs = readTicketSyncs(root).filter((s) => s.flags.length);
@@ -44,7 +48,7 @@ export async function gatherAttention(input: {
     snaps,
     questions: docs.flatMap((d) => d.pending),
     sessions: docs.map((d) => d.session),
-    approvals: snaps.flatMap((s) => approvalItems(root, s)),
+    approvals: allSnaps.flatMap((s) => approvalItems(root, s)),
     syncs,
     leases: readLeases(root),
     knowledge: listKnowledge(root),
@@ -58,7 +62,7 @@ export async function gatherAttention(input: {
       : {}),
     agents: connectedAgents(docs),
     deliveries: readDeliveryProblems(root),
-    trust: pendingTrust(root, snaps),
+    trust: pendingTrust(root, allSnaps),
     ...oldQueue(root),
     ...trackerWaiting(root),
     policy,

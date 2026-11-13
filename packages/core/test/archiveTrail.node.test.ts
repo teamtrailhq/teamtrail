@@ -11,6 +11,8 @@ import { ALL_LABELS } from '../src/adapters/remote/format';
 import { mapFromIssue } from '../src/adapters/remote/issueMapping';
 import { isQueuedWrite } from '../src/adapters/remote/sync/isQueuedWrite';
 import { applyWrite } from '../src/adapters/remote/sync/queuedWrites';
+import { DEFAULT_ATTENTION_POLICY } from '../src/attention/defaults';
+import { gatherAttention } from '../src/attention/gatherAttention';
 import { activeTrails } from '../src/model/activeTrails';
 import { ARCHIVED_LABEL } from '../src/model/brand';
 import type { MapDoc } from '../src/model/types';
@@ -123,4 +125,18 @@ test('archived: restoring a trail by editing map.md does not count; the signed v
   assert.equal((await adapter.loadMap(map.id)).map.archived, true);
   const change = outsideChanges(root).changes.find((c) => c.kind === 'map' && c.mapId === map.id);
   assert.deepEqual(change?.fields, ['archived']);
+});
+
+test('archived: no work comes from it, but what waits on the trail lead stays in the queue', async () => {
+  const adapter = new MemoryAdapter();
+  const { map, tickets } = await chartMap(adapter, PLAN);
+  await adapter.setMeta(map.id, tickets[0].id, { status: 'blocked' });
+  await setTrailArchived(adapter, map.id, true, 'trail lead');
+  const root = mkdtempSync(path.join(os.tmpdir(), 'tt-archived-'));
+  const input = await gatherAttention({ root, adapter, policy: DEFAULT_ATTENTION_POLICY, now: Date.now() });
+  assert.deepEqual(input.snaps, []);
+  assert.deepEqual(
+    input.approvals.map((a) => [a.mapId, a.ticketId, a.kind]),
+    [[map.id, tickets[0].id, 'held']],
+  );
 });
