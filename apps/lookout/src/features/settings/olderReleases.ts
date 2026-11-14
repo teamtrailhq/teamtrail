@@ -1,8 +1,17 @@
 import { EARLIEST_RELEASES } from './earliestReleases';
 import type { Release } from './releases';
 
-/** Releases 0.7–0.21 (0.1–0.6 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.7–0.22 (0.1–0.6 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
 export const OLDER_RELEASES: Release[] = [
+  {
+    version: '0.22.0',
+    date: '2026-11-05',
+    items: [
+      'A calmer, clearer command center: every list now reads the same way, what it is first, then one quiet line of context, and details when you want them',
+      'Red now only means something needs you now; other states show as a thin edge instead of colored text everywhere',
+      'The open question in a conversation can no longer be hidden by its suggested answers, and the phone header no longer runs off the side',
+    ],
+  },
   {
     version: '0.21.0',
     date: '2026-11-05',
