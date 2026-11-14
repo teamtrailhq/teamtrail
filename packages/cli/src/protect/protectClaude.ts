@@ -1,5 +1,5 @@
-import fs from 'node:fs';
 import { claudeRules } from './claudeRules';
+import { readSettings } from './readSettings';
 import { writeSettings } from './writeSettings';
 
 /** What protecting the config folder did to Claude Code's settings file. */
@@ -19,16 +19,6 @@ const PATTERN = /[*?[\]{}()\\!]/;
 type Json = Record<string, unknown>;
 
 const isObject = (v: unknown): v is Json => typeof v === 'object' && v !== null && !Array.isArray(v);
-
-function read(file: string): Json | undefined {
-  if (!fs.existsSync(file)) return {};
-  try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return isObject(parsed) ? parsed : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 /** The object at `key` in `parent`, created when missing; undefined when something else is there. */
 function child(parent: Json, key: string): Json | undefined {
@@ -73,7 +63,7 @@ export function protectClaude(file: string, dirs: string[]): ClaudeProtection {
     ...all.denyWrite.map((d) => `sandbox.filesystem.denyWrite: ${d}`),
   ];
   if (dirs.some((d) => PATTERN.test(d))) return { kind: 'pattern-path', file, rules: byHand };
-  const settings = read(file);
+  const settings = readSettings(file);
   const added = settings && merge(settings, dirs);
   if (!settings || !added) return { kind: 'unreadable', file, rules: byHand };
   if (!added.length) return { kind: 'unchanged', file };

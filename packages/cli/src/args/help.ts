@@ -5,7 +5,7 @@ export const HELP = `${BRAND.name}: ${BRAND.category}
 Usage: ${BRAND.slug} [options]
        ${BRAND.slug} mcp [--dir <path>] [--agent <trailName>] [--lease-minutes <n>] [--no-register]
        ${BRAND.slug} mcp --http [--port <n>] [--host <addr>] [--allow-host <name>] [--dir <path>] [--lease-minutes <n>] [--no-register]
-       ${BRAND.slug} connect claude|codex [--dir <path>] [--no-register] [--no-protect-config]
+       ${BRAND.slug} connect claude|codex [--dir <path>] [--no-register] [--no-protect-config] [--sandbox | --no-sandbox]
        ${BRAND.slug} connect claude|codex --url <http(s)://host:port/mcp> [--token-stdin | --token <token>] [--allow-http]
                  [--no-protect-config]
        ${BRAND.slug} projects add [path] | list | remove <id|path>
@@ -37,7 +37,9 @@ Commands:
                  It also keeps the agent out of ${BRAND.name}'s config folder (this machine's key, approvals,
                  credentials): deny rules in Claude Code's user settings (~/.claude/settings.json), printed
                  with how to remove them; for Codex it prints the permissions profile to add.
-                 --no-protect-config skips that
+                 --no-protect-config skips that. For Claude Code it also asks to turn on its sandbox for
+                 this project (.claude/settings.local.json), so shell commands can't reach the folder
+                 either: --sandbox turns it on, --no-sandbox leaves it, without asking
   connect <agent> --url <endpoint>
                  Point the agent at a ${BRAND.name} MCP server over HTTP instead of starting one.
                  The token comes from --token-stdin, $${BRAND.tokenEnv} or --token (which lands in

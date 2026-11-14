@@ -13,7 +13,8 @@ export function codexProtectionLines(dirs: string[], codexHome: string): string[
   const config = path.join(codexHome, 'config.toml');
   return [
     `  Config folder   readable by Codex's commands: ${dirs.join(' and ')} (this machine's key, approvals, credentials).`,
-    `${PAD}Its workspace-write sandbox already keeps its commands from writing there. To deny reading too, make this profile`,
+    `${PAD}Its default sandbox (workspace-write) keeps its commands' writes inside the repo, so not there: leave it on.`,
+    `${PAD}To deny reading too, make this profile`,
     `${PAD}your default in ${config} (it replaces sandbox_mode; check it suits how you run Codex):`,
     '',
     `  default_permissions = "teamtrail"`,

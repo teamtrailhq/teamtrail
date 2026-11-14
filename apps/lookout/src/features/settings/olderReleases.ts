@@ -1,8 +1,17 @@
 import { EARLIEST_RELEASES } from './earliestReleases';
 import type { Release } from './releases';
 
-/** Releases 0.7–0.20 (0.1–0.6 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.7–0.21 (0.1–0.6 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
 export const OLDER_RELEASES: Release[] = [
+  {
+    version: '0.21.0',
+    date: '2026-11-05',
+    items: [
+      'New plans can now edit a ticket, remove a dependency and reopen finished work, instead of working around it',
+      "Slack digests follow the team's digest setting (digestMinutes in attention.json); 0 turns them off, and everything still waits in Waiting on you",
+      "Remove a finished task's workspace from Settings → Workspaces or the ticket; the branch stays, and MILOOPS asks before discarding uncommitted changes",
+    ],
+  },
   {
     version: '0.20.0',
     date: '2026-11-04',
