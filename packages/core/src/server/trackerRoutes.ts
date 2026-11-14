@@ -10,6 +10,8 @@ import { GITHUB_SIGN_IN, handleGitHubSignIn } from './githubSignInRoutes';
 import { BadRequest, readJson, sendFailure, sendJson } from './http';
 import { lanCallRefusal } from './lanCallRefusal';
 import { handleLegacyOutbox, LEGACY_OUTBOX } from './legacyOutboxRoutes';
+import { limitedCallRefusal } from './limitedCallRefusal';
+import { markedLimited } from './limitedRequests';
 import { linearLookups } from './linearLookups';
 import { handleLinearTeams, LINEAR_PROJECTS, LINEAR_TEAMS } from './linearTeamRoutes';
 import { isKind, remoteAdapters } from './remoteAdapters';
@@ -153,6 +155,9 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
       const body = await readJson<{ method?: string; args?: unknown[] }>(req, '{}');
       const refused = fromThisMachine(req, o.peer) ? undefined : lanCallRefusal(String(body.method), body.args ?? []);
       if (refused) return (void sendJson(res, 403, { error: refused, elsewhere: true }), true);
+      const args = Array.isArray(body.args) ? body.args : [];
+      const limited = markedLimited(req) ? await limitedCallRefusal(o.root, String(body.method), args) : undefined;
+      if (limited) return (void sendJson(res, 403, { error: limited, highRisk: true }), true);
       const result = await callAdapter(kind, body);
       return (void sendJson(res, 200, { result: result ?? null }), true);
     }

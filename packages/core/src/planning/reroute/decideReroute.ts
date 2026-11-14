@@ -23,8 +23,9 @@ export interface RerouteDecision {
   /** `rerouteHash` of the proposal the trail lead looked at; the bridge always sends it. A file that differs is refused. */
   hash?: string;
   /**
-   * Where the trail lead decided, when not the Lookout. Approving changes the plan or a trail lead's setting, so it
-   * is the Lookout's only: Slack's word passes Teamtrail's Scout service. Declining is allowed anywhere.
+   * Where the trail lead decided. Approving changes the plan or a trail lead's setting, so it is the Lookout's only:
+   * Slack's word passes Teamtrail's Scout service, and a Lookout caller not allowed high-risk calls
+   * (`lookout-limited`) can't either. Declining is allowed anywhere.
    */
   via?: AnswerVia;
 }
@@ -32,8 +33,10 @@ export interface RerouteDecision {
 /** Approving from anywhere but the Lookout is refused; an actor id `slack:…` counts as Slack even unsaid. */
 function assertApprovedInLookout(d: RerouteDecision, id: string) {
   const via = d.via ?? (d.by.startsWith('slack:') ? 'slack' : undefined);
-  if (via && !approvesHighRisk(via))
-    throw new OperationError(`${id} changes the plan or your settings: approve it in the Lookout.`);
+  if (!via || approvesHighRisk(via)) return;
+  // A Lookout caller its sign-in doesn't allow high-risk calls is in the Lookout already: someone else has to.
+  const where = via === 'lookout-limited' ? 'ask someone allowed to make high-risk calls' : 'approve it in the Lookout';
+  throw new OperationError(`${id} changes the plan or your settings: ${where}.`);
 }
 
 /**

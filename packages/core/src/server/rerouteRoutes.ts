@@ -9,6 +9,7 @@ import { rerouteView, RerouteInvalid, type RerouteEnv } from '../planning/rerout
 import { listAllReroutes, listReroutes, readReroute } from '../planning/reroute/rerouteStore';
 import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
+import { lookoutVia } from './lookoutVia';
 import type { RouteContext } from './routeContext';
 
 const DECISIONS: Record<string, typeof approveReroute | undefined> = {
@@ -51,6 +52,8 @@ export async function handleReroutes(ctx: RouteContext, req: IncomingMessage, re
     id: b.id as string,
     // The Lookout's trail lead: this route says so, whatever the body says.
     by: TRAIL_LEAD,
+    // and how: a caller not allowed high-risk calls can't approve (decideReroute.ts)
+    via: lookoutVia(req),
     note: typeof b.note === 'string' ? b.note.slice(0, 2000) : undefined,
     ...(text(b.hash) ? { hash: b.hash as string } : {}),
   };

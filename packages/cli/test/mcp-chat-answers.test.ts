@@ -199,6 +199,47 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
     expect(closed.decision.decidedBy).toBe('slack:U0ANA');
   });
 
+  it('a Lookout answer from someone not allowed high-risk calls backs an ordinary call, never a high-risk one', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    const questionId = await askOnJunction(call);
+    const doc = (await readAgentDocs(root)).find((d) => d.pending.length)!;
+    const limited = { author: 'trail lead', via: 'lookout-limited' as const };
+    expect(() =>
+      writeAgentAnswer(root, { sessionId: doc.session.id, questionId, text: 'Drop it', ...limited }),
+    ).toThrow(/high risk: ask someone allowed to make high-risk calls/);
+
+    const medium = await call<Asked>('ask_human', {
+      question: 'Show deleted users greyed out?',
+      category: 'product-behaviour',
+      urgency: 'blocking',
+      waitSeconds: 0,
+    });
+    const asked = (await readAgentDocs(root)).find((d) => d.pending.some((q) => q.id === medium.questionId))!;
+    writeAgentAnswer(root, {
+      sessionId: asked.session.id,
+      questionId: medium.questionId,
+      text: 'Greyed out',
+      ...limited,
+    });
+    const got = await call<Got>('wait_for_answer', { questionId: medium.questionId, waitSeconds: 5 });
+    expect(got).toMatchObject({ answered: true, answeredVia: 'lookout-limited' });
+    expect(got.note).toBeUndefined();
+    await expect(
+      call('record_decision', {
+        question: 'Drop?',
+        answer: 'Greyed out',
+        category: 'data-deletion',
+        questionId: medium.questionId,
+      }),
+    ).rejects.toThrow(/answered in the Lookout by someone not allowed to make high-risk calls/);
+    const closed = await call<Closed>('close_ticket', {
+      resolution: 'Greyed out',
+      category: 'product-behaviour',
+      questionId: medium.questionId,
+    });
+    expect(closed.decision.decidedBy).toBe('trail lead');
+  });
+
   it('a high-risk question marks its ticket for good, where the repo can’t reach; an ordinary one doesn’t', async () => {
     const call = await hub.connect({ name: 'claude-01' });
     await askOnJunction(call);

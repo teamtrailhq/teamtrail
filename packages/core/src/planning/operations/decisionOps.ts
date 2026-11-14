@@ -39,25 +39,33 @@ export async function recordDecision(
   return rec;
 }
 
-/** Replace a decision: new record pointing back at the old one, old one marked superseded, trail line swapped. */
+/**
+ * Replace a decision: new record pointing back at the old one, old one marked superseded, trail line swapped. The
+ * new decision is on the old one's ticket unless it names another, and passes the same `guard` as recording one.
+ */
 export async function supersedeDecision(
   adapter: TrackerAdapter,
   mapId: string,
   decisionId: string,
-  input: Omit<DecisionInput, 'question' | 'supersedes'> & { question?: string },
+  { guard, ...input }: Omit<DecisionInput, 'question' | 'supersedes'> & { question?: string; guard?: LookoutGuard },
 ): Promise<DecisionRecord> {
   const all = await adapter.listDecisions(mapId);
   const old = all.find((d) => d.id === decisionId);
   if (!old) throw new OperationError(`decision ${decisionId} not found`);
   if (old.postedBy) throw new OperationError(`${old.id} is ${old.postedBy}'s decision; record your own instead`);
   if (old.supersededBy) throw new OperationError(`${old.id} is already superseded by ${old.supersededBy}`);
-  const rec = await adapter.createDecision(mapId, {
+  const next = {
     ticketId: old.ticketId,
     ticketKey: old.ticketKey,
     ...input,
     question: input.question ?? old.question,
     supersedes: old.id,
-  });
+  };
+  await assertLookoutGuard(
+    { ...guard, sourceKind: input.source.kind },
+    { mapId, ticketId: next.ticketId, key: next.ticketKey },
+  );
+  const rec = await adapter.createDecision(mapId, next);
   await adapter.markSuperseded(mapId, old.id, rec.id);
   const fresh = await adapter.loadMap(mapId);
   const ds = fresh.map.sections.decisions;

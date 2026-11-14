@@ -3,6 +3,7 @@ import { readAgentDocs, writeAgentAnswer } from '../agents/agentDocs';
 import type { AgentAnswer } from '../agents/agentLink';
 import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
+import { lookoutVia } from './lookoutVia';
 
 /** `/agents` routes over the session docs under `root`; false when none matches. */
 export async function handleAgents(
@@ -31,7 +32,7 @@ export async function handleAgents(
         text: b.text!,
         // Given in the Lookout, by its trail lead: this route says so, whatever the body says.
         author: TRAIL_LEAD,
-        via: 'lookout',
+        via: lookoutVia(req),
       }),
     );
     return true;

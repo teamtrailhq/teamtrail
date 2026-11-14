@@ -1,11 +1,13 @@
 import { approvesHighRisk, type AnswerVia } from '../../model/answerVia';
+import { highRiskRefusal } from '../../model/highRiskRefusal';
 import { OperationError } from './operationError';
 
 /**
  * How a decision that doesn't come from the Lookout shows it isn't high risk. `via` is how the human gave it;
  * `highRisk` is this machine's check of the ticket against its risk policy and evidence (policy/needsLookout.ts,
  * `ticketNeedsLookout`). A Slack answer reaches this machine through Teamtrail's Scout service, which could be made
- * to forge one, so on a high-risk ticket only the Lookout's word counts.
+ * to forge one, so on a high-risk ticket only the Lookout's word counts; and not that of a Lookout caller its sign-in
+ * doesn't allow high-risk calls (`lookout-limited`, signIn/externalSignIn.ts).
  */
 export interface LookoutGuard {
   via?: AnswerVia;
@@ -27,9 +29,7 @@ export async function assertLookoutGuard(
   const via = g.via ?? (g.sourceKind === 'slack' ? 'slack' : undefined);
   if (!via || approvesHighRisk(via) || !t.ticketId) return;
   const which = t.key ?? t.ticketId;
-  if (!g.highRisk) throw new OperationError(`Can't tell whether ${which} is high risk: decide it in the Lookout.`);
-  if (await g.highRisk(t.mapId, t.ticketId))
-    throw new OperationError(
-      `${which} is high risk: decide it in the Lookout. Answers given in Slack don't count for it.`,
-    );
+  const where = via === 'lookout-limited' ? 'ask someone allowed to make high-risk calls' : 'decide it in the Lookout';
+  if (!g.highRisk) throw new OperationError(`Can't tell whether ${which} is high risk: ${where}.`);
+  if (await g.highRisk(t.mapId, t.ticketId)) throw new OperationError(highRiskRefusal(which, via));
 }

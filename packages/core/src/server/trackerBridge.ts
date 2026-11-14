@@ -94,7 +94,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
           p.handle(req, res, url),
     ),
     async (req, res, url) =>
-      url.pathname.startsWith('/decisions') && handleDecisions(await routes.active(), req, res, url),
+      url.pathname.startsWith('/decisions') &&
+      handleDecisions({ adapter: await routes.active(), root: abs }, req, res, url),
     (req, res, url) => handleLeases(ctx, req, res, url),
     (req, res, url) => handleJournal({ root: abs, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),

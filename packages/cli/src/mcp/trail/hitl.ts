@@ -1,5 +1,6 @@
 import {
   approvesGates,
+  approvesHighRisk,
   attention,
   chatNote,
   OperationError,
@@ -10,7 +11,7 @@ import {
 import { lookoutOnlyTickets, needsLookout, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { rankedAttention } from './attention';
-import { CHAT_GUIDES, SLACK_HIGH_RISK } from './humanAnswer';
+import { CHAT_GUIDES, LIMITED_HIGH_RISK, SLACK_HIGH_RISK } from './humanAnswer';
 import { trailNameFamily } from './trailName';
 import { TRAIL_LEAD, type AskResult, type WaitControl } from './types';
 
@@ -145,8 +146,8 @@ export async function waitForAnswer(
 /** How the answer was given, and for one that can't approve gates, what that means for the agent. */
 function viaOf(ctx: AgentContext, via: AnswerVia | undefined, questionId: string) {
   const categories = ctx.answers.get(questionId)?.categories ?? [];
-  if (via === 'slack' && needsLookout.question(ctx.root, { categories }))
-    return { answeredVia: via, note: SLACK_HIGH_RISK };
+  if (approvesGates(via) && !approvesHighRisk(via) && needsLookout.question(ctx.root, { categories }))
+    return { answeredVia: via, note: via === 'lookout-limited' ? LIMITED_HIGH_RISK : SLACK_HIGH_RISK };
   if (approvesGates(via)) return { answeredVia: via };
   if (via) return { answeredVia: via, note: CHAT_GUIDES };
   // Unlabelled: written by a Teamtrail from before labels, or its label didn't verify. Either way it only guides.

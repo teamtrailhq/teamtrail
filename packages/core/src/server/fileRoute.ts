@@ -5,6 +5,8 @@ import { symlinkFree } from '../projects/symlinkFree';
 import { contentHash } from '../trust/trustLedger';
 import { BadRequest, readText, sendJson } from './http';
 import { lanFileRefusal } from './lanFileRefusal';
+import { limitedFileRefusal } from './limitedFileRefusal';
+import { markedLimited } from './limitedRequests';
 
 /**
  * What the raw file route may touch: the tracker's markdown (trails, tickets, decisions, briefs, criteria,
@@ -43,13 +45,18 @@ async function create(c: { ctx: FileRouteContext; res: ServerResponse; p: string
   sendJson(c.res, 412, { error: `${c.p} exists: pick the next number.`, exists: true });
 }
 
-/** `PUT /file`: refused from another device when it changes more than it may; 409 when the file moved on. */
+/**
+ * `PUT /file`: refused from another device when it changes more than it may, and from a caller not allowed high-risk
+ * calls when it decides a high-risk ticket; 409 when the file moved on.
+ */
 async function put(ctx: FileRouteContext, req: IncomingMessage, res: ServerResponse, p: string) {
   const text = await readText(req);
   const local = ctx.local(req);
   const before = await readOrMissing(ctx.fs, p);
   const refused = local ? undefined : lanFileRefusal(p, before, text);
   if (refused) return sendJson(res, 403, { error: refused, elsewhere: true });
+  const limited = markedLimited(req) ? await limitedFileRefusal(ctx.root, { rel: p, before, after: text }) : undefined;
+  if (limited) return sendJson(res, 403, { error: limited, highRisk: true });
   if (req.headers['if-none-match'] === '*') return create({ ctx, res, p, text, local });
   const match = ifMatch(req);
   if (match && match !== contentHash(before ?? ''))

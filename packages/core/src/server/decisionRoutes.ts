@@ -3,7 +3,10 @@ import type { TrackerAdapter } from '../adapters/adapter';
 import type { DecisionInput } from '../model/types';
 import { DECISION_SOURCES } from '../planning/decisions/decisionRecord';
 import { recordDecision, supersedeDecision } from '../planning/operations/decisionOps';
+import type { LookoutGuard } from '../planning/operations/lookoutGuard';
+import { ticketNeedsLookout } from '../policy/ticketNeedsLookout';
 import { BadRequest, readJson, sendJson } from './http';
+import { lookoutVia } from './lookoutVia';
 
 async function trailOf(adapter: TrackerAdapter, b: { trail?: unknown }) {
   const id = typeof b.trail === 'string' ? b.trail : '';
@@ -22,9 +25,18 @@ function checkInput(b: Partial<DecisionInput>, needQuestion: boolean) {
     throw new BadRequest(`"source.kind" must be one of ${Object.keys(DECISION_SOURCES).join(', ')}`);
 }
 
-/** `/decisions` routes on the given tracker; false when none matches. */
+/**
+ * How a decision recorded through this request is guarded: given in the Lookout, by a caller allowed high-risk calls
+ * or not (lookoutVia.ts), and this machine's check of whether its ticket is high risk.
+ */
+const guardOf = (root: string, req: IncomingMessage): LookoutGuard => ({
+  via: lookoutVia(req),
+  highRisk: (mapId, ticketId) => ticketNeedsLookout(root, mapId, ticketId),
+});
+
+/** `/decisions` routes on the given tracker (`root`: its folder); false when none matches. */
 export async function handleDecisions(
-  adapter: TrackerAdapter,
+  { adapter, root }: { adapter: TrackerAdapter; root: string },
   req: IncomingMessage,
   res: ServerResponse,
   url: URL,
@@ -43,7 +55,8 @@ export async function handleDecisions(
     const mapId = await trailOf(adapter, b);
     checkInput(b, true);
     const { trail: _m, appendToTrail, ...input } = b;
-    sendJson(res, 201, await recordDecision(adapter, mapId, input as DecisionInput, { appendToTrail }));
+    const guard = guardOf(root, req);
+    sendJson(res, 201, await recordDecision(adapter, mapId, input as DecisionInput, { appendToTrail, guard }));
     return true;
   }
   const sup = url.pathname.match(/^\/decisions\/([^/]+)\/supersede$/);
@@ -52,7 +65,9 @@ export async function handleDecisions(
     const mapId = await trailOf(adapter, b);
     checkInput(b, false);
     const { trail: _m, ...input } = b;
-    sendJson(res, 201, await supersedeDecision(adapter, mapId, decodeURIComponent(sup[1]), input as DecisionInput));
+    const id = decodeURIComponent(sup[1]);
+    const guard = guardOf(root, req);
+    sendJson(res, 201, await supersedeDecision(adapter, mapId, id, { ...(input as DecisionInput), guard }));
     return true;
   }
   return false;
