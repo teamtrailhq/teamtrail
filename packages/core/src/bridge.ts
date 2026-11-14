@@ -20,7 +20,13 @@ export { readLookoutLock } from './agents/lookoutLock';
 export { ensureLocalDir, writeLocalJson } from './lib/ensureLocalDir';
 export { writeJsonAtomic } from './lib/jsonFile';
 export { outboxFile, outboxKey } from './adapters/remote/outboxFile';
-export { createProjectsHub, type ProjectsHub, type ProjectsHubOptions } from './server/projectsHub';
+export {
+  createProjectsHub,
+  type ProjectsHub,
+  type ProjectsHubAccess,
+  type ProjectsHubOptions,
+} from './server/projectsHub';
+export type { ExternalCaller, ExternalSignIn } from './signIn/externalSignIn';
 export { BadRequest, requestUrl, sendFailure } from './server/http';
 export { neverCrash } from './server/neverCrash';
 export { setSecurityHeaders } from './server/securityHeaders';

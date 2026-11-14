@@ -62,6 +62,10 @@ export interface BridgeOptions extends Omit<TrackerRoutesOptions, 'root' | 'mark
   plugins?: BridgePluginFactory[];
   /** Who is on the other end of a connection; default the socket's remote address. Tests stand in another device. */
   peer?: PeerAddress;
+  /** Host names besides IP addresses and localhost the bridge answers (hosted mode: the workspace's own). */
+  allowedHosts?: string[];
+  /** Whom `/events` streams are counted for (at most 16 each); default the socket's address. */
+  streamKey?: (req: IncomingMessage) => string;
   url?: () => string | undefined;
   /** How often lease files are polled and expired leases returned to the queue. */
   leases?: { pollMs?: number; reapMs?: number };

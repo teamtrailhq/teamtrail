@@ -1,5 +1,6 @@
 import { BRAND } from '@teamtrail/core';
 import { apiBase } from './apiBase';
+import { managedSignIn } from './managedSignIn';
 import { distrustServer, proveServer } from './serverProof';
 
 type Listener = (e: Event) => void;
@@ -44,6 +45,7 @@ export class SessionEventSource {
 
   private async connect() {
     if (this.closed) return;
+    if (managedSignIn()) return this.open(`${this.base}${this.path}`);
     // the server proves it is this page's Lookout before the session goes out for a ticket
     if ((await proveServer()) !== 'proven') return this.failed();
     const ticket = await fetch(`${BRAND.apiPrefix}/sign-in/stream`, {
@@ -56,7 +58,11 @@ export class SessionEventSource {
       .catch(() => undefined);
     if (this.closed) return;
     if (!ticket) return this.failed();
-    const es = new EventSource(`${this.base}${this.path}?ticket=${encodeURIComponent(ticket)}`);
+    this.open(`${this.base}${this.path}?ticket=${encodeURIComponent(ticket)}`);
+  }
+
+  private open(url: string) {
+    const es = new EventSource(url);
     this.inner = es;
     for (const [type, l] of this.listeners) es.addEventListener(type, l);
     es.addEventListener('open', () => (this.retryMs = 1000));

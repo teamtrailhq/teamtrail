@@ -55,6 +55,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     integration: integrationTiming,
     attention: attentionTiming,
     peer,
+    allowedHosts,
+    streamKey = (req) => req.socket.remoteAddress ?? '',
     ...trackers
   } = options;
   const abs = path.resolve(root);
@@ -119,7 +121,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   /** The live event stream, and raw file access to the tracker folder (fileRoute.ts). */
   async function fileRoute(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
     if (url.pathname === '/events') {
-      const who = req.socket.remoteAddress ?? '';
+      const who = streamKey(req);
       // A tab needs one stream; a few tabs and a phone, a few more. Past that it's hoarding connections.
       if ((streams.get(who) ?? 0) >= MAX_STREAMS_PER_PEER)
         return (sendJson(res, 429, { error: 'too many open event streams' }), true);
@@ -138,7 +140,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   async function handle(req: IncomingMessage, res: ServerResponse) {
     setSecurityHeaders(res, 'api');
     const url = requestUrl(req);
-    const refusal = requestRefusal(req);
+    const refusal = requestRefusal(req, allowedHosts);
     if (refusal) return refuseEarly(res, { error: refusal });
     const local = fromThisMachine(req, peer);
     if (url.pathname === '/machine') return sendJson(res, 200, { local });

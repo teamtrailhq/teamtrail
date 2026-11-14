@@ -10,6 +10,7 @@ import { projectEntries } from '../projects/projectEntries';
 import { projectId } from '../projects/projectId';
 import { projectState } from '../projects/projectState';
 import { projectsView } from '../projects/projectsView';
+import type { ExternalSignIn } from '../signIn/externalSignIn';
 import type { LookoutSignIn } from '../signIn/lookoutSignIn';
 import { sendBridgeError } from './bridgeErrors';
 import type { TrackerBridge } from './bridgeTypes';
@@ -41,12 +42,17 @@ export interface ProjectsHubOptions {
   peer?: PeerAddress;
   /** How often project summaries are recomputed while a Lookout listens. */
   pollMs?: number;
-  /**
-   * Who may use the API (signIn/lookoutSignIn.ts): every route but pairing needs a paired browser's session. Made
-   * for the folder the Lookout was started in, by whoever serves it (the CLI, the dev server).
-   */
-  signIn: LookoutSignIn;
+  /** Host names besides IP addresses and localhost the hub answers (a proxy's name in front). */
+  allowedHosts?: string[];
 }
+
+/**
+ * Who may use the API. Paired: every route but pairing needs a paired browser's session (signIn/lookoutSignIn.ts),
+ * made for the folder the Lookout was started in, by whoever serves it (the CLI, the dev server). External: a
+ * server that embeds the Lookout brings its own sign-in (signIn/externalSignIn.ts), and there is no pairing.
+ */
+export type ProjectsHubAccess =
+  { signIn: LookoutSignIn; external?: undefined } | { external: ExternalSignIn; signIn?: undefined };
 
 export type ProjectsHub = ReturnType<typeof createProjectsHub>;
 
@@ -63,7 +69,7 @@ function checkPath(root: string, url: URL) {
  * routes as the un-prefixed API, for registered projects only. Bridges start lazily, capped, and close when
  * idle; a project another `teamtrail` serves is only read, never opened here.
  */
-export function createProjectsHub(o: ProjectsHubOptions) {
+export function createProjectsHub(o: ProjectsHubOptions & ProjectsHubAccess) {
   const configDir = o.configDir ?? defaultConfigDir();
   const homeId = projectId(o.home.root);
   const places = lanPlaces(o.home.root, configDir);
@@ -130,26 +136,42 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     await bridge.handle(req, res);
   }
 
+  /** Who the request is from, by the hub's access (ProjectsHubAccess); undefined once it was answered here. */
+  async function admit(req: IncomingMessage, res: ServerResponse, at: { url: URL; route: string }) {
+    if (o.external) {
+      const caller = await o.external.admit(req, res, { route: at.route, homeId });
+      return caller && { kind: 'external' as const, caller };
+    }
+    const loopback = fromThisMachine(req, o.peer);
+    const who = loopback ? 'loopback' : ((o.peer ?? ((r) => r.socket.remoteAddress))(req) ?? 'unknown');
+    const session = await signInGate(
+      { signIn: o.signIn, local: loopback, who, homeId, route: at.route },
+      req,
+      res,
+      at.url,
+    );
+    return session && { kind: 'paired' as const, caller: session, signIn: o.signIn };
+  }
+
   async function handle(req: IncomingMessage, res: ServerResponse) {
     setSecurityHeaders(res, 'api');
     const url = requestUrl(req);
-    const refusal = requestRefusal(req);
+    const refusal = requestRefusal(req, o.allowedHosts);
     if (refusal) return refuseEarly(res, { error: refusal });
     // The same list for every project: `/p/<id>/policy` is `/policy` of that project.
     const inProject = /^\/p\/[^/]+(\/.*)?$/.exec(url.pathname);
     const route = inProject ? (inProject[1] ?? '/') : url.pathname;
-    const loopback = fromThisMachine(req, o.peer);
-    const who = loopback ? 'loopback' : ((o.peer ?? ((r) => r.socket.remoteAddress))(req) ?? 'unknown');
-    const session = await signInGate({ signIn: o.signIn, local: loopback, who, homeId, route }, req, res, url);
-    if (!session) return;
-    // A device's session is a device's everywhere behind this point, whatever address it comes from.
-    if (session.kind === 'device') markFromDevice(req);
+    const signedIn = await admit(req, res, { url, route });
+    if (!signedIn) return;
+    // A device is a device everywhere behind this point, whatever address it comes from.
+    if (signedIn.caller.kind === 'device') markFromDevice(req);
     const local = fromThisMachine(req, o.peer);
     if (!local && thisMachineOnly(req.method, route)) return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
     if (!local) redactResponse(res, places);
-    if (isEventStreamRoute(route)) o.signIn.holdStream(session.id, req, res);
+    const paired = signedIn.kind === 'paired' ? signedIn : undefined;
+    if (paired && isEventStreamRoute(route)) paired.signIn.holdStream(paired.caller.id, req, res);
     try {
-      if (await handleSignIn({ signIn: o.signIn, session }, req, res, url)) return;
+      if (paired && (await handleSignIn({ signIn: paired.signIn, session: paired.caller }, req, res, url))) return;
       const m = /^\/p\/([^/]+)(\/.*)?$/.exec(url.pathname);
       if (m) return await forward(req, res, { id: m[1], rest: m[2] ?? '/', url });
       if (await handleProjects(ctx, req, res, url)) return;
@@ -167,7 +189,7 @@ export function createProjectsHub(o: ProjectsHubOptions) {
     close() {
       watcher.stop();
       bridges.close();
-      o.signIn.close();
+      o.signIn?.close();
     },
   };
 }

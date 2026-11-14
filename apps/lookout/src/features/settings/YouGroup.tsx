@@ -1,6 +1,6 @@
 import { AGENT_INTEGRATIONS } from '@teamtrail/core';
 import { Choice } from '../../components/ui';
-import { DevicesSection } from '../sign-in';
+import { DevicesSlot } from './DevicesSlot';
 import { SettingsSection } from './SettingsSection';
 import { SettingsSlot } from './SettingsSlot';
 import { ThemeChoice } from './ThemeChoice';
@@ -31,9 +31,7 @@ export function YouGroup({ data }: { data: SettingsData }) {
           </div>
         </SettingsSection>
       </SettingsSlot>
-      <SettingsSlot id="devices" storage="machine">
-        <DevicesSection />
-      </SettingsSlot>
+      <DevicesSlot />
     </>
   );
 }
