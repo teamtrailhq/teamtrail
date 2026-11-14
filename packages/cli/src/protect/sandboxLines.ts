@@ -3,6 +3,9 @@ import type { SandboxResult } from './applySandbox';
 
 const PAD = '                  ';
 
+/** Linux runs the sandbox through bubblewrap and socat; without them Claude Code runs commands unsandboxed. */
+const LINUX = `${PAD}On Linux it needs bubblewrap and socat (e.g. apt install bubblewrap socat); without them commands run unsandboxed.`;
+
 const LEFT: Record<Extract<SandboxResult, { kind: 'left' }>['why'], string> = {
   'no-sandbox': 'left as it is (--no-sandbox)',
   declined: 'left as it is (you said no)',
@@ -26,7 +29,8 @@ export function sandboxLines(o: { result: SandboxResult; cwd: string; guarded: b
     case 'turned-on':
       return [
         `  Sandbox         on · ${shown} · ${reach}`,
-        `${PAD}Added "sandbox": { "enabled": true }. A command Claude Code wants to run outside it still asks you first.`,
+        `${PAD}Added "sandbox": { "enabled": true }. Commands still ask you as before, and a new network domain asks too.`,
+        ...(process.platform === 'linux' ? [LINUX] : []),
         `${PAD}To undo: delete "enabled" from "sandbox" in ${shown}.`,
       ];
     case 'already-on':

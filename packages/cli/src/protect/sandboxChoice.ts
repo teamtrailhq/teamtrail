@@ -4,7 +4,7 @@ import { claudeSandboxState } from './claudeSandboxState';
 export type SandboxChoice = 'on' | 'no-sandbox' | 'declined' | 'no-tty';
 
 const QUESTION =
-  "  Turn on Claude Code's sandbox for this project? Its shell commands then can't read or change Teamtrail's config folder either. [Y/n] ";
+  "  Turn on Claude Code's sandbox for this project? Its shell commands then can't read or change Teamtrail's config folder either, and a new network domain asks first. [Y/n] ";
 
 /**
  * `connect claude`'s sandbox question, asked before anything is written: `--sandbox` (flag true) and

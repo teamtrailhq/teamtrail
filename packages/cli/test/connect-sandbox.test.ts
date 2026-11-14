@@ -59,9 +59,18 @@ describe('enableClaudeSandbox', () => {
     expect(enableClaudeSandbox(local())).toBe('enabled');
     expect(JSON.parse(fs.readFileSync(local(), 'utf8'))).toEqual({
       hooks: { SessionStart: [] },
-      sandbox: { filesystem: { denyRead: ['~/.aws'] }, enabled: true },
+      sandbox: { filesystem: { denyRead: ['~/.aws'] }, enabled: true, autoAllowBashIfSandboxed: false },
     });
     expect(enableClaudeSandbox(local())).toBe('unchanged');
+  });
+
+  it('keeps permission prompts as they were, unless the file already chose', () => {
+    writeJson(local(), { sandbox: { autoAllowBashIfSandboxed: true } });
+    expect(enableClaudeSandbox(local())).toBe('enabled');
+    expect(JSON.parse(fs.readFileSync(local(), 'utf8')).sandbox).toEqual({
+      autoAllowBashIfSandboxed: true,
+      enabled: true,
+    });
   });
 
   it('leaves a file it can’t read, or an odd-shaped sandbox, alone', () => {
@@ -114,7 +123,7 @@ describe('connect claude and the sandbox', () => {
   it('turns it on in .claude/settings.local.json, next to the usage hook, and says how to undo it', () => {
     const text = connect({ sandbox: 'on' });
     const settings = JSON.parse(fs.readFileSync(local(), 'utf8'));
-    expect(settings.sandbox).toEqual({ enabled: true });
+    expect(settings.sandbox).toEqual({ enabled: true, autoAllowBashIfSandboxed: false });
     expect(settings.hooks.SessionStart).toHaveLength(1);
     expect(text).toMatch(
       /Sandbox {9}on · \.claude\/settings\.local\.json · shell commands can't reach the config folder either/,
@@ -137,7 +146,10 @@ describe('connect claude and the sandbox', () => {
       expect(text).toMatch(/To turn it on: connect claude --sandbox/);
     }
     connect({ sandbox: 'on' });
-    expect(JSON.parse(fs.readFileSync(local(), 'utf8')).sandbox).toEqual({ enabled: true });
+    expect(JSON.parse(fs.readFileSync(local(), 'utf8')).sandbox).toEqual({
+      enabled: true,
+      autoAllowBashIfSandboxed: false,
+    });
   });
 
   it('without a terminal or a flag: nothing changes, and it prints how to turn it on', () => {
