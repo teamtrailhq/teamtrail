@@ -9,7 +9,7 @@
   },
   "description": "Pixel-art Scout avatar: a React component plus a framework-free renderer (mountScout).",
   "type": "module",
-  "license": "FSL-1.1-ALv2",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/teamtrailhq/teamtrail.git",

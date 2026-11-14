@@ -27,4 +27,4 @@ npx teamtrail@next
 
 ## License
 
-[FSL-1.1-ALv2](LICENSE): free to use, modify and run, including at work, for anything except a competing product. Each release becomes Apache 2.0 two years after it ships.
+[MIT](LICENSE).

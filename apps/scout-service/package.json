@@ -9,7 +9,7 @@
   },
   "description": "The Scout service: the backend of Teamtrail's official Slack app. Receives Slack's requests, passes them to each person's Teamtrail over an outbound WebSocket, and posts Scout's messages. Stores no trail content.",
   "type": "module",
-  "license": "FSL-1.1-ALv2",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/teamtrailhq/teamtrail.git",

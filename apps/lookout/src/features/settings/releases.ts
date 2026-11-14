@@ -17,6 +17,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.33.1',
+    date: '2026-11-14',
+    items: ['Teamtrail is now MIT licensed'],
+  },
+  {
     version: '0.33.0',
     date: '2026-11-14',
     items: [
@@ -182,15 +187,6 @@ export const RELEASES: Release[] = [
       'A new greeting when you start `teamtrail` in a terminal',
       'A new logo, a t whose stem runs along a trail to a node, and a new look for Scout: the original CRT head with ear cups and a baseball cap, with a lamp on the cap at night. No more pixel art, and new fonts too',
       "All projects: every repo you supervise in one view, with one list of what needs you across them and what changed while you were away. Answer an agent's question in any repo from there, and switch projects from the header. Agents add their repo when they connect (`--no-register` opts out), or add one with `teamtrail projects add`",
-    ],
-  },
-  {
-    version: '0.22.0',
-    date: '2026-11-05',
-    items: [
-      'A calmer, clearer command center: every list now reads the same way, what it is first, then one quiet line of context, and details when you want them',
-      'Red now only means something needs you now; other states show as a thin edge instead of colored text everywhere',
-      'The open question in a conversation can no longer be hidden by its suggested answers, and the phone header no longer runs off the side',
     ],
   },
   ...OLDER_RELEASES,

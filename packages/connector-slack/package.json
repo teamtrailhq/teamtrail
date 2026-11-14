@@ -15,7 +15,7 @@
     "./api": "./src/api.ts"
   },
   "sideEffects": false,
-  "license": "FSL-1.1-ALv2",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/teamtrailhq/teamtrail.git",
