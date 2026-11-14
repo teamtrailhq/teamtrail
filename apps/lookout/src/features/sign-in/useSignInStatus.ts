@@ -1,5 +1,6 @@
 import { BRAND } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
+import { learnManagedSignIn } from '../../lib/managedSignIn';
 import { onProofChange, proveServer } from '../../lib/serverProof';
 import { readSession } from '../../lib/session';
 
@@ -17,8 +18,10 @@ async function unpaired(): Promise<SignInStatus> {
   try {
     const r = await fetch(`${BRAND.apiPrefix}/session`, { cache: 'no-store' });
     if (!r.ok) return { kind: 'no-server' };
-    const s = (await r.json()) as { signedIn?: unknown; local?: unknown };
+    const s = (await r.json()) as { signedIn?: unknown; local?: unknown; managed?: unknown };
     if (typeof s.signedIn !== 'boolean') return { kind: 'no-server' };
+    // the server in front signs this browser in itself: nothing to pair or prove
+    if (s.signedIn && learnManagedSignIn(s)) return { kind: 'signed-in' };
     return { kind: 'signed-out', local: s.local === true };
   } catch {
     return { kind: 'no-server' };
