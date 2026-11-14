@@ -2,6 +2,7 @@ import type { TrackerAdapter } from '../../adapters/adapter';
 import type { DecisionInput, DecisionRecord } from '../../model/types';
 import { assertLookoutGuard, type LookoutGuard } from './lookoutGuard';
 import { OperationError } from './operationError';
+import { assertSupersedeGuard } from './supersedeGuard';
 
 /**
  * Record a decision (from any source: Lookout, agent, Slack, tracker import)
@@ -41,7 +42,8 @@ export async function recordDecision(
 
 /**
  * Replace a decision: new record pointing back at the old one, old one marked superseded, trail line swapped. The
- * new decision is on the old one's ticket unless it names another, and passes the same `guard` as recording one.
+ * new decision is on the old one's ticket unless it names another; the `guard` checks the old one's ticket and risk
+ * as well as the new one's (supersedeGuard.ts).
  */
 export async function supersedeDecision(
   adapter: TrackerAdapter,
@@ -61,10 +63,7 @@ export async function supersedeDecision(
     question: input.question ?? old.question,
     supersedes: old.id,
   };
-  await assertLookoutGuard(
-    { ...guard, sourceKind: input.source.kind },
-    { mapId, ticketId: next.ticketId, key: next.ticketKey },
-  );
+  await assertSupersedeGuard({ ...guard, sourceKind: input.source.kind }, { mapId, old, next });
   const rec = await adapter.createDecision(mapId, next);
   await adapter.markSuperseded(mapId, old.id, rec.id);
   const fresh = await adapter.loadMap(mapId);

@@ -9,6 +9,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
+import { MemoryAdapter } from '../src/adapters/memoryAdapter';
 import { agentPaths, type AgentSessionDoc } from '../src/agents/agentLink';
 import {
   createProjectsHub,
@@ -18,7 +19,13 @@ import {
   type TrackerBridge,
 } from '../src/bridge';
 import { writeLocalJson } from '../src/lib/ensureLocalDir';
+import type { DecisionInput } from '../src/model/types';
+import { chartMap } from '../src/planning/operations/chart';
+import { recordDecision, supersedeDecision } from '../src/planning/operations/decisionOps';
+import { lookoutOnlyTickets } from '../src/policy/lookoutOnlyTickets';
+import { ticketNeedsLookout } from '../src/policy/ticketNeedsLookout';
 import { sendJson } from '../src/server/http';
+import { limitedCallRefusal } from '../src/server/limitedCallRefusal';
 import { fakeGitHub } from './fakes/github';
 
 const external: ExternalSignIn = {
@@ -117,7 +124,6 @@ test('a limited caller can’t close, reopen or record a decision on a high-risk
   for (const [method, args] of [
     ['close', ['3', '7', 'completed']],
     ['reopen', ['3', '7']],
-    ['createDecision', ['3', { ticketId: '7', question: 'Q', answer: 'A', decidedBy: 'trail lead' }]],
   ] as const) {
     const refused = await trackerCall('limited', method, [...args]);
     assert.equal(refused.status, 403, method);
@@ -125,7 +131,83 @@ test('a limited caller can’t close, reopen or record a decision on a high-risk
     // an allowed caller's call goes on to GitHub (which has no such issue): not refused here
     assert.notEqual((await trackerCall('allowed', method, [...args])).status, 403, method);
   }
+  // a limited caller is another device's: no decisions through tracker calls at all
+  for (const [method, args] of [
+    ['createDecision', ['3', { ticketKey: '#7', question: 'Q', answer: 'A', decidedBy: 'trail lead' }]],
+    ['markSuperseded', ['3', 'D-1', 'D-2']],
+  ] as const) {
+    const refused = await trackerCall('limited', method, [...args]);
+    assert.equal(refused.status, 403, method);
+    assert.equal(refused.body.elsewhere, true, method);
+  }
   // another ticket, and calls that decide nothing, go on to GitHub
   assert.notEqual((await trackerCall('limited', 'close', ['3', '8', 'completed'])).status, 403);
   assert.notEqual((await trackerCall('limited', 'comment', ['3', '7', 'trail lead', 'hi'])).status, 403);
+});
+
+/** A memory tracker with a high-risk ticket (an agent asked about it with "schema"), a plain one and a decision on each. */
+async function memoryTrail() {
+  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-limited-unit-')), '.teamtrail');
+  mkdirSync(root, { recursive: true });
+  const adapter = new MemoryAdapter({ latency: [0, 0] });
+  const { map, tickets } = await chartMap(adapter, {
+    title: 'Users',
+    sections: { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] },
+    tickets: [
+      { ref: 'drop', title: 'Drop the old table?', type: 'junction', body: '' },
+      { ref: 'copy', title: 'Button copy', type: 'junction', body: '' },
+    ],
+  });
+  const [risky, plain] = tickets;
+  lookoutOnlyTickets.mark(root, { mapId: map.id, ticketId: risky.id, categories: ['schema'] });
+  const decide = (t: typeof risky, extra: Partial<DecisionInput> = {}) =>
+    recordDecision(adapter, map.id, {
+      ticketId: t.id,
+      ticketKey: t.key,
+      question: t.title,
+      answer: 'Yes',
+      summary: 'Yes',
+      decidedBy: 'trail lead',
+      source: { kind: 'lookout' },
+      ...extra,
+    });
+  return { root, adapter, mapId: map.id, risky, plain, decide };
+}
+
+test('limitedCallRefusal (defence in depth): a decision by ticket key, and marking a high-risk one superseded', async () => {
+  const t = await memoryTrail();
+  const onRisky = await t.decide(t.risky);
+  const onPlain = await t.decide(t.plain);
+  const highByRisk = await t.decide(t.plain, { risk: { level: 'high', category: 'schema', reason: 'schema' } });
+  const refusal = (method: string, args: unknown[]) =>
+    limitedCallRefusal({ root: t.root, adapter: async () => t.adapter }, { method, args });
+  assert.match(String(await refusal('createDecision', [t.mapId, { ticketKey: t.risky.key }])), /high risk/);
+  assert.match(String(await refusal('markSuperseded', [t.mapId, onRisky.id, 'D-9'])), /high risk/);
+  assert.match(String(await refusal('markSuperseded', [t.mapId, highByRisk.id, 'D-9'])), /high risk/);
+  assert.equal(await refusal('markSuperseded', [t.mapId, onPlain.id, 'D-9']), undefined);
+  assert.equal(await refusal('createDecision', [t.mapId, { ticketKey: t.plain.key }]), undefined);
+});
+
+test('supersedeDecision: the old decision’s ticket and risk count, whatever ticket the new one names', async () => {
+  const t = await memoryTrail();
+  const limited = {
+    via: 'lookout-limited' as const,
+    highRisk: (m: string, id: string) => ticketNeedsLookout(t.root, m, id),
+  };
+  const input = { answer: 'No', decidedBy: 'trail lead', source: { kind: 'lookout' as const }, guard: limited };
+  const onRisky = await t.decide(t.risky);
+  for (const ticketId of [t.plain.id, ''])
+    await assert.rejects(
+      supersedeDecision(t.adapter, t.mapId, onRisky.id, { ...input, ticketId }),
+      /high risk: ask someone allowed to make high-risk calls/,
+    );
+  const highByRisk = await t.decide(t.plain, { risk: { level: 'high', category: 'schema', reason: 'schema' } });
+  await assert.rejects(supersedeDecision(t.adapter, t.mapId, highByRisk.id, input), /high risk/);
+  // moving a plain decision onto the high-risk ticket is refused too; a plain one on its own ticket goes through
+  const onPlain = await t.decide(t.plain);
+  await assert.rejects(supersedeDecision(t.adapter, t.mapId, onPlain.id, { ...input, ticketId: t.risky.id }));
+  assert.ok(await supersedeDecision(t.adapter, t.mapId, onPlain.id, input));
+  assert.ok(
+    await supersedeDecision(t.adapter, t.mapId, onRisky.id, { ...input, guard: { ...limited, via: 'lookout' } }),
+  );
 });

@@ -155,12 +155,15 @@ export function createProjectsHub(o: ProjectsHubOptions & ProjectsHubAccess) {
   }
 
   /**
-   * A device is a device everywhere behind the hub, whatever address it comes from; a caller an embedding server's
-   * sign-in doesn't allow high-risk calls is limited everywhere behind it too (limitedRequests.ts).
+   * A device is a device everywhere behind the hub, whatever address it comes from. A caller an embedding server's
+   * sign-in doesn't allow high-risk calls is limited everywhere behind it (limitedRequests.ts), and is also another
+   * device's: someone who may not make high-risk calls may not change what this machine trusts either (its risk
+   * policy, approvals, outside changes), and gets a device's limits on tracker files and calls.
    */
   function markCaller(req: IncomingMessage, signedIn: NonNullable<Awaited<ReturnType<typeof admit>>>) {
-    if (signedIn.caller.kind === 'device') markFromDevice(req);
-    if (signedIn.kind === 'external' && signedIn.caller.highRisk === false) markLimited(req);
+    const limited = signedIn.kind === 'external' && signedIn.caller.highRisk === false;
+    if (limited) markLimited(req);
+    if (limited || signedIn.caller.kind === 'device') markFromDevice(req);
   }
 
   async function handle(req: IncomingMessage, res: ServerResponse) {

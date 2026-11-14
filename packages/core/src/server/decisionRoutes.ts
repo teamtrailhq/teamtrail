@@ -6,6 +6,7 @@ import { recordDecision, supersedeDecision } from '../planning/operations/decisi
 import type { LookoutGuard } from '../planning/operations/lookoutGuard';
 import { ticketNeedsLookout } from '../policy/ticketNeedsLookout';
 import { BadRequest, readJson, sendJson } from './http';
+import { markedLimited } from './limitedRequests';
 import { lookoutVia } from './lookoutVia';
 
 async function trailOf(adapter: TrackerAdapter, b: { trail?: unknown }) {
@@ -64,7 +65,10 @@ export async function handleDecisions(
     const b = await readJson<Partial<DecisionInput> & { trail?: string }>(req);
     const mapId = await trailOf(adapter, b);
     checkInput(b, false);
-    const { trail: _m, ...input } = b;
+    const { trail: _m, ...named } = b;
+    const { ticketId: _t, ticketKey: _k, ...onOwnTicket } = named;
+    // A caller not allowed high-risk calls supersedes a decision on its own ticket only: it can't move it elsewhere.
+    const input = markedLimited(req) ? onOwnTicket : named;
     const id = decodeURIComponent(sup[1]);
     const guard = guardOf(root, req);
     sendJson(res, 201, await supersedeDecision(adapter, mapId, id, { ...(input as DecisionInput), guard }));

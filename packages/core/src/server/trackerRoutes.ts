@@ -156,7 +156,9 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
       const refused = fromThisMachine(req, o.peer) ? undefined : lanCallRefusal(String(body.method), body.args ?? []);
       if (refused) return (void sendJson(res, 403, { error: refused, elsewhere: true }), true);
       const args = Array.isArray(body.args) ? body.args : [];
-      const limited = markedLimited(req) ? await limitedCallRefusal(o.root, String(body.method), args) : undefined;
+      const adapter = () => remotes.get(kind);
+      const call = { method: String(body.method), args };
+      const limited = markedLimited(req) ? await limitedCallRefusal({ root: o.root, adapter }, call) : undefined;
       if (limited) return (void sendJson(res, 403, { error: limited, highRisk: true }), true);
       const result = await callAdapter(kind, body);
       return (void sendJson(res, 200, { result: result ?? null }), true);

@@ -2,11 +2,12 @@
  * An embedding server's sign-in may deny a caller high-risk calls (`ExternalCaller.highRisk: false`). What that
  * caller does in the Lookout then counts at every gate but the high-risk ones, as a Slack answer does: its answers
  * are `lookout-limited`, and it can't answer a high-risk question, accept high-risk work, record a decision on a
- * high-risk ticket, approve a reroute, close a high-risk ticket through the file route, or change the risk policy.
- * A caller with `highRisk: true` or unset can do all of it, as before.
+ * high-risk ticket (nor supersede one naming another ticket), approve a reroute, or close a high-risk ticket through
+ * the file route. It is also another device's whatever its kind: it can't change the risk policy or approve what
+ * this machine trusts. A caller with `highRisk: true` or unset can do all of it, as before.
  */
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
@@ -271,8 +272,27 @@ test('decisions: a limited caller can’t record or supersede one on a high-risk
     headers: { 'Content-Type': 'text/markdown', 'If-Match': loaded.etag! },
   });
   assert.equal(edited.status, 403);
-  assert.match(edited.body.error, LIMITED);
   assert.equal((await supersede('allowed')).status, 201);
+});
+
+test('supersede: a limited caller can’t move a high-risk decision to another ticket, or to none, to get past it', async () => {
+  const supersede = (who: Who, id: string, ticketId: string) =>
+    call(who, {
+      path: `/decisions/${encodeURIComponent(id)}/supersede`,
+      method: 'POST',
+      body: { trail: mapId, ticketId, answer: 'No', decidedBy: 'trail lead', source: { kind: 'lookout' } },
+    });
+  for (const ticketId of [tickets.plain.id, '']) {
+    const old = await decision('allowed', tickets.risky);
+    for (const who of ['limited', 'limited-device'] as const) {
+      const refused = await supersede(who, old.body.id, ticketId);
+      assert.equal(refused.status, 409, `${who} naming "${ticketId}"`);
+      assert.match(refused.body.error, LIMITED);
+    }
+    const kept = (await (await bridge.active()).listDecisions(mapId)).find((d) => d.id === old.body.id);
+    assert.equal(kept?.supersededBy, undefined, 'the high-risk decision still stands');
+    assert.equal((await supersede('allowed', old.body.id, ticketId)).status, 201);
+  }
 });
 
 test('reroutes: a limited caller can’t approve one, and can decline', async () => {
@@ -320,11 +340,29 @@ test('the file route: a limited caller can’t close a high-risk ticket, from th
   assert.equal((await closeByFile('allowed', tickets.risky)).status, 200);
 });
 
-test('the risk policy: a limited caller can’t change what is high risk', async () => {
+test('what this machine trusts: a limited caller is another device’s, whatever its kind', async () => {
   const policy = await call('allowed', { path: '/policy' });
   const put = (who: Who) => call(who, { path: '/policy', method: 'PUT', body: policy.body.policy ?? {} });
-  const refused = await put('limited');
-  assert.equal(refused.status, 403);
-  assert.equal(refused.body.highRisk, true);
+  const elsewhere = (r: Reply) => {
+    assert.equal(r.status, 403);
+    assert.equal(r.body.elsewhere, true);
+  };
+  elsewhere(await put('limited'));
   assert.equal((await put('allowed')).status, 200);
+  // an outside close of a high-risk ticket, and a lowered policy, written to the repo by something else
+  const file = path.join(root, mapId, 'tickets', `${tickets.risky2.id}.md`);
+  writeFileSync(file, readFileSync(file, 'utf8').replace(/state: open/, 'state: closed\nclose_reason: completed'));
+  const lowered = { ...policy.body.policy, categories: { ...policy.body.policy.categories, schema: 'low' } };
+  writeFileSync(path.join(root, 'policy.json'), JSON.stringify(lowered, null, 2));
+  const pending = (await call('allowed', { path: '/trust' })).body.items as { key: string; hash: string }[];
+  const items = pending.map(({ key, hash }) => ({ key, hash }));
+  assert.ok(items.some((i) => i.key.includes('policy')) && items.length > 1, JSON.stringify(items));
+  elsewhere(await call('limited', { path: '/trust/approve', method: 'POST', body: { items } }));
+  elsewhere(await call('limited', { path: '/trust/revert', method: 'POST', body: items[0] }));
+  // so the high-risk question is still high risk, and the ticket is still open to the gates
+  assert.equal((await answer('limited', 'q1')).status, 409);
+  const snap = await (await bridge.active()).loadMap(mapId);
+  assert.equal(snap.tickets.find((t) => t.id === tickets.risky2.id)?.state, 'open');
+  const approved = await call('allowed', { path: '/trust/approve', method: 'POST', body: { items } });
+  assert.equal(approved.status, 200);
 });
