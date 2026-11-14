@@ -18,6 +18,7 @@ import { markFromDevice } from './deviceRequests';
 import { isEventStreamRoute } from './eventStreamRoute';
 import { BadRequest, refuseEarly, requestUrl, sendJson } from './http';
 import { lanPlaces } from './lanPlaces';
+import { markLimited } from './limitedRequests';
 import { neverCrash } from './neverCrash';
 import { handleProjects } from './projectRoutes';
 import { redactResponse } from './redactResponse';
@@ -153,6 +154,18 @@ export function createProjectsHub(o: ProjectsHubOptions & ProjectsHubAccess) {
     return session && { kind: 'paired' as const, caller: session, signIn: o.signIn };
   }
 
+  /**
+   * A device is a device everywhere behind the hub, whatever address it comes from. A caller an embedding server's
+   * sign-in doesn't allow high-risk calls is limited everywhere behind it (limitedRequests.ts), and is also another
+   * device's: someone who may not make high-risk calls may not change what this machine trusts either (its risk
+   * policy, approvals, outside changes), and gets a device's limits on tracker files and calls.
+   */
+  function markCaller(req: IncomingMessage, signedIn: NonNullable<Awaited<ReturnType<typeof admit>>>) {
+    const limited = signedIn.kind === 'external' && signedIn.caller.highRisk === false;
+    if (limited) markLimited(req);
+    if (limited || signedIn.caller.kind === 'device') markFromDevice(req);
+  }
+
   async function handle(req: IncomingMessage, res: ServerResponse) {
     setSecurityHeaders(res, 'api');
     const url = requestUrl(req);
@@ -163,8 +176,7 @@ export function createProjectsHub(o: ProjectsHubOptions & ProjectsHubAccess) {
     const route = inProject ? (inProject[1] ?? '/') : url.pathname;
     const signedIn = await admit(req, res, { url, route });
     if (!signedIn) return;
-    // A device is a device everywhere behind this point, whatever address it comes from.
-    if (signedIn.caller.kind === 'device') markFromDevice(req);
+    markCaller(req, signedIn);
     const local = fromThisMachine(req, o.peer);
     if (!local && thisMachineOnly(req.method, route)) return refuseEarly(res, { error: ELSEWHERE, elsewhere: true });
     if (!local) redactResponse(res, places);

@@ -9,6 +9,7 @@ import { operatorAction, type OperatorAction, type OperatorRequest } from '../ve
 import { readEvidenceLog, ticketEvidence } from '../verification/ticketEvidence';
 import { levelFor } from '../verification/verifyCompletion';
 import { BadRequest, readJson, sendJson } from './http';
+import { lookoutVia } from './lookoutVia';
 import type { RouteContext } from './routeContext';
 import { ELSEWHERE } from './thisMachineRoutes';
 import { crossSite } from './trackerErrors';
@@ -83,7 +84,8 @@ export async function handleVerification(
   }
   if (p === '/verification/action' && req.method === 'POST') {
     if (crossSite(req)) return (sendJson(res, 403, { error: 'cross-site request refused' }), true);
-    const r = request(await readJson<Record<string, unknown>>(req, '{}'));
+    // Given in the Lookout: this route says how, whatever the body says (lookoutVia.ts).
+    const r = { ...request(await readJson<Record<string, unknown>>(req, '{}')), via: lookoutVia(req) };
     // Approving, rejecting and re-running are steering. How much proof a trail or ticket needs is a trust setting.
     if (r.action === 'level' && local === false)
       return (sendJson(res, 403, { error: ELSEWHERE, elsewhere: true }), true);

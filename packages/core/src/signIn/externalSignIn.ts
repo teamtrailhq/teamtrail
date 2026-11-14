@@ -6,6 +6,13 @@ export interface ExternalCaller {
   /** Stable, safe to show and to journal. */
   id: string;
   kind: SignInKind;
+  /**
+   * `false`: this caller may not make high-risk calls (by the risk policy, policy/needsLookout.ts). What they do in
+   * the Lookout counts at every gate but those, as a Slack answer does (model/answerVia.ts `lookout-limited`), and
+   * they can't close a high-risk ticket or approve a reroute. Such a caller is also another device's, whatever its
+   * `kind`: it may not change what this machine trusts either. Unset or `true`: allowed.
+   */
+  highRisk?: boolean;
 }
 
 /**

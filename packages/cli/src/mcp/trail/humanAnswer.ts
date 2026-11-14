@@ -35,8 +35,9 @@ export interface HumanAnswer {
   /** The conversation the answer was given in. */
   transcript: TranscriptEntry[];
   /**
-   * How it was given (answerVia.ts). Only `lookout` and `slack` answers back the human's decisions; a `chat` one,
-   * or one without a label (from before labels), only guides.
+   * How it was given (answerVia.ts). Only `lookout`, `lookout-limited` and `slack` answers back the human's
+   * decisions, and only `lookout` a high-risk one; a `chat` one, or one without a label (from before labels), only
+   * guides.
    */
   via?: AnswerVia;
   /** For `chat`: the agent whose chat it was given in. */
@@ -62,8 +63,17 @@ function chatRefusal(a: HumanAnswer) {
   return `Question ${a.questionId} was answered ${where}. ${CHAT_GUIDES}`;
 }
 
-/** The refusal for a Slack answer offered for a high-risk call: only the Lookout's answer counts for those. */
-export function lookoutOnly(a: { questionId: string }) {
+/** What an agent is told of a Lookout answer from someone not allowed high-risk calls, to a high-risk question. */
+export const LIMITED_HIGH_RISK =
+  'Answered in the Lookout by someone not allowed to make high-risk calls, and the question is high risk: it guides you, but backs no decision. For the decision, ask again with ask_human and have someone allowed to make high-risk calls answer in the Lookout.';
+
+/**
+ * The refusal for a Slack answer offered for a high-risk call: only the Lookout's answer counts for those, and not
+ * one from someone the Lookout's sign-in doesn't allow high-risk calls (`lookout-limited`).
+ */
+export function lookoutOnly(a: { questionId: string; via?: AnswerVia }) {
+  if (a.via === 'lookout-limited')
+    return `Question ${a.questionId} was answered in the Lookout by someone not allowed to make high-risk calls, and this decision is high risk. Ask again with ask_human and have someone allowed to make high-risk calls answer in the Lookout.`;
   return `Question ${a.questionId} was answered in Slack, and this decision is high risk: only an answer given in the Lookout counts for it (Slack answers pass through Teamtrail's Scout service). Ask again with ask_human and have the human answer in the Lookout.`;
 }
 

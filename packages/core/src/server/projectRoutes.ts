@@ -8,6 +8,7 @@ import { updateProjects } from '../projects/projectsFile';
 import { ProjectPathError, registerProject, trackerRootFor, unregisterProject } from '../projects/registerProject';
 import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
+import { lookoutVia } from './lookoutVia';
 import { crossSite } from './trackerErrors';
 
 /** What the `/projects` routes need from the hub. */
@@ -59,10 +60,11 @@ async function answer(ctx: ProjectRoutesContext, entry: ProjectEntry, req: Incom
     typeof b.sessionId === 'string' && b.sessionId ? b.sessionId : await sessionOf(entry.root, b.questionId!);
   // Given in the Lookout (All projects), by its trail lead: this route says so, whatever the body says.
   const author = TRAIL_LEAD;
+  const via = lookoutVia(req);
   sendJson(
     res,
     201,
-    writeAgentAnswer(entry.root, { sessionId, questionId: b.questionId!, text: b.text!, author, via: 'lookout' }),
+    writeAgentAnswer(entry.root, { sessionId, questionId: b.questionId!, text: b.text!, author, via }),
   );
   ctx.changed();
 }

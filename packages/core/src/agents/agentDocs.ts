@@ -3,7 +3,7 @@ import path from 'node:path';
 import { writeLocalJson } from '../lib/ensureLocalDir';
 import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
-import type { AnswerVia } from '../model/answerVia';
+import { approvesGates, approvesHighRisk, type AnswerVia } from '../model/answerVia';
 import { runningVersion } from '../model/runningVersion';
 import { needsLookout } from '../policy/needsLookout';
 import { signAgentAnswer } from './agentAnswerSignature';
@@ -43,6 +43,10 @@ const writer = () => {
   return v ? { writer: v } : {};
 };
 
+/** Where a high-risk question's answer has to come from, told to whoever tried to give it. */
+const answerElsewhere = (via: AnswerVia) =>
+  via === 'lookout-limited' ? 'ask someone allowed to make high-risk calls' : 'answer it in the Lookout';
+
 /** What an answer's writer passes: `via` is the writer's own path (the bridge, Slack, answer_question). */
 export type AnswerInput = Omit<AgentAnswer, 'at' | 'sig' | 'via'> & { via: AnswerVia; at?: number };
 
@@ -55,9 +59,10 @@ export function writeAgentAnswer(root: string, input: AnswerInput): AgentAnswer 
   if (!doc) throw new AnswerError(`unknown session "${input.sessionId}"`);
   const q = doc.pending.find((x) => x.id === input.questionId);
   if (!q) throw new AnswerError(`question "${input.questionId}" is not waiting for an answer`);
-  // A high-risk question takes the human's word from the Lookout only: Slack's comes through the Scout service.
-  if (input.via === 'slack' && needsLookout.question(root, q))
-    throw new LookoutOnlyAnswer(`question "${input.questionId}" is high risk: answer it in the Lookout`);
+  // A high-risk question takes the human's word from the Lookout only: Slack's comes through the Scout service, and
+  // a Lookout caller its sign-in doesn't allow high-risk calls can't give it either. A chat answer only guides.
+  if (approvesGates(input.via) && !approvesHighRisk(input.via) && needsLookout.question(root, q))
+    throw new LookoutOnlyAnswer(`question "${input.questionId}" is high risk: ${answerElsewhere(input.via)}`);
   if (!input.text.trim()) throw new AnswerError('answer is empty');
   const { sessionId, questionId, author, via } = input;
   const chatOf = via === 'chat' && input.chatOf ? { chatOf: input.chatOf } : {};
