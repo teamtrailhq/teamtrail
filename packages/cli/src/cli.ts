@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { BRAND, setRunningVersion } from '@teamtrail/core';
 import { approveCli } from './approve/approveCli';
 import { fail } from './args/help';
-import { parseArgs, parseSubArgs } from './args/parseArgs';
+import { parseArgs, parseSubArgs, type SubOptions } from './args/parseArgs';
 import { runConnect } from './connect';
 import { connectRemote } from './connectRemote';
 import { connectToken } from './connectToken';
@@ -15,6 +15,7 @@ import { runMcpServer } from './mcp/server';
 import { pairCli } from './pairCli';
 import { printGreeting } from './printGreeting';
 import { runProjects } from './projects';
+import { askSandbox } from './protect/askSandbox';
 import { selfCommand } from './selfCommand';
 import { serveLookout } from './serve/serveLookout';
 import { readStdin, recordClaudeSession } from './usage/hook';
@@ -48,6 +49,15 @@ async function mcpCommand(argv: string[]) {
   });
 }
 
+/** `--sandbox` and `--no-sandbox` set Claude Code's sandbox for this project, next to the config folder's rules. */
+function sandboxFlagFits(o: SubOptions, target: string) {
+  const flag = o.sandbox ? '--sandbox' : '--no-sandbox';
+  if (target !== 'claude') fail(`${flag} is for connect claude: Codex keeps its own sandbox`);
+  if (o.url) fail(`${flag} can't go with --url`);
+  if (o.noProtectConfig)
+    fail(`${flag} can't go with --no-protect-config: the sandbox keeps commands out through those rules`);
+}
+
 /** `teamtrail connect claude|codex`: a local stdio server, or a remote one with `--url`. */
 async function connectCommand(argv: string[]) {
   const o = parseSubArgs(argv, [
@@ -58,6 +68,8 @@ async function connectCommand(argv: string[]) {
     '--token-stdin',
     '--allow-http',
     '--no-protect-config',
+    '--sandbox',
+    '--no-sandbox',
   ]);
   const target = o.rest[0];
   if (target !== 'claude' && target !== 'codex') fail('connect needs an agent: claude or codex');
@@ -67,6 +79,7 @@ async function connectCommand(argv: string[]) {
     fail(
       `${local.join(' and ')} can't go with --url: the tracker folder and the projects list are the server's, on its machine`,
     );
+  if (o.sandbox !== undefined) sandboxFlagFits(o, target);
   printGreeting();
   process.stdout.write(`\n  ${BRAND.name} · connect ${target === 'claude' ? 'Claude Code' : 'Codex'}\n\n`);
   if (o.url)
@@ -79,12 +92,16 @@ async function connectCommand(argv: string[]) {
     });
   else {
     const self = selfCommand({ version: __VERSION__, file: fileURLToPath(import.meta.url) });
+    const protect = !o.noProtectConfig;
+    const sandbox =
+      target === 'claude' ? await askSandbox({ cwd: process.cwd(), flag: o.sandbox, protect }) : undefined;
     runConnect(target, {
       cwd: process.cwd(),
       dir: o.dir,
       noRegister: o.noRegister,
       self,
-      protectConfig: !o.noProtectConfig,
+      protectConfig: protect,
+      sandbox,
     });
   }
   process.stdout.write('\n');

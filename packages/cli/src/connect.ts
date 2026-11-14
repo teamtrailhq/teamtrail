@@ -6,7 +6,11 @@ import { configDir } from '@teamtrail/core/bridge';
 import { autoRegister } from '@teamtrail/core/node';
 import SCOUT_COMMAND from '../commands/scout.md';
 import { writeIfChanged } from './files';
+import { applySandbox } from './protect/applySandbox';
+import { claudeLocalSettings } from './protect/claudeLocalSettings';
 import { protectConfig } from './protect/protectConfig';
+import type { SandboxChoice } from './protect/sandboxChoice';
+import { sandboxLines } from './protect/sandboxLines';
 import type { SelfCommand } from './selfCommand';
 import { installClaudeHook } from './usage/hook';
 
@@ -25,6 +29,8 @@ export interface ConnectOptions {
   run?: RunCli;
   /** Keep Teamtrail's config folder out of the agent's reach in its own settings; false is `--no-protect-config`. */
   protectConfig?: boolean;
+  /** Claude Code's sandbox for this project, as chosen before connecting (sandboxChoice.ts); unset is no terminal. */
+  sandbox?: SandboxChoice;
 }
 
 const runCli = (cwd: string): RunCli => {
@@ -59,7 +65,11 @@ export function runConnect(target: ConnectTarget, opts: ConnectOptions) {
   if (target === 'claude') connectClaude(o);
   else connectCodex(o);
   print(versionLine(opts.self, target));
-  protectConfig(target, { print, enabled: opts.protectConfig });
+  const guarded = protectConfig(target, { print, enabled: opts.protectConfig });
+  if (target === 'claude' && guarded !== undefined) {
+    const result = applySandbox({ cwd: opts.cwd, choice: opts.sandbox ?? 'no-tty' });
+    for (const l of sandboxLines({ result, cwd: opts.cwd, guarded })) print(l);
+  }
   const prefix = target === 'claude' ? '/scout' : '/prompts:scout';
   const where = target === 'claude' ? 'Claude Code' : 'Codex';
   print(`\n  In ${where}: ${prefix} new "<idea>", ${prefix} resume, ${prefix} status, ${prefix} inbox`);
@@ -86,7 +96,7 @@ function connectClaude(o: Ready) {
   const file = path.join(o.cwd, '.claude', 'commands', 'scout.md');
   o.print(`  /scout command   ${writeIfChanged(file, SCOUT_COMMAND)} · ${path.relative(o.cwd, file)}`);
   o.print(`  MCP server      ${registerClaude(o, serverCommand(o.self, o.dir))}`);
-  const settings = path.join(o.cwd, '.claude', 'settings.local.json');
+  const settings = claudeLocalSettings(o.cwd);
   o.print(
     `  Usage hook      ${installClaudeHook(settings, o.dir, o.self)} · ${path.relative(o.cwd, settings)} (SessionStart: tokens and cost come from the session transcript)`,
   );

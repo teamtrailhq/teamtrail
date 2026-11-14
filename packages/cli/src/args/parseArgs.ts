@@ -91,9 +91,16 @@ export interface SubOptions {
   allowHttp?: boolean;
   /** `connect`: leave the agent's settings without the rule that keeps it out of Teamtrail's config folder. */
   noProtectConfig?: boolean;
+  /** `connect claude`: turn Claude Code's sandbox on (`--sandbox`) or leave it (`--no-sandbox`), without asking. */
+  sandbox?: boolean;
   /** `pair`: only print the link, without opening the browser on it. */
   noOpen?: boolean;
   rest: string[];
+}
+
+function setSandbox(o: SubOptions, on: boolean) {
+  if (o.sandbox === !on) fail("--sandbox and --no-sandbox can't go together");
+  o.sandbox = on;
 }
 
 /** What each subcommand flag sets. */
@@ -114,6 +121,8 @@ const SUB_FLAGS: Record<string, (o: SubOptions, f: Flag) => void> = {
   '--token-stdin': (o) => void (o.tokenStdin = true),
   '--allow-http': (o) => void (o.allowHttp = true),
   '--no-protect-config': (o) => void (o.noProtectConfig = true),
+  '--sandbox': (o) => setSandbox(o, true),
+  '--no-sandbox': (o) => setSandbox(o, false),
   '--no-open': (o) => void (o.noOpen = true),
 };
 

@@ -17,6 +17,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.33.0',
+    date: '2026-11-14',
+    items: [
+      "`teamtrail connect claude` offers to turn on Claude Code's sandbox, so the agent's shell commands can't reach Teamtrail's config folder either",
+    ],
+  },
+  {
     version: '0.32.0',
     date: '2026-11-13',
     items: [
@@ -184,15 +191,6 @@ export const RELEASES: Release[] = [
       'A calmer, clearer command center: every list now reads the same way, what it is first, then one quiet line of context, and details when you want them',
       'Red now only means something needs you now; other states show as a thin edge instead of colored text everywhere',
       'The open question in a conversation can no longer be hidden by its suggested answers, and the phone header no longer runs off the side',
-    ],
-  },
-  {
-    version: '0.21.0',
-    date: '2026-11-05',
-    items: [
-      'New plans can now edit a ticket, remove a dependency and reopen finished work, instead of working around it',
-      "Slack digests follow the team's digest setting (digestMinutes in attention.json); 0 turns them off, and everything still waits in Waiting on you",
-      "Remove a finished task's workspace from Settings → Workspaces or the ticket; the branch stays, and MILOOPS asks before discarding uncommitted changes",
     ],
   },
   ...OLDER_RELEASES,
