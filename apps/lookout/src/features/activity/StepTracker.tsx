@@ -1,5 +1,6 @@
 import { type ActivityState, type MapSnapshot, STEPS } from '@teamtrail/core';
 import { EmptyState, MetaLine } from '../../components/ui';
+import { hostedAgents } from '../../lib/hostedAgents';
 import { featured } from './featured';
 
 const STATUS = { running: 'Working', done: 'Done', failed: 'Stopped' } as const;
@@ -12,7 +13,11 @@ export function StepTracker({ activity, snap }: { activity: ActivityState; snap?
     return (
       <EmptyState
         title="No agent working yet"
-        hint="Run /scout resume in Claude Code or Codex. Each step an agent reports shows here."
+        hint={
+          hostedAgents()
+            ? `Turn your agents on for this trail in ${hostedAgents()?.label}. Each step they report shows here.`
+            : 'Run /scout resume in Claude Code or Codex. Each step an agent reports shows here.'
+        }
       />
     );
   const t = s.ticketId ? snap?.tickets.find((x) => x.id === s.ticketId) : undefined;

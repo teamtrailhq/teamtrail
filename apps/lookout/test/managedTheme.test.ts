@@ -67,4 +67,15 @@ describe("a server's own sign-in carries the person's theme", () => {
       expect(managedSignIn()?.tracker).toBeUndefined();
     }
   });
+
+  test("the server's agents page is kept only on this origin", () => {
+    page();
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], agents: { label: 'Agents', href: '/_cloud/agents' } } });
+    expect(managedSignIn()?.agents?.label).toBe('Agents');
+    for (const agents of [{ label: 'Agents', href: 'https://evil.example/agents' }, { label: 'Agents' }, 'Agents']) {
+      page();
+      learnManagedSignIn({ managed: { name: 'Ada', pages: [], agents } });
+      expect(managedSignIn()?.agents).toBeUndefined();
+    }
+  });
 });

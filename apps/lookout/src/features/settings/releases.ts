@@ -13,10 +13,20 @@ export interface Release {
 }
 
 export const NEXT: { area: string; items: string[] }[] = [
-  { area: 'Teamtrail Cloud', items: ['Agents that run in the cloud, steered from the same Lookout'] },
+  {
+    area: 'Teamtrail Cloud',
+    items: ['The Lookout as an app on your phone, with a nudge only for the calls that need you'],
+  },
 ];
 
 export const RELEASES: Release[] = [
+  {
+    version: '0.43.0',
+    date: '2026-11-15',
+    items: [
+      'Where the server runs your agents, the Lookout says to turn them on for a trail there, instead of offering /scout commands for an agent of your own',
+    ],
+  },
   {
     version: '0.42.0',
     date: '2026-11-15',
