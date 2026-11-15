@@ -26,4 +26,9 @@ export interface PendingQuestion {
   stakes?: string;
   /** An earlier decision that may already answer it, asked anyway: "D-2 already decided: …". */
   precedent?: string;
+  /**
+   * High risk by the risk policy when it was asked: only the Lookout, and only someone allowed to make high-risk
+   * calls, may answer it. A hint for the page, which routes it to them; the answer route checks again.
+   */
+  lookoutOnly?: true;
 }

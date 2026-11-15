@@ -27,4 +27,15 @@ describe("a server's own sign-in carries the person's theme", () => {
       expect(managedSignIn()?.theme).toBeUndefined();
     }
   });
+
+  test('a person who may not make high-risk calls is routed to someone who may; anything but false says nothing', () => {
+    page();
+    learnManagedSignIn({ managed: { name: 'Grace', pages: [], highRisk: false } });
+    expect(managedSignIn()?.highRisk).toBe(false);
+    for (const highRisk of [true, undefined, 'false', 0]) {
+      page();
+      learnManagedSignIn({ managed: { name: 'Grace', pages: [], highRisk } });
+      expect(managedSignIn()?.highRisk).toBeUndefined();
+    }
+  });
 });

@@ -33,6 +33,9 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   if (precedent.line) q.precedent = precedent.line;
   if (categories.length) q.category = categories[0];
   if (categories.length > 1) q.categories = categories;
+  // Said with the question, so a Lookout whose caller may not make high-risk calls routes it to someone who may.
+  // Only a hint for the page: the answer route decides, whatever this says.
+  if (needsLookout.question(ctx.root, { categories })) q.lookoutOnly = true;
   ctx.writer.flush();
   const sid = s.id;
   // The ticket the question is about: the one this session holds as it asks.
