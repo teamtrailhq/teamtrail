@@ -7,3 +7,5 @@ export { projectState } from './projects/projectState';
 export { fileAdapter } from './projects/fileAdapter';
 export { homeEntry, projectEntries } from './projects/projectEntries';
 export { projectSummary } from './projects/projectSummary';
+export { buildProof, type ProofInput } from './proof/buildProof';
+export { proofMarkdown } from './proof/proofMarkdown';
