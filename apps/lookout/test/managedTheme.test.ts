@@ -38,4 +38,33 @@ describe("a server's own sign-in carries the person's theme", () => {
       expect(managedSignIn()?.highRisk).toBeUndefined();
     }
   });
+
+  test("the server's home link is kept only as a short label and a web address", () => {
+    page();
+    learnManagedSignIn({
+      managed: { name: 'Ada', pages: [], home: { label: 'Teamtrail Cloud', href: 'https://app.teamtrail.app/' } },
+    });
+    expect(managedSignIn()?.home).toEqual({ label: 'Teamtrail Cloud', href: 'https://app.teamtrail.app/' });
+    for (const home of [
+      { label: 'x', href: 'javascript:alert(1)' },
+      { label: '', href: 'https://a.b/' },
+      { label: 'x'.repeat(61), href: 'https://a.b/' },
+      'https://a.b/',
+    ]) {
+      page();
+      learnManagedSignIn({ managed: { name: 'Ada', pages: [], home } });
+      expect(managedSignIn()?.home).toBeUndefined();
+    }
+  });
+
+  test('a server that keeps the trails itself says so; anything else is the Lookout choosing as usual', () => {
+    page();
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], tracker: 'markdown' } });
+    expect(managedSignIn()?.tracker).toBe('markdown');
+    for (const tracker of ['github', 'linear', true, undefined]) {
+      page();
+      learnManagedSignIn({ managed: { name: 'Ada', pages: [], tracker } });
+      expect(managedSignIn()?.tracker).toBeUndefined();
+    }
+  });
 });
