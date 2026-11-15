@@ -8,4 +8,5 @@ export { fileAdapter } from './projects/fileAdapter';
 export { homeEntry, projectEntries } from './projects/projectEntries';
 export { projectSummary } from './projects/projectSummary';
 export { buildProof, type ProofInput } from './proof/buildProof';
+export { proofForTicket } from './proof/proofForTicket';
 export { proofMarkdown } from './proof/proofMarkdown';

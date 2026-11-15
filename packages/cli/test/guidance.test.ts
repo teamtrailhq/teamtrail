@@ -22,6 +22,7 @@ describe('agent guidance', () => {
       expect(text).toContain('propose_knowledge');
       expect(text).toContain('flag_knowledge');
       expect(text).toContain('set_criteria');
+      expect(text).toContain('proof_report');
       expect(text).toMatch(/Never decide (HITL|a `hitl`)/);
       expect(text).toMatch(/get past a gate doesn't work/);
     }

@@ -126,6 +126,15 @@ describe('verified completion over MCP', () => {
     expect(passed.decision).toBeTruthy();
     expect(passed.unblocked?.map((t) => t.key)).toEqual([m.tickets[2].key]);
 
+    const proof = await call<{ status: string; gaps: string[]; digest: string; markdown: string }>('proof_report', {
+      ticket: build,
+    });
+    expect(proof).toMatchObject({ status: 'verified', gaps: [] });
+    expect(proof.markdown).toContain(`<!-- teamtrail:proof v1 ${proof.digest} -->`);
+    expect(proof.markdown).toContain('Verified by Teamtrail');
+    const unproven = await call<{ status: string; gaps: string[] }>('proof_report', { ticket: m.tickets[2].key });
+    expect(unproven).toMatchObject({ status: 'not-verified', gaps: ['No completion was submitted for this ticket.'] });
+
     const events = journalFile(root)
       .read(m.trail.id)
       .filter((e: TransitionEntry) => e.ticketKey === build)

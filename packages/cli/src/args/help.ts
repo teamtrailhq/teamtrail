@@ -13,6 +13,7 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} knowledge import <file.md> [--dir <path>]
        ${BRAND.slug} approve [--hash <hash>]… [--dir <path>]
        ${BRAND.slug} pair [--dir <path>] [--no-open]
+       ${BRAND.slug} proof <ticket> [--trail <name>] [--json] [--dir <path>]
        ${BRAND.slug} guides list|search|add|new|update|remove|lint … [--dir <path>]
 
 Starts the Lookout for the current folder and opens your browser on it, ready to sign in with one click.
@@ -59,6 +60,9 @@ Commands:
                  (works once, for 10 minutes), and a browser tab opened on it, ready to sign in;
                  --no-open only prints the link. Phones and other computers pair from the Lookout:
                  Settings → You → Browsers & devices
+  proof <ticket>  Verified by Teamtrail: what this machine recorded about the ticket's completion (the
+                 checks it ran, criteria verified or only claimed, git range, review, decisions), as
+                 Markdown for a pull request; --json for the structure. Exits 1 when not verified
   knowledge import <file.md>  Seed project knowledge from a markdown document: one suggestion per
                  ## heading, for you to review in the Lookout
   guides list     Guides agents take on (built in, local and from a catalog), with their status
