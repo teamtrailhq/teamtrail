@@ -2,7 +2,7 @@
   "name": "teamtrail",
   "version": "0.33.1",
   "author": "Teamtrail",
-  "description": "Teamtrail: the trail map for your AI coding agents. You pick the destination, your agents walk the trail, and you only get the calls that need you.",
+  "description": "Teamtrail: the control layer for AI coding agents. Agents do the work, you make the calls, and nothing counts as done without evidence.",
   "type": "module",
   "bin": {
     "teamtrail": "dist/cli.js"

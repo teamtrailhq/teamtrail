@@ -2,7 +2,7 @@
 
 # Teamtrail
 
-> You pick the destination. Your agents walk the trail.
+> Agents do the work. You make the calls. Teamtrail makes sure both happen, with evidence.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/teamtrailhq/teamtrail/ci.yml?branch=main&label=CI)](https://github.com/teamtrailhq/teamtrail/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/teamtrail/next?label=npm%40next)](https://www.npmjs.com/package/teamtrail?activeTab=versions)
@@ -14,19 +14,19 @@
 
 **[teamtrail.app](https://teamtrail.app)** · [Docs](https://teamtrail.app/docs/) · [Try it: `npx teamtrail@next`](https://www.npmjs.com/package/teamtrail?activeTab=versions)
 
-Teamtrail is a local trail map for planning and executing big work with your AI coding agents. You describe a trail; your agents chart it as decision tickets, work through them, and bring the calls that need you to a single inbox. Scout, the Lookout's trail lead, briefs you on what changed while you were away and keeps spend and token usage in view.
+Teamtrail is the control layer for AI coding agents. It breaks big work into decision tickets that Claude Code, Codex or any MCP agent picks up, sends you only the calls that are yours, and won't let an agent call anything done without evidence. You steer from the Lookout, a web app on your machine, where Scout briefs you on what changed while you were away.
 
-- **Trails and decision tickets:** a live map of what's decided, in progress, blocked and out of scope.
-- **Waiting on you:** every question from every agent, in one inbox, answered in-window.
-- **Decision records:** each call is written down with its alternatives, rationale and transcript.
-- **Live spend:** per-session and per-trail tokens and cost.
+- **Your calls, by rule:** a risk policy in your repo sets what always comes to you (database changes, logins, billing, deleting data). Agents can't record those decisions themselves; it's enforced in code, not in a prompt.
+- **Done means proven:** acceptance criteria agreed up front, your tests run by Teamtrail itself, and a review by a different agent, never the author.
+- **Every call on the record:** each decision keeps the question, your words, the alternatives and who made it, long after the agent's session is gone.
+- **One queue for what needs you:** every question and approval from every agent and repo, ranked with a reason, with focus hours and Slack.
 - **Your data stays yours:** trails are plain markdown in `./.teamtrail/` in your repo. Nothing leaves your machine unless you connect Slack.
 
 Works with any coding agent that connects over MCP. Claude Code and Codex are the primary supported agents.
 
 ## Why Teamtrail
 
-Your agents can already write the code. What's missing is a place to run them like a team: one where you set the direction, they do the work, and you make the calls that matter.
+Your agents can already write the code, and plenty of tools run them side by side. What's missing is control: a place where you set the direction, they do the work, the calls that matter stay yours, and "done" means proven.
 
 - **Bring any agent.** Everything runs through MCP tools. Claude Code today, Codex tomorrow, both at once. Teamtrail never calls a model itself and never locks you into a vendor.
 - **Local-first, for real.** Trails live as plain files in your repo's `.teamtrail/` folder, or in the GitHub Issues or Linear tracker you already use. Nothing needs a Teamtrail server. Slack is optional: its questions, answers and digests pass through Teamtrail's Scout service, but your trails, decisions and approvals never leave your machine.
