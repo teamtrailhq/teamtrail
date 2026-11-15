@@ -12,6 +12,7 @@ import { knowledgeSource } from './knowledgeSource';
 import { modelSource } from './modelSource';
 import { overlapSource } from './overlapSource';
 import { policySource } from './policySource';
+import { precedentSource } from './precedentSource';
 import { questionSource } from './questionSource';
 import { rerouteSource } from './rerouteSource';
 import { rerouteSuggestedSource } from './rerouteSuggestedSource';
@@ -43,4 +44,5 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   deliverySource,
   trackerSettingsSource,
   trustSource,
+  precedentSource,
 ];

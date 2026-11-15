@@ -10,6 +10,8 @@ export interface AskView {
   ticket?: string;
   /** What answering it lets the agent do ("Answering this decides #3"), so a one-click reply is no surprise. */
   stakes?: string;
+  /** An earlier decision that may already answer it: "D-2 already decided: …". */
+  precedent?: string;
 }
 
 export interface AskRef {
@@ -24,8 +26,10 @@ const askHeader = (a: AskView) =>
     .join(' · ');
 
 /** The line saying what answering decides, as quiet context above the buttons. */
-const stakesBlock = (a: AskView) =>
-  a.stakes ? [{ type: 'context', elements: [md(`*${label(clip(a.stakes, 280))}*`)] }] : [];
+const stakesBlock = (a: AskView) => [
+  ...(a.stakes ? [{ type: 'context', elements: [md(`*${label(clip(a.stakes, 280))}*`)] }] : []),
+  ...(a.precedent ? [{ type: 'context', elements: [md(label(clip(a.precedent, 280)))] }] : []),
+];
 
 export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'titles-only'; mode?: AnswerMode } = {}) {
   const ref = (i?: number) =>

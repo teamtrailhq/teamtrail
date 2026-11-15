@@ -32,6 +32,8 @@ const WRITES: RegExp[] = [
   // The projects this Lookout supervises.
   /^\/projects$/,
   /^\/projects\/settings$/,
+  // Whether a project's decisions are offered as precedents in the others.
+  /^\/projects\/[^/]+\/share$/,
 ];
 
 /**

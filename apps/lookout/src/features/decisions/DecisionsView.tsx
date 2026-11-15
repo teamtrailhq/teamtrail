@@ -8,6 +8,7 @@ import { DecisionFilters } from './DecisionFilters';
 import { DecisionList } from './DecisionList';
 import { DecisionReadouts } from './DecisionReadouts';
 import { DecisionSearch } from './DecisionSearch';
+import { useDecisionMemory } from './useDecisionMemory';
 
 /**
  * Decisions audit: every decision across trails, newest first. Covers the
@@ -25,6 +26,8 @@ export function DecisionsView(props: {
   const [filter, setFilter] = useState<DecisionFilter>({});
   const [sel, setSel] = useState<string | undefined>(props.focus);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [byArea, setByArea] = useState(false);
+  const memory = useDecisionMemory();
   useEffect(() => setSel(props.focus), [props.focus]);
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -71,6 +74,16 @@ export function DecisionsView(props: {
         )}
         {bp !== 'mobile' && <DecisionReadouts stats={stats} />}
         <span className="dv-head-right">
+          {!detailOnly && memory && (
+            <Button
+              on={byArea}
+              aria-pressed={byArea}
+              onClick={() => setByArea((v) => !v)}
+              title="Group by the area each decision is about, the most cited first"
+            >
+              By area
+            </Button>
+          )}
           {!detailOnly && (
             <Button onClick={exportMd} disabled={!rows.length} title="Export the filtered list as markdown">
               Export .md
@@ -110,6 +123,7 @@ export function DecisionsView(props: {
             snaps={api.allSnaps}
             showTrail={bp === 'wide'}
             onSelect={setSel}
+            memory={byArea && memory ? memory : undefined}
           />
         )}
         {(bp !== 'mobile' || current) && (

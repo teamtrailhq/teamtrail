@@ -155,3 +155,7 @@ export type { Scorecard, ScorecardRow, ScorecardSession, ScorecardTicket } from 
 export { agentScorecard, SCORECARD_MIN_SAMPLE, UNKNOWN_MODEL } from './scorecard/agentScorecard';
 export { tierSuggestions, type TierSuggestion } from './scorecard/tierSuggestions';
 export { scorecardMarkdown } from './scorecard/scorecardMarkdown';
+export type { Precedent, PrecedentQuery } from './model/precedent';
+export { findPrecedents } from './precedent/findPrecedents';
+export { decisionMemory, NO_AREA, type DecisionMemoryEntry } from './precedent/decisionMemory';
+export { precedentConflicts, type PrecedentConflict } from './precedent/precedentConflicts';

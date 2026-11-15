@@ -24,6 +24,7 @@ export const DEFAULT_WEIGHTS: Record<AttentionKind, number> = {
   delivery: 10,
   'tracker-settings': 40,
   trust: 55,
+  precedent: 40,
 };
 
 export const ATTENTION_KINDS = Object.keys(DEFAULT_WEIGHTS) as AttentionKind[];

@@ -435,6 +435,15 @@ const proofPanel = await page
   );
 log(`${route.ticket.key} proof in the inspector: ${proofPanel ? 'shown, with Copy for PR' : 'NOT shown'}`);
 const proofOk = proofToolOk && proofPanel;
+// Decision memory: a question #3's decision already answers comes back with it instead of reaching the human.
+const remembered = await call('find_precedent', {
+  text: 'How should versions be grouped in the changelog?',
+  ticket: '#3',
+});
+const precedentOk = remembered.precedents.some((p) => p.id === 'D-3');
+log(
+  `decision memory: ${remembered.precedents.map((p) => `${p.id} ${p.strength} (${p.reasons.join('; ')})`).join(', ') || 'none found'}`,
+);
 
 // Independent review: at checks+review+human a passing completion gets a review ticket. The worker is never given its
 // own review; a second agent passes it, and the trail lead approves from the Lookout inbox.
@@ -647,6 +656,7 @@ if (
   !signedOk ||
   !verifiedOk ||
   !proofOk ||
+  !precedentOk ||
   !scorecardOk ||
   !reviewOk ||
   !discoveryOk ||

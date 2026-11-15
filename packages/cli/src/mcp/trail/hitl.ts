@@ -12,11 +12,15 @@ import { lookoutOnlyTickets, needsLookout, readAgentDocs, writeAgentAnswer } fro
 import type { AgentContext } from './agentContext';
 import { rankedAttention } from './attention';
 import { CHAT_GUIDES, LIMITED_HIGH_RISK, SLACK_HIGH_RISK } from './humanAnswer';
+import { precedentCheck } from './precedents';
 import { trailNameFamily } from './trailName';
 import { TRAIL_LEAD, type AskResult, type WaitControl } from './types';
 
 export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl = {}): Promise<AskResult> {
   const s = input.framing ? await ctx.chartSession() : await ctx.ensureSession();
+  const query = { ...input, text: input.question, ticketId: s.info.ticketId, categories: askedCategories(input) };
+  const precedent = await precedentCheck(ctx, { query, askAnyway: input.askAnyway, framing: input.framing });
+  if (precedent.answer) return precedent.answer;
   if (input.framing && s.info.step === 0) s.step(1, 'framing interview');
   ctx.sessions.note(s, 'agent', s.info.agent, input.question);
   const blocks = await blockedIds(ctx, s.info.mapId, input.blocks);
@@ -26,6 +30,7 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   const categories = askedCategories(input);
   const stakes = stakesOf(ctx, { input, agent: s.info.agent, ticketId: s.info.ticketId });
   if (stakes) q.stakes = stakes;
+  if (precedent.line) q.precedent = precedent.line;
   if (categories.length) q.category = categories[0];
   if (categories.length > 1) q.categories = categories;
   ctx.writer.flush();
@@ -83,6 +88,12 @@ export interface AskInput {
   urgency?: 'blocking' | 'soon' | 'fyi';
   /** Ticket refs that can't move until this is answered. */
   blocks?: string[];
+  /** Files it touches, assumptions it relies on, decisions it relates to: matched against earlier decisions. */
+  paths?: string[];
+  assumes?: string[];
+  relatesTo?: string[];
+  /** Ask even though an earlier decision seems to answer it. */
+  askAnyway?: boolean;
 }
 
 /** What the answer lets the agent do, for the Lookout and Slack to show with the question. */

@@ -31,6 +31,7 @@ export async function askView(
     suggestions: q.suggestions,
     agent: q.agent,
     ...(q.stakes ? { stakes: q.stakes } : {}),
+    ...(q.precedent ? { precedent: q.precedent } : {}),
     trail,
     ticket,
     mapId: q.mapId,

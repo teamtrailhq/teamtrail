@@ -15,3 +15,5 @@ export { verifyProofText, type ProofCheck } from './proof/verifyProofText';
 export { proofKeysAt } from './proof/proofKeysAt';
 export { parseProofKeys } from './proof/parseProofKeys';
 export { GitHubProofPublisher } from './evidence/github/GitHubProofPublisher';
+export { precedentAreas } from './precedent/precedentAreas';
+export { otherProjectPrecedents } from './precedent/otherProjectPrecedents';

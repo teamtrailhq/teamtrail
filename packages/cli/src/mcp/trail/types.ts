@@ -1,11 +1,12 @@
-import type {
-  AnswerVia,
-  ChecklistAnswer,
-  CriterionEvidence,
-  CriterionKind,
-  RiskCategory,
-  TicketType,
-  TrackerAdapter,
+import {
+  type Precedent,
+  type AnswerVia,
+  type ChecklistAnswer,
+  type CriterionEvidence,
+  type CriterionKind,
+  type RiskCategory,
+  type TicketType,
+  type TrackerAdapter,
 } from '@teamtrail/core';
 import type { UsageMeter } from '../../usage/meter';
 
@@ -61,6 +62,8 @@ export interface AskResult {
   /** Set for a chat answer: what it can't be used for. */
   note?: string;
   waitedSeconds: number;
+  /** Not asked: earlier decisions that already answer it (decision memory). */
+  precedents?: Precedent[];
 }
 
 export interface WaitControl {

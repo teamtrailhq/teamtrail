@@ -14,6 +14,10 @@ function chainNote(d: AuditDecision) {
 export function DecisionRow(props: {
   d: AuditDecision;
   newDay: boolean;
+  /** By area: the group heading shown above its first row, instead of the day. */
+  group?: string;
+  /** How many later decisions cite this one. */
+  cited?: number;
   trail?: string;
   on: boolean;
   showTrail: boolean;
@@ -24,7 +28,7 @@ export function DecisionRow(props: {
   const status = decisionStatus(d);
   return (
     <>
-      {props.newDay && <li className="dv-day t-label">{day(d.decidedAt)}</li>}
+      {props.newDay && <li className="dv-day t-label">{props.group ?? day(d.decidedAt)}</li>}
       <Row
         as="li"
         className={`dv-row ${status}`}
@@ -42,6 +46,7 @@ export function DecisionRow(props: {
               actorLabel(d.decidedBy, people),
               postedNote(d) ?? DECISION_SOURCES[d.source.kind].label,
               chainNote(d),
+              !!props.cited && `cited ${props.cited}×`,
             ]}
           />
         }

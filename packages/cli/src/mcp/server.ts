@@ -11,6 +11,7 @@ import { toolDefiner } from './toolKit';
 import { registerGuideTools } from './tools/guideTools';
 import { registerHitlTools } from './tools/hitlTools';
 import { registerKnowledgeTools } from './tools/knowledgeTools';
+import { registerMemoryTools } from './tools/memoryTools';
 import { registerProjectTools } from './tools/projectTools';
 import { registerProofTools } from './tools/proofTools';
 import { registerRerouteTools } from './tools/rerouteTools';
@@ -30,6 +31,7 @@ export function createMcpServer(agent: TrailAgent, version: string) {
   registerGuideTools(tool, agent);
   registerProjectTools(tool, agent);
   registerProofTools(tool, agent);
+  registerMemoryTools(tool, agent);
   if (agent.remote) refuseHumanTools(server);
   return server;
 }
