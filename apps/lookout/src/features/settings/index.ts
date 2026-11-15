@@ -1,3 +1,4 @@
+export { FirstRun } from './FirstRun';
 export { Onboarding } from './Onboarding';
 export { parseSettingsRoute } from './parseSettingsRoute';
 export { SettingsPage } from './SettingsPage';

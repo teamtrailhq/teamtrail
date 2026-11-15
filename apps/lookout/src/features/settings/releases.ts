@@ -18,6 +18,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.42.0',
+    date: '2026-11-15',
+    items: [
+      'A hosted Lookout has your menu in its header: back to all your workspaces, the server’s own pages, and Sign out',
+      'Where the server keeps your trails itself, the Lookout asks no tracker questions on its first run',
+    ],
+  },
+  {
     version: '0.41.0',
     date: '2026-11-15',
     items: [

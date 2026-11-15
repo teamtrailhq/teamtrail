@@ -24,7 +24,7 @@ import { Inspector } from './features/inspector';
 import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/knowledge';
 import { MapSections } from './features/plan';
 import { PhoneProjects, ProjectSwitcher } from './features/projects';
-import { Onboarding } from './features/settings';
+import { FirstRun } from './features/settings';
 import { useBriefing, useBreakpoint, usePrefs, useLookout } from './hooks';
 import { applyTheme, createRuntime, trackerKind } from './lib';
 import { managedSignIn } from './lib/managedSignIn';
@@ -204,7 +204,7 @@ export function App() {
         {trail.dialog}
         {api.error && <div className="error-toast">{api.error}</div>}
         {newTrail.dialog}
-        {!prefs.onboarded && <Onboarding prefs={prefs} update={updatePrefs} activeTracker={rt.kind} />}
+        {!prefs.onboarded && <FirstRun prefs={prefs} update={updatePrefs} activeTracker={rt.kind} />}
         <KnowledgeView />
       </div>
     </KnowledgeContext.Provider>

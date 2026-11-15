@@ -8,8 +8,13 @@ export function ManagedSignInSection({ managed }: { managed: ManagedSignIn }) {
   return (
     <SettingsSection title="Signed in">
       <p className="vf-intro">Signed in as {managed.name}. Sign-in is managed by the server this Lookout runs on.</p>
-      {pages.length ? (
+      {pages.length || managed.home ? (
         <div className="choice-row">
+          {managed.home && (
+            <Button size="sm" onClick={() => location.assign(managed.home!.href)}>
+              ← {managed.home.label}
+            </Button>
+          )}
           {pages.map((page) => (
             <Button key={page.href} size="sm" onClick={() => location.assign(page.href)}>
               {page.label}

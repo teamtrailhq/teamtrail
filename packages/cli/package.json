@@ -1,6 +1,6 @@
 {
   "name": "teamtrail",
-  "version": "0.41.0",
+  "version": "0.42.0",
   "author": "Teamtrail",
   "description": "Teamtrail: the control layer for AI coding agents. Agents do the work, you make the calls, and nothing counts as done without evidence.",
   "type": "module",
