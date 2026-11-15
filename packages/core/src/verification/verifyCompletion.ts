@@ -14,6 +14,7 @@ import { resolve, type DecisionMeta } from '../planning/operations/resolve';
 import { withApprovedLevel } from './approvedLevel';
 import { assertConfirmed } from './assertConfirmed';
 import { checkoutFor } from './checkoutFor';
+import type { CheckRunner } from './checkRunner';
 import { checksWaitReason, trustedChecks } from './checksApproval';
 import { DEFAULT_CONFIG } from './config';
 import type { ConfigRead } from './configFile';
@@ -24,6 +25,7 @@ import { verificationFor, type LevelInfo } from './policy';
 import { remoteGraded } from './remoteCompletion';
 import { requestReview } from './reviewRequest';
 import { acquireRunLock, releaseRunLock } from './runLock';
+import { runnerGraded } from './runnerGraded';
 
 /** The engine as an actor: comments and journal lines of the check runner. */
 export const CHECK_RUNNER = BRAND.slug;
@@ -36,6 +38,8 @@ export interface VerifyEnv {
   repoRoot?: string;
   journal?: Journal;
   signal?: AbortSignal;
+  /** An embedding server's runner for remote agents' completions (checkRunner.ts); without one nothing runs for them. */
+  checkRunner?: CheckRunner;
 }
 
 /** The repo a tracker's checks and git evidence use. */
@@ -131,6 +135,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
     ...(sub.noCodeReason ? { noCodeReason: sub.noCodeReason } : {}),
     ...(sub.pr ? { pr: sub.pr } : {}),
     ...(sub.remote ? { remote: true } : {}),
+    ...(sub.remote && env.checkRunner ? { runner: env.checkRunner.name } : {}),
     ...(sub.declaredPaths ? { declaredPaths: sub.declaredPaths } : {}),
   };
   const id = nextAttemptId(env.root, mapId, t.id);
@@ -157,8 +162,13 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
   return { attemptId: id, done };
 }
 
-/** What an attempt finds: nothing run for a remote agent or for unapproved commands, else the checks here. */
+/**
+ * What an attempt finds: for a remote agent, the embedding server's runner (else nothing runs); nothing for
+ * unapproved commands; else the checks here.
+ */
 function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; waiting?: string }) {
+  const runner = env.checkRunner;
+  if (job.sub.remote && runner) return runnerGraded({ ...env, checkRunner: runner }, job, run);
   if (job.sub.remote) return remoteGraded(env, job);
   const checkout = checkoutFor(env, job.mapId, job.ticket.id);
   const none = run.waiting ?? (checkout.kind === 'none' ? `No check ran: ${checkout.reason}.` : undefined);

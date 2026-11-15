@@ -103,7 +103,9 @@ export function settledView(s: Settled) {
 /** Why a blocked completion waits on the human, in the agent's terms. */
 function blockedNote(s: Settled) {
   const { attempt: a } = s;
-  if (a.remote)
+  if (a.runner && a.result === 'error')
+    return `${a.runner} couldn't run the checks (${a.note}). Make sure your branch is pushed; the human decides in the Lookout. Move on to another ticket.`;
+  if (a.remote && !a.runner)
     return "You're connected remotely, so no check ran on your work: the human reviews it in the Lookout. Make sure your branch is pushed and named in the resolution (or pass pr), then move on to another ticket.";
   if (a.result === 'fail')
     return `${s.failures} failed attempts: the human decides in the Lookout. Move on to another ticket.`;

@@ -11,12 +11,17 @@ const date = (ms: number) => new Date(ms).toISOString().slice(0, 16).replace('T'
 const short = (sha: string | null) => (sha ? sha.slice(0, 8) : 'none');
 
 function checkLines(p: Proof): string[] {
-  if (p.attempt.remote) return ['- No check ran here: the work was submitted from another machine.'];
+  if (p.attempt.remote && !p.attempt.runner)
+    return ['- No check ran here: the work was submitted from another machine.'];
   if (!p.checks.length) return ['- No checks ran.'];
-  return p.checks.map(
-    (c) =>
-      `- ${c.passed ? '✅' : '❌'} \`${md(c.argv.join(' '), 120)}\` (exit ${c.exitCode ?? 'none'}, ${Math.round(c.durationMs / 100) / 10}s)`,
-  );
+  const by = p.attempt.runner ? [`Ran by ${md(p.attempt.runner, 60)}, on the pushed commit:`] : [];
+  return [
+    ...by,
+    ...p.checks.map(
+      (c) =>
+        `- ${c.passed ? '✅' : '❌'} \`${md(c.argv.join(' '), 120)}\` (exit ${c.exitCode ?? 'none'}, ${Math.round(c.durationMs / 100) / 10}s)`,
+    ),
+  ];
 }
 
 function criteriaLines(p: Proof): string[] {

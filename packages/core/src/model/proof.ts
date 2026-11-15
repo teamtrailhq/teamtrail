@@ -60,6 +60,8 @@ export interface Proof {
     pr?: number;
     /** Submitted from another machine: no check ran here and no git was read. */
     remote: boolean;
+    /** For a remote completion, the runner that ran its checks where its work is (the embedding server's). */
+    runner?: string;
   };
   /** Earlier attempts on the ticket, oldest first. */
   earlier: { id: string; result: AttemptResult }[];

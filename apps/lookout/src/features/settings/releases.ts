@@ -17,6 +17,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.39.0',
+    date: '2026-11-15',
+    items: [
+      "A server that hosts Teamtrail can run a remote agent's checks on its pushed work, so that work is verified and its proof counts, like work done on your machine",
+    ],
+  },
+  {
     version: '0.38.0',
     date: '2026-11-15',
     items: [

@@ -1,6 +1,7 @@
 import type { ChangedFile, EvidenceFlag, GitBaseline, GitTreeState } from '../model/evidence';
 import type { TicketType } from '../model/types';
 import type { VerificationConfig } from '../model/verification';
+import { noChangesFlag } from './noChangesFlag';
 
 /** Files another working or verifying ticket changed. */
 export interface OtherWork {
@@ -26,25 +27,6 @@ export interface FlagInput {
 }
 
 const short = (sha?: string | null) => sha?.slice(0, 8) ?? 'none';
-
-const NO_CHANGES_EFFECT = { fail: '; completing needs a change', human: '; a human decides' } as const;
-
-function noChanges(i: FlagInput): EvidenceFlag {
-  const allowed = i.noChanges.allow.includes(i.ticketType);
-  if (allowed || i.noCodeReason)
-    return {
-      kind: 'no-changes',
-      level: 'info',
-      message: `no files changed${i.noCodeReason ? `: ${i.noCodeReason}` : ` (allowed for ${i.ticketType} tickets)`}`,
-    };
-  const effect = i.noChanges.else === 'flag' ? undefined : i.noChanges.else;
-  return {
-    kind: 'no-changes',
-    level: effect ? 'alert' : 'warn',
-    message: `no files changed since the claim${effect ? NO_CHANGES_EFFECT[effect] : ''}`,
-    ...(effect ? { effect } : {}),
-  };
-}
 
 function overlap(i: FlagInput): EvidenceFlag[] {
   const mine = new Set(i.changed.map((c) => c.path));
@@ -115,7 +97,7 @@ export function evidenceFlags(i: FlagInput): EvidenceFlag[] {
     return out;
   }
   out.push(...history(i.base.git, i.now, i.descends));
-  if (!i.changed.length) out.push(noChanges(i));
+  if (!i.changed.length) out.push(noChangesFlag(i));
   out.push(...overlap(i));
   return out;
 }
