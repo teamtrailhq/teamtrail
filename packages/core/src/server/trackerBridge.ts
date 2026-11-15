@@ -26,6 +26,7 @@ import { redactResponse } from './redactResponse';
 import { handleRemoteAgents } from './remoteAgentRoutes';
 import { fromThisMachine, requestRefusal } from './requestGuard';
 import { handleReroutes } from './rerouteRoutes';
+import { handleScorecard } from './scorecardRoutes';
 import { setSecurityHeaders } from './securityHeaders';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { createTrackerRoutes } from './trackerRoutes';
@@ -103,6 +104,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleJournal({ root: abs, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
+    (req, res, url) => handleScorecard(ctx, req, res, url),
     (req, res, url) =>
       handleProof({ ...ctx, configDir: trackers.configDir, kick: () => reconciler.kick() }, req, res, url),
     (req, res, url) => handleAgents(abs, req, res, url),

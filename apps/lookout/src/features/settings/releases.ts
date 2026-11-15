@@ -17,6 +17,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.37.0',
+    date: '2026-11-15',
+    items: [
+      'Trail stats has a Scorecard: how each model, agent and vendor does on your own tickets, verified first time, rework and cost per verified ticket, with small samples marked too few',
+      'Settings → Model matching suggests a tier per ticket type when one model clearly does better on your repo, with the numbers; nothing changes until you take it',
+      'Copy the scorecard as Markdown to share it with your team',
+    ],
+  },
+  {
     version: '0.36.0',
     date: '2026-11-15',
     items: [
@@ -168,25 +177,6 @@ export const RELEASES: Release[] = [
       'Check commands, briefs, criteria and other trusted settings run only once you approve them on this machine, in Settings → Approvals',
       'Changes made to trail files outside Teamtrail have no effect until you accept them',
     ],
-  },
-  {
-    version: '0.25.0',
-    date: '2026-11-10',
-    items: [
-      'Agents on other machines or in cloud sandboxes can join your trails: `teamtrail mcp --http` serves the same tools over HTTP',
-      'One token per remote agent, created and revoked in Settings → Remote agents; without a token nothing is reachable',
-      '`teamtrail connect claude|codex --url` points an agent at a remote Teamtrail',
-    ],
-  },
-  {
-    version: '0.24.2',
-    date: '2026-11-10',
-    items: ['A ticket’s description no longer repeats which trail it is part of'],
-  },
-  {
-    version: '0.24.1',
-    date: '2026-11-10',
-    items: ['Buttons in the same row are always the same size'],
   },
   ...OLDER_RELEASES,
 ];

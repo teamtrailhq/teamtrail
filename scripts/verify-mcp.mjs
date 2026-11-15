@@ -614,6 +614,13 @@ await page.locator('.perf-row').first().waitFor({ timeout: 10000 });
 log(
   `trail stats: ${await page.locator('.perf-row').count()} vendor row(s), first ${await page.locator('.perf-row .ds-row-title').first().textContent()}`,
 );
+const scoreRows = page.locator('.scorecard .score-row');
+await scoreRows.first().waitFor({ timeout: 10000 });
+const scorecardOk =
+  (await scoreRows.count()) > 0 && /too few|first time/.test((await scoreRows.first().textContent()) ?? '');
+log(
+  `scorecard: ${await scoreRows.count()} type × model row(s), first "${await scoreRows.first().locator('.ds-row-title').textContent()}"`,
+);
 await page.keyboard.press('Escape');
 log(`page errors: ${errors.length ? errors.join(' | ') : 'none'}`);
 await browser.close();
@@ -640,6 +647,7 @@ if (
   !signedOk ||
   !verifiedOk ||
   !proofOk ||
+  !scorecardOk ||
   !reviewOk ||
   !discoveryOk ||
   !supervisionOk ||

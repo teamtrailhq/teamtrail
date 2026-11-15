@@ -479,3 +479,17 @@
   gap: var(--sp-2);
   min-width: 0;
 }
+.tier-suggestions {
+  list-style: none;
+  margin: var(--sp-8) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+.tier-suggestions li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+}

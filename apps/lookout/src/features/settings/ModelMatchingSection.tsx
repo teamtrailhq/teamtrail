@@ -5,12 +5,15 @@ import {
   type MapDoc,
   type MapSnapshot,
   type ModelMatching,
+  type ModelTier,
+  type TicketType,
 } from '@teamtrail/core';
 import { Button } from '../../components/ui';
 import { useModels } from '../models';
 import { ModelsFileLine } from './ModelsFileLine';
 import { SettingsSection } from './SettingsSection';
 import { TierGrid } from './TierGrid';
+import { TierSuggestions } from './TierSuggestions';
 import { useTypeHints } from './useTypeHints';
 
 /**
@@ -29,6 +32,11 @@ export function ModelMatchingSection(props: {
   if (!map) return null;
   const on = !!map.modelMatching?.enabled;
   const own = map.modelMatching?.tiers ?? {};
+  const setTier = (type: TicketType, tier: ModelTier) => {
+    const tiers = { ...own, [type]: tier };
+    if (tier === DEFAULT_TIER_MAP[type]) delete tiers[type];
+    props.onChange({ enabled: true, tiers });
+  };
   return (
     <SettingsSection title="Model matching">
       <p className="vf-intro">
@@ -48,17 +56,8 @@ export function ModelMatchingSection(props: {
           {on ? 'On' : 'Off'}
         </Button>
       </div>
-      {on && (
-        <TierGrid
-          tiers={effectiveTiers(map)}
-          hints={hints}
-          onChange={(type, tier) => {
-            const tiers = { ...own, [type]: tier };
-            if (tier === DEFAULT_TIER_MAP[type]) delete tiers[type];
-            props.onChange({ enabled: true, tiers });
-          }}
-        />
-      )}
+      {on && <TierGrid tiers={effectiveTiers(map)} hints={hints} onChange={setTier} />}
+      {on && <TierSuggestions tiers={effectiveTiers(map)} models={models?.models} onTake={setTier} />}
       {on && <span className="set-hint t-meta">Changes apply to the next claim; nothing running is interrupted.</span>}
       <ModelsFileLine view={models} />
     </SettingsSection>
