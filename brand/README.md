@@ -35,6 +35,6 @@ The Teamtrail logo, the `teamtrail.` wordmark and Scout's avatar, rendered at ex
 
 ## Proof badges
 
-`badges/verified.svg` and `badges/not-verified.svg` are the Verified by Teamtrail badges, in the shields flat style (20px tall; Verdana, like shields): the `t.` mark and "Teamtrail" on shields' grey, then "verified" on moss (`#3f7a39`) or "not verified" on burnt orange (`#b8621c`), never red. A proof report in a pull request shows one at its top (`packages/core/src/proof/proofBadge.ts`), served by the site as `https://teamtrail.app/badges/<name>.svg`; the landing keeps the same files in `public/badges/`.
+`badges/verified.svg` and `badges/not-verified.svg` are the Verified by Teamtrail badges, in the shields flat style (20px tall; Verdana, like shields): the `t.` mark and "Teamtrail" on shields' grey, then "verified" on moss (`#3f7a39`) or "not verified" on burnt orange (`#b8621c`), never red. A proof report in a pull request shows one at its top (`packages/core/src/proof/proofBadge.ts`), served by the site as `https://www.teamtrail.app/badges/<name>.svg`; the landing keeps the same files in `public/badges/`.
 
 The landing ([teamtrail-landing](https://github.com/teamtrailhq/teamtrail-landing)) serves its own copies of the favicons, OG image and Slack icon from `public/media/brand/`.

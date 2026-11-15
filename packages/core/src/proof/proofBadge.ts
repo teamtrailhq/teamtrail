@@ -5,6 +5,6 @@ import type { ProofStatus } from '../model/proof';
  * proxy, so nothing about the project is sent), never a link to a hosted report. Sources in `brand/badges/`.
  */
 export function proofBadge(status: ProofStatus): string {
-  if (status === 'verified') return '![Teamtrail: verified](https://teamtrail.app/badges/verified.svg)';
-  return '![Teamtrail: not verified](https://teamtrail.app/badges/not-verified.svg)';
+  if (status === 'verified') return '![Teamtrail: verified](https://www.teamtrail.app/badges/verified.svg)';
+  return '![Teamtrail: not verified](https://www.teamtrail.app/badges/not-verified.svg)';
 }
