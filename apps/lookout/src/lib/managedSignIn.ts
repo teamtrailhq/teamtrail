@@ -4,6 +4,12 @@ import { applyTheme, type ThemeChoice } from './theme';
 
 const THEMES: ThemeChoice[] = ['auto', 'day', 'night'];
 
+/** The server's agents page, kept only on this origin (managedPages.ts). */
+function agentsOf(value: unknown): { agents?: ManagedPage } {
+  const [page] = managedPages(value ? [value] : [], location.origin);
+  return page ? { agents: page } : {};
+}
+
 /** The server's home link, kept only as a short label and an http(s) URL. */
 function homeOf(value: unknown): { home?: { label: string; href: string } } {
   const h = value as { label?: unknown; href?: unknown } | undefined;
@@ -35,6 +41,11 @@ export interface ManagedSignIn {
    * first run asks nothing and Settings → Tracker says so.
    */
   tracker?: 'markdown';
+  /**
+   * The server runs agents itself: the page (on this origin) where people turn them on for a trail. The Lookout then
+   * points there instead of offering `/scout` commands for an agent of their own.
+   */
+  agents?: ManagedPage;
 }
 
 let managed: ManagedSignIn | undefined;
@@ -57,6 +68,7 @@ export function learnManagedSignIn(reply: { managed?: unknown }) {
     ...(m.highRisk === false ? { highRisk: false } : {}),
     ...homeOf(m.home),
     ...(m.tracker === 'markdown' ? { tracker: 'markdown' as const } : {}),
+    ...agentsOf(m.agents),
   };
   if (theme) applyTheme(theme);
   return managed;

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Panel, Field, Button } from '../../components/ui';
+import { hostedAgents } from '../../lib/hostedAgents';
 import { AgentCommand } from './AgentCommand';
+import { CreatedNote } from './CreatedNote';
 import type { TrailSeed } from './trailSeed';
 
 /**
@@ -63,23 +65,16 @@ export function NewTrailDialog({
             placeholder="What the plan takes for granted, e.g. The v2 API supports batch writes"
           />
         </Field>
-        <div className="agent-draft">
-          <span className="dim">
-            Paste this in Claude Code or Codex. Scout frames the trail with you there, then charts it here in {tracker}.
-          </span>
-          <AgentCommand command={`/scout new "${idea || 'your idea'}"`} label="Copy command" />
-        </div>
-        {created ? (
-          <div className="agent-draft created">
-            <span>
-              Trail {created} is on the map, starting with discovery. To get it moving, run this in Claude Code or
-              Codex:
+        {!hostedAgents() && (
+          <div className="agent-draft">
+            <span className="dim">
+              Paste this in Claude Code or Codex. Scout frames the trail with you there, then charts it here in{' '}
+              {tracker}.
             </span>
-            <AgentCommand command="/scout resume" label="Copy command" />
+            <AgentCommand command={`/scout new "${idea || 'your idea'}"`} label="Copy command" />
           </div>
-        ) : (
-          error && <p className="vf-err">{error}</p>
         )}
+        {created ? <CreatedNote created={created} /> : error && <p className="vf-err">{error}</p>}
         <footer>
           <Button variant="ghost" onClick={onClose}>
             Close
@@ -88,7 +83,11 @@ export function NewTrailDialog({
             <Button
               variant="primary"
               disabled={busy || !title.trim() || !dest.trim()}
-              data-tip="Put the trail on the map now; any agent picks it up with /scout resume"
+              data-tip={
+                hostedAgents()
+                  ? 'Put the trail on the map now, then turn your agents on for it'
+                  : 'Put the trail on the map now; any agent picks it up with /scout resume'
+              }
               onClick={() => {
                 setBusy(true);
                 const lines = assumptions.split('\n').map((l) => l.trim());
