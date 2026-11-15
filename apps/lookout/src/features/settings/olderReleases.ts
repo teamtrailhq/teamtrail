@@ -1,3 +1,4 @@
+import { EARLIEST_RELEASES } from './earliestReleases';
 import type { Release } from './releases';
 
 /** Releases 0.11–0.23 (0.1–0.10 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
@@ -158,4 +159,5 @@ export const OLDER_RELEASES: Release[] = [
       'Connected agents (MCP) work on the active tracker: with GitHub or Linear connected, their missions, claims and decisions land there, and their sessions show live in the command center',
     ],
   },
+  ...EARLIEST_RELEASES,
 ];

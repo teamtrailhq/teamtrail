@@ -48,7 +48,6 @@ export const EARLIEST_RELEASES: Release[] = [
       'Packages renamed to @miloops-hq/core and @miloops-hq/command-center',
     ],
   },
-  ...EARLIEST_RELEASES,
   {
     version: '0.6.0',
     date: '2026-10-31',
