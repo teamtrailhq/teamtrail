@@ -246,6 +246,14 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
     const [map] = await new MarkdownAdapter(nodeMarkdownFs(root), root).listMaps();
     const { tickets } = await new MarkdownAdapter(nodeMarkdownFs(root), root).loadMap(map.id);
     expect(lookoutOnlyTickets.has(root, map.id, tickets[0].id)).toBe(true);
+    // the question says so too, for a Lookout whose caller may not make high-risk calls to route it
+    const sessions = path.join(root, '.agents', 'sessions');
+    const pending = fs
+      .readdirSync(sessions)
+      .flatMap(
+        (f) => (JSON.parse(fs.readFileSync(path.join(sessions, f), 'utf8')).pending ?? []) as { lookoutOnly?: true }[],
+      );
+    expect(pending.some((q) => q.lookoutOnly)).toBe(true);
     // the session docs go (a month on, or deleted by an agent): the mark still holds
     fs.rmSync(path.join(root, '.agents', 'sessions'), { recursive: true, force: true });
     expect(await ticketNeedsLookout(root, map.id, tickets[0].id)).toBe(true);

@@ -17,6 +17,8 @@ export interface ManagedSignIn {
   pages: ManagedPage[];
   /** The theme this person picked on the server: the Lookout follows it in place of its own setting. */
   theme?: ThemeChoice;
+  /** `false`: this person may not make high-risk calls, so the page routes those to someone who may. */
+  highRisk?: boolean;
 }
 
 let managed: ManagedSignIn | undefined;
@@ -26,7 +28,8 @@ export const managedSignIn = () => managed;
 
 /** Read from a `GET /session` reply: kept only when it is well formed; its sign-out and pages only on this origin. */
 export function learnManagedSignIn(reply: { managed?: unknown }) {
-  const m = reply.managed as { name?: unknown; signOut?: unknown; pages?: unknown; theme?: unknown } | undefined;
+  const m = reply.managed as
+    { name?: unknown; signOut?: unknown; pages?: unknown; theme?: unknown; highRisk?: unknown } | undefined;
   if (!m || typeof m.name !== 'string') return undefined;
   const sameOrigin = typeof m.signOut === 'string' && new URL(m.signOut, location.href).origin === location.origin;
   const pages = managedPages(m.pages, location.origin);
@@ -36,6 +39,7 @@ export function learnManagedSignIn(reply: { managed?: unknown }) {
     pages,
     ...(sameOrigin ? { signOut: m.signOut as string } : {}),
     ...(theme ? { theme } : {}),
+    ...(m.highRisk === false ? { highRisk: false } : {}),
   };
   if (theme) applyTheme(theme);
   return managed;

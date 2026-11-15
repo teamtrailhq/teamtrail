@@ -2,6 +2,7 @@ import type { MapSnapshot } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
 import { Button, Empty, Field, MetaLine, Panel } from '../../components/ui';
 import { ago } from '../../lib';
+import { highRiskElsewhere } from '../../lib/highRiskElsewhere';
 import { changedSinceProposed } from './changedSinceProposed';
 import { RerouteChangeRow } from './RerouteChangeRow';
 import { RerouteDestination } from './RerouteDestination';
@@ -135,14 +136,20 @@ export function RerouteDialog(props: {
               <Button className="reroute-reject" disabled={!note.trim()} onClick={() => props.onReject(note.trim())}>
                 Reject
               </Button>
-              <Button
-                className="reroute-approve"
-                variant="primary"
-                disabled={!mayApprove}
-                onClick={() => props.onApprove(note.trim())}
-              >
-                Approve and apply
-              </Button>
+              {highRiskElsewhere() ? (
+                <span className="vf-intro">
+                  Only an owner, or someone they allowed to make high-risk calls, can approve it.
+                </span>
+              ) : (
+                <Button
+                  className="reroute-approve"
+                  variant="primary"
+                  disabled={!mayApprove}
+                  onClick={() => props.onApprove(note.trim())}
+                >
+                  Approve and apply
+                </Button>
+              )}
             </>
           )}
           <Button variant="ghost" onClick={props.onClose}>

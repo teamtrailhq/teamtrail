@@ -1,11 +1,11 @@
 import type { ActivityState, MapSnapshot } from '@teamtrail/core';
 import { useState, useRef, useEffect } from 'react';
-import { SectionHeader, Empty, InputRow } from '../../components/ui';
+import { SectionHeader, Empty } from '../../components/ui';
 import { isRunning, pickPending } from '../../lib';
+import { AnswerArea } from './AnswerArea';
 import { ChatMessage } from './ChatMessage';
 import { ConversationTicket } from './ConversationTicket';
 import { OpenQuestion } from './OpenQuestion';
-import { Suggestions } from './Suggestions';
 
 /**
  * The HITL line: the ticket as the zone's title, the transcript (scrolls), the open question pinned under it, then
@@ -79,16 +79,7 @@ export function Conversation(props: {
             ))}
           </div>
           {pending && <OpenQuestion q={pending} chatId={openChat?.id} />}
-          <Suggestions options={pending?.suggestions} onPick={send} />
-          <InputRow
-            ref={inputRef}
-            className="comms-input"
-            value={draft}
-            onValueChange={setDraft}
-            onSubmit={send}
-            disabled={!pending}
-            placeholder={pending ? 'Answer' : ''}
-          />
+          <AnswerArea pending={pending} draft={draft} onDraft={setDraft} onSend={send} inputRef={inputRef} />
         </>
       )}
     </div>
