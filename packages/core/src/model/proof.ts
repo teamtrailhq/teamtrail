@@ -30,6 +30,13 @@ export interface ProofDecision {
   superseded: boolean;
 }
 
+/** An Ed25519 signature over a proof's digest, by the machine key `keyId` names (proof-keys/<keyId>.pub). */
+export interface ProofSignature {
+  keyId: string;
+  /** Base64. */
+  sig: string;
+}
+
 /**
  * What Teamtrail recorded about one ticket's completion, as a PR shows it: built only from recorded data (attempts,
  * verdicts, decisions), never from what an agent says now. `digest` covers everything else, so a copy that was

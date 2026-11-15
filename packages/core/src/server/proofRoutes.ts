@@ -2,9 +2,9 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { journalFile } from '../history/journalFile';
 import { PROOF_POST_JOURNAL } from '../model/proofPost';
 import { proofForTicket } from '../proof/proofForTicket';
-import { proofMarkdown } from '../proof/proofMarkdown';
 import { proofPostSetting } from '../proof/proofPostSetting';
 import { readProofPost } from '../proof/proofPostStore';
+import { signedProofMarkdown } from '../proof/signedProofMarkdown';
 import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
@@ -54,5 +54,6 @@ async function ticketProof(ctx: ProofContext, res: ServerResponse, url: URL) {
   if (!ticket) return sendJson(res, 404, { error: `no ticket ${ticketId} in this trail` });
   const proof = proofForTicket({ root: ctx.root, snap, ticket, decisions: await adapter.listDecisions(mapId) });
   const post = readProofPost(ctx.root, mapId, ticketId);
-  sendJson(res, 200, { proof, markdown: proofMarkdown(proof), ...(post ? { post } : {}) });
+  const { markdown, keyFile } = signedProofMarkdown(ctx.root, proof, ctx.configDir);
+  sendJson(res, 200, { proof, markdown, ...(keyFile ? { keyFile } : {}), ...(post ? { post } : {}) });
 }

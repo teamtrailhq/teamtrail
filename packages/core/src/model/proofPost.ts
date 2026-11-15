@@ -42,5 +42,5 @@ export interface ProofPostRecord {
 export interface ProofPublisher {
   readonly repo: string;
   upsertComment(pr: number, body: string): Promise<{ url: string }>;
-  setStatus(sha: string, status: ProofStatusCall & { targetUrl?: string }): Promise<void>;
+  setStatus(sha: string, status: ProofStatusCall & { targetUrl?: string; context?: string }): Promise<void>;
 }

@@ -14,6 +14,7 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} approve [--hash <hash>]… [--dir <path>]
        ${BRAND.slug} pair [--dir <path>] [--no-open]
        ${BRAND.slug} proof <ticket> [--trail <name>] [--json] [--dir <path>]
+       ${BRAND.slug} proof verify [file] | --pr <n> [--repo <owner/name>] [--set-status] [--keys-ref <ref>] [--dir <path>]
        ${BRAND.slug} guides list|search|add|new|update|remove|lint … [--dir <path>]
 
 Starts the Lookout for the current folder and opens your browser on it, ready to sign in with one click.
@@ -62,7 +63,10 @@ Commands:
                  Settings → You → Browsers & devices
   proof <ticket>  Verified by Teamtrail: what this machine recorded about the ticket's completion (the
                  checks it ran, criteria verified or only claimed, git range, review, decisions), as
-                 Markdown for a pull request; --json for the structure. Exits 1 when not verified
+                 Markdown for a pull request; --json for the structure. Exits 1 when not verified.
+                 Signed with this machine's key; commit the .pub file it writes in proof-keys/
+  proof verify   Checks a report (a file, stdin, or every proof on --pr) against the proof keys
+                 committed at --keys-ref (HEAD): signed, unchanged, verified, at the PR's head
   knowledge import <file.md>  Seed project knowledge from a markdown document: one suggestion per
                  ## heading, for you to review in the Lookout
   guides list     Guides agents take on (built in, local and from a catalog), with their status

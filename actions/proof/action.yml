@@ -1,0 +1,34 @@
+name: Verified by Teamtrail
+description: Checks that a pull request carries a Teamtrail proof that verifies at its head commit, and records the result as a commit status.
+author: Teamtrail
+branding:
+  icon: check-circle
+  color: green
+inputs:
+  version:
+    description: The teamtrail version to run (an npm version or dist-tag).
+    default: next
+  tracker-dir:
+    description: The repo's tracker folder, which holds proof-keys/.
+    default: .teamtrail
+  token:
+    description: A token that can read the pull request and write commit statuses.
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    # Keys come from the default branch, never from the pull request: a key a PR adds counts only once it is merged.
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.repository.default_branch }}
+        path: .teamtrail-proof-keys
+        sparse-checkout: ${{ inputs.tracker-dir }}/proof-keys
+        persist-credentials: false
+    - shell: bash
+      working-directory: .teamtrail-proof-keys
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        PR: ${{ github.event.pull_request.number || github.event.issue.number }}
+        VERSION: ${{ inputs.version }}
+        TRACKER_DIR: ${{ inputs.tracker-dir }}
+      run: npx --yes "teamtrail@${VERSION}" proof verify --pr "$PR" --repo "$GITHUB_REPOSITORY" --keys-ref HEAD --dir "$TRACKER_DIR" --set-status

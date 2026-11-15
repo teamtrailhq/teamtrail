@@ -17,6 +17,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.36.0',
+    date: '2026-11-15',
+    items: [
+      "Proof reports are signed with your machine's key: commit the key file Teamtrail writes in .teamtrail/proof-keys, and anyone can check a report with `teamtrail proof verify`",
+      "A GitHub Action, Verified by Teamtrail, checks every proof on a pull request and can be made a required check, so a PR without a valid proof can't merge",
+      'The ticket inspector shows the proof, with Copy for PR and a link to the comment once it is posted',
+    ],
+  },
+  {
     version: '0.35.0',
     date: '2026-11-15',
     items: [
@@ -178,17 +187,6 @@ export const RELEASES: Release[] = [
     version: '0.24.1',
     date: '2026-11-10',
     items: ['Buttons in the same row are always the same size'],
-  },
-  {
-    version: '0.24.0',
-    date: '2026-11-10',
-    items: [
-      'Focus in the header: see at a glance whether it is on, and start or end it in one click',
-      'Sign in with GitHub, and pick your repo or Linear team from a searchable list',
-      'Write your own guides with `teamtrail guides new`, approve them in Settings and share them with the catalog',
-      'Settings is its own page, and the trail map has a cleaner, flatter look',
-      'Smaller polish: one colour for work in progress everywhere, a calmer first run and clearer Slack setup',
-    ],
   },
   ...OLDER_RELEASES,
 ];
