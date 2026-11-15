@@ -4,6 +4,7 @@ import { writeLocalJson } from '../lib/ensureLocalDir';
 import { readJsonFile } from '../lib/jsonFile';
 import { processAlive } from '../lib/processAlive';
 import { approvesGates, approvesHighRisk, type AnswerVia } from '../model/answerVia';
+import { personOf } from '../model/person';
 import { runningVersion } from '../model/runningVersion';
 import { needsLookout } from '../policy/needsLookout';
 import { signAgentAnswer } from './agentAnswerSignature';
@@ -66,6 +67,8 @@ export function writeAgentAnswer(root: string, input: AnswerInput): AgentAnswer 
   if (!input.text.trim()) throw new AnswerError('answer is empty');
   const { sessionId, questionId, author, via } = input;
   const chatOf = via === 'chat' && input.chatOf ? { chatOf: input.chatOf } : {};
+  const person = personOf(input.by);
+  const by = person ? { by: person } : {};
   const ans = signAgentAnswer(root, {
     sessionId,
     questionId,
@@ -74,6 +77,7 @@ export function writeAgentAnswer(root: string, input: AnswerInput): AgentAnswer 
     at: input.at ?? Date.now(),
     via,
     ...chatOf,
+    ...by,
     ...writer(),
   });
   writeLocalJson(root, agentPaths.answer(sessionId, questionId), ans);

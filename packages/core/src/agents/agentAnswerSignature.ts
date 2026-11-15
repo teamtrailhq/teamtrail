@@ -1,6 +1,7 @@
 import { machineId } from '../machine/machineId';
 import { machineSign, machineSigned } from '../machine/machineKey';
 import { ANSWER_VIAS, type AnswerHow } from '../model/answerVia';
+import { personOf } from '../model/person';
 import type { AgentAnswer } from './agentLink';
 
 /*
@@ -21,7 +22,7 @@ import type { AgentAnswer } from './agentLink';
  * files in the user's home can read machine.key and sign (`teamtrail connect` asks the agent's own settings to deny
  * it the config folder); any local agent can call answer_question, which is why chat answers never pass a gate.
  */
-type Unsigned = Omit<AgentAnswer, 'sig' | 'sigVia'>;
+type Unsigned = Omit<AgentAnswer, 'sig' | 'sigVia' | 'sigBy'>;
 
 const answerFields = (root: string, a: Unsigned) => [
   'answer',
@@ -39,10 +40,20 @@ const labelFields = (root: string, a: Unsigned) => [
   a.chatOf ?? '',
 ];
 
-/** Signs an answer for this project (the tracker folder `root`) on this machine; the label too, when it has one. */
+/** Who gave it, signed apart from the rest, so an answer from before people were named still verifies. */
+const byFields = (root: string, a: Unsigned) => [
+  'answer.by',
+  ...answerFields(root, a).slice(1),
+  a.by?.id ?? '',
+  a.by?.name ?? '',
+];
+
+/** Signs an answer for this project (the tracker folder `root`) on this machine; the label and person too, when it has them. */
 export function signAgentAnswer(root: string, a: Unsigned): AgentAnswer {
   const sig = machineSign(answerFields(root, a));
-  return a.via === undefined ? { ...a, sig } : { ...a, sig, sigVia: machineSign(labelFields(root, a)) };
+  const sigVia = a.via === undefined ? {} : { sigVia: machineSign(labelFields(root, a)) };
+  const sigBy = a.by ? { sigBy: machineSign(byFields(root, a)) } : {};
+  return { ...a, sig, ...sigVia, ...sigBy };
 }
 
 /** An answer file checked: not Teamtrail's (forged, or moved), or Teamtrail's with the label that verified. */
@@ -63,6 +74,11 @@ export function checkAgentAnswer(
   if (!machineSigned(answerFields(root, a), a.sig)) return { kind: 'forged' };
   const known =
     a.via !== undefined && ANSWER_VIAS.includes(a.via) && (a.chatOf === undefined || typeof a.chatOf === 'string');
-  if (!known || !machineSigned(labelFields(root, a), a.sigVia)) return { kind: 'signed', how: {} };
-  return { kind: 'signed', how: a.via === 'chat' ? { via: a.via, chatOf: a.chatOf } : { via: a.via } };
+  const by = a.by && machineSigned(byFields(root, a), a.sigBy) ? personOf(a.by) : undefined;
+  const named = by ? { by } : {};
+  if (!known || !machineSigned(labelFields(root, a), a.sigVia)) return { kind: 'signed', how: named };
+  return {
+    kind: 'signed',
+    how: a.via === 'chat' ? { via: a.via, chatOf: a.chatOf, ...named } : { via: a.via, ...named },
+  };
 }

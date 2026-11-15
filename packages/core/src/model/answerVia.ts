@@ -1,3 +1,4 @@
+import type { Person } from './person';
 /**
  * How the human gave an answer to an agent's question, set by the code path that recorded it, never by its input:
  * - `lookout`: in the Lookout (the bridge's answer routes),
@@ -37,6 +38,8 @@ export interface AnswerHow {
   via?: AnswerVia;
   /** For `chat`: the agent whose chat it was given in. */
   chatOf?: string;
+  /** Who gave it, when the sign-in named them and this machine signed it so. */
+  by?: Person;
 }
 
 /** The label to keep with an answer (chat message, answered question): nothing for an unlabelled one. */

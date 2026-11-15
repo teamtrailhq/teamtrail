@@ -1,4 +1,5 @@
 import type { AnswerVia } from '../model/answerVia';
+import type { Person } from '../model/person';
 import type { AnsweredQuestion, ChatMessage, FeedEntry, PendingQuestion, SessionInfo } from '../model/types';
 
 /**
@@ -71,12 +72,16 @@ export interface AgentAnswer {
   via?: AnswerVia;
   /** For `chat`: the agent whose chat it was given in. */
   chatOf?: string;
+  /** Who gave it, when the sign-in named them (model/person.ts); signed on its own (`sigBy`). */
+  by?: Person;
   /** The Teamtrail version that wrote it, to say so when the asking agent runs another one. Not signed. */
   writer?: string;
   /** This machine's signature of the answer (all but the label). An answer without a valid one is not the human's. */
   sig?: string;
   /** This machine's signature of the answer with its label: without a valid one, the label doesn't count. */
   sigVia?: string;
+  /** This machine's signature of the answer with who gave it: without a valid one, nobody is named. */
+  sigBy?: string;
 }
 
 export interface LookoutLock {

@@ -153,6 +153,7 @@ async function saveWith(
       alternatives: input.alternatives,
       rationale: said.rationale,
       decidedBy,
+      ...('decidedByName' in said && said.decidedByName ? { decidedByName: said.decidedByName } : {}),
       participants: [...new Set([agent, decidedBy])].map((id) => ({ id })),
       source: {
         kind: 'agent',

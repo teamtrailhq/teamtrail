@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { writeLookoutLock } from '../agents/lookoutLock';
+import { personOf } from '../model/person';
 import type { ProjectEntry, ProjectState } from '../model/project';
 import { insideRoot } from '../projects/confinePath';
 import { verifiedElsewhere } from '../projects/elsewhereUrl';
@@ -19,10 +20,12 @@ import { isEventStreamRoute } from './eventStreamRoute';
 import { BadRequest, refuseEarly, requestUrl, sendJson } from './http';
 import { lanPlaces } from './lanPlaces';
 import { markLimited } from './limitedRequests';
+import { localPerson } from './localPerson';
 import { neverCrash } from './neverCrash';
 import { handleProjects } from './projectRoutes';
 import { redactResponse } from './redactResponse';
 import { fromThisMachine, requestRefusal, type PeerAddress } from './requestGuard';
+import { markPerson } from './requestPerson';
 import { setSecurityHeaders } from './securityHeaders';
 import { signInGate } from './signInGate';
 import { handleSignIn } from './signInRoutes';
@@ -164,6 +167,9 @@ export function createProjectsHub(o: ProjectsHubOptions & ProjectsHubAccess) {
     const limited = signedIn.kind === 'external' && signedIn.caller.highRisk === false;
     if (limited) markLimited(req);
     if (limited || signedIn.caller.kind === 'device') markFromDevice(req);
+    // Who acted: the embedding server's person, or this machine's (git user.name); another device stays unnamed.
+    if (signedIn.kind === 'external') markPerson(req, personOf(signedIn.caller.person));
+    else if (signedIn.caller.kind === 'machine') markPerson(req, localPerson());
   }
 
   async function handle(req: IncomingMessage, res: ServerResponse) {

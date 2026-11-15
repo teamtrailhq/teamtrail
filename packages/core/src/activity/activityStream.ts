@@ -106,7 +106,8 @@ export class ActivityStream {
     if (!q || (!resolveFn && !remote)) return false;
     this.resolvers.delete(questionId);
     const label = labelOf(how);
-    this.chat({ sessionId: q.sessionId, ticketId: q.ticketId, from: 'human', author, text, ...label });
+    const by = how.by ? { by: how.by } : {};
+    this.chat({ sessionId: q.sessionId, ticketId: q.ticketId, from: 'human', author, text, ...label, ...by });
     this.set({
       pending: this.state.pending.filter((p) => p.id !== questionId),
       answered: [
@@ -123,6 +124,7 @@ export class ActivityStream {
           ...(q.categories?.length ? { categories: q.categories } : {}),
           ...(q.urgency ? { urgency: q.urgency } : {}),
           ...label,
+          ...by,
         },
       ].slice(-200),
     });

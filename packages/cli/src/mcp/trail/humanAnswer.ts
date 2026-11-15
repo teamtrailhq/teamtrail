@@ -1,4 +1,5 @@
 import {
+  type Person,
   approvesGates,
   approvesHighRisk,
   oneLine,
@@ -42,6 +43,8 @@ export interface HumanAnswer {
   via?: AnswerVia;
   /** For `chat`: the agent whose chat it was given in. */
   chatOf?: string;
+  /** Who gave it, when the sign-in named them. */
+  by?: Person;
   /** What it backed, once used. */
   usedFor?: string;
 }
@@ -190,6 +193,7 @@ export function humanDecision(a: HumanAnswer, by: { agent: string; said: string;
   const reading = by.said.trim() === a.answer.trim() ? '' : `${by.agent}'s reading: ${by.said.trim()}`;
   return {
     decidedBy: a.author,
+    ...(a.by ? { decidedByName: a.by.name } : {}),
     question: a.question,
     answer: a.answer,
     summary: `${oneLine(a.answer).slice(0, 100)} (asked: ${oneLine(a.question).slice(0, 100)})`,

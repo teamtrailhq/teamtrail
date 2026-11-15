@@ -25,6 +25,8 @@ export interface ProofDecision {
   id: string;
   summary: string;
   decidedBy: string;
+  /** The person behind it, when the sign-in named them. */
+  decidedByName?: string;
   decidedAt: number;
   /** Replaced by a later decision, so no longer in force. */
   superseded: boolean;
