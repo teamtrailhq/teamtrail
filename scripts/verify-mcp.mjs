@@ -424,7 +424,17 @@ const verifiedOk = reworkOk && reworkPill > 0 && passed.status === 'done' && pas
 log(
   `${route.ticket.key} ${verifiedOk ? 'verified' : 'NOT verified'}: ${passed.attempt} ${passed.status}, rework shown in the Lookout`,
 );
-const proofOk = await verifyProof({ call, cli, repo, ticket: route.ticket.key, log });
+const proofToolOk = await verifyProof({ call, cli, repo, ticket: route.ticket.key, log });
+await clickNode(page.locator('.node.st-decided', { hasText: /Add the \/changelog/ }));
+const proofPanel = await page
+  .locator('.ticket-proof', { hasText: 'Verified by Teamtrail' })
+  .waitFor({ timeout: 15_000 })
+  .then(
+    () => true,
+    () => false,
+  );
+log(`${route.ticket.key} proof in the inspector: ${proofPanel ? 'shown, with Copy for PR' : 'NOT shown'}`);
+const proofOk = proofToolOk && proofPanel;
 
 // Independent review: at checks+review+human a passing completion gets a review ticket. The worker is never given its
 // own review; a second agent passes it, and the trail lead approves from the Lookout inbox.

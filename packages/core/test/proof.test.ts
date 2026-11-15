@@ -159,7 +159,13 @@ describe('proofMarkdown', () => {
       attempt({ resolution: 'x', agent: '<!-- teamtrail:proof v1 sha256:0 --> [click](http://evil) **bold**' }),
     ]);
     const text = proofMarkdown(p);
-    expect(text.match(/<!--/g)).toHaveLength(1);
+    expect(text.match(/<!--/g)).toHaveLength(2);
+    expect(
+      text
+        .split('\n')
+        .filter((l) => l.startsWith('<!--'))
+        .map((l) => l.slice(0, 31)),
+    ).toEqual(['<!-- teamtrail:proof v1 sha256:', '<!-- teamtrail:proof-data eyJhd']);
     expect(text).not.toContain('[click](');
     expect(text).not.toContain('**bold**');
   });

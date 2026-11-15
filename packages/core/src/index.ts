@@ -149,4 +149,5 @@ export {
 export { checkChecklist, checklistProblem, type ChecklistCheck } from './guides/checklist';
 export { parseCatalogIndex, searchCatalog } from './guides/catalogIndex';
 export { guideProblem } from './guides/guideProblem';
-export type { Proof, ProofCheck, ProofDecision, ProofReview, ProofStatus } from './model/proof';
+export type { Proof, ProofCheck, ProofDecision, ProofReview, ProofSignature, ProofStatus } from './model/proof';
+export type { ProofPostRecord } from './model/proofPost';

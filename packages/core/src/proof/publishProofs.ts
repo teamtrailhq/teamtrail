@@ -4,14 +4,16 @@ import type { ProofPostRecord, ProofPublisher } from '../model/proofPost';
 import type { MapSnapshot, Ticket } from '../model/types';
 import { redact } from '../verification/redact';
 import { proofForTicket } from './proofForTicket';
-import { proofMarkdown } from './proofMarkdown';
 import { readProofPost, writeProofPost } from './proofPostStore';
 import { proofStatus } from './proofStatus';
+import { signedProofMarkdown } from './signedProofMarkdown';
 
 export interface PublishEnv {
   root: string;
   adapter: TrackerAdapter;
   publisher: ProofPublisher;
+  /** The config dir whose proof key signs the reports. */
+  configDir?: string;
   now?: () => number;
 }
 
@@ -46,7 +48,10 @@ async function publishOne(
   };
   let rec: ProofPostRecord;
   try {
-    const { url } = await env.publisher.upsertComment(pr.number, proofMarkdown(proof));
+    const { url } = await env.publisher.upsertComment(
+      pr.number,
+      signedProofMarkdown(env.root, proof, env.configDir).markdown,
+    );
     await env.publisher.setStatus(pr.headSha, { ...status, targetUrl: url });
     rec = { ...base, commentUrl: url, postedAt: now };
   } catch (e) {

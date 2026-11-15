@@ -1,8 +1,19 @@
 import { EARLIEST_RELEASES } from './earliestReleases';
 import type { Release } from './releases';
 
-/** Releases 0.11–0.23 (0.1–0.10 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.11–0.24 (0.1–0.10 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
 export const OLDER_RELEASES: Release[] = [
+  {
+    version: '0.24.0',
+    date: '2026-11-10',
+    items: [
+      'Focus in the header: see at a glance whether it is on, and start or end it in one click',
+      'Sign in with GitHub, and pick your repo or Linear team from a searchable list',
+      'Write your own guides with `teamtrail guides new`, approve them in Settings and share them with the catalog',
+      'Settings is its own page, and the trail map has a cleaner, flatter look',
+      'Smaller polish: one colour for work in progress everywhere, a calmer first run and clearer Slack setup',
+    ],
+  },
   {
     version: '0.23.0',
     date: '2026-11-08',

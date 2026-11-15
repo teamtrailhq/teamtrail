@@ -13,6 +13,6 @@ export function postProofs(ctx: RouteContext, deps: { access: ProofAccess; confi
     if (!proofPostSetting(ctx.root, deps.configDir).enabled()) return [];
     const publisher = await deps.access();
     if (typeof publisher === 'string') return [];
-    return publishProofs({ root: ctx.root, adapter: await ctx.active(), publisher });
+    return publishProofs({ root: ctx.root, adapter: await ctx.active(), publisher, configDir: deps.configDir });
   };
 }

@@ -65,6 +65,18 @@ export class GitHubProofPublisher implements ProofPublisher {
     return undefined;
   }
 
+  /** The PR's head commit and every text on it that holds a Teamtrail proof: its description, then its comments. */
+  async proofTexts(pr: number): Promise<{ headSha: string; texts: string[] }> {
+    const p = await this.#call<{ body?: string | null; head: { sha: string } }>(`${this.#base}/pulls/${pr}`);
+    const texts = [p.body ?? ''];
+    for (let page = 1; page <= PAGES; page++) {
+      const list = await this.#call<GhComment[]>(`${this.#base}/issues/${pr}/comments?per_page=100&page=${page}`);
+      texts.push(...list.map((c) => c.body ?? ''));
+      if (list.length < 100) break;
+    }
+    return { headSha: p.head.sha, texts: texts.filter((t) => t.includes(MARKER)) };
+  }
+
   async upsertComment(pr: number, body: string) {
     if (!Number.isInteger(pr) || pr <= 0) throw new TrackerError('invalid', `not a pull request number: ${pr}`);
     const own = await this.#findOwn(pr);
@@ -73,12 +85,12 @@ export class GitHubProofPublisher implements ProofPublisher {
     return { url: c.html_url };
   }
 
-  async setStatus(sha: string, s: ProofStatusCall & { targetUrl?: string }) {
+  async setStatus(sha: string, s: ProofStatusCall & { targetUrl?: string; context?: string }) {
     if (!SHA.test(sha)) throw new TrackerError('invalid', 'the pull request head is not a full commit sha');
     await this.#call(`${this.#base}/statuses/${sha}`, 'POST', {
       state: s.state,
       description: s.description,
-      context: PROOF_STATUS_CONTEXT,
+      context: s.context ?? PROOF_STATUS_CONTEXT,
       ...(s.targetUrl ? { target_url: s.targetUrl } : {}),
     });
   }

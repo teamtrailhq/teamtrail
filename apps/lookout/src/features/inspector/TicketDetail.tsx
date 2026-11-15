@@ -8,6 +8,7 @@ import { TicketGuide } from '../guides';
 import { KnowledgePreview, PromoteButton } from '../knowledge';
 import { ModelWaitNote } from '../models';
 import { PrFlagBadges } from '../pr-sync';
+import { TicketProof } from '../proof';
 import { OutsideChangeNote } from '../signed-state';
 import { VerificationPanel } from '../verification';
 import { TicketWorkspace } from '../workspaces';
@@ -77,6 +78,7 @@ export function TicketDetail(props: {
       {lease && <LeaseFacts lease={lease} onRelease={() => actions.releaseLease(t.id)} />}
       {!lease && <TicketWorkspace mapId={snap.map.id} ticketId={t.id} />}
       <VerificationPanel mapId={snap.map.id} trail={snap.map.verification} ticket={t} state={state} />
+      <TicketProof mapId={snap.map.id} ticket={t} />
 
       <TicketActions
         t={t}

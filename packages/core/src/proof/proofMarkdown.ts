@@ -1,6 +1,8 @@
 import { untrusted } from '../evidence/github/prText';
-import type { Proof } from '../model/proof';
+import { canonicalJson } from '../lib/canonicalJson';
+import type { Proof, ProofSignature } from '../model/proof';
 import { proofBadge } from './proofBadge';
+import { proofMarker } from './proofMarker';
 
 /** Agent-written text as inert Markdown: flattened and capped, then every character Markdown acts on escaped. */
 const md = (text: string, max = 200) => untrusted(text, max).replace(/[\\*_[\]()#|!~+-]/g, (c) => `\\${c}`);
@@ -52,12 +54,13 @@ function gitLines(p: Proof): string[] {
 
 /**
  * The proof as a pull request shows it. Everything an agent wrote is escaped; the hidden marker carries the digest
- * so a changed copy can be told from the original.
+ * so a changed copy can be told from the original; the last line carries the proof itself (base64 of its canonical
+ * JSON) so anyone can check the text against it (verifyProofText.ts).
  */
-export function proofMarkdown(p: Proof): string {
+export function proofMarkdown(p: Proof, signature?: ProofSignature): string {
   const title = p.status === 'verified' ? 'Verified by Teamtrail' : 'Not verified by Teamtrail';
   const lines = [
-    `<!-- teamtrail:proof v1 ${p.digest} -->`,
+    proofMarker(p.digest, signature),
     proofBadge(p.status),
     '',
     `### ${title}`,
@@ -79,6 +82,8 @@ export function proofMarkdown(p: Proof): string {
     ...gitLines(p),
     '',
     `<sub>Attempt ${md(p.attempt.id, 40)} by ${md(p.attempt.agent, 60)}${p.earlier.length ? ` after ${p.earlier.length} earlier` : ''} · ${p.digest.slice(0, 19)}… · Teamtrail records what ran on the trail lead's machine; it does not judge the code.</sub>`,
+    '',
+    `<!-- teamtrail:proof-data ${Buffer.from(canonicalJson(p)).toString('base64')} -->`,
   ];
   return lines.join('\n');
 }

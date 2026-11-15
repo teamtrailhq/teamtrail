@@ -1,5 +1,5 @@
 import { OperationError } from '@teamtrail/core';
-import { proofForTicket, proofMarkdown } from '@teamtrail/core/node';
+import { proofForTicket, signedProofMarkdown } from '@teamtrail/core/node';
 import type { AgentContext } from './agentContext';
 
 /**
@@ -13,12 +13,14 @@ export async function proofReport(ctx: AgentContext, input: { trail?: string; ti
   if (!ref) throw new OperationError('Which ticket? Pass `ticket`.');
   const t = ctx.findTicket(snap, ref);
   const proof = proofForTicket({ root: ctx.root, snap, ticket: t, decisions: await ctx.decisions(snap.map.id) });
+  const signed = signedProofMarkdown(ctx.root, proof);
   return {
     ticket: t.key,
     status: proof.status,
     gaps: proof.gaps,
     digest: proof.digest,
-    markdown: proofMarkdown(proof),
+    markdown: signed.markdown,
+    signed: !!signed.signature,
     howTo:
       proof.status === 'verified'
         ? 'Put `markdown` in the pull request description as it is. Never edit it: the digest covers it.'

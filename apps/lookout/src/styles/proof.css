@@ -1,0 +1,18 @@
+/* Verified by Teamtrail: a ticket's proof in the inspector. */
+.ticket-proof {
+  align-items: flex-start;
+  gap: var(--sp-6);
+}
+.proof-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6);
+}
+.proof-gaps {
+  margin: 0;
+  padding-left: var(--sp-18);
+}
+.ticket-proof code {
+  overflow-wrap: anywhere;
+}

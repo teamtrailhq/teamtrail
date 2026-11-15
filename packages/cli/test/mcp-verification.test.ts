@@ -130,7 +130,8 @@ describe('verified completion over MCP', () => {
       ticket: build,
     });
     expect(proof).toMatchObject({ status: 'verified', gaps: [] });
-    expect(proof.markdown).toContain(`<!-- teamtrail:proof v1 ${proof.digest} -->`);
+    expect(proof.markdown.startsWith(`<!-- teamtrail:proof v1 ${proof.digest} key:`)).toBe(true);
+    expect(proof.markdown).toMatch(/<!-- teamtrail:proof-data [A-Za-z0-9+/=]+ -->$/);
     expect(proof.markdown).toContain('Verified by Teamtrail');
     const unproven = await call<{ status: string; gaps: string[] }>('proof_report', { ticket: m.tickets[2].key });
     expect(unproven).toMatchObject({ status: 'not-verified', gaps: ['No completion was submitted for this ticket.'] });

@@ -1,9 +1,10 @@
 import path from 'node:path';
 import { MarkdownAdapter, type MapSnapshot, type TrackerAdapter } from '@teamtrail/core';
 import { activeTracker } from '@teamtrail/core/bridge';
-import { nodeMarkdownFs, proofForTicket, proofMarkdown } from '@teamtrail/core/node';
+import { nodeMarkdownFs, proofForTicket, signedProofMarkdown } from '@teamtrail/core/node';
 import { fail } from '../args/help';
 import { findProofTicket } from './findProofTicket';
+import { proofVerifyCli } from './proofVerifyCli';
 
 interface ProofOptions {
   dir: string;
@@ -36,6 +37,7 @@ function parse(argv: string[]): ProofOptions {
  * request (`--json` for the structure). Exit code 0 when it is verified, 1 when it isn't.
  */
 export async function proofCli(argv: string[]) {
+  if (argv[0] === 'verify') return proofVerifyCli(argv.slice(1));
   const o = parse(argv);
   const root = path.resolve(process.cwd(), o.dir);
   const markdown = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
@@ -46,7 +48,14 @@ export async function proofCli(argv: string[]) {
     if ('error' in found) fail(found.error);
     const decisions = await tracker.listDecisions(found.snap.map.id);
     const proof = proofForTicket({ root, snap: found.snap, ticket: found.ticket, decisions });
-    process.stdout.write(o.json ? `${JSON.stringify(proof, null, 2)}\n` : `${proofMarkdown(proof)}\n`);
+    const signed = signedProofMarkdown(root, proof);
+    process.stdout.write(
+      o.json ? `${JSON.stringify({ ...proof, signature: signed.signature }, null, 2)}\n` : `${signed.markdown}\n`,
+    );
+    if (signed.keyFile)
+      process.stderr.write(
+        `Signed with this machine's key; commit ${o.dir}/${signed.keyFile} so others can check it.\n`,
+      );
     process.exitCode = proof.status === 'verified' ? 0 : 1;
   } finally {
     tracker.dispose();

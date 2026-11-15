@@ -10,3 +10,8 @@ export { projectSummary } from './projects/projectSummary';
 export { buildProof, type ProofInput } from './proof/buildProof';
 export { proofForTicket } from './proof/proofForTicket';
 export { proofMarkdown } from './proof/proofMarkdown';
+export { signedProofMarkdown } from './proof/signedProofMarkdown';
+export { verifyProofText, type ProofCheck } from './proof/verifyProofText';
+export { proofKeysAt } from './proof/proofKeysAt';
+export { parseProofKeys } from './proof/parseProofKeys';
+export { GitHubProofPublisher } from './evidence/github/GitHubProofPublisher';
