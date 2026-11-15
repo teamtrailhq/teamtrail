@@ -1,4 +1,5 @@
 import { MAP_LABEL, BRAND, HITL_LABEL, PLAN_ONLY_LABEL } from '@teamtrail/core';
+import { managedSignIn } from '../../lib/managedSignIn';
 import { ApprovalsSection } from '../approvals';
 import { GuidesSection } from '../guides';
 import { ProofPostSection } from '../proof';
@@ -19,7 +20,11 @@ export function ProjectGroup({ data, route }: { data: SettingsData; route: Setti
       </SettingsSlot>
       <SettingsSlot id="tracker">
         <SettingsSection title="Tracker">
-          <TrackerConnectors activeTracker={data.activeTracker} location={data.location} update={data.update} />
+          {managedSignIn()?.tracker ? (
+            <p className="vf-intro">Trails are kept by the server this Lookout runs on, in its own storage.</p>
+          ) : (
+            <TrackerConnectors activeTracker={data.activeTracker} location={data.location} update={data.update} />
+          )}
         </SettingsSection>
       </SettingsSlot>
       <SettingsSlot id="workspaces" storage="repo">

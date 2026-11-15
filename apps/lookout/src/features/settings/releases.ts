@@ -21,6 +21,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.43.1',
+    date: '2026-11-15',
+    items: [
+      'In a hosted Lookout that keeps your trails itself, Settings → Tracker says so instead of offering trackers',
+    ],
+  },
+  {
     version: '0.43.0',
     date: '2026-11-15',
     items: [
