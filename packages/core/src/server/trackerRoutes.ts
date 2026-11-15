@@ -4,6 +4,7 @@ import { TrackerError } from '../adapters/remote/http';
 import type { RemoteKind, TrackerConnectRequest, TrackerTestRequest } from '../adapters/remote/types';
 import { githubCiAccess } from './githubCiAccess';
 import { githubLookups } from './githubLookups';
+import { githubProofAccess } from './githubProofAccess';
 import { handleGitHubRepos } from './githubRepoRoutes';
 import { githubSignIn } from './githubSignIn';
 import { GITHUB_SIGN_IN, handleGitHubSignIn } from './githubSignInRoutes';
@@ -186,6 +187,8 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
     },
     /** GitHub PR and CI reads for the reconciler, with the same token resolution as the tracker. */
     ciAccess: githubCiAccess(ctx),
+    /** Posting proofs to pull requests, with the same repo and token, when the trail lead switched it on here. */
+    proofAccess: githubProofAccess(ctx),
     close() {
       remotes.close();
     },

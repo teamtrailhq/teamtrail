@@ -20,6 +20,8 @@ import { handleLeases } from './leaseRoutes';
 import { handleModels } from './modelRoutes';
 import { neverCrash } from './neverCrash';
 import { handlePolicy } from './policyRoutes';
+import { postProofs } from './postProofs';
+import { handleProof } from './proofRoutes';
 import { redactResponse } from './redactResponse';
 import { handleRemoteAgents } from './remoteAgentRoutes';
 import { fromThisMachine, requestRefusal } from './requestGuard';
@@ -76,7 +78,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const unwatchLeases = watchLeases(abs, () => routes.active(), send, leaseTiming);
   const ctx = { root: abs, active: () => routes.active() };
   const places = lanPlaces(abs, trackers.configDir);
-  const reconciler = watchVerification(ctx, { access: routes.ciAccess, send }, reconcilerTiming);
+  const proofs = postProofs(ctx, { access: routes.proofAccess, configDir: trackers.configDir });
+  const reconciler = watchVerification(ctx, { access: routes.ciAccess, send, postProofs: proofs }, reconcilerTiming);
   const attention = watchAttention(ctx, send, { ...attentionTiming, configDir: trackers.configDir });
   const unwatchIntegration = watchIntegration(abs, integrationTiming);
   const unwatchRemoteAgents = watchRemoteAgents(abs, send);
@@ -100,6 +103,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleJournal({ root: abs, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
+    (req, res, url) =>
+      handleProof({ ...ctx, configDir: trackers.configDir, kick: () => reconciler.kick() }, req, res, url),
     (req, res, url) => handleAgents(abs, req, res, url),
     (req, res, url) => handleBriefs(ctx, req, res, url),
     (req, res, url) => handleReroutes(ctx, req, res, url),

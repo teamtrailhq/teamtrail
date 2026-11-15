@@ -27,6 +27,8 @@ const WRITES: RegExp[] = [
   /^\/trust\/revert$/,
   // This person's own attention preferences, kept in their config dir.
   /^\/attention\/prefs$/,
+  // Posting proofs to pull requests with this machine's GitHub token (proofRoutes.ts).
+  /^\/proof\/settings$/,
   // The projects this Lookout supervises.
   /^\/projects$/,
   /^\/projects\/settings$/,
