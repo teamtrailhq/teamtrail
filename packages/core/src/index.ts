@@ -151,3 +151,7 @@ export { parseCatalogIndex, searchCatalog } from './guides/catalogIndex';
 export { guideProblem } from './guides/guideProblem';
 export type { Proof, ProofCheck, ProofDecision, ProofReview, ProofSignature, ProofStatus } from './model/proof';
 export type { ProofPostRecord } from './model/proofPost';
+export type { Scorecard, ScorecardRow, ScorecardSession, ScorecardTicket } from './model/scorecard';
+export { agentScorecard, SCORECARD_MIN_SAMPLE, UNKNOWN_MODEL } from './scorecard/agentScorecard';
+export { tierSuggestions, type TierSuggestion } from './scorecard/tierSuggestions';
+export { scorecardMarkdown } from './scorecard/scorecardMarkdown';

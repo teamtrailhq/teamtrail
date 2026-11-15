@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Choice, Empty, Label, MetaLine, Panel } from '../../components/ui';
 import type { Breakpoint, LookoutApi } from '../../hooks';
 import { PerformanceRows } from './PerformanceRows';
+import { ScorecardSection } from './ScorecardSection';
 import { useAllJournals } from './useAllJournals';
 
 type Group = 'byVendor' | 'byAgent' | 'byType';
@@ -58,6 +59,7 @@ export function PerformanceView({ api, bp, onClose }: { api: LookoutApi; bp: Bre
             <Empty>Nothing yet. This needs at least 5 results from two vendors to compare.</Empty>
           )}
         </section>
+        <ScorecardSection />
         <section className="perf-section">
           <div className="choice-row compact">
             {GROUPS.map((g) => (

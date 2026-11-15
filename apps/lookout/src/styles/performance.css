@@ -47,3 +47,9 @@
 .perf-section > h3 {
   align-self: flex-start;
 }
+.score-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+}

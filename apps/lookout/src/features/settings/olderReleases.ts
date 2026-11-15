@@ -1,8 +1,27 @@
 import { EARLIEST_RELEASES } from './earliestReleases';
 import type { Release } from './releases';
 
-/** Releases 0.11–0.24 (0.1–0.10 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.11–0.25 (0.1–0.10 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
 export const OLDER_RELEASES: Release[] = [
+  {
+    version: '0.25.0',
+    date: '2026-11-10',
+    items: [
+      'Agents on other machines or in cloud sandboxes can join your trails: `teamtrail mcp --http` serves the same tools over HTTP',
+      'One token per remote agent, created and revoked in Settings → Remote agents; without a token nothing is reachable',
+      '`teamtrail connect claude|codex --url` points an agent at a remote Teamtrail',
+    ],
+  },
+  {
+    version: '0.24.2',
+    date: '2026-11-10',
+    items: ['A ticket’s description no longer repeats which trail it is part of'],
+  },
+  {
+    version: '0.24.1',
+    date: '2026-11-10',
+    items: ['Buttons in the same row are always the same size'],
+  },
   {
     version: '0.24.0',
     date: '2026-11-10',
