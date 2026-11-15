@@ -2,7 +2,7 @@
 
 # teamtrail
 
-**The trail map for your AI coding agents.** You pick the destination, your agents walk the trail, and you only get the calls that need you. One command opens it for the agents working in your repo.
+**The control layer for AI coding agents.** Agents do the work, you make the calls, and nothing counts as done without evidence. Teamtrail breaks big work into decision tickets for Claude Code, Codex or any MCP agent, sends you only the calls that are yours, and runs your tests before anything is done. One command opens it for the agents working in your repo.
 
 **[teamtrail.app](https://teamtrail.app)** · [Docs](https://teamtrail.app/docs/) · [GitHub](https://github.com/teamtrailhq/teamtrail)
 
