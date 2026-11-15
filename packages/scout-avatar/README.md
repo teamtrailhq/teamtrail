@@ -30,19 +30,25 @@ src/logo/
   logoMark.ts      the logo's SVG markup, with and without the tile, per theme
   logoFaviconSvg.ts  a standalone favicon SVG that follows prefers-color-scheme
   logoAutoStyle.ts the light-dark() colours behind theme="auto"
+  types.ts         LogoTheme and LogoColors
   Logo.tsx         React component (size, bare, theme)
 src/scout/
   badgeArt.ts      Scout's badge: colours, faces and SVG markup
+  portraitHead.ts  the head in three-quarter view: screen, headset, cap and antenna lamp
+  portraitFace.ts  the face on the screen (eyes and mouth)
+  portraitBody.ts  the shoulders and neckerchief
   guideArt.ts      guide symbol badges
   Badge.tsx        React component for a still badge at any size
   frames.ts        styles (day/night), expressions per state, status labels, timing, visemes, composeWave
   types.ts         shared types
   scoutFrame.ts    what Scout shows at a moment (state, face, layout, labels), shared by both renderers
   rects.ts         waveform rects
-  ScoutAvatar.tsx  React component; Wave.tsx and hooks/ (reduced motion, clock, blink)
+  ScoutAvatar.tsx  React component; Wave.tsx is its waveform
+  hooks/           useBlink, useClock, useSpeechClock, usePrefersReducedMotion
   mountScout.ts    framework-free renderer with the same markup, classes and timing (for the vanilla landing page)
+  scoutDom.ts      the DOM and SVG building behind mountScout
   ScoutAvatar.css  panel frame; all colors are --scout-* vars with lookout fallbacks
-  index.ts         React exports (import mountScout from './mountScout' directly)
+  index.ts         React exports, plus the logo's (import mountScout from './mountScout' directly)
 preview/           preview page (?view=options | states | demo | square | favicon | lockup | banner, &theme=light|dark for square and favicon); App.tsx
 tools/
   capture.mjs      writes the PNGs, the banner GIF, the MP4 loop and brand/* (Playwright + system Chrome)
@@ -50,38 +56,29 @@ tools/
 
 ## Lookout
 
-The Lookout imports the component from `@teamtrail/scout-avatar`.
+The Lookout imports the components from `@teamtrail/scout-avatar` (`apps/lookout/src`):
 
-It reads the lookout tokens, so it follows the active fonts and palette:
+- `features/inbox/QuestionAvatar.tsx`: Scout beside an open question, unframed at 24px. It speaks the start of the question when it arrives, then waits in `alert`.
+- `features/briefing/BriefingDialog.tsx`: Scout speaking the line at the top of While you were away.
+- `components/ui/TooltipLayer.tsx`: Scout's tooltips, a small face next to a speech bubble.
+- `components/ui/ScoutBadge.tsx`: the still `Badge`, day or night, next to lines in Scout's voice (onboarding, empty states).
+- `components/ui/TeamtrailLogo.tsx`: the `Logo`.
 
-- `--mono`, `--display`, `--sans`
-- `--urgent`
-- `--line`, `--line2`, `--panel`
-
-`Inbox.tsx` → `Conversation` renders a `sm` panel at the top of the conversation pane, next to the ticket title:
-
-```tsx
-<ScoutAvatar size="sm" state={pending ? 'alert' : 'idle'} />
-```
-
-There is no onboarding placement. The activity log keeps `ScoutMark`.
+The avatar reads the Lookout's tokens through its `--scout-*` variables (`ScoutAvatar.css`), so it follows the active fonts and palette: `--display`, `--sans`, `--mono`, `--text`, `--dim`, `--urgent`, `--line`, `--line2`, `--panel`. The activity log keeps `ScoutMark`.
 
 ## Landing page
 
-The landing page imports the framework-free renderer from `@teamtrail/scout-avatar/mount`. It does not use React.
+The landing page (`teamtrailhq/teamtrail-landing`, which installs this package from the product repo next to it) imports the framework-free renderer from `@teamtrail/scout-avatar/mount`. It does not use React. Every Scout there is unframed:
 
-The "Meet Scout" section (`#scout`) mounts an `lg` panel:
-
-- It plays its `data-scout-line` once when the section scrolls into view, then holds the caption with the status back at `ONLINE`.
-- Below 400px wide it uses `md`.
+- `src/main.ts`: Scout on Home's "The scout who keeps everyone on the path" card (`[data-scout]`, `sm`, day or night with the page's theme), and the guide symbol badges (`guideMarkup`) on the guide cards (`/guides`).
+- `src/slackScene.ts`: Scout next to Slack on the Scout in Slack page (`[data-slack-scout]`).
+- `src/cloudScene.ts`: Scout on the pixel cloud of the Cloud page, saying a short line every few seconds, and thinking midway along its journey (`[data-cloud-scout]`, `[data-cloud-mid-scout]`).
 
 ```ts
-const scout = mountScout(host, { size: 'lg', caption: true });
-scout.update({ speaking: "I keep your trail moving. When a call is yours, I'll ask you." });
+const scout = mountScout(host, { size: 'sm', state: 'idle', framed: false });
+scout.update({ variant: 'night' });
 scout.destroy();
 ```
-
-`--scout-warn`, `--scout-line`, `--scout-line2` and `--scout-panel` are mapped to the landing tokens on `.meet__avatar .scout`.
 
 ## API
 

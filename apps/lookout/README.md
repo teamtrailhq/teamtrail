@@ -9,7 +9,7 @@ The Lookout for planning with agents: a live map of decision tickets, HITL conve
 Requires Node 20+. One package, one command:
 
 ```bash
-npm i -g teamtrail            # or, without installing: npx teamtrail
+npm i -g teamtrail@next       # or, without installing: npx teamtrail@next
 cd your-repo
 teamtrail
 ```
@@ -23,10 +23,11 @@ teamtrail
 | `--host <addr>` | `127.0.0.1` | The server can write files in the tracker folder, so bind wider only on trusted networks |
 | `--no-open` | | Don't open the browser |
 
-`teamtrail --help` and `teamtrail --version` work as usual. `teamtrail` is published on npm; to try an unreleased build, `npm run pack` from the repo root and `npm i -g ./teamtrail-<version>.tgz`.
+Use `@next` until launch: npm's `latest` tag is still a placeholder. `teamtrail --help` and `teamtrail --version` work as usual. `teamtrail` is published on npm; to try an unreleased build, `npm run pack` from the repo root and `npm i -g ./teamtrail-<version>.tgz`.
 
 - On first run, onboarding asks for a tracker (local markdown is the default) and whether to post **full HITL transcripts** or a **summary** to tickets. Both choices can be changed later in Settings.
 - An empty tracker explains that trails start in the agent's chat and offers `/scout new "your idea"` to copy. The trail switcher (top left) lists every trail with progress and waiting count, and holds **New trail**, which drafts that command. Teamtrail never runs an agent itself.
+- **Sign-in:** the Lookout opens only in paired browsers. `teamtrail` opens your browser ready to sign in with one click and prints a one-time link for another browser; `teamtrail pair` prints a new one while it runs. Pair a phone or another device from Settings → You → Browsers & devices with a short code or its QR code (`src/features/sign-in/`). A server that embeds the Lookout (a hosted Lookout) can bring its own sign-in instead: `GET /session` says `managed`, the page skips pairing and Settings → You shows who is signed in. Details: [`packages/cli/README.md`](../../packages/cli/README.md#signing-in).
 
 ## Develop
 
@@ -37,12 +38,13 @@ npm install
 npm run dev                 # resets the dev project (npm run seed), then Vite with hot reload, http://127.0.0.1:7477
 npm run dev:keep            # the same server without reseeding, keeping what you changed
 npm run dev:agent           # real MCP agents working the dev project (after npm run build -w teamtrail)
+npm run dev:pair            # a new one-time sign-in link for the dev Lookout
 npm run build               # every workspace; the lookout bundle + CLI land in packages/cli/dist
 npm start                   # run the built CLI from the repo (same as `teamtrail`)
 npm run pack                # → ./teamtrail-<version>.tgz, installable with `npm i -g ./teamtrail-<version>.tgz`
 ```
 
-- Local development works on real data only, never a demo. `npm run seed` (run by `npm run dev`) resets `.teamtrail/` at the repo root to a fixed project: a trail mid-flight (decisions made and superseded, done, blocked and ruled-out work) and a plan-only trail, written as plain files through the same adapters a user's install uses. It only wipes a folder it created (marked `.dev-seed`).
+- Local development works on real data only, never a demo. `npm run seed` (run by `npm run dev`) resets `.teamtrail/` at the repo root to a fixed project: a trail mid-flight (decisions made and superseded, done, blocked and ruled-out work), a plan-only trail, a finished trail for Trail stats, a risk policy with assumptions and reroute proposals, worktrees and overlapping claims, model matching with agents on different models, guides, a second project in All projects, and dates that make it a lived-in day (`scripts/seed*.ts`), written as plain files through the same adapters a user's install uses. It only wipes a folder it created (marked `.dev-seed`).
 - `npm run dev:agent [agents=2] [trail=#1]` connects real agents over MCP (`teamtrail mcp`, as Claude Code does). They claim ready tickets, report progress and usage, close agent-only work, and ask you on tickets that need a human, waiting for your answer in the Lookout.
 - Use `TEAMTRAIL_DIR=/abs/path/.teamtrail npm run dev:keep` to open another folder without reseeding. Env var names come from `brand.ts`.
 - `npm run typecheck` typechecks every workspace. `node scripts/verify-cli.mjs <url> <trackerDir>` smoke-tests a running `teamtrail`. The landing screenshots and video ([teamtrail-landing](https://github.com/teamtrailhq/teamtrail-landing): `npm run media`, `npm run journey`) run on the same seed with real agents.
@@ -56,7 +58,7 @@ npm run pack                # → ./teamtrail-<version>.tgz, installable with `n
 Layers by priority. Smaller screens show fewer layers by default; larger screens add zones around the existing ones and never move them.
 
 | # | Layer | Phone (<1024px) | Laptop (1024–1439px) | Wide (≥1440px) |
-| --- | --- | --- |
+| --- | --- | --- | --- | --- |
 | 1 | Waiting on you inbox + answer (all trails) | Home view (default) | Left column | Left column |
 | 2 | Repo / trail title + destination | Header | Header | Header (+ elapsed, progress, tracker pulse) |
 | 3 | Up next: frontier + claimed tickets | Home view, under the inbox | Left column, under the inbox | Left column, under the inbox |
@@ -74,16 +76,15 @@ The Changelog tab reads `apps/lookout/src/features/settings/releases.ts` (`RELEA
 
 ## Type, colour and the Scout mark
 
-One typeface family, defined as CSS variables at the top of `src/styles/base.css` and loaded in `src/fonts.ts` (all SIL OFL 1.1 via Fontsource):
+Three faces, defined as CSS variables at the top of `src/styles/base.css` and loaded in `src/fonts.ts` (all SIL OFL 1.1 via Fontsource):
 
 | Variable | Face | Used for |
 | --- | --- | --- |
-| `--display` | Chakra Petch | headings, agent and Scout voice |
-| `--mono` | Share Tech Mono | caps labels, readouts, tracker lines |
-| `--sans` | Barlow | body; trail lead (human) voice in italic |
-| `--dot` | Doto | signal moments only: a new decision request, a trail launch |
+| `--display` | Londrina Solid | the wordmark, titles and zone heroes; Scout's own lines (`--voice-scout`) |
+| `--sans` | Figtree | everything read; `--label`, `--strong` and `--data` (tabular digits) build on it |
+| `--mono` | JetBrains Mono | keys, ids, timers and code |
 
-Voices: `--voice-human`, `--voice-agent` and `--voice-data` keep operators, agents and tracker/system data visually distinct in the inbox, comms and activity log. Feed entries with `signal: true` render in the dot-matrix face.
+Voices: people and agents both read in Figtree (`--voice-human`, `--voice-agent`; bubbles and colours tell them apart), tool and tracker data is mono (`--voice-data`), and Scout's briefing and onboarding lines use the title face (`--voice-scout`).
 
 Colour: the base palette is a desaturated blue / orange set (`--accent-rgb`, `--claimed-rgb`, `--amber-rgb`, `--decided-rgb`, `--line-rgb`). Saturated colour (`--urgent`) is reserved for warnings, waiting on you and danger.
 

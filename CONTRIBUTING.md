@@ -44,7 +44,7 @@ Every screen presents data the same way, so people never have to work out where 
   - **body**: `--type-body` / `.t-body`, running text;
   - **meta**: `--type-meta` / `.t-meta`, the quiet context and detail lines, sentence case;
   - **label**: `--type-label` / `.t-label` (alias `.mono-label`), small caps for section, field and group labels only.
-- **Fonts have one job each.** Bricolage Grotesque is for the brand and zone heroes (`.t-pixel`, `.t-heading.caps`). Mono (`.t-code`) is for code, paths, ids and ticket keys inside any role. Everything else is the sans.
+- **Fonts have one job each.** Londrina Solid (`--display`) is for the wordmark and zone heroes (`.t-heading.caps`). JetBrains Mono (`--mono`, `.t-code`) is for code, paths, ids and ticket keys inside any role. Everything else is Figtree (`--sans`).
 - **One accent, one meaning.** Red means "needs you now" (interrupting or blocking) and nothing else. Status is a thin left edge: `edge-urgent` (red), `edge-attention` (amber: work held up or at risk, such as blocked, flags, stalled claims, risky changes, reroutes, overlaps, integration), `edge-neutral` otherwise. Text stays neutral; a time turns red only on an urgent row.
 - **Say it once.** Don't repeat what the screen already shows: no trail name for the trail on screen, no ticket key the title already contains, no reason that restates the urgency, the wait or the group.
 - **Chips are for state only** (Done, Working, Blocking). Sentences and reasons are plain text joined with " · ".

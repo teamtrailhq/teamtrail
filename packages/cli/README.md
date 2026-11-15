@@ -107,21 +107,16 @@ A remote agent's files aren't on your machine, so it gets no worktree, and on tr
 
 ### Tools
 
-| Tool | |
-| --- | --- |
-| `status` | Trails, progress, ready / claimed / blocked tickets, sessions, waiting questions, decisions, spend |
-| `start_trail` | Create a trail: destination, notes, decided, not yet specified, out of scope, tickets with blocking edges |
-| `resume_trail` | Open a session on a trail; returns status, your claim and the next ready ticket |
-| `update_trail` | Edit destination or notes, add Not yet specified / Out of scope lines, switch mode |
-| `next_ticket` | The next ready ticket with its blockers' decisions (does not claim) |
-| `claim_ticket` / `release_ticket` | Assign a ticket to the agent (next ready by default) / give it back |
-| `add_ticket` | Add a ticket or promote a Not yet specified line |
-| `report_progress` | Step, log line, chat message; tokens and cost only when no agent log is read (see Usage) |
-| `close_ticket` | Resolve (or rule out) a ticket: resolution comment, close, DecisionRecord, unblocked tickets |
-| `record_decision` | Keep any other decision as a DecisionRecord |
-| `proof_report` | A ticket's Verified by Teamtrail report for its pull request: the checks Teamtrail ran, criteria verified or only claimed, the review and the decisions it relies on (also `teamtrail proof <ticket>` in a terminal) |
-| `ask_human` / `wait_for_answer` | Ask the human through the Lookout inbox and wait for the answer |
-| `list_inbox` / `answer_question` | Questions from every agent; answer one with the human's words from the chat (it guides the agent; only answers given in the Lookout or Slack back a decision that needs the human) |
+`teamtrail mcp` offers about thirty tools, in these groups:
+
+- **Trails:** `status`, `start_trail`, `resume_trail`, `update_trail`, and the discovery brief (`submit_brief`, `get_brief`).
+- **Tickets:** `next_ticket`, `claim_ticket`, `release_ticket`, `add_ticket` and acceptance criteria (`set_criteria`).
+- **Working and completing:** `report_progress`, `report_completion`, `verification_status`, `submit_review`, `close_ticket`, `record_decision`, and the Verified by Teamtrail report (`proof_report`, also `teamtrail proof <ticket>` in a terminal).
+- **The human:** `ask_human`, `wait_for_answer`, `list_inbox`, `answer_question` (a chat answer guides the agent; only answers given in the Lookout or Slack back a decision that needs you), and decision memory (`find_precedent`).
+- **Knowledge, assumptions and reroutes:** `propose_knowledge`, `search_knowledge`, `flag_knowledge`, `list_assumptions`, `challenge_assumption`, `propose_reroute`, `reroute_status`.
+- **Guides and other projects:** `list_guides`, `projects_status`.
+
+Every tool, its inputs and what remote agents can't call: [MCP tools reference](https://teamtrail.app/docs/mcp-tools/).
 
 Sessions, questions and usage reach the Lookout through `.teamtrail/.agents/`, so the agent and the Lookout can start in any order.
 

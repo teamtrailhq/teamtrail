@@ -60,7 +60,9 @@ Your agents can already write the code, and plenty of tools run them side by sid
 **Evidence you can trust**
 
 - **Checks before done:** completions run your project's checks and collect git evidence; PR and CI status sync back to the ticket.
+- **Verified by Teamtrail:** each done ticket gets a signed proof report (the checks Teamtrail ran, criteria verified or only claimed, the review and the decisions it relies on). Teamtrail can post it on the ticket's pull request with a `Teamtrail proof` commit status, and a GitHub Action checks every proof on a PR against your committed keys.
 - **Decision records:** the question, answer, alternatives, rationale and transcript, and who actually decided. An agent's own call is never shown as yours.
+- **Decision memory:** before an agent asks you something you already decided, it gets your earlier decision instead, and later work that changes what a decision covers is flagged for you.
 - **Approvals on this machine:** check commands, briefs, criteria, guides and settings only take effect once you approve them here, and edits to trail files made outside Teamtrail wait until you accept them.
 - **Signed-in Lookout:** the browser signs in with a one-time link, and you can pair your phone with a QR code.
 
@@ -68,7 +70,7 @@ Your agents can already write the code, and plenty of tools run them side by sid
 
 - **All projects:** every repo you supervise in one Lookout, with one list of what needs you across them.
 - **Your tracker:** local markdown files, GitHub Issues or Linear.
-- **Trail stats and live spend:** delivery by vendor, agent and ticket type, and tokens and cost per session and trail.
+- **Trail stats and live spend:** delivery by vendor, agent and ticket type, a Scorecard of how each model, agent and vendor does on your own tickets (verified first time, rework, cost per verified ticket), and tokens and cost per session and trail.
 
 ## What's next
 
@@ -104,8 +106,11 @@ Details for both agents are in [`packages/cli/README.md`](packages/cli/README.md
 | --- | --- | --- |
 | [`packages/core`](packages/core) | `@teamtrail/core` | UI-free engine: trails, tickets, trackers, metrics, decision records |
 | [`packages/cli`](packages/cli) | [`teamtrail`](https://www.npmjs.com/package/teamtrail) | The `teamtrail` command: serves the Lookout and the tracker API |
-| [`packages/scout-avatar`](packages/scout-avatar) | `@teamtrail/scout-avatar` | Pixel-art Scout avatar (React component and framework-free renderer) |
+| [`packages/connector-slack`](packages/connector-slack) | `@teamtrail/connector-slack` | Optional Slack connector: questions, approvals and briefings through Scout |
+| [`packages/scout-avatar`](packages/scout-avatar) | `@teamtrail/scout-avatar` | The Teamtrail logo and Scout's badge (React components and a framework-free renderer) |
 | [`apps/lookout`](apps/lookout) | private | The lookout web UI bundled into the CLI |
+| [`apps/scout-service`](apps/scout-service) | private | The Scout service: the backend of Teamtrail's Slack app, deployed separately |
+| [`actions/proof`](actions/proof) | | The Verified by Teamtrail GitHub Action |
 | [`brand`](brand) | | Logos, avatars and social images |
 
 The landing site lives in [teamtrailhq/teamtrail-landing](https://github.com/teamtrailhq/teamtrail-landing).
