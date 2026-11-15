@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { Person } from '../model/person';
 import type { SignInKind } from '../model/signIn';
 
 /** Who a request is from, as a server's own sign-in says: `machine` may do what only this machine may do. */
@@ -13,6 +14,8 @@ export interface ExternalCaller {
    * `kind`: it may not change what this machine trusts either. Unset or `true`: allowed.
    */
   highRisk?: boolean;
+  /** The person, when the server knows who it is: recorded with their answers and decisions (model/person.ts). */
+  person?: Person;
 }
 
 /**

@@ -17,6 +17,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.40.0',
+    date: '2026-11-15',
+    items: [
+      'Decisions now say who made the call: your name from git on this machine, or the person signed in to a hosted Lookout, in the Logbook and in Verified by Teamtrail proofs',
+      'A hosted Lookout opens in the theme you picked in your account there',
+    ],
+  },
+  {
     version: '0.39.0',
     date: '2026-11-15',
     items: [

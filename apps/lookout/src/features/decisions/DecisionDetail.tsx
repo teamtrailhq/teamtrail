@@ -10,7 +10,7 @@ import {
 import { useState, useEffect, type FormEvent } from 'react';
 import { Pill, Meta, MetaLine, Button, Card, Field, Empty } from '../../components/ui';
 import type { LookoutApi } from '../../hooks';
-import { actorLabel, stamp, ago, day, hm } from '../../lib';
+import { actorLabel, stamp, ago, day, deciderLabel, hm } from '../../lib';
 import { PromoteButton } from '../knowledge';
 import { OutsideChangeNote } from '../signed-state';
 import { useSlackPeople } from '../slack';
@@ -73,7 +73,7 @@ export function DecisionDetail(props: {
           )}
         </dd>
         <dt>Decided by</dt>
-        <dd>{[actorLabel(d.decidedBy, people), postedNote(d)].filter(Boolean).join(', ')}</dd>
+        <dd>{[deciderLabel(d, people), postedNote(d)].filter(Boolean).join(', ')}</dd>
         {d.participants.length > 1 && (
           <>
             <dt>Participants</dt>

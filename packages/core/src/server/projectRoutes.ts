@@ -9,6 +9,7 @@ import { ProjectPathError, registerProject, trackerRootFor, unregisterProject } 
 import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
 import { lookoutVia } from './lookoutVia';
+import { personOfRequest } from './requestPerson';
 import { crossSite } from './trackerErrors';
 
 /** What the `/projects` routes need from the hub. */
@@ -64,7 +65,14 @@ async function answer(ctx: ProjectRoutesContext, entry: ProjectEntry, req: Incom
   sendJson(
     res,
     201,
-    writeAgentAnswer(entry.root, { sessionId, questionId: b.questionId!, text: b.text!, author, via }),
+    writeAgentAnswer(entry.root, {
+      sessionId,
+      questionId: b.questionId!,
+      text: b.text!,
+      author,
+      via,
+      by: personOfRequest(req),
+    }),
   );
   ctx.changed();
 }

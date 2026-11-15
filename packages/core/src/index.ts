@@ -166,3 +166,4 @@ export type {
   RunnerCheckResult,
   RunnerReport,
 } from './verification/checkRunner';
+export { personOf, type Person } from './model/person';

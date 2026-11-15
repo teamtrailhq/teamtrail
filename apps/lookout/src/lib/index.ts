@@ -15,4 +15,5 @@ export { isRunning, isWaiting } from './sessions';
 export { pickPending } from './pickPending';
 export { sinceLabel } from './sinceLabel';
 export { actorLabel } from './actorLabel';
+export { deciderLabel } from './deciderLabel';
 export type { SlackPeople } from './actorLabel';

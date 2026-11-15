@@ -47,7 +47,7 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
         [...ctx.activity.snapshot.chats].reverse().find((c) => c.sessionId === sid && c.from === 'human')?.author ??
         TRAIL_LEAD;
       // How it was given, as the path that delivered it recorded (answerVia.ts); none on an older, unlabelled one.
-      const { via, chatOf } = ctx.activity.snapshot.answered.find((a) => a.id === q.id) ?? {};
+      const { via, chatOf, by } = ctx.activity.snapshot.answered.find((a) => a.id === q.id) ?? {};
       const at = Date.now();
       const where = chatNote({ via, chatOf });
       const said = where ? `${author} (${where})` : author;
@@ -65,6 +65,7 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
         transcript: ctx.sessions.transcript(sid) ?? [],
         via,
         chatOf,
+        ...(by ? { by } : {}),
       });
       return { text, author, via };
     }),

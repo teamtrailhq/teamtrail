@@ -21,6 +21,8 @@ export interface DecisionMeta {
   rationale?: string;
   /** Actor id of who made the call; defaults to the resolving author. */
   decidedBy?: string;
+  /** The person behind it, when the sign-in named them. */
+  decidedByName?: string;
   participants?: Participant[];
   source?: DecisionSource;
   /** Kept on the record even when only a summary is posted to the ticket. */
@@ -93,6 +95,7 @@ function decisionOf(t: { id: string; key: string; title: string }, input: Resolv
     alternatives: d.alternatives,
     rationale: d.rationale,
     decidedBy: d.decidedBy ?? input.author,
+    ...(d.decidedByName ? { decidedByName: d.decidedByName } : {}),
     participants: d.participants,
     source: d.source ?? { kind: 'agent' as const, label: input.author },
     transcript: d.transcript,

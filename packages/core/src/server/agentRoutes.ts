@@ -4,6 +4,7 @@ import type { AgentAnswer } from '../agents/agentLink';
 import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
 import { lookoutVia } from './lookoutVia';
+import { personOfRequest } from './requestPerson';
 
 /** `/agents` routes over the session docs under `root`; false when none matches. */
 export async function handleAgents(
@@ -33,6 +34,8 @@ export async function handleAgents(
         // Given in the Lookout, by its trail lead: this route says so, whatever the body says.
         author: TRAIL_LEAD,
         via: lookoutVia(req),
+        // Who, as the sign-in in front of the bridge named them (requestPerson.ts); never from the body.
+        by: personOfRequest(req),
       }),
     );
     return true;

@@ -114,6 +114,7 @@ export function buildProof(input: ProofInput): Proof {
         id: d.id,
         summary: d.summary,
         decidedBy: d.decidedBy,
+        ...(d.decidedByName ? { decidedByName: d.decidedByName } : {}),
         decidedAt: d.decidedAt,
         superseded: Boolean(d.supersededBy),
       })),

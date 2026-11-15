@@ -1,4 +1,3 @@
-import type { AnswerVia } from './answerVia';
 import type { Assumption } from './assumption';
 import type { TicketStatus, VerificationLevel } from './lifecycle';
 import type { ModelTier } from './modelTier';
@@ -172,6 +171,8 @@ export interface DecisionRecord {
   rationale: string;
   /** Actor id of who made the call: the trail lead for HITL answers, the agent trail name for AFK resolutions, `slack:U123`. */
   decidedBy: string;
+  /** The person behind `decidedBy` when the sign-in named them (model/person.ts): shown, signed, never a gate's. */
+  decidedByName?: string;
   decidedAt: number;
   /** Everyone who took part (HITL agent + trail lead, Slack thread authors). */
   participants: Participant[];
@@ -298,20 +299,7 @@ export type FeedKind =
 /** Who a ticket needs: a human in the loop, or an agent away from keyboard. */
 export type Attention = 'hitl' | 'afk';
 
-export interface ChatMessage {
-  id: string;
-  sessionId: string;
-  ticketId?: string;
-  from: 'agent' | 'human';
-  author: string;
-  text: string;
-  at: number;
-  /** Set on agent questions; the question is open until answered. */
-  questionId?: string;
-  /** On the human's answers: how it was given (answerVia.ts), and for `chat` the agent whose chat it was. */
-  via?: AnswerVia;
-  chatOf?: string;
-}
+export type { ChatMessage } from './chatMessage';
 
 export type { PendingQuestion } from './pendingQuestion';
 export type { AnsweredQuestion } from './answeredQuestion';

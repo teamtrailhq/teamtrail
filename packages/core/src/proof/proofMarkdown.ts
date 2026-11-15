@@ -43,7 +43,7 @@ function decisionLines(p: Proof): string[] {
   if (!p.decisions.length) return ['- None recorded.'];
   return p.decisions.map(
     (d) =>
-      `- ${md(d.id, 20)}${d.superseded ? ' (superseded)' : ''}: ${md(d.summary)}, decided by ${md(d.decidedBy, 60)}, ${date(d.decidedAt)} UTC`,
+      `- ${md(d.id, 20)}${d.superseded ? ' (superseded)' : ''}: ${md(d.summary)}, decided by ${d.decidedByName ? `${md(d.decidedByName, 60)} (${md(d.decidedBy, 60)})` : md(d.decidedBy, 60)}, ${date(d.decidedAt)} UTC`,
   );
 }
 

@@ -1,4 +1,5 @@
 import type { AnswerVia } from './answerVia';
+import type { Person } from './person';
 import type { RiskCategory } from './risk';
 
 /** A question the human answered: who asked it, and on what, with what (what the answer can cover). */
@@ -19,6 +20,8 @@ export interface AnsweredQuestion {
   via?: AnswerVia;
   /** For `chat`: the agent whose chat it was given in. */
   chatOf?: string;
+  /** Who gave it, when the sign-in named them; signed with the entry. */
+  by?: Person;
   /** This machine's signature, added where the session doc is written (agents/answeredSignature.ts). */
   sig?: string;
 }
