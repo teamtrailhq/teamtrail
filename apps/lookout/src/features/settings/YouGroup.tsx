@@ -1,5 +1,6 @@
 import { AGENT_INTEGRATIONS } from '@teamtrail/core';
 import { Choice } from '../../components/ui';
+import { managedSignIn } from '../../lib/managedSignIn';
 import { DevicesSlot } from './DevicesSlot';
 import { SettingsSection } from './SettingsSection';
 import { SettingsSlot } from './SettingsSlot';
@@ -14,7 +15,13 @@ export function YouGroup({ data }: { data: SettingsData }) {
     <>
       <SettingsSlot id="appearance" storage="browser">
         <SettingsSection title="Appearance">
-          <ThemeChoice value={prefs.theme} onChange={(theme) => update({ theme })} />
+          {managedSignIn()?.theme ? (
+            <p className="vf-intro">
+              Follows the theme you picked in your account on the server. Change it from your name in its menu.
+            </p>
+          ) : (
+            <ThemeChoice value={prefs.theme} onChange={(theme) => update({ theme })} />
+          )}
         </SettingsSection>
       </SettingsSlot>
       <SettingsSlot id="transcript" storage="browser">

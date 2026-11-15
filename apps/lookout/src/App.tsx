@@ -27,6 +27,7 @@ import { PhoneProjects, ProjectSwitcher } from './features/projects';
 import { Onboarding } from './features/settings';
 import { useBriefing, useBreakpoint, usePrefs, useLookout } from './hooks';
 import { applyTheme, createRuntime, trackerKind } from './lib';
+import { managedSignIn } from './lib/managedSignIn';
 
 /**
  * Progressive disclosure. Layers by priority:
@@ -41,7 +42,8 @@ export function App() {
   const api = useLookout(rt);
   const { snap, activity, selection, actions } = api;
   const [prefs, updatePrefs] = usePrefs();
-  useEffect(() => applyTheme(prefs.theme), [prefs.theme]);
+  // A server's own sign-in may carry the person's theme (managedSignIn.ts): it wins over this browser's setting.
+  useEffect(() => applyTheme(managedSignIn()?.theme ?? prefs.theme), [prefs.theme]);
   const settings = useSettingsPage();
   const newTrail = useNewTrail(rt, api);
   const repo = useRepoName(rt.kind);

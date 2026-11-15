@@ -1,4 +1,7 @@
 import { managedPages, type ManagedPage } from './managedPages';
+import { applyTheme, type ThemeChoice } from './theme';
+
+const THEMES: ThemeChoice[] = ['auto', 'day', 'night'];
 
 /**
  * Sign-in managed by the server the Lookout runs behind (core signIn/externalSignIn.ts): `GET /session` says
@@ -12,6 +15,8 @@ export interface ManagedSignIn {
   signOut?: string;
   /** The server's own pages for this person (who is in the workspace, say), on this origin. */
   pages: ManagedPage[];
+  /** The theme this person picked on the server: the Lookout follows it in place of its own setting. */
+  theme?: ThemeChoice;
 }
 
 let managed: ManagedSignIn | undefined;
@@ -21,10 +26,17 @@ export const managedSignIn = () => managed;
 
 /** Read from a `GET /session` reply: kept only when it is well formed; its sign-out and pages only on this origin. */
 export function learnManagedSignIn(reply: { managed?: unknown }) {
-  const m = reply.managed as { name?: unknown; signOut?: unknown; pages?: unknown } | undefined;
+  const m = reply.managed as { name?: unknown; signOut?: unknown; pages?: unknown; theme?: unknown } | undefined;
   if (!m || typeof m.name !== 'string') return undefined;
   const sameOrigin = typeof m.signOut === 'string' && new URL(m.signOut, location.href).origin === location.origin;
   const pages = managedPages(m.pages, location.origin);
-  managed = { name: m.name, pages, ...(sameOrigin ? { signOut: m.signOut as string } : {}) };
+  const theme = THEMES.find((t) => t === m.theme);
+  managed = {
+    name: m.name,
+    pages,
+    ...(sameOrigin ? { signOut: m.signOut as string } : {}),
+    ...(theme ? { theme } : {}),
+  };
+  if (theme) applyTheme(theme);
   return managed;
 }
