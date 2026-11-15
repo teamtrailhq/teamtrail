@@ -17,6 +17,7 @@ import { pendingTrust } from '../trust/pendingTrust';
 import { approvalItems } from '../verification/approvals';
 import { readIntegrationScan } from '../workspaces/integrationStore';
 import { readAttentionState } from './attentionStore';
+import { readPrecedentConflicts } from './readPrecedentConflicts';
 import { readViolations } from './readViolations';
 import { rerouteInputs } from './rerouteInputs';
 import type { AttentionInput } from './types';
@@ -55,6 +56,7 @@ export async function gatherAttention(input: {
     briefs,
     ...(await rerouteInputs({ root, adapter, snaps, syncs })),
     violations: await readViolations({ root, adapter, snaps, docs }),
+    precedentConflicts: await readPrecedentConflicts({ root, adapter, snaps }),
     integrations: integrationsOf(root),
     guides: listGuides(root).flatMap(guideFiles),
     ...(reportsSettings(adapter)

@@ -19,6 +19,8 @@ export interface ProjectEntry {
   /** Its tracker folder (`<path>/.teamtrail` unless `--dir` said otherwise). */
   root: string;
   addedAt: number;
+  /** Its decisions may be suggested as precedents in this person's other projects (Settings → Projects). Off by default. */
+  sharePrecedents?: boolean;
 }
 
 /** `<config dir>/projects.json`. */
@@ -65,6 +67,8 @@ export interface ProjectSummary {
   path: string;
   /** The project this process was started in: the un-prefixed API serves it. */
   home: boolean;
+  /** Its decisions are offered as precedents in the other projects. */
+  sharePrecedents: boolean;
   state: ProjectState;
   tracker: ProjectTracker;
   trails: number;

@@ -17,6 +17,7 @@ export function OpenQuestion(props: { q: PendingQuestion; chatId?: string }) {
       <QuestionAvatar id={props.chatId ?? q.id} text={q.text} />
       <div className="msg-text">{q.text}</div>
       {q.stakes && <MetaLine parts={[{ text: q.stakes, strong: true }]} />}
+      {q.precedent && <MetaLine className="open-q-precedent" parts={[q.precedent]} />}
     </div>
   );
 }

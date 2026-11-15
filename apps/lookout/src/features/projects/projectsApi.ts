@@ -19,6 +19,7 @@ export const projectsApi = {
   add: (path: string) => send<{ entry: ProjectEntry; added: boolean }>('', 'POST', { path }),
   remove: (id: string) => send<{ removed: string | null }>(`/${id}`, 'DELETE'),
   setAutoRegister: (autoRegister: boolean) => send<{ autoRegister: boolean }>('/settings', 'PUT', { autoRegister }),
+  setShare: (id: string, share: boolean) => send<{ id: string; share: boolean }>(`/${id}/share`, 'PUT', { share }),
   answer: (id: string, a: { sessionId?: string; questionId: string; text: string }) =>
     send<AgentAnswer>(`/${id}/answer`, 'POST', a),
   async briefing(since: number): Promise<ProjectsBriefing | undefined> {

@@ -23,7 +23,8 @@ export function ProjectsSection() {
     <SettingsSection title="Projects">
       <p className="vf-intro">
         Supervise several repos from this Lookout: All projects shows what needs you in each of them. The list lives in
-        your config folder on this machine, never in a repo, and agents only ever work in their own repo.
+        your config folder on this machine, never in a repo, and agents only ever work in their own repo. A project that
+        shares its decisions offers them to agents in your other projects as suggestions, never as answers.
       </p>
       <ul className="pj-list set-projects">
         {view.projects.map((p) => (
@@ -34,11 +35,24 @@ export function ProjectsSection() {
             title={p.name}
             context={<MetaLine parts={contextOf(p)} />}
             actions={
-              !p.home && (
-                <Button size="sm" variant="ghost" onClick={() => run(projectsApi.remove(p.id))}>
-                  Remove
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  on={p.sharePrecedents}
+                  aria-pressed={p.sharePrecedents}
+                  className="share-precedents-toggle"
+                  title="Offer this project's decisions as suggestions when agents look for precedents in your other projects"
+                  onClick={() => run(projectsApi.setShare(p.id, !p.sharePrecedents))}
+                >
+                  {p.sharePrecedents ? 'Shares decisions' : 'Share decisions'}
                 </Button>
-              )
+                {!p.home && (
+                  <Button size="sm" variant="ghost" onClick={() => run(projectsApi.remove(p.id))}>
+                    Remove
+                  </Button>
+                )}
+              </>
             }
           />
         ))}

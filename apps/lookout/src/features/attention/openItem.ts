@@ -22,22 +22,27 @@ function openTicketOrTrail(item: AttentionItem, h: AttentionHandlers) {
   else h.selectTrail(item.mapId);
 }
 
-/** Opens the place where the human handles the item. Every kind is listed, so a new kind fails to compile here. */
+/** Kinds about one ticket (or a trail): their row opens it. */
+const TICKET_KINDS = new Set<AttentionItem['kind']>([
+  'approval',
+  'blocked',
+  'policy',
+  'precedent',
+  'flag',
+  'stalled',
+  'hitl-ready',
+  'overlap',
+  'integration',
+  'model',
+  'tracker-settings',
+]);
+
+/** Opens the place where the human handles the item: the ticket for ticket kinds, else its own view. */
 export function openItem(item: AttentionItem, h: AttentionHandlers) {
+  if (TICKET_KINDS.has(item.kind)) return openTicketOrTrail(item, h);
   switch (item.kind) {
     case 'question':
       return h.openQuestion(item.ref);
-    case 'approval':
-    case 'blocked':
-    case 'policy':
-    case 'flag':
-    case 'stalled':
-    case 'hitl-ready':
-    case 'overlap':
-    case 'integration':
-    case 'model':
-    case 'tracker-settings':
-      return openTicketOrTrail(item, h);
     case 'knowledge':
       return h.openKnowledge();
     case 'brief':
@@ -52,9 +57,7 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
       return h.openConnector(item.ref);
     case 'trust':
       return h.openApprovals();
-    default: {
-      const never: never = item.kind;
-      return never;
-    }
+    default:
+      return openTicketOrTrail(item, h);
   }
 }

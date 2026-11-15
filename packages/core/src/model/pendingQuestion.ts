@@ -24,4 +24,6 @@ export interface PendingQuestion {
    * surprise: "Answering this decides #3", "Answering this lets claude-01 skip discovery".
    */
   stakes?: string;
+  /** An earlier decision that may already answer it, asked anyway: "D-2 already decided: …". */
+  precedent?: string;
 }

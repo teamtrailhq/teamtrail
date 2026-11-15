@@ -45,6 +45,7 @@ function missingSummary(input: SummaryInput): ProjectSummary {
   const { entry } = input;
   return {
     ...{ id: entry.id, name: entry.name, path: entry.path, home: input.home, state: input.state },
+    sharePrecedents: entry.sharePrecedents === true,
     ...{ tracker: { kind: 'markdown' }, trails: 0, agents: 0, phases: NO_PHASES, questions: 0 },
     ...{ needsYou: 0, interrupting: 0, flags: 0, stalled: 0, note: 'Folder not found' },
   };
@@ -73,6 +74,7 @@ export async function projectSummary(input: SummaryInput): Promise<{ summary: Pr
   const top = view?.items[0];
   const summary: ProjectSummary = {
     ...{ id: entry.id, name: entry.name, path: entry.path, home: input.home, state: input.state },
+    sharePrecedents: entry.sharePrecedents === true,
     tracker: trackerOf(input),
     trails: snaps.length,
     agents: docs.filter((d) => d.session.status === 'running').length,

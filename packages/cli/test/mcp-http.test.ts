@@ -570,7 +570,7 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
 
   it('every tool says whether it speaks for the human, and the ones that do are exactly these', () => {
     const roles = declared();
-    expect(roles.length).toBe(31);
+    expect(roles.length).toBe(32);
     const acts = roles.filter(([, r]) => r !== 'none' && r.kind === 'acts').map(([n]) => n);
     const inputs = roles.flatMap(([n, r]) => (r !== 'none' && r.kind === 'inputs' ? [[n, Object.keys(r.inputs)]] : []));
     // Changing either list is a security decision: a tool that acts for the human must never reach remote agents.

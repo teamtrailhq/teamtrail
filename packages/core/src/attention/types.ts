@@ -12,6 +12,7 @@ import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
 import type { ConnectedAgent } from '../planning/matching/modelWaits';
 import type { RerouteSuggestion } from '../planning/reroute/rerouteTriggers';
 import type { PolicyViolation } from '../policy/policyViolations';
+import type { PrecedentConflict } from '../precedent/precedentConflicts';
 import type { TrustItem } from '../trust/trustItem';
 import type { ApprovalItem } from '../verification/approvals';
 import type { IntegrationOverlap } from '../workspaces/workspace';
@@ -35,6 +36,8 @@ export interface AttentionInput {
   suggestions?: RerouteSuggestion[];
   /** High-risk changes made without the human (policy/policyViolations.ts). Missing: none. */
   violations?: PolicyViolation[];
+  /** Verified work that changed files an earlier decision of the human's covers (precedent/). Missing: none. */
+  precedentConflicts?: PrecedentConflict[];
   /** Active claim branches that changed the same files (workspaces/scanIntegrations.ts). Missing: none. */
   integrations?: IntegrationOverlap[];
   /** Installed guides, checked against the lock (guides/guideStore.ts). Missing: none. */

@@ -2,7 +2,7 @@ import { ATTENTION_KINDS, type AttentionKind } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
 import { text } from '../lineSafety';
-import { type DefineTool, riskCategory, waitControl } from '../toolKit';
+import { type DefineTool, riskCategory, riskPaths, waitControl } from '../toolKit';
 
 const ATTENTION_KIND_VALUES = ATTENTION_KINDS as [AttentionKind, ...AttentionKind[]];
 
@@ -14,7 +14,7 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Ask the human',
       description:
-        'Ask the human a question. It lands in the Lookout inbox (Waiting on you), ranked with everything else that needs them, and this call waits for the answer, up to waitSeconds (default 600; 50 for Codex). Returns answered=false with a questionId on timeout: call wait_for_answer to keep waiting. Set framing=true for the framing questions of a trail that does not exist yet. Set urgency honestly and ask related questions together. answeredVia says how the human answered: lookout or slack answers can back their decisions; a chat answer (passed on with answer_question) only guides.',
+        'Ask the human a question. First Teamtrail checks the decisions already made: when one already answers it (the same ticket or files and risk category, or one you name in relatesTo), nothing is asked and you get precedents back to act on; askAnyway asks regardless. Otherwise it lands in the Lookout inbox (Waiting on you), ranked with everything else that needs them, and this call waits for the answer, up to waitSeconds (default 600; 50 for Codex). Returns answered=false with a questionId on timeout: call wait_for_answer to keep waiting. Set framing=true for the framing questions of a trail that does not exist yet. Set urgency honestly and ask related questions together. answeredVia says how the human answered: lookout or slack answers can back their decisions; a chat answer (passed on with answer_question) only guides.',
     },
     {
       question: text().min(1),
@@ -39,6 +39,15 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
         .array(z.string())
         .optional()
         .describe('Ticket refs (#4 or ids) that cannot move until this is answered; they rank the question higher.'),
+      paths: riskPaths.optional().describe('Files the question is about; matched against earlier decisions.'),
+      assumes: z.array(z.string()).max(20).optional().describe('Assumption ids (S-<n>) the question relies on.'),
+      relatesTo: z.array(z.string()).max(20).optional().describe('Decision ids (D-<n>) it relates to.'),
+      askAnyway: z
+        .boolean()
+        .optional()
+        .describe(
+          'Ask even though an earlier decision answers it (ask_human returned precedents instead of asking). Say in the question why that decision no longer fits; the human sees it next to the question.',
+        ),
     },
     (a, extra) => agent.ask(a, waitControl(extra)),
   );

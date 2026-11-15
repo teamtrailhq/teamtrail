@@ -93,12 +93,27 @@ async function setAutoRegister(ctx: ProjectRoutesContext, req: IncomingMessage, 
   sendJson(res, 200, { autoRegister: next.autoRegister });
 }
 
-/** `/projects/<id>` (DELETE: forget it) and `/projects/<id>/answer` (POST). */
+/** `PUT /projects/<id>/share` body `{ share }`: whether the project's decisions are offered in the other projects. */
+async function setShare(ctx: ProjectRoutesContext, id: string, req: IncomingMessage, res: ServerResponse) {
+  const b = await readJson<{ share?: unknown }>(req);
+  if (typeof b.share !== 'boolean') throw new BadRequest('"share" (true or false) is required');
+  const share = b.share;
+  updateProjects(ctx.configDir, (f) => ({
+    ...f,
+    projects: f.projects.map((e) => (e.id === id ? { ...e, sharePrecedents: share } : e)),
+  }));
+  ctx.changed();
+  sendJson(res, 200, { id, share });
+}
+
+/** `/projects/<id>` (DELETE: forget it), `/projects/<id>/answer` (POST) and `/projects/<id>/share` (PUT). */
 async function oneProject(ctx: ProjectRoutesContext, req: IncomingMessage, res: ServerResponse, p: string) {
-  const m = /^\/projects\/([^/]+)(\/answer)?$/.exec(p);
+  const m = /^\/projects\/([^/]+)(\/answer|\/share)?$/.exec(p);
   if (!m) return false;
   const entry = ctx.entries().find((e) => e.id === m[1]);
   if (!entry) return (sendJson(res, 404, { error: `unknown project "${m[1]}"` }), true);
+  if (m[2] === '/share' && req.method === 'PUT') return (await setShare(ctx, entry.id, req, res), true);
+  if (m[2] === '/share') return false;
   if (m[2] && req.method === 'POST') {
     if (ctx.stateOf(entry).kind === 'missing') return (sendJson(res, 404, { error: 'project folder not found' }), true);
     return (await answer(ctx, entry, req, res), true);

@@ -9,6 +9,7 @@ import type { BridgeOptions, TrackerBridge } from './bridgeTypes';
 import { handleBriefs } from './briefRoutes';
 import { handleCriteriaProposals } from './criteriaProposalRoutes';
 import { handleCriteria } from './criteriaRoutes';
+import { handleDecisionMemory } from './decisionMemoryRoutes';
 import { handleDecisions } from './decisionRoutes';
 import { handleFileRoute } from './fileRoute';
 import { handleGuides } from './guideRoutes';
@@ -105,6 +106,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
     (req, res, url) => handleScorecard(ctx, req, res, url),
+    (req, res, url) => handleDecisionMemory(ctx, req, res, url),
     (req, res, url) =>
       handleProof({ ...ctx, configDir: trackers.configDir, kick: () => reconciler.kick() }, req, res, url),
     (req, res, url) => handleAgents(abs, req, res, url),

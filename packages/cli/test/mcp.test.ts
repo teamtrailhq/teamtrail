@@ -75,6 +75,7 @@ describe('teamtrail MCP server', () => {
         'challenge_assumption',
         'claim_ticket',
         'close_ticket',
+        'find_precedent',
         'flag_knowledge',
         'get_brief',
         'list_assumptions',
