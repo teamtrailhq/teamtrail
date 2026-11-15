@@ -1,0 +1,1 @@
+export { ProofPostSection } from './ProofPostSection';

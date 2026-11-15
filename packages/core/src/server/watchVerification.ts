@@ -2,6 +2,7 @@ import { TrackerError } from '../adapters/remote/http';
 import { reconcile } from '../evidence/reconcile';
 import { readSyncStatus, writeSyncStatus } from '../evidence/syncStore';
 import type { CiProvider, PrSyncStatus, TicketSync, VerificationSyncEvent } from '../model/prEvidence';
+import type { ProofPostRecord } from '../model/proofPost';
 import { trustedChecks } from '../verification/checksApproval';
 import { redact } from '../verification/redact';
 import type { RouteContext } from './routeContext';
@@ -27,7 +28,7 @@ const MAX_BACKOFF_MS = 15 * 60_000;
  */
 export function watchVerification(
   { root, active }: RouteContext,
-  deps: { access: CiAccess; send: (text: string) => void },
+  deps: { access: CiAccess; send: (text: string) => void; postProofs?: () => Promise<ProofPostRecord[]> },
   opts: { firstMs?: number; now?: () => number } = {},
 ): VerificationWatch {
   const { access, send } = deps;
@@ -59,6 +60,8 @@ export function watchVerification(
     if (typeof provider === 'string') return { ...off(provider), pollMs };
     const where = { provider: provider.name, repo: provider.repo };
     const r = await reconcile({ root, adapter: await active(), provider, requiredChecks: github.requiredChecks, now });
+    const posted = await deps.postProofs?.();
+    if (posted?.length) send(`event: proof\ndata: ${JSON.stringify({ kind: 'posted', posts: posted })}\n\n`);
     const status: PrSyncStatus = r.failures.length
       ? {
           state: 'failed',

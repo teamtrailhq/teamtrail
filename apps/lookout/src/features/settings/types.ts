@@ -13,6 +13,7 @@ export type SettingsSectionId =
   | 'approvals'
   | 'tracker'
   | 'workspaces'
+  | 'proof'
   | 'remote-agents'
   | 'policy'
   | 'guides'

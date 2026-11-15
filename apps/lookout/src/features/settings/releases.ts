@@ -17,6 +17,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.35.0',
+    date: '2026-11-15',
+    items: [
+      "Settings → Project → Proof on pull requests: switch it on and Teamtrail posts each done ticket's report on its open pull request, updating the same comment as things change",
+      'A Teamtrail proof check sits next to CI on the pull request and passes only when the ticket is verified at its latest commit',
+    ],
+  },
+  {
     version: '0.34.0',
     date: '2026-11-15',
     items: [
@@ -180,22 +188,6 @@ export const RELEASES: Release[] = [
       'Write your own guides with `teamtrail guides new`, approve them in Settings and share them with the catalog',
       'Settings is its own page, and the trail map has a cleaner, flatter look',
       'Smaller polish: one colour for work in progress everywhere, a calmer first run and clearer Slack setup',
-    ],
-  },
-  {
-    version: '0.23.0',
-    date: '2026-11-08',
-    items: [
-      'Match work to models: switch it on for a trail in Settings and each agent gets the tickets that fit the model it runs on, research on fast models and junctions on the strongest. You set the tier per ticket type; Teamtrail never switches a model, and a ticket no connected agent is strong enough for waits in your queue',
-      'Guides: a ticket can ask for a reviewer, QA, security, docs or architect, and the agent that claims it gets that guide’s instructions and a checklist it must answer before the work counts as done. Pick a trail’s team and each ticket’s guide in the Lookout, and add more guides from a moderated catalog in Settings → Guides. A guide can add checks but never remove one, its commands only run after you approve them, and a guide file edited after you approved it is switched off until you look at it again',
-      "Records has a new Trail stats view: delivery across every trail, by vendor, agent and ticket type, with plain observations from your own numbers. Teamtrail doesn't route work from them",
-      'MILOOPS is now Teamtrail. Missions are trails, the command center is the Lookout, MILO is Scout, and `/milo` is `/scout`',
-      'More room for the map: the summary of counts now slides up from a tab when you want it',
-      'A new day and night look, starting in night, with an Appearance setting to switch to day or follow your system',
-      'The map is now a landscape: tickets are trail signs, the trail shows what is walked and what is ahead, and an X marks the destination',
-      'A new greeting when you start `teamtrail` in a terminal',
-      'A new logo, a t whose stem runs along a trail to a node, and a new look for Scout: the original CRT head with ear cups and a baseball cap, with a lamp on the cap at night. No more pixel art, and new fonts too',
-      "All projects: every repo you supervise in one view, with one list of what needs you across them and what changed while you were away. Answer an agent's question in any repo from there, and switch projects from the header. Agents add their repo when they connect (`--no-register` opts out), or add one with `teamtrail projects add`",
     ],
   },
   ...OLDER_RELEASES,

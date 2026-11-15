@@ -1,6 +1,7 @@
 import { MAP_LABEL, BRAND, HITL_LABEL, PLAN_ONLY_LABEL } from '@teamtrail/core';
 import { ApprovalsSection } from '../approvals';
 import { GuidesSection } from '../guides';
+import { ProofPostSection } from '../proof';
 import { RemoteAgentsSection } from '../remote-agents';
 import { TrackerConnectors } from '../trackers';
 import { RiskPolicySection } from './RiskPolicySection';
@@ -23,6 +24,9 @@ export function ProjectGroup({ data, route }: { data: SettingsData; route: Setti
       </SettingsSlot>
       <SettingsSlot id="workspaces" storage="repo">
         <WorkspacesSection />
+      </SettingsSlot>
+      <SettingsSlot id="proof" storage="machine">
+        <ProofPostSection />
       </SettingsSlot>
       <SettingsSlot id="remote-agents" storage="machine">
         <RemoteAgentsSection />

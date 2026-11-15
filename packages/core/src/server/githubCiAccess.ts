@@ -1,26 +1,19 @@
 import { GitHubCiProvider } from '../evidence/github/GitHubCiProvider';
 import type { CiProvider } from '../model/prEvidence';
+import { githubRepoToken } from './githubRepoToken';
 import type { TrackerContext } from './trackerContext';
 import type { CiAccess } from './watchVerification';
 
-/**
- * The reconciler's GitHub reader: the repo approved as this machine's tracker (trackerPin.ts), else the
- * `origin` remote; the token from Settings, the environment or `gh auth
- * token`. The token stays in this process's memory, never in evidence files.
- */
+/** The reconciler's GitHub reader (githubRepoToken.ts), made again only when the repo or token changes. */
 export function githubCiAccess(ctx: TrackerContext): CiAccess {
   let cached: { key: string; provider: CiProvider } | undefined;
   return async () => {
-    const approved = ctx.pin.read().config;
-    const repo = (approved.active === 'github' ? approved.github?.repo : undefined) ?? (await ctx.detectedRepo());
-    if (!repo) return 'no GitHub repository: connect one in Settings or add a github.com origin remote';
-    const t = await ctx.githubToken();
-    if (!t) return 'no GitHub token: run `gh auth login`, set GITHUB_TOKEN, or paste one in Settings';
-    const key = `${repo}\n${t.source}\n${t.token}`;
-    if (cached?.key !== key)
+    const r = await githubRepoToken(ctx);
+    if (typeof r === 'string') return r;
+    if (cached?.key !== r.key)
       cached = {
-        key,
-        provider: new GitHubCiProvider({ repo, token: t.token, apiUrl: ctx.apiUrl.github, fetch: ctx.o.fetch }),
+        key: r.key,
+        provider: new GitHubCiProvider({ repo: r.repo, token: r.token, apiUrl: ctx.apiUrl.github, fetch: ctx.o.fetch }),
       };
     return cached.provider;
   };

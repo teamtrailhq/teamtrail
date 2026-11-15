@@ -21,6 +21,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { id: 'approvals', title: 'Approvals' },
       { id: 'tracker', title: 'Tracker' },
       { id: 'workspaces', title: 'Workspaces' },
+      { id: 'proof', title: 'Proof on pull requests' },
       { id: 'remote-agents', title: 'Remote agents' },
       { id: 'policy', title: 'Risk policy' },
       { id: 'guides', title: 'Guides' },

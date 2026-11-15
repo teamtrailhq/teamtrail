@@ -1,8 +1,23 @@
-import { EARLIEST_RELEASES } from './earliestReleases';
 import type { Release } from './releases';
 
-/** Releases 0.7–0.22 (0.1–0.6 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.11–0.23 (0.1–0.10 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
 export const OLDER_RELEASES: Release[] = [
+  {
+    version: '0.23.0',
+    date: '2026-11-08',
+    items: [
+      'Match work to models: switch it on for a trail in Settings and each agent gets the tickets that fit the model it runs on, research on fast models and junctions on the strongest. You set the tier per ticket type; Teamtrail never switches a model, and a ticket no connected agent is strong enough for waits in your queue',
+      'Guides: a ticket can ask for a reviewer, QA, security, docs or architect, and the agent that claims it gets that guide’s instructions and a checklist it must answer before the work counts as done. Pick a trail’s team and each ticket’s guide in the Lookout, and add more guides from a moderated catalog in Settings → Guides. A guide can add checks but never remove one, its commands only run after you approve them, and a guide file edited after you approved it is switched off until you look at it again',
+      "Records has a new Trail stats view: delivery across every trail, by vendor, agent and ticket type, with plain observations from your own numbers. Teamtrail doesn't route work from them",
+      'MILOOPS is now Teamtrail. Missions are trails, the command center is the Lookout, MILO is Scout, and `/milo` is `/scout`',
+      'More room for the map: the summary of counts now slides up from a tab when you want it',
+      'A new day and night look, starting in night, with an Appearance setting to switch to day or follow your system',
+      'The map is now a landscape: tickets are trail signs, the trail shows what is walked and what is ahead, and an X marks the destination',
+      'A new greeting when you start `teamtrail` in a terminal',
+      'A new logo, a t whose stem runs along a trail to a node, and a new look for Scout: the original CRT head with ear cups and a baseball cap, with a lamp on the cap at night. No more pixel art, and new fonts too',
+      "All projects: every repo you supervise in one view, with one list of what needs you across them and what changed while you were away. Answer an agent's question in any repo from there, and switch projects from the header. Agents add their repo when they connect (`--no-register` opts out), or add one with `teamtrail projects add`",
+    ],
+  },
   {
     version: '0.22.0',
     date: '2026-11-05',
@@ -143,51 +158,4 @@ export const OLDER_RELEASES: Release[] = [
       'Connected agents (MCP) work on the active tracker: with GitHub or Linear connected, their missions, claims and decisions land there, and their sessions show live in the command center',
     ],
   },
-  {
-    version: '0.10.0',
-    date: '2026-10-31',
-    items: [
-      'MCP server in the miloops package: `claude mcp add miloops -- npx -y miloops-cli mcp`, or the same for Codex',
-      'Connected agents start and resume missions, claim ready tickets, report steps, tokens and spend, close tickets and record decisions, live in the command center',
-      'Agent questions land in Waiting on you and the agent waits for your answer; answer in the command center or in the agent chat',
-      '/milo new, resume, status and inbox commands for Claude Code (and as a Codex prompt); `miloops connect claude|codex` sets them up',
-      'The command center follows a mission an agent just charted; sessions of agents that quit show as disconnected',
-    ],
-  },
-  {
-    version: '0.9.0',
-    date: '2026-10-31',
-    items: [
-      'While you were away: MILO briefs you when you open the app or come back after being away: tickets done, now blocked, decisions waiting on you, agent decisions, spend and tokens since, active sessions',
-      'Briefing shows on return after 15 minutes hidden or idle; change the threshold or turn it off in Settings; reopen it from the header',
-      'Last seen per mission and usage over time are kept locally, so the briefing survives a reload',
-      'Mission title shows in full at laptop width; header readouts collapse to glyph and count',
-      'Prototype reviews link a real preview build and ask about the spike results',
-    ],
-  },
-  {
-    version: '0.8.0',
-    date: '2026-10-31',
-    items: [
-      'Decisions: every decision across missions, newest first, with question, decision, alternatives, rationale, who decided and the full transcript',
-      'Filter decisions by mission, source, who decided and status; search; export to markdown',
-      'Supersede a decision; the chain stays visible on every record and in the mission',
-      'Decision records stored as markdown next to each mission and served by the local API with a live event stream',
-      'Resolve form: rationale and alternatives considered',
-    ],
-  },
-  {
-    version: '0.7.0',
-    date: '2026-10-31',
-    items: [
-      'New type: Chakra Petch, Share Tech Mono and Barlow',
-      'Calmer palette; bright colour only for warnings and waiting on you',
-      'MILO mark, also used for status, action and alert glyphs',
-      'Dot-matrix signals for new decision requests and mission launches',
-      'Separate type voices for operators and agents',
-      'One-command install: npm i -g miloops-cli, then miloops in any repo',
-      'Packages renamed to @miloops-hq/core and @miloops-hq/command-center',
-    ],
-  },
-  ...EARLIEST_RELEASES,
 ];

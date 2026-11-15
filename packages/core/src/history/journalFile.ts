@@ -11,6 +11,7 @@ import type {
   TransitionEntry,
   TrustEntry,
 } from '../model/lifecycle';
+import type { ProofPostEntry } from '../model/proofPost';
 
 /*
  * Trail history, one JSON line per transition, reroute step, guide change, remote-agent token change, Slack owner
@@ -24,7 +25,8 @@ import type {
  * `readSlack` the Slack owner changes, `readSignIn` the Lookout's sign-ins.
  */
 const TRAIL_KINDS = new Set<string>(['transition', 'reroute']);
-type AnyEntry = JournalEntry | GuideEntry | RemoteAgentEntry | SlackOwnerEntry | TrustEntry | SignInEntry;
+type AnyEntry =
+  JournalEntry | GuideEntry | RemoteAgentEntry | SlackOwnerEntry | TrustEntry | SignInEntry | ProofPostEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -41,6 +43,7 @@ export function journalFile(root: string): Journal & {
   readSlack(mapId: string): SlackOwnerEntry[];
   readSignIn(mapId: string): SignInEntry[];
   readTrust(mapId: string): TrustEntry[];
+  readProofPost(mapId: string): ProofPostEntry[];
 } {
   const raw = (mapId: string) => readEntries(root, mapId) as AnyEntry[];
   const readAll = (mapId: string) => raw(mapId).filter((e): e is JournalEntry => TRAIL_KINDS.has(e.kind));
@@ -57,6 +60,7 @@ export function journalFile(root: string): Journal & {
     readSlack: (mapId) => raw(mapId).filter((e): e is SlackOwnerEntry => e.kind === 'slack'),
     readSignIn: (mapId) => raw(mapId).filter((e): e is SignInEntry => e.kind === 'sign-in'),
     readTrust: (mapId) => raw(mapId).filter((e): e is TrustEntry => e.kind === 'trust'),
+    readProofPost: (mapId) => raw(mapId).filter((e): e is ProofPostEntry => e.kind === 'proof-post'),
   };
 }
 
