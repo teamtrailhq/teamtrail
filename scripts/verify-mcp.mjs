@@ -17,6 +17,7 @@ import { verifyLinear } from './verifyLinear.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
+import { verifyProof } from './verifyProof.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
 import { verifySignedState } from './verifySignedState.mjs';
 import { verifySignIn } from './verifySignIn.mjs';
@@ -423,6 +424,7 @@ const verifiedOk = reworkOk && reworkPill > 0 && passed.status === 'done' && pas
 log(
   `${route.ticket.key} ${verifiedOk ? 'verified' : 'NOT verified'}: ${passed.attempt} ${passed.status}, rework shown in the Lookout`,
 );
+const proofOk = await verifyProof({ call, cli, repo, ticket: route.ticket.key, log });
 
 // Independent review: at checks+review+human a passing completion gets a review ticket. The worker is never given its
 // own review; a second agent passes it, and the trail lead approves from the Lookout inbox.
@@ -627,6 +629,7 @@ if (
   !releaseOk ||
   !signedOk ||
   !verifiedOk ||
+  !proofOk ||
   !reviewOk ||
   !discoveryOk ||
   !supervisionOk ||

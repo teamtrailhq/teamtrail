@@ -82,6 +82,7 @@ describe('teamtrail MCP server', () => {
         'list_guides',
         'next_ticket',
         'projects_status',
+        'proof_report',
         'propose_knowledge',
         'propose_reroute',
         'record_decision',

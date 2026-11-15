@@ -12,6 +12,7 @@ import { registerGuideTools } from './tools/guideTools';
 import { registerHitlTools } from './tools/hitlTools';
 import { registerKnowledgeTools } from './tools/knowledgeTools';
 import { registerProjectTools } from './tools/projectTools';
+import { registerProofTools } from './tools/proofTools';
 import { registerRerouteTools } from './tools/rerouteTools';
 import { registerTicketTools } from './tools/ticketTools';
 import { registerTrailTools } from './tools/trailTools';
@@ -28,6 +29,7 @@ export function createMcpServer(agent: TrailAgent, version: string) {
   registerRerouteTools(tool, agent);
   registerGuideTools(tool, agent);
   registerProjectTools(tool, agent);
+  registerProofTools(tool, agent);
   if (agent.remote) refuseHumanTools(server);
   return server;
 }

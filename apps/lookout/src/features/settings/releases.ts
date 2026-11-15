@@ -17,6 +17,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.34.0',
+    date: '2026-11-15',
+    items: [
+      "Verified by Teamtrail: `teamtrail proof <ticket>` prints what Teamtrail recorded about a ticket's completion (the checks it ran, criteria verified or only claimed, the review and the decisions it relies on), ready for a pull request",
+      'Agents get the same report from the new `proof_report` tool and put it in their pull requests',
+    ],
+  },
+  {
     version: '0.33.1',
     date: '2026-11-14',
     items: ['Teamtrail is now MIT licensed'],

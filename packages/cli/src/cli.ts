@@ -15,6 +15,7 @@ import { runMcpServer } from './mcp/server';
 import { pairCli } from './pairCli';
 import { printGreeting } from './printGreeting';
 import { runProjects } from './projects';
+import { proofCli } from './proof/proofCli';
 import { askSandbox } from './protect/askSandbox';
 import { selfCommand } from './selfCommand';
 import { serveLookout } from './serve/serveLookout';
@@ -140,6 +141,7 @@ async function main() {
   if (GUIDE_COMMANDS.has(argv[0])) return guidesCli(argv.slice(1));
   if (argv[0] === 'approve') return approveCli(argv.slice(1));
   if (argv[0] === 'pair') return pairCli(argv.slice(1));
+  if (argv[0] === 'proof') return proofCli(argv.slice(1));
   const slackSetup = argv[0] === 'connect' && argv[1] === 'slack';
   if (argv[0] === 'connect' && !slackSetup) return connectCommand(argv.slice(1));
   await serveLookout(parseArgs(slackSetup ? argv.slice(2) : argv), slackSetup);

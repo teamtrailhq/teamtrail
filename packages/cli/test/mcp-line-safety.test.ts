@@ -112,7 +112,7 @@ describe('single-line inputs', () => {
   it('every string of every tool is one line, except the fields declared free text', async () => {
     const { server } = await connect();
     const shapes = [...toolShapes(server)];
-    expect(shapes.length).toBe(30);
+    expect(shapes.length).toBe(31);
     const multiline: string[] = [];
     let checked = 0;
     for (const [tool, shape] of shapes) {
