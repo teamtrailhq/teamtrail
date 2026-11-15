@@ -1,5 +1,6 @@
 import { untrusted } from '../evidence/github/prText';
 import type { Proof } from '../model/proof';
+import { proofBadge } from './proofBadge';
 
 /** Agent-written text as inert Markdown: flattened and capped, then every character Markdown acts on escaped. */
 const md = (text: string, max = 200) => untrusted(text, max).replace(/[\\*_[\]()#|!~+-]/g, (c) => `\\${c}`);
@@ -54,9 +55,11 @@ function gitLines(p: Proof): string[] {
  * so a changed copy can be told from the original.
  */
 export function proofMarkdown(p: Proof): string {
-  const title = p.status === 'verified' ? '✅ Verified by Teamtrail' : '⚠️ Not verified by Teamtrail';
+  const title = p.status === 'verified' ? 'Verified by Teamtrail' : 'Not verified by Teamtrail';
   const lines = [
     `<!-- teamtrail:proof v1 ${p.digest} -->`,
+    proofBadge(p.status),
+    '',
     `### ${title}`,
     '',
     `**${md(p.ticket.key, 20)} ${md(p.ticket.title, 120)}** · ${md(p.trail, 80)} · level ${p.level}`,

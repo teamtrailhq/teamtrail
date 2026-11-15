@@ -145,7 +145,8 @@ describe('proofMarkdown', () => {
     const p = proofOf([attempt()]);
     const text = proofMarkdown(p);
     expect(text.startsWith(`<!-- teamtrail:proof v1 ${p.digest} -->`)).toBe(true);
-    expect(text).toContain('### ✅ Verified by Teamtrail');
+    expect(text).toContain('![Teamtrail: verified](https://www.teamtrail.app/badges/verified.svg)');
+    expect(text).toContain('### Verified by Teamtrail');
     expect(text).toContain('`npm test` (exit 0, 1.2s)');
     expect(text).toContain('1 verified by Teamtrail, 1 claimed by the agent:');
     expect(text).toContain('PASS by codex\\-01 (agent, not the author)');
@@ -165,7 +166,8 @@ describe('proofMarkdown', () => {
 
   it('says plainly what is missing when not verified', () => {
     const text = proofMarkdown(proofOf([attempt({ result: 'fail' })], []));
-    expect(text).toContain('### ⚠️ Not verified by Teamtrail');
+    expect(text).toContain('![Teamtrail: not verified](https://www.teamtrail.app/badges/not-verified.svg)');
+    expect(text).toContain('### Not verified by Teamtrail');
     // Escaped like everything else in the list; GitHub shows it as "(fail)".
     expect(text).toContain("The checks didn't pass \\(fail\\).");
   });

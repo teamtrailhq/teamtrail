@@ -119,6 +119,7 @@ A remote agent's files aren't on your machine, so it gets no worktree, and on tr
 | `report_progress` | Step, log line, chat message; tokens and cost only when no agent log is read (see Usage) |
 | `close_ticket` | Resolve (or rule out) a ticket: resolution comment, close, DecisionRecord, unblocked tickets |
 | `record_decision` | Keep any other decision as a DecisionRecord |
+| `proof_report` | A ticket's Verified by Teamtrail report for its pull request: the checks Teamtrail ran, criteria verified or only claimed, the review and the decisions it relies on (also `teamtrail proof <ticket>` in a terminal) |
 | `ask_human` / `wait_for_answer` | Ask the human through the Lookout inbox and wait for the answer |
 | `list_inbox` / `answer_question` | Questions from every agent; answer one with the human's words from the chat (it guides the agent; only answers given in the Lookout or Slack back a decision that needs the human) |
 
