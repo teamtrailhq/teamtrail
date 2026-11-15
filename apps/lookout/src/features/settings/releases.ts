@@ -22,6 +22,7 @@ export const RELEASES: Release[] = [
     items: [
       "Verified by Teamtrail: `teamtrail proof <ticket>` prints what Teamtrail recorded about a ticket's completion (the checks it ran, criteria verified or only claimed, the review and the decisions it relies on), ready for a pull request",
       'Agents get the same report from the new `proof_report` tool and put it in their pull requests',
+      'The report opens with a Teamtrail verified or not verified badge',
     ],
   },
   {
