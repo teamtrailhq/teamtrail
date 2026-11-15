@@ -79,6 +79,8 @@ export interface VerificationAttempt {
   pr?: number;
   /** Submitted over HTTP from another machine: no check ran here and no git evidence was read. */
   remote?: boolean;
+  /** For a remote completion: the embedding server's check runner that ran its checks where its work is. */
+  runner?: string;
   /**
    * The repo-relative files the agent said it changed. For a remote completion they are all there is, and nothing
    * here verified them; for a local one the git evidence says what actually changed.

@@ -5,7 +5,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { MarkdownAdapter } from '@teamtrail/core';
+import { MarkdownAdapter, type CheckRunJob, type CheckRunner, type RunnerReport } from '@teamtrail/core';
 import {
   createRemoteToken,
   readAgentDocs,
@@ -45,10 +45,10 @@ async function until(what: string, ok: () => boolean | Promise<boolean>, ms = 50
 }
 
 /** The endpoint as `teamtrail mcp --http` serves it: only `/mcp`, tokens from the repo's file. */
-async function serve(opts: Partial<McpHttpOptions> = {}) {
+async function serve(opts: Partial<McpHttpOptions> = {}, checkRunner?: CheckRunner) {
   mcp = createMcpHttp({
     auth: tokenFileAuth(root),
-    open: remoteAgentOpener({ root, version: '0.0.0-test', agent: { pollMs: 20 } }),
+    open: remoteAgentOpener({ root, version: '0.0.0-test', agent: { pollMs: 20 }, checkRunner }),
     sweepMs: 30,
     ...opts,
   });
@@ -782,5 +782,121 @@ describe('MCP over HTTP: never the human\u2019s voice', () => {
       questionId: right,
     });
     expect(risky.decision.decidedBy).toBe('trail lead');
+  });
+});
+
+describe("MCP over HTTP: the embedding server's check runner", () => {
+  const SHA = 'a'.repeat(40);
+  /** A runner that records what it was asked and answers as told: here, every asked check passes. */
+  function fakeRunner(answer?: (job: CheckRunJob) => RunnerReport | Promise<RunnerReport>) {
+    const asked: CheckRunJob[] = [];
+    const runner: CheckRunner = {
+      name: 'Test runner',
+      async run(job) {
+        asked.push(job);
+        if (answer) return answer(job);
+        return {
+          checks: job.checks.map((c) => ({
+            name: c.name,
+            exitCode: 0,
+            timedOut: false,
+            durationMs: 12,
+            output: 'ok\n',
+          })),
+          git: {
+            head: SHA,
+            branch: 'teamtrail/x/1',
+            base: { head: 'b'.repeat(40), branch: 'main' },
+            changed: [{ path: 'src/a.ts', add: 3, del: 1 }],
+          },
+        };
+      },
+    };
+    return { runner, asked };
+  }
+
+  async function setUp(runner: CheckRunner, code = '0') {
+    await serve({}, runner);
+    const marker = path.join(repo, 'check-ran.txt');
+    fs.writeFileSync(
+      path.join(root, 'verification.json'),
+      JSON.stringify({ v: 1, checks: { check: { run: [process.execPath, '-e', code] } }, run: ['check'] }),
+    );
+    approveAllHere(root);
+    const { call } = await connectHttp(newToken('sandbox'));
+    const local = await connectLocal();
+    const m = await local<{ trail: { id: string }; tickets: { key: string }[] }>('start_trail', {
+      discovery: false,
+      title: 'Changelog',
+      destination: 'A changelog page',
+      tickets: [{ ref: 'build', title: 'Build the page', type: 'execute' }],
+    });
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const attempt = () => readAttempts(root, m.trail.id, m.tickets[0].key.replace('#', ''))[0];
+    return { call, m, marker, attempt };
+  }
+
+  it('runs the approved checks on the runner, never here, and grades its report like local work', async () => {
+    const { runner, asked } = fakeRunner();
+    const { call, marker, attempt } = await setUp(runner, "require('fs').writeFileSync('check-ran.txt', '')");
+    const done = await call<{ status: string }>('close_ticket', {
+      resolution: 'Built it on teamtrail/x/1',
+      paths: ['src/a.ts'],
+    });
+    expect(done.status).toBe('done');
+    expect(fs.existsSync(marker)).toBe(false);
+    expect(asked).toHaveLength(1);
+    expect(asked[0].checks.map((c) => [c.name, c.spec.run[0]])).toEqual([['check', process.execPath]]);
+    expect(asked[0].origin).toMatch(/^token:/);
+    const a = attempt();
+    expect(a).toMatchObject({ result: 'pass', remote: true, runner: 'Test runner' });
+    expect(a.checks[0]).toMatchObject({
+      name: 'check',
+      argv: [process.execPath, '-e', expect.any(String)],
+      exitCode: 0,
+    });
+    expect(a.git?.tree?.head).toBe(SHA);
+    expect(a.git?.stats).toEqual({ files: 1, add: 3, del: 1 });
+  });
+
+  it("a report that isn't what was asked can't pass: a renamed check counts as not run", async () => {
+    const { runner } = fakeRunner((job) => ({
+      checks: job.checks.map((c) => ({
+        name: `${c.name}-other`,
+        exitCode: 0,
+        timedOut: false,
+        durationMs: 1,
+        output: '',
+      })),
+    }));
+    const { call, attempt } = await setUp(runner);
+    const done = await call<{ status: string }>('close_ticket', { resolution: 'Built it', paths: ['src/a.ts'] });
+    expect(done.status).not.toBe('done');
+    expect(attempt()).toMatchObject({ result: 'fail', checks: [] });
+    expect(attempt().note).toMatch(/did not report every check/);
+  });
+
+  it("a runner that can't run goes to the human, and the agent is told to push its branch", async () => {
+    const { runner } = fakeRunner(() => ({ checks: [], error: 'no pushed branch for this ticket' }));
+    const { call, attempt } = await setUp(runner);
+    const done = await call<{ status: string; note: string }>('close_ticket', {
+      resolution: 'Built it',
+      paths: ['src/a.ts'],
+    });
+    expect(done.status).toBe('blocked');
+    expect(done.note).toMatch(/Test runner couldn't run the checks \(Test runner: no pushed branch/);
+    expect(attempt()).toMatchObject({ result: 'error', runner: 'Test runner' });
+  });
+
+  it('with a runner, a remote completion waits for the approved check commands, like a local one', async () => {
+    const { runner, asked } = fakeRunner();
+    const { call } = await setUp(runner);
+    fs.writeFileSync(
+      path.join(root, 'verification.json'),
+      JSON.stringify({ v: 1, checks: { check: { run: [process.execPath, '-e', '1'] } }, run: ['check'] }),
+    );
+    const done = await call<{ status: string }>('close_ticket', { resolution: 'Built it', paths: ['src/a.ts'] });
+    expect(done.status).toMatch(/waiting/);
+    expect(asked).toHaveLength(0);
   });
 });

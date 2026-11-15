@@ -72,6 +72,7 @@ function attemptOf(a?: VerificationAttempt): Proof['attempt'] {
     resolution: a.resolution,
     pr: a.pr,
     remote: a.remote === true,
+    ...(a.remote && a.runner ? { runner: a.runner } : {}),
   };
 }
 

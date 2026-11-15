@@ -17,6 +17,8 @@ export function remoteAgentOpener(o: {
   version: string;
   leaseMinutes?: number;
   agent?: Pick<AgentOptions, 'pollMs' | 'leaseMs'>;
+  /** The server's runner for its remote agents' checks (AgentOptions.checkRunner). */
+  checkRunner?: AgentOptions['checkRunner'];
 }) {
   return (principal: McpPrincipal): McpHosted => {
     let server: McpServer | undefined;
@@ -33,6 +35,7 @@ export function remoteAgentOpener(o: {
       leaseMs: leaseMs(o.leaseMinutes ?? process.env[LEASE_MINUTES_ENV]),
       ...o.agent,
       remote: { tokenName: principal.name, tokenId: principal.id },
+      ...(o.checkRunner ? { checkRunner: o.checkRunner } : {}),
     });
     server = createMcpServer(agent, o.version);
     return { server, close: (reason) => agent.close(reason) };

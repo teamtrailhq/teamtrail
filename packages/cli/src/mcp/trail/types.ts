@@ -1,6 +1,7 @@
 import {
   type Precedent,
   type AnswerVia,
+  type CheckRunner,
   type ChecklistAnswer,
   type CriterionEvidence,
   type CriterionKind,
@@ -39,6 +40,11 @@ export interface AgentOptions {
     tokenName: string;
     /** The token's id: what tells this agent from another, whatever trail names it takes. */ tokenId?: string;
   };
+  /**
+   * For a remote agent: the embedding server's runner, which runs its completion's approved checks where its work
+   * is. Set only by the server's own code. Without one, a remote completion runs nothing and goes to the human.
+   */
+  checkRunner?: CheckRunner;
 }
 
 export interface TicketPlanInput {

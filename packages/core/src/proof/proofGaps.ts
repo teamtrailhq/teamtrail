@@ -9,7 +9,9 @@ import type { VerificationAttempt } from '../model/verification';
 export function proofGaps({ attempt, reviews }: { attempt?: VerificationAttempt; reviews: ProofReview[] }): string[] {
   if (!attempt) return ['No completion was submitted for this ticket.'];
   if (attempt.level === 'off') return ['Verification is off for this ticket, so nothing was checked.'];
-  if (attempt.remote) return ['Submitted from another machine: no check ran here and no git was read.'];
+  // A remote completion counts only when the embedding server's runner ran its checks where its work is.
+  if (attempt.remote && !attempt.runner)
+    return ['Submitted from another machine: no check ran here and no git was read.'];
   const gaps: string[] = [];
   if (attempt.result !== 'pass') gaps.push(`The checks didn't pass (${attempt.result}).`);
   const c = attempt.criteria;

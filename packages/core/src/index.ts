@@ -159,3 +159,10 @@ export type { Precedent, PrecedentQuery } from './model/precedent';
 export { findPrecedents } from './precedent/findPrecedents';
 export { decisionMemory, NO_AREA, type DecisionMemoryEntry } from './precedent/decisionMemory';
 export { precedentConflicts, type PrecedentConflict } from './precedent/precedentConflicts';
+export type {
+  CheckRunJob,
+  CheckRunner,
+  RunnerCheck,
+  RunnerCheckResult,
+  RunnerReport,
+} from './verification/checkRunner';

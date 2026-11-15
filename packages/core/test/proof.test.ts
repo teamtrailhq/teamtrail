@@ -129,6 +129,18 @@ describe('buildProof', () => {
     expect(buildProof({ ticket, trail: 't', attempts: [], verdicts: [], decisions: [] }).status).toBe('not-verified');
   });
 
+  it("verifies a remote completion only when the embedding server's runner ran its checks", () => {
+    const p = proofOf([attempt({ remote: true, runner: 'Teamtrail Cloud' })]);
+    expect(p.gaps).toEqual([]);
+    expect(p.status).toBe('verified');
+    expect(p.attempt.runner).toBe('Teamtrail Cloud');
+    expect(proofMarkdown(p)).toMatch(/Ran by Teamtrail Cloud, on the pushed commit:/);
+    expect(
+      proofOf([attempt({ runner: 'Teamtrail Cloud' })]).attempt.runner,
+      'a local run names no runner',
+    ).toBeUndefined();
+  });
+
   it("needs the trail lead's approval at the human level", () => {
     const p = proofOf([attempt({ level: 'checks+review+human' })]);
     expect(p.gaps).toEqual(["The trail lead hasn't approved it."]);

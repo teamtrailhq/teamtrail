@@ -227,7 +227,13 @@ export class AgentContext {
 
   /** Where this agent's verification runs read the config, keep evidence and run checks. */
   verifyEnv(): VerifyEnv {
-    return { adapter: this.adapter, root: this.root, journal: this.journal };
+    const runner = this.opts.remote ? this.opts.checkRunner : undefined;
+    return {
+      adapter: this.adapter,
+      root: this.root,
+      journal: this.journal,
+      ...(runner ? { checkRunner: runner } : {}),
+    };
   }
 
   /** End the running session (agent disconnected) and write final state. */

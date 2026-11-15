@@ -95,9 +95,11 @@ export async function submitVerified(
   wait: { seconds: number; ctl: WaitControl },
 ) {
   const { snap, ticket: t, info, sub } = job;
-  // Checks run only from the verification.json approved on this machine. Until then the completion waits: the
-  // ticket stays the agent's, nothing runs, and the human is asked (attention item, Settings → Approvals).
-  const approval = sub.remote ? undefined : checksApproval(ctx.root);
+  // Checks run only from the verification.json approved on this machine, here or on the server's runner. Until
+  // then the completion waits: the ticket stays the agent's, nothing runs, and the human is asked (attention item,
+  // Settings → Approvals). A remote completion with no runner runs nothing, so it doesn't wait.
+  const runs = !sub.remote || !!ctx.opts.checkRunner;
+  const approval = runs ? checksApproval(ctx.root) : undefined;
   if (approval?.waiting) return waitingForApproval(ctx, t.key, checksWaitReason(approval));
   await transition(ctx.adapter, snap.map.id, t.id, {
     event: 'submit',
