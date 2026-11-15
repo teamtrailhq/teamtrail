@@ -13,10 +13,12 @@ import {
   readLeases,
   remoteTokenViews,
   revokeRemoteToken,
+  staleness,
   writeAgentAnswer,
 } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { submissionOf } from '../../core/src/verification/resubmit';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpHttp } from '../src/mcp/http/createMcpHttp';
 import { remoteAgentOpener } from '../src/mcp/http/remoteAgentOpener';
@@ -859,6 +861,45 @@ describe("MCP over HTTP: the embedding server's check runner", () => {
     expect(a.git?.stats).toEqual({ files: 1, add: 3, del: 1 });
   });
 
+  it('its evidence never reads as stale here, and a re-run of it stays remote', async () => {
+    const { runner } = fakeRunner();
+    const { call, attempt } = await setUp(runner);
+    await call('close_ticket', { resolution: 'Built it', paths: ['src/a.ts'] });
+    const a = attempt();
+    expect(a.git?.configHash).toMatch(/^sha256:/);
+    expect(await staleness(root, a.git)).toEqual({ checked: false, stale: false });
+    expect(submissionOf(a).remote).toBe(true);
+  });
+
+  const broken: [string, () => RunnerReport | Promise<RunnerReport>, RegExp][] = [
+    ['reports no commit', () => ({ checks: [] }), /reported no commit/],
+    ['throws', () => Promise.reject(new Error('boom')), /the check runner failed: boom/],
+    ['answers nothing', () => null as unknown as RunnerReport, /gave no report/],
+  ];
+  for (const [what, answer, note] of broken)
+    it(`a runner that ${what} still leaves an attempt, for the human`, async () => {
+      const { runner } = fakeRunner(answer);
+      const { call, attempt } = await setUp(runner);
+      const done = await call<{ status: string }>('close_ticket', { resolution: 'Built it', paths: ['src/a.ts'] });
+      expect(done.status).toBe('blocked');
+      expect(attempt()).toMatchObject({ result: 'error', runner: 'Test runner' });
+      expect(attempt().note).toMatch(note);
+    });
+
+  it("a runner's work with no changes meets the project's no-changes policy", async () => {
+    const { runner } = fakeRunner((job) => ({
+      checks: job.checks.map((c) => ({ name: c.name, exitCode: 0, timedOut: false, durationMs: 1, output: '' })),
+      git: { head: SHA, branch: 'b', base: { head: SHA, branch: 'main' }, changed: [] },
+    }));
+    const { call, attempt } = await setUp(runner);
+    const v = JSON.parse(fs.readFileSync(path.join(root, 'verification.json'), 'utf8'));
+    fs.writeFileSync(path.join(root, 'verification.json'), JSON.stringify({ ...v, noChanges: { else: 'fail' } }));
+    approveAllHere(root);
+    await call('close_ticket', { resolution: 'Built it', paths: ['src/a.ts'] });
+    expect(attempt()).toMatchObject({ result: 'fail' });
+    expect(attempt().note).toMatch(/no files changed/);
+  });
+
   it("a report that isn't what was asked can't pass: a renamed check counts as not run", async () => {
     const { runner } = fakeRunner((job) => ({
       checks: job.checks.map((c) => ({
@@ -868,6 +909,7 @@ describe("MCP over HTTP: the embedding server's check runner", () => {
         durationMs: 1,
         output: '',
       })),
+      git: { head: SHA, branch: 'b', base: { head: null, branch: 'main' }, changed: [{ path: 'a', add: 1, del: 0 }] },
     }));
     const { call, attempt } = await setUp(runner);
     const done = await call<{ status: string }>('close_ticket', { resolution: 'Built it', paths: ['src/a.ts'] });

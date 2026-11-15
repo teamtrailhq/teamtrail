@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import path from 'node:path';
 import type { GitEvidence, StaleCheck } from '../model/evidence';
 import type { VerificationAttempt, VerificationConfig } from '../model/verification';
 import { trustedChecks } from '../verification/checksApproval';
@@ -15,7 +16,9 @@ export async function staleness(root: string, ev: GitEvidence | undefined): Prom
   const hash = trustedChecks(root).config.hash;
   if (ev && (ev.configHash ?? null) !== (hash ?? null))
     return { checked: true, stale: true, reason: 'verification.json changed since the checks ran' };
-  if (!ev?.tree || !existsSync(ev.tree.toplevel)) return { checked: false, stale: false };
+  // Only a worktree on this machine is compared: a runner's evidence (`runner:<name>`) has nothing here to read.
+  if (!ev?.tree || !path.isAbsolute(ev.tree.toplevel) || !existsSync(ev.tree.toplevel))
+    return { checked: false, stale: false };
   const wt = await findWorktree(ev.tree.toplevel, root);
   if ('error' in wt) return { checked: false, stale: false, reason: wt.error };
   const now = await readTreeState(wt);

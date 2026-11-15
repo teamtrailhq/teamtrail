@@ -130,6 +130,9 @@ describe('buildProof', () => {
   });
 
   it("verifies a remote completion only when the embedding server's runner ran its checks", () => {
+    expect(proofOf([attempt({ remote: true, runner: 'Teamtrail Cloud', git: undefined })]).gaps).toEqual([
+      'Teamtrail Cloud named no commit the checks ran on.',
+    ]);
     const p = proofOf([attempt({ remote: true, runner: 'Teamtrail Cloud' })]);
     expect(p.gaps).toEqual([]);
     expect(p.status).toBe('verified');
