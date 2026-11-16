@@ -1,13 +1,23 @@
-import { type ActivityState, type MapSnapshot, STEPS } from '@teamtrail/core';
+import { type ActivityState, type MapSnapshot, STEPS, type TrailDone } from '@teamtrail/core';
 import { EmptyState, MetaLine } from '../../components/ui';
 import { hostedAgents } from '../../lib/hostedAgents';
+import { TrailDoneStep } from '../trail-done';
 import { featured } from './featured';
 
 const STATUS = { running: 'Working', done: 'Done', failed: 'Stopped' } as const;
 
 /** The latest step an agent reported, in words ("claude-01 · work, step 3 of 5" / "Resolve #6" / the ticket),
- * with the step pipeline underneath. */
-export function StepTracker({ activity, snap }: { activity: ActivityState; snap?: MapSnapshot }) {
+ * with the step pipeline underneath; once the trail is done, that it is. */
+export function StepTracker({
+  activity,
+  snap,
+  done,
+}: {
+  activity: ActivityState;
+  snap?: MapSnapshot;
+  done?: TrailDone;
+}) {
+  if (done && done.kind !== 'not-done') return <TrailDoneStep done={done} />;
   const s = featured(activity);
   if (!s)
     return (

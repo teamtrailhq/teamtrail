@@ -1,20 +1,18 @@
-import { type MapSnapshot, type SessionInfo, type TicketLease, layout, leaseHealth } from '@teamtrail/core';
+import { layout, leaseHealth } from '@teamtrail/core';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNow, usePrSync } from '../../hooks';
-import { type Selection, heldLeases, isRunning, prSync, worstFlag } from '../../lib';
+import { heldLeases, isRunning, prSync, worstFlag } from '../../lib';
 import { useModels } from '../models';
-import { destinationSpot, destinationTrail } from './destination';
-import { DestinationMark } from './DestinationMark';
-import { DestinationTrail } from './DestinationTrail';
+import { destinationSpot } from './destination';
 import { GraphDefs } from './GraphDefs';
 import { GraphEdges } from './GraphEdges';
 import { GraphNode } from './GraphNode';
-import type { MapPreview } from './mapPreview';
+import { MapDestination } from './MapDestination';
 import { openingView } from './openingView';
 import { OutOfScopeStrip } from './OutOfScopeStrip';
 import { TerrainLayer } from './TerrainLayer';
+import type { MapGraphProps } from './types';
 import { useFocusSelected } from './useFocusSelected';
-import { useTrailProofs } from './useTrailProofs';
 import { useWheelZoom } from './useWheelZoom';
 import { type View, zoomAt } from './zoomAt';
 
@@ -22,19 +20,9 @@ export const PAD = 32;
 const LR_PREFERENCE = 1.8;
 
 /** Decision graph. Fits itself to the zone; drag/pinch/wheel to pan and zoom. */
-export function MapGraph(props: {
-  snap: MapSnapshot;
-  sessions: SessionInfo[];
-  leases?: TicketLease[];
-  selection: Selection;
-  onSelect: (s: Selection) => void;
-  /** Smallest zoom the initial fit may use; keeps text readable on phones. */
-  minFit?: number;
-  /** A pending reroute drawn over the map: ghost, struck and frozen tickets, dashed new edges. */
-  preview?: MapPreview;
-}) {
+export function MapGraph(props: MapGraphProps) {
   const { snap, selection, onSelect, preview } = props;
-  const proofs = useTrailProofs(snap.map.id, snap.tickets);
+  const proofs = props.proofs ?? {};
   const tickets = preview?.tickets ?? snap.tickets;
   const box = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -177,10 +165,7 @@ export function MapGraph(props: {
               preview={preview}
             />
 
-            <DestinationTrail trails={destinationTrail(L, destination)} />
-            {L.nodes.length > 0 && (
-              <DestinationMark x={destination.x} y={destination.y} text={snap.map.sections.destination} />
-            )}
+            <MapDestination laid={L} spot={destination} text={snap.map.sections.destination} done={props.done} />
 
             {L.nodes.map((n) => (
               <GraphNode
