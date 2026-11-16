@@ -259,7 +259,7 @@ test('run lock: one run per ticket; a dead holder becomes an interrupted attempt
   assert.deepEqual(recoverInterrupted(root), []);
 });
 
-test('GET /verification/config serves the parsed file read-only', async () => {
+test('GET /verification/config serves the parsed file; a PUT from outside the Lookout changes nothing', async () => {
   const root = tmp();
   const bridge = createTrackerBridge(root, { env: {}, configDir: path.join(root, 'cfg'), leases: { reapMs: 60_000 } });
   const server = http.createServer((req, res) => void bridge.handle(req, res));
@@ -276,7 +276,13 @@ test('GET /verification/config serves the parsed file read-only', async () => {
     const bad = (await (await fetch(url)).json()) as { errors: string[]; config?: unknown };
     assert.ok(bad.errors.length);
     assert.equal(bad.config, undefined);
-    assert.equal((await fetch(url, { method: 'PUT', body: '{}' })).status, 404);
+    // Setting checks is the Lookout's, from its own page on this machine (setChecks.ts); a bare client is refused.
+    const put = await fetch(url, {
+      method: 'PUT',
+      body: JSON.stringify({ checks: [{ name: 'x', run: ['npm', 'test'] }], base: 'none' }),
+    });
+    assert.equal(put.status, 403);
+    assert.equal(readFileSync(path.join(root, 'verification.json'), 'utf8'), '{"v":1,"run":"npm test"}', 'unchanged');
   } finally {
     server.close();
     bridge.close();
