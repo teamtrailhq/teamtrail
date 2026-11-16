@@ -21,7 +21,7 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.52.2',
+    version: '0.53.0',
     date: '2026-11-16',
     items: [
       "Your trail's agents are one header menu: what they're doing, with Pause and Runs inside",
