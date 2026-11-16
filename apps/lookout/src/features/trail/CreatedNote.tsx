@@ -8,12 +8,12 @@ import { StartTrail } from './StartTrail';
  * After New trail: how to get it moving. Behind a server that runs agents: Start the trail, right here (StartTrail);
  * else your own agent's command.
  */
-export function CreatedNote({ created, mapId }: { created: string; mapId: string }) {
+export function CreatedNote({ created, mapId, onStarted }: { created: string; mapId: string; onStarted?: () => void }) {
   if (trailAgentsPath())
     return (
       <div className="agent-draft created">
         <span>Trail {created} is on the map, starting with discovery.</span>
-        <StartTrail mapId={mapId} />
+        <StartTrail mapId={mapId} onStarted={onStarted} />
       </div>
     );
   const page = hostedAgents();

@@ -23,7 +23,7 @@ export const RELEASES: Release[] = [
   {
     version: '0.52.1',
     date: '2026-11-16',
-    items: ['Start the trail is a full-size button, like Create trail'],
+    items: ['Start the trail is a full-size button, like Create trail, and closes New trail once your agents are on'],
   },
   {
     version: '0.52.0',
