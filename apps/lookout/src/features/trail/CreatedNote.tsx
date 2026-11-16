@@ -1,9 +1,21 @@
 import { Button } from '../../components/ui';
 import { hostedAgents, openHostedAgents } from '../../lib/hostedAgents';
+import { trailAgentsPath } from '../../lib/trailAgents';
 import { AgentCommand } from './AgentCommand';
+import { StartTrail } from './StartTrail';
 
-/** After New trail: how to get it moving, with your own agent, or by turning the server's agents on for it. */
-export function CreatedNote({ created }: { created: string }) {
+/**
+ * After New trail: how to get it moving. Behind a server that runs agents: Start the trail, right here (StartTrail);
+ * else your own agent's command.
+ */
+export function CreatedNote({ created, mapId }: { created: string; mapId: string }) {
+  if (trailAgentsPath())
+    return (
+      <div className="agent-draft created">
+        <span>Trail {created} is on the map, starting with discovery.</span>
+        <StartTrail mapId={mapId} />
+      </div>
+    );
   const page = hostedAgents();
   if (page)
     return (

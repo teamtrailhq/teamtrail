@@ -21,9 +21,10 @@ export function NewTrailDialog({
   tracker: string;
   onCreate: (input: { title: string; destination: string; notes: string; assumptions: string[] }) => Promise<{
     key: string;
+    id: string;
   }>;
 }) {
-  const [created, setCreated] = useState<string>();
+  const [created, setCreated] = useState<{ key: string; id: string }>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [title, setTitle] = useState(seed?.title ?? '');
@@ -74,7 +75,11 @@ export function NewTrailDialog({
             <AgentCommand command={`/scout new "${idea || 'your idea'}"`} label="Copy command" />
           </div>
         )}
-        {created ? <CreatedNote created={created} /> : error && <p className="vf-err">{error}</p>}
+        {created ? (
+          <CreatedNote created={created.key} mapId={created.id} />
+        ) : (
+          error && <p className="vf-err">{error}</p>
+        )}
         <footer>
           <Button variant="ghost" onClick={onClose}>
             Close
@@ -97,7 +102,7 @@ export function NewTrailDialog({
                   notes: notes.trim(),
                   assumptions: lines.filter(Boolean),
                 })
-                  .then((m) => setCreated(m.key))
+                  .then((m) => setCreated({ key: m.key, id: m.id }))
                   .catch((e: Error) => setError(e.message))
                   .finally(() => setBusy(false));
               }}
