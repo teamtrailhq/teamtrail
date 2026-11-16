@@ -119,3 +119,17 @@ describe('a theme picked here is saved on the server, when it says where', () =>
     expect(posts).toHaveLength(1);
   });
 });
+
+describe('a server that merges pull requests says where', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  test('only a path on this origin is kept', () => {
+    vi.stubGlobal('location', { href: `${origin}/`, origin });
+    vi.stubGlobal('document', { documentElement: { dataset: {} } });
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], merge: '/_cloud/merge' } });
+    expect(managedSignIn()?.merge).toBe('/_cloud/merge');
+    for (const merge of ['https://evil.example/merge', '//evil.example/m', 'javascript:x', 1]) {
+      learnManagedSignIn({ managed: { name: 'Ada', pages: [], merge } });
+      expect(managedSignIn()?.merge).toBeUndefined();
+    }
+  });
+});

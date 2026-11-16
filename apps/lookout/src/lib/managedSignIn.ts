@@ -10,10 +10,19 @@ function agentsOf(value: unknown): { agents?: ManagedPage } {
   return page ? { agents: page } : {};
 }
 
-/** Where the server saves the theme: a path on this origin only. */
+/** A path on this origin only, as the server's places to save or act are. */
+const pathOf = (value: unknown) => (typeof value === 'string' && /^\/[\w/-]{1,100}$/.test(value) ? value : undefined);
+
+/** Where the server saves the theme. */
 function themeSaveOf(value: unknown): { themeSave?: string } {
-  if (typeof value !== 'string' || !/^\/[\w/-]{1,100}$/.test(value)) return {};
-  return { themeSave: value };
+  const p = pathOf(value);
+  return p ? { themeSave: p } : {};
+}
+
+/** Where the server merges an approved ticket's pull request. */
+function mergeOf(value: unknown): { merge?: string } {
+  const p = pathOf(value);
+  return p ? { merge: p } : {};
 }
 
 /** The server's home link, kept only as a short label and an http(s) URL. */
@@ -43,6 +52,11 @@ export interface ManagedSignIn {
    * it there (managedTheme.ts). Without it, a server theme is fixed here.
    */
   themeSave?: string;
+  /**
+   * Where the server merges a finished ticket's pull request once a person approves it here (a path on this origin):
+   * the Proof section then offers Approve and merge on a verified ticket (features/proof/MergeOnApprove.tsx).
+   */
+  merge?: string;
   /** `false`: this person may not make high-risk calls, so the page routes those to someone who may. */
   highRisk?: boolean;
   /** The server's own home (all of this person's workspaces, say), on any web origin: a way out of the Lookout. */
@@ -77,6 +91,7 @@ export function learnManagedSignIn(reply: { managed?: unknown }) {
     ...(sameOrigin ? { signOut: m.signOut as string } : {}),
     ...(theme ? { theme } : {}),
     ...themeSaveOf(m.themeSave),
+    ...mergeOf(m.merge),
     ...(m.highRisk === false ? { highRisk: false } : {}),
     ...homeOf(m.home),
     ...(m.tracker === 'markdown' ? { tracker: 'markdown' as const } : {}),
