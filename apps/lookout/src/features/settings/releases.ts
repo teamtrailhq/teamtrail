@@ -21,6 +21,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.53.1',
+    date: '2026-11-16',
+    items: [
+      'A quieter header: tracker and CI show only when they fail, spend once there is any, and Plan only / Plan + execute moves into the trail menu',
+    ],
+  },
+  {
     version: '0.53.0',
     date: '2026-11-16',
     items: [

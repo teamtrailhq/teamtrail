@@ -16,11 +16,12 @@ const ASKS: Record<Ask, { text: (m: MapDoc) => string; confirm: string }> = {
   },
 };
 
-/** What the trail lead can do with the trail on screen: start it over, archive it, or restore an archived one. */
+/** What the trail lead can do with the trail on screen: switch its mode, start it over, archive it, or restore an archived one. */
 export function TrailActions(props: {
   map: MapDoc;
   onStartOver: () => void;
   onArchive: (archived: boolean) => void;
+  onToggleMode?: () => void;
   onDone: () => void;
 }) {
   const { map } = props;
@@ -55,8 +56,21 @@ export function TrailActions(props: {
         </div>
       </div>
     );
+  const planOnly = map.mode === 'plan-only';
   return (
     <>
+      {props.onToggleMode && (
+        <button
+          role="menuitem"
+          className="trail-item act"
+          data-tip={
+            planOnly ? 'Agents decide, then build what was decided' : 'Agents research and decide; execute tickets wait'
+          }
+          onClick={() => (props.onToggleMode?.(), props.onDone())}
+        >
+          {planOnly ? 'Switch to Plan + execute' : 'Switch to Plan only'}
+        </button>
+      )}
       <button
         role="menuitem"
         className="trail-item act"
