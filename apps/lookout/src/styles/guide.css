@@ -55,6 +55,9 @@
   align-items: center;
   gap: var(--sp-8);
 }
+.setup-bubble a {
+  color: var(--text);
+}
 .setup-bubble li.done a {
   color: var(--dim);
 }
