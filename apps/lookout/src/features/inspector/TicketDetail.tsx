@@ -4,6 +4,7 @@ import { Empty, Button, Card, Field } from '../../components/ui';
 import { type LookoutApi } from '../../hooks';
 import { TRAIL_LEAD, heldLeases, isRunning } from '../../lib';
 import { CriteriaSection } from '../criteria';
+import { DiscoveryHoldNote, useDiscoveryHold } from '../discovery';
 import { TicketGuide } from '../guides';
 import { KnowledgePreview, PromoteButton } from '../knowledge';
 import { ModelWaitNote } from '../models';
@@ -36,6 +37,7 @@ export function TicketDetail(props: {
   const [rationale, setRationale] = useState('');
   const [alternatives, setAlternatives] = useState('');
   const [reason, setReason] = useState('Not needed to reach the destination.');
+  const briefHolds = useDiscoveryHold(snap);
   const t = snap.tickets.find((x) => x.id === props.id);
   if (!t) return <Empty>Ticket not found.</Empty>;
   const state = deriveStates(snap.tickets, snap.map.mode).get(t.id)!;
@@ -46,11 +48,13 @@ export function TicketDetail(props: {
   const others = t.comments.filter((c) => c !== resolution);
   const description = ticketDescription(t.body);
   const decisions = api.decisions.filter((d) => d.mapId === snap.map.id && d.ticketId === t.id);
+  const held = briefHolds(t);
 
   return (
     <div className="detail">
-      <TicketFacts t={t} state={state} tickets={snap.tickets} />
+      <TicketFacts t={t} state={state} tickets={snap.tickets} briefHeld={held && state === 'frontier'} />
       <OutsideChangeNote mapId={snap.map.id} kind="ticket" id={t.id} />
+      {held && <DiscoveryHoldNote />}
       {description && (
         <section className="d-section ticket-body">
           <span className="t-label">Description</span>

@@ -21,8 +21,8 @@ export function InboxPane(props: {
   handlers?: Omit<AttentionHandlers, 'openQuestion'>;
   /** Rendered under the inbox in the same column (the Up next list). */
   below?: ReactNode;
-  /** Shown above the inbox list (a discovery brief waiting for review). */
-  above?: ReactNode;
+  /** The current trail's discovery brief while it waits for review, for when the ranked queue isn't there. */
+  brief?: ReactNode;
 }) {
   const [view, setView] = useState<'list' | 'conv'>('list');
   const [questionId, setQuestionId] = useState<string>();
@@ -48,7 +48,7 @@ export function InboxPane(props: {
       sessionId={props.sessionId}
       attention={props.attention}
       handlers={props.handlers && { ...props.handlers, openQuestion }}
-      briefShown={!!props.above}
+      brief={props.brief}
       onOpenQuestion={open}
       onOpenTicket={props.onOpenTicket}
     />
@@ -71,7 +71,6 @@ export function InboxPane(props: {
           conv
         ) : (
           <div className="stack-scroll">
-            {props.above}
             {list}
             {props.below}
           </div>
@@ -87,7 +86,6 @@ export function InboxPane(props: {
         title="Communication"
         info="Where your agents reach you: everything waiting on you, ranked with the reasons why, the conversation with the agent that asked, and the tickets coming up next."
       />
-      {props.above}
       {list}
       {hasConv && conv}
       {props.below}

@@ -65,7 +65,7 @@ export function App() {
   });
   const brief = useBriefing(rt, api, prefs.briefing, attn.attention.view?.items);
 
-  const inbox = <AppInbox api={api} nav={nav} bp={bp} scoped={scoped} attn={attn} above={trail.inboxCard} />;
+  const inbox = <AppInbox api={api} nav={nav} bp={bp} scoped={scoped} attn={attn} brief={trail.inboxCard} />;
   const map = (
     <MapZone
       api={api}

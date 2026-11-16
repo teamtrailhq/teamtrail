@@ -9,6 +9,7 @@ import {
 } from '@teamtrail/core';
 import { type Selection, TYPE_TEXT } from '../../lib';
 import { useSignGuide } from '../guides';
+import { briefWait } from './briefWait';
 import { CardChips } from './CardChips';
 import { CARD_TEXT_X } from './cardLayout';
 import { layoutChips } from './layoutChips';
@@ -40,6 +41,7 @@ export function GraphNode({
   frozen,
   needs,
   verified,
+  briefHeld,
 }: {
   n: LaidOutNode;
   session?: SessionInfo;
@@ -57,6 +59,8 @@ export function GraphNode({
   needs?: ModelTier;
   /** Done: whether its proof is verified (undefined while not known). */
   verified?: boolean;
+  /** The discovery gate holds it until the trail lead accepts the brief. */
+  briefHeld?: boolean;
 }) {
   const t = n.ticket;
   const lines = wrap(t.title, TITLE_CHARS);
@@ -64,10 +68,13 @@ export function GraphNode({
   const waiting = !!s?.waitingOn;
   const marked = !!mark && mark !== 'unchanged';
   const wait = modelWait(n, needs, !!s);
+  const brief = briefWait(n, briefHeld, !!s);
   const guide = useSignGuide(t.guide);
-  const state = marked ? undefined : statePart({ n, session: s, waiting, stalled, wait, step: !guide, verified });
+  const state = marked
+    ? undefined
+    : statePart({ n, session: s, waiting, stalled, brief, wait, step: !guide, verified });
   const needsYou = hitl && !marked && (t.type === 'task' || t.type === 'execute');
-  const heldUp = waiting || !!stalled || !!wait || (needsYou && n.state === 'frontier');
+  const heldUp = waiting || !!stalled || brief || !!wait || (needsYou && n.state === 'frontier');
   const tone = nodeTone({ state: n.state, live: !!s, attention: heldUp });
   const type = TYPE_TEXT[t.type];
   const reserve = (marked && mark !== 'cancelled' ? 44 : 0) + (frozen ? 12 : 0);

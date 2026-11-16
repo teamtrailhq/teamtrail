@@ -1,6 +1,7 @@
 import { type MapSnapshot, type ActivityState, deriveStates, type NodeState, attention } from '@teamtrail/core';
 import { SectionHeader, Empty } from '../../components/ui';
 import { type Selection, STATE_TEXT, isWaiting } from '../../lib';
+import { useDiscoveryHold } from '../discovery';
 
 /** Layer 3: the tickets that can move now (frontier) or are moving (claimed), as a compact list. */
 export function UpNext(props: {
@@ -10,6 +11,7 @@ export function UpNext(props: {
   onSelect: (s: Selection) => void;
 }) {
   const { snap } = props;
+  const briefHolds = useDiscoveryHold(snap);
   const states = snap ? deriveStates(snap.tickets, snap.map.mode) : new Map<string, NodeState>();
   const rank: Partial<Record<NodeState, number>> = { claimed: 0, frontier: 1 };
   const items = (snap?.tickets ?? [])
@@ -26,7 +28,8 @@ export function UpNext(props: {
         <ul className="ticket-list">
           {items.map((t) => {
             const st = states.get(t.id)!;
-            const row = { state: st, waiting: waiting.has(t.id), assignee: t.assignee, hitl: attention(t) === 'hitl' };
+            const hitl = attention(t) === 'hitl';
+            const row = { state: st, waiting: waiting.has(t.id), assignee: t.assignee, hitl, brief: briefHolds(t) };
             const stateText = upNextState(row);
             return (
               <li key={t.id} className={`${selId === t.id ? 'sel' : ''} st-${upNextTone(row)}`}>
@@ -46,16 +49,20 @@ export function UpNext(props: {
 }
 
 /** The quiet state on the right: who has it, "waiting on you" (the only red one), or ready, saying when it needs you. */
-function upNextState(t: { state: NodeState; waiting: boolean; assignee?: string; hitl: boolean }) {
+function upNextState(t: { state: NodeState; waiting: boolean; assignee?: string; hitl: boolean; brief: boolean }) {
   if (t.waiting) return 'waiting on you';
   if (t.state === 'claimed') return t.assignee ?? 'claimed';
+  if (t.brief) return 'waits on brief';
   const ready = STATE_TEXT[t.state].toLowerCase();
   return t.hitl ? `${ready}, needs you` : ready;
 }
 
-/** The dot, as on the map's cards: green working, grey ready, amber when it's ready but needs a person, red waiting on you. */
-function upNextTone(t: { state: NodeState; waiting: boolean; hitl: boolean }) {
+/**
+ * The dot, as on the map's cards: green working, grey ready, amber when it's ready but needs a person or waits on the
+ * discovery brief, red waiting on you.
+ */
+function upNextTone(t: { state: NodeState; waiting: boolean; hitl: boolean; brief: boolean }) {
   if (t.waiting) return 'waiting';
-  if (t.state === 'frontier' && t.hitl) return 'attention';
+  if (t.state === 'frontier' && (t.hitl || t.brief)) return 'attention';
   return t.state;
 }

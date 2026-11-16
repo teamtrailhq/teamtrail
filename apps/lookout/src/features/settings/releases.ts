@@ -21,6 +21,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.54.0',
+    date: '2026-11-16',
+    items: [
+      'When discovery ends, the Lookout tells you research is done and opens the brief for your review',
+      'A brief waiting for your review counts in Waiting on you',
+      'Tickets held until you accept the brief show as waiting on it, on the map and in Up next, not as ready',
+    ],
+  },
+  {
     version: '0.53.1',
     date: '2026-11-16',
     items: [
@@ -181,15 +190,6 @@ export const RELEASES: Release[] = [
       'Trail stats has a Scorecard: how each model, agent and vendor does on your own tickets, verified first time, rework and cost per verified ticket, with small samples marked too few',
       'Settings → Model matching suggests a tier per ticket type when one model clearly does better on your repo, with the numbers; nothing changes until you take it',
       'Copy the scorecard as Markdown to share it with your team',
-    ],
-  },
-  {
-    version: '0.36.0',
-    date: '2026-11-15',
-    items: [
-      "Proof reports are signed with your machine's key: commit the key file Teamtrail writes in .teamtrail/proof-keys, and anyone can check a report with `teamtrail proof verify`",
-      "A GitHub Action, Verified by Teamtrail, checks every proof on a pull request and can be made a required check, so a PR without a valid proof can't merge",
-      'The ticket inspector shows the proof, with Copy for PR and a link to the comment once it is posted',
     ],
   },
   ...MID_RELEASES,
