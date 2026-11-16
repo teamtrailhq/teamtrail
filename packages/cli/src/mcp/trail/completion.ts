@@ -12,6 +12,7 @@ import {
   checksWaitReason,
   levelFor,
   readAttempts,
+  readLease,
   readRunLock,
   readVerdicts,
   recoverInterrupted,
@@ -110,13 +111,16 @@ export async function submitVerified(
     reason: sub.summary,
     journal: ctx.journal,
   });
+  // the files the agent declared at its claim are its scope: read from the lease before it goes
+  const touches = readLease(ctx.root, snap.map.id, t.id)?.touches;
   ctx.leases.drop(snap.map.id, t.id);
   ctx.sessions.running()?.log(`${t.key} submitted · checks: ${info.checks.join(', ') || 'none'}`, 'step');
+  const scoped = touches?.length ? { ...sub, touches } : sub;
   const run = track(
     ctx,
     snap.map.id,
     t.id,
-    await verify(ctx.verifyEnv(), { mapId: snap.map.id, ticket: t, info, sub }),
+    await verify(ctx.verifyEnv(), { mapId: snap.map.id, ticket: t, info, sub: scoped }),
   );
   return awaitRun(ctx, run, wait.seconds, wait.ctl);
 }

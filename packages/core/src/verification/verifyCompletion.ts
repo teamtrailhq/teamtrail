@@ -70,6 +70,8 @@ export interface Submission {
   origin?: string;
   /** The repo-relative files the agent said it changed. */
   declaredPaths?: string[];
+  /** The path globs the agent declared at its claim (`touches`), read from its lease before it's dropped. */
+  touches?: string[];
 }
 
 /** One ticket's completion to verify: its level, and what the agent submitted. */
@@ -137,6 +139,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
     ...(sub.remote ? { remote: true } : {}),
     ...(sub.remote && env.checkRunner ? { runner: env.checkRunner.name } : {}),
     ...(sub.declaredPaths ? { declaredPaths: sub.declaredPaths } : {}),
+    ...(sub.touches?.length ? { touches: sub.touches } : {}),
   };
   const id = nextAttemptId(env.root, mapId, t.id);
   const lock = acquireRunLock(env.root, { ...base, id });
@@ -187,6 +190,7 @@ async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; conf
     ticket: t,
     config: run.config,
     noCodeReason: sub.noCodeReason,
+    touches: sub.touches,
   });
   const { outcome, criteria } = await gradeAttempt({
     root: env.root,

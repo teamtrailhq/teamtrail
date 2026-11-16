@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { noChangesFlag } from '../evidence/noChangesFlag';
+import { scopeFlag } from '../evidence/scopeFlag';
 import type { GitEvidence } from '../model/evidence';
 import type { TicketType } from '../model/types';
 import type { CheckResult, VerificationConfig } from '../model/verification';
@@ -28,6 +29,7 @@ export function readRunnerReport(o: {
   configHash?: string;
   ticketType: TicketType;
   noCodeReason?: string;
+  touches?: string[];
 }): { checks: CheckResult[]; git: GitEvidence } | { error: string } {
   const got: unknown[] = Array.isArray(o.report.checks) ? o.report.checks : [];
   const checks: CheckResult[] = [];
@@ -49,8 +51,9 @@ export function readRunnerReport(o: {
       del: Number.isInteger(c.del) ? (c.del as number) : null,
     }));
   const sum = (k: 'add' | 'del') => changed.reduce((s, c) => s + (c[k] ?? 0), 0);
+  const scope = scopeFlag({ changed, touches: o.touches, scope: o.config.scope });
   const flags = changed.length
-    ? []
+    ? [...(scope ? [scope] : [])]
     : [noChangesFlag({ noChanges: o.config.noChanges, ticketType: o.ticketType, noCodeReason: o.noCodeReason })];
   const git: GitEvidence = {
     v: 1,

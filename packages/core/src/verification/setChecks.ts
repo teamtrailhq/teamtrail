@@ -1,13 +1,10 @@
-import { lstatSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { checkArgv, checkNotice } from '../guides/checkArgv';
-import { journalFile } from '../history/journalFile';
-import { TRUST_JOURNAL } from '../model/lifecycle';
 import { OperationError } from '../planning/operations/operationError';
-import { approveChecksHere, checksApproval } from './checksApproval';
-import { parseVerificationConfig } from './config';
+import { checksApproval } from './checksApproval';
 import { VERIFICATION_FILE } from './configFile';
 import { readRawConfig } from './rawConfig';
+import { writeApprovedConfig } from './writeApprovedConfig';
 
 /** One check as the person set it: a name and its argv (never a shell line). */
 export interface CheckInput {
@@ -60,24 +57,7 @@ export function setChecks(o: { root: string; checks: CheckInput[]; base: string;
   // A check that keeps its name keeps its other settings (a timeout, a folder).
   const checks = Object.fromEntries(o.checks.map((c) => [c.name, { ...(kept[c.name] ?? {}), run: c.run }]));
   const text = `${JSON.stringify({ ...raw, v: 1, checks, run: o.checks.map((c) => c.name) }, null, 2)}\n`;
-  const { errors } = parseVerificationConfig(text);
-  if (errors.length) throw new OperationError(`${VERIFICATION_FILE} would be invalid: ${errors.join('; ')}`);
-  if (lstatSync(file, { throwIfNoEntry: false })?.isSymbolicLink())
-    throw new OperationError(`${VERIFICATION_FILE} is a link; replace it by hand`);
-  const tmp = `${file}.${process.pid}.tmp`;
-  writeFileSync(tmp, text, { flag: 'wx' });
-  renameSync(tmp, file);
-  const approval = approveChecksHere(o.root, o.by, text);
-  journalFile(o.root).append({
-    v: 1,
-    kind: 'trust',
-    at: Date.now(),
-    mapId: TRUST_JOURNAL,
-    action: 'approved',
-    subject: `check commands, set in the Lookout: ${o.checks.map((c) => c.name).join(', ') || 'none'}`,
-    detail: approval.hash,
-    actor: o.by,
-    actorKind: 'trail lead',
-  });
+  const subject = `check commands, set in the Lookout: ${o.checks.map((c) => c.name).join(', ') || 'none'}`;
+  const approval = writeApprovedConfig({ root: o.root, text, by: o.by, subject });
   return approval;
 }

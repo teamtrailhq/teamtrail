@@ -54,6 +54,23 @@ function gitLines(p: Proof): string[] {
   return [
     '',
     `**Changes:** ${short(g.base)} → ${short(g.head)} on ${md(g.branch ?? 'detached HEAD', 80)}, ${g.files} files (+${g.add} −${g.del})${flags}`,
+    ...scopeLines(g.scope),
+  ];
+}
+
+const SCOPE_SHOWN = 10;
+const path = (s: string) => md(s, 120);
+
+/** What changed outside the files the agent declared: the code a reviewer reads first, since nothing asked for it. */
+function scopeLines(s?: { declared: string[]; outside: string[] }): string[] {
+  if (!s) return [];
+  const declared = s.declared.slice(0, SCOPE_SHOWN).map(path).join(', ');
+  if (!s.outside.length) return ['', `**Scope:** every changed file is inside the declared ${declared}.`];
+  const more = s.outside.length > SCOPE_SHOWN ? `, and ${s.outside.length - SCOPE_SHOWN} more` : '';
+  const files = s.outside.slice(0, SCOPE_SHOWN).map(path).join(', ');
+  return [
+    '',
+    `**Scope:** ${s.outside.length} changed file${s.outside.length === 1 ? '' : 's'} outside the declared ${declared}: ${files}${more}.`,
   ];
 }
 

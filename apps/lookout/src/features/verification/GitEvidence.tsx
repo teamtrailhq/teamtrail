@@ -9,6 +9,7 @@ export function GitEvidence({ attempt }: { attempt: VerificationAttempt }) {
   const g = attempt.git;
   if (!g) return null;
   const { files, add, del } = g.stats;
+  const outside = new Set(g.flags.find((f) => f.kind === 'outside-scope')?.files ?? []);
   return (
     <div className="vf-git">
       <MetaLine
@@ -37,6 +38,7 @@ export function GitEvidence({ attempt }: { attempt: VerificationAttempt }) {
                 <span className="dim">
                   {c.untracked ? 'new' : `+${count(c.add)} −${count(c.del)}`}
                   {c.dirtyAtClaim ? ' · dirty at claim' : ''}
+                  {outside.has(c.path) ? ' · outside the declared files' : ''}
                 </span>
               </li>
             ))}

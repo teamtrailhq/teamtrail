@@ -7,6 +7,7 @@ export const submissionOf = (a: VerificationAttempt): Submission => ({
   sessionId: a.sessionId,
   origin: a.origin,
   declaredPaths: a.declaredPaths,
+  touches: a.touches,
   resolution: a.resolution,
   summary: a.summary,
   rationale: a.rationale,

@@ -28,6 +28,11 @@ export interface VerificationConfig {
   maxAttempts: number;
   totalTimeoutSec: number;
   noChanges: { allow: TicketType[]; else: 'flag' | 'fail' | 'human' };
+  /**
+   * Changed files outside the ones the agent declared at its claim (`touches`): `flag` shows them to the reviewer,
+   * `fail` sends the work back for rework, `human` has a person decide (evidence/scopeFlag.ts).
+   */
+  scope: 'flag' | 'fail' | 'human';
   stale: 'reverify' | 'flag';
   github: { enabled: 'auto' | 'off'; requiredChecks: string[]; pollSec: number };
 }
@@ -86,6 +91,8 @@ export interface VerificationAttempt {
    * here verified them; for a local one the git evidence says what actually changed.
    */
   declaredPaths?: string[];
+  /** The path globs the agent declared at its claim (`touches`): its scope, compared with what changed. */
+  touches?: string[];
   checks: CheckResult[];
   result: AttemptResult;
   /** Why the result is `error` or `interrupted`. */

@@ -30,6 +30,9 @@ export function reviewBody(t: Ticket, a: VerificationAttempt) {
     `**Checks:** ${a.checks.map(checkLine).join(', ') || 'none configured'}`,
     ...criteriaLines(a),
     ...(a.criteria?.claimed?.length ? ['', 'Check the criteria marked ? yourself: nothing here verified them.'] : []),
+    ...(g?.flags.some((f) => f.kind === 'outside-scope')
+      ? ['', 'Start with the files changed outside the declared scope: is each one needed for what the ticket asks?']
+      : []),
     '',
     `Read the change${range ? ` (\`git diff ${range}\`)` : ''} against what ${t.key} asks, run what you need, then call \`submit_review\` with PASS, FAIL (findings the author can act on) or NEEDS_HUMAN. You cannot review a ticket you worked on.`,
   ].join('\n');

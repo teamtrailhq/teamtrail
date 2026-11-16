@@ -86,6 +86,7 @@ export async function runnerGraded(
     configHash: run.config.hash,
     ticketType: job.ticket.type,
     noCodeReason: job.sub.noCodeReason,
+    touches: job.sub.touches,
   });
   if ('error' in read) return { checks: [], result: 'error', note: read.error };
   const outcome = gateOutcome(read.git) ?? outcomeOf(read.checks, asked.length);

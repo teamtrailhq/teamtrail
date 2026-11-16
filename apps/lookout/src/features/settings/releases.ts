@@ -21,6 +21,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.52.0',
+    date: '2026-11-16',
+    items: [
+      'Scope check: files an agent changed beyond the ones it said it would are listed first for whoever reviews',
+      'Choose in Settings → Verification whether they are only shown, sent back for rework, or left for you to decide',
+      'Proofs on pull requests say whether every change stayed inside the declared files',
+    ],
+  },
+  {
     version: '0.51.0',
     date: '2026-11-16',
     items: [
