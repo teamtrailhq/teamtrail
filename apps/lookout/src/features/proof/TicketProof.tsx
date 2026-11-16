@@ -2,6 +2,7 @@ import { BRAND, webUrl, type Ticket } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button, MetaLine, Pill } from '../../components/ui';
 import { MergeOnApprove } from './MergeOnApprove';
+import { proofParts } from './proofParts';
 import { useTicketProof } from './useTicketProof';
 
 /**
@@ -38,17 +39,7 @@ export function TicketProof(props: { mapId: string; ticket: Ticket }) {
           ))}
         </ul>
       )}
-      <MetaLine
-        className="t-meta"
-        parts={[
-          proof.checks.length > 0 &&
-            `${proof.checks.filter((c) => c.passed).length}/${proof.checks.length} checks passed`,
-          proof.criteria.lines.length > 0 &&
-            `${proof.criteria.verified} criteria verified, ${proof.criteria.claimed} claimed`,
-          proof.reviews.length > 0 && `${proof.reviews.length} review${proof.reviews.length > 1 ? 's' : ''}`,
-          { text: proof.digest.slice(0, 19), code: true },
-        ]}
-      />
+      <MetaLine className="t-meta" parts={proofParts(proof)} />
       {done && <MergeOnApprove mapId={props.mapId} ticketId={props.ticket.id} verified={verified} />}
       {comment && (
         <a className="t-meta" href={comment} target="_blank" rel="noreferrer">

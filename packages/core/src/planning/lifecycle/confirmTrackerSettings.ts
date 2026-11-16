@@ -1,6 +1,7 @@
 import type { TrackerAdapter } from '../../adapters/adapter';
 import { settingsFromKey, type BodySettings } from '../../adapters/remote/bodySettings';
 import { reportsSettings } from '../../adapters/remote/settingsLedger';
+import { trailGuidesByType } from '../../guides/trailGuidesByType';
 import { VERIFICATION_LEVELS, type MapMetaPatch, type TicketMetaPatch } from '../../model/lifecycle';
 import type { MapDoc, Ticket } from '../../model/types';
 import { DEFAULT_CONFIG } from '../../verification/config';
@@ -16,18 +17,36 @@ const rank = (v: BodySettings['verification']) => (v ? VERIFICATION_LEVELS.index
 const stricterLevel = (a: BodySettings['verification'], b: BodySettings['verification']) =>
   rank(a) >= rank(b) ? a : b;
 const union = (a: string[] = [], b: string[] = []) => [...new Set([...a, ...b])];
+const both = (a: string[] = [], b: string[] = []) => a.filter((x) => b.includes(x));
+const orNull = (ids: string[]) => (ids.length ? ids : null);
+
+/** Per type, every guide either the found mapping or the one in force gives it: more guides is stricter. */
+function joinedGuides(found: BodySettings, map: MapDoc) {
+  const theirs = trailGuidesByType({ guidesByType: found.guidesByType, guides: found.guides }).byType;
+  const ours = trailGuidesByType(map).byType;
+  const types = Object.keys(ours);
+  return Object.fromEntries(types.map((type) => [type, union(ours[type], theirs[type])]));
+}
 
 /** The ticket's patch: its own settings, as found or the stricter of found and in force (with the trail's level). */
 function ticketPatch(o: { found: BodySettings; t: Ticket; map: MapDoc; root: string; choice: SettingsChoice }) {
   const { found, t } = o;
   if (o.choice === 'as-is')
-    return { verification: found.verification ?? null, checks: found.checks ?? null, guide: found.guide ?? null };
+    return {
+      verification: found.verification ?? null,
+      checks: found.checks ?? null,
+      guide: found.guide ?? null,
+      guidesAdded: found.guidesAdded ?? null,
+      guidesRemoved: found.guidesRemoved ?? null,
+    };
   const now = verificationFor(readVerificationConfig(o.root).config, o.map, t);
   const level = stricterLevel(found.verification, now.level);
   return {
     verification: level ?? null,
     checks: union(now.checks, found.checks),
     guide: found.guide ?? t.guide ?? null,
+    guidesAdded: orNull(union(t.guidesAdded, found.guidesAdded)),
+    guidesRemoved: orNull(both(t.guidesRemoved, found.guidesRemoved)),
   };
 }
 
@@ -38,6 +57,7 @@ function mapPatch(o: { found: BodySettings; map: MapDoc; root: string; choice: S
     return {
       verification: found.verification ?? null,
       guides: found.guides ?? null,
+      guidesByType: found.guidesByType ?? null,
       modelMatching: found.modelMatching ?? null,
     };
   const fallback = map.verification ?? (readVerificationConfig(o.root).config ?? DEFAULT_CONFIG).default;
@@ -46,6 +66,8 @@ function mapPatch(o: { found: BodySettings; map: MapDoc; root: string; choice: S
   return {
     verification: stricterLevel(found.verification, fallback) ?? null,
     guides: guides.length ? guides : null,
+    // either side's mapping with no team: the joined guides are the trail's own from now on
+    guidesByType: found.guidesByType || map.guidesByType ? joinedGuides(found, map) : null,
     // per type, the stronger of the tier found and the default (tierOfTicket.ts), kept as the trail's own
     modelMatching: matching
       ? {

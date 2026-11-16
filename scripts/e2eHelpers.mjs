@@ -100,3 +100,41 @@ export async function approveSkipInLookout({ started, page, url, project }) {
   if (!r.ok()) throw new Error(`approve refused: ${r.status()} ${await r.text()}`);
   return started;
 }
+
+const COMPLETIONS = ['close_ticket', 'report_completion', 'submit_review'];
+
+/**
+ * A scripted agent that does what its guides ask: wraps a tool `call` so it remembers the guides each ticket came
+ * with (claim_ticket, next_ticket, add_ticket, and guidesChanged from report_progress), and a completion that passes
+ * no `checklist` answers every item of every one. A step that tests the checklist itself passes `checklist` (even
+ * `[]`) and gets what it passed.
+ */
+export function answeringChecklists(call) {
+  const byTicket = new Map();
+  let working;
+  const keep = (t) => {
+    if (!t?.key) return;
+    byTicket.set(t.key.replace(/^#/, ''), t.guides ?? []);
+  };
+  return async (name, args = {}) => {
+    const ref = String(args.ticket ?? working ?? '').replace(/^#/, '');
+    const guides = byTicket.get(ref) ?? [];
+    const answers = guides.flatMap((g) => g.checklist.map((item) => ({ guide: g.id, item, done: true })));
+    const filled =
+      COMPLETIONS.includes(name) && args.checklist === undefined && answers.length
+        ? { ...args, checklist: answers }
+        : args;
+    const r = await call(name, filled);
+    if (name === 'claim_ticket') {
+      keep(r?.claimed);
+      working = r?.claimed?.key?.replace(/^#/, '');
+    }
+    if (name === 'next_ticket' || name === 'add_ticket') keep(r?.ticket);
+    const changed = r?.guidesChanged;
+    if (changed && working) {
+      const kept = (byTicket.get(working) ?? []).filter((g) => !(changed.removed ?? []).includes(g.id));
+      byTicket.set(working, [...kept, ...(changed.added ?? [])]);
+    }
+    return r;
+  };
+}

@@ -25,7 +25,7 @@ import {
 } from './closeEvidence';
 import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
-import { checkedAnswers, keepAnswers } from './guides';
+import { checkedAnswers, keepAnswers } from './guideChecklists';
 import { humanAnswerFor, release, spend, type HumanAnswer } from './humanAnswer';
 import { assertOwnClaim } from './ownClaim';
 import { withReview } from './parallel';
@@ -145,11 +145,8 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
     repoRoot: pathRoots(ctx),
   });
   assertCriteria(ctx.root, snap, t, info.level);
-  await keepAnswers(ctx, {
-    snap,
-    ticket: t,
-    checked: checkedAnswers(ctx, { snap, ticket: t, given: input.checklist }),
-  });
+  const checked = checkedAnswers(ctx, { snap, ticket: t, given: input.checklist });
+  await keepAnswers(ctx, { snap, ticket: t, checked });
   // Spent before the resolving writes (comment, close, decision): one failing part way can't free it again.
   spend(c.human, `the close of ${t.key}`);
   let unverified: { warning?: string } = {};
@@ -173,6 +170,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
       remote: ctx.remote,
       origin: ctx.origin,
       declaredPaths: declared,
+      ...(checked?.attempt.length ? { guides: checked.attempt } : {}),
     };
     const r = await submitVerified(
       ctx,

@@ -20,8 +20,8 @@ import { removeGuide } from '../src/guides/removeGuide';
 import { effectiveChecks, resolveGuide } from '../src/guides/resolveGuide';
 import { journalFile } from '../src/history/journalFile';
 import { GUIDES_JOURNAL } from '../src/model/lifecycle';
-import { setTicketGuide } from '../src/planning/lifecycle/setTicketGuide';
-import { setTrailTeam } from '../src/planning/lifecycle/setTrailTeam';
+import { setTicketGuides } from '../src/planning/lifecycle/setTicketGuides';
+import { setTrailGuides } from '../src/planning/lifecycle/setTrailGuides';
 import { chartMap } from '../src/planning/operations/chart';
 import { readVerificationConfig } from '../src/verification/configFile';
 import { runChecks } from '../src/verification/runChecks';
@@ -175,10 +175,10 @@ test('a guide only adds checks: it never lowers the level or removes one, and it
     verification: 'checks+review',
     tickets: [{ ref: 'a', title: 'Build', type: 'execute', body: '' }],
   });
-  await setTicketGuide(adapter, { mapId: map.id, ticketId: tickets[0].id }, 'a11y', 'trail lead');
+  await setTicketGuides(adapter, { mapId: map.id, ticketId: tickets[0].id }, { kind: 'add', id: 'a11y' }, 'trail lead');
   const snap = await adapter.loadMap(map.id);
   const t = snap.tickets[0];
-  assert.equal(t.guide, 'a11y');
+  assert.deepEqual(t.guidesAdded, ['a11y']);
   const { info, config } = levelFor(root, snap, t);
   assert.equal(info.level, 'checks+review', 'the level is the trail’s');
   assert.deepEqual(info.checks, ['test', 'a11y'], 'the guide adds its check after the configured ones');
@@ -225,7 +225,7 @@ test('removing a guide drops its file and pin; a built-in comes back, and built-
   assert.throws(() => removeGuide({ root, id: 'qa' }), /built in/);
 });
 
-test('agents may only give a guide to a ticket they just added, and a team to a trail without one', async () => {
+test('agents may only add one guide to a ticket they just added, and never change a trail’s guides', async () => {
   const root = tmpRoot();
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(adapter, {
@@ -234,14 +234,18 @@ test('agents may only give a guide to a ticket they just added, and a team to a 
     tickets: [{ ref: 'a', title: 'Build', type: 'task', body: '' }],
   });
   const target = { mapId: map.id, ticketId: tickets[0].id };
-  await setTicketGuide(adapter, target, 'qa', 'agent');
-  await assert.rejects(setTicketGuide(adapter, target, 'docs', 'agent'), /only the trail lead/);
-  await setTicketGuide(adapter, target, 'docs', 'trail lead');
-  await setTrailTeam(adapter, map.id, ['qa', 'reviewer'], 'agent');
-  await assert.rejects(setTrailTeam(adapter, map.id, ['qa'], 'agent'), /only the trail lead/);
+  await assert.rejects(setTicketGuides(adapter, target, { kind: 'remove', id: 'qa' }, 'agent'), /only the trail lead/);
+  await setTicketGuides(adapter, target, { kind: 'add', id: 'docs' }, 'agent');
+  await assert.rejects(
+    setTicketGuides(adapter, target, { kind: 'add', id: 'architect' }, 'agent'),
+    /only the trail lead/,
+  );
+  await setTicketGuides(adapter, target, { kind: 'remove', id: 'security' }, 'trail lead');
+  await assert.rejects(setTrailGuides(adapter, map.id, { task: ['qa'] }, 'agent'), /only the trail lead/);
   const snap = await adapter.loadMap(map.id);
-  assert.equal(snap.tickets[0].guide, 'docs');
-  assert.deepEqual(snap.map.guides, ['qa', 'reviewer']);
+  assert.deepEqual(snap.tickets[0].guidesAdded, ['docs']);
+  assert.deepEqual(snap.tickets[0].guidesRemoved, ['security']);
+  assert.equal(snap.map.guidesByType, undefined, 'the trail keeps the defaults');
 });
 
 test('the checklist needs an answer per item, by text or number; done:false is still an answer', () => {

@@ -54,6 +54,11 @@ export interface TicketLease {
   decisions: string[];
   /** Path globs the agent said it will change (claim_ticket `touches`). */
   touches?: string[];
+  /**
+   * The guides the agent was given for this ticket (at its claim, or since at a progress report), so a guide the
+   * trail lead adds or removes mid-work can be told to it once. Missing on leases from before guides came by type.
+   */
+  guides?: string[];
   /** The worktree prepared for this claim, when there is one. */
   workspace?: { path: string; branch: string; base: string };
   /** Set once the ticket went back to the queue; the file is then a tombstone. */

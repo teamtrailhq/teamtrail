@@ -13,6 +13,8 @@ export interface ScorecardTicket {
   findings: { info: number; warn: number; error: number };
   /** First claim to done, when both are known. */
   leadMs?: number;
+  /** The guides of its latest attempt; missing on attempts from before guides came by type. */
+  guides?: string[];
 }
 
 /** A session's model and spend, as its session record has them. */
@@ -22,11 +24,12 @@ export interface ScorecardSession {
   costUsd?: number;
 }
 
-/** One group of tickets: a ticket type and model, a model, an agent or a vendor. */
+/** One group of tickets: a ticket type and model, a model, an agent, a vendor or a guide. */
 export interface ScorecardRow {
   key: string;
   type?: string;
   model?: string;
+  guide?: string;
   /** Tickets with at least one completion, credited to whoever made the first. */
   tickets: number;
   verified: number;
@@ -52,4 +55,6 @@ export interface Scorecard {
   byModel: ScorecardRow[];
   byAgent: ScorecardRow[];
   byVendor: ScorecardRow[];
+  /** One row per guide the work was done under; a ticket with several guides counts in each. */
+  byGuide: ScorecardRow[];
 }

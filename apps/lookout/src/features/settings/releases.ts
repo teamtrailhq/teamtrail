@@ -21,6 +21,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.56.0',
+    date: '2026-11-17',
+    items: [
+      'Guides come with the ticket type: the architect on research, junctions and prototypes, QA and security on tasks, the reviewer on reviews. Change them per trail in Settings → Guides by type, your own guides included',
+      'A ticket can take several guides: add or remove one for that ticket alone in the inspector',
+      'A guide you add while an agent works reaches it at its next report, and its checklist counts at completion',
+    ],
+  },
+  {
     version: '0.55.2',
     date: '2026-11-16',
     items: ['Teamtrail Cloud: the agents menu says which model your agents are working on'],

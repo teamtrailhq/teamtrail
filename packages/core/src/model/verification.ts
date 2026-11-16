@@ -1,6 +1,6 @@
 import type { CriteriaResult } from '../criteria/criteria';
 import type { GitEvidence } from './evidence';
-import type { ChecklistAnswer } from './guide';
+import type { AttemptGuide, ChecklistAnswer, GuideAnswers } from './guide';
 import type { VerificationLevel } from './lifecycle';
 import type { TicketType } from './types';
 
@@ -93,6 +93,8 @@ export interface VerificationAttempt {
   declaredPaths?: string[];
   /** The path globs the agent declared at its claim (`touches`): its scope, compared with what changed. */
   touches?: string[];
+  /** The guides the ticket took on at completion. Missing on attempts from before guides came by type. */
+  guides?: AttemptGuide[];
   checks: CheckResult[];
   result: AttemptResult;
   /** Why the result is `error` or `interrupted`. */
@@ -121,8 +123,10 @@ export interface VerificationVerdict {
   summary: string;
   findings: { path?: string; line?: number; severity: 'info' | 'warn' | 'error'; text: string }[];
   at: number;
-  /** The guide the reviewer acted in, when the review ticket had one. */
+  /** The guides the reviewer acted in, each with its checklist answers, when the review ticket had any. */
+  guides?: GuideAnswers[];
+  /** Verdicts from before guides came by type: the one guide the reviewer acted in. */
   guide?: { id: string; version: string };
-  /** The reviewer's answers to that guide's checklist. */
+  /** Verdicts from before guides came by type: the reviewer's answers to that guide's checklist. */
   checklist?: ChecklistAnswer[];
 }

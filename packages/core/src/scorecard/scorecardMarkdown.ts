@@ -22,7 +22,7 @@ function table(rows: ScorecardRow[], first: string) {
   ];
 }
 
-/** The scorecard as Markdown, to share with the team: by ticket type and model, then by vendor. */
+/** The scorecard as Markdown, to share with the team: by ticket type and model, by vendor, then by guide. */
 export function scorecardMarkdown(s: Scorecard, title = 'Agent scorecard'): string {
   return [
     `## ${plain(title)}`,
@@ -32,5 +32,6 @@ export function scorecardMarkdown(s: Scorecard, title = 'Agent scorecard'): stri
     ...table(s.byTypeAndModel, 'Ticket type · model'),
     '',
     ...table(s.byVendor, 'Vendor'),
+    ...(s.byGuide?.length ? ['', ...table(s.byGuide, 'Guide')] : []),
   ].join('\n');
 }

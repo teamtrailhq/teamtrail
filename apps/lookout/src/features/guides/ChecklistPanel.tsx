@@ -3,22 +3,28 @@ import { hhmm } from '../../lib';
 import { ChecklistAnswers } from './ChecklistAnswers';
 import { useChecklist } from './useChecklist';
 
-/** The latest checklist answers the agent gave when it completed the ticket in its guide. */
+/** The latest checklist answers the agent gave when it completed the ticket, one list per guide. */
 export function ChecklistPanel(props: { mapId: string; ticketId: string }) {
   const rec = useChecklist(props.mapId, props.ticketId);
   if (!rec) return null;
-  const open = rec.answers.filter((a) => !a.done).length;
   return (
-    <div className="checklist-panel">
-      <MetaLine
-        parts={[
-          `${rec.guide.id} ${rec.guide.version} checklist`,
-          rec.by,
-          hhmm(rec.at),
-          open ? `${open} not done` : 'all done',
-        ]}
-      />
-      <ChecklistAnswers answers={rec.answers} />
-    </div>
+    <>
+      {rec.guides.map((g) => {
+        const open = g.answers.filter((a) => !a.done).length;
+        return (
+          <div key={g.guide.id} className="checklist-panel">
+            <MetaLine
+              parts={[
+                `${g.guide.id} ${g.guide.version} checklist`,
+                rec.by,
+                hhmm(rec.at),
+                open ? `${open} not done` : 'all done',
+              ]}
+            />
+            <ChecklistAnswers answers={g.answers} />
+          </div>
+        );
+      })}
+    </>
   );
 }

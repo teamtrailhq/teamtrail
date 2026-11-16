@@ -33,7 +33,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Claim a ticket',
       description:
-        'Assign a ticket to you (default: the next ready one) and start working it. Fails if another agent got it first. When the ticket has a guide, the result has `guide` (instructions and a checklist): take on the role it describes.',
+        'Assign a ticket to you (default: the next ready one) and start working it. Fails if another agent got it first. When the ticket has guides, the result has `claimed.guides` (each with instructions, a checklist and required checks): take on the roles they describe, and answer every checklist at completion.',
     },
     {
       trail,

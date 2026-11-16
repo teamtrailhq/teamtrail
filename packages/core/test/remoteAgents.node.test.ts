@@ -340,7 +340,7 @@ test('another device on the network reads, answers and approves, but changes not
     ['POST', '/guides/catalog/add'],
     // which guide a ticket or a trail's team uses brings that guide's checks: trust, not steering
     ['POST', '/guides/ticket'],
-    ['POST', '/guides/team'],
+    ['POST', '/guides/trail'],
     // the raw file route: anything but a trail's map or tickets, and their trust fields, is this machine's
     ['PUT', '/file?path=trail/notes.md'],
     // ... and a new trail or ticket: the phone moves existing work along, it doesn't add any

@@ -1,12 +1,15 @@
 import type { TrackerAdapter } from '../adapters/adapter';
 import { readAgentDocs } from '../agents/agentDocs';
 import { journalFile } from '../history/journalFile';
+import type { AttemptGuide } from '../model/guide';
 import type { ScorecardSession, ScorecardTicket } from '../model/scorecard';
 import type { MapSnapshot, Ticket } from '../model/types';
 import { readAttempts, readVerdicts } from '../verification/evidenceStore';
 
 /** Session records kept for the scorecard: every one on disk, however old. */
 const ALL = { recentMs: Number.MAX_SAFE_INTEGER, limit: Number.MAX_SAFE_INTEGER };
+
+const guidesOf = (guides?: AttemptGuide[]) => (guides ? { guides: guides.map((g) => g.id) } : {});
 
 function ticketOf(root: string, snap: MapSnapshot, t: Ticket, claims: Map<string, number>): ScorecardTicket {
   const attempts = readAttempts(root, snap.map.id, t.id);
@@ -22,6 +25,7 @@ function ticketOf(root: string, snap: MapSnapshot, t: Ticket, claims: Map<string
     attempts: attempts.map((a) => ({ agent: a.agent, sessionId: a.sessionId, result: a.result })),
     findings,
     leadMs: done && claimedAt && t.closedAt && t.closedAt >= claimedAt ? t.closedAt - claimedAt : undefined,
+    ...guidesOf(attempts.at(-1)?.guides),
   };
 }
 

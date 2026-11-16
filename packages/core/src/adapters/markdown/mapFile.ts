@@ -3,6 +3,7 @@ import { arr, iso, parseFront, str, time, writeFront } from '../../model/frontma
 import { levelOf } from '../../model/lifecycle';
 import { parseMapBody, serializeMapBody } from '../../model/mapBody';
 import { DEFAULT_MAP_MODE, type MapDoc } from '../../model/types';
+import { readGuidesByTypeFront, writeGuidesByTypeFront } from './guidesByTypeFront';
 import { readModelMatchingFront, writeModelMatchingFront } from './modelMatchingFront';
 
 /** `<map-slug>/map.md`: frontmatter + canonical map body. */
@@ -10,6 +11,7 @@ export function parseMapFile(mapId: string, md: string): MapDoc {
   const { front, body } = parseFront(md);
   const verification = levelOf(str(front.verification));
   const modelMatching = readModelMatchingFront(front);
+  const guidesByType = readGuidesByTypeFront(front);
   return {
     id: mapId,
     key: str(front.key) || mapId,
@@ -18,6 +20,7 @@ export function parseMapFile(mapId: string, md: string): MapDoc {
       str(front.mode) === 'plan-only' || arr(front.labels).includes(PLAN_ONLY_LABEL) ? 'plan-only' : DEFAULT_MAP_MODE,
     ...(verification ? { verification } : {}),
     ...(arr(front.guides).length ? { guides: arr(front.guides) } : {}),
+    ...(guidesByType ? { guidesByType } : {}),
     ...(modelMatching ? { modelMatching } : {}),
     ...(str(front.archived) === 'true' ? { archived: true as const } : {}),
     sections: parseMapBody(body),
@@ -34,6 +37,7 @@ export function serializeMapFile(m: MapDoc) {
       mode: m.mode,
       ...(m.verification ? { verification: m.verification } : {}),
       ...(m.guides?.length ? { guides: m.guides } : {}),
+      ...writeGuidesByTypeFront(m.guidesByType),
       ...writeModelMatchingFront(m.modelMatching),
       ...(m.archived ? { archived: 'true' } : {}),
       labels: [MAP_LABEL, ...(m.mode === 'plan-only' ? [PLAN_ONLY_LABEL] : [])],

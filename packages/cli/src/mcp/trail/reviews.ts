@@ -8,7 +8,7 @@ import {
 } from '@teamtrail/core';
 import { readAgentDocs, readAttempts, reviewConflict, submitReview } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
-import { checkedAnswers, keepAnswers } from './guides';
+import { checkedAnswers, keepAnswers } from './guideChecklists';
 import { assertOwnClaim } from './ownClaim';
 
 /** Why this agent may not take review ticket `r`, or undefined. */
@@ -86,7 +86,7 @@ export async function submitReviewTool(
     verdict: input.verdict,
     summary: input.summary,
     findings: input.findings,
-    ...(checked ? { guide: checked.guide, checklist: checked.answers } : {}),
+    ...(checked?.guides.length ? { guides: checked.guides } : {}),
   });
   await keepAnswers(ctx, { snap, ticket: review, checked });
   ctx.leases.drop(snap.map.id, review.id);

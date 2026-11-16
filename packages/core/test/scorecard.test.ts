@@ -107,3 +107,23 @@ describe('scorecardMarkdown', () => {
     expect(md).toContain('| task · evilxhttp//e (too few) | 1 | 100% |');
   });
 });
+
+describe('the scorecard by guide', () => {
+  it('counts a ticket under every guide of its latest attempt, and leaves out tickets from before guides', () => {
+    const withGuides = (t: ScorecardTicket, guides: string[]) => ({ ...t, guides });
+    const card = agentScorecard({
+      tickets: [
+        withGuides(ticket('task', 'claude-01:s1', ['pass']), ['qa', 'security']),
+        withGuides(ticket('task', 'claude-01:s1', ['fail', 'pass']), ['qa']),
+        ticket('task', 'claude-01:s1', ['pass']),
+      ],
+      sessions: [],
+      minSample: 2,
+    });
+    expect(card.byGuide.map((r) => [r.key, r.guide, r.tickets, r.verifiedFirstTime])).toEqual([
+      ['qa', 'qa', 2, 1],
+      ['security', 'security', 1, 1],
+    ]);
+    expect(scorecardMarkdown(card)).toContain('| Guide | Tickets');
+  });
+});

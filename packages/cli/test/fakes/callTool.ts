@@ -1,5 +1,5 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { MarkdownAdapter, type TrackerAdapter } from '@teamtrail/core';
+import { MarkdownAdapter, setTrailGuides, type TrackerAdapter } from '@teamtrail/core';
 import { approveReroute, journalFile, readReroute, rerouteHash } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 
@@ -11,23 +11,29 @@ type Result = { isError?: boolean; content: { text: string }[] };
  * `discovery: false` charts the trail with discovery and asks them (trail/settings.ts). Most tests chart without
  * discovery only to get to what they test, so here the trail lead approves that request in the Lookout at once,
  * as they would. Tests about the request itself make the call without this helper.
+ *
+ * Every trail takes the default guides by ticket type, whose checklists a completion must answer. Tests about
+ * something else chart a trail only to get to what they test, so here the trail lead turns its guides off at once
+ * (Settings → Trail); `guides: 'defaults'` keeps them, for the tests about guides.
  */
 export async function callTool(
   client: Client,
   root: string,
   name: string,
   args: Args,
-  o: { timeout?: number; adapter?: TrackerAdapter } = {},
+  o: { timeout?: number; adapter?: TrackerAdapter; guides?: 'defaults' } = {},
 ) {
   const r = (await client.callTool(
     { name, arguments: args },
     undefined,
     o.timeout ? { timeout: o.timeout } : undefined,
   )) as Result;
-  if (name !== 'start_trail' || args.discovery !== false || r.isError) return r;
+  if (name !== 'start_trail' || r.isError) return r;
   const out = JSON.parse(r.content[0].text) as { trail: { id: string }; skipDiscovery?: { request: string } };
-  if (out.skipDiscovery)
-    await approveInLookout({ root, mapId: out.trail.id, id: out.skipDiscovery.request, adapter: o.adapter });
+  const adapter = o.adapter ?? new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
+  if (o.guides !== 'defaults') await setTrailGuides(adapter, out.trail.id, {}, 'trail lead');
+  if (args.discovery === false && out.skipDiscovery)
+    await approveInLookout({ root, mapId: out.trail.id, id: out.skipDiscovery.request, adapter });
   return r;
 }
 

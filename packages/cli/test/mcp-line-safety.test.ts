@@ -12,6 +12,7 @@ import { TrailAgent } from '../src/mcp/agent';
 import { assertLineSafe, stringFields, toolShapes } from '../src/mcp/lineSafety';
 import { createMcpServer } from '../src/mcp/server';
 import { approveInLookout, callTool } from './fakes/callTool';
+import { guidesOff } from './fakes/guidesOff';
 import { approveAllHere } from './fakes/trailLead';
 
 /*
@@ -42,6 +43,7 @@ const BREAKS = [
 /** A trail started without discovery, the trail lead approving that in the Lookout (fakes/callTool.ts). */
 async function startSkipped(input: Omit<Parameters<TrailAgent['startTrail']>[0], 'discovery'>) {
   const started = await agent.startTrail({ ...input, discovery: false });
+  await guidesOff(root, started.trail.id);
   await approveInLookout({
     root,
     mapId: started.trail.id,

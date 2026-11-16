@@ -193,3 +193,21 @@ describe('proofMarkdown', () => {
     expect(text).toContain("The checks didn't pass \\(fail\\).");
   });
 });
+
+describe('the guides a proof lists', () => {
+  it('come from the attempt: each guide, how the ticket got it and its checklist; older attempts list none', () => {
+    const old = proofOf([attempt()]);
+    expect(old.guides).toBeUndefined();
+    expect(proofMarkdown(old)).not.toContain('**Guides:**');
+    const guides = [
+      { id: 'qa', version: '1.0.0', via: 'type' as const, checklist: { answered: 5, items: 5 } },
+      { id: 'a11y', via: 'ticket' as const, disabled: true as const },
+    ];
+    const p = proofOf([attempt({ guides })]);
+    expect(p.guides).toEqual(guides);
+    expect(p.digest).not.toBe(old.digest);
+    const md = proofMarkdown(p);
+    expect(md).toContain('- qa 1.0.0, by ticket type, checklist 5 of 5');
+    expect(md).toContain('- a11y, added to the ticket, not usable, its approved checks ran');
+  });
+});

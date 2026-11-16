@@ -120,23 +120,48 @@ export interface InstalledGuide {
 
 /** An agent's answer to one checklist item. Presence is checked, not truth. */
 export interface ChecklistAnswer {
+  /** The guide whose checklist it answers; needed only when the item alone can't tell (checklist.ts). */
+  guide?: string;
   item: string;
   done: boolean;
   note?: string;
 }
 
-/** The latest checklist answers for a ticket. */
-export interface ChecklistRecord {
-  v: 1;
-  mapId: string;
-  ticketId: string;
+/** One guide's checklist answers. */
+export interface GuideAnswers {
   guide: { id: string; version: string };
   answers: ChecklistAnswer[];
+}
+
+/**
+ * The latest checklist answers for a ticket, one entry per guide with a checklist. Files from before guides came by
+ * type (`v: 1`, one guide) are read as one entry (checklistStore.ts).
+ */
+export interface ChecklistRecord {
+  v: 2;
+  mapId: string;
+  ticketId: string;
+  guides: GuideAnswers[];
   by: string;
   at: number;
 }
 
-/** What a claim tells the agent about the guide it takes on. */
+/**
+ * A guide a completion was made under, as its attempt records it: the proof and the scorecard read guides from here,
+ * never from what the ticket says now.
+ */
+export interface AttemptGuide {
+  id: string;
+  /** The version the agent worked in; missing for a guide that couldn't be used. */
+  version?: string;
+  via: 'type' | 'ticket';
+  /** The guide couldn't be used (unapproved, changed, missing): its last approved checks still ran. */
+  disabled?: true;
+  /** Checklist items answered, out of `items`, when the guide has a checklist. */
+  checklist?: { answered: number; items: number };
+}
+
+/** What a claim tells the agent about a guide it takes on. */
 export interface GuidePayload {
   id: string;
   name: string;
@@ -145,6 +170,10 @@ export interface GuidePayload {
   checklist: string[];
   requiredChecks: string[];
   preferredAgent?: string;
+  /** `type`: the trail gives it to every ticket of this type; `ticket`: added to this ticket. */
+  via?: 'type' | 'ticket';
+  /** The instructions didn't fit in what a claim carries (guidesPayload.ts); the checklist and checks still apply. */
+  instructionsOmitted?: true;
 }
 
 /**

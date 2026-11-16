@@ -41,7 +41,7 @@ export function dropLease(root: string, mapId: string, ticketId: string) {
 export function renewLease(
   root: string,
   holder: { mapId: string; ticketId: string; agent: string },
-  patch: { note?: string; decision?: string; sessionId?: string } = {},
+  patch: { note?: string; decision?: string; sessionId?: string; guides?: string[] } = {},
   now = Date.now(),
 ): TicketLease | undefined {
   const { mapId, ticketId, agent } = holder;
@@ -55,6 +55,7 @@ export function renewLease(
     expiresAt: now + l.ttlMs,
     notes: patch.note && l.notes.at(-1) !== patch.note ? [...l.notes, patch.note].slice(-MAX_NOTES) : l.notes,
     decisions: patch.decision ? [...l.decisions, patch.decision] : l.decisions,
+    ...(patch.guides ? { guides: patch.guides } : {}),
   };
   writeLease(root, next);
   return next;

@@ -1,4 +1,4 @@
-/* Guides: the chip on tickets, the inspector section, Settings → Guides and Team, and the catalog dialog. */
+/* Guides: the chip on tickets, the inspector section, Settings → Guides and Guides by type, and the catalog dialog. */
 .guide-chip {
   display: inline-flex;
   align-items: center;
@@ -22,17 +22,98 @@
 .node .card-chip.guide.off text {
   fill: var(--amber);
 }
-.ticket-guide .guide-head {
+.ticket-guides .guide-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-8);
 }
-.guide-picker {
+/* In the inspector: one chip per guide, its source in a quiet hint, and the trail lead's remove or put back. */
+.ticket-guide-chip {
   display: inline-flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-6);
+  padding: 2px var(--sp-4) 2px var(--sp-10);
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  font-size: var(--fs-body);
+  color: var(--text);
+  white-space: nowrap;
+}
+.ticket-guide-chip .how {
+  color: var(--dim);
+}
+.ticket-guide-chip.removed {
+  border-style: dashed;
+}
+.ticket-guide-chip.removed .name {
+  color: var(--dim);
+  text-decoration: line-through;
+}
+.ticket-guide-chip.off {
+  border-style: dashed;
+  border-color: var(--edge-attention);
+}
+.ticket-guide-chip .chip-act {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--dim);
+  font-size: var(--fs-body);
+  cursor: pointer;
+}
+.ticket-guide-chip .chip-act:hover,
+.ticket-guide-chip .chip-act:focus-visible {
+  background: var(--panel2);
+  color: var(--text-hi);
+}
+.add-ticket-guide {
+  font-size: var(--fs-body);
+}
+/* Settings → Guides by type: one row per ticket type, a toggle per guide. */
+.type-guides-head {
+  margin-bottom: var(--sp-6);
+}
+.type-guides {
+  display: grid;
+  gap: var(--sp-8);
+}
+.type-guides-row {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-4) var(--sp-8);
+  font-size: var(--fs-body);
+}
+.type-guides-row .type-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+}
+.type-guides-row .type-toggles .btn {
+  font-size: var(--fs-body);
+}
+.type-guides-row .type-toggles .btn.off {
+  border-style: dashed;
+  border-color: var(--edge-attention);
+}
+.type-guides-row .type-hint {
+  grid-column: 2;
+}
+.type-guides-row .type-hint:empty {
+  display: none;
+}
+@media (max-width: 640px) {
+  .type-guides-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .type-guides-row .type-hint {
+    grid-column: 1;
+  }
 }
 .guide-warning {
   margin: 0;
@@ -90,7 +171,6 @@
   overflow-wrap: anywhere;
 }
 .guides-foot,
-.team-guides,
 .catalog-filters {
   display: flex;
   flex-wrap: wrap;

@@ -3,8 +3,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { BUILTIN_GUIDES } from '@teamtrail/core';
-import { approveGuide, installGuide, readChecklist, readVerdicts, guideSha } from '@teamtrail/core/agents';
+import { BUILTIN_GUIDES, MarkdownAdapter, setTicketGuides, setTrailGuides } from '@teamtrail/core';
+import {
+  approveGuide,
+  installGuide,
+  readAttempts,
+  readChecklist,
+  readVerdicts,
+  guideSha,
+} from '@teamtrail/core/agents';
+import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { guideText } from '../../core/test/fakes/guideCatalog';
 import { TrailAgent } from '../src/mcp/agent';
@@ -24,32 +32,49 @@ async function connect(agentName = 'claude-01') {
   await Promise.all([server.connect(a), client.connect(b)]);
   open.push({ close: () => agent.close() }, client);
   return async <T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}) => {
-    const r = (await callTool(client, root, name, args)) as { isError?: boolean; content: { text: string }[] };
+    const r = (await callTool(client, root, name, args, { guides: 'defaults' })) as {
+      isError?: boolean;
+      content: { text: string }[];
+    };
     if (r.isError) throw new Error(r.content[0].text);
     return JSON.parse(r.content[0].text) as T;
   };
 }
 type Call = Awaited<ReturnType<typeof connect>>;
 
-type Guide = { id: string; version: string; instructions: string; checklist: string[]; requiredChecks: string[] };
+type Guide = {
+  id: string;
+  version: string;
+  via: 'type' | 'ticket';
+  instructions: string;
+  checklist: string[];
+  requiredChecks: string[];
+};
 type Info = {
   key: string;
   id: string;
-  guide?: Guide;
-  guideWarning?: string;
+  guides?: Guide[];
+  guideWarnings?: string[];
   verification?: { checks: { name: string }[] };
 };
-const QA_ITEMS = BUILTIN_GUIDES.qa.match(/^ {2}- (.+)$/gm)!.map((l) => l.slice(4));
-const allDone = (items: string[]) => items.map((item) => ({ item, done: true }));
+const itemsOf = (id: string) => BUILTIN_GUIDES[id].match(/^ {2}- (.+)$/gm)!.map((l) => l.slice(4));
+/** An answer to every item of every guide's checklist, each naming its guide. */
+const answerAll = (guides: { id: string; checklist: string[] }[] = []) =>
+  guides.flatMap((g) => g.checklist.map((item) => ({ guide: g.id, item, done: true })));
+const adapter = () => new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
 
 async function trail(call: Call, extra: Record<string, unknown> = {}) {
-  return call<{ trail: { id: string; team?: string[] }; tickets: { ref: string; key: string }[] }>('start_trail', {
+  return call<{
+    trail: { id: string; guidesByType: Record<string, string[]> };
+    tickets: { ref: string; key: string }[];
+    teamNote?: string;
+  }>('start_trail', {
     discovery: false,
     title: 'Search',
     destination: 'Readers find a release',
     tickets: [
-      { ref: 'ui', title: 'Search box', type: 'task', guide: 'qa' },
-      { ref: 'plain', title: 'Plain work', type: 'research' },
+      { ref: 'ui', title: 'Search box', type: 'task' },
+      { ref: 'plain', title: 'Look around', type: 'research' },
     ],
     ...extra,
   });
@@ -81,56 +106,84 @@ afterEach(async () => {
 });
 
 describe('guides over MCP', () => {
-  it('claims return the guide; the guides filter picks only matching tickets; list_guides shows what can be used', async () => {
+  it('tickets take their type’s default guides; the guides filter picks by them; team is no longer taken', async () => {
     const call = await connect();
-    const m = await trail(call, { team: ['qa', 'reviewer'] });
-    expect(m.trail.team).toEqual(['qa', 'reviewer']);
+    const m = await trail(call, { team: ['qa'] });
+    expect(m.teamNote).toMatch(/team was not taken/);
+    expect(m.trail.guidesByType).toMatchObject({ task: ['qa', 'security'], research: ['architect'] });
+    expect(m.trail.guidesByType.review).toEqual(['reviewer']);
     const guides = await call<{ guides: { id: string; builtIn: boolean }[] }>('list_guides');
     expect(guides.guides.map((r) => r.id)).toEqual(['architect', 'docs', 'qa', 'reviewer', 'security']);
 
-    const next = await call<{ ticket: Info }>('next_ticket', { guides: ['docs'] });
-    expect(next.ticket).toBeNull();
+    expect((await call<{ ticket: Info }>('next_ticket', { guides: ['docs'] })).ticket).toBeNull();
     const qaNext = await call<{ ticket: Info }>('next_ticket', { guides: ['qa'] });
     expect(qaNext.ticket.key).toBe(m.tickets[0].key);
-    await expect(call('claim_ticket', { ticket: m.tickets[1].key, guides: ['qa'] })).rejects.toThrow(/no guide/);
+    await expect(call('claim_ticket', { ticket: m.tickets[1].key, guides: ['qa'] })).rejects.toThrow(
+      /has guides architect, none of qa/,
+    );
     const claimed = await call<{ claimed: Info }>('claim_ticket', { guides: ['qa'] });
-    expect(claimed.claimed.guide).toMatchObject({ id: 'qa', version: '1.0.0', checklist: QA_ITEMS });
-    expect(claimed.claimed.guide!.instructions).toMatch(/You own quality/);
-    const plain = await call<{ ticket: Info }>('next_ticket');
-    expect(plain.ticket.guide).toBeUndefined();
+    expect(claimed.claimed.guides!.map((g) => [g.id, g.via])).toEqual([
+      ['qa', 'type'],
+      ['security', 'type'],
+    ]);
+    expect(claimed.claimed.guides![0]).toMatchObject({ version: '1.0.0', checklist: itemsOf('qa') });
+    expect(claimed.claimed.guides![0].instructions).toMatch(/You own quality/);
+    const research = await call<{ ticket: Info }>('next_ticket');
+    expect(research.ticket.guides!.map((g) => g.id)).toEqual(['architect']);
   });
 
-  it('only installed guides can be given, and only to ticket types they handle', async () => {
+  it('an agent may add one guide to a ticket it adds; only installed ones, made for its type', async () => {
     const call = await connect();
-    await expect(trail(call, { team: ['pirate'] })).rejects.toThrow(/Unknown guide "pirate". Usable guides: architect/);
+    await expect(trail(call, { tickets: [{ ref: 'x', title: 'X', type: 'task', guide: 'pirate' }] })).rejects.toThrow(
+      /Unknown guide "pirate". Usable guides: architect/,
+    );
     const m = await trail(call);
     await expect(call('add_ticket', { title: 'X', type: 'junction', guide: 'qa' })).rejects.toThrow(/not junction/);
     const added = await call<{ ticket: Info }>('add_ticket', { title: 'Docs', type: 'task', guide: 'docs' });
-    expect(added.ticket.guide?.id).toBe('docs');
+    expect(added.ticket.guides!.map((g) => `${g.id}:${g.via}`)).toEqual(['qa:type', 'security:type', 'docs:ticket']);
     expect(m.tickets).toHaveLength(3); // and discovery, ruled out (fakes/callTool.ts)
   });
 
-  it('completing a ticket with a guide needs an answer per checklist item, which is kept', async () => {
+  it('a completion answers every guide’s checklist, each checked on its own, and keeps them per guide', async () => {
     const call = await connect();
     const m = await trail(call);
-    await call('claim_ticket', { ticket: m.tickets[0].key });
-    await expect(call('close_ticket', { resolution: 'Built it' })).rejects.toThrow(/Missing: "Ran the full test suite/);
+    const claimed = await call<{ claimed: Info }>('claim_ticket', { ticket: m.tickets[0].key });
+    const guides = claimed.claimed.guides!;
+    await expect(call('close_ticket', { resolution: 'Built it' })).rejects.toThrow(
+      /QA guide \(qa\)[^]*Missing: "Ran the full test suite[^]*Security guide \(security\)/,
+    );
+    const onlyQa = answerAll(guides.slice(0, 1));
+    await expect(call('close_ticket', { resolution: 'Built it', checklist: onlyQa })).rejects.toThrow(
+      /Security guide \(security\) needs an answer/,
+    );
     await expect(
-      call('close_ticket', { resolution: 'Built it', checklist: [{ item: 'Something else', done: true }] }),
-    ).rejects.toThrow(/Not on the checklist: "Something else"/);
-    const answers = [...allDone(QA_ITEMS.slice(1)), { item: '1', done: false, note: 'no suite yet' }];
+      call('close_ticket', { resolution: 'Built it', checklist: [{ item: '1', done: true }] }),
+    ).rejects.toThrow(/Not on the checklist: "1"/);
+    const answers = [...answerAll(guides).slice(1), { guide: 'qa', item: '1', done: false, note: 'no suite yet' }];
     const done = await call<{ closed: string }>('close_ticket', { resolution: 'Built it', checklist: answers });
     expect(done.closed).toBe(m.tickets[0].key);
     const rec = readChecklist(root, m.trail.id, m.tickets[0].key.slice(1))!;
-    expect(rec.guide).toEqual({ id: 'qa', version: '1.0.0' });
-    expect(rec.answers[0]).toEqual({ item: QA_ITEMS[0], done: false, note: 'no suite yet' });
-    // A ticket without a guide closes without a checklist (claimed first: a close without verification needs it).
-    await call('claim_ticket', { ticket: m.tickets[1].key });
-    const free = await call('close_ticket', { ticket: m.tickets[1].key, resolution: 'Found it' });
-    expect(free).toMatchObject({ closed: m.tickets[1].key });
+    expect(rec.guides.map((g) => g.guide)).toEqual([
+      { id: 'qa', version: '1.0.0' },
+      { id: 'security', version: '1.0.0' },
+    ]);
+    expect(rec.guides[0].answers[0]).toEqual({ item: itemsOf('qa')[0], done: false, note: 'no suite yet' });
   });
 
-  it("a guide's required checks are added to the ticket's, and an unapproved one never runs", async () => {
+  it('an item text shared by no other guide needs no guide name; a ticket with guides off closes without one', async () => {
+    const call = await connect();
+    const m = await trail(call);
+    await setTrailGuides(adapter(), m.trail.id, { research: ['architect'] }, 'trail lead');
+    await call('claim_ticket', { ticket: m.tickets[1].key });
+    const plain = itemsOf('architect').map((item) => ({ item, done: true }));
+    expect(await call('close_ticket', { resolution: 'Found it', checklist: plain })).toMatchObject({
+      closed: m.tickets[1].key,
+    });
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    expect(await call('close_ticket', { resolution: 'Built it' })).toMatchObject({ closed: m.tickets[0].key });
+  });
+
+  it("guides' required checks are the union, and an unapproved one never runs", async () => {
     writeConfig('checks');
     const a11y = guideText({
       id: 'a11y',
@@ -139,25 +192,73 @@ describe('guides over MCP', () => {
     });
     installGuide({ root, text: a11y, source: 'local', by: 'trail lead' });
     const call = await connect();
-    const m = await trail(call, {
-      tickets: [{ ref: 'ui', title: 'Search box', type: 'task', guide: 'a11y' }],
-    });
+    const m = await trail(call, { tickets: [{ ref: 'ui', title: 'Search box', type: 'task', guide: 'a11y' }] });
     const claimed = await call<{ claimed: Info }>('claim_ticket', { ticket: m.tickets[0].key });
     expect(claimed.claimed.verification!.checks.map((c) => c.name)).toEqual(['ok', 'a11y']);
-    const r = await call<{ status: string; note?: string }>('report_completion', { resolution: 'Done' });
+    const checklist = answerAll(claimed.claimed.guides);
+    const r = await call<{ status: string; note?: string }>('report_completion', { resolution: 'Done', checklist });
     expect(r.status).toBe('blocked');
     expect(r.note).toMatch(/unknown check a11y/);
+    const [attempt] = readAttempts(root, m.trail.id, m.tickets[0].key.slice(1));
+    expect(attempt.guides!.map((g) => `${g.id}:${g.via}`)).toEqual(['qa:type', 'security:type', 'a11y:ticket']);
+    expect(attempt.guides![0].checklist).toEqual({ answered: 5, items: 5 });
+  });
+
+  it('a guide added mid-work is told at the next report, and applies at completion', async () => {
+    const call = await connect();
+    const m = await trail(call);
+    const ticket = m.tickets[0];
+    const claimed = await call<{ claimed: Info }>('claim_ticket', { ticket: ticket.key });
+    expect((await call<Record<string, unknown>>('report_progress', { message: 'started' })).guidesChanged).toBe(
+      undefined,
+    );
+    const target = { mapId: m.trail.id, ticketId: ticket.key.slice(1) };
+    await setTicketGuides(adapter(), target, { kind: 'add', id: 'docs' }, 'trail lead');
+    await setTicketGuides(adapter(), target, { kind: 'remove', id: 'security' }, 'trail lead');
+    const before = answerAll(claimed.claimed.guides).filter((a) => a.guide === 'qa');
+    await expect(call('close_ticket', { resolution: 'Built it', checklist: before })).rejects.toThrow(
+      /Docs guide \(docs\) needs an answer[^]*Guide Docs \(docs 1.0.0\) was added to this ticket since you claimed it/,
+    );
+    const told = await call<{ guidesChanged: { added: Guide[]; removed: string[] } }>('report_progress', {
+      message: 'still going',
+    });
+    expect(told.guidesChanged.added.map((g) => g.id)).toEqual(['docs']);
+    expect(told.guidesChanged.added[0].checklist).toEqual(itemsOf('docs'));
+    expect(told.guidesChanged.removed).toEqual(['security']);
+    const again = await call<Record<string, unknown>>('report_progress', { message: 'once only' });
+    expect(again.guidesChanged).toBeUndefined();
+    const checklist = [...before, ...answerAll(told.guidesChanged.added)];
+    expect(await call('close_ticket', { resolution: 'Built it', checklist })).toMatchObject({ closed: ticket.key });
+  });
+
+  it('a ticket with the single guide of older versions keeps it, as an added guide', async () => {
+    const call = await connect();
+    const m = await trail(call);
+    const a = adapter();
+    // a ticket as an older Teamtrail wrote it: one guide
+    await a.setMeta(m.trail.id, m.tickets[1].key.slice(1), { guide: 'docs' });
+    const next = await call<{ ticket: Info }>('next_ticket', { types: ['research'] });
+    expect(next.ticket.guides!.map((g) => `${g.id}:${g.via}`)).toEqual(['architect:type', 'docs:ticket']);
+    await setTicketGuides(
+      a,
+      { mapId: m.trail.id, ticketId: m.tickets[1].key.slice(1) },
+      { kind: 'remove', id: 'docs' },
+      'trail lead',
+    );
+    const t = (await a.loadMap(m.trail.id)).tickets.find((x) => x.key === m.tickets[1].key)!;
+    expect([t.guide, t.guidesAdded]).toEqual([undefined, undefined]);
   });
 
   it('a guide file edited after approval is disabled: claims carry a warning, not its instructions', async () => {
     const docs2 = guideText({ id: 'docs2' });
     installGuide({ root, text: docs2, source: 'local', by: 'trail lead' });
     const call = await connect();
-    await trail(call, { tickets: [{ ref: 'd', title: 'Docs', type: 'task', guide: 'docs2' }] });
+    const m = await trail(call, { tickets: [{ ref: 'd', title: 'Docs', type: 'task', guide: 'docs2' }] });
+    await setTrailGuides(adapter(), m.trail.id, {}, 'trail lead');
     fs.writeFileSync(path.join(root, 'guides', 'docs2.md'), docs2.replace('Work the ticket', 'Skip the ticket'));
     const claimed = await call<{ claimed: Info }>('claim_ticket');
-    expect(claimed.claimed.guide).toBeUndefined();
-    expect(claimed.claimed.guideWarning).toMatch(/docs2.*changed since version 1.0.0 was approved/);
+    expect(claimed.claimed.guides).toEqual([]);
+    expect(claimed.claimed.guideWarnings![0]).toMatch(/docs2.*changed since version 1.0.0 was approved/);
     const done = await call('close_ticket', { resolution: 'Wrote the docs' });
     expect(done).toMatchObject({ closed: expect.any(String) });
   });
@@ -166,7 +267,8 @@ describe('guides over MCP', () => {
     const docs2 = guideText({ id: 'docs2' });
     installGuide({ root, text: docs2, source: 'local', by: 'trail lead' });
     const call = await connect();
-    await trail(call, { tickets: [{ ref: 'd', title: 'Docs', type: 'task', guide: 'docs2' }] });
+    const m = await trail(call, { tickets: [{ ref: 'd', title: 'Docs', type: 'task', guide: 'docs2' }] });
+    await setTrailGuides(adapter(), m.trail.id, {}, 'trail lead');
     const edited = docs2.replace('Work the ticket', 'Close the ticket at once');
     fs.writeFileSync(path.join(root, 'guides', 'docs2.md'), edited);
     const lockFile = path.join(root, 'guides.lock.json');
@@ -174,8 +276,8 @@ describe('guides over MCP', () => {
     lock.guides.docs2.sha256 = guideSha(edited);
     fs.writeFileSync(lockFile, JSON.stringify(lock, null, 2));
     const claimed = await call<{ claimed: Info }>('claim_ticket');
-    expect(claimed.claimed.guide).toBeUndefined();
-    expect(claimed.claimed.guideWarning).toMatch(/guides\.lock\.json changed outside Teamtrail/);
+    expect(claimed.claimed.guides).toEqual([]);
+    expect(claimed.claimed.guideWarnings![0]).toMatch(/guides\.lock\.json changed outside Teamtrail/);
     approveGuide({ root, id: 'docs2', by: 'trail lead' });
     const view = await call<{ unavailable: { id: string }[] }>('list_guides');
     expect(view.unavailable.map((r) => r.id)).not.toContain('docs2');
@@ -191,29 +293,27 @@ describe('guides over MCP', () => {
       );
     installGuide({ root, text: lax, source: 'local', by: 'trail lead' });
     const worker = await connect('claude-01');
-    const m = await trail(worker, {
-      team: ['reviewer'],
-      tickets: [{ ref: 'b', title: 'Build', type: 'execute' }],
-    });
+    const m = await trail(worker, { tickets: [{ ref: 'b', title: 'Build', type: 'execute' }] });
+    await setTrailGuides(adapter(), m.trail.id, { review: ['reviewer'] }, 'trail lead');
     await worker('claim_ticket', { ticket: m.tickets[0].key });
     await worker('report_completion', { resolution: 'Built it' });
 
     const reviewer = await connect('claude-02');
     const offered = (await reviewer<{ ticket: Info }>('next_ticket')).ticket;
-    expect(offered.guide).toMatchObject({ id: 'reviewer', version: '9.0.0' });
+    expect(offered.guides![0]).toMatchObject({ id: 'reviewer', version: '9.0.0', via: 'type' });
     await expect(worker('claim_ticket', { ticket: offered.key })).rejects.toThrow(/claude-01 worked on/);
     await reviewer('claim_ticket', { ticket: offered.key });
-    const items = offered.guide!.checklist;
     await expect(reviewer('submit_review', { verdict: 'FAIL', summary: 'Broken' })).rejects.toThrow(/Missing/);
     const r = await reviewer('submit_review', {
       verdict: 'FAIL',
       summary: 'The page is empty',
       findings: [{ severity: 'error', text: 'No rows render' }],
-      checklist: allDone(items),
+      checklist: answerAll(offered.guides),
     });
     expect(r).toMatchObject({ verdict: 'V-1', phase: 'rework' });
     const [v] = readVerdicts(root, m.trail.id, m.tickets[0].key.slice(1));
-    expect(v).toMatchObject({ verdict: 'FAIL', guide: { id: 'reviewer', version: '9.0.0' } });
-    expect(v.checklist).toHaveLength(items.length);
+    expect(v.verdict).toBe('FAIL');
+    expect(v.guides![0].guide).toEqual({ id: 'reviewer', version: '9.0.0' });
+    expect(v.guides![0].answers).toHaveLength(offered.guides![0].checklist.length);
   });
 });

@@ -33,7 +33,8 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
       },
       title: 'Start a trail',
       description:
-        'Create a trail from a framed idea: destination (what done looks like), notes, decisions already made, open questions (not yet specified), out of scope, and the first tickets with blocking edges (by ref). Frame it first: ask the framing questions with ask_human (framing: true).',
+        "Create a trail from a framed idea: destination (what done looks like), notes, decisions already made, open questions (not yet specified), out of scope, and the first tickets with blocking edges (by ref). Frame it first: ask the framing questions with ask_human (framing: true). Tickets take their type's guides from the trail (the human's setting; the result's guidesByType), so leave a ticket's guide unset unless it needs one more.",
+      retired: ['team'],
     },
     {
       title: z.string().min(1).describe('Short trail title.'),
@@ -75,13 +76,6 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
         )
         .optional()
         .describe('What the plan relies on and could turn out wrong, e.g. "the v2 API supports batch writes".'),
-      team: z
-        .array(z.string())
-        .max(20)
-        .optional()
-        .describe(
-          "The trail's team: the installed guides (list_guides) its tickets use. With reviewer, review tickets get the reviewer guide.",
-        ),
       discovery: z
         .boolean()
         .optional()

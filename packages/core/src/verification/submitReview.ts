@@ -21,9 +21,8 @@ export interface ReviewSubmission extends Reviewer {
   verdict: VerdictKind;
   summary: string;
   findings?: VerificationVerdict['findings'];
-  /** The review ticket's guide and the reviewer's checklist answers, kept on the verdict. They change nothing else. */
-  guide?: VerificationVerdict['guide'];
-  checklist?: VerificationVerdict['checklist'];
+  /** The review ticket's guides and the reviewer's checklist answers, kept on the verdict. They change nothing else. */
+  guides?: VerificationVerdict['guides'];
 }
 
 export interface ReviewResult {
@@ -100,8 +99,7 @@ async function recordVerdict({ env, r, t, last, summary }: Reviewed & { r: Revie
     summary,
     findings: r.findings ?? [],
     at: Date.now(),
-    ...(r.guide ? { guide: r.guide } : {}),
-    ...(r.checklist?.length ? { checklist: r.checklist } : {}),
+    ...(r.guides?.length ? { guides: r.guides } : {}),
   });
   const findings = verdict.findings.map(findingLine);
   const heading = `**Review ${verdict.id} of ${last.id}: ${r.verdict}**`;

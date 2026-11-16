@@ -128,6 +128,7 @@ export function buildProof(input: ProofInput): Proof {
         decidedAt: d.decidedAt,
         superseded: Boolean(d.supersededBy),
       })),
+    ...(latest?.guides ? { guides: latest.guides } : {}),
   };
   return { ...body, digest: `sha256:${createHash('sha256').update(canonicalJson(body)).digest('hex')}` };
 }

@@ -10,7 +10,7 @@ export function registerGuideTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'List guides',
       description:
-        'The guides you can give tickets (add_ticket, start_trail): id, version, the ticket types each handles, checklist size and required checks. A claim on a ticket with a guide returns its instructions and checklist.',
+        "The installed guides: id, version, the ticket types each handles, checklist size and required checks. Tickets take their type's guides from the trail (the human's setting); a claim returns each guide's instructions and checklist.",
       readOnly: true,
     },
     {},

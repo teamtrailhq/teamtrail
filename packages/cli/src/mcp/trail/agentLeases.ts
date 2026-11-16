@@ -25,8 +25,8 @@ export class AgentLeases {
 
   private id = (mapId: string, ticketId: string) => `${mapId}/${ticketId}`;
 
-  hold(agent: string, mapId: string, t: Ticket, opts: { sessionId?: string; now?: number } = {}) {
-    const { sessionId, now = Date.now() } = opts;
+  hold(agent: string, mapId: string, t: Ticket, opts: { sessionId?: string; now?: number; guides?: string[] } = {}) {
+    const { sessionId, now = Date.now(), guides } = opts;
     const lease: TicketLease = {
       v: 1,
       mapId,
@@ -42,6 +42,7 @@ export class AgentLeases {
       expiresAt: now + this.ttlMs,
       notes: [],
       decisions: [],
+      ...(guides ? { guides } : {}),
     };
     writeLease(this.root, lease);
     this.held.set(this.id(mapId, t.id), { mapId, ticketId: t.id, key: t.key });

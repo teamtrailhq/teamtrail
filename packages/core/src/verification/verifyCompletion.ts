@@ -3,8 +3,9 @@ import type { TrackerAdapter } from '../adapters/adapter';
 import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
 import { listGuides } from '../guides/guideStore';
-import { effectiveChecks, resolveGuide } from '../guides/resolveGuide';
+import { checksOfGuides, resolveGuides } from '../guides/resolveGuides';
 import { BRAND } from '../model/brand';
+import type { AttemptGuide } from '../model/guide';
 import type { Journal, TicketPhase } from '../model/lifecycle';
 import type { MapSnapshot, Ticket } from '../model/types';
 import type { VerificationAttempt } from '../model/verification';
@@ -26,6 +27,7 @@ import { remoteGraded } from './remoteCompletion';
 import { requestReview } from './reviewRequest';
 import { acquireRunLock, releaseRunLock } from './runLock';
 import { runnerGraded } from './runnerGraded';
+import { submittedFields } from './submittedFields';
 
 /** The engine as an actor: comments and journal lines of the check runner. */
 export const CHECK_RUNNER = BRAND.slug;
@@ -72,6 +74,8 @@ export interface Submission {
   declaredPaths?: string[];
   /** The path globs the agent declared at its claim (`touches`), read from its lease before it's dropped. */
   touches?: string[];
+  /** The guides the ticket takes on now, kept on the attempt for its proof. */
+  guides?: AttemptGuide[];
 }
 
 /** One ticket's completion to verify: its level, and what the agent submitted. */
@@ -91,8 +95,9 @@ export interface Settled {
 }
 
 /**
- * The level a completion of `t` needs, with the config it was read from. A ticket's guide adds the checks it
- * requires (resolveGuide.ts); it never changes the level or drops a check.
+ * The level a completion of `t` needs, with the config it was read from. A ticket's guides add the checks they
+ * require, the union of them all (resolveGuides.ts); they never change the level or drop a check. A disabled guide
+ * keeps adding the checks of its last approved version.
  */
 export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: LevelInfo; config: ConfigRead } {
   // the approved config and the approved level: an edit to verification.json or to a trail's or ticket's level in
@@ -100,8 +105,9 @@ export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: Le
   const { config } = trustedChecks(root);
   const asked = verificationFor(config.config, snap.map, t);
   const info = withApprovedLevel(root, { config: config.config, map: snap.map, t, info: asked });
-  if (!t.guide) return { info, config };
-  return { info: { ...info, checks: effectiveChecks(info.checks, resolveGuide(listGuides(root), t)) }, config };
+  const guides = resolveGuides(listGuides(root), { map: snap.map, ticket: t });
+  if (!guides.length) return { info, config };
+  return { info: { ...info, checks: checksOfGuides(info.checks, guides) }, config };
 }
 
 /**
@@ -131,15 +137,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
     configHash: config.hash ?? 'none',
     submittedAt: Date.now(),
     resolution: sub.resolution,
-    ...(sub.summary ? { summary: sub.summary } : {}),
-    ...(sub.rationale ? { rationale: sub.rationale } : {}),
-    ...(sub.alternatives?.length ? { alternatives: sub.alternatives } : {}),
-    ...(sub.noCodeReason ? { noCodeReason: sub.noCodeReason } : {}),
-    ...(sub.pr ? { pr: sub.pr } : {}),
-    ...(sub.remote ? { remote: true } : {}),
-    ...(sub.remote && env.checkRunner ? { runner: env.checkRunner.name } : {}),
-    ...(sub.declaredPaths ? { declaredPaths: sub.declaredPaths } : {}),
-    ...(sub.touches?.length ? { touches: sub.touches } : {}),
+    ...submittedFields(sub, env.checkRunner?.name),
   };
   const id = nextAttemptId(env.root, mapId, t.id);
   const lock = acquireRunLock(env.root, { ...base, id });

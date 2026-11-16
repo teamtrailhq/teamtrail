@@ -18,21 +18,26 @@ export const guidesFilter = z
   .array(z.string())
   .max(20)
   .optional()
-  .describe('Only take tickets whose guide is one of these (e.g. ["qa"]). Tickets without a guide are left out.');
+  .describe('Only take tickets with one of these guides (e.g. ["qa"]). Tickets without a guide are left out.');
 export const guideId = z
   .string()
-  .describe('The guide an agent takes on when it claims the ticket (list_guides). Must be an installed guide.');
+  .describe(
+    "Rarely needed: one more guide for this ticket beyond the ones its type gets from the trail (list_guides). Must be an installed guide made for the ticket's type.",
+  );
 export const checklistAnswers = z
   .array(
     z.object({
+      guide: z.string().optional().describe('The guide whose checklist this answers; needed with several guides.'),
       item: z.string().describe('The item text, or its number'),
       done: z.boolean(),
       note: z.string().optional(),
     }),
   )
-  .max(20)
+  .max(100)
   .optional()
-  .describe("Answers to the ticket guide's checklist: one per item. Required when the guide has a checklist.");
+  .describe(
+    "Answers to the checklists of the ticket's guides: one per item of every guide. Required when its guides have checklists.",
+  );
 export const riskPaths = z
   .array(z.string())
   .max(200)

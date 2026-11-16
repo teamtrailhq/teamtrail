@@ -60,7 +60,7 @@ export function registerWorkTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Report progress',
       description:
-        'Show progress live in the Lookout: a step of the session procedure (work: Load trail, Claim, Resolve, Record, Update plan; research: Claim, Investigate, Record), a log line, a chat message to the human. Token and cost usage is read from Claude Code and Codex session logs; pass inputTokens/outputTokens/costUsd only when your client has no such log and you actually know them (since your last report).',
+        'Show progress live in the Lookout: a step of the session procedure (work: Load trail, Claim, Resolve, Record, Update plan; research: Claim, Investigate, Record), a log line, a chat message to the human. Token and cost usage is read from Claude Code and Codex session logs; pass inputTokens/outputTokens/costUsd only when your client has no such log and you actually know them (since your last report). When the human changed the guides of the ticket you work, the result has guidesChanged: work in the added ones too.',
     },
     {
       message: z.string().optional().describe('Log line, or detail for the step.'),

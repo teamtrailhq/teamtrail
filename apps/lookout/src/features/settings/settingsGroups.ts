@@ -10,7 +10,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { id: 'mode', title: 'Trail mode' },
       { id: 'verification', title: 'Verification' },
       { id: 'models', title: 'Model matching' },
-      { id: 'team', title: 'Team' },
+      { id: 'trail-guides', title: 'Guides by type' },
     ],
   },
   {

@@ -1,7 +1,7 @@
 import { withArchived } from '../adapters/withArchived';
 import { isAssumptionStatus } from '../model/assumption';
 import { levelOf, TICKET_STATUSES, type TicketStatus } from '../model/lifecycle';
-import type { DecisionRecord, MapDoc, MapMode, ModelMatching, Ticket, TicketType } from '../model/types';
+import type { DecisionRecord, GuidesByType, MapDoc, MapMode, ModelMatching, Ticket, TicketType } from '../model/types';
 import { ASSUMPTION_PREFIX, type FieldValue, type Fields } from './stateFields';
 
 /*
@@ -33,6 +33,8 @@ const TICKET: Record<string, Setter<Ticket>> = {
   verification: (t, v) => ({ ...t, verification: levelOf(str(v)) }),
   checks: (t, v) => ({ ...t, checks: strs(v) }),
   guide: (t, v) => ({ ...t, guide: str(v) }),
+  guides_added: (t, v) => ({ ...t, guidesAdded: strs(v)?.length ? strs(v) : undefined }),
+  guides_removed: (t, v) => ({ ...t, guidesRemoved: strs(v)?.length ? strs(v) : undefined }),
 };
 
 /** Drops the keys that ended up undefined, so the value reads exactly like one parsed from a file. */
@@ -60,6 +62,7 @@ export function withMapFields(m: MapDoc, f: Fields): MapDoc {
   if (has(f, 'mode')) out.mode = (f.mode === 'plan-only' ? 'plan-only' : 'plan+execute') as MapMode;
   if (has(f, 'verification')) out.verification = levelOf(str(f.verification));
   if (has(f, 'guides')) out.guides = strs(f.guides)?.length ? strs(f.guides) : undefined;
+  if (has(f, 'guides_by_type')) out.guidesByType = parsed<GuidesByType>(f.guides_by_type);
   if (has(f, 'model_matching')) out.modelMatching = parsed<ModelMatching>(f.model_matching);
   if (has(f, 'archived')) out = withArchived(out, f.archived === true);
   out = withAssumptions(out, f);

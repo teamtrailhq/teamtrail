@@ -1,4 +1,4 @@
-import type { ModelMatching } from './types';
+import type { GuidesByType, ModelMatching } from './types';
 
 /**
  * Ticket lifecycle. The tracker stores open/closed, the assignee and, on top
@@ -72,8 +72,12 @@ export interface TicketMetaPatch {
   checks?: string[] | null;
   /** Set once, when Teamtrail creates a review ticket. */
   reviewOf?: string | null;
-  /** The ticket's guide; set at creation, or by the trail lead (`setTicketGuide`). */
+  /** The ticket's guide from before guides came by type; only ever cleared now (`setTicketGuides`). */
   guide?: string | null;
+  /** Guides added to this ticket beyond its type's (`setTicketGuides`). */
+  guidesAdded?: string[] | null;
+  /** Guides of its type this ticket goes without (`setTicketGuides`). */
+  guidesRemoved?: string[] | null;
   /**
    * Set by the trail lead's own settings actions only: on a remote tracker the settings this write carries count as
    * accepted on this machine (remote/settingsInForce.ts). Every other write leaves what was accepted alone.
@@ -85,8 +89,10 @@ export interface TicketMetaPatch {
 export interface MapMetaPatch {
   /** Trail lead only (`setVerification`). */
   verification?: VerificationLevel | null;
-  /** The trail's team of guide ids (`setTrailTeam`). */
+  /** The trail's team from before guides came by type; only ever cleared now (`setTrailGuides`). */
   guides?: string[] | null;
+  /** The guides each ticket type takes on (`setTrailGuides`). */
+  guidesByType?: GuidesByType | null;
   /** Trail lead only (`setModelMatching`). */
   modelMatching?: ModelMatching | null;
   /**
@@ -132,7 +138,16 @@ export interface RerouteEntry {
   changes?: number;
 }
 
-export type GuideAction = 'approved' | 'installed' | 'updated' | 'removed' | 'check-approved' | 'ticket-guide' | 'team';
+export type GuideAction =
+  | 'approved'
+  | 'installed'
+  | 'updated'
+  | 'removed'
+  | 'check-approved'
+  | 'ticket-guide'
+  | 'team'
+  | 'ticket-guides'
+  | 'trail-guides';
 
 /**
  * A trail lead's change to guides, in the same history files. Project-wide changes (install, approve, remove) go to

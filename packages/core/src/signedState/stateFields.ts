@@ -22,6 +22,8 @@ export const TICKET_KEYS = [
   'verification',
   'checks',
   'guide',
+  'guides_added',
+  'guides_removed',
 ] as const;
 
 /** A ticket's fields that say what happened to it; a ticket nobody signed has none of them set (unsignedTicket). */
@@ -29,9 +31,18 @@ export const PROGRESS_KEYS = ['state', 'close_reason', 'assignee', 'status', 're
 
 /**
  * Trail fields (`destination` is a hash of its text); each assumption's status is a field of its own, `assumption:S-<n>`.
- * `archived` is null on an active trail, so a record written before it existed still reads the same.
+ * `archived` is null on an active trail, and `guides_by_type` on one with the default guides, so a record written
+ * before either existed still reads the same; so are a ticket's `guides_added` and `guides_removed` when unset.
  */
-export const MAP_KEYS = ['mode', 'destination', 'verification', 'guides', 'model_matching', 'archived'] as const;
+export const MAP_KEYS = [
+  'mode',
+  'destination',
+  'verification',
+  'guides',
+  'guides_by_type',
+  'model_matching',
+  'archived',
+] as const;
 /** The hash of a trail's destination: what it is for is the human's, so rewriting it is a change, not a text edit. */
 export const destinationHash = (m: MapDoc) => contentHash(m.sections.destination ?? '');
 export const ASSUMPTION_PREFIX = 'assumption:';
@@ -73,6 +84,8 @@ export function ticketFields(t: Ticket): Fields {
     verification: opt(t.verification),
     checks: list(t.checks),
     guide: opt(t.guide),
+    guides_added: t.guidesAdded?.length ? [...t.guidesAdded] : null,
+    guides_removed: t.guidesRemoved?.length ? [...t.guidesRemoved] : null,
   };
 }
 
@@ -83,6 +96,7 @@ export function mapFields(m: MapDoc): Fields {
     destination: destinationHash(m),
     verification: opt(m.verification),
     guides: list(m.guides),
+    guides_by_type: m.guidesByType ? canon(m.guidesByType) : null,
     model_matching: m.modelMatching ? canon(m.modelMatching) : null,
     archived: m.archived ? true : null,
     ...Object.fromEntries(assumptions),

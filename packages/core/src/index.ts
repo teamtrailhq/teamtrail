@@ -153,6 +153,12 @@ export {
   type ResolvedGuide,
 } from './guides/resolveGuide';
 export { checkChecklist, checklistProblem, type ChecklistCheck } from './guides/checklist';
+export { checkGuideChecklists, type ChecklistsResult } from './guides/guideChecklists';
+export { DEFAULT_GUIDES_BY_TYPE } from './guides/defaultGuidesByType';
+export { trailGuidesByType, type GuidesByTypeSource } from './guides/trailGuidesByType';
+export { addedGuides, ticketGuideIds, type TicketGuideRef } from './guides/ticketGuideIds';
+export { checksOfGuides, resolveGuides, resolvedId, type ResolvedTicketGuide } from './guides/resolveGuides';
+export { guidesPayload, GUIDES_PAYLOAD_BYTES, type GuidesPayload } from './guides/guidesPayload';
 export { parseCatalogIndex, searchCatalog } from './guides/catalogIndex';
 export { guideProblem } from './guides/guideProblem';
 export type { Proof, ProofCheck, ProofDecision, ProofReview, ProofSignature, ProofStatus } from './model/proof';

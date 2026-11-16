@@ -60,17 +60,28 @@ async function agent(n) {
   };
   const log = (...a) => console.log(`agent ${n} ·`, ...a);
   /** Progress with usage, like a client that knows its tokens; cost at $3 / $15 per million in / out. */
-  const report = (args) =>
-    call('report_progress', {
+  /** The guides of the ticket being worked, kept up to date when the trail lead adds or removes one mid-work. */
+  let working;
+  const report = async (args) => {
+    const r = await call('report_progress', {
       ...args,
       ...(args.inputTokens ? { costUsd: (args.inputTokens * 3 + (args.outputTokens ?? 0) * 15) / 1e6 } : {}),
     });
+    const changed = r?.guidesChanged;
+    if (changed && working) {
+      const kept = (working.guides ?? []).filter((g) => !(changed.removed ?? []).includes(g.id));
+      working.guides = [...kept, ...(changed.added ?? [])];
+    }
+    return r;
+  };
   await call('resume_trail', { trail });
   let askedFyi = false;
   for (;;) {
-    /** A ticket with a guide needs an answer per checklist item; the scripted agent answers each one. */
-    const checklistOf = (t) =>
-      t.guide?.checklist.length ? { checklist: t.guide.checklist.map((item) => ({ item, done: true })) } : {};
+    /** A ticket's guides each need an answer per checklist item; the scripted agent answers every one. */
+    const checklistOf = (t) => {
+      const answers = (t.guides ?? []).flatMap((g) => g.checklist.map((item) => ({ guide: g.id, item, done: true })));
+      return answers.length ? { checklist: answers } : {};
+    };
     let claimed;
     try {
       claimed = (await call('claim_ticket', { trail })).claimed;
@@ -84,6 +95,7 @@ async function agent(n) {
           .catch(() => undefined);
       }
     }
+    working = claimed;
     if (!claimed) {
       log('nothing to claim; waiting');
       await pause(10_000);

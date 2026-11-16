@@ -115,7 +115,7 @@ test('catalog: list, preview without writing, add and pin, then approve its chec
   assert.deepEqual(readVerificationConfig(root).config?.checks.a11y.run, ['node_modules/.bin/pa11y-ci']);
 });
 
-test("a ticket's guide and a trail's team: only active guides that fit; journaled on the trail", async () => {
+test("a ticket's guides and a trail's guides by type: only active guides go on; journaled on the trail", async () => {
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const sections = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
   const { map, tickets } = await chartMap(adapter, {
@@ -123,20 +123,33 @@ test("a ticket's guide and a trail's team: only active guides that fit; journale
     sections,
     tickets: [{ ref: 'a', title: 'Decide', type: 'junction', body: '' }],
   });
-  const bad = await call<View>('POST', '/guides/ticket', { mapId: map.id, ticketId: tickets[0].id, guide: 'qa' });
+  const target = { mapId: map.id, ticketId: tickets[0].id };
+  const bad = await call<View>('POST', '/guides/ticket', { ...target, add: 'nope' });
   assert.equal(bad.status, 400);
-  assert.match(bad.json.error!, /not junction/);
-  const ok = await call('POST', '/guides/ticket', { mapId: map.id, ticketId: tickets[0].id, guide: 'architect' });
-  assert.equal(ok.status, 200);
-  const team = await call('POST', '/guides/team', { mapId: map.id, guides: ['architect', 'reviewer'] });
-  assert.equal(team.status, 200);
+  assert.match(bad.json.error!, /Unknown guide "nope"/);
+  const neither = await call<View>('POST', '/guides/ticket', target);
+  assert.equal(neither.status, 400);
+  assert.equal((await call('POST', '/guides/ticket', { ...target, add: 'qa' })).status, 200, 'any type may take it');
+  assert.equal((await call('POST', '/guides/ticket', { ...target, remove: 'architect' })).status, 200);
+  const wrongType = await call<View>('POST', '/guides/trail', { mapId: map.id, byType: { epic: ['qa'] } });
+  assert.equal(wrongType.status, 400);
+  const byType = { junction: ['architect', 'docs'], review: ['reviewer'] };
+  assert.equal((await call('POST', '/guides/trail', { mapId: map.id, byType })).status, 200);
   const snap = await adapter.loadMap(map.id);
-  assert.equal(snap.tickets[0].guide, 'architect');
-  assert.deepEqual(snap.map.guides, ['architect', 'reviewer']);
+  assert.deepEqual(snap.tickets[0].guidesAdded, ['qa']);
+  assert.deepEqual(snap.tickets[0].guidesRemoved, ['architect']);
+  assert.deepEqual(snap.map.guidesByType, byType);
+  assert.equal((await call('POST', '/guides/trail', { mapId: map.id, byType: null })).status, 200);
+  assert.equal((await adapter.loadMap(map.id)).map.guidesByType, undefined, 'back on the defaults');
   assert.deepEqual(
     journalFile(root)
       .readGuides(map.id)
-      .map((e) => e.action),
-    ['ticket-guide', 'team'],
+      .map((e) => [e.action, e.guide]),
+    [
+      ['ticket-guides', 'add qa'],
+      ['ticket-guides', 'remove architect'],
+      ['trail-guides', 'junction: architect, docs; review: reviewer'],
+      ['trail-guides', 'defaults'],
+    ],
   );
 });

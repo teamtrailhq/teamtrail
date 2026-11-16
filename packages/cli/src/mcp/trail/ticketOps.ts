@@ -5,7 +5,7 @@ import {
   OperationError,
   promoteToTicket,
   release,
-  setTicketGuide,
+  setTicketGuides,
   type MapSnapshot,
   type Ticket,
   type TicketType,
@@ -89,6 +89,10 @@ function addedLine(ctx: AgentContext, hitl?: boolean) {
   return `Added by ${ctx.sessions.running()?.info.agent ?? 'an agent'}${during}, ${who}.`;
 }
 
+/** An extra guide on a ticket the agent just added, beyond its type's on the trail (setTicketGuides.ts). */
+const addGuide = (ctx: AgentContext, target: { mapId: string; ticketId: string }, id: string) =>
+  setTicketGuides(ctx.adapter, target, { kind: 'add', id }, 'agent');
+
 export async function addTicket(
   ctx: AgentContext,
   input: {
@@ -133,7 +137,7 @@ export async function addTicket(
   // the type it was added as: its trail's level applies by it, whatever the file says before its first claim
   recordTypes(ctx.root, snap.map.id, [t]);
   await ctx.adapter.comment(snap.map.id, t.id, await ctx.agentId(), addedLine(ctx, attention(t) === 'hitl'));
-  if (input.guide) await setTicketGuide(ctx.adapter, { mapId: snap.map.id, ticketId: t.id }, input.guide, 'agent');
+  if (input.guide) await addGuide(ctx, { mapId: snap.map.id, ticketId: t.id }, input.guide);
   if (input.criteria?.length) saveCriteria(ctx.root, snap.map, t, input.criteria);
   const fresh = await ctx.load(snap.map.id);
   const created = fresh.tickets.find((x) => x.id === t.id)!;

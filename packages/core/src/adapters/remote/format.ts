@@ -37,27 +37,45 @@ export interface BodyMeta extends BodySettings {
   reviewOf?: string;
 }
 
-/** The trail issue body: its sections, plus a meta marker only when the trail has a verification level, model matching or a team. */
-export const mapBody = (m: Pick<MapDoc, 'sections' | 'verification' | 'modelMatching' | 'guides'>) =>
-  m.verification || m.modelMatching || m.guides?.length
+type TrailSettings = Pick<MapDoc, 'verification' | 'modelMatching' | 'guides' | 'guidesByType'>;
+type TicketGuides = 'guide' | 'guidesAdded' | 'guidesRemoved';
+
+/**
+ * The trail issue body: its sections, plus a meta marker only when the trail has a verification level, model
+ * matching, a team or guides by type of its own.
+ */
+export const mapBody = (m: Pick<MapDoc, 'sections'> & TrailSettings) =>
+  m.verification || m.modelMatching || m.guides?.length || m.guidesByType
     ? joinBody(serializeMapBody(m.sections), {
         verification: m.verification,
         modelMatching: m.modelMatching,
         guides: m.guides?.length ? m.guides : undefined,
+        guidesByType: m.guidesByType,
       })
     : serializeMapBody(m.sections);
 
 /** The settings a trail issue's marker holds. */
-export const mapSettings = (m: Pick<MapDoc, 'verification' | 'modelMatching' | 'guides'>): BodySettings =>
-  settingsOf({ verification: m.verification, modelMatching: m.modelMatching, guides: m.guides });
+export const mapSettings = (m: TrailSettings): BodySettings =>
+  settingsOf({
+    verification: m.verification,
+    modelMatching: m.modelMatching,
+    guides: m.guides,
+    guidesByType: m.guidesByType,
+  });
 
 /** The settings a ticket's marker holds. */
-export const ticketSettings = (t: Pick<Ticket, 'verification' | 'checks' | 'guide'>): BodySettings =>
-  settingsOf({ verification: t.verification, checks: t.checks, guide: t.guide });
+export const ticketSettings = (t: Pick<Ticket, 'verification' | 'checks' | TicketGuides>): BodySettings =>
+  settingsOf({
+    verification: t.verification,
+    checks: t.checks,
+    guide: t.guide,
+    guidesAdded: t.guidesAdded,
+    guidesRemoved: t.guidesRemoved,
+  });
 
 /** Everything Teamtrail keeps in a ticket's meta marker, so one write never drops another's field. */
 export const ticketMeta = (
-  t: Pick<Ticket, 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | 'guide'>,
+  t: Pick<Ticket, 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | TicketGuides>,
 ): BodyMeta => ({
   assignee: t.assignee,
   status: t.status,
@@ -65,6 +83,8 @@ export const ticketMeta = (
   checks: t.checks,
   reviewOf: t.reviewOf,
   guide: t.guide,
+  guidesAdded: t.guidesAdded?.length ? t.guidesAdded : undefined,
+  guidesRemoved: t.guidesRemoved?.length ? t.guidesRemoved : undefined,
 });
 
 /**
@@ -107,7 +127,7 @@ export function joinBody(text: string, meta: BodyMeta): string {
  * trail issue's text is the map body, which guards its own fields and carries real assumption markers.)
  */
 export const ticketBody = (
-  t: Pick<Ticket, 'body' | 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | 'guide'>,
+  t: Pick<Ticket, 'body' | 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | TicketGuides>,
 ) => joinBody(guardMarkers(t.body), ticketMeta(t));
 
 const stripped = (s: string) => oneLine(s).replace(/-->/g, '');
@@ -196,14 +216,16 @@ export interface IssueParts {
 function ticketSettingsIn(
   p: IssueParts,
   meta: BodyMeta,
-): Pick<Ticket, 'verification' | 'checks' | 'guide' | 'settingsUnconfirmed'> {
+): Pick<Ticket, 'verification' | 'checks' | TicketGuides | 'settingsUnconfirmed'> {
   const found = settingsOf({ ...meta });
   const settled = p.settle ? p.settle(found) : { use: found };
-  const { verification, checks, guide } = settled.use;
+  const { verification, checks, guide, guidesAdded, guidesRemoved } = settled.use;
   return {
     ...(verification ? { verification } : {}),
     ...(checks ? { checks } : {}),
     ...(guide ? { guide } : {}),
+    ...(guidesAdded?.length ? { guidesAdded } : {}),
+    ...(guidesRemoved?.length ? { guidesRemoved } : {}),
     ...(settled.unconfirmed ? { settingsUnconfirmed: true as const } : {}),
   };
 }
