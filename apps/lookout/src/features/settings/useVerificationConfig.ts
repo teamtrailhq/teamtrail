@@ -10,7 +10,7 @@ export interface VerificationConfigView {
   hash?: string;
   config?: VerificationConfig;
   /** Whether its commands run on this machine: `waiting` until the trail lead approves the file as it is. */
-  approval?: { state: string; waiting: boolean };
+  approval?: { state: string; waiting: boolean; base?: string };
 }
 
 async function fetchConfig(): Promise<VerificationConfigView | null> {

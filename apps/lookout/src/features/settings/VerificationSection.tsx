@@ -1,16 +1,22 @@
 import { BRAND, DEFAULT_CONFIG, VERIFICATION_LEVELS, type MapDoc } from '@teamtrail/core';
 import { useState } from 'react';
-import { Choice, MetaLine } from '../../components/ui';
+import { Choice } from '../../components/ui';
 import { TRAIL_LEAD } from '../../lib';
 import { LEVEL_HELP, LEVEL_TEXT, verificationApi } from '../../lib/verification';
+import { ChecksEditor } from './ChecksEditor';
+import { ChecksList } from './ChecksList';
 import { settingsHref } from './settingsHref';
 import { SettingsSection } from './SettingsSection';
+import { useThisMachine } from './useThisMachine';
 import { useVerificationConfig } from './useVerificationConfig';
-import { VerificationSetup } from './VerificationSetup';
 
-/** The trail's level is picked here; checks are changed in the repo, so an agent cannot edit what verifies its own work. */
+/**
+ * The trail's level, and the checks: set here on the machine Teamtrail runs on (approved as they're saved), read
+ * elsewhere. An agent never edits what verifies its own work: a change in the repo runs nothing until approved.
+ */
 export function VerificationSection(props: { map?: MapDoc }) {
   const view = useVerificationConfig();
+  const local = useThisMachine();
   const [error, setError] = useState<string>();
   if (!view) return null;
   const map = props.map;
@@ -74,39 +80,14 @@ export function VerificationSection(props: { map?: MapDoc }) {
           </span>
         </div>
       )}
-      {!view.exists && <VerificationSetup file={file} />}
-      {c && view.exists && (
-        <>
-          <div className="sync-line ok" title={view.hash}>
-            <span className="dot" />
-            <span>
-              <span className="t-code">{file}</span> · {c.run.length} checks run on every completion
-            </span>
-          </div>
-          <MetaLine
-            className="set-hint"
-            parts={[
-              `New trails start at ${LEVEL_TEXT[c.default]}`,
-              `${c.maxAttempts} attempts before it waits for you`,
-              c.failFast && 'Stops at the first failure',
-            ]}
-          />
-          <div className="vf-checks">
-            {Object.entries(c.checks).map(([name, spec]) => (
-              <div key={name} className="vf-check">
-                <span className="t-code">{c.run.includes(name) ? name : `${name} (on request)`}</span>
-                <code>{spec.run.join(' ')}</code>
-                <span className="dim">
-                  {spec.timeoutSec} s{spec.cwd && spec.cwd !== '.' ? ` · in ${spec.cwd}` : ''}
-                </span>
-              </div>
-            ))}
-          </div>
-        </>
+      {local && <ChecksEditor key={view.approval?.base ?? 'none'} view={view} />}
+      {!local && !view.exists && (
+        <span className="set-hint t-meta">No checks yet. They're set on the machine Teamtrail runs on.</span>
       )}
+      {!local && c && view.exists && <ChecksList config={c} file={file} hash={view.hash} />}
       <span className="set-hint t-meta">
-        Teamtrail never edits {file}. Change checks in the repo, then approve them here: an edit by an agent or a
-        teammate runs nothing on this machine until you do.
+        Saved here, checks are approved as you save them. A change to {file} made in the repo, by an agent or a
+        teammate, runs nothing until you approve it.
       </span>
       <span className="set-hint t-meta">
         Checks run on this machine as you, with no sandbox. Teamtrail passes them only the environment variables they

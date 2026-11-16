@@ -1,31 +1,18 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { ProposedCheck } from '../model/guide';
 import { OperationError } from '../planning/operations/operationError';
 import { approveChecksHere, checksApproval } from '../verification/checksApproval';
 import { parseVerificationConfig } from '../verification/config';
 import { VERIFICATION_FILE } from '../verification/configFile';
+import { readRawConfig } from '../verification/rawConfig';
 import { checkArgv, checkNotice } from './checkArgv';
 import { checkSha } from './guideHash';
 import { readGuideLock, writeGuideLock } from './guideLock';
 import { listGuides } from './guideStore';
 
-type Raw = { checks?: Record<string, unknown> } & Record<string, unknown>;
-
 /** verification.json as JSON; a new file starts with verification off, so approving a check never turns it on. */
-function readRaw(file: string): Raw {
-  let text: string;
-  try {
-    text = readFileSync(file, 'utf8');
-  } catch {
-    return { v: 1, default: 'off', checks: {} };
-  }
-  try {
-    return JSON.parse(text) as Raw;
-  } catch {
-    throw new OperationError(`${VERIFICATION_FILE} is not valid JSON; fix it first`);
-  }
-}
+const readRaw = (file: string) => readRawConfig(file, { v: 1, default: 'off', checks: {} });
 
 const specOf = (p: ProposedCheck) => ({
   run: p.run,
