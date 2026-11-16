@@ -21,6 +21,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.45.0',
+    date: '2026-11-16',
+    items: ['In Teamtrail Cloud, Run agents on the trail takes you straight to its agents'],
+  },
+  {
     version: '0.44.2',
     date: '2026-11-16',
     items: ['The middle of the Lookout gets the same margin at the top as at its sides'],

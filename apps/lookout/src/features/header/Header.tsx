@@ -16,6 +16,7 @@ import { managedThemeFixed } from '../../lib/managedTheme';
 import { PrSyncIndicator } from '../pr-sync';
 import { ManagedMenu } from './ManagedMenu';
 import { RecordsMenu } from './RecordsMenu';
+import { RunAgentsButton } from './RunAgentsButton';
 import { ThemeToggle } from './ThemeToggle';
 import { TrackerChip } from './TrackerChip';
 import { TrailSwitcher } from './TrailSwitcher';
@@ -123,6 +124,7 @@ export function Header(props: {
             {map.mode === 'plan-only' ? 'Plan only' : 'Plan + execute'}
           </Button>
         )}
+        {map && <RunAgentsButton mapId={map.id} />}
         <RecordsMenu
           decisions={props.decisions}
           onDecisions={props.onDecisions}
