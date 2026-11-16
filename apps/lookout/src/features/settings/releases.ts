@@ -21,6 +21,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.44.2',
+    date: '2026-11-16',
+    items: ['The middle of the Lookout gets the same margin at the top as at its sides'],
+  },
+  {
     version: '0.44.1',
     date: '2026-11-16',
     items: ['Text you type in forms is full size (14px) again, not the small caps of the label above it'],
