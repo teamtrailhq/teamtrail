@@ -67,7 +67,7 @@ export function StartTrail({ mapId }: { mapId: string }) {
           ))}
         </select>
       )}
-      <Button size="sm" disabled={busy || (state.repos.length > 1 && !repo)} onClick={() => void act(true)}>
+      <Button variant="primary" disabled={busy || (state.repos.length > 1 && !repo)} onClick={() => void act(true)}>
         Start the trail
       </Button>
       {!state.repos.length && <span className="t-meta">Connect a repository first.</span>}

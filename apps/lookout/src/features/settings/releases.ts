@@ -21,6 +21,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.52.1',
+    date: '2026-11-16',
+    items: ['Start the trail is a full-size button, like Create trail'],
+  },
+  {
     version: '0.52.0',
     date: '2026-11-16',
     items: [

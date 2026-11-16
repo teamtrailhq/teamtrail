@@ -140,7 +140,7 @@
 }
 .start-trail select {
   width: auto;
-  height: var(--h-sm, 28px);
+  height: var(--h-md);
 }
 .start-trail-status {
   font-size: var(--fs-sm);
