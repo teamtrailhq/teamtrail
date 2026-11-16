@@ -21,6 +21,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.50.0',
+    date: '2026-11-16',
+    items: [
+      'On the map, a done ticket’s check is green when its work is verified, grey when it isn’t',
+      'Cards say “checks running” while a completion is checked, and a Legend explains the dots',
+    ],
+  },
+  {
     version: '0.49.0',
     date: '2026-11-16',
     items: [

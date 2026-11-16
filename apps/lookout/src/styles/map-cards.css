@@ -68,7 +68,7 @@
 }
 
 /* The status dot: green working, amber waiting on a person or held up, grey ready, a ring in the backlog,
- * a muted check when done, faint when cancelled. */
+ * a green check when done and verified, a muted one when done on someone's word, faint when cancelled. */
 .node .dot-working {
   fill: rgb(var(--decided-rgb));
 }
@@ -92,6 +92,14 @@
 }
 .node .dot-cancelled {
   fill: var(--faint);
+}
+/* Done and verified: the check in the colour of passed checks. */
+.node .dot-done.dot-verified {
+  stroke: rgb(var(--decided-rgb));
+  stroke-width: 2;
+}
+.node .card-chip.state.verified text {
+  fill: rgb(var(--decided-rgb));
 }
 
 /* Hover and selection: a stronger border, never a heavier font. */
@@ -242,4 +250,31 @@
   border: solid var(--faint);
   border-width: 0 1.6px 1.6px 0;
   transform: translateY(-1px) rotate(45deg);
+}
+
+/* The legend (features/map/MapLegend.tsx): bottom left of the map, the dots and what they mean. */
+.map-legend {
+  position: absolute;
+  left: var(--sp-12);
+  bottom: var(--sp-12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-6);
+}
+.map-legend-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-8) var(--sp-10);
+  background: var(--panel-solid);
+  border: 1px solid var(--line2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  font-size: var(--fs-sm);
+}
+.map-legend-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
 }

@@ -9,11 +9,13 @@ import { DestinationTrail } from './DestinationTrail';
 import { GraphDefs } from './GraphDefs';
 import { GraphEdges } from './GraphEdges';
 import { GraphNode } from './GraphNode';
+import { MapLegend } from './MapLegend';
 import type { MapPreview } from './mapPreview';
 import { openingView } from './openingView';
 import { OutOfScopeStrip } from './OutOfScopeStrip';
 import { TerrainLayer } from './TerrainLayer';
 import { useFocusSelected } from './useFocusSelected';
+import { useTrailProofs } from './useTrailProofs';
 import { useWheelZoom } from './useWheelZoom';
 import { type View, zoomAt } from './zoomAt';
 
@@ -33,6 +35,7 @@ export function MapGraph(props: {
   preview?: MapPreview;
 }) {
   const { snap, selection, onSelect, preview } = props;
+  const proofs = useTrailProofs(snap.map.id, snap.tickets);
   const tickets = preview?.tickets ?? snap.tickets;
   const box = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -192,11 +195,13 @@ export function MapGraph(props: {
                 mark={preview?.marks.get(n.ticket.id)}
                 frozen={preview?.frozen.has(n.ticket.id)}
                 needs={waits?.find((w) => w.mapId === snap.map.id && w.ticketId === n.ticket.id)?.tier}
+                verified={proofs[n.ticket.id] === undefined ? undefined : proofs[n.ticket.id] === 'verified'}
               />
             ))}
           </g>
         </g>
       </svg>
+      <MapLegend />
       <button
         className="btn sm fit-btn"
         data-tip="Fit the whole trail in view"

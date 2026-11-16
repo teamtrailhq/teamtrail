@@ -17,12 +17,14 @@ let bridge: TrackerBridge;
 let base: string;
 let root: string;
 let ids: { mapId: string; ticketId: string };
+let adapter: MarkdownAdapter;
 
 before(async () => {
   const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-proofroutes-'));
   root = path.join(tmp, '.teamtrail');
   mkdirSync(root);
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
+  adapter = a;
   const sections = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
   const { map, tickets } = await chartMap(a, {
     title: 'Checkout',
@@ -80,4 +82,14 @@ test("GET /proof/ticket gives a ticket's proof and its Markdown", async () => {
   assert.match(r.json.markdown, /not-verified\.svg/);
   assert.equal((await call('GET', `/proof/ticket?mapId=${ids.mapId}&ticketId=nope`)).status, 404);
   assert.equal((await call('GET', '/proof/ticket')).status, 400);
+});
+
+test("GET /proof/trail: each done ticket's proof status, for the map's checks", async () => {
+  const open = await call<{ statuses: Record<string, string> }>('GET', `/proof/trail?mapId=${ids.mapId}`);
+  assert.equal(open.status, 200);
+  assert.deepEqual(open.json.statuses, {}, 'nothing done yet');
+  await adapter.close(ids.mapId, ids.ticketId, 'completed');
+  const done = await call<{ statuses: Record<string, string> }>('GET', `/proof/trail?mapId=${ids.mapId}`);
+  assert.deepEqual(done.json.statuses, { [ids.ticketId]: 'not-verified' }, 'closed without a passing completion');
+  assert.equal((await call('GET', '/proof/trail')).status, 400);
 });

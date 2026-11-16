@@ -41,7 +41,25 @@ export async function handleProof(ctx: ProofContext, req: IncomingMessage, res: 
     return (sendJson(res, 200, { enabled: setting.enabled() }), true);
   }
   if (url.pathname === '/proof/ticket' && req.method === 'GET') return (await ticketProof(ctx, res, url), true);
+  if (url.pathname === '/proof/trail' && req.method === 'GET') return (await trailProofs(ctx, res, url), true);
   return false;
+}
+
+/**
+ * `GET /proof/trail?mapId=`: whether each done ticket's proof is verified, for the map's checks (a verified ticket's
+ * check is green; one closed without a passing completion, grey). Read-only, from the recorded attempts.
+ */
+async function trailProofs(ctx: ProofContext, res: ServerResponse, url: URL) {
+  const mapId = url.searchParams.get('mapId');
+  if (!mapId) throw new BadRequest('"mapId" is required');
+  const adapter = await ctx.active();
+  const snap = await adapter.loadMap(mapId);
+  const decisions = await adapter.listDecisions(mapId);
+  const done = snap.tickets.filter((t) => t.state === 'closed' && t.closeReason === 'completed');
+  const statuses = Object.fromEntries(
+    done.map((ticket) => [ticket.id, proofForTicket({ root: ctx.root, snap, ticket, decisions }).status]),
+  );
+  sendJson(res, 200, { statuses });
 }
 
 async function ticketProof(ctx: ProofContext, res: ServerResponse, url: URL) {
