@@ -60,6 +60,7 @@ Your agents can already write the code, and plenty of tools run them side by sid
 **Evidence you can trust**
 
 - **Checks before done:** completions run your project's checks and collect git evidence; PR and CI status sync back to the ticket.
+- **Paced to your review:** set how many finished tickets may wait for your review, and agents start no new work past it; they fix what came back and keep researching. Files an agent changes beyond the ones it said it would are listed first for the reviewer and on the proof, or sent back, as you choose.
 - **Verified by Teamtrail:** each done ticket gets a signed proof report (the checks Teamtrail ran, criteria verified or only claimed, the review and the decisions it relies on). Teamtrail can post it on the ticket's pull request with a `Teamtrail proof` commit status, and a GitHub Action checks every proof on a PR against your committed keys.
 - **Decision records:** the question, answer, alternatives, rationale and transcript, and who actually decided. An agent's own call is never shown as yours.
 - **Decision memory:** before an agent asks you something you already decided, it gets your earlier decision instead, and later work that changes what a decision covers is flagged for you.
