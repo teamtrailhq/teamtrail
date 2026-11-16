@@ -10,6 +10,12 @@ function agentsOf(value: unknown): { agents?: ManagedPage } {
   return page ? { agents: page } : {};
 }
 
+/** Where the server saves the theme: a path on this origin only. */
+function themeSaveOf(value: unknown): { themeSave?: string } {
+  if (typeof value !== 'string' || !/^\/[\w/-]{1,100}$/.test(value)) return {};
+  return { themeSave: value };
+}
+
 /** The server's home link, kept only as a short label and an http(s) URL. */
 function homeOf(value: unknown): { home?: { label: string; href: string } } {
   const h = value as { label?: unknown; href?: unknown } | undefined;
@@ -32,6 +38,11 @@ export interface ManagedSignIn {
   pages: ManagedPage[];
   /** The theme this person picked on the server: the Lookout follows it in place of its own setting. */
   theme?: ThemeChoice;
+  /**
+   * Where the server saves this person's theme (a path on this origin): the Lookout's own theme controls then change
+   * it there (managedTheme.ts). Without it, a server theme is fixed here.
+   */
+  themeSave?: string;
   /** `false`: this person may not make high-risk calls, so the page routes those to someone who may. */
   highRisk?: boolean;
   /** The server's own home (all of this person's workspaces, say), on any web origin: a way out of the Lookout. */
@@ -65,6 +76,7 @@ export function learnManagedSignIn(reply: { managed?: unknown }) {
     pages,
     ...(sameOrigin ? { signOut: m.signOut as string } : {}),
     ...(theme ? { theme } : {}),
+    ...themeSaveOf(m.themeSave),
     ...(m.highRisk === false ? { highRisk: false } : {}),
     ...homeOf(m.home),
     ...(m.tracker === 'markdown' ? { tracker: 'markdown' as const } : {}),

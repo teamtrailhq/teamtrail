@@ -79,3 +79,43 @@ describe("a server's own sign-in carries the person's theme", () => {
     }
   });
 });
+
+describe('a theme picked here is saved on the server, when it says where', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  test('only a path on this origin is kept as the place to save it', () => {
+    vi.stubGlobal('location', { href: `${origin}/`, origin });
+    vi.stubGlobal('document', { documentElement: { dataset: {} } });
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], theme: 'day', themeSave: '/_cloud/theme' } });
+    expect(managedSignIn()?.themeSave).toBe('/_cloud/theme');
+    for (const themeSave of ['https://evil.example/theme', '//evil.example/theme', 'javascript:x', '/a b', 1]) {
+      learnManagedSignIn({ managed: { name: 'Ada', pages: [], theme: 'day', themeSave } });
+      expect(managedSignIn()?.themeSave).toBeUndefined();
+    }
+  });
+
+  test('picked here: applied at once, posted to the server, and the controls stay; without a place, it stays fixed', async () => {
+    const { managedThemeFixed, saveManagedTheme, shownTheme } = await import('../src/lib/managedTheme');
+    const dataset: Record<string, string> = {};
+    vi.stubGlobal('location', { href: `${origin}/`, origin });
+    vi.stubGlobal('document', { documentElement: { dataset } });
+    const posts: { url: string; body: string }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      async (url: string, init: { body: string }) => (
+        posts.push({ url, body: init.body }),
+        new Response(null, { status: 204 })
+      ),
+    );
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], theme: 'day', themeSave: '/_cloud/theme' } });
+    expect(managedThemeFixed()).toBe(false);
+    saveManagedTheme('night');
+    expect(dataset.theme).toBe('night');
+    expect(shownTheme('day')).toBe('night');
+    expect(posts).toEqual([{ url: '/_cloud/theme', body: '{"theme":"night"}' }]);
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], theme: 'day' } });
+    expect(managedThemeFixed()).toBe(true);
+    saveManagedTheme('night');
+    expect(posts).toHaveLength(1);
+  });
+});

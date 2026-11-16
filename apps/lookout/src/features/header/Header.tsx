@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
 import { Panel, ScoutMark, Label, Readout, Button } from '../../components/ui';
 import { type BriefingStatus, useNow } from '../../hooks';
 import { hms, tokens, usd } from '../../lib';
-import { managedSignIn } from '../../lib/managedSignIn';
+import { managedThemeFixed } from '../../lib/managedTheme';
 import { PrSyncIndicator } from '../pr-sync';
 import { ManagedMenu } from './ManagedMenu';
 import { RecordsMenu } from './RecordsMenu';
@@ -140,8 +140,8 @@ export function Header(props: {
         >
           Settings
         </Button>
-        {/* Behind a server's own sign-in: its theme wins (lib/managedSignIn.ts), so the toggle gives way to the person's menu. */}
-        {managedSignIn()?.theme ? null : <ThemeToggle onToggle={props.onToggleTheme} />}
+        {/* Behind a server's own sign-in, its theme wins; the toggle stays when the server saves a theme picked here (lib/managedTheme.ts). */}
+        {managedThemeFixed() ? null : <ThemeToggle onToggle={props.onToggleTheme} />}
         <ManagedMenu />
       </div>
     </Panel>

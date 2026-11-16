@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   AppBriefing,
   AppHeader,
@@ -25,9 +25,8 @@ import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/k
 import { MapSections } from './features/plan';
 import { PhoneProjects, ProjectSwitcher } from './features/projects';
 import { FirstRun } from './features/settings';
-import { useBriefing, useBreakpoint, usePrefs, useLookout } from './hooks';
-import { applyTheme, createRuntime, trackerKind } from './lib';
-import { managedSignIn } from './lib/managedSignIn';
+import { useBriefing, useBreakpoint, useLookout, useThemedPrefs } from './hooks';
+import { createRuntime, trackerKind } from './lib';
 
 /**
  * Progressive disclosure. Layers by priority:
@@ -41,9 +40,7 @@ export function App() {
   const rt = useMemo(() => createRuntime(trackerKind()), []);
   const api = useLookout(rt);
   const { snap, activity, selection, actions } = api;
-  const [prefs, updatePrefs] = usePrefs();
-  // A server's own sign-in may carry the person's theme (managedSignIn.ts): it wins over this browser's setting.
-  useEffect(() => applyTheme(managedSignIn()?.theme ?? prefs.theme), [prefs.theme]);
+  const [prefs, updatePrefs] = useThemedPrefs();
   const settings = useSettingsPage();
   const newTrail = useNewTrail(rt, api);
   const repo = useRepoName(rt.kind);
