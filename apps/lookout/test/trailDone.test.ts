@@ -1,7 +1,7 @@
 import type { ActivityState, LaidOutNode, MapSnapshot, Ticket, TicketSync, TrailDone } from '@teamtrail/core';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { StepTracker } from '../src/features/activity/StepTracker';
 import { DestinationMark } from '../src/features/map/DestinationMark';
 import { DestinationTrail } from '../src/features/map/DestinationTrail';
@@ -9,6 +9,9 @@ import { GraphEdge } from '../src/features/map/GraphEdge';
 import { openPullRequests } from '../src/features/trail-done/openPullRequests';
 import { proofsSettled } from '../src/features/trail-done/proofsSettled';
 import { TrailDoneDialog } from '../src/features/trail-done/TrailDoneDialog';
+
+// Some modules these pull in read the page's address when they load (vitest hoists this above the imports).
+vi.hoisted(() => vi.stubGlobal('location', { search: '' }));
 
 const ticket = (id: string, patch: Partial<Ticket> = {}) =>
   ({ id, key: `#${id}`, title: `T${id}`, state: 'open', blockedBy: [], ...patch }) as unknown as Ticket;
