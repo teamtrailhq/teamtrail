@@ -1,0 +1,98 @@
+/* Scout's Get started guide (features/guide/SetupGuide.tsx): bottom right, a speech bubble above Scout. */
+.setup-guide {
+  position: fixed;
+  right: var(--sp-16);
+  bottom: var(--sp-16);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--sp-8);
+  max-width: min(320px, calc(100vw - 2 * var(--sp-16)));
+}
+.setup-bubble {
+  position: relative;
+  width: 100%;
+  padding: var(--sp-12);
+  background: var(--panel-solid);
+  border: 1px solid var(--line2);
+  box-shadow: 0 8px 24px var(--shadow-color);
+}
+/* The bubble's tail, pointing down at Scout. */
+.setup-bubble::after {
+  content: '';
+  position: absolute;
+  right: 22px;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: var(--panel-solid);
+  border-right: 1px solid var(--line2);
+  border-bottom: 1px solid var(--line2);
+  transform: rotate(45deg);
+}
+.setup-bubble header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin-bottom: var(--sp-8);
+}
+.setup-bubble header b {
+  flex: 1;
+  color: var(--text-hi);
+}
+.setup-bubble ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  font-size: var(--fs-body);
+}
+.setup-bubble li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+.setup-bubble li.done a {
+  color: var(--dim);
+}
+.setup-bubble li.next a {
+  color: var(--text-hi);
+  font-weight: 600;
+}
+.setup-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--line2);
+  font-size: var(--fs-label);
+  color: var(--dim);
+}
+.setup-bubble li.done .setup-mark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.setup-bubble li.next .setup-mark {
+  border-color: var(--accent);
+  color: var(--text-hi);
+}
+.setup-scout {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.setup-chip {
+  padding: var(--sp-4) var(--sp-8);
+  background: var(--panel-solid);
+  border: 1px solid var(--line2);
+  font-size: var(--fs-sm);
+  color: var(--text-hi);
+}

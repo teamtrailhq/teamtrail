@@ -19,6 +19,12 @@ function themeSaveOf(value: unknown): { themeSave?: string } {
   return p ? { themeSave: p } : {};
 }
 
+/** Where the server says how far setup is. */
+function setupOf(value: unknown): { setup?: string } {
+  const p = pathOf(value);
+  return p ? { setup: p } : {};
+}
+
 /** Where the server merges an approved ticket's pull request. */
 function mergeOf(value: unknown): { merge?: string } {
   const p = pathOf(value);
@@ -57,6 +63,11 @@ export interface ManagedSignIn {
    * the Proof section then offers Approve and merge on a verified ticket (features/proof/MergeOnApprove.tsx).
    */
   merge?: string;
+  /**
+   * Where the server says how far this person is with setting up (a path on this origin): Scout's Get started guide
+   * in the corner reads it (features/guide/), until every step is done.
+   */
+  setup?: string;
   /** `false`: this person may not make high-risk calls, so the page routes those to someone who may. */
   highRisk?: boolean;
   /** The server's own home (all of this person's workspaces, say), on any web origin: a way out of the Lookout. */
@@ -92,6 +103,7 @@ export function learnManagedSignIn(reply: { managed?: unknown }) {
     ...(theme ? { theme } : {}),
     ...themeSaveOf(m.themeSave),
     ...mergeOf(m.merge),
+    ...setupOf(m.setup),
     ...(m.highRisk === false ? { highRisk: false } : {}),
     ...homeOf(m.home),
     ...(m.tracker === 'markdown' ? { tracker: 'markdown' as const } : {}),
