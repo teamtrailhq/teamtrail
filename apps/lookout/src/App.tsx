@@ -20,6 +20,7 @@ import {
   RecordViews,
 } from './app/index';
 import { StepZone, LogZone, ActivityStack } from './features/activity';
+import { SetupGuide } from './features/guide';
 import { Inspector } from './features/inspector';
 import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/knowledge';
 import { MapSections } from './features/plan';
@@ -203,6 +204,7 @@ export function App() {
         {newTrail.dialog}
         {!prefs.onboarded && <FirstRun prefs={prefs} update={updatePrefs} activeTracker={rt.kind} />}
         <KnowledgeView />
+        <SetupGuide />
       </div>
     </KnowledgeContext.Provider>
   );

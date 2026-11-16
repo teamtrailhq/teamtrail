@@ -21,6 +21,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.48.0',
+    date: '2026-11-16',
+    items: ['In Teamtrail Cloud, Scout keeps Get started in the corner until your workspace is set up'],
+  },
+  {
     version: '0.47.0',
     date: '2026-11-16',
     items: ['Set the checks every finished ticket must pass in Settings → Verification, no file to edit'],

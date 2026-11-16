@@ -133,3 +133,15 @@ describe('a server that merges pull requests says where', () => {
     }
   });
 });
+
+describe('a server that tracks setup says where', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  test('only a path on this origin is kept', () => {
+    vi.stubGlobal('location', { href: `${origin}/`, origin });
+    vi.stubGlobal('document', { documentElement: { dataset: {} } });
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], setup: '/_cloud/setup' } });
+    expect(managedSignIn()?.setup).toBe('/_cloud/setup');
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], setup: 'https://evil.example/setup' } });
+    expect(managedSignIn()?.setup).toBeUndefined();
+  });
+});
