@@ -21,6 +21,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.47.0',
+    date: '2026-11-16',
+    items: ['Set the checks every finished ticket must pass in Settings → Verification, no file to edit'],
+  },
+  {
     version: '0.46.0',
     date: '2026-11-16',
     items: [

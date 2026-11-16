@@ -182,42 +182,45 @@
   line-height: var(--lh-snug);
   word-break: normal;
 }
-.vf-setup {
+/* The checks editor (settings/ChecksEditor.tsx): one row per check, then suggestions, the one question, Save. */
+.vf-editor {
   display: flex;
   flex-direction: column;
   gap: var(--sp-8);
   padding: var(--sp-12);
   border: 1px solid var(--line2);
-  background: rgba(var(--accent-rgb), 0.03);
 }
-.vf-setup p {
-  margin: 0;
-  max-width: 64ch;
+.vf-edit-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 140px) 1fr auto;
+  gap: var(--sp-8);
+  align-items: center;
+}
+.vf-edit-add,
+.vf-edit-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+}
+.vf-edit-sure {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
   font-size: var(--fs-sm);
-  line-height: var(--lh-body);
 }
-.vf-setup-h {
-  font-size: var(--fs-body);
-  color: var(--text-hi);
+.vf-edit-sure input {
+  width: auto;
+  height: auto;
 }
-.vf-snippet {
-  position: relative;
-}
-.vf-snippet pre {
-  margin: 0;
-  padding: var(--sp-10) var(--sp-12);
-  background: var(--sunken);
-  border: 1px solid var(--line);
-  font-family: var(--mono);
-  font-size: var(--fs-sm);
-  line-height: var(--lh-snug);
-  color: var(--text-hi);
-  overflow-x: auto;
-}
-.vf-snippet .btn {
-  position: absolute;
-  top: var(--sp-8);
-  right: var(--sp-8);
+@media (max-width: 640px) {
+  .vf-edit-row {
+    grid-template-columns: 1fr auto;
+  }
+  .vf-edit-row input[aria-label='Command'] {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }
 
 /* Acceptance criteria: the evidence of an attempt, and the ticket's criteria in the inspector. */

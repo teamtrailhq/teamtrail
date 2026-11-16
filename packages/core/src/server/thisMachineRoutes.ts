@@ -23,6 +23,8 @@ const WRITES: RegExp[] = [
   // Approving what the repo's files ask this machine to trust (trustRoutes.ts): the check commands it runs, a
   // lowered risk policy, and adopting a teammate's accepted briefs, confirmed criteria and knowledge in one step.
   /^\/trust\/approve$/,
+  // Setting the check commands themselves from the Lookout, approved in the same step (verification/setChecks.ts).
+  /^\/verification\/config$/,
   // Reverting a trail file changed outside Teamtrail: Teamtrail writes the signed values back (signedState/).
   /^\/trust\/revert$/,
   // This person's own attention preferences, kept in their config dir.
