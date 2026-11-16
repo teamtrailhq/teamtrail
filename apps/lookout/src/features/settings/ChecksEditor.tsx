@@ -81,6 +81,13 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
           + Another
         </Button>
       </div>
+      {rows.some((r) => !SUGGESTED.some((s) => s.name === r.name)) && (
+        <p className="vf-edit-hint t-meta">
+          Run from the repository&apos;s root, as words (no pipes or <code>&amp;&amp;</code>): the script must already
+          be in the repo. For example <code>npm run e2e</code>, <code>make test</code>, <code>./scripts/check.sh</code>{' '}
+          or <code>pytest -q</code>.
+        </p>
+      )}
       <label className="vf-edit-sure">
         <input type="checkbox" checked={sure} onChange={(e) => setSure(e.target.checked)} />
         <span>I know what these commands run, and approve them</span>

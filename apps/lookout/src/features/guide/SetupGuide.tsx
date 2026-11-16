@@ -1,5 +1,6 @@
 import { ScoutAvatar } from '@teamtrail/scout-avatar';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '../../components/ui';
 import { useSetupSteps } from './useSetupSteps';
 
@@ -36,7 +37,9 @@ export function SetupGuide() {
     remember(next);
   };
   const count = `${view.done} of ${view.total}`;
-  return (
+  // On the page itself, not inside the app's zones: a zone that makes its own stacking or containing box would
+  // otherwise pin a fixed corner to itself instead of the window.
+  return createPortal(
     <aside className={`setup-guide${open ? ' open' : ''}`} aria-label="Get started">
       {open && (
         <div className="setup-bubble">
@@ -64,6 +67,7 @@ export function SetupGuide() {
         <ScoutAvatar size={1} framed={false} state="idle" />
         {!open && <span className="setup-chip">Get started · {count}</span>}
       </button>
-    </aside>
+    </aside>,
+    document.body,
   );
 }
