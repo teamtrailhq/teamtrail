@@ -1,7 +1,19 @@
 import type { Release } from './releases';
 
-/** Releases 0.26–0.32, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.26–0.33, kept apart so `releases.ts` stays short. Newest first. */
 export const MID_RELEASES: Release[] = [
+  {
+    version: '0.33.1',
+    date: '2026-11-14',
+    items: ['Teamtrail is now MIT licensed'],
+  },
+  {
+    version: '0.33.0',
+    date: '2026-11-14',
+    items: [
+      "`teamtrail connect claude` offers to turn on Claude Code's sandbox, so the agent's shell commands can't reach Teamtrail's config folder either",
+    ],
+  },
   {
     version: '0.32.0',
     date: '2026-11-13',
