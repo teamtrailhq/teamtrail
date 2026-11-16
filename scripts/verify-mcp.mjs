@@ -525,7 +525,10 @@ await call('submit_brief', {
 // Research is done: the Lookout says so once, the brief is in Waiting on you, and the build ticket waits on it.
 const ready = page.locator('.brief-ready');
 await ready.waitFor({ timeout: 15_000 });
-await page.locator('.inbox').getByText(/Review the discovery brief/).waitFor();
+await page
+  .locator('.inbox')
+  .getByText(/Review the discovery brief/)
+  .waitFor();
 await page.locator('.node', { hasText: 'waits on brief' }).first().waitFor();
 await shot('11-brief-ready');
 await ready.getByRole('button', { name: 'Review brief' }).click();
