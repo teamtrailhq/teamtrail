@@ -1,5 +1,5 @@
 import { levelOf, type VerificationLevel } from '../../model/lifecycle';
-import type { ModelMatching } from '../../model/types';
+import { ALL_TICKET_TYPES, type GuidesByType, type ModelMatching } from '../../model/types';
 import { modelMatchingOf } from '../modelMatchingOf';
 
 /**
@@ -11,7 +11,10 @@ export interface BodySettings {
   verification?: VerificationLevel;
   checks?: string[];
   guide?: string;
+  guidesAdded?: string[];
+  guidesRemoved?: string[];
   guides?: string[];
+  guidesByType?: GuidesByType;
   modelMatching?: ModelMatching;
 }
 
@@ -25,16 +28,30 @@ function sortedMatching(raw: unknown): ModelMatching | undefined {
   return { enabled: m.enabled, tiers };
 }
 
+/** A trail's guides by type in one order, each type's ids once; `{}` (no guides for any type) is kept as it is. */
+function sortedGuidesByType(raw: unknown): GuidesByType | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const r = raw as Record<string, unknown>;
+  const pairs = ALL_TICKET_TYPES.map((type) => [type, [...new Set(strings(r[type]))]] as const);
+  return Object.fromEntries(pairs.filter(([, ids]) => ids.length));
+}
+
+const listed = (key: string, v: unknown) => (strings(v).length ? { [key]: strings(v) } : {});
+
 /** The settings in a parsed marker, read leniently and always in the same shape, so two can be compared as text. */
 export function settingsOf(meta: Record<string, unknown>): BodySettings {
   const verification = levelOf(meta.verification);
   const guides = strings(meta.guides);
   const modelMatching = sortedMatching(meta.modelMatching);
+  const guidesByType = sortedGuidesByType(meta.guidesByType);
   return {
     ...(verification ? { verification } : {}),
     ...(Array.isArray(meta.checks) ? { checks: strings(meta.checks) } : {}),
     ...(typeof meta.guide === 'string' && meta.guide ? { guide: meta.guide } : {}),
+    ...listed('guidesAdded', meta.guidesAdded),
+    ...listed('guidesRemoved', meta.guidesRemoved),
     ...(guides.length ? { guides } : {}),
+    ...(guidesByType ? { guidesByType } : {}),
     ...(modelMatching ? { modelMatching } : {}),
   };
 }
@@ -55,7 +72,10 @@ const LABELS: [keyof BodySettings, string][] = [
   ['verification', 'verification level'],
   ['checks', 'checks'],
   ['guide', 'guide'],
+  ['guidesAdded', 'guides added'],
+  ['guidesRemoved', 'guides removed'],
   ['guides', 'guides'],
+  ['guidesByType', 'guides by type'],
   ['modelMatching', 'model matching'],
 ];
 
@@ -63,7 +83,9 @@ function shown(v: BodySettings[keyof BodySettings]): string {
   if (v === undefined) return 'not set';
   if (typeof v === 'string') return v;
   if (Array.isArray(v)) return v.join(', ') || 'none';
-  return v.enabled ? 'on' : 'off';
+  if ('enabled' in v) return v.enabled ? 'on' : 'off';
+  const types = Object.entries(v as GuidesByType).map(([type, ids]) => `${type} ${(ids ?? []).join(', ')}`);
+  return types.join('; ') || 'none';
 }
 
 /** The settings themselves, one plain line each: `verification level: checks+review`. */

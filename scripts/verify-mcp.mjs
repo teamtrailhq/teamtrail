@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { chromium } from 'playwright-core';
-import { lookoutLinks, pairLink, sessionHeaders, signInWith } from './e2eHelpers.mjs';
+import { answeringChecklists, lookoutLinks, pairLink, sessionHeaders, signInWith } from './e2eHelpers.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
@@ -140,7 +140,8 @@ await client.connect(transport);
 const tools = (await client.listTools()).tools.map((t) => t.name);
 log(`MCP connected · ${tools.length} tools: ${tools.join(', ')}`);
 let seq = 0;
-const call = async (name, args = {}) => {
+// the scripted agent answers the checklists of the guides its tickets take on (e2eHelpers.mjs)
+const call = answeringChecklists(async (name, args = {}) => {
   const id = `toolu_verify_${Date.now().toString(36)}_${seq++}`;
   const message = {
     id: `msg_verify_${seq}`,
@@ -162,7 +163,7 @@ const call = async (name, args = {}) => {
   // millisecond a session ended in, and the meter cannot tell which side of the boundary it belongs to.
   await new Promise((done) => setTimeout(done, 5));
   return JSON.parse(r.content[0].text);
-};
+});
 
 /** Opening a ticket zooms the map onto it, so other tickets can be out of view: Fit first, as a user would. */
 async function clickNode(node) {
@@ -468,11 +469,11 @@ const reviewTransport = new StdioClientTransport({
 });
 const reviewClient = new Client({ name: 'claude-code', version: '2.1.0' });
 await reviewClient.connect(reviewTransport);
-const reviewCall = async (name, args = {}) => {
+const reviewCall = answeringChecklists(async (name, args = {}) => {
   const r = await reviewClient.callTool({ name, arguments: args });
   if (r.isError) throw new Error(`${name}: ${r.content[0].text}`);
   return JSON.parse(r.content[0].text);
-};
+});
 const offered = (await reviewCall('next_ticket')).ticket;
 const ownClaim = await call('claim_ticket', { ticket: offered.key }).then(
   () => 'allowed',

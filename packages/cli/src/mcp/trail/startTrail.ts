@@ -3,8 +3,8 @@ import {
   chartMap,
   DISCOVERY_TICKET,
   OperationError,
-  setTicketGuide,
-  setTrailTeam,
+  setTicketGuides,
+  trailGuidesByType,
   type MapDoc,
   type MapMode,
   type Ticket,
@@ -37,8 +37,6 @@ interface StartInput {
   discoveryLast?: boolean;
   /** What the trail relies on; `tickets` are plan refs. */
   assumptions?: AssumptionPlanInput[];
-  /** The trail's team of installed guide ids. */
-  team?: string[];
 }
 
 const EMPTY_BRIEF = {
@@ -100,7 +98,7 @@ async function chartTrail(ctx: AgentContext, input: StartInput) {
   // and each ticket's type, which the trail level applies by: an edited type doesn't move a ticket out of it
   recordTypes(ctx.root, map.id, tickets);
   saveAllCriteria(ctx, { map, tickets, planned });
-  await saveGuides(ctx, { map, tickets, planned, team: input.team });
+  await saveGuides(ctx, { map, tickets, planned });
   await saveAssumptions(ctx, { map, tickets, planned, items: input.assumptions ?? [] });
   const discoveryTicket = withDiscovery ? tickets.find((t) => t.title === DISCOVERY_TICKET.title) : undefined;
   if (discoveryTicket)
@@ -117,8 +115,9 @@ async function chartTrail(ctx: AgentContext, input: StartInput) {
       title: map.title,
       mode: map.mode,
       ...(map.verification ? { verification: map.verification } : {}),
-      ...(input.team?.length ? { team: input.team } : {}),
+      guidesByType: guidesOfTrail(map),
     },
+    ...('team' in input ? { teamNote: TEAM_RETIRED } : {}),
     tickets: tickets.map((t) => ({
       ref: planned.find((p) => p.title === t.title)?.ref,
       key: t.key,
@@ -199,21 +198,27 @@ function saveAllCriteria(ctx: AgentContext, made: { map: MapDoc; tickets: Ticket
   }
 }
 
-/** Every guide named (team and tickets) must be installed and active, and made for its ticket's type. */
+const TEAM_RETIRED =
+  "team was not taken: a trail's guides come by ticket type (guidesByType), and only the human changes them, in the Lookout.";
+
+/** The trail's guides by ticket type, the types without any left out. */
+const guidesOfTrail = (map: MapDoc) =>
+  Object.fromEntries(Object.entries(trailGuidesByType(map).byType).filter(([, ids]) => ids.length));
+
+/** Every extra guide named on a ticket must be installed and active, and made for its ticket's type. */
 function assertGuides(ctx: AgentContext, input: StartInput) {
   const guides = listGuides(ctx.root);
-  for (const id of input.team ?? []) assertGuide(guides, id);
   for (const t of input.tickets ?? []) if (t.guide) assertGuide(guides, t.guide, t.type);
 }
 
-/** The team on the trail and each planned ticket's guide, as the agent that charted it. */
-async function saveGuides(
-  ctx: AgentContext,
-  made: { map: MapDoc; tickets: Ticket[]; planned: TicketPlanInput[]; team?: string[] },
-) {
-  if (made.team?.length) await setTrailTeam(ctx.adapter, made.map.id, made.team, 'agent');
+/**
+ * Each planned ticket's extra guide, as the agent that charted it. The trail's guides by type are the defaults
+ * until the trail lead sets them; no agent sets them.
+ */
+async function saveGuides(ctx: AgentContext, made: { map: MapDoc; tickets: Ticket[]; planned: TicketPlanInput[] }) {
   for (const pt of made.planned) {
     const t = pt.guide ? made.tickets.find((x) => x.title === pt.title) : undefined;
-    if (t) await setTicketGuide(ctx.adapter, { mapId: made.map.id, ticketId: t.id }, pt.guide!, 'agent');
+    const add = { kind: 'add' as const, id: pt.guide! };
+    if (t) await setTicketGuides(ctx.adapter, { mapId: made.map.id, ticketId: t.id }, add, 'agent');
   }
 }

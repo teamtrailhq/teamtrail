@@ -1,8 +1,16 @@
-// M5 guides in the dev seed: a team on the main trail, guides on a few tickets, a catalog guide pinned with a check
-// still waiting for approval, a hand-written guide waiting for approval, and checklist answers on a ticket.
+// M5 guides in the dev seed: the main trail's guides by type (the defaults, plus a catalog guide on prototypes), a
+// guide added to one ticket and one taken off another, a catalog guide pinned with a check still waiting for approval,
+// a hand-written guide waiting for approval, and checklist answers on a ticket.
 import fs from 'node:fs';
 import path from 'node:path';
-import { setTicketGuide, setTrailTeam, type MapDoc, type TrackerAdapter } from '@teamtrail/core';
+import {
+  DEFAULT_GUIDES_BY_TYPE,
+  setTicketGuides,
+  setTrailGuides,
+  type MapDoc,
+  type TicketGuideChange,
+  type TrackerAdapter,
+} from '@teamtrail/core';
 import { installGuide, guidesDir, writeChecklist } from '@teamtrail/core/agents';
 
 interface SeedInput {
@@ -57,11 +65,10 @@ license: MIT
 Measure the change on the slowest device you support, before and after, and write both numbers down.
 `;
 
-const GUIDES: [string, string][] = [
-  ['Instrument current sync failure rate in production', 'qa'],
-  ['Implement offline write queue behind a flag', 'security'],
-  ['Schema migration strategy for offline clients', 'architect'],
-  ['Conflict review UI: inline vs queue', 'a11y'],
+const QA_TICKET = 'Instrument current sync failure rate in production';
+const CHANGES: [string, TicketGuideChange][] = [
+  [QA_TICKET, { kind: 'remove', id: 'security' }],
+  ['Implement offline write queue behind a flag', { kind: 'add', id: 'docs' }],
 ];
 
 export async function seedGuides({ root, adapter, main, now }: SeedInput) {
@@ -75,29 +82,34 @@ export async function seedGuides({ root, adapter, main, now }: SeedInput) {
   });
   // dropped in by hand, never approved: Settings → Guides asks the trail lead
   fs.writeFileSync(path.join(guidesDir(root), 'perf.md'), PERF);
-  await setTrailTeam(adapter, main.id, ['qa', 'security', 'architect', 'a11y', 'reviewer'], 'trail lead');
+  const byType = { ...DEFAULT_GUIDES_BY_TYPE, prototype: ['architect', 'a11y'] };
+  await setTrailGuides(adapter, main.id, byType, 'trail lead');
   const snap = await adapter.loadMap(main.id);
-  for (const [title, guide] of GUIDES) {
+  for (const [title, change] of CHANGES) {
     const t = snap.tickets.find((x) => x.title === title);
-    if (t) await setTicketGuide(adapter, { mapId: main.id, ticketId: t.id }, guide, 'trail lead');
+    if (t) await setTicketGuides(adapter, { mapId: main.id, ticketId: t.id }, change, 'trail lead');
   }
-  const qa = snap.tickets.find((x) => x.title === GUIDES[0][0]);
-  if (qa)
-    writeChecklist(root, {
-      v: 1,
-      mapId: main.id,
-      ticketId: qa.id,
-      guide: { id: 'qa', version: '1.0.0' },
-      answers: [
-        { item: 'Ran the full test suite and it passes', done: true },
-        { item: 'Added or updated tests that fail without the change', done: true },
-        {
-          item: 'Listed what you did not test, and why',
-          done: false,
-          note: 'Release builds only; staging has no failures to count',
-        },
-      ],
-      by: 'codex-01',
-      at: now - 40 * 60_000,
-    });
+  const qa = snap.tickets.find((x) => x.title === QA_TICKET);
+  if (!qa) return;
+  writeChecklist(root, {
+    v: 2,
+    mapId: main.id,
+    ticketId: qa.id,
+    guides: [
+      {
+        guide: { id: 'qa', version: '1.0.0' },
+        answers: [
+          { item: 'Ran the full test suite and it passes', done: true },
+          { item: 'Added or updated tests that fail without the change', done: true },
+          {
+            item: 'Listed what you did not test, and why',
+            done: false,
+            note: 'Release builds only; staging has no failures to count',
+          },
+        ],
+      },
+    ],
+    by: 'codex-01',
+    at: now - 40 * 60_000,
+  });
 }

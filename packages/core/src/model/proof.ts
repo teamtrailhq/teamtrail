@@ -1,3 +1,4 @@
+import type { AttemptGuide } from './guide';
 import type { VerificationLevel } from './lifecycle';
 import type { AttemptResult, VerdictKind } from './verification';
 
@@ -93,6 +94,11 @@ export interface Proof {
   };
   reviews: ProofReview[];
   decisions: ProofDecision[];
+  /**
+   * The guides the work was done under, as its attempt recorded them. Missing for attempts from before guides came
+   * by type, so their proofs and digests read as they always did.
+   */
+  guides?: AttemptGuide[];
   /** `sha256:` of the canonical JSON of every other field. */
   digest: string;
 }

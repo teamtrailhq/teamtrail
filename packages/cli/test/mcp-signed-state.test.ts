@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
 import { approveInLookout } from './fakes/callTool';
+import { guidesOff } from './fakes/guidesOff';
 
 /*
  * Signed state over MCP: an agent's writes through the tools are signed as its own and raise no flag, and an edit
@@ -78,6 +79,7 @@ async function start(call: Awaited<ReturnType<typeof connect>>) {
     ],
     assumptions: [{ text: 'The v2 API supports batch writes', tickets: ['batch'] }],
   });
+  await guidesOff(root, started.trail.id);
   const key = (ref: string) => started.tickets.find((t) => t.ref === ref)!.key;
   return { mapId: started.trail.id, key, skip: started.skipDiscovery?.request };
 }

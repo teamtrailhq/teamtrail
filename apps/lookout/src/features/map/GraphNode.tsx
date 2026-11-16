@@ -1,4 +1,5 @@
 import {
+  addedGuides,
   attention,
   type DiffMark,
   type LaidOutNode,
@@ -69,7 +70,8 @@ export function GraphNode({
   const marked = !!mark && mark !== 'unchanged';
   const wait = modelWait(n, needs, !!s);
   const brief = briefWait(n, briefHeld, !!s);
-  const guide = useSignGuide(t.guide);
+  // the type's guides go without saying: a card names a guide only when one was added to this ticket
+  const guide = useSignGuide(addedGuides(t).find((id) => !t.guidesRemoved?.includes(id)));
   const state = marked
     ? undefined
     : statePart({ n, session: s, waiting, stalled, brief, wait, step: !guide, verified });

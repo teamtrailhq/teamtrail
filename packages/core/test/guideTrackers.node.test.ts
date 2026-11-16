@@ -15,9 +15,10 @@ import { addFromCatalog, assertNotBuiltin, previewCatalogGuide } from '../src/gu
 import { parseCatalogIndex, searchCatalog } from '../src/guides/catalogIndex';
 import { readGuideLock } from '../src/guides/guideLock';
 import { listGuides } from '../src/guides/guideStore';
+import { ticketGuideIds } from '../src/guides/ticketGuideIds';
 import { journalFile } from '../src/history/journalFile';
-import { setTicketGuide } from '../src/planning/lifecycle/setTicketGuide';
-import { setTrailTeam } from '../src/planning/lifecycle/setTrailTeam';
+import { setTicketGuides } from '../src/planning/lifecycle/setTicketGuides';
+import { setTrailGuides } from '../src/planning/lifecycle/setTrailGuides';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { fakeGitHub } from './fakes/github';
 import { fakeGuideCatalog, guideText } from './fakes/guideCatalog';
@@ -32,19 +33,21 @@ const tmpRoot = () => {
   return root;
 };
 
-/** Writes a ticket guide and a team with one adapter and reads them back with `fresh`. */
+/** Writes a ticket's guide overrides and a trail's guides by type with one adapter and reads them back with `fresh`. */
 async function roundTrip(make: () => TrackerAdapter, fresh: () => TrackerAdapter = make) {
   const a = make();
   const map = await a.createMap({ title: 'Guides', sections: SECTIONS, verification: 'checks' });
   const t = await a.createTicket(map.id, { title: 'Check a11y', type: 'task', body: 'Body text' });
-  await setTicketGuide(a, { mapId: map.id, ticketId: t.id }, 'qa', 'trail lead');
-  await setTrailTeam(a, map.id, ['qa', 'reviewer'], 'trail lead');
+  const target = { mapId: map.id, ticketId: t.id };
+  await setTicketGuides(a, target, { kind: 'add', id: 'docs' }, 'trail lead');
+  await setTicketGuides(a, target, { kind: 'remove', id: 'security' }, 'trail lead');
+  await setTrailGuides(a, map.id, { task: ['qa', 'security'], review: ['reviewer'] }, 'trail lead');
   const back = await fresh().loadMap(map.id);
   const ticket = back.tickets.find((x) => x.id === t.id)!;
   return { back, ticket, a, map, t };
 }
 
-test('Ticket.guide and MapDoc.guides round-trip on markdown, memory, GitHub and Linear', async () => {
+test('a ticket’s guide overrides and a trail’s guides by type round-trip on markdown, memory, GitHub and Linear', async () => {
   const root = tmpRoot();
   const md = () => new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const mem = new MemoryAdapter();
@@ -62,20 +65,32 @@ test('Ticket.guide and MapDoc.guides round-trip on markdown, memory, GitHub and 
     ['linear', lnAdapter, lnAdapter],
   ] as const) {
     const { back, ticket, a, map, t } = await roundTrip(make, fresh);
-    assert.equal(ticket.guide, 'qa', `${name}: ticket guide`);
+    assert.deepEqual(ticket.guidesAdded, ['docs'], `${name}: added`);
+    assert.deepEqual(ticket.guidesRemoved, ['security'], `${name}: removed`);
     assert.equal(ticket.body, 'Body text', `${name}: the marker stays out of the body`);
-    assert.deepEqual(back.map.guides, ['qa', 'reviewer'], `${name}: team`);
+    assert.deepEqual(back.map.guidesByType, { task: ['qa', 'security'], review: ['reviewer'] }, `${name}: by type`);
+    assert.deepEqual(
+      ticketGuideIds(back.map, ticket).map((r) => `${r.id}:${r.via}`),
+      ['qa:type', 'docs:ticket'],
+      `${name}: effective guides`,
+    );
     assert.equal(back.map.verification, 'checks', `${name}: other trail meta survives`);
-    await setTicketGuide(a, { mapId: map.id, ticketId: t.id }, null, 'trail lead');
-    await setTrailTeam(a, map.id, null, 'trail lead');
+    await setTicketGuides(a, { mapId: map.id, ticketId: t.id }, { kind: 'remove', id: 'docs' }, 'trail lead');
+    await setTicketGuides(a, { mapId: map.id, ticketId: t.id }, { kind: 'add', id: 'security' }, 'trail lead');
+    await setTrailGuides(a, map.id, {}, 'trail lead');
+    const none = await fresh().loadMap(map.id);
+    assert.deepEqual(none.map.guidesByType, {}, `${name}: no guides for any type is kept`);
+    await setTrailGuides(a, map.id, null, 'trail lead');
     const cleared = await fresh().loadMap(map.id);
-    assert.equal(cleared.tickets.find((x) => x.id === t.id)!.guide, undefined, `${name}: guide cleared`);
-    assert.equal(cleared.map.guides, undefined, `${name}: team cleared`);
+    const tc = cleared.tickets.find((x) => x.id === t.id)!;
+    assert.equal(tc.guidesAdded, undefined, `${name}: added cleared`);
+    assert.equal(tc.guidesRemoved, undefined, `${name}: removed cleared`);
+    assert.equal(cleared.map.guidesByType, undefined, `${name}: back on the defaults`);
   }
 });
 
-test('review tickets take the reviewer guide only when the trail team has one', async () => {
-  for (const team of [['reviewer'], ['qa']]) {
+test('review tickets take the reviewer guide by default, and not when a trail’s old team leaves it out', async () => {
+  for (const team of [['reviewer'], ['qa'], []]) {
     const root = tmpRoot();
     const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
     const { writeFileSync } = await import('node:fs');
@@ -85,7 +100,7 @@ test('review tickets take the reviewer guide only when the trail team has one', 
     );
     approveAllHere(root);
     const map = await adapter.createMap({ title: 'R', sections: SECTIONS, verification: 'checks+review' });
-    await setTrailTeam(adapter, map.id, team, 'trail lead');
+    if (team.length) await adapter.setMapMeta(map.id, { guides: team });
     const t = await adapter.createTicket(map.id, { title: 'Build', type: 'execute', body: '' });
     const { transition } = await import('../src/planning/lifecycle/transition');
     const w = { actor: 'claude-01', actorKind: 'agent' as const };
@@ -101,8 +116,10 @@ test('review tickets take the reviewer guide only when the trail team has one', 
       sub: { agent: 'claude-01', resolution: 'done' },
     });
     await run.done;
-    const review = (await adapter.loadMap(map.id)).tickets.find((x) => x.type === 'review')!;
-    assert.equal(review.guide, team.includes('reviewer') ? 'reviewer' : undefined, team.join());
+    const after = await adapter.loadMap(map.id);
+    const review = after.tickets.find((x) => x.type === 'review')!;
+    const ids = ticketGuideIds(after.map, review).map((r) => r.id);
+    assert.deepEqual(ids, team.includes('qa') ? [] : ['reviewer'], team.join());
   }
 });
 

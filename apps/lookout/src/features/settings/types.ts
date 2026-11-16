@@ -9,7 +9,7 @@ export type SettingsSectionId =
   | 'mode'
   | 'verification'
   | 'models'
-  | 'team'
+  | 'trail-guides'
   | 'approvals'
   | 'tracker'
   | 'workspaces'

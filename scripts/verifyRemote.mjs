@@ -10,7 +10,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { approveSkipInLookout, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { answeringChecklists, approveSkipInLookout, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 /** Starts the built CLI and resolves once its output names the URL it serves. */
 async function start(cli, args, cwd, pattern) {
@@ -31,13 +31,13 @@ async function start(cli, args, cwd, pattern) {
   return { proc, url, pair };
 }
 
-const caller =
-  (client) =>
-  async (tool, args = {}) => {
+/** A tool caller for one client; it answers the checklists of its tickets' guides, as an agent would. */
+const caller = (client) =>
+  answeringChecklists(async (tool, args = {}) => {
     const r = await client.callTool({ name: tool, arguments: args });
     if (r.isError) throw new Error(`${tool}: ${r.content[0].text}`);
     return JSON.parse(r.content[0].text);
-  };
+  });
 
 /** An agent on "another machine": an MCP client over streamable HTTP with its token in the Authorization header. */
 async function httpAgent(endpoint, token) {

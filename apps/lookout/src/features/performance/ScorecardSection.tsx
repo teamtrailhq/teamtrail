@@ -4,12 +4,13 @@ import { Button, Choice, Empty, Label } from '../../components/ui';
 import { ScoreRow } from './ScoreRow';
 import { useScorecard } from './useScorecard';
 
-type Group = 'byTypeAndModel' | 'byModel' | 'byVendor' | 'byAgent';
+type Group = 'byTypeAndModel' | 'byModel' | 'byVendor' | 'byAgent' | 'byGuide';
 const GROUPS: { id: Group; title: string }[] = [
   { id: 'byTypeAndModel', title: 'Type × model' },
   { id: 'byModel', title: 'By model' },
   { id: 'byVendor', title: 'By vendor' },
   { id: 'byAgent', title: 'By agent' },
+  { id: 'byGuide', title: 'By guide' },
 ];
 
 /** Trail stats → Scorecard: verified first time, rework and cost per verified ticket on this repo, by ticket type and model. */
@@ -40,7 +41,7 @@ export function ScorecardSection() {
           <Choice key={g.id} on={group === g.id} title={g.title} onClick={() => setGroup(g.id)} />
         ))}
       </div>
-      {card[group].length ? (
+      {card[group]?.length ? (
         <ul className="perf-rows">
           {card[group].map((r) => (
             <ScoreRow key={r.key} r={r} minSample={card.minSample} />

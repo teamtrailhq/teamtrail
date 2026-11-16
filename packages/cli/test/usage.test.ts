@@ -11,6 +11,7 @@ import { installClaudeHook, recordClaudeSession } from '../src/usage/hook';
 import { claudeTranscriptParser, codexRolloutParser, readLog, type UsageEvent } from '../src/usage/logs';
 import { UsageMeter, claudeProjectDirName } from '../src/usage/meter';
 import { priceUsage, rateFor } from '../src/usage/pricing';
+import { guidesOff } from './fakes/guidesOff';
 
 /**
  * Fixtures were recorded from real Claude Code 2.1.316 (`claude -p`) and Codex
@@ -183,7 +184,10 @@ async function replay(meter: UsageMeter, agent: 'claude' | 'codex', clientName: 
       _meta: c.msg.params._meta,
     })) as { isError?: boolean; content: { text: string }[] };
     if (r.isError) throw new Error(r.content[0].text);
-    results.push(JSON.parse(r.content[0].text));
+    const out = JSON.parse(r.content[0].text);
+    // recorded before guides came by type: the trail lead turns this trail's guides off, so no checklist is asked
+    if (c.msg.params.name === 'start_trail') await guidesOff(root, out.trail.id);
+    results.push(out);
   }
   const sessions = (await readAgentDocs(root, { recentMs: 10 * 365 * 86_400_000 }))
     .map((d) => d.session)

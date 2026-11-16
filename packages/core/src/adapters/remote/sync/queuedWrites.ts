@@ -1,8 +1,9 @@
+import type { TicketMetaPatch } from '../../../model/lifecycle';
 import type { Ticket } from '../../../model/types';
 import { OperationError } from '../../../planning/operations/operationError';
 import { withMapMeta } from '../../mapMeta';
 import { reopened, withEdit, withoutBlocker } from '../../ticketEdits';
-import { withMeta } from '../../ticketMeta';
+import { META_FIELDS, withMeta } from '../../ticketMeta';
 import { withArchived } from '../../withArchived';
 import type { CacheEntry, QueuedChange, QueuedWrite } from './types';
 
@@ -18,6 +19,13 @@ export function ticketOf(e: CacheEntry, id: string) {
 function touch(t: Ticket, patch: Partial<Ticket>, now: () => number): Ticket {
   Object.assign(t, patch, { updatedAt: now() });
   return t;
+}
+
+/** A meta patch on a cached ticket; a field the patch cleared goes (Object.assign alone would keep it). */
+function applyMeta(t: Ticket, patch: TicketMetaPatch, now: () => number) {
+  const next = withMeta(t, patch);
+  for (const k of META_FIELDS) if (next[k] === undefined) delete t[k];
+  touch(t, next, now);
 }
 
 /** Applies a queueable write to a cached (or freshly fetched) trail. Safe to repeat. */
@@ -62,13 +70,9 @@ export function applyWrite(e: CacheEntry, w: QueuedWrite, now: () => number) {
     case 'claim':
       touch(ticketOf(e, c.ticketId), { assignee: c.assignee }, now);
       break;
-    case 'meta': {
-      const t = ticketOf(e, c.ticketId);
-      const next = withMeta(t, c.patch);
-      if (!next.status) delete t.status;
-      touch(t, next, now);
+    case 'meta':
+      applyMeta(ticketOf(e, c.ticketId), c.patch, now);
       break;
-    }
     case 'comment': {
       const t = ticketOf(e, c.ticketId);
       if (!t.comments.some((x) => x.writeId === w.id))

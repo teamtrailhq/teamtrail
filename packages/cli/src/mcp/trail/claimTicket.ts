@@ -14,6 +14,7 @@ import { baselineForClaim, levelFor, recordTypes, repoRootOf } from '@teamtrail/
 import type { AgentContext } from './agentContext';
 import { criteriaView } from './criteria';
 import { assertClaimable, briefView, claimable } from './discovery';
+import { givenGuides } from './guideChanges';
 import { assertInGuides, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
 import { pickNext, stampModel, tierFields } from './models';
@@ -55,7 +56,8 @@ export async function claimTicket(
     : await claim(ctx.adapter, snap.map.id, target.id, { assignee: agent, journal: ctx.journal });
   const s = await sessionFor(ctx, snap, t);
   stampModel(ctx);
-  const lease = ctx.leases.hold(agent, snap.map.id, t, { sessionId: s.id });
+  const guides = givenGuides(ctx.root, snap, t);
+  const lease = ctx.leases.hold(agent, snap.map.id, t, { sessionId: s.id, guides });
   const parallel = await claimParallel(ctx, {
     mapId: snap.map.id,
     ticket: t,
@@ -126,7 +128,7 @@ async function pickTarget(
     throw new OperationError(`${target.key} is frozen by reroute proposal ${proposal}, waiting on the human`);
   assertMayReview(ctx, snap, target, agent);
   assertUnderReviewLimit(review, target, agent);
-  if (target.assignee !== agent) assertInGuides(target, at.guides);
+  if (target.assignee !== agent) assertInGuides(snap, target, at.guides);
   if (target.assignee !== agent) assertClaimable(ctx.root, snap.map.id, target);
   return target;
 }

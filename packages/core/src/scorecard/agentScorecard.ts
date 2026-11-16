@@ -59,17 +59,28 @@ function row(key: string, items: Credited[], minSample: number, extra: Partial<S
   };
 }
 
-function grouped(
-  items: Credited[],
-  keyOf: (i: Credited) => string,
+function grouped<T extends Credited>(
+  items: T[],
+  keyOf: (i: T) => string,
   minSample: number,
-  extra?: (i: Credited) => Partial<ScorecardRow>,
+  extra?: (i: T) => Partial<ScorecardRow>,
 ) {
-  const groups = new Map<string, Credited[]>();
+  const groups = new Map<string, T[]>();
   for (const i of items) groups.set(keyOf(i), [...(groups.get(keyOf(i)) ?? []), i]);
   return [...groups]
     .map(([key, list]) => row(key, list, minSample, extra?.(list[0])))
     .sort((a, b) => b.tickets - a.tickets || a.key.localeCompare(b.key));
+}
+
+/** One row per guide: each ticket counts once under every guide its latest attempt was made under. */
+function byGuide(items: Credited[], minSample: number) {
+  const each = items.flatMap((i) => (i.t.guides ?? []).map((guide) => ({ ...i, guide })));
+  return grouped(
+    each,
+    (i) => i.guide,
+    minSample,
+    (i) => ({ guide: i.guide }),
+  );
 }
 
 /**
@@ -109,5 +120,6 @@ export function agentScorecard(input: {
     ),
     byAgent: grouped(items, (i) => i.agent, minSample),
     byVendor: grouped(items, (i) => vendorOf(i.agent), minSample),
+    byGuide: byGuide(items, minSample),
   };
 }

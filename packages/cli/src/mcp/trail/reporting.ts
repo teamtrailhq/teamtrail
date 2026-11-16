@@ -9,6 +9,7 @@ import {
 } from '@teamtrail/core';
 import type { AgentContext } from './agentContext';
 import { assertAssumes } from './assumptions';
+import { guideChanges } from './guideChanges';
 import { humanAnswerFor, humanDecision, release, spend, type HumanAnswer } from './humanAnswer';
 import { pathRoots } from './pathRoots';
 import { checkRisk, riskOf } from './riskCheck';
@@ -57,7 +58,16 @@ export async function report(
   const measured = ctx.sessions.measure(s);
   const reportedAny = u.inputTokens || u.outputTokens || u.costUsd;
   if (!measured && reportedAny) s.usage({ ...u, source: 'reported' });
-  return { session: sessionView(ctx), usageSource: usageSource(measured, s.info.usage) };
+  const guides = await workingGuideChanges(ctx, s.info);
+  return { session: sessionView(ctx), usageSource: usageSource(measured, s.info.usage), ...guides };
+}
+
+/** The guides of the ticket the session works, when the human changed them since the agent was last told. */
+async function workingGuideChanges(ctx: AgentContext, info: { mapId?: string; ticketId?: string }) {
+  if (!info.mapId || !info.ticketId) return {};
+  const snap = await ctx.load(info.mapId);
+  const ticket = snap.tickets.find((t) => t.id === info.ticketId);
+  return ticket ? guideChanges(ctx, { snap, ticket }) : {};
 }
 
 /** A step given as its number or its name (any case), checked against the mode's steps. */

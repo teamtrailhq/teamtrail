@@ -1,3 +1,4 @@
+import { ticketGuideIds } from '../../guides/ticketGuideIds';
 import type { InstalledGuide } from '../../model/guide';
 import type { AttentionSource, Candidate } from '../types';
 
@@ -7,11 +8,12 @@ const TITLES: Record<string, (id: string) => string> = {
   invalid: (id) => `Guide ${id} can't be used`,
 };
 
-/** Tickets that ask for a guide, by guide id. */
+/** Open tickets that take on a guide (by their type on the trail, or added to them), by guide id. */
 function ticketsByGuide(input: Parameters<AttentionSource['collect']>[0]) {
   const out = new Map<string, string[]>();
   for (const s of input.snaps)
-    for (const t of s.tickets) if (t.guide && t.state === 'open') out.set(t.guide, [...(out.get(t.guide) ?? []), t.id]);
+    for (const t of s.tickets.filter((x) => x.state === 'open'))
+      for (const { id } of ticketGuideIds(s.map, t)) out.set(id, [...(out.get(id) ?? []), t.id]);
   return out;
 }
 

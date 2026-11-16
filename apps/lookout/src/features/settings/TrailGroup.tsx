@@ -1,5 +1,5 @@
 import { Empty } from '../../components/ui';
-import { TeamSection } from '../guides';
+import { TrailGuidesSection } from '../guides';
 import { ModeChoice } from '../trail';
 import { ModelMatchingSection } from './ModelMatchingSection';
 import { SettingsSection } from './SettingsSection';
@@ -7,7 +7,7 @@ import { SettingsSlot } from './SettingsSlot';
 import type { SettingsData } from './types';
 import { VerificationSection } from './VerificationSection';
 
-/** Settings → This trail: the trail on screen's mode, verification, model matching and team. */
+/** Settings → This trail: the trail on screen's mode, verification, model matching and guides by type. */
 export function TrailGroup({ data }: { data: SettingsData }) {
   const { map } = data;
   return (
@@ -19,7 +19,7 @@ export function TrailGroup({ data }: { data: SettingsData }) {
           </SettingsSection>
         </SettingsSlot>
       ) : (
-        <Empty>Chart or pick a trail to set its mode, model matching and team.</Empty>
+        <Empty>Chart or pick a trail to set its mode, model matching and guides.</Empty>
       )}
       <SettingsSlot id="verification" storage="repo">
         <VerificationSection map={map} />
@@ -28,8 +28,8 @@ export function TrailGroup({ data }: { data: SettingsData }) {
         <ModelMatchingSection map={map} snaps={data.snaps} answered={data.answered} onChange={data.onModelMatching} />
       </SettingsSlot>
       {map && (
-        <SettingsSlot id="team">
-          <TeamSection map={map} />
+        <SettingsSlot id="trail-guides">
+          <TrailGuidesSection map={map} />
         </SettingsSlot>
       )}
     </>

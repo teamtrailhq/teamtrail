@@ -14,6 +14,7 @@ export function fingerprint(e: CacheEntry) {
     !!map.archived,
     map.verification ?? '',
     map.guides ?? [],
+    map.guidesByType ?? null,
     map.modelMatching ?? null,
     roundtrip(map.sections),
     [...tickets]
@@ -30,6 +31,8 @@ export function fingerprint(e: CacheEntry) {
         t.verification ?? '',
         t.checks ?? null,
         t.guide ?? '',
+        t.guidesAdded ?? [],
+        t.guidesRemoved ?? [],
         [...t.blockedBy].sort(),
         t.body.trim(),
         t.comments.map((c) => [c.author, c.body.trim()]),

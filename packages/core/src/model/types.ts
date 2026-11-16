@@ -48,8 +48,15 @@ export interface Ticket {
   checks?: string[];
   /** `review` tickets: id of the ticket under review. */
   reviewOf?: string;
-  /** The guide (model/guide.ts) an agent takes on when it claims this ticket, e.g. `qa`. */
+  /**
+   * The guide this ticket was given before guides came by type (format of 0.55 and older). Read as an added
+   * override (guides/ticketGuideIds.ts); the trail lead's next change to the ticket's guides moves it to `guidesAdded`.
+   */
   guide?: string;
+  /** Guides this ticket takes on besides its type's guides on the trail (`guidesByType`). */
+  guidesAdded?: string[];
+  /** Guides of its type on the trail that this ticket goes without. */
+  guidesRemoved?: string[];
   /** Remote trackers: settings someone else wrote that this machine never confirmed (remote/settingsInForce.ts). */
   settingsUnconfirmed?: true;
   /** Ids of tickets that block this one (native blocking edges). */
@@ -92,8 +99,16 @@ export interface MapDoc {
   mode: MapMode;
   /** Unset means off: trails that predate verification complete as they always have. */
   verification?: VerificationLevel;
-  /** The trail's team: the guide ids its tickets may declare. Unset means no team. */
+  /**
+   * The trail's team from before guides came by type: only consulted while `guidesByType` is unset, as the list the
+   * default guides are kept within (guides/trailGuidesByType.ts). Unset means no limit.
+   */
   guides?: string[];
+  /**
+   * The guides each ticket type takes on. Unset means the defaults (DEFAULT_GUIDES_BY_TYPE); `{}` means none for any
+   * type. A trail lead setting (`setTrailGuides`).
+   */
+  guidesByType?: GuidesByType;
   /** Match work to the model each agent session runs on. Unset means off: claiming works as it always has. */
   modelMatching?: ModelMatching;
   /** Remote trackers: settings someone else wrote that this machine never confirmed (remote/settingsInForce.ts). */
@@ -104,6 +119,9 @@ export interface MapDoc {
   createdAt: number;
   updatedAt: number;
 }
+
+/** The guide ids each ticket type takes on; a type that isn't listed takes none. */
+export type GuidesByType = Partial<Record<TicketType, string[]>>;
 
 /** A trail's model matching: off unless `enabled`; `tiers` overrides the default tier of a ticket type. */
 export type ModelMatching = { enabled: boolean; tiers?: Partial<Record<TicketType, ModelTier>> };

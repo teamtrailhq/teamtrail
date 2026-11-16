@@ -47,6 +47,22 @@ function decisionLines(p: Proof): string[] {
   );
 }
 
+/** Each guide the work was done under: version, whether the trail or the ticket gave it, its checklist. */
+function guideLines(p: Proof): string[] {
+  if (!p.guides) return [];
+  if (!p.guides.length) return ['', '**Guides:** none.'];
+  const line = (g: NonNullable<Proof['guides']>[number]) => {
+    const parts = [
+      `${md(g.id, 60)}${g.version ? ` ${md(g.version, 20)}` : ''}`,
+      g.via === 'type' ? 'by ticket type' : 'added to the ticket',
+      ...(g.disabled ? ['not usable, its approved checks ran'] : []),
+      ...(g.checklist ? [`checklist ${g.checklist.answered} of ${g.checklist.items}`] : []),
+    ];
+    return `- ${parts.join(', ')}`;
+  };
+  return ['', '**Guides:**', ...p.guides.map(line)];
+}
+
 function gitLines(p: Proof): string[] {
   const g = p.git;
   if (!g) return [];
@@ -101,6 +117,7 @@ export function proofMarkdown(p: Proof, signature?: ProofSignature): string {
     '',
     '**Decisions this relies on:**',
     ...decisionLines(p),
+    ...guideLines(p),
     ...gitLines(p),
     '',
     `<sub>Attempt ${md(p.attempt.id, 40)} by ${md(p.attempt.agent, 60)}${p.earlier.length ? ` after ${p.earlier.length} earlier` : ''} · ${p.digest.slice(0, 19)}… · Teamtrail records what ran on the trail lead's machine; it does not judge the code.</sub>`,

@@ -46,7 +46,7 @@ export function checklistProblem(guide: { id: string; name: string }, c: Checkli
     `The ${guide.name} guide (${guide.id}) needs an answer for every checklist item.`,
     ...(c.missing.length ? [`Missing: ${c.missing.map((m) => `"${m}"`).join('; ')}.`] : []),
     ...(c.unknown.length ? [`Not on the checklist: ${c.unknown.map((m) => `"${m}"`).join('; ')}.`] : []),
-    'Pass checklist: [{ item, done, note? }], one per item, with the item text or its number.',
+    'Pass checklist: [{ item, done, note? }], one per item, with the item text or its number; with several guides, add guide: "<id>" to each.',
   ];
   return parts.join(' ');
 }

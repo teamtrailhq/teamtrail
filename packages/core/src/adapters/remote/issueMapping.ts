@@ -29,7 +29,7 @@ export function mapFromIssue(p: TrailIssueParts): MapDoc {
   const { text, meta } = p.writer.kind === 'outsider' ? readBody(p.body, p.writer) : splitBody(p.body);
   const found = settingsOf({ ...meta });
   const settled = p.settle ? p.settle(found) : { use: found };
-  const { verification, guides, modelMatching } = settled.use;
+  const { verification, guides, guidesByType, modelMatching } = settled.use;
   return {
     id: p.id,
     key: p.key,
@@ -38,6 +38,7 @@ export function mapFromIssue(p: TrailIssueParts): MapDoc {
     ...(p.labels.includes(ARCHIVED_LABEL) ? { archived: true as const } : {}),
     ...(verification ? { verification } : {}),
     ...(guides?.length ? { guides } : {}),
+    ...(guidesByType ? { guidesByType } : {}),
     ...(modelMatching ? { modelMatching } : {}),
     ...(settled.unconfirmed ? { settingsUnconfirmed: true as const } : {}),
     sections: parseMapBody(text),

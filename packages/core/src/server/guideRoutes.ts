@@ -1,15 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { approveCheck } from '../guides/approveCheck';
 import { readChecklist } from '../guides/checklistStore';
-import { guideProblem } from '../guides/guideProblem';
-import { listGuides } from '../guides/guideStore';
 import { approveGuide } from '../guides/installGuide';
 import { removeGuide } from '../guides/removeGuide';
-import { setTicketGuide } from '../planning/lifecycle/setTicketGuide';
-import { setTrailTeam } from '../planning/lifecycle/setTrailTeam';
 import { OperationError } from '../planning/operations/operationError';
 import { handleGuideCatalog } from './guideCatalogRoutes';
 import { journalGuide, guidesView, TRAIL_LEAD } from './guideJournal';
+import { guideTrailAction } from './guideTrailActions';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
 
@@ -38,33 +35,11 @@ async function projectAction(ctx: RouteContext, req: IncomingMessage, path: stri
   }
 }
 
-/** A ticket's guide, or a trail's team; every id must be an active guide (and, for a ticket, made for its type). */
-async function trailAction(ctx: RouteContext, req: IncomingMessage, path: string) {
-  const b = await readJson<{ mapId?: unknown; ticketId?: unknown; guide?: unknown; guides?: unknown }>(req, '{}');
-  const mapId = str(b.mapId, 'mapId');
-  const adapter = await ctx.active();
-  const guides = listGuides(ctx.root);
-  if (path === '/guides/team') {
-    const team = Array.isArray(b.guides) ? b.guides.filter((r): r is string => typeof r === 'string') : [];
-    const problem = team.map((id) => guideProblem(guides, id)).find(Boolean);
-    if (problem) throw new BadRequest(problem);
-    await setTrailTeam(adapter, mapId, team, 'trail lead');
-    return journalGuide(ctx.root, { action: 'team', guide: team.join(', '), mapId });
-  }
-  const ticketId = str(b.ticketId, 'ticketId');
-  const guide = b.guide === null || b.guide === '' ? null : str(b.guide, 'guide');
-  const t = (await adapter.loadMap(mapId)).tickets.find((x) => x.id === ticketId);
-  if (!t) throw new BadRequest(`ticket ${ticketId} not found`);
-  const problem = guide ? guideProblem(guides, guide, t.type) : undefined;
-  if (problem) throw new BadRequest(problem);
-  await setTicketGuide(adapter, { mapId, ticketId }, guide, 'trail lead');
-  journalGuide(ctx.root, { action: 'ticket-guide', guide: guide ?? '', mapId, ticketId });
-}
-
 /**
  * `/guides`, the trail lead's side of guides (agents only read them, over MCP). GET `/guides` lists them; POST
  * `/guides/approve { id, sha256 }`, `/guides/checks/approve { id, name, acknowledged? }` (a program Teamtrail doesn't know needs `acknowledged`) and `/guides/remove { id }` act on the project;
- * POST `/guides/ticket { mapId, ticketId, guide|null }` and `/guides/team { mapId, guides }` on a trail. GET
+ * POST `/guides/ticket { mapId, ticketId, add|remove }` and `/guides/trail { mapId, byType|null }` on a trail
+ * (guideTrailActions.ts). GET
  * `/guides/checklist?mapId&ticketId` is a ticket's latest checklist answers. Catalog routes are in guideCatalogRoutes.ts.
  * Every write is journaled; a refused one answers 409 with the reason.
  */
@@ -80,7 +55,7 @@ export async function handleGuides(ctx: RouteContext, req: IncomingMessage, res:
   if (req.method !== 'POST') return false;
   try {
     if (['/guides/approve', '/guides/checks/approve', '/guides/remove'].includes(p)) await projectAction(ctx, req, p);
-    else if (p === '/guides/ticket' || p === '/guides/team') await trailAction(ctx, req, p);
+    else if (p === '/guides/ticket' || p === '/guides/trail') await guideTrailAction(ctx, req, p);
     else return false;
   } catch (e) {
     if (!(e instanceof OperationError)) throw e;

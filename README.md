@@ -69,7 +69,7 @@ Teamtrail paces agents to your review:
 
 - **Separate workspaces:** each claimed ticket can get its own git worktree and branch. Agents say which files they'll change, you're warned before two collide, and a ticket to bring the work together is one click away. Teamtrail never merges or pushes for you.
 - **Model matching:** per trail, each agent gets the tickets that fit the model it runs on, from research on fast models to junctions on the strongest. Teamtrail never picks or switches a model.
-- **Guides:** a ticket can ask for a reviewer, QA, security, docs or architect guide, with a checklist the agent must answer before the work counts. Add more from a moderated catalog, or write your own with `teamtrail guides new`.
+- **Guides:** tickets take guides by type (the architect on research, QA and security on tasks, the reviewer on reviews), each with a checklist the agent must answer before the work counts. Change them per trail or per ticket, add more from a moderated catalog, or write your own with `teamtrail guides new`.
 - **Remote agents:** agents on other machines or in cloud sandboxes join over HTTP (`teamtrail mcp --http`), each with a token you can revoke.
 
 **Evidence you can trust**
