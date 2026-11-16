@@ -1,6 +1,7 @@
 import { BRAND, webUrl, type Ticket } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button, MetaLine, Pill } from '../../components/ui';
+import { MergeOnApprove } from './MergeOnApprove';
 import { useTicketProof } from './useTicketProof';
 
 /**
@@ -48,6 +49,7 @@ export function TicketProof(props: { mapId: string; ticket: Ticket }) {
           { text: proof.digest.slice(0, 19), code: true },
         ]}
       />
+      {done && <MergeOnApprove mapId={props.mapId} ticketId={props.ticket.id} verified={verified} />}
       {comment && (
         <a className="t-meta" href={comment} target="_blank" rel="noreferrer">
           Posted on pull request #{post!.pr}

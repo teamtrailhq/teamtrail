@@ -16,3 +16,10 @@
 .ticket-proof code {
   overflow-wrap: anywhere;
 }
+/* Approve and merge (features/proof/MergeOnApprove.tsx): the button, its one question, what happened. */
+.merge-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+}
