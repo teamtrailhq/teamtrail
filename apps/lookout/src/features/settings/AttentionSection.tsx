@@ -2,7 +2,9 @@ import { BRAND, type AttentionPrefs, type NotifyChannel } from '@teamtrail/core'
 import { MetaLine, Select, type SelectOption } from '../../components/ui';
 import { useAttention } from '../attention';
 import { FocusHoursRow } from './FocusHoursRow';
+import { ReviewLimitRow } from './ReviewLimitRow';
 import { SettingsSection } from './SettingsSection';
+import { useThisMachine } from './useThisMachine';
 
 const CHANNELS: SelectOption<NotifyChannel>[] = [
   { value: 'browser', label: 'Browser notification' },
@@ -19,7 +21,8 @@ function askBrowserPermission() {
 
 /** When Teamtrail may interrupt you. The team's rules live in attention.json; channel and quiet hours are yours. */
 export function AttentionSection() {
-  const { view, error, savePrefs } = useAttention(0);
+  const { view, error, savePrefs, saveReviewLimit } = useAttention(0);
+  const local = useThisMachine();
   if (!view) return null;
   const team = view.policy.value;
   const file = `${BRAND.dataDir}/attention.json`;
@@ -49,6 +52,12 @@ export function AttentionSection() {
       )}
       <FocusHoursRow focus={view.prefs.focus} onChange={(focus) => save({ focus })} />
       <span className="set-hint t-meta">Your channel and quiet hours stay on this machine.</span>
+      <ReviewLimitRow
+        limit={team.reviewLimit}
+        review={view.review}
+        local={local}
+        onChange={(limit) => void saveReviewLimit(limit)}
+      />
       {view.policy.errors.length > 0 && (
         <ul className="vf-errors">
           {view.policy.errors.map((e) => (
@@ -64,6 +73,7 @@ export function AttentionSection() {
           view.policy.exists ? { text: file, code: true } : 'Team defaults',
           `interrupt at ${team.interrupt}`,
           team.digestMinutes ? `Slack digest every ${team.digestMinutes} min` : 'Slack digest off',
+          team.reviewLimit ? `review limit ${team.reviewLimit}` : 'review limit off',
         ]}
       />
       {error && <span className="vf-err">{error}</span>}

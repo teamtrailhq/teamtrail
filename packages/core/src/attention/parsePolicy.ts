@@ -1,4 +1,5 @@
 import type { AttentionKind, AttentionPolicy } from '../model/attention';
+import { REVIEW_LIMIT_RANGE } from '../model/reviewLoad';
 import { ATTENTION_KINDS, DEFAULT_ATTENTION_POLICY } from './defaults';
 
 export interface Parsed<T> {
@@ -12,7 +13,7 @@ const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v =
 const isNumberIn = (v: unknown, min: number, max: number): v is number =>
   typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 
-const KEYS = ['v', 'weights', 'interrupt', 'digestMinutes'];
+const KEYS = ['v', 'weights', 'interrupt', 'digestMinutes', 'reviewLimit'];
 
 function parseWeights(raw: unknown, errors: string[]): Record<AttentionKind, number> {
   const weights = { ...DEFAULT_ATTENTION_POLICY.weights };
@@ -47,5 +48,14 @@ export function parseAttentionPolicy(raw: unknown): Parsed<AttentionPolicy> {
     if (isNumberIn(raw.digestMinutes, 0, 7 * 24 * 60)) value.digestMinutes = raw.digestMinutes;
     else errors.push('"digestMinutes" must be minutes from 0 (off) to 10080');
   }
+  parseReviewLimit(raw.reviewLimit, value, errors);
   return { value, errors };
+}
+
+/** `reviewLimit`: a whole number of waiting reviews; missing or `null` is off. */
+function parseReviewLimit(raw: unknown, value: AttentionPolicy, errors: string[]) {
+  if (raw === undefined || raw === null) return;
+  const { min, max } = REVIEW_LIMIT_RANGE;
+  if (isNumberIn(raw, min, max) && Number.isInteger(raw)) value.reviewLimit = raw;
+  else errors.push(`"reviewLimit" must be a whole number from ${min} to ${max}, or null (off)`);
 }

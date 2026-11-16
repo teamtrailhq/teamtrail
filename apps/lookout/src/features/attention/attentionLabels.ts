@@ -22,6 +22,7 @@ export const KIND_LABEL: Record<AttentionKind, string> = {
   delivery: 'Delivery',
   'tracker-settings': 'Settings',
   precedent: 'Precedent',
+  'review-limit': 'Review',
 };
 
 /** What a batch of one kind is called: "3 questions from Reminders, answer together". */
@@ -46,6 +47,7 @@ export const KIND_PLURAL: Record<AttentionKind, string> = {
   delivery: 'connectors not delivering',
   'tracker-settings': 'settings changed in the tracker',
   precedent: 'changes to what you decided',
+  'review-limit': 'review queues full',
 };
 
 /** Snooze choices, in minutes. */

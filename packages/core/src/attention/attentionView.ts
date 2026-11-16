@@ -1,5 +1,6 @@
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { AttentionView } from '../model/attention';
+import { reviewLoad } from '../reviewLoad/reviewLoad';
 import { readAttentionPolicy, readAttentionPrefs } from './attentionStore';
 import { buildAttention } from './buildAttention';
 import { focusState, isFocused, isInterrupting } from './focus';
@@ -29,5 +30,6 @@ export async function attentionView(input: {
     focus: focusState(prefs, now),
     heldBack: focused ? wouldInterrupt : 0,
     hidden,
+    review: reviewLoad({ approvals: gathered.approvals, syncs: gathered.syncs, limit: policy.value.reviewLimit }),
   };
 }

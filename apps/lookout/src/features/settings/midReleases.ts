@@ -1,7 +1,28 @@
 import type { Release } from './releases';
 
-/** Releases 0.26–0.30, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.26–0.32, kept apart so `releases.ts` stays short. Newest first. */
 export const MID_RELEASES: Release[] = [
+  {
+    version: '0.32.0',
+    date: '2026-11-13',
+    items: [
+      'Scout has a new look: a scout companion with a cap, a headset and an antenna, looking out along the trail',
+    ],
+  },
+  {
+    version: '0.31.1',
+    date: '2026-11-13',
+    items: ['An archived trail’s held work and changes waiting for your approval stay in your queue'],
+  },
+  {
+    version: '0.31.0',
+    date: '2026-11-13',
+    items: [
+      'Start a trail over: the trail menu archives the map that went wrong and opens New trail with its idea filled in',
+      'Archive a trail you are done with, or restore it: it stays as history, and no agent takes work from it',
+      'The empty map looks like every other empty zone, with New trail and the agent command under it',
+    ],
+  },
   {
     version: '0.30.0',
     date: '2026-11-12',
