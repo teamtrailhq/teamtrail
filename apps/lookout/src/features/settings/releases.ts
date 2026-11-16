@@ -192,14 +192,6 @@ export const RELEASES: Release[] = [
       'The ticket inspector shows the proof, with Copy for PR and a link to the comment once it is posted',
     ],
   },
-  {
-    version: '0.35.0',
-    date: '2026-11-15',
-    items: [
-      "Settings → Project → Proof on pull requests: switch it on and Teamtrail posts each done ticket's report on its open pull request, updating the same comment as things change",
-      'A Teamtrail proof check sits next to CI on the pull request and passes only when the ticket is verified at its latest commit',
-    ],
-  },
   ...MID_RELEASES,
   ...OLDER_RELEASES,
 ];
