@@ -9,7 +9,6 @@ import { DestinationTrail } from './DestinationTrail';
 import { GraphDefs } from './GraphDefs';
 import { GraphEdges } from './GraphEdges';
 import { GraphNode } from './GraphNode';
-import { MapLegend } from './MapLegend';
 import type { MapPreview } from './mapPreview';
 import { openingView } from './openingView';
 import { OutOfScopeStrip } from './OutOfScopeStrip';
@@ -201,7 +200,6 @@ export function MapGraph(props: {
           </g>
         </g>
       </svg>
-      <MapLegend />
       <button
         className="btn sm fit-btn"
         data-tip="Fit the whole trail in view"

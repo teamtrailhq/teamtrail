@@ -225,6 +225,22 @@
   color: var(--text-hi);
   cursor: pointer;
 }
+a.header-menu-item {
+  text-decoration: none;
+}
+/* The trail's agents (features/header/TrailAgentsMenu.tsx): green while one is working. */
+.agents-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--sp-6);
+  border-radius: 50%;
+  border: 1px solid var(--dim);
+}
+.agents-dot.on {
+  border-color: rgb(var(--decided-rgb));
+  background: rgb(var(--decided-rgb));
+}
 .header-menu-item:hover:not(:disabled) {
   background: var(--panel2);
 }

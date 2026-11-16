@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button, EmptyState, Panel } from '../components/ui';
-import { MapGraph, type MapPreview } from '../features/map';
+import { MapGraph, MapLegend, type MapPreview } from '../features/map';
 import { StatusDrawer } from '../features/status';
 import { AgentCommand, CommandBar } from '../features/trail';
 import type { LookoutApi } from '../hooks';
@@ -51,6 +51,7 @@ export function MapZone(props: {
             )}
           </div>
         )}
+        {snap && props.compact && <MapLegend />}
         {snap && props.compact && (
           <Legend planOnly={snap.map.mode === 'plan-only'} verifies={(snap.map.verification ?? 'off') !== 'off'} />
         )}
