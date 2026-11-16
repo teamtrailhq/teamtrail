@@ -1,7 +1,7 @@
 import { Button } from '../../components/ui';
 import { hostedAgents } from '../../lib/hostedAgents';
 import { trailAgentsPath } from '../../lib/trailAgents';
-import { StartTrail } from '../trail/StartTrail';
+import { TrailAgentsMenu } from './TrailAgentsMenu';
 
 /**
  * In a hosted Lookout whose server runs agents itself (lib/hostedAgents.ts): straight to this trail's row on the
@@ -9,7 +9,7 @@ import { StartTrail } from '../trail/StartTrail';
  */
 export function RunAgentsButton({ mapId }: { mapId: string }) {
   // A server that starts agents from here: in place, no page to go to.
-  if (trailAgentsPath()) return <StartTrail mapId={mapId} />;
+  if (trailAgentsPath()) return <TrailAgentsMenu mapId={mapId} />;
   const page = hostedAgents();
   if (!page) return null;
   const open = () => location.assign(`${page.href}#trail-${encodeURIComponent(mapId)}`);
