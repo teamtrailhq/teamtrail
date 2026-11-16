@@ -145,3 +145,15 @@ describe('a server that tracks setup says where', () => {
     expect(managedSignIn()?.setup).toBeUndefined();
   });
 });
+
+describe('a server that starts agents from here says where', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  test('only a path on this origin is kept', () => {
+    vi.stubGlobal('location', { href: `${origin}/`, origin });
+    vi.stubGlobal('document', { documentElement: { dataset: {} } });
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], trailAgents: '/_cloud/agents/trail' } });
+    expect(managedSignIn()?.trailAgents).toBe('/_cloud/agents/trail');
+    learnManagedSignIn({ managed: { name: 'Ada', pages: [], trailAgents: 'https://evil.example/x' } });
+    expect(managedSignIn()?.trailAgents).toBeUndefined();
+  });
+});

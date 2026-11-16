@@ -19,6 +19,12 @@ function themeSaveOf(value: unknown): { themeSave?: string } {
   return p ? { themeSave: p } : {};
 }
 
+/** Where the server starts and pauses agents on a trail. */
+function trailAgentsOf(value: unknown): { trailAgents?: string } {
+  const p = pathOf(value);
+  return p ? { trailAgents: p } : {};
+}
+
 /** Where the server says how far setup is. */
 function setupOf(value: unknown): { setup?: string } {
   const p = pathOf(value);
@@ -68,6 +74,11 @@ export interface ManagedSignIn {
    * in the corner reads it (features/guide/), until every step is done.
    */
   setup?: string;
+  /**
+   * Where the server starts and pauses this person's agents on a trail (a path on this origin): New trail and the
+   * trail's header then offer Start the trail in place (features/trail/StartTrail.tsx).
+   */
+  trailAgents?: string;
   /** `false`: this person may not make high-risk calls, so the page routes those to someone who may. */
   highRisk?: boolean;
   /** The server's own home (all of this person's workspaces, say), on any web origin: a way out of the Lookout. */
@@ -104,6 +115,7 @@ export function learnManagedSignIn(reply: { managed?: unknown }) {
     ...themeSaveOf(m.themeSave),
     ...mergeOf(m.merge),
     ...setupOf(m.setup),
+    ...trailAgentsOf(m.trailAgents),
     ...(m.highRisk === false ? { highRisk: false } : {}),
     ...homeOf(m.home),
     ...(m.tracker === 'markdown' ? { tracker: 'markdown' as const } : {}),

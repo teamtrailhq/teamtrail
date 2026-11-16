@@ -21,6 +21,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.49.0',
+    date: '2026-11-16',
+    items: [
+      'In Teamtrail Cloud, Start the trail right after New trail, or from the trail’s header: agents start in place',
+      'A trail started in the Lookout gets your project’s default verification level, as one an agent starts does',
+    ],
+  },
+  {
     version: '0.48.1',
     date: '2026-11-16',
     items: ['Scout’s Get started sits in the bottom-right corner; adding your own check shows examples'],

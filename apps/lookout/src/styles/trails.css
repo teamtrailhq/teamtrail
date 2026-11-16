@@ -130,3 +130,19 @@
 .trail-tag.cur {
   color: var(--accent);
 }
+
+/* Start the trail (features/trail/StartTrail.tsx): the button, or what the agents are doing with Pause and Runs. */
+.start-trail {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+}
+.start-trail select {
+  width: auto;
+  height: var(--h-sm, 28px);
+}
+.start-trail-status {
+  font-size: var(--fs-sm);
+  color: var(--text-hi);
+}
