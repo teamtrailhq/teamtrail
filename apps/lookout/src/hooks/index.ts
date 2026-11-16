@@ -5,4 +5,5 @@ export { type LookoutApi, useLookout } from './useLookout';
 export { useLeases } from './useLeases';
 export { useNow } from './useNow';
 export { usePrefs } from './usePrefs';
+export { useThemedPrefs } from './useThemedPrefs';
 export { usePrSync } from './usePrSync';
