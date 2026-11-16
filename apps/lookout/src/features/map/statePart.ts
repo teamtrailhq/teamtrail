@@ -13,6 +13,8 @@ export function statePart(input: {
   wait?: ModelTier;
   /** Room for the agent's step: there isn't when the line also carries a guide. */
   step: boolean;
+  /** Done: whether its proof is verified. */
+  verified?: boolean;
 }) {
   const { n, session } = input;
   const assignee = n.ticket.assignee;
@@ -22,5 +24,7 @@ export function statePart(input: {
   if (session && input.step) return { text: `${session.agent} · step ${session.step}/${session.total}`, tone: 'agent' };
   if (session) return { text: session.agent, tone: 'agent' };
   if (n.state === 'claimed') return { text: assignee ?? 'working', tone: 'agent' };
+  if (n.state === 'verifying') return { text: 'checks running', tone: 'agent' };
+  if (n.state === 'decided' && input.verified) return { text: 'verified', tone: 'verified' };
   return { text: STATE_LABEL[n.state], tone: '' };
 }

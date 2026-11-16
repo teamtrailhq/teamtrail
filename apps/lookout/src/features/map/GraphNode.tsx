@@ -39,6 +39,7 @@ export function GraphNode({
   mark,
   frozen,
   needs,
+  verified,
 }: {
   n: LaidOutNode;
   session?: SessionInfo;
@@ -54,6 +55,8 @@ export function GraphNode({
   frozen?: boolean;
   /** Model matching: ready, but waiting for a stronger model than any connected agent runs. */
   needs?: ModelTier;
+  /** Done: whether its proof is verified (undefined while not known). */
+  verified?: boolean;
 }) {
   const t = n.ticket;
   const lines = wrap(t.title, TITLE_CHARS);
@@ -62,7 +65,7 @@ export function GraphNode({
   const marked = !!mark && mark !== 'unchanged';
   const wait = modelWait(n, needs, !!s);
   const guide = useSignGuide(t.guide);
-  const state = marked ? undefined : statePart({ n, session: s, waiting, stalled, wait, step: !guide });
+  const state = marked ? undefined : statePart({ n, session: s, waiting, stalled, wait, step: !guide, verified });
   const needsYou = hitl && !marked && (t.type === 'task' || t.type === 'execute');
   const heldUp = waiting || !!stalled || !!wait || (needsYou && n.state === 'frontier');
   const tone = nodeTone({ state: n.state, live: !!s, attention: heldUp });
@@ -82,7 +85,7 @@ export function GraphNode({
       <NodeTip wait={wait} session={s} />
       <rect className="ring" x={-3.5} y={-3.5} width={NODE_W + 7} height={NODE_H + 7} rx={9} />
       <rect className="card" x={0.5} y={0.5} width={NODE_W - 1} height={NODE_H - 1} rx={6} />
-      <StatusDot tone={tone} cy={top - 4} />
+      <StatusDot tone={tone} cy={top - 4} verified={verified} />
       {lines.map((l, i) => (
         <text key={i} className="title" x={CARD_TEXT_X} y={top + i * 14}>
           {l}
