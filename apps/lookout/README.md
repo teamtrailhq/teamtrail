@@ -9,9 +9,8 @@ The Lookout for planning with agents: a live map of decision tickets, HITL conve
 Requires Node 20+. One package, one command:
 
 ```bash
-npm i -g teamtrail@next       # or, without installing: npx teamtrail@next
 cd your-repo
-teamtrail
+npx teamtrail      # or install it: npm i -g teamtrail, then run `teamtrail`
 ```
 
 `teamtrail` starts a local server (default `http://127.0.0.1:7420`, the next free port if that one is taken), opens the Lookout in your browser and keeps trails as markdown in `./.teamtrail/` in the current folder. The header shows the folder name. Agents and people can edit those files directly; changes stream into the UI.

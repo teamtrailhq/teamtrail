@@ -5,14 +5,14 @@
 > Verified work from AI coding agents. Agents do the work; you know it's done.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/teamtrailhq/teamtrail/ci.yml?branch=main&label=CI)](https://github.com/teamtrailhq/teamtrail/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/teamtrail/next?label=npm%40next)](https://www.npmjs.com/package/teamtrail?activeTab=versions)
+[![npm](https://img.shields.io/npm/v/teamtrail/next?label=npm%40next)](https://www.npmjs.com/package/teamtrail)
 [![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![MCP](https://img.shields.io/badge/MCP-server-555)](https://modelcontextprotocol.io)
 [![Works with Claude Code and Codex](https://img.shields.io/badge/works%20with-Claude%20Code%20%C2%B7%20Codex-555)](packages/cli/README.md#connect-your-coding-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/teamtrailhq/teamtrail?style=social)](https://github.com/teamtrailhq/teamtrail/stargazers)
 
-**[teamtrail.app](https://teamtrail.app)** · [Docs](https://teamtrail.app/docs/) · [Try it: `npx teamtrail@next`](https://www.npmjs.com/package/teamtrail?activeTab=versions)
+**[teamtrail.app](https://teamtrail.app)** · [Docs](https://teamtrail.app/docs/) · [Try it: `npx teamtrail`](https://www.npmjs.com/package/teamtrail)
 
 Teamtrail gives you verified work from AI coding agents. It breaks big work into decision tickets that Claude Code, Codex or any MCP agent picks up, sends you only the calls that are yours, and counts nothing as done until it's verified: your checks, run by Teamtrail, a review by a different agent and a signed proof for every finished ticket. You steer from the Lookout, a web app on your machine, where Scout briefs you on what changed while you were away.
 
@@ -83,18 +83,16 @@ Requires Node 20+.
 
 ```bash
 cd your-repo
-npx teamtrail@next      # or install it: npm i -g teamtrail@next, then run `teamtrail`
+npx teamtrail      # or install it: npm i -g teamtrail, then run `teamtrail`
 ```
-
-Use `@next` until launch: npm's `latest` tag is still a placeholder that only says Teamtrail isn't released yet.
 
 `teamtrail` opens the Lookout in your browser. Run `teamtrail --help` for options.
 
 Connect your agent once, then use `/scout new "<idea>"`, `/scout resume`, `/scout status` and `/scout inbox`:
 
 ```bash
-npx teamtrail@next connect claude   # Claude Code: the MCP server and the /scout command
-npx teamtrail@next connect codex    # Codex: the MCP server and the /prompts:scout prompt
+npx teamtrail connect claude   # Claude Code: the MCP server and the /scout command
+npx teamtrail connect codex    # Codex: the MCP server and the /prompts:scout prompt
 ```
 
 `connect` pins your agent to the version you ran it with.
