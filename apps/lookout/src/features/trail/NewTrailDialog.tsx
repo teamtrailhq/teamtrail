@@ -76,7 +76,7 @@ export function NewTrailDialog({
           </div>
         )}
         {created ? (
-          <CreatedNote created={created.key} mapId={created.id} />
+          <CreatedNote created={created.key} mapId={created.id} onStarted={onClose} />
         ) : (
           error && <p className="vf-err">{error}</p>
         )}

@@ -11,10 +11,10 @@ function status(s: TrailAgents) {
 
 /**
  * Start the trail, in place: switches this person's agents on for it (in the one repository, or the one picked) and
- * shows what they're doing, with Pause and a link to their runs. Only behind a server that runs agents and says
+ * shows what they're doing, with Pause and a link to their runs; `onStarted` once they're on (New trail closes). Only behind a server that runs agents and says
  * where (lib/trailAgents.ts); the server checks everything again.
  */
-export function StartTrail({ mapId }: { mapId: string }) {
+export function StartTrail({ mapId, onStarted }: { mapId: string; onStarted?: () => void }) {
   const [state, setState] = useState<TrailAgents>();
   const [repo, setRepo] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -38,6 +38,7 @@ export function StartTrail({ mapId }: { mapId: string }) {
     setBusy(false);
     if ('error' in next) return setError(next.error);
     setState(next);
+    if (on) onStarted?.();
   };
   const runs = hostedAgents();
   if (state.on)
@@ -67,7 +68,7 @@ export function StartTrail({ mapId }: { mapId: string }) {
           ))}
         </select>
       )}
-      <Button size="sm" disabled={busy || (state.repos.length > 1 && !repo)} onClick={() => void act(true)}>
+      <Button variant="primary" disabled={busy || (state.repos.length > 1 && !repo)} onClick={() => void act(true)}>
         Start the trail
       </Button>
       {!state.repos.length && <span className="t-meta">Connect a repository first.</span>}
