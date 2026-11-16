@@ -1,6 +1,7 @@
+import type { TrailDone } from '@teamtrail/core';
 import type { ReactNode } from 'react';
 import { Button, EmptyState, Panel } from '../components/ui';
-import { MapGraph, MapLegend, type MapPreview } from '../features/map';
+import { MapGraph, MapLegend, type MapPreview, type ProofStatuses } from '../features/map';
 import { StatusDrawer } from '../features/status';
 import { AgentCommand, CommandBar } from '../features/trail';
 import type { LookoutApi } from '../hooks';
@@ -16,8 +17,11 @@ export function MapZone(props: {
   onNewTrail: () => void;
   compact: boolean;
   minFit: number;
-  /** The trail's banners (discovery, reroute) above the map, and a pending reroute's preview drawn on it. */
-  trail?: { banner?: ReactNode; preview?: MapPreview };
+  /**
+   * The trail's banners (discovery, reroute) above the map, a pending reroute's preview drawn on it, its tickets'
+   * proofs and whether it's done.
+   */
+  trail?: { banner?: ReactNode; preview?: MapPreview; proofs?: ProofStatuses; done?: TrailDone };
 }) {
   const { snap, selection } = props.api;
   return (
@@ -35,6 +39,8 @@ export function MapZone(props: {
             onSelect={props.onSelect}
             minFit={props.minFit}
             preview={props.trail?.preview}
+            proofs={props.trail?.proofs}
+            done={props.trail?.done}
           />
         ) : (
           <div className="nomap">

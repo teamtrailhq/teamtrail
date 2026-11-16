@@ -50,7 +50,7 @@ export function App() {
   const scoped = useScopedActivity(activity, api.mapId);
   useDocumentTitle(pending, snap?.map.title);
   const nav = useAppNavigation(api, bp);
-  const trail = useTrailUi(snap, actions.selectMap);
+  const trail = useTrailUi({ snap, selectMap: actions.selectMap, openTicket: nav.openTicket });
   const knowledge = useKnowledgeStore(trail.briefText);
   const attn = useAttentionUi({
     api,
@@ -92,6 +92,7 @@ export function App() {
     leases: api.leases,
     onTicket: (id: string) => nav.select({ kind: 'ticket', id }),
     onOpenChat: (id: string) => nav.openChat(id),
+    done: trail.done,
   };
   const plan = (bare: boolean) => (
     <MapSections

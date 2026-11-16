@@ -19,7 +19,7 @@ export function StepZone(props: ZoneProps) {
         info="What your agents are doing right now. The top shows the latest step an agent reported; below is every agent holding a ticket."
       />
       <div className="zone-b">
-        <StepTracker activity={props.activity} snap={props.snap} />
+        <StepTracker activity={props.activity} snap={props.snap} done={props.done} />
         {!idle && (
           <>
             <SessionsHead activity={props.activity} snap={props.snap} running={running} usage={false} />

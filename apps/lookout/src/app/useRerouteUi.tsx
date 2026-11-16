@@ -28,6 +28,8 @@ export function useRerouteUi(snap?: MapSnapshot, selectMap?: (mapId: string) => 
         onDismiss={() => void r.reject(pending.id, DISMISS_NOTE)}
       />
     ),
+    /** How many proposals wait on the trail lead: a trail with one pending isn't done. */
+    pending: r.reroutes.filter((p) => p.status === 'pending').length,
     preview: snap && previewed?.diff ? mapPreview(snap, previewed.diff, previewed.frozen) : undefined,
     /** Opens a proposal's review, switching to its trail first when it's another one. */
     openReroute: (mapId: string, id: string) => {
