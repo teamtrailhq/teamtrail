@@ -2,7 +2,6 @@ import { type MapSnapshot, type SessionInfo, type TicketLease, layout, leaseHeal
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNow, usePrSync } from '../../hooks';
 import { type Selection, heldLeases, isRunning, prSync, worstFlag } from '../../lib';
-import { useModels } from '../models';
 import { destinationSpot, destinationTrail } from './destination';
 import { DestinationMark } from './DestinationMark';
 import { DestinationTrail } from './DestinationTrail';
@@ -13,6 +12,7 @@ import type { MapPreview } from './mapPreview';
 import { openingView } from './openingView';
 import { OutOfScopeStrip } from './OutOfScopeStrip';
 import { TerrainLayer } from './TerrainLayer';
+import { useCardHolds } from './useCardHolds';
 import { useFocusSelected } from './useFocusSelected';
 import { useTrailProofs } from './useTrailProofs';
 import { useWheelZoom } from './useWheelZoom';
@@ -114,7 +114,7 @@ export function MapGraph(props: {
   const now = useNow(5000);
   const held = heldLeases(props.leases, snap.map.id);
   const sync = usePrSync();
-  const waits = useModels()?.waiting;
+  const holds = useCardHolds(snap);
   const live = new Map(props.sessions.filter((s) => isRunning(s) && s.ticketId).map((s) => [s.ticketId!, s]));
   const selId = selection?.kind === 'ticket' ? selection.id : undefined;
   useFocusSelected({ selId, nodes: L.nodes, size, pad: PAD, view, setView, onFocus: () => (touched.current = true) });
@@ -193,7 +193,7 @@ export function MapGraph(props: {
                 onSelect={onSelect}
                 mark={preview?.marks.get(n.ticket.id)}
                 frozen={preview?.frozen.has(n.ticket.id)}
-                needs={waits?.find((w) => w.mapId === snap.map.id && w.ticketId === n.ticket.id)?.tier}
+                {...holds(n.ticket)}
                 verified={proofs[n.ticket.id] === undefined ? undefined : proofs[n.ticket.id] === 'verified'}
               />
             ))}

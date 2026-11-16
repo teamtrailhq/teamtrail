@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { chartMap, MemoryAdapter, numbered, submitted, type TrackerAdapter } from '../src';
+import { chartMap, EMPTY_SECTIONS, MemoryAdapter, numbered, submitted, type TrackerAdapter } from '../src';
 import { writeCriteriaProposal } from '../src/criteria/criteriaProposals';
 import { readCriteria, writeTicketCriteria } from '../src/criteria/criteriaStore';
 import { readBrief, writeBrief } from '../src/discovery/briefStore';
@@ -119,6 +119,15 @@ describe('accepting a brief binds to what was shown', () => {
     expect((await call(h, 'POST', '/briefs/accept', { mapId: 'm1' })).status).toBe(400);
     expect((await call(h, 'POST', '/briefs/accept', { mapId: 'm1', hash })).status).toBe(409);
     expect(readBrief(root, 'm1')?.status).toBe('submitted');
+  });
+
+  it('says whether discovery still gates the trail, until the human accepts the brief', async () => {
+    const sections = { ...EMPTY_SECTIONS, summary: 'Plan', assumptions: [], openQuestions: [] };
+    writeBrief(root, submitted(undefined, { mapId: 'm1', sections, author: 'claude-01' }));
+    const shown = (await call(h, 'GET', '/briefs?mapId=m1')).body;
+    expect(shown.gated).toBe(true);
+    expect((await call(h, 'POST', '/briefs/accept', { mapId: 'm1', hash: shown.hash })).status).toBe(200);
+    expect((await call(h, 'GET', '/briefs?mapId=m1')).body.gated).toBe(false);
   });
 });
 

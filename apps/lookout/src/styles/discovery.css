@@ -2,6 +2,12 @@
 .brief-card {
   padding: 0 var(--sp-10) var(--sp-10);
 }
+.dialog.brief-ready {
+  width: min(440px, 100%);
+}
+.dialog.brief-ready p {
+  margin: 0;
+}
 .brief-dialog {
   width: min(760px, 94vw);
   max-height: 86vh;

@@ -5,7 +5,8 @@ import { apiBase } from '../../lib/apiBase';
 
 const api = `${apiBase()}/briefs`;
 
-type Loaded = { brief: DiscoveryBrief | null; hash?: string };
+/** `gated`: discovery still holds the trail's implementation tickets on this machine (core discoveryGate.ts). */
+type Loaded = { brief: DiscoveryBrief | null; hash?: string; gated?: boolean };
 
 async function fetchBrief(mapId?: string): Promise<Loaded> {
   if (!mapId) return { brief: null };
@@ -20,6 +21,7 @@ export function useBrief(snap?: MapSnapshot) {
   const [error, setError] = useState<string>();
   /** The hash of the brief as shown: accepting names it, so a brief resubmitted meanwhile is not accepted. */
   const [hash, setHash] = useState<string>();
+  const [gated, setGated] = useState(false);
   const { reload, pushed } = useLiveLoad({
     view: mapId,
     version: snap?.tickets.reduce((n, t) => Math.max(n, t.updatedAt), snap.map.updatedAt),
@@ -27,8 +29,9 @@ export function useBrief(snap?: MapSnapshot) {
     show: (b) => {
       setBrief(b.brief);
       setHash(b.hash);
+      setGated(!!b.gated);
     },
-    failed: () => setBrief(null),
+    failed: () => (setBrief(null), setGated(false)),
     changed: (path) => path.startsWith('briefs/'),
   });
   /** `shown`: the hash of the brief as the trail lead opened it (useShown), sent with accept. */
@@ -44,6 +47,7 @@ export function useBrief(snap?: MapSnapshot) {
       // the brief as the server wrote it: a load started before it is older
       pushed();
       setBrief(b.brief);
+      if (b.brief.status === 'accepted') setGated(false);
     });
   /** Resolves true when the call went through; on failure the error is shown and the dialog stays open. */
   const act = (action: 'accept' | 'request-changes', note?: string, shown?: string) =>
@@ -55,6 +59,7 @@ export function useBrief(snap?: MapSnapshot) {
     brief,
     error,
     hash,
+    gated,
     accept: (shown?: string) => act('accept', undefined, shown),
     requestChanges: (note: string) => act('request-changes', note),
   };

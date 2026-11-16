@@ -13,8 +13,8 @@ export function AppInbox(props: {
   bp: ReturnType<typeof useBreakpoint>;
   scoped: ReturnType<typeof useScopedActivity>;
   attn: ReturnType<typeof useAttentionUi>;
-  /** A discovery brief waiting for review, shown above the queue. */
-  above?: ReactNode;
+  /** The current trail's discovery brief while it waits for review (the queue lists it too). */
+  brief?: ReactNode;
 }) {
   const { api, nav } = props;
   return (
@@ -33,7 +33,7 @@ export function AppInbox(props: {
       below={
         <UpNext snap={api.snap} sessions={props.scoped.sessions} selection={api.selection} onSelect={nav.select} />
       }
-      above={props.above}
+      brief={props.brief}
     />
   );
 }
