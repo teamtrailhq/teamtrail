@@ -84,7 +84,7 @@ export function Header(props: {
               title="Trail elapsed time, since it was charted"
             />
             <Readout label="Done" value={`${p.decided}/${p.total}`} />
-            {u && (
+            {u && u.costUsd + u.inputTokens + u.outputTokens > 0 && (
               <Readout
                 className="spend"
                 label="Spent"
@@ -110,18 +110,14 @@ export function Header(props: {
             {props.slackAlert.label}
           </Button>
         )}
-        {map && (
+        {map?.mode === 'plan-only' && (
           <Button
             variant="ghost"
             className="mode-chip"
             onClick={props.onToggleMode}
-            data-tip={
-              map.mode === 'plan-only'
-                ? 'Plan only: agents research and decide, but no execute tickets run. Click to switch to Plan + execute.'
-                : 'Plan + execute: agents decide, then build what was decided. Click to switch to Plan only, which parks execute tickets.'
-            }
+            data-tip="Plan only: agents research and decide, but no execute tickets run. Click to switch to Plan + execute."
           >
-            {map.mode === 'plan-only' ? 'Plan only' : 'Plan + execute'}
+            Plan only
           </Button>
         )}
         {map && <RunAgentsButton mapId={map.id} />}

@@ -12,6 +12,7 @@ export function TrailSwitcher(props: {
   onNewTrail: () => void;
   onStartOver?: () => void;
   onArchive?: (archived: boolean) => void;
+  onToggleMode?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -88,6 +89,7 @@ export function TrailSwitcher(props: {
                 map={props.map}
                 onStartOver={props.onStartOver}
                 onArchive={props.onArchive}
+                onToggleMode={props.onToggleMode}
                 onDone={() => setOpen(false)}
               />
             </div>
