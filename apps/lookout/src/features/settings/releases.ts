@@ -21,6 +21,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.53.1',
+    date: '2026-11-16',
+    items: [
+      'A quieter header: tracker and CI show only when they fail, spend once there is any, and Plan only / Plan + execute moves into the trail menu',
+    ],
+  },
+  {
     version: '0.53.0',
     date: '2026-11-16',
     items: [
@@ -183,14 +190,6 @@ export const RELEASES: Release[] = [
       "Proof reports are signed with your machine's key: commit the key file Teamtrail writes in .teamtrail/proof-keys, and anyone can check a report with `teamtrail proof verify`",
       "A GitHub Action, Verified by Teamtrail, checks every proof on a pull request and can be made a required check, so a PR without a valid proof can't merge",
       'The ticket inspector shows the proof, with Copy for PR and a link to the comment once it is posted',
-    ],
-  },
-  {
-    version: '0.35.0',
-    date: '2026-11-15',
-    items: [
-      "Settings → Project → Proof on pull requests: switch it on and Teamtrail posts each done ticket's report on its open pull request, updating the same comment as things change",
-      'A Teamtrail proof check sits next to CI on the pull request and passes only when the ticket is verified at its latest commit',
     ],
   },
   ...MID_RELEASES,

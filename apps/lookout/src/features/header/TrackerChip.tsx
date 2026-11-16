@@ -9,8 +9,9 @@ export const SYNC_TEXT: Record<TrackerHealth['status'], string> = {
   error: 'Sync error',
 };
 
-/** `metrics.trackerHealth`: sync status; write counts and last-write latency are in the tooltip. */
+/** `metrics.trackerHealth`, only when syncing fails: write counts and last-write latency are in the tooltip. */
 export function TrackerChip({ label, health, now }: { label: string; health: TrackerHealth; now: number }) {
+  if (health.status !== 'error') return null;
   const title = [
     `${SYNC_TEXT[health.status]} · ${health.writes} writes · ${health.errors} errors`,
     health.lastWriteAt
