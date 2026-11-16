@@ -206,6 +206,15 @@ export async function verifyGuides({ browser, cli, log, shots }) {
     const checklist = guide.checklist.map((item) => ({ item, done: true }));
     const done = await worker.call('report_completion', { resolution: 'Added the sheet', checklist });
     const ran = done.checks?.map((c) => `${c.name}:${c.ok}`).join(',');
+    // The trail's one ticket is done: the Lookout says Destination reached once, a flag stands at the end of the map,
+    // and with no pull request left the dialog only closes.
+    const reached = page.locator('.dialog.trail-done');
+    await reached.waitFor({ timeout: 15_000 });
+    const reachedText = (await reached.textContent()) ?? '';
+    await shot('22-destination-reached');
+    await reached.getByRole('button', { name: 'Close' }).click();
+    await reached.waitFor({ state: 'detached' });
+    const flagged = await page.locator('.graph .destination.reached').isVisible();
     const ok =
       approved &&
       verifiedInSettings &&
@@ -217,10 +226,12 @@ export async function verifyGuides({ browser, cli, log, shots }) {
       /needs an answer for every checklist item/.test(refused) &&
       done.status === 'done' &&
       ran === 'a11y:true' &&
+      /Destination reached/.test(reachedText) &&
+      flagged &&
       !errors.length;
     const own = await verifyOwnGuides({ page, url, cli, root, call: worker.call, shot, second: second.url });
     log(
-      `guides ${ok ? 'ok' : 'WRONG'}: a11y added from the catalog and pinned (${pinned?.version}), its check approved in the Lookout (${approved}), Verified in Settings, "${signText?.trim()}" on its map card; the claim carried the guide with ${guide?.checklist.length} checklist items; completion refused without them, then ${done.status} with checks ${ran}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `guides ${ok ? 'ok' : 'WRONG'}: a11y added from the catalog and pinned (${pinned?.version}), its check approved in the Lookout (${approved}), Verified in Settings, "${signText?.trim()}" on its map card; the claim carried the guide with ${guide?.checklist.length} checklist items; completion refused without them, then ${done.status} with checks ${ran}, then Destination reached (${flagged ? 'flag on the map' : 'NO FLAG'})${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     log(own.line);
     return ok && own.ok && !errors.length;
