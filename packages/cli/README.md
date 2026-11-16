@@ -2,141 +2,69 @@
 
 # teamtrail
 
-**Verified work from AI coding agents.** Agents do the work, you make the calls, and nothing counts as done until it's verified. Teamtrail breaks big work into decision tickets for Claude Code, Codex or any MCP agent, sends you only the calls that are yours, and runs your tests before anything is done. One command opens it for the agents working in your repo.
+**Verified work from AI coding agents.** Agents do the work, you make the calls, and nothing counts as done until it's verified. Teamtrail breaks big work into decision tickets for Claude Code, Codex or any MCP agent, sends you only the calls that are yours, and runs your tests before anything is done.
 
 **[teamtrail.app](https://teamtrail.app)** · [Docs](https://teamtrail.app/docs/) · [GitHub](https://github.com/teamtrailhq/teamtrail)
 
+## Start
+
+Requires Node 20 or newer.
+
 ```bash
-npm i -g teamtrail      # or skip the install: npx teamtrail
 cd your-repo
-teamtrail
+npx teamtrail      # or install it: npm i -g teamtrail, then run `teamtrail`
 ```
 
-`teamtrail` starts a local server at `http://127.0.0.1:7420/`, opens the Lookout in your browser and keeps trails as markdown in `./.teamtrail/` in the current folder. Commit that folder or ignore it; agents and people can edit the files directly, and changes show up live.
+`teamtrail` opens the Lookout in your browser at `http://127.0.0.1:7420/`, signed in with one click, and keeps trails as plain markdown in `./.teamtrail/`. Run `teamtrail --help` for options.
 
-| Option | Default | |
-| --- | --- | --- |
-| `--dir <path>` | `./.teamtrail` (or `$TEAMTRAIL_DIR`) | Tracker folder |
-| `--port <n>` | `7420`, next free port if taken | Port |
-| `--host <addr>` | `127.0.0.1` | IP address to bind (a name is refused; `0.0.0.0` or `::` means each of the machine's addresses). The server can write files in the tracker folder, so only expose it on networks you trust. |
-| `--no-open` | | Don't open the browser |
-
-Requires Node 20 or newer. No other runtime dependencies.
-
-The Lookout's address is always `http://127.0.0.1:<port>/`, never `localhost`, which a browser may send to `::1` instead. It listens on 127.0.0.1 and `::1` (where the machine has it) on its port, besides the `--host` address, so no other program can take its address beside it; if another program already holds the port on any of them, it doesn't start and names the address. It never listens on a wildcard: `--host 0.0.0.0` (or `::`) listens on each of the machine's network addresses at start, and only those are offered for pairing. After a network change (a new Wi-Fi, a VPN), restart `teamtrail` to serve the new address. `teamtrail mcp --http` does the same.
-
-### Signing in
-
-The Lookout opens only in browsers you've paired. `teamtrail` opens your browser on the Lookout's sign-in page: click **Sign in this browser**. It also prints a one-time **Sign in** link in its terminal, for another browser. (A code is never passed to the browser on a command line, where other programs could read it. Teamtrail finds your default web browser by name, never whatever opens `.html` files, and opens it on a one-time page in Teamtrail's config folder, readable only by your user, that sends it on to a link with a code of its own. That code works once, for one minute, and the page is deleted once used, when the code expires, or when `teamtrail` stops. Anything that can read Teamtrail's config folder could read the code in that minute, so every sign-in through the opened page is printed in the terminal ("Signed in a browser (opened page)", with the time and a short id) and marked with that id in Settings → Browsers & devices: revoke one you didn't make. If your own tab then says the link was already used, someone else may have used it: check that list, or restart `teamtrail` to end every session. If no browser is found (a snap or Flatpak browser can't read the page), or the folder can't be written, the browser opens signed out and the terminal says why; use the printed link.) A link works once, within 10 minutes, and only for the Lookout that printed it. A browser stays signed in while that Lookout runs, up to 30 days after it was last used; when you restart `teamtrail`, browsers and devices pair again (so a session a program grabbed while the Lookout was stopped opens nothing). Before the page sends its session, the server proves it is your Lookout; if it can't, the page says Teamtrail isn't running there and sends nothing. A browser that isn't paired sees "Pair this browser". For another browser on the same machine, run `teamtrail pair` in the repo while the Lookout runs: after checking that the server at the Lookout's address really is that Lookout, it opens a browser tab ready to sign in the same way and prints the new link; `teamtrail pair --no-open` only prints it. To pair a phone or another computer (the Lookout started with `--host`), open Settings → You → Browsers & devices → **Pair a device** on the machine and type the short code on the device, or scan its QR code. Phones and other devices must pair again after every Lookout restart. The same page lists every paired browser with Revoke; a revoked browser is signed out at once. 
-The session is never a cookie: browsers send cookies to every port of a host, so another server on your machine (an agent's dev server, say) would get it. It is kept in the Lookout page's own storage and sent by that page alone, and the code in a link travels after `#`, which no server sees. Sign-in stops a program on your machine, or a device on your network, that isn't a paired browser: an agent with `curl` can't approve its own work, answer its own questions or change your settings through the Lookout, and a device paired from Settings can read, answer and approve but never change what runs on the machine or whom it trusts. It can't stop a program that can write Teamtrail's config folder (it can make a pairing code, as `teamtrail pair` does), one that can read it while a sign-in page Teamtrail opened waits (a minute at most; such a sign-in is announced), or one that can read your browser's profile on disk. The MCP endpoints keep their own tokens and are not affected.
+More: [Install](https://teamtrail.app/docs/install/) · [CLI commands](https://teamtrail.app/docs/cli/) · [Sign in to the Lookout](https://teamtrail.app/docs/sign-in/) · [Your first trail](https://teamtrail.app/docs/first-trail/)
 
 ## Connect your coding agent
 
-The same package ships an MCP server, `teamtrail mcp`, that your agent starts over stdio. Nothing else to install. Run `teamtrail` in the repo as well to watch the agent live and answer its questions in the Lookout.
-
-### Claude Code
+The same package is the MCP server your agent starts. Connect once in the repo:
 
 ```bash
-claude mcp add teamtrail -- npx -y teamtrail mcp
+npx teamtrail connect claude   # Claude Code: the MCP server and the /scout command
+npx teamtrail connect codex    # Codex: the MCP server and the /prompts:scout prompt
 ```
 
-Or let `teamtrail` do it and add the `/scout` command to the repo (`.claude/commands/scout.md`):
-
-```bash
-npx teamtrail connect claude
-```
-
-Then, in Claude Code:
+Then, in your agent:
 
 | Command | Does |
 | --- | --- |
 | `/scout new "<idea>"` | Frames the idea with you, then charts a trail |
 | `/scout resume [trail]` | Picks up the trail and works ready tickets |
-| `/scout status` | Progress, running sessions, what's waiting and blocked, spend |
-| `/scout inbox` | Questions waiting on you; answer them in the chat (a chat answer guides the agent; a high-risk call or a junction needs your answer in the Lookout or Slack) |
+| `/scout status` | Progress, what's waiting and blocked, spend |
+| `/scout inbox` | Questions waiting on you |
 
-### Codex
+`connect` pins your agent to the version you ran it with, and keeps it out of Teamtrail's config folder. Any other MCP client works too: run `npx -y teamtrail mcp` over stdio in the repo.
 
-```bash
-codex mcp add teamtrail -- npx -y teamtrail mcp
-```
+More: [Connect your agent](https://teamtrail.app/docs/connect-your-agent/) · [Scout commands](https://teamtrail.app/docs/scout-commands/) · [Agents on other machines](https://teamtrail.app/docs/remote-agents/) · [MCP tools](https://teamtrail.app/docs/mcp-tools/)
 
-or in `~/.codex/config.toml`:
+## Agents write more code. Review is where it waits.
 
-```toml
-[mcp_servers.teamtrail]
-command = "npx"
-args = ["-y", "teamtrail", "mcp"]
-# ask_human waits for your answer; Codex cancels tool calls after 60 s by default.
-tool_timeout_sec = 900
-```
+A Harvard study of 655 companies\* found that after teams adopted coding agents, pull requests went up by 36%, while issues resolved rose by only 14% and time to approval by 56%. Teamtrail paces agents to your review:
 
-`npx teamtrail connect codex` prints this and installs the same command as a Codex prompt (`~/.codex/prompts/scout.md`): `/prompts:scout new "<idea>"`, `/prompts:scout resume`, and so on.
+- **Review limit:** set how many finished tickets may wait for you. Once they do, agents start no new work: they fix what came back and keep researching until you've reviewed some.
+- **Scope check:** agents say which files they'll change when they take a ticket. Anything they change beyond that is listed first for the reviewer and on the proof, or sent back, as you choose.
 
-### Keep agents out of Teamtrail's config folder
+More: [Review capacity](https://teamtrail.app/docs/review-capacity/)
 
-Teamtrail's config folder (`$TEAMTRAIL_CONFIG_DIR`, else `$XDG_CONFIG_HOME/teamtrail`, else `~/.config/teamtrail`) holds this machine's key, which signs your answers, your approvals and tracker credentials. `connect claude` adds deny rules for it to Claude Code's user settings (`~/.claude/settings.json`): `Read(//<folder>/**)` and `Edit(//<folder>/**)` in `permissions.deny`, and the folder in `sandbox.filesystem.denyRead` and `denyWrite` for sandboxed commands. It keeps what is already there (and the file's indentation, writing atomically and through a symlink), adds nothing twice, and prints what it added and how to remove it. The rules are best effort unless Claude Code's sandbox is on: without it they stop Claude's own file tools, but a shell command such as `cat` can still read the folder. So `connect claude` asks whether to turn the sandbox on for the project (`"sandbox": { "enabled": true }` in `.claude/settings.local.json`; Enter is yes): `--sandbox` turns it on and `--no-sandbox` leaves it, without asking. Turning it on also sets `autoAllowBashIfSandboxed: false` unless your settings already choose, so Claude Code still asks before running commands as it did; the sandbox asks before each new network domain, and on Linux it needs `bubblewrap` and `socat` (without them Claude Code runs commands unsandboxed). Without a terminal and without a flag it changes nothing and prints how to turn it on; a sandbox your settings already turn on is left as it is, and one they turn off changes only on your yes or `--sandbox`. A folder whose path has characters a rule would read as a pattern (`* ? [ ] { } ( ) \ !`) is not written; connect prints the rules to add by hand. Codex can deny a folder only through a default permissions profile, which changes how it sandboxes every folder, so `connect codex` only prints that profile as a suggestion: until you add it, Codex's commands can still read the folder, `machine.key` included. With a custom `$TEAMTRAIL_CONFIG_DIR`, the default `~/.config/teamtrail` is denied too, and a folder not created yet is named where it will really be (through a symlinked `~/.config`). Teamtrail's own MCP server is not affected: agents don't apply these rules to the MCP servers they start. Pass `--no-protect-config` to skip this.
+## What you get
 
-### Other agents
+- **Your calls, by rule:** a risk policy in your repo sets what always comes to you. Agents can't record those decisions themselves. [Policy](https://teamtrail.app/docs/policy-json/)
+- **Done means proven:** acceptance criteria agreed up front, your checks run by Teamtrail, a review by a different agent and a signed proof on the pull request. [Verification](https://teamtrail.app/docs/verification/)
+- **One queue for what needs you:** every question and approval, ranked with a reason, with focus hours and Slack. [Waiting on you](https://teamtrail.app/docs/waiting-on-you/)
+- **Every call on the record:** the question, your words, the alternatives and who decided. [Decision memory](https://teamtrail.app/docs/decision-memory/)
+- **Many agents at once:** separate git worktrees, model matching and guides. [Parallel work](https://teamtrail.app/docs/parallel-work/)
+- **Your data stays yours:** markdown in your repo, or GitHub Issues or Linear. Nothing leaves your machine unless you connect Slack. [Trackers](https://teamtrail.app/docs/trackers/)
 
-Any MCP client works: run `npx -y teamtrail mcp` over stdio in the repo. `--dir <path>` (or `$TEAMTRAIL_DIR`) picks another tracker folder; `--agent <trail name>` fixes the session name, which otherwise comes from the client (`claude-01`, `codex-01`).
+## Security
 
-### Agents on other machines
+By default the Lookout listens on `127.0.0.1` only. It opens only in browsers you've paired. Check commands, briefs, criteria, guides and settings take effect only once you approve them on this machine, and edits to trail files made outside Teamtrail wait for you. What this protects against, and what it doesn't: [Security](https://teamtrail.app/docs/security/).
 
-An agent on another machine or in a cloud sandbox reaches the same trails over HTTP. On the machine with the repo:
+---
 
-1. Create a token for the agent in the Lookout: Settings → Project → Remote agents. It's shown once; only its hash is kept, in `.teamtrail/.agents/` (never committed).
-2. Serve the tools: run `npx teamtrail mcp --http` (port 7421, path `/mcp`). It serves the agent tools and nothing else; without a token every request gets a 401. The running Lookout also answers at `/mcp` on its own port, but only to clients on the same machine.
-3. On the agent's machine, with the token in `$TEAMTRAIL_TOKEN`:
+\* Chen and Stratton, _Artificial Intelligence in the Firm: Bottlenecks in Software Production_, Harvard, November 2026. Effects 12 months after firms adopted AI coding agents.
 
-```bash
-npx -y teamtrail connect claude --url https://trail.example.com/mcp   # or: connect codex --url …
-```
-
-`--token-stdin` and `--token <token>` work too. Claude Code keeps the token in its own config; Codex only stores the variable's name and reads `$TEAMTRAIL_TOKEN` when it starts. `connect` checks the token against the endpoint, except over plain HTTP to another machine, where the check itself would send it unencrypted: use https, or pass `--allow-http`.
-
-The connection is plain HTTP and binds to `127.0.0.1` unless you pass `--host`. Before agents elsewhere use it, put the `mcp --http` port behind HTTPS (a reverse proxy or a tunnel) and pass `--allow-host <name>` with the host name they'll use. The Lookout's own port is not for sharing: its `/mcp` answers the machine itself only, its API needs a paired browser (never a token), and it refuses a `Host` that isn't `localhost` or an IP address. Another device on your network, once paired from Settings, can read, answer and approve, but can't change what runs on the machine or whom it trusts: tokens, the tracker connection (and anything looked up with its credentials), Slack, the risk policy, verification levels, workspaces, guides, attention preferences and the projects list are set on the machine itself, and what that device reads leaves out absolute paths and the tracker account. A token only opens the agent tools, at most 8 sessions at a time, and revoking it in Settings ends them within about a second.
-
-The risk policy acts on what an agent declares: a decision is held for you when the agent names a high-risk category or files that match your path rules. An agent that declares nothing is not caught by it. So give an agent you don't fully trust only trails where you review the work: verification on, where every remote completion comes to you.
-
-With GitHub Issues or Linear as the tracker, what a remote agent writes (tickets, comments, closing) goes to the tracker with your credentials, as it does for local agents.
-
-A remote agent can't speak for you. Over HTTP there is no `answer_question`; `start_trail` can't skip discovery; `update_trail` can't change the mode or the destination; and a ticket that needs you (junction, prototype, HITL task) closes only after you answered the agent's question in the Lookout or Slack, the same rule as for local agents. For any agent, skipping discovery or changing a trail's mode or destination is a request you approve or decline in the Lookout or Slack; nothing changes until you approve, and no answer to a question stands in for that.
-
-A remote agent's files aren't on your machine, so it gets no worktree, and on trails with verification its completions come to you for review instead of running the checks locally.
-
-### Tools
-
-`teamtrail mcp` offers about thirty tools, in these groups:
-
-- **Trails:** `status`, `start_trail`, `resume_trail`, `update_trail`, and the discovery brief (`submit_brief`, `get_brief`).
-- **Tickets:** `next_ticket`, `claim_ticket`, `release_ticket`, `add_ticket` and acceptance criteria (`set_criteria`).
-- **Working and completing:** `report_progress`, `report_completion`, `verification_status`, `submit_review`, `close_ticket`, `record_decision`, and the Verified by Teamtrail report (`proof_report`, also `teamtrail proof <ticket>` in a terminal).
-- **The human:** `ask_human`, `wait_for_answer`, `list_inbox`, `answer_question` (a chat answer guides the agent; only answers given in the Lookout or Slack back a decision that needs you), and decision memory (`find_precedent`).
-- **Knowledge, assumptions and reroutes:** `propose_knowledge`, `search_knowledge`, `flag_knowledge`, `list_assumptions`, `challenge_assumption`, `propose_reroute`, `reroute_status`.
-- **Guides and other projects:** `list_guides`, `projects_status`.
-
-Every tool, its inputs and what remote agents can't call: [MCP tools reference](https://teamtrail.app/docs/mcp-tools/).
-
-Sessions, questions and usage reach the Lookout through `.teamtrail/.agents/`, so the agent and the Lookout can start in any order.
-
-### Claims are leases
-
-A claim lasts 15 minutes and every tool call from the claiming agent renews it (so do waits on `ask_human`). If the agent crashes or goes silent, the lease expires and the ticket goes back to the queue: the Lookout checks every 15 s, and so does any agent calling `next_ticket` or `claim_ticket`. The ticket gets a **Returned to queue** comment with the agent's `report_progress` notes and decisions, and the next agent's `claim_ticket` returns it as `resume`. The return is an ordinary tracker write (comment + unassign), so on GitHub and Linear it goes through the offline outbox like any other write. Tickets close to expiry show as **Stalled** in the Lookout, which can also release them by hand. Set the length with `--lease-minutes <n>` or `$TEAMTRAIL_LEASE_MINUTES`.
-
-### Edits outside Teamtrail
-
-With the default markdown tracker, a trail is plain files in `.teamtrail/`. What decides how work moves (a ticket's type, state, claim, blockers and verification level, a trail's mode and level, assumption statuses, decision records) counts only as Teamtrail wrote it on your machine, through the Lookout or an agent's MCP tools. Teamtrail keeps a signed record of it in your config folder, outside the repo.
-
-If an agent or a teammate edits those fields in the files directly, the edit doesn't count yet: the ticket is held, the signed values apply, and Settings → Approvals shows what changed (old → new) with **Accept this change** and **Revert**. Titles, bodies and comments can be edited freely; the Lookout only marks them as edited outside Teamtrail. On a fresh clone, a new machine or the upgrade, existing trails are adopted with the other committed approvals in one step; after that, a teammate's pushed changes wait for you on this machine. An agent that can write your config folder can still forge that record.
-
-### Usage
-
-Tokens and cost per session are measured from the agent's own local logs, priced at list rates, and tagged `LOG` in the sessions area:
-
-- **Claude Code:** the session transcript (`~/.claude/projects/<project>/<session>.jsonl`). `connect claude` also adds a silent `SessionStart` hook to `.claude/settings.local.json` that records which transcript belongs to the repo.
-- **Codex:** the session rollout (`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`), found from the tool call's thread id. Nothing to install.
-
-Other agents report usage through `report_progress`; those numbers are tagged `SELF`. Nothing leaves your machine.
-
-Concepts derived from mattpocock/skills (MIT); see `THIRD_PARTY_NOTICES.md`.
+MIT licensed. Concepts derived from mattpocock/skills (MIT); see `THIRD_PARTY_NOTICES.md`.
