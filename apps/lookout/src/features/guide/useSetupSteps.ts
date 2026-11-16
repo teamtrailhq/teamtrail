@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { managedSignIn } from '../../lib/managedSignIn';
+import { onStreamOpen, onTrackerChange } from '../../lib/trackerChanges';
+import { TRAIL_AGENTS_CHANGED } from '../../lib/trailAgents';
 
 export interface SetupStep {
   title: string;
@@ -41,22 +43,45 @@ function viewOf(body: unknown): SetupView | undefined {
 
 /**
  * How far this person is with setting up, from the server that hosts this Lookout (managedSignIn.ts `setup`): read
- * when the page opens and again whenever it comes back into view, since the steps are done on the server's pages.
+ * when the page opens, whenever it comes back into view (most steps are done on the server's pages), and when a trail
+ * changes or its agents are switched here.
  */
 export function useSetupSteps() {
   const path = managedSignIn()?.setup;
   const [view, setView] = useState<SetupView>();
   useEffect(() => {
     if (!path) return;
+    let complete = false;
     const load = () =>
       void fetch(path)
         .then((r) => (r.ok ? r.json() : undefined))
-        .then((b) => setView(viewOf(b)))
+        .then((b) => {
+          const v = viewOf(b);
+          complete = v?.complete === true;
+          setView(v);
+        })
         .catch(() => undefined);
     load();
     const onShow = () => document.visibilityState === 'visible' && load();
+    // A trail created or its agents started here: read again, once a burst of file changes settles.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const soon = () => {
+      // Once setup is complete, agents' file changes mean nothing to it.
+      if (complete) return;
+      clearTimeout(timer);
+      timer = setTimeout(load, 500);
+    };
     document.addEventListener('visibilitychange', onShow);
-    return () => document.removeEventListener('visibilitychange', onShow);
+    window.addEventListener(TRAIL_AGENTS_CHANGED, soon);
+    const offChange = onTrackerChange(soon);
+    const offOpen = onStreamOpen(soon);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onShow);
+      window.removeEventListener(TRAIL_AGENTS_CHANGED, soon);
+      offChange();
+      offOpen();
+    };
   }, [path]);
   return view;
 }
