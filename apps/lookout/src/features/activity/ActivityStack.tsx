@@ -10,7 +10,7 @@ import type { ZoneProps } from './types';
 export function ActivityStack(props: ZoneProps) {
   return (
     <div className="zone-b activity-stack">
-      <StepTracker activity={props.activity} snap={props.snap} />
+      <StepTracker activity={props.activity} snap={props.snap} done={props.done} />
       <SessionsHead
         activity={props.activity}
         snap={props.snap}

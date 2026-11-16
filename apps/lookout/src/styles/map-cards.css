@@ -146,7 +146,8 @@
   text-decoration: line-through;
 }
 
-/* Connectors: thin elbows. Walked ones are green and quiet, the critical path a shade stronger than the rest. */
+/* Connectors: thin elbows. Travelled ones (both ends done) solid green, walked ones green and quiet, the critical path
+ * a shade stronger than the rest. */
 .graph .edge {
   fill: none;
   stroke: var(--line2);
@@ -155,6 +156,10 @@
 }
 .graph .edge-done {
   stroke: rgba(var(--decided-rgb), 0.55);
+}
+.graph .edge-travelled {
+  stroke: rgb(var(--decided-rgb));
+  stroke-width: 1.75;
 }
 .graph .edge-critical {
   stroke: var(--dim);

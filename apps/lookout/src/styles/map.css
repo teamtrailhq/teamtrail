@@ -390,6 +390,29 @@
 .destination:focus-visible .x-stroke {
   stroke-width: 9;
 }
+/* Reached: a planted flag, in the colour of passed checks when every ticket is verified, muted when some aren't. */
+.destination.reached {
+  --flag: rgb(var(--decided-rgb));
+}
+.destination.reached.unverified {
+  --flag: var(--dim);
+}
+.destination .flag-pole,
+.destination .flag-ground {
+  fill: none;
+  stroke: var(--flag);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.destination .flag-cloth {
+  fill: var(--flag);
+  stroke: var(--flag);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.destination.reached:focus-visible .flag-pole {
+  stroke-width: 6;
+}
 .quarantine text {
   font-family: var(--label);
   font-size: var(--fs-label);

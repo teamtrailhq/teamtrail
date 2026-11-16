@@ -24,6 +24,8 @@ export * from './activity/activityStream';
 export * from './activity/describeTrackerEvent';
 export type { SessionHandle } from './activity/sessionHandle';
 export * from './planning/metrics';
+export { trailDone } from './planning/trailDone';
+export type { TrailDone, TrailDoneInput } from './model/trailDone';
 export * from './planning/decisions';
 export { memoryStore, type KeyValueStore } from './activity/keyValueStore';
 export { Presence } from './activity/presence';
