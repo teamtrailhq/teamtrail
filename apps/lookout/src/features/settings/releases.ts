@@ -21,6 +21,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.53.0',
+    date: '2026-11-16',
+    items: [
+      "Your trail's agents are one header menu: what they're doing, with Pause and Runs inside",
+      'Legend sits next to Summary under the map, no longer behind it',
+    ],
+  },
+  {
     version: '0.52.2',
     date: '2026-11-16',
     items: ['Teamtrail Cloud: Scout and Get started show in the corner of the Lookout again'],
@@ -183,15 +191,6 @@ export const RELEASES: Release[] = [
     items: [
       "Settings → Project → Proof on pull requests: switch it on and Teamtrail posts each done ticket's report on its open pull request, updating the same comment as things change",
       'A Teamtrail proof check sits next to CI on the pull request and passes only when the ticket is verified at its latest commit',
-    ],
-  },
-  {
-    version: '0.34.0',
-    date: '2026-11-15',
-    items: [
-      "Verified by Teamtrail: `teamtrail proof <ticket>` prints what Teamtrail recorded about a ticket's completion (the checks it ran, criteria verified or only claimed, the review and the decisions it relies on), ready for a pull request",
-      'Agents get the same report from the new `proof_report` tool and put it in their pull requests',
-      'The report opens with a Teamtrail verified or not verified badge',
     ],
   },
   ...MID_RELEASES,
