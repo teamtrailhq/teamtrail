@@ -1,55 +1,27 @@
-import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui';
 import { hostedAgents } from '../../lib/hostedAgents';
-import { readTrailAgents, setTrailAgents, type TrailAgents } from '../../lib/trailAgents';
-
-/** What the agents are doing, in a few words. */
-function status(s: TrailAgents) {
-  if (s.running) return `Agents on · ${s.running} working`;
-  return s.note ? `Agents on · ${s.note}` : 'Agents on · starting soon';
-}
+import { trailAgentsStatus } from './trailAgentsStatus';
+import type { TrailAgentsControl } from './useTrailAgents';
 
 /**
  * Start the trail, in place: switches this person's agents on for it (in the one repository, or the one picked) and
- * shows what they're doing, with Pause and a link to their runs; `onStarted` once they're on (New trail closes). Only behind a server that runs agents and says
- * where (lib/trailAgents.ts); the server checks everything again.
+ * shows what they're doing, with Pause and a link to their runs; `onStarted` once they're on (New trail closes). Only
+ * behind a server that runs agents and says where (lib/trailAgents.ts); the server checks everything again.
  */
-export function StartTrail({ mapId, onStarted }: { mapId: string; onStarted?: () => void }) {
-  const [state, setState] = useState<TrailAgents>();
-  const [repo, setRepo] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
-  useEffect(() => {
-    let live = true;
-    const load = () => void readTrailAgents(mapId).then((s) => live && s && setState(s));
-    load();
-    // While on, what they're doing changes on its own: read it again now and then.
-    const timer = setInterval(load, 15_000);
-    return () => {
-      live = false;
-      clearInterval(timer);
-    };
-  }, [mapId]);
+export function StartTrail({ agents, onStarted }: { agents: TrailAgentsControl; onStarted?: () => void }) {
+  const { state, busy, error, repo } = agents;
   if (!state || !state.canRun) return null;
-  const act = async (on: boolean) => {
-    setBusy(true);
-    setError(undefined);
-    const next = await setTrailAgents(mapId, { on, ...(on && repo ? { repo } : {}) });
-    setBusy(false);
-    if ('error' in next) return setError(next.error);
-    setState(next);
-    if (on) onStarted?.();
-  };
+  const start = () => void agents.act(true).then((on) => on && onStarted?.());
   const runs = hostedAgents();
   if (state.on)
     return (
       <span className="start-trail">
-        <span className="start-trail-status">{status(state)}</span>
-        <Button size="sm" variant="ghost" disabled={busy} onClick={() => void act(false)}>
+        <span className="start-trail-status">{trailAgentsStatus(state)}</span>
+        <Button size="sm" variant="ghost" disabled={busy} onClick={() => void agents.act(false)}>
           Pause
         </Button>
         {runs && (
-          <a className="t-meta" href={`${runs.href}#trail-${encodeURIComponent(mapId)}`}>
+          <a className="t-meta" href={`${runs.href}#trail-${encodeURIComponent(agents.mapId)}`}>
             Runs
           </a>
         )}
@@ -59,7 +31,11 @@ export function StartTrail({ mapId, onStarted }: { mapId: string; onStarted?: ()
   return (
     <span className="start-trail">
       {state.repos.length > 1 && (
-        <select aria-label="Repository" value={repo ?? ''} onChange={(e) => setRepo(e.target.value || undefined)}>
+        <select
+          aria-label="Repository"
+          value={repo ?? ''}
+          onChange={(e) => agents.setRepo(e.target.value || undefined)}
+        >
           <option value="">Repository…</option>
           {state.repos.map((r) => (
             <option key={r} value={r}>
@@ -68,7 +44,7 @@ export function StartTrail({ mapId, onStarted }: { mapId: string; onStarted?: ()
           ))}
         </select>
       )}
-      <Button variant="primary" disabled={busy || (state.repos.length > 1 && !repo)} onClick={() => void act(true)}>
+      <Button variant="primary" disabled={busy || (state.repos.length > 1 && !repo)} onClick={start}>
         Start the trail
       </Button>
       {!state.repos.length && <span className="t-meta">Connect a repository first.</span>}

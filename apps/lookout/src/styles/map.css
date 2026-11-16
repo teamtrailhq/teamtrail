@@ -158,9 +158,30 @@
 .status-drawer.open {
   transform: none;
 }
+.status-tabs {
+  margin-left: var(--sp-10);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-6);
+}
+.status-tabs .map-legend {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  pointer-events: auto;
+}
+.status-tabs .map-legend-list {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--sp-6));
+  white-space: nowrap;
+}
+.status-tabs .map-legend .btn {
+  height: var(--h-sm);
+  border-bottom: 0;
+}
 .status-toggle {
   pointer-events: auto;
-  margin-left: var(--sp-10);
   height: var(--h-sm);
   padding: 0 var(--sp-10);
   display: inline-flex;

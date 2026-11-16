@@ -21,6 +21,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.52.2',
+    date: '2026-11-16',
+    items: [
+      "Your trail's agents are one header menu: what they're doing, with Pause and Runs inside",
+      'Legend sits next to Summary under the map, no longer behind it',
+    ],
+  },
+  {
     version: '0.52.1',
     date: '2026-11-16',
     items: ['Start the trail is a full-size button, like Create trail, and closes New trail once your agents are on'],
@@ -187,18 +195,6 @@ export const RELEASES: Release[] = [
       "Verified by Teamtrail: `teamtrail proof <ticket>` prints what Teamtrail recorded about a ticket's completion (the checks it ran, criteria verified or only claimed, the review and the decisions it relies on), ready for a pull request",
       'Agents get the same report from the new `proof_report` tool and put it in their pull requests',
       'The report opens with a Teamtrail verified or not verified badge',
-    ],
-  },
-  {
-    version: '0.33.1',
-    date: '2026-11-14',
-    items: ['Teamtrail is now MIT licensed'],
-  },
-  {
-    version: '0.33.0',
-    date: '2026-11-14',
-    items: [
-      "`teamtrail connect claude` offers to turn on Claude Code's sandbox, so the agent's shell commands can't reach Teamtrail's config folder either",
     ],
   },
   ...MID_RELEASES,
