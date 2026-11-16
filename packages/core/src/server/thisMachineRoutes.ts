@@ -25,6 +25,8 @@ const WRITES: RegExp[] = [
   /^\/trust\/approve$/,
   // Setting the check commands themselves from the Lookout, approved in the same step (verification/setChecks.ts).
   /^\/verification\/config$/,
+  // What a change outside the files an agent declared does, set and approved in the same step (verification/setScope.ts).
+  /^\/verification\/scope$/,
   // Reverting a trail file changed outside Teamtrail: Teamtrail writes the signed values back (signedState/).
   /^\/trust\/revert$/,
   // This person's own attention preferences, kept in their config dir.

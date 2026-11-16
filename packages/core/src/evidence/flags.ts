@@ -2,6 +2,7 @@ import type { ChangedFile, EvidenceFlag, GitBaseline, GitTreeState } from '../mo
 import type { TicketType } from '../model/types';
 import type { VerificationConfig } from '../model/verification';
 import { noChangesFlag } from './noChangesFlag';
+import { scopeFlag } from './scopeFlag';
 
 /** Files another working or verifying ticket changed. */
 export interface OtherWork {
@@ -21,6 +22,9 @@ export interface FlagInput {
   /** The agent says the ticket needed no code change; it still shows, as info. */
   noCodeReason?: string;
   configHash?: string;
+  /** The globs the agent declared at its claim, and what changes outside them do (evidence/scopeFlag.ts). */
+  touches?: string[];
+  scope?: VerificationConfig['scope'];
   /** Whether the base head is an ancestor of the current head (`undefined`: not known). */
   descends?: boolean;
   others: OtherWork[];
@@ -98,6 +102,8 @@ export function evidenceFlags(i: FlagInput): EvidenceFlag[] {
   }
   out.push(...history(i.base.git, i.now, i.descends));
   if (!i.changed.length) out.push(noChangesFlag(i));
+  const scope = scopeFlag({ changed: i.changed, touches: i.touches, scope: i.scope ?? 'flag' });
+  if (scope) out.push(scope);
   out.push(...overlap(i));
   return out;
 }

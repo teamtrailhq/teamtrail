@@ -56,8 +56,18 @@ function gitOf(a?: VerificationAttempt): Proof['git'] {
     files: g.stats.files,
     add: g.stats.add,
     del: g.stats.del,
-    flags: g.flags.filter((f) => f.kind !== 'no-git').map((f) => f.kind),
+    flags: g.flags.filter((f) => f.kind !== 'no-git' && !SCOPE_KINDS.includes(f.kind)).map((f) => f.kind),
+    ...scopeOf(a),
   };
+}
+
+const SCOPE_KINDS: string[] = ['outside-scope', 'in-scope'];
+
+/** The attempt's scope, when its evidence carries a scope flag. */
+function scopeOf(a?: VerificationAttempt) {
+  const f = a?.git?.flags.find((x) => SCOPE_KINDS.includes(x.kind));
+  if (!f) return {};
+  return { scope: { declared: a?.touches ?? [], outside: f.kind === 'outside-scope' ? (f.files ?? []) : [] } };
 }
 
 /** The latest attempt as the proof shows it; an empty, failed one when nothing was submitted. */

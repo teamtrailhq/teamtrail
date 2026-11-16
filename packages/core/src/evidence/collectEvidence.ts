@@ -21,6 +21,8 @@ export interface EvidenceRequest {
   /** `configHash` of verification.json now; absent when there is no file. */
   configHash?: string;
   noCodeReason?: string;
+  /** The globs the agent declared at its claim. */
+  touches?: string[];
 }
 
 /**
@@ -44,6 +46,8 @@ export async function collectEvidence(r: EvidenceRequest): Promise<GitEvidence> 
     ticketType: r.ticket.type,
     noChanges: (r.config ?? DEFAULT_CONFIG).noChanges,
     noCodeReason: r.noCodeReason,
+    touches: r.touches,
+    scope: (r.config ?? DEFAULT_CONFIG).scope,
     configHash: r.configHash,
     descends: await descendsFrom(b, now),
     others: now ? await otherWork(r.root, r.snap, r.ticket) : [],

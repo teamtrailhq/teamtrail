@@ -15,6 +15,7 @@ export const DEFAULT_CONFIG: VerificationConfig = {
   maxAttempts: 3,
   totalTimeoutSec: 1800,
   noChanges: { allow: ['research', 'junction', 'prototype'], else: 'flag' },
+  scope: 'flag',
   stale: 'reverify',
   github: { enabled: 'auto', requiredChecks: [], pollSec: 60 },
 };
@@ -100,6 +101,7 @@ export function parseVerificationConfig(text: string): { config?: VerificationCo
   for (const k of ['maxAttempts', 'totalTimeoutSec'] as const)
     take(raw[k], isPosInt, (v) => (c[k] = v), `"${k}" must be a positive integer`);
   parseNoChanges(raw.noChanges, c, errors);
+  take(raw.scope, oneOf('flag', 'fail', 'human'), (v) => (c.scope = v), '"scope" must be flag, fail or human');
   take(raw.stale, oneOf('reverify', 'flag'), (v) => (c.stale = v), '"stale" must be reverify or flag');
   parseGithub(raw.github, c, errors);
   return errors.length ? { errors } : { config: c, errors };

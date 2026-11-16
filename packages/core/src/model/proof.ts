@@ -85,6 +85,11 @@ export interface Proof {
     add: number;
     del: number;
     flags: string[];
+    /**
+     * The files the agent declared at its claim and the changed files outside them (evidence/scopeFlag.ts). Missing
+     * on attempts from before the scope check.
+     */
+    scope?: { declared: string[]; outside: string[] };
   };
   reviews: ProofReview[];
   decisions: ProofDecision[];

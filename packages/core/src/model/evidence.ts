@@ -49,7 +49,9 @@ export type EvidenceFlagKind =
   | 'branch-switch'
   | 'history-rewritten'
   | 'config-changed'
-  | 'stale';
+  | 'stale'
+  | 'outside-scope'
+  | 'in-scope';
 
 /** Something a human should know about a completion. `effect` is what it does to the attempt, if anything. */
 export interface EvidenceFlag {

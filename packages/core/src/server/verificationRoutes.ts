@@ -12,6 +12,7 @@ import type { RouteContext } from './routeContext';
 import { ELSEWHERE } from './thisMachineRoutes';
 import { crossSite } from './trackerErrors';
 import { handleChecksConfig } from './verificationConfigRoute';
+import { putScope } from './verificationScopeRoute';
 
 const ACTIONS = new Set<OperatorAction>(['rerun', 'approve', 'accept', 'rework', 'unblock', 'level']);
 const str = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
@@ -55,6 +56,7 @@ export async function handleVerification(
   const p = url.pathname;
   const q = (k: string) => url.searchParams.get(k) ?? '';
   if (p === '/verification/config') return handleChecksConfig({ root, local }, req, res);
+  if (p === '/verification/scope') return putScope({ root, local }, req, res);
   if (p === '/verification/ticket' && req.method === 'GET') {
     if (!q('mapId') || !q('ticketId')) throw new BadRequest('"mapId" and "ticketId" are required');
     const snap = await (await active()).loadMap(q('mapId'));

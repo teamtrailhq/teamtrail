@@ -17,6 +17,7 @@ export interface CompletionContext {
   ticket: Ticket;
   config: ConfigRead;
   noCodeReason?: string;
+  touches?: string[];
 }
 
 /** Git evidence for an attempt. Evidence never stops verification: a failure to read it is an info flag. */
@@ -32,6 +33,7 @@ export async function completionEvidence(c: CompletionContext): Promise<GitEvide
       config: c.config.config,
       configHash: c.config.hash,
       noCodeReason: c.noCodeReason,
+      touches: c.touches,
     });
   } catch (e) {
     return {

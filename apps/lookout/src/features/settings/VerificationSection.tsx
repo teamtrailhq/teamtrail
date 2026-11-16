@@ -3,12 +3,11 @@ import { useState } from 'react';
 import { Choice } from '../../components/ui';
 import { TRAIL_LEAD } from '../../lib';
 import { LEVEL_HELP, LEVEL_TEXT, verificationApi } from '../../lib/verification';
-import { ChecksEditor } from './ChecksEditor';
-import { ChecksList } from './ChecksList';
 import { settingsHref } from './settingsHref';
 import { SettingsSection } from './SettingsSection';
 import { useThisMachine } from './useThisMachine';
 import { useVerificationConfig } from './useVerificationConfig';
+import { VerificationChecks } from './VerificationChecks';
 
 /**
  * The trail's level, and the checks: set here on the machine Teamtrail runs on (approved as they're saved), read
@@ -80,11 +79,7 @@ export function VerificationSection(props: { map?: MapDoc }) {
           </span>
         </div>
       )}
-      {local && <ChecksEditor key={view.approval?.base ?? 'none'} view={view} />}
-      {!local && !view.exists && (
-        <span className="set-hint t-meta">No checks yet. They're set on the machine Teamtrail runs on.</span>
-      )}
-      {!local && c && view.exists && <ChecksList config={c} file={file} hash={view.hash} />}
+      <VerificationChecks view={view} local={local} file={file} />
       <span className="set-hint t-meta">
         Saved here, checks are approved as you save them. A change to {file} made in the repo, by an agent or a
         teammate, runs nothing until you approve it.
