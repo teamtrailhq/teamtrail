@@ -21,6 +21,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.55.2',
+    date: '2026-11-16',
+    items: ['Teamtrail Cloud: the agents menu says which model your agents are working on'],
+  },
+  {
     version: '0.55.1',
     date: '2026-11-16',
     items: ['Teamtrail Cloud: Get started ticks off your trail and your agents as soon as you start them'],
@@ -179,13 +184,6 @@ export const RELEASES: Release[] = [
     items: [
       'Decisions now say who made the call: your name from git on this machine, or the person signed in to a hosted Lookout, in the Logbook and in Verified by Teamtrail proofs',
       'A hosted Lookout opens in the theme you picked in your account there',
-    ],
-  },
-  {
-    version: '0.39.0',
-    date: '2026-11-15',
-    items: [
-      "A server that hosts Teamtrail can run a remote agent's checks on its pushed work, so that work is verified and its proof counts, like work done on your machine",
     ],
   },
   ...MID_RELEASES,

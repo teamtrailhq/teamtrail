@@ -7,6 +7,8 @@ export interface TrailAgents {
   on: boolean;
   repo?: string;
   running: number;
+  /** The model the newest going run is on, as the server names it ("Opus 5.5"); unset for the agent's default. */
+  model?: string;
   /** Why none is going while they're on, in words. */
   note?: string;
 }
@@ -20,6 +22,7 @@ const asState = (b: unknown): TrailAgents | undefined => {
     on: v.on,
     ...(typeof v.repo === 'string' ? { repo: v.repo } : {}),
     running: Number.isInteger(v.running) ? (v.running as number) : 0,
+    ...(typeof v.model === 'string' && v.model.trim() ? { model: v.model.trim().slice(0, 80) } : {}),
     ...(typeof v.note === 'string' ? { note: v.note.slice(0, 200) } : {}),
   };
 };
