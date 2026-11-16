@@ -1,7 +1,16 @@
 import type { Release } from './releases';
 
-/** Releases 0.26–0.35, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.26–0.36, kept apart so `releases.ts` stays short. Newest first. */
 export const MID_RELEASES: Release[] = [
+  {
+    version: '0.36.0',
+    date: '2026-11-15',
+    items: [
+      "Proof reports are signed with your machine's key: commit the key file Teamtrail writes in .teamtrail/proof-keys, and anyone can check a report with `teamtrail proof verify`",
+      "A GitHub Action, Verified by Teamtrail, checks every proof on a pull request and can be made a required check, so a PR without a valid proof can't merge",
+      'The ticket inspector shows the proof, with Copy for PR and a link to the comment once it is posted',
+    ],
+  },
   {
     version: '0.35.0',
     date: '2026-11-15',
