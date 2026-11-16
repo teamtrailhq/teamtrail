@@ -21,6 +21,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.55.0',
+    date: '2026-11-16',
+    items: [
+      'A finished trail looks finished: the stretches you walked turn solid green, and a flag stands where the X was',
+      'Destination reached, once per trail, with a way to the pull requests still waiting to be merged',
+      'Done but not verified stays honest: a grey flag, and how many tickets were closed without a verified proof',
+    ],
+  },
+  {
     version: '0.54.0',
     date: '2026-11-16',
     items: [
@@ -181,15 +190,6 @@ export const RELEASES: Release[] = [
       'Decision memory: before an agent asks you something you already decided, Teamtrail hands it your earlier decision instead, and shows it next to the question if the agent asks anyway',
       'Waiting on you flags finished work that changes files one of your decisions covers, so a later change never quietly undoes it',
       "The Logbook groups decisions by area, the most cited first; share a project's decisions with your other projects in Settings → Projects",
-    ],
-  },
-  {
-    version: '0.37.0',
-    date: '2026-11-15',
-    items: [
-      'Trail stats has a Scorecard: how each model, agent and vendor does on your own tickets, verified first time, rework and cost per verified ticket, with small samples marked too few',
-      'Settings → Model matching suggests a tier per ticket type when one model clearly does better on your repo, with the numbers; nothing changes until you take it',
-      'Copy the scorecard as Markdown to share it with your team',
     ],
   },
   ...MID_RELEASES,

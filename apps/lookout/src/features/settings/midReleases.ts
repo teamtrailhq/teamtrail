@@ -1,7 +1,16 @@
 import type { Release } from './releases';
 
-/** Releases 0.26–0.36, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.26–0.37, kept apart so `releases.ts` stays short. Newest first. */
 export const MID_RELEASES: Release[] = [
+  {
+    version: '0.37.0',
+    date: '2026-11-15',
+    items: [
+      'Trail stats has a Scorecard: how each model, agent and vendor does on your own tickets, verified first time, rework and cost per verified ticket, with small samples marked too few',
+      'Settings → Model matching suggests a tier per ticket type when one model clearly does better on your repo, with the numbers; nothing changes until you take it',
+      'Copy the scorecard as Markdown to share it with your team',
+    ],
+  },
   {
     version: '0.36.0',
     date: '2026-11-15',
