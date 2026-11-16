@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { readAttentionPrefs, updateAttentionState, writeAttentionPrefs } from '../attention/attentionStore';
 import { attentionView } from '../attention/attentionView';
+import { writeReviewLimit } from '../attention/writeReviewLimit';
 import type { AttentionState, AttentionView } from '../model/attention';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
@@ -19,9 +20,19 @@ function snoozeUntil(body: { minutes?: unknown; until?: unknown }, now: number):
   throw new BadRequest('"minutes" (more than 0) or "until" (epoch ms) is required');
 }
 
+/** Sets the team's review limit in attention.json: `{ limit }`, a whole number, or null for off. */
+async function putReviewLimit(root: string, req: IncomingMessage, res: ServerResponse) {
+  const body = await readJson<{ limit?: unknown }>(req, '{}');
+  if (body.limit !== null && typeof body.limit !== 'number')
+    throw new BadRequest('"limit" (a whole number, or null for off) is required');
+  const parsed = writeReviewLimit(root, body.limit);
+  sendJson(res, parsed.errors.length ? 400 : 200, parsed.errors.length ? { errors: parsed.errors } : parsed.value);
+}
+
 /**
  * `/attention` routes: the ranked queue (GET), snooze, dismiss and restore (POST), and this person's
- * prefs (GET and PUT `/attention/prefs`, kept in `configDir`). False when none matches.
+ * prefs (GET and PUT `/attention/prefs`, kept in `configDir`), and the team's review limit (PUT
+ * `/attention/review-limit { limit }`, written to attention.json). False when none matches.
  */
 export async function handleAttention(
   { root, active, configDir, served }: RouteContext & { configDir?: string; served?: (view: AttentionView) => void },
@@ -47,6 +58,7 @@ export async function handleAttention(
     sendJson(res, parsed.errors.length ? 400 : 200, parsed.errors.length ? { errors: parsed.errors } : parsed.value);
     return true;
   }
+  if (p === '/attention/review-limit' && req.method === 'PUT') return (await putReviewLimit(root, req, res), true);
   if (req.method !== 'POST') return false;
   const body = await readJson<{ id?: unknown; minutes?: unknown; until?: unknown }>(req, '{}');
   if (p === '/attention/snooze') {

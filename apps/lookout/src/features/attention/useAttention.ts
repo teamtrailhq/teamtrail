@@ -26,6 +26,8 @@ export interface AttentionApi {
   snooze: (id: string, minutes: number) => void;
   dismiss: (id: string) => void;
   savePrefs: (prefs: AttentionPrefs) => Promise<boolean>;
+  /** The team's review limit in attention.json; `null` turns it off. */
+  saveReviewLimit: (limit: number | null) => Promise<boolean>;
 }
 
 /**
@@ -60,6 +62,11 @@ export function useAttention(nudge: unknown): AttentionApi {
     const t = setTimeout(load, NUDGE_MS);
     return () => clearTimeout(t);
   }, [load, nudge]);
+  const saved = (p: Promise<unknown>) =>
+    p.then(
+      () => (setError(undefined), load(), true),
+      (e: Error) => (setError(e.message), false),
+    );
   const act = (path: string, body: unknown) =>
     void send(path, 'POST', body).then(
       () => (setError(undefined), load()),
@@ -70,10 +77,7 @@ export function useAttention(nudge: unknown): AttentionApi {
     error,
     snooze: (id, minutes) => act('/snooze', { id, minutes }),
     dismiss: (id) => act('/dismiss', { id }),
-    savePrefs: (prefs) =>
-      send('/prefs', 'PUT', prefs).then(
-        () => (setError(undefined), load(), true),
-        (e: Error) => (setError(e.message), false),
-      ),
+    savePrefs: (prefs) => saved(send('/prefs', 'PUT', prefs)),
+    saveReviewLimit: (limit) => saved(send('/review-limit', 'PUT', { limit })),
   };
 }

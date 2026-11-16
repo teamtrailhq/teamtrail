@@ -21,6 +21,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.51.0',
+    date: '2026-11-16',
+    items: [
+      'Review limit: set how much finished work may wait for your review, and agents start no new work past it',
+      'Agents finish rework and keep researching meanwhile, and Waiting on you shows what to review first',
+      'Set it in Settings → Attention; in Teamtrail Cloud, workspace owners set it there too',
+    ],
+  },
+  {
     version: '0.50.0',
     date: '2026-11-16',
     items: [
@@ -176,27 +185,6 @@ export const RELEASES: Release[] = [
     date: '2026-11-14',
     items: [
       "`teamtrail connect claude` offers to turn on Claude Code's sandbox, so the agent's shell commands can't reach Teamtrail's config folder either",
-    ],
-  },
-  {
-    version: '0.32.0',
-    date: '2026-11-13',
-    items: [
-      'Scout has a new look: a scout companion with a cap, a headset and an antenna, looking out along the trail',
-    ],
-  },
-  {
-    version: '0.31.1',
-    date: '2026-11-13',
-    items: ['An archived trail’s held work and changes waiting for your approval stay in your queue'],
-  },
-  {
-    version: '0.31.0',
-    date: '2026-11-13',
-    items: [
-      'Start a trail over: the trail menu archives the map that went wrong and opens New trail with its idea filled in',
-      'Archive a trail you are done with, or restore it: it stays as history, and no agent takes work from it',
-      'The empty map looks like every other empty zone, with New trail and the agent command under it',
     ],
   },
   ...MID_RELEASES,

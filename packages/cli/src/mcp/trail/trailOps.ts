@@ -9,6 +9,7 @@ import { knowledgeFor } from './knowledge';
 import { matchingView, pickNext, stampModel } from './models';
 import { parallelView } from './parallel';
 import { adaptiveView, frozenOn } from './reroutes';
+import { reviewGate, reviewLimitField } from './reviewLimit';
 import { requestSetting } from './settings';
 import { ticketInfo } from './ticketInfo';
 import { trailView } from './views';
@@ -61,10 +62,12 @@ export async function resumeTrail(ctx: AgentContext, trailRef?: string) {
   const agent = await ctx.agentId();
   const states = deriveStates(snap.tickets, snap.map.mode);
   const mine = snap.tickets.find((t) => states.get(t.id) === 'claimed' && t.assignee === agent);
-  const exclude = [...frozenOn(ctx, snap.map.id).keys()];
+  const review = await reviewGate(ctx, snap);
+  const exclude = [...frozenOn(ctx, snap.map.id).keys(), ...review.held.map((h) => h.id)];
   const next = pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude }).ticket;
   return {
     ...current,
+    ...reviewLimitField(review),
     discovery: briefView(ctx.root, snap),
     yourClaim: mine ? ticketInfo(ctx.root, snap, mine, await ctx.decisions(snap.map.id)) : null,
     next: next ? ticketInfo(ctx.root, snap, next, await ctx.decisions(snap.map.id)) : null,

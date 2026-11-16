@@ -23,6 +23,7 @@ import { pathRoots } from './pathRoots';
 import { recoverStalled } from './recoverStalled';
 import { sessionView } from './reporting';
 import { frozenOn } from './reroutes';
+import { assertUnderReviewLimit, reviewGate } from './reviewLimit';
 import { assertMayReview, ownReviews } from './reviews';
 import { ticketInfo } from './ticketInfo';
 import { nextTicket } from './ticketOps';
@@ -104,7 +105,13 @@ async function pickTarget(
 ): Promise<Ticket> {
   const { snap, agent } = at;
   const frozen = frozenOn(ctx, snap.map.id);
-  const exclude = [...(await ownReviews(ctx, snap, agent)), ...frozen.keys(), ...outsideGuides(snap, at.guides)];
+  const review = await reviewGate(ctx, snap);
+  const exclude = [
+    ...(await ownReviews(ctx, snap, agent)),
+    ...frozen.keys(),
+    ...outsideGuides(snap, at.guides),
+    ...review.held.map((h) => h.id),
+  ];
   const target = at.ref
     ? ctx.findTicket(snap, at.ref)
     : pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude }).ticket;
@@ -118,6 +125,7 @@ async function pickTarget(
   if (proposal && target.assignee !== agent)
     throw new OperationError(`${target.key} is frozen by reroute proposal ${proposal}, waiting on the human`);
   assertMayReview(ctx, snap, target, agent);
+  assertUnderReviewLimit(review, target, agent);
   if (target.assignee !== agent) assertInGuides(target, at.guides);
   if (target.assignee !== agent) assertClaimable(ctx.root, snap.map.id, target);
   return target;

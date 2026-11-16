@@ -119,6 +119,7 @@ export { assertConfirmed } from './verification/assertConfirmed';
 export { rerun } from './verification/rerunInterrupted';
 export { operatorAction, type OperatorAction, type OperatorRequest } from './verification/operatorActions';
 export { approvalItems, type ApprovalItem } from './verification/approvals';
+export { readReviewLoad } from './reviewLoad/readReviewLoad';
 export { rerunChecks } from './verification/operatorRerun';
 export { reviewConflict, type Reviewer } from './verification/reviewIndependence';
 export { reviewBody, requestReview } from './verification/reviewRequest';

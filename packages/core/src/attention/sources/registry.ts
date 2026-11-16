@@ -16,6 +16,7 @@ import { precedentSource } from './precedentSource';
 import { questionSource } from './questionSource';
 import { rerouteSource } from './rerouteSource';
 import { rerouteSuggestedSource } from './rerouteSuggestedSource';
+import { reviewLimitSource } from './reviewLimitSource';
 import { stalledSource } from './stalledSource';
 import { trackerSettingsSource } from './trackerSettingsSource';
 import { trustSource } from './trustSource';
@@ -45,4 +46,5 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   trackerSettingsSource,
   trustSource,
   precedentSource,
+  reviewLimitSource,
 ];

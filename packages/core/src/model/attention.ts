@@ -1,3 +1,5 @@
+import type { ReviewLoad } from './reviewLoad';
+
 /**
  * The attention queue: everything that needs the human, ranked by code (attention/buildAttention.ts).
  * Files:
@@ -27,7 +29,8 @@ export type AttentionKind =
   | 'delivery'
   | 'tracker-settings'
   | 'trust'
-  | 'precedent';
+  | 'precedent'
+  | 'review-limit';
 
 /** `blocking`: the agent can do no useful work until answered. `soon`: the default. `fyi`: whenever convenient. */
 export type AttentionUrgency = 'blocking' | 'soon' | 'fyi';
@@ -67,6 +70,11 @@ export interface AttentionPolicy {
   interrupt: number;
   /** How often the digest of non-interrupting items goes out, in minutes; 0 turns it off. */
   digestMinutes: number;
+  /**
+   * How many finished tickets may wait for review (approvals and open pull requests) before agents start no new
+   * implementation work (model/reviewLoad.ts). Missing means off.
+   */
+  reviewLimit?: number;
 }
 
 export type NotifyChannel = 'browser' | 'slack-dm' | 'slack-channel' | 'none';
@@ -128,4 +136,6 @@ export interface AttentionView {
   heldBack: number;
   /** Items hidden by snoozes and dismissals. */
   hidden: number;
+  /** Finished work waiting for review, against the team's review limit. Missing from older servers. */
+  review?: ReviewLoad;
 }
