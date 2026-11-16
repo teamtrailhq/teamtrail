@@ -34,6 +34,9 @@ export async function readTrailAgents(mapId: string) {
   return r?.ok ? asState(await r.json().catch(() => undefined)) : undefined;
 }
 
+/** Fired on the window when this page switches a trail's agents on or off. */
+export const TRAIL_AGENTS_CHANGED = 'teamtrail:trail-agents';
+
 /** Starts (`on`, in `repo` when there are several) or pauses them; the new state, or why not. */
 export async function setTrailAgents(
   mapId: string,
@@ -48,5 +51,7 @@ export async function setTrailAgents(
   }).catch(() => undefined);
   const body = (await r?.json().catch(() => undefined)) as { error?: unknown } | undefined;
   const state = r?.ok ? asState(body) : undefined;
+  // Setup's "Run your agents" step (features/guide) reads this to update at once.
+  if (state) window.dispatchEvent(new Event(TRAIL_AGENTS_CHANGED));
   return state ?? { error: typeof body?.error === 'string' ? body.error.slice(0, 200) : "The server didn't answer." };
 }

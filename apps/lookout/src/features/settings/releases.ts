@@ -21,6 +21,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.55.1',
+    date: '2026-11-16',
+    items: ['Teamtrail Cloud: Get started ticks off your trail and your agents as soon as you start them'],
+  },
+  {
     version: '0.55.0',
     date: '2026-11-16',
     items: [
@@ -181,15 +186,6 @@ export const RELEASES: Release[] = [
     date: '2026-11-15',
     items: [
       "A server that hosts Teamtrail can run a remote agent's checks on its pushed work, so that work is verified and its proof counts, like work done on your machine",
-    ],
-  },
-  {
-    version: '0.38.0',
-    date: '2026-11-15',
-    items: [
-      'Decision memory: before an agent asks you something you already decided, Teamtrail hands it your earlier decision instead, and shows it next to the question if the agent asks anyway',
-      'Waiting on you flags finished work that changes files one of your decisions covers, so a later change never quietly undoes it',
-      "The Logbook groups decisions by area, the most cited first; share a project's decisions with your other projects in Settings → Projects",
     ],
   },
   ...MID_RELEASES,

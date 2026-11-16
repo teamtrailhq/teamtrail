@@ -1,7 +1,16 @@
 import type { Release } from './releases';
 
-/** Releases 0.26–0.37, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.26–0.38, kept apart so `releases.ts` stays short. Newest first. */
 export const MID_RELEASES: Release[] = [
+  {
+    version: '0.38.0',
+    date: '2026-11-15',
+    items: [
+      'Decision memory: before an agent asks you something you already decided, Teamtrail hands it your earlier decision instead, and shows it next to the question if the agent asks anyway',
+      'Waiting on you flags finished work that changes files one of your decisions covers, so a later change never quietly undoes it',
+      "The Logbook groups decisions by area, the most cited first; share a project's decisions with your other projects in Settings → Projects",
+    ],
+  },
   {
     version: '0.37.0',
     date: '2026-11-15',
