@@ -2,7 +2,7 @@
 
 # Teamtrail
 
-> Agents do the work. You make the calls. Teamtrail makes sure both happen, with evidence.
+> Verified work from AI coding agents. Agents do the work; you know it's done.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/teamtrailhq/teamtrail/ci.yml?branch=main&label=CI)](https://github.com/teamtrailhq/teamtrail/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/teamtrail/next?label=npm%40next)](https://www.npmjs.com/package/teamtrail?activeTab=versions)
@@ -14,7 +14,7 @@
 
 **[teamtrail.app](https://teamtrail.app)** · [Docs](https://teamtrail.app/docs/) · [Try it: `npx teamtrail@next`](https://www.npmjs.com/package/teamtrail?activeTab=versions)
 
-Teamtrail is the control layer for AI coding agents. It breaks big work into decision tickets that Claude Code, Codex or any MCP agent picks up, sends you only the calls that are yours, and won't let an agent call anything done without evidence. You steer from the Lookout, a web app on your machine, where Scout briefs you on what changed while you were away.
+Teamtrail gives you verified work from AI coding agents. It breaks big work into decision tickets that Claude Code, Codex or any MCP agent picks up, sends you only the calls that are yours, and counts nothing as done until it's verified: your checks, run by Teamtrail, a review by a different agent and a signed proof for every finished ticket. You steer from the Lookout, a web app on your machine, where Scout briefs you on what changed while you were away.
 
 - **Your calls, by rule:** a risk policy in your repo sets what always comes to you (database changes, logins, billing, deleting data). Agents can't record those decisions themselves; it's enforced in code, not in a prompt.
 - **Done means proven:** acceptance criteria agreed up front, your tests run by Teamtrail itself, and a review by a different agent, never the author.
