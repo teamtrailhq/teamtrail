@@ -11,6 +11,8 @@ export { buildProof, type ProofInput } from './proof/buildProof';
 export { proofForTicket } from './proof/proofForTicket';
 export { proofMarkdown } from './proof/proofMarkdown';
 export { signedProofMarkdown } from './proof/signedProofMarkdown';
+export { gapsHash } from './proof/gapsHash';
+export { mergeAcceptances } from './proof/mergeAcceptances';
 export { verifyProofText, type ProofCheck } from './proof/verifyProofText';
 export { proofKeysAt } from './proof/proofKeysAt';
 export { parseProofKeys } from './proof/parseProofKeys';

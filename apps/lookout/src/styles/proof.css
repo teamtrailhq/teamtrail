@@ -23,3 +23,15 @@
   align-items: center;
   gap: var(--sp-8);
 }
+/* Merge anyway: why it isn't verified, on its own line after the bar's buttons. */
+.merge-gaps {
+  flex-basis: 100%;
+  order: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-6);
+}
+.merge-gaps .proof-gaps {
+  margin-top: var(--sp-4);
+}

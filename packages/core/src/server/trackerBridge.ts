@@ -20,6 +20,7 @@ import { handleKnowledge } from './knowledgeRoutes';
 import { lanPlaces } from './lanPlaces';
 import { handleLeases } from './leaseRoutes';
 import { handleMainChecks } from './mainChecksRoutes';
+import { handleMergeAnyway } from './mergeAnywayRoute';
 import { handleModels } from './modelRoutes';
 import { neverCrash } from './neverCrash';
 import { handlePolicy } from './policyRoutes';
@@ -121,6 +122,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
     (req, res, url) => handleScorecard(ctx, req, res, url),
     (req, res, url) => handleDecisionMemory(ctx, req, res, url),
+    (req, res, url) => handleMergeAnyway(ctx, req, res, url),
     (req, res, url) =>
       handleProof({ ...ctx, configDir: trackers.configDir, kick: () => reconciler.kick() }, req, res, url),
     (req, res, url) => handleAgents(abs, req, res, url),

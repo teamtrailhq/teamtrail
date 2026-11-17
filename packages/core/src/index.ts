@@ -176,6 +176,7 @@ export type {
   ProofWaived,
 } from './model/proof';
 export type * from './model/checkWaiver';
+export type * from './model/mergeAnyway';
 export type { ProofPostRecord } from './model/proofPost';
 export type { Scorecard, ScorecardRow, ScorecardSession, ScorecardTicket } from './model/scorecard';
 export { agentScorecard, SCORECARD_MIN_SAMPLE, UNKNOWN_MODEL } from './scorecard/agentScorecard';

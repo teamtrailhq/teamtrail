@@ -111,13 +111,28 @@ type Graded =
 /** Criteria whose claimed evidence the human signs off: an agent's word is not enough for these. */
 const SIGN_OFF_WHEN_CLAIMED: CriterionKind[] = ['security', 'business-rule'];
 
-function grade(c: Criterion, e: CriterionEvidence | undefined, checks: CheckResult[], waived: string[]): Graded {
+/** Checks whose result says nothing about the work: waived by the trail lead, or failing as they do on main. */
+export interface UnprovenChecks {
+  waived?: string[];
+  /** Known failures on main this attempt repeated, which the trail lead accepted for the trail. */
+  known?: string[];
+}
+
+/** Why a `check:` evidence proves nothing here, when it doesn't. */
+function unproven(name: string, skip: UnprovenChecks) {
+  if (skip.waived?.includes(name)) return 'waived';
+  if (skip.known?.includes(name)) return 'already failing on main';
+  return undefined;
+}
+
+function grade(c: Criterion, e: CriterionEvidence | undefined, checks: CheckResult[], skip: UnprovenChecks): Graded {
   const ev = e?.evidence.trim();
   if (!ev) return { kind: 'missing' };
   const name = ev.startsWith('check:') ? ev.slice(6).trim() : undefined;
-  // a check the trail lead accepted the ticket without proves nothing: what it would have shown rests on the agent
-  if (name !== undefined && waived.includes(name))
-    return { kind: 'claimed', evidence: `${ev} (waived)`, signOff: false };
+  // a check the trail lead accepted the ticket without, or one that fails as it already does on main, proves
+  // nothing either way: what it would have shown rests on the agent
+  const why = name === undefined ? undefined : unproven(name, skip);
+  if (why) return { kind: 'claimed', evidence: `${ev} (${why})`, signOff: false };
   const run = name === undefined ? undefined : checks.find((x) => x.name === name);
   if (name !== undefined && !(run && passed(run)))
     return { kind: 'failed', why: `${ev} ${run ? 'failed' : "didn't run"}` };
@@ -132,19 +147,20 @@ function grade(c: Criterion, e: CriterionEvidence | undefined, checks: CheckResu
  * that didn't run or didn't pass fails it, and one that passed here verifies it; `manual` (the evidence, or the
  * criterion's kind) waits for the trail lead. Everything else (a named test, a command, the PR, free text) is the
  * agent's word: it is kept and marked "claimed, not verified", never as verified; on a security or business-rule
- * criterion it also waits for the trail lead's sign-off.
+ * criterion it also waits for the trail lead's sign-off. A `check:` the trail lead waived, or one that repeated a
+ * known failure on main, is the agent's word too.
  */
 export function checkCriteria(
   criteria: Criterion[],
   given: CriterionEvidence[],
   checks: CheckResult[],
-  waived: string[] = [],
+  skip: UnprovenChecks = {},
 ): CriteriaResult {
   const byId = new Map(given.map((e) => [e.id, e]));
   const out: CriteriaResult = { lines: [], missing: [], failed: [], manual: [], claimed: [], evidence: [] };
   for (const c of criteria) {
     const e = byId.get(c.id);
-    const g = grade(c, e, checks, waived);
+    const g = grade(c, e, checks, skip);
     if (e && g.kind !== 'missing') out.evidence.push(e);
     const note = e?.note ? ` (${e.note})` : '';
     switch (g.kind) {

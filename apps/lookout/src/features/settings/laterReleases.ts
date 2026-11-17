@@ -1,0 +1,55 @@
+import type { Release } from './releases';
+
+/** Releases 0.44–0.49, kept apart so `releases.ts` stays short. Newest first. */
+export const LATER_RELEASES: Release[] = [
+  {
+    version: '0.49.0',
+    date: '2026-11-16',
+    items: [
+      'In Teamtrail Cloud, Start the trail right after New trail, or from the trail’s header: agents start in place',
+      'A trail started in the Lookout gets your project’s default verification level, as one an agent starts does',
+    ],
+  },
+  {
+    version: '0.48.1',
+    date: '2026-11-16',
+    items: ['Scout’s Get started sits in the bottom-right corner; adding your own check shows examples'],
+  },
+  {
+    version: '0.48.0',
+    date: '2026-11-16',
+    items: ['In Teamtrail Cloud, Scout keeps Get started in the corner until your workspace is set up'],
+  },
+  {
+    version: '0.47.0',
+    date: '2026-11-16',
+    items: ['Set the checks every finished ticket must pass in Settings → Verification, no file to edit'],
+  },
+  {
+    version: '0.46.0',
+    date: '2026-11-16',
+    items: [
+      'In Teamtrail Cloud, Approve and merge on a verified ticket merges its pull request at the commit that was checked',
+    ],
+  },
+  {
+    version: '0.45.0',
+    date: '2026-11-16',
+    items: ['In Teamtrail Cloud, Run agents on the trail takes you straight to its agents'],
+  },
+  {
+    version: '0.44.2',
+    date: '2026-11-16',
+    items: ['The middle of the Lookout gets the same margin at the top as at its sides'],
+  },
+  {
+    version: '0.44.1',
+    date: '2026-11-16',
+    items: ['Text you type in forms is full size (14px) again, not the small caps of the label above it'],
+  },
+  {
+    version: '0.44.0',
+    date: '2026-11-16',
+    items: ['In a hosted Lookout, the theme toggle and Settings → Appearance change your theme on the server too'],
+  },
+];
