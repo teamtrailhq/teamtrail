@@ -118,7 +118,7 @@ async function waiting({ fast, strong, page, shot }) {
   const title = new RegExp(`^${added.ticket.key} needs a strongest model`);
   const item = (await openNeedsList(page)).locator('li.att-item.k-model', { hasText: title });
   await item.waitFor({ timeout: 20_000 });
-  const shown = (await item.textContent()) ?? '';
+  const shown = ((await item.innerText()) ?? '').replace(/\s+/g, ' ');
   await item.locator('.ds-row-main').click();
   await page.locator('.bubble .model-wait').waitFor({ timeout: 15_000 });
   await shot('19-needs-a-strongest-model');

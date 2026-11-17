@@ -64,6 +64,8 @@ export async function verifyProjects({ browser, cli, log, shots }) {
   try {
     const askA = one.call('ask_human', { question: 'Show prices with tax?', urgency: 'blocking', waitSeconds: 90 });
     const askB = two.call('ask_human', { question: 'Round partial units up?', urgency: 'blocking', waitSeconds: 90 });
+    // handled here too: a step that fails while they wait must report its own error, not the agents' closing
+    for (const ask of [askA, askB]) ask.catch(() => undefined);
     const registered = JSON.parse(fs.readFileSync(path.join(config, 'projects.json'), 'utf8')).projects.map(
       (p) => p.name,
     );
