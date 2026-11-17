@@ -18,6 +18,7 @@ import { handleJournal } from './journalRoutes';
 import { handleKnowledge } from './knowledgeRoutes';
 import { lanPlaces } from './lanPlaces';
 import { handleLeases } from './leaseRoutes';
+import { handleMainChecks } from './mainChecksRoutes';
 import { handleModels } from './modelRoutes';
 import { neverCrash } from './neverCrash';
 import { handlePolicy } from './policyRoutes';
@@ -38,6 +39,7 @@ import { handleVerificationSync } from './verificationSyncRoutes';
 import { watchAttention } from './watchAttention';
 import { watchIntegration } from './watchIntegration';
 import { watchLeases } from './watchLeases';
+import { watchMainChecks } from './watchMainChecks';
 import { watchRemoteAgents } from './watchRemoteAgents';
 import { watchTrackerFolder } from './watchTrackerFolder';
 import { watchVerification } from './watchVerification';
@@ -58,6 +60,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     reconciler: reconcilerTiming,
     integration: integrationTiming,
     attention: attentionTiming,
+    mainChecks: mainChecksTiming,
+    checkRunner,
     peer,
     allowedHosts,
     streamKey = (req) => req.socket.remoteAddress ?? '',
@@ -85,6 +89,10 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const attention = watchAttention(ctx, send, { ...attentionTiming, configDir: trackers.configDir });
   const unwatchIntegration = watchIntegration(abs, integrationTiming);
   const unwatchRemoteAgents = watchRemoteAgents(abs, send);
+  // checks on main: in Cloud the server's runner runs them, never this process (mainChecks/startMainRun.ts)
+  const mainEnv = { root: abs, ...(checkRunner ? { checkRunner } : {}) };
+  const mainCtx = { ...ctx, env: mainEnv, changed: () => send('event: main-checks\ndata: {}\n\n') };
+  const unwatchMainChecks = watchMainChecks(mainCtx, send, mainChecksTiming);
 
   type Route = (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<boolean>;
   /** Tried in order; the first that handles the request answers it. */
@@ -119,6 +127,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) =>
       handleAttention({ ...ctx, configDir: trackers.configDir, served: attention.served }, req, res, url),
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
+    (req, res, url) => handleMainChecks(mainCtx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
     (req, res, url) =>
@@ -178,6 +187,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       attention.stop();
       unwatchIntegration();
       unwatchRemoteAgents();
+      unwatchMainChecks();
       reconciler.stop();
       for (const c of clients) c.end();
       clients.clear();

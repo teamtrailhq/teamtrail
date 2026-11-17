@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { DecisionRecord } from '../model/types';
+import type { CheckRunner } from '../verification/checkRunner';
 import type { PeerAddress } from './requestGuard';
 import type { TrackerRoutesOptions } from './trackerContext';
 
@@ -25,6 +26,8 @@ export interface TrackerBridge {
    *                                          endpoint over HTTP; SSE `remote-agents` when that changes (remoteAgentRoutes.ts)
    *   POST /remote-agents/tokens             body `{ name }` → `{ token, created, … }`: the token's value, this once
    *   POST /remote-agents/tokens/revoke      body `{ id }`; the token's sessions end
+   *   GET  /main-checks?mapId=               checks on main for a trail; POST /main-checks/run and /main-checks/choose
+   *                                          (mainChecksRoutes.ts); SSE `main-checks` when they change
    *   /trackers*, /tracker/<kind>/*          GitHub / Linear settings and API (trackerRoutes.ts)
    * Decision routes use the project's active tracker (local markdown, GitHub or Linear).
    */
@@ -75,4 +78,11 @@ export interface BridgeOptions extends Omit<TrackerRoutesOptions, 'root' | 'mark
   integration?: { pollMs?: number };
   /** How often the attention queue is recomputed for the `attention` event (watchAttention.ts). */
   attention?: { pollMs?: number };
+  /** How often trails ready for work are checked for a run on main to start (watchMainChecks.ts). */
+  mainChecks?: { pollMs?: number };
+  /**
+   * The embedding server's check runner (Cloud). Runs of the approved checks on main go to its `runMain`, never to
+   * this process; without one they run here, in a worktree Teamtrail prepares (mainChecks/).
+   */
+  checkRunner?: CheckRunner;
 }

@@ -1,0 +1,36 @@
+/* Checks on main: the trail glance's section and Settings → Verification (features/main-checks/). */
+.main-checks-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  margin-top: var(--sp-6);
+}
+.main-check-output {
+  margin: var(--sp-8) 0 0;
+}
+.main-check-output figcaption {
+  margin-bottom: var(--sp-4);
+}
+.main-check-output pre {
+  margin: 0;
+  max-height: 240px;
+  overflow: auto;
+  padding: var(--sp-6) var(--sp-8);
+  font-size: var(--fs-body);
+  line-height: var(--lh-snug);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  background: var(--sunken);
+  border: 1px solid var(--line);
+}
+.main-checks-setting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  margin-top: var(--sp-14);
+}
+.main-checks-setting .actions {
+  display: flex;
+  gap: var(--sp-6);
+}

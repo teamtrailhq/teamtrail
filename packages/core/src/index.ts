@@ -93,6 +93,10 @@ export * from './model/reviewLoad';
 export { reviewLoad, type ReviewLoadInput } from './reviewLoad/reviewLoad';
 export { reviewLimitHeld } from './reviewLoad/reviewLimitHeld';
 export { reviewLimitReason } from './reviewLoad/reviewLimitReason';
+export * from './model/mainChecks';
+export { mainChecksState, type MainChecksGate, type MainChecksStateInput } from './mainChecks/mainChecksState';
+export { mainChecksHeld } from './mainChecks/mainChecksHeld';
+export { failuresOf, knownFailuresOf } from './mainChecks/knownFailures';
 export * from './workspaces/workspace';
 export { parseWorkspaceSettings, serializeWorkspaceSettings } from './workspaces/workspaceFile';
 export { globsOverlap, touchOverlaps, pairsLabel, type TouchOverlap } from './workspaces/touches';
@@ -174,6 +178,7 @@ export { precedentConflicts, type PrecedentConflict } from './precedent/preceden
 export type {
   CheckRunJob,
   CheckRunner,
+  MainRunJob,
   RunnerCheck,
   RunnerCheckResult,
   RunnerReport,

@@ -16,6 +16,7 @@ import { criteriaView, saveCriteria, type CriterionInput } from './criteria';
 import { briefView, claimable } from './discovery';
 import { assertGuide, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
+import { mainChecksField, mainGate, type MainGate } from './mainChecks';
 import { heldReason, pickNext, tierFields } from './models';
 import { noTicketReason } from './noTicketReason';
 import { assertOwnClaim } from './ownClaim';
@@ -36,14 +37,16 @@ export async function nextTicket(
   const gate = claimable(ctx.root, snap.map.id);
   const types = gate ? (input.types ?? gate).filter((x) => gate.includes(x)) : input.types;
   const review = await reviewGate(ctx, snap);
+  const main = await mainGate(ctx, snap);
   const exclude = [
     ...(await ownReviews(ctx, snap, await ctx.agentId())),
     ...frozenOn(ctx, snap.map.id).keys(),
     ...outsideGuides(snap, input.guides),
     ...review.held.map((h) => h.id),
+    ...main.held.map((h) => h.id),
   ];
   const { ticket: t, held } = pickNext(ctx, snap, { types, exclude });
-  const extra = { ...(recovered.length ? { recovered } : {}), ...reviewLimitField(review) };
+  const extra = { ...(recovered.length ? { recovered } : {}), ...reviewLimitField(review), ...mainChecksField(main) };
   if (t)
     return {
       ticket: ticketInfo(ctx.root, snap, t, await ctx.decisions(snap.map.id)),
@@ -51,16 +54,17 @@ export async function nextTicket(
       knowledge: knowledgeFor(ctx.root, snap, t),
       ...extra,
     };
-  return { ticket: null, reason: whyNothing(ctx, snap, { held, review, gate }), ...extra };
+  return { ticket: null, reason: whyNothing(ctx, snap, { held, review, main, gate }), ...extra };
 }
 
 /** Why nothing was offered: the review limit holds the ready work, model matching does, or what's in the way. */
 function whyNothing(
   ctx: AgentContext,
   snap: MapSnapshot,
-  w: { held: Ticket[]; review: ReviewGate; gate?: TicketType[] },
+  w: { held: Ticket[]; review: ReviewGate; main: MainGate; gate?: TicketType[] },
 ): string {
   if (w.review.reason && w.review.held.length) return w.review.reason;
+  if (w.main.view.reason && w.main.held.length) return w.main.view.reason;
   if (w.held.length) return heldReason(ctx, snap, w.held);
   return noTicketReason(snap, { gate: w.gate, next: w.gate ? briefView(ctx.root, snap)?.next : undefined });
 }

@@ -30,7 +30,8 @@ export type AttentionKind =
   | 'tracker-settings'
   | 'trust'
   | 'precedent'
-  | 'review-limit';
+  | 'review-limit'
+  | 'main-checks';
 
 /** `blocking`: the agent can do no useful work until answered. `soon`: the default. `fyi`: whenever convenient. */
 export type AttentionUrgency = 'blocking' | 'soon' | 'fyi';

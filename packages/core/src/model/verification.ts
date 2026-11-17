@@ -56,6 +56,14 @@ export interface CheckResult {
 
 export type AttemptResult = 'pass' | 'fail' | 'error' | 'interrupted';
 
+/** A check that failed in an attempt exactly as it already did on main, a failure the trail lead accepted. */
+export interface AttemptKnownFailure {
+  name: string;
+  /** The run on main it failed in, and that run's commit. */
+  runId: string;
+  commit: string | null;
+}
+
 /** One completion claim and what Teamtrail found. Written once, never rewritten. */
 export interface VerificationAttempt {
   v: 1;
@@ -97,6 +105,11 @@ export interface VerificationAttempt {
   guides?: AttemptGuide[];
   checks: CheckResult[];
   result: AttemptResult;
+  /**
+   * Failed checks that fail the same way on main, known failures the trail lead accepted for the trail: the attempt
+   * passes without them, and its proof is not verified (mainChecks/withKnownFailures.ts).
+   */
+  knownFailures?: AttemptKnownFailure[];
   /** Why the result is `error` or `interrupted`. */
   note?: string;
   /** The worktree the checks ran on, the changes since the claim and their flags. */

@@ -4,6 +4,7 @@ import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
 import { listGuides } from '../guides/guideStore';
 import { checksOfGuides, resolveGuides } from '../guides/resolveGuides';
+import { droppedChecks, trailKnownFailures } from '../mainChecks/withKnownFailures';
 import { BRAND } from '../model/brand';
 import type { AttemptGuide } from '../model/guide';
 import type { Journal, TicketPhase } from '../model/lifecycle';
@@ -104,7 +105,10 @@ export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: Le
   // the tracker files lowers nothing until the trail lead approves it (approvedLevel.ts)
   const { config } = trustedChecks(root);
   const asked = verificationFor(config.config, snap.map, t);
-  const info = withApprovedLevel(root, { config: config.config, map: snap.map, t, info: asked });
+  const approved = withApprovedLevel(root, { config: config.config, map: snap.map, t, info: asked });
+  // checks the trail lead dropped for this trail because they fail on main (mainChecks/chooseMain.ts)
+  const dropped = droppedChecks(root, snap.map.id);
+  const info = dropped.length ? { ...approved, checks: approved.checks.filter((c) => !dropped.includes(c)) } : approved;
   const guides = resolveGuides(listGuides(root), { map: snap.map, ticket: t });
   if (!guides.length) return { info, config };
   return { info: { ...info, checks: checksOfGuides(info.checks, guides) }, config };
@@ -200,6 +204,7 @@ async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; conf
     info,
     git,
     evidence: sub.criteria,
+    known: trailKnownFailures(env.root, mapId),
     signal: env.signal,
   });
   return { ...outcome, git, ...(criteria ? { criteria } : {}) };

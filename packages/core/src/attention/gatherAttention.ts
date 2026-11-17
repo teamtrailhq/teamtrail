@@ -9,6 +9,7 @@ import { readBrief } from '../discovery/briefStore';
 import { readTicketSyncs } from '../evidence/syncStore';
 import { listGuides } from '../guides/guideStore';
 import { listKnowledge } from '../knowledge/knowledgeStore';
+import { readMainChecks } from '../mainChecks/readMainChecks';
 import { activeTrails } from '../model/activeTrails';
 import type { AttentionPolicy } from '../model/attention';
 import type { InstalledGuide } from '../model/guide';
@@ -58,6 +59,7 @@ export async function gatherAttention(input: {
     violations: await readViolations({ root, adapter, snaps, docs }),
     precedentConflicts: await readPrecedentConflicts({ root, adapter, snaps }),
     integrations: integrationsOf(root),
+    mainChecks: await Promise.all(snaps.map((s) => readMainChecks({ root }, s.map.id))),
     guides: listGuides(root).flatMap(guideFiles),
     ...(reportsSettings(adapter)
       ? { trackerSettings: adapter.unacceptedSettings(), trackerSettingsSkipped: adapter.settingsSkipped() }

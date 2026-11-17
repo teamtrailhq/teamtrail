@@ -21,6 +21,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.58.0',
+    date: '2026-11-17',
+    items: [
+      'Before agents build, the approved checks run once on the default branch, so a check already failing on main is known before any agent is blamed for it',
+      'When one fails, the trail waits for your call: fix main first, drop that check for the trail, or start anyway. Each can be undone',
+      'After Start anyway, a completion that fails only in those checks, the same way, isn’t sent back, and its proof marks them as known failures, not verified',
+      'Run checks on main again any time, from the trail at a glance or Settings → Verification',
+    ],
+  },
+  {
     version: '0.57.0',
     date: '2026-11-17',
     items: [
@@ -166,28 +176,6 @@ export const RELEASES: Release[] = [
     version: '0.44.0',
     date: '2026-11-16',
     items: ['In a hosted Lookout, the theme toggle and Settings → Appearance change your theme on the server too'],
-  },
-  {
-    version: '0.43.1',
-    date: '2026-11-15',
-    items: [
-      'In a hosted Lookout that keeps your trails itself, Settings → Tracker says so instead of offering trackers',
-    ],
-  },
-  {
-    version: '0.43.0',
-    date: '2026-11-15',
-    items: [
-      'Where the server runs your agents, the Lookout says to turn them on for a trail there, instead of offering /scout commands for an agent of your own',
-    ],
-  },
-  {
-    version: '0.42.0',
-    date: '2026-11-15',
-    items: [
-      'A hosted Lookout has your menu in its header: back to all your workspaces, the server’s own pages, and Sign out',
-      'Where the server keeps your trails itself, the Lookout asks no tracker questions on its first run',
-    ],
   },
   ...MID_RELEASES,
   ...OLDER_RELEASES,
