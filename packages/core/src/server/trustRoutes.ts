@@ -7,6 +7,7 @@ import { approveTogether } from '../trust/approveTogether';
 import { firstRun, stateFirstRun } from '../trust/firstRun';
 import { pendingTrust } from '../trust/pendingTrust';
 import { withCommitted } from '../trust/withCommitted';
+import { withScreening } from '../trust/withScreening';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
 
@@ -41,7 +42,9 @@ async function snapsOf(ctx: RouteContext): Promise<MapSnapshot[]> {
  */
 export async function handleTrust(ctx: TrustContext, req: IncomingMessage, res: ServerResponse, url: URL) {
   if (url.pathname === '/trust' && req.method === 'GET') {
-    const items = await withCommitted(ctx.root, pendingTrust(ctx.root, await snapsOf(ctx)));
+    const committed = await withCommitted(ctx.root, pendingTrust(ctx.root, await snapsOf(ctx)));
+    // check commands carry what reading the repo says about each (advice only: approving is keeping them anyway)
+    const items = await withScreening(committed, ctx.repoFiles?.());
     // `firstRun`, `stateFirstRun`: whether committed items (trail files) may be adopted together (approveTrust.ts)
     sendJson(res, 200, { items, firstRun: firstRun(ctx.root), stateFirstRun: stateFirstRun(ctx.root) });
     return true;

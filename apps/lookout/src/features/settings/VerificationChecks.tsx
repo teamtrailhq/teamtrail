@@ -1,3 +1,4 @@
+import { CheckFindingList } from '../check-screening';
 import { ChecksEditor } from './ChecksEditor';
 import { ChecksList } from './ChecksList';
 import { ScopeSetting } from './ScopeSetting';
@@ -17,6 +18,7 @@ export function VerificationChecks(props: { view: VerificationConfigView; local?
         <span className="set-hint t-meta">No checks yet. They're set on the machine Teamtrail runs on.</span>
       )}
       {!local && c && view.exists && <ChecksList config={c} file={file} hash={view.hash} />}
+      {!local && <CheckFindingList findings={view.screening ?? []} named />}
       {c && view.exists && <ScopeSetting view={view} local={local} />}
     </>
   );

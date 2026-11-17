@@ -1,4 +1,5 @@
 import type { CriteriaResult } from '../criteria/criteria';
+import type { WaivedCheck } from './checkWaiver';
 import type { GitEvidence } from './evidence';
 import type { AttemptGuide, ChecklistAnswer, GuideAnswers } from './guide';
 import type { VerificationLevel } from './lifecycle';
@@ -104,6 +105,8 @@ export interface VerificationAttempt {
   /** The guides the ticket took on at completion. Missing on attempts from before guides came by type. */
   guides?: AttemptGuide[];
   checks: CheckResult[];
+  /** Checks the trail lead accepted the ticket without: not run for this attempt (verification/waivedChecks.ts). */
+  waived?: WaivedCheck[];
   result: AttemptResult;
   /**
    * Failed checks that fail the same way on main, known failures the trail lead accepted for the trail: the attempt

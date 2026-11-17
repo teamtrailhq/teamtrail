@@ -8,6 +8,9 @@ const STANDING = {
 /** A trail file changed outside Teamtrail; accepting it here signs it as yours. */
 const OUTSIDE = 'changed by a teammate or an agent outside Teamtrail; accepting signs it as yours on this machine';
 
+/** How a screening finding reads in the terminal (verification/screenChecks.ts). */
+const SEVERITY = { 'wont-run': "won't run", unsure: 'may not run' };
+
 const indent = (lines: string[]) => lines.map((l) => `    ${l}`).join('\n');
 
 /**
@@ -18,5 +21,6 @@ export function showItem(item: TrustItem): string {
   const whole =
     item.committed === false ? `\n  not committed, so here it is whole:\n${indent(item.content.split('\n'))}` : '';
   const advice = item.warnings.map((w) => `  worth a look: ${w}\n`).join('');
-  return `\n  ${item.title}\n  ${item.kind === 'state' ? OUTSIDE : STANDING[item.standing]}\n${indent(item.lines)}${whole}\n${advice}  hash ${item.hash}\n`;
+  const screening = (item.screening ?? []).map((f) => `  ${f.check}: ${SEVERITY[f.severity]}: ${f.text}\n`).join('');
+  return `\n  ${item.title}\n  ${item.kind === 'state' ? OUTSIDE : STANDING[item.standing]}\n${indent(item.lines)}${whole}\n${advice}${screening}  hash ${item.hash}\n`;
 }

@@ -1,6 +1,7 @@
 import type { InstalledGuide } from '@teamtrail/core';
 import { CheckApprove } from './CheckApprove';
 import { argvText } from './guideLabels';
+import { ProposedCheckFindings } from './ProposedCheckFindings';
 
 /**
  * The checks a guide requires and the commands it proposes, each as its exact argv. A proposed command only runs
@@ -30,6 +31,7 @@ export function GuideChecks(props: {
             <code className="t-code">
               {name}: {argvText(spec.run)}
             </code>
+            {pending && canApprove && <ProposedCheckFindings spec={spec} />}
             {pending && canApprove && (
               <CheckApprove name={name} spec={spec} busy={props.busy} onApprove={props.onApprove} />
             )}

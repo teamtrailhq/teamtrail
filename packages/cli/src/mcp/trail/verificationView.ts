@@ -1,5 +1,6 @@
 import type { GitBaseline, GitEvidence, MapSnapshot, Ticket, VerificationAttempt } from '@teamtrail/core';
 import {
+  activeWaivers,
   checkPassed,
   checksApproval,
   checksWaitReason,
@@ -48,6 +49,7 @@ export function verificationView(root: string, snap: MapSnapshot, t: Ticket) {
         return { name, run: spec?.run, ...(spec?.cwd ? { cwd: spec.cwd } : {}) };
       }),
       ...(config.errors.length ? { configErrors: config.errors } : {}),
+      ...waivedView(root, snap.map.id, t.id),
       ...waiting(root),
       howTo:
         'close_ticket (or report_completion) runs these checks before the ticket is done. Run them yourself first.',
@@ -57,11 +59,19 @@ export function verificationView(root: string, snap: MapSnapshot, t: Ticket) {
           rework: {
             attempt: last.id,
             failures: feedbackOf(last),
-            note: 'The last completion failed these checks. Fix the cause, then close_ticket again.',
+            note: "The last completion failed these checks. Fix the cause, then close_ticket again. If a check can't pass in this repo (no such script, nothing to run), say so to the human: only they can accept the ticket without it.",
           },
         }
       : {}),
   };
+}
+
+/** Checks the trail lead accepted this ticket without: they don't run on its completions until undone. */
+function waivedView(root: string, mapId: string, ticketId: string) {
+  const waived = activeWaivers(root, mapId, ticketId).flatMap((w) =>
+    w.checks.map((c) => ({ check: c.name, by: w.by, reason: w.reason })),
+  );
+  return waived.length ? { waived } : {};
 }
 
 /** The result of a finished verification run, for the agent. */
@@ -71,6 +81,7 @@ export function settledView(s: Settled) {
     status: s.phase,
     attempt: a.id,
     checks: checksOf(a),
+    ...(a.waived?.length ? { skipped: a.waived.map((w) => ({ check: w.name, by: w.by, reason: w.reason })) } : {}),
     ...(a.criteria ? { criteria: a.criteria.lines } : {}),
     ...(a.git ? { git: gitView(a.git) } : {}),
   };

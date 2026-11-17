@@ -1,3 +1,5 @@
+import type { CheckFinding } from '../model/checkScreening';
+
 /** What a pending approval is about. */
 export type TrustKind =
   'checks' | 'catalogs' | 'brief' | 'criteria' | 'knowledge' | 'policy' | 'level' | 'type' | 'state' | 'discovery';
@@ -22,6 +24,8 @@ export interface TrustItem {
   lines: string[];
   /** Advice, never a refusal: a check command that runs a shell, reaches the network, … */
   warnings: string[];
+  /** Check commands only: what reading the repo says about whether each can run (trust/withScreening.ts). Advice. */
+  screening?: CheckFinding[];
   /** The file it comes from, relative to the tracker folder; none for a tracker that isn't files. */
   file?: string;
   /** The files it comes from, when there are several (a trail's files nobody signed, accepted together). */

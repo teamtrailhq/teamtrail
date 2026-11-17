@@ -1,5 +1,6 @@
+import type { WaivableCheck } from '@teamtrail/core';
 import type { LookoutApi } from '../../hooks';
-import { ReasonForm } from '../verification';
+import { ReasonForm, WaiveForm } from '../verification';
 import { RemoveWorkspaceForm } from '../workspaces';
 import { ResolveForm } from './ResolveForm';
 import { RuleOutForm } from './RuleOutForm';
@@ -14,6 +15,7 @@ export function TicketForms(props: {
   v: TicketView;
   actions: LookoutApi['actions'];
   act: (req: ReasonRequest) => Promise<unknown>;
+  waive: (req: { checks: WaivableCheck[]; reason: string }) => Promise<unknown>;
 }) {
   const { form, v, actions } = props;
   const close = () => props.setForm(null);
@@ -46,6 +48,18 @@ export function TicketForms(props: {
           kind={form}
           onSubmit={(req) => {
             void props.act(req);
+            close();
+          }}
+          onCancel={close}
+        />
+      );
+    case 'waive':
+      return (
+        <WaiveForm
+          waivable={v.verification?.waivable ?? []}
+          results={v.verification?.attempts[0]?.checks ?? []}
+          onSubmit={(req) => {
+            void props.waive(req);
             close();
           }}
           onCancel={close}

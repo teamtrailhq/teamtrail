@@ -2,11 +2,13 @@ import {
   type ApprovalItem,
   type AttemptResult,
   type CheckResult,
+  type CheckWaiver,
   type LevelInfo,
   type TicketPhase,
   type VerificationAttempt,
   type VerificationLevel,
   type VerificationVerdict,
+  type WaivableCheck,
 } from '@teamtrail/core';
 import { apiBase } from './apiBase';
 
@@ -17,6 +19,19 @@ export interface TicketVerification {
   verdicts: VerificationVerdict[];
   /** The run in progress: who submitted and when it started. */
   running?: { id: string; agent: string; startedAt: number };
+  /** The latest completion's failing checks the trail lead may accept the ticket without. */
+  waivable?: WaivableCheck[];
+  /** The trail lead's waivers in force on the ticket. */
+  waivers?: CheckWaiver[];
+}
+
+/** "Accept without <check>": the completion and the checks the page showed, with the trail lead's reason. */
+export interface WaiveRequest {
+  mapId: string;
+  ticketId: string;
+  attemptId: string;
+  checks: { name: string; hash: string }[];
+  reason: string;
 }
 
 export type OperatorAction = 'rerun' | 'approve' | 'accept' | 'rework' | 'unblock' | 'level';
@@ -79,6 +94,18 @@ export const verificationApi = {
     ),
   log: (path: string) =>
     fetch(`${api}/log?path=${encodeURIComponent(path)}`).then((r) => json<{ text: string; clipped: boolean }>(r)),
+  waive: (req: WaiveRequest) =>
+    fetch(`${api}/waive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    }).then((r) => json<{ waiver: string; attemptId?: string }>(r)),
+  undoWaiver: (req: { mapId: string; ticketId: string }) =>
+    fetch(`${api}/waive/undo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    }).then((r) => json<{ undone: string[] }>(r)),
   act: (req: ActionRequest & { by: string }) =>
     fetch(`${api}/action`, {
       method: 'POST',

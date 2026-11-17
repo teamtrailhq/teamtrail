@@ -48,14 +48,14 @@ function request(b: Record<string, unknown>): OperatorRequest {
  *                                                 token (thisMachineRoutes.ts), over the file as they loaded it.
  */
 export async function handleVerification(
-  { root, active, local }: RouteContext & { local?: boolean },
+  { root, active, local, repoFiles }: RouteContext & { local?: boolean },
   req: IncomingMessage,
   res: ServerResponse,
   url: URL,
 ): Promise<boolean> {
   const p = url.pathname;
   const q = (k: string) => url.searchParams.get(k) ?? '';
-  if (p === '/verification/config') return handleChecksConfig({ root, local }, req, res);
+  if (p === '/verification/config') return handleChecksConfig({ root, local, repoFiles }, req, res);
   if (p === '/verification/scope') return putScope({ root, local }, req, res);
   if (p === '/verification/ticket' && req.method === 'GET') {
     if (!q('mapId') || !q('ticketId')) throw new BadRequest('"mapId" and "ticketId" are required');

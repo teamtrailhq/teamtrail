@@ -111,10 +111,13 @@ type Graded =
 /** Criteria whose claimed evidence the human signs off: an agent's word is not enough for these. */
 const SIGN_OFF_WHEN_CLAIMED: CriterionKind[] = ['security', 'business-rule'];
 
-function grade(c: Criterion, e: CriterionEvidence | undefined, checks: CheckResult[]): Graded {
+function grade(c: Criterion, e: CriterionEvidence | undefined, checks: CheckResult[], waived: string[]): Graded {
   const ev = e?.evidence.trim();
   if (!ev) return { kind: 'missing' };
   const name = ev.startsWith('check:') ? ev.slice(6).trim() : undefined;
+  // a check the trail lead accepted the ticket without proves nothing: what it would have shown rests on the agent
+  if (name !== undefined && waived.includes(name))
+    return { kind: 'claimed', evidence: `${ev} (waived)`, signOff: false };
   const run = name === undefined ? undefined : checks.find((x) => x.name === name);
   if (name !== undefined && !(run && passed(run)))
     return { kind: 'failed', why: `${ev} ${run ? 'failed' : "didn't run"}` };
@@ -135,12 +138,13 @@ export function checkCriteria(
   criteria: Criterion[],
   given: CriterionEvidence[],
   checks: CheckResult[],
+  waived: string[] = [],
 ): CriteriaResult {
   const byId = new Map(given.map((e) => [e.id, e]));
   const out: CriteriaResult = { lines: [], missing: [], failed: [], manual: [], claimed: [], evidence: [] };
   for (const c of criteria) {
     const e = byId.get(c.id);
-    const g = grade(c, e, checks);
+    const g = grade(c, e, checks, waived);
     if (e && g.kind !== 'missing') out.evidence.push(e);
     const note = e?.note ? ` (${e.note})` : '';
     switch (g.kind) {

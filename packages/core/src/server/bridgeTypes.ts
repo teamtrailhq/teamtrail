@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { TrackerAdapter } from '../adapters/adapter';
+import type { RepoFiles } from '../model/checkScreening';
 import type { DecisionRecord } from '../model/types';
 import type { CheckRunner } from '../verification/checkRunner';
 import type { PeerAddress } from './requestGuard';
@@ -85,4 +86,10 @@ export interface BridgeOptions extends Omit<TrackerRoutesOptions, 'root' | 'mark
    * this process; without one they run here, in a worktree Teamtrail prepares (mainChecks/).
    */
   checkRunner?: CheckRunner;
+  /**
+   * The repo's files, read-only, for screening check commands (verification/screenChecks.ts), given the folder that
+   * holds the tracker folder. Default: this machine's checkout (localRepoFiles.ts). An embedding server whose repos
+   * aren't on disk (a hosted workspace) passes its own reader, e.g. one backed by GitHub.
+   */
+  repoFiles?: (repoRoot: string) => RepoFiles | undefined;
 }

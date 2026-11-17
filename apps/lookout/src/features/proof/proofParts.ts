@@ -7,6 +7,7 @@ export function proofParts(proof: Proof): (MetaPart | false)[] {
   const reviews = proof.reviews.length;
   return [
     proof.checks.length > 0 && `${passed}/${proof.checks.length} checks passed`,
+    !!proof.waived?.length && `${proof.waived.map((w) => w.name).join(', ')} skipped`,
     proof.criteria.lines.length > 0 &&
       `${proof.criteria.verified} criteria verified, ${proof.criteria.claimed} claimed`,
     reviews > 0 && `${reviews} review${reviews > 1 ? 's' : ''}`,

@@ -15,6 +15,7 @@ import { OperationError } from '../planning/operations/operationError';
 import { resolve, type DecisionMeta } from '../planning/operations/resolve';
 import { withApprovedLevel } from './approvedLevel';
 import { assertConfirmed } from './assertConfirmed';
+import { attemptBase } from './attemptBase';
 import { checkoutFor } from './checkoutFor';
 import type { CheckRunner } from './checkRunner';
 import { checksWaitReason, trustedChecks } from './checksApproval';
@@ -28,7 +29,7 @@ import { remoteGraded } from './remoteCompletion';
 import { requestReview } from './reviewRequest';
 import { acquireRunLock, releaseRunLock } from './runLock';
 import { runnerGraded } from './runnerGraded';
-import { submittedFields } from './submittedFields';
+import { withoutWaived } from './withoutWaived';
 
 /** The engine as an actor: comments and journal lines of the check runner. */
 export const CHECK_RUNNER = BRAND.slug;
@@ -85,6 +86,8 @@ export interface VerifyJob {
   ticket: Ticket;
   info: LevelInfo;
   sub: Submission;
+  /** In-process only: the checks the trail lead waived for the ticket, left out of `info.checks`. */
+  waived?: string[];
 }
 
 export interface Settled {
@@ -123,26 +126,15 @@ export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: Le
  * error naming why, so the ticket goes to the human instead of staying stuck
  * (completions are held before they get here, submitVerified in the CLI).
  */
-export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptId: string; done: Promise<Settled> }> {
-  const { mapId, ticket: t, info, sub } = job;
-  assertConfirmed(t, info);
+export async function verify(env: VerifyEnv, asked: VerifyJob): Promise<{ attemptId: string; done: Promise<Settled> }> {
+  assertConfirmed(asked.ticket, asked.info);
   // Read once: the commands that run are the ones whose approval was just checked.
   const { config, approval } = trustedChecks(env.root);
   const waiting = approval.waiting ? checksWaitReason(approval) : undefined;
-  const base = {
-    v: 1 as const,
-    mapId,
-    ticketId: t.id,
-    ticketKey: t.key,
-    agent: sub.agent,
-    ...(sub.sessionId ? { sessionId: sub.sessionId } : {}),
-    ...(sub.origin ? { origin: sub.origin } : {}),
-    level: info.level,
-    configHash: config.hash ?? 'none',
-    submittedAt: Date.now(),
-    resolution: sub.resolution,
-    ...submittedFields(sub, env.checkRunner?.name),
-  };
+  // the checks the trail lead accepted this ticket without don't run; the attempt keeps them for its proof
+  const { job, waived } = withoutWaived(env.root, asked, config.config);
+  const { mapId, ticket: t, sub } = job;
+  const base = attemptBase({ job, configHash: config.hash, runner: env.checkRunner?.name, waived });
   const id = nextAttemptId(env.root, mapId, t.id);
   const lock = acquireRunLock(env.root, { ...base, id });
   if (!lock.ok)
@@ -150,7 +142,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
   if (lock.recovered) {
     // the dead run took the id we picked: start over with the next one
     releaseRunLock(env.root, mapId, t.id);
-    return verify(env, job);
+    return verify(env, asked);
   }
   const done = (async (): Promise<Settled> => {
     let attempt: VerificationAttempt;
@@ -161,7 +153,7 @@ export async function verify(env: VerifyEnv, job: VerifyJob): Promise<{ attemptI
     } finally {
       releaseRunLock(env.root, mapId, t.id);
     }
-    if (reverifies(attempt, config.config, !!sub.reverified)) return reverify(env, job, attempt);
+    if (reverifies(attempt, config.config, !!sub.reverified)) return reverify(env, asked, attempt);
     return settle(env, attempt, sub, (config.config ?? DEFAULT_CONFIG).maxAttempts);
   })();
   return { attemptId: id, done };
@@ -205,6 +197,7 @@ async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; conf
     git,
     evidence: sub.criteria,
     known: trailKnownFailures(env.root, mapId),
+    waived: job.waived,
     signal: env.signal,
   });
   return { ...outcome, git, ...(criteria ? { criteria } : {}) };

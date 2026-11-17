@@ -50,10 +50,17 @@ export function TicketPanel(props: {
       <TicketHead t={t} tickets={snap.tickets} />
       <StandingLine v={v} />
       <ActionBar v={v} bar={bar} onOpenChat={props.onOpenChat} />
-      <TicketForms form={props.form} setForm={props.setForm} v={v} actions={api.actions} act={bar.act} />
+      <TicketForms
+        form={props.form}
+        setForm={props.setForm}
+        v={v}
+        actions={api.actions}
+        act={bar.act}
+        waive={bar.waive}
+      />
       <WhatSection v={v} />
       <HowSection v={v} editing={editing} setEditing={setEditing} act={bar.act} />
-      <ProgressSection v={v} />
+      <ProgressSection v={v} onUndoWaiver={bar.undoWaiver} />
       <TicketProof ticket={t} view={v.proof} />
       <HistorySection t={t} decisions={decisions} onOpenDecision={props.onOpenDecision} />
     </div>

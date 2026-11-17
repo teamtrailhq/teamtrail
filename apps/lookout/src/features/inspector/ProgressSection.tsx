@@ -1,7 +1,7 @@
 import { DetailSection, Fact } from '../../components/ui';
 import { ChecklistSummary } from '../guides';
 import { PrFlagBadges } from '../pr-sync';
-import { AttemptsSummary } from '../verification';
+import { AttemptsSummary, WaivedChecks } from '../verification';
 import { LeaseFacts } from './LeaseFacts';
 import type { TicketView } from './useTicketView';
 
@@ -9,7 +9,7 @@ import type { TicketView } from './useTicketView';
  * What has happened on the ticket so far: the claim, the branch or finished workspace, the pull request, the
  * completions and the checklist answers. Only once there is some.
  */
-export function ProgressSection({ v }: { v: TicketView }) {
+export function ProgressSection({ v, onUndoWaiver }: { v: TicketView; onUndoWaiver: () => void }) {
   const attempts = v.verification?.attempts.length ?? 0;
   if (!v.lease && !v.workspace && !attempts && !v.pr) return null;
   const mapId = v.snap.map.id;
@@ -36,6 +36,7 @@ export function ProgressSection({ v }: { v: TicketView }) {
           </Fact>
         )}
         {attempts > 0 && <ChecklistSummary mapId={mapId} ticketId={v.t.id} />}
+        <WaivedChecks waivers={v.verification?.waivers ?? []} onUndo={onUndoWaiver} />
       </dl>
     </DetailSection>
   );

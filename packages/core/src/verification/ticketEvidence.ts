@@ -1,17 +1,25 @@
 import { closeSync, openSync, readSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { activeWaivers } from './activeWaivers';
 import { EVIDENCE_DIR, readAttempts, readVerdicts } from './evidenceStore';
 import { readRunLock } from './runLock';
+import { waivableChecks } from './waivableChecks';
 
 /** Largest slice of a check log the Lookout is sent; logs themselves are capped at 1 MB. */
 export const LOG_VIEW_BYTES = 256 * 1024;
 
-/** A ticket's verification record: attempts and verdicts newest first, and the run in progress if any. */
+/**
+ * A ticket's verification record: attempts and verdicts newest first, the run in progress if any, the failing checks
+ * of the latest attempt the trail lead may accept it without, and the waivers in force.
+ */
 export function ticketEvidence(root: string, mapId: string, ticketId: string) {
+  const attempts = readAttempts(root, mapId, ticketId);
   return {
-    attempts: readAttempts(root, mapId, ticketId).reverse(),
+    attempts: [...attempts].reverse(),
     verdicts: readVerdicts(root, mapId, ticketId).reverse(),
     running: readRunLock(root, mapId, ticketId),
+    waivable: waivableChecks(attempts.at(-1)),
+    waivers: activeWaivers(root, mapId, ticketId),
   };
 }
 

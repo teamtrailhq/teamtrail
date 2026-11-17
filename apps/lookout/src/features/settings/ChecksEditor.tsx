@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Button } from '../../components/ui';
+import { useCheckScreening } from '../../hooks/useCheckScreening';
 import { apiBase } from '../../lib/apiBase';
+import { rowFindings } from '../../lib/rowFindings';
+import { CheckFindingList } from '../check-screening';
 import type { VerificationConfigView } from './useVerificationConfig';
 
 type Row = { name: string; command: string };
@@ -34,6 +37,16 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
     kind: 'idle',
   });
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const remove = (i: number) => setRows(rows.filter((_, j) => j !== i));
+  // read against the repo as they're typed: a command that can't run is said next to it, never refused
+  const [kept, setKept] = useState<ReadonlySet<string>>(new Set());
+  const screened = rows.map((r, n) => ({
+    name: String(n),
+    run: words(r.command),
+    cwd: view.config?.checks[r.name]?.cwd,
+  }));
+  const screening = useCheckScreening(screened);
+  const findings = rowFindings({ findings: screening, rows, kept });
   const offered = SUGGESTED.filter((s) => !rows.some((r) => r.name === s.name));
   const save = async () => {
     setState({ kind: 'saving' });
@@ -52,23 +65,42 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
   return (
     <div className="vf-editor">
       {rows.map((r, i) => (
-        <div key={i} className="vf-edit-row">
-          <input
-            aria-label="Name"
-            value={r.name}
-            placeholder="name"
-            onChange={(e) => set(i, { name: e.target.value })}
+        <div key={i} className="vf-edit-check">
+          <div className="vf-edit-row">
+            <input
+              aria-label="Name"
+              value={r.name}
+              placeholder="name"
+              onChange={(e) => set(i, { name: e.target.value })}
+            />
+            <input
+              aria-label="Command"
+              className="t-code"
+              value={r.command}
+              placeholder="npm test"
+              onChange={(e) => set(i, { command: e.target.value })}
+            />
+            <Button size="sm" variant="ghost" onClick={() => remove(i)}>
+              Remove
+            </Button>
+          </div>
+          <CheckFindingList
+            findings={findings[i]}
+            actions={
+              <>
+                <Button size="sm" variant="ghost" onClick={() => remove(i)}>
+                  Remove check
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setKept(new Set([...kept, words(r.command).join(' ')]))}
+                >
+                  Keep anyway
+                </Button>
+              </>
+            }
           />
-          <input
-            aria-label="Command"
-            className="t-code"
-            value={r.command}
-            placeholder="npm test"
-            onChange={(e) => set(i, { command: e.target.value })}
-          />
-          <Button size="sm" variant="ghost" onClick={() => setRows(rows.filter((_, j) => j !== i))}>
-            Remove
-          </Button>
         </div>
       ))}
       <div className="vf-edit-add">
