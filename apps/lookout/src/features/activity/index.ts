@@ -1,3 +1,4 @@
-export { ActivityStack } from './ActivityStack';
-export { LogZone } from './LogZone';
-export { StepZone } from './StepZone';
+export { ActivityLog } from './ActivityLog';
+export { Sessions } from './Sessions';
+export { SessionsHead } from './SessionsHead';
+export { StepTracker } from './StepTracker';

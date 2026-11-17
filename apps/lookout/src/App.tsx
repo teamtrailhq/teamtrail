@@ -1,56 +1,55 @@
 import { useMemo } from 'react';
 import {
   AppBriefing,
+  AppBubble,
   AppHeader,
-  AppInbox,
-  AppInspector,
-  useNewTrail,
   AppSettings,
-  LaptopSide,
+  AppTicketDrawer,
+  AppTrailBar,
   MapZone,
   PhoneTabBar,
   PhoneView,
+  RecordViews,
   useAppNavigation,
+  useAttentionUi,
   useDocumentTitle,
+  useLiveTrail,
+  useMainMark,
+  useNewTrail,
+  useOpeningBubble,
+  useProjectsUi,
   useRepoName,
   useScopedActivity,
-  useTrailUi,
-  useAttentionUi,
-  useProjectsUi,
   useSettingsPage,
-  RecordViews,
+  useTrailUi,
+  type View,
 } from './app/index';
-import { StepZone, LogZone, ActivityStack } from './features/activity';
 import { SetupGuide } from './features/guide';
 import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/knowledge';
-import { MapSections } from './features/plan';
 import { PhoneProjects, ProjectSwitcher } from './features/projects';
 import { FirstRun } from './features/settings';
 import { useBriefing, useBreakpoint, useLookout, useThemedPrefs } from './hooks';
 import { createRuntime, trackerKind } from './lib';
 
 /**
- * Progressive disclosure. Layers by priority:
- *   1 inbox + answer · 2 title + destination · 3 up next (frontier/claimed) · 4 map graph
- *   5 ticket inspector · 6 activity + sessions · 7 plan sections (not yet specified, decisions, out of scope)
- * mobile (<1024): 1–3 on the home view; 4–7 behind a fixed bottom tab bar.
- * laptop (1024–1439): adds 4 in the center and 5 on the right; 6–7 are tabs in that same right zone.
- * wide (≥1440): 6 and 7 get their own zones under the map and the ticket. Nothing visible moves.
+ * The map first. The header (with the view tabs and "N need you"), the map filling the page with a bubble on what's
+ * selected (what it needs from you first, then the ticket), and the trail bar under it, minimal or with its lists.
+ * Plan, Activity and the Logbook are pages over the map; Settings and Trail stats too. On a phone the same, one view
+ * at a time, the bubble a sheet under the map and the views in a bottom tab bar.
  */
 export function App() {
   const rt = useMemo(() => createRuntime(trackerKind()), []);
   const api = useLookout(rt);
-  const { snap, activity, selection, actions } = api;
+  const { snap, activity } = api;
   const [prefs, updatePrefs] = useThemedPrefs();
   const settings = useSettingsPage();
   const newTrail = useNewTrail(rt, api);
   const repo = useRepoName(rt.kind);
   const bp = useBreakpoint();
-  const pending = activity.pending.length;
   const scoped = useScopedActivity(activity, api.mapId);
-  useDocumentTitle(pending, snap?.map.title);
-  const nav = useAppNavigation(api, bp);
-  const trail = useTrailUi({ snap, selectMap: actions.selectMap, openTicket: nav.openTicket });
+  useDocumentTitle(activity.pending.length, snap?.map.title);
+  const nav = useAppNavigation(api);
+  const trail = useTrailUi({ snap, selectMap: api.actions.selectMap, openTicket: nav.openTicket });
   const knowledge = useKnowledgeStore(trail.briefText);
   const attn = useAttentionUi({
     api,
@@ -63,48 +62,46 @@ export function App() {
     openApprovals: () => settings.open('approvals'),
     openFocusSettings: () => settings.open('attention'),
   });
-  const brief = useBriefing(rt, api, prefs.briefing, attn.attention.view?.items);
-
-  const inbox = <AppInbox api={api} nav={nav} bp={bp} scoped={scoped} attn={attn} brief={trail.inboxCard} />;
-  const map = (
-    <MapZone
-      api={api}
-      sessions={scoped.sessions}
-      onSelect={nav.select}
-      onNewTrail={newTrail.open}
-      compact={bp === 'mobile'}
-      minFit={bp === 'mobile' ? 0.7 : 0}
-      trail={trail}
-    />
-  );
-  const inspector = (bare: boolean) => (
-    <AppInspector {...{ api, nav, attn, bare }} sessions={scoped.sessions} done={trail.done} />
-  );
-  const zoneProps = {
-    activity: scoped,
-    snap,
-    leases: api.leases,
-    onTicket: (id: string) => nav.select({ kind: 'ticket', id }),
-    onOpenChat: (id: string) => nav.openChat(id),
-    done: trail.done,
-  };
-  const plan = (bare: boolean) => (
-    <MapSections
-      snap={snap}
-      selection={selection}
-      onSelect={nav.select}
-      bare={bare}
-      onAudit={() => nav.openDecisions()}
-      activity={scoped}
-    />
-  );
-  const { projects, overview, openOverview } = useProjectsUi(bp, nav, attn.link.request);
+  const view = attn.attention.view;
+  const brief = useBriefing(rt, api, prefs.briefing, view?.items);
+  const live = useLiveTrail({ snap, sessions: scoped.sessions, view });
+  const main = useMainMark(api.mapId, live.items);
+  const { projects, overview, openOverview, closeOverview } = useProjectsUi(bp, nav, attn.link.request);
   const settingsPage = settings.route && (
     <AppSettings rt={rt} api={api} bp={bp} prefs={prefs} update={updatePrefs} settings={settings} />
   );
-  const records = (nav.statsOpen || nav.decisionsView) && <RecordViews api={api} bp={bp} nav={nav} />;
-  const decisions = settingsPage || overview || records;
-  const briefing = brief.shown && (
+  const records = (nav.statsOpen || nav.page) && (
+    <RecordViews api={api} bp={bp} nav={nav} scoped={scoped} done={trail.done} attn={attn} />
+  );
+  const covered = settingsPage || overview || records;
+  useOpeningBubble({ ...api, view, busy: !!covered || !!api.selection, open: attn.open });
+
+  const shown: View = nav.page ?? 'map';
+  const onView = (v: View) => {
+    settings.dismiss();
+    closeOverview();
+    if (v === 'map') nav.toMap();
+    else nav.openPage(v);
+  };
+  const phone = bp === 'mobile';
+  const map = (
+    <MapZone
+      api={api}
+      live={live.live}
+      main={main.tone}
+      focus={live.focus}
+      onSelect={nav.select}
+      onNewTrail={newTrail.open}
+      minFit={phone ? 0.7 : 0}
+      docked={phone}
+      trail={trail}
+      bubble={(place) => (
+        <AppBubble api={api} nav={nav} attn={attn} sessions={scoped.sessions} mainNeeds={main.needs} place={place} />
+      )}
+    />
+  );
+  const trailBar = <AppTrailBar api={api} nav={nav} attn={attn} trail={live} bp={bp} brief={trail.inboxCard} />;
+  const briefing = (
     <AppBriefing
       brief={brief}
       snaps={api.allSnaps}
@@ -112,28 +109,28 @@ export function App() {
       openTicket={nav.openTicket}
       openChat={nav.openChat}
       openDecisions={nav.openDecisions}
-      closeDecisions={() => nav.setDecisionsView(null)}
-      showPhoneHome={() => nav.setPhoneTab('home')}
+      openQuestion={nav.openQuestion}
+      toMap={nav.toMap}
     />
   );
 
   return (
     <KnowledgeContext.Provider value={knowledge}>
-      <div className={`app bp-${bp}`}>
+      <div className={`app bp-${bp} view-${shown}`}>
         <AppHeader
           api={api}
           rt={rt}
           repo={<ProjectSwitcher repo={repo} projects={projects} onOverview={openOverview} />}
           brief={brief}
           attention={attn.header}
-          decisionsOpen={!!nav.decisionsView}
-          onDecisions={() => {
-            settings.close();
-            if (nav.decisionsView) nav.setDecisionsView(null);
-            else nav.openDecisions();
-          }}
+          view={settingsPage || overview ? undefined : shown}
+          onView={onView}
+          phone={phone}
+          needs={live.items}
+          elsewhere={live.elsewhere}
+          onNeed={attn.open}
           onStats={() => {
-            settings.close();
+            settings.dismiss();
             nav.toggleStats();
           }}
           onNewTrail={newTrail.open}
@@ -142,57 +139,29 @@ export function App() {
           onSlack={() => settings.open('slack')}
           onToggleTheme={(night) => updatePrefs({ theme: night ? 'night' : 'day' })}
         />
-        {bp === 'wide' && (
-          <>
-            {inbox}
-            {map}
-            {inspector(false)}
-            <StepZone {...zoneProps} />
-            <LogZone {...zoneProps} />
-            {plan(false)}
-            {decisions}
-          </>
-        )}
-        {bp === 'laptop' && (
-          <>
-            {inbox}
-            {map}
-            <LaptopSide
-              tab={nav.sideTab}
-              onTab={nav.setSideTab}
-              unspecified={snap?.map.sections.unspecified.length}
-              ticket={inspector(true)}
-              activity={<ActivityStack {...zoneProps} />}
-              plan={plan(true)}
-            />
-            {decisions}
-          </>
-        )}
-        {bp === 'mobile' && (
+        {phone ? (
           <>
             <PhoneView
-              tab={nav.phoneTab}
-              decisions={decisions}
-              inbox={inbox}
-              projects={projects.many && <PhoneProjects projects={projects} onOverview={openOverview} />}
+              covered={covered}
               map={map}
-              ticket={inspector(true)}
-              activity={<ActivityStack {...zoneProps} />}
-              plan={plan(true)}
+              trailBar={trailBar}
+              projects={projects.many && <PhoneProjects projects={projects} onOverview={openOverview} />}
             />
             <PhoneTabBar
-              tab={nav.phoneTab}
-              covered={!!decisions}
-              pending={pending}
-              onPick={(id) => {
-                settings.close();
-                nav.setPhoneTab(id);
-                nav.setDecisionsView(null);
-              }}
+              view={shown}
+              covered={!!settingsPage || !!overview}
+              needs={live.items.length}
+              onPick={onView}
             />
           </>
+        ) : (
+          <>
+            {map}
+            {trailBar}
+            {covered}
+          </>
         )}
-
+        <AppTicketDrawer api={api} nav={nav} attn={attn} sessions={scoped.sessions} done={trail.done} />
         {briefing}
         {trail.dialog}
         {api.error && <div className="error-toast">{api.error}</div>}

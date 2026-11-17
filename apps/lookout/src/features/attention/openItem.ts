@@ -15,6 +15,8 @@ export interface AttentionHandlers {
   openConnector: (channel: string) => void;
   /** What the repo's files ask this machine to trust: Settings → Approvals. */
   openApprovals: () => void;
+  /** Checks failing on main: their bubble at the start of the trail. */
+  openMainChecks: (mapId: string) => void;
 }
 
 function openTicketOrTrail(item: AttentionItem, h: AttentionHandlers) {
@@ -57,6 +59,8 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
       return h.openConnector(item.ref);
     case 'trust':
       return h.openApprovals();
+    case 'main-checks':
+      return h.openMainChecks(item.mapId);
     default:
       return openTicketOrTrail(item, h);
   }

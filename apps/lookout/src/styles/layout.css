@@ -5,20 +5,14 @@
   gap: var(--sp-10);
   padding: var(--sp-10) var(--sp-12);
 }
-.app.bp-wide {
-  grid-template-columns: clamp(310px, 21.5vw, 360px) minmax(0, 1.1fr) minmax(0, 1fr) clamp(340px, 24vw, 400px);
-  grid-template-rows: 62px minmax(0, 1fr) 262px;
-  grid-template-areas:
-    'header header header header'
-    'inbox  map    map    inspector'
-    'inbox  step   log    plan';
-}
+.app.bp-wide,
 .app.bp-laptop {
-  grid-template-columns: 320px minmax(0, 1fr) 360px;
-  grid-template-rows: 62px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 62px minmax(0, 1fr) auto;
   grid-template-areas:
-    'header header header'
-    'inbox  map    inspector';
+    'header'
+    'map'
+    'trailbar';
 }
 .app.bp-mobile {
   gap: 0;

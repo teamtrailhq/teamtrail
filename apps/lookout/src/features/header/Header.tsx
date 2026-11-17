@@ -3,7 +3,6 @@ import {
   type MapDoc,
   type ActivityState,
   type TrackerHealth,
-  trailProgress,
   trailUsage,
   trailUsageSources,
   USAGE_SOURCE,
@@ -40,11 +39,12 @@ export function Header(props: {
   /** Set when Slack needs the trail lead: the connection broke, or the owner waits to be confirmed. */
   slackAlert?: { label: string; why: string };
   onSlack: () => void;
-  /** Focus mode and what interrupts now; replaces the plain waiting count when given. */
+  /** Focus mode (features/attention); replaces the plain waiting count when given. */
   attention?: ReactNode;
-  decisions: number;
-  decisionsOpen: boolean;
-  onDecisions: () => void;
+  /** The view tabs: Map, Plan, Activity, Logbook. */
+  views?: ReactNode;
+  /** "N need you", opening the most urgent. */
+  needs?: ReactNode;
   onStats: () => void;
   /** Knowledge entries that need the trail lead (suggestions, flags, stale). */
   knowledge: number;
@@ -58,7 +58,6 @@ export function Header(props: {
   const now = useNow(1000);
   const waiting = props.activity.pending.length;
   const cur = map && props.snaps[map.id];
-  const p = cur && trailProgress(cur);
   const u = map && trailUsage(props.activity, map.id);
   return (
     <Panel as="header" className="header">
@@ -76,14 +75,13 @@ export function Header(props: {
       <div className="h-right">
         <TrackerChip label={props.trackerLabel} health={props.health} now={now} />
         <PrSyncIndicator now={now} />
-        {map && p && (
+        {map && cur && (
           <span className="trail-meta">
             <Readout
               label="Trail T+"
               value={hms(now - map.createdAt)}
               title="Trail elapsed time, since it was charted"
             />
-            <Readout label="Done" value={`${p.decided}/${p.total}`} />
             {u && u.costUsd + u.inputTokens + u.outputTokens > 0 && (
               <Readout
                 className="spend"
@@ -97,8 +95,10 @@ export function Header(props: {
             )}
           </span>
         )}
+        {props.views}
         {props.attention}
-        {!props.attention && waiting > 0 && (
+        {props.needs}
+        {!props.attention && !props.needs && waiting > 0 && (
           <span className="waiting-chip" title={`${waiting} waiting on you`}>
             <ScoutMark variant="alert" size={14} />
             <b>{waiting}</b>
@@ -122,8 +122,6 @@ export function Header(props: {
         )}
         {map && <RunAgentsButton mapId={map.id} />}
         <RecordsMenu
-          decisions={props.decisions}
-          onDecisions={props.onDecisions}
           onStats={props.onStats}
           knowledge={props.knowledge}
           onKnowledge={props.onKnowledge}

@@ -1,21 +1,29 @@
+import type { AttentionItem } from '@teamtrail/core';
 import type { ReactNode } from 'react';
-import { Header } from '../features/header';
+import { Header, NeedsButton, ViewTabs } from '../features/header';
 import { useKnowledge } from '../features/knowledge';
 import { slackNeeds, useSlackStatus } from '../features/slack';
 import type { LookoutApi, useBriefing } from '../hooks';
 import type { Runtime } from '../lib';
+import { type View, VIEW_TABS } from './tabs';
 
-/** The header, wired to the app's trail actions, dialogs and the Slack connection alert. */
+/** The header, wired to the app's trail actions, views, dialogs and the Slack connection alert. */
 export function AppHeader(props: {
   api: LookoutApi;
   rt: Runtime;
   /** The repo name, or the project switcher. */
   repo: ReactNode;
   brief: ReturnType<typeof useBriefing>;
-  /** Focus mode and the interrupting count (features/attention), in place of the plain waiting count. */
+  /** Focus mode (features/attention). */
   attention?: ReactNode;
-  decisionsOpen: boolean;
-  onDecisions: () => void;
+  /** The view on screen (none while Settings covers it), and the tabs' choice; no tabs on a phone (its tab bar). */
+  view?: View;
+  onView: (view: View) => void;
+  phone: boolean;
+  /** What needs you on this trail, most urgent first ("N need you" opens the first), and on other trails. */
+  needs: AttentionItem[];
+  elsewhere: AttentionItem[];
+  onNeed: (item: AttentionItem) => void;
   onStats: () => void;
   onNewTrail: () => void;
   onStartOver: () => void;
@@ -44,11 +52,20 @@ export function AppHeader(props: {
       onSettings={props.onSettings}
       onToggleTheme={props.onToggleTheme}
       attention={props.attention}
+      views={!props.phone && <ViewTabs tabs={VIEW_TABS} value={props.view} onChange={props.onView} />}
+      needs={
+        <NeedsButton
+          count={props.needs.length}
+          elsewhere={props.elsewhere.length}
+          top={props.needs[0]?.title}
+          onOpen={() => {
+            const top = props.needs[0] ?? props.elsewhere[0];
+            if (top) props.onNeed(top);
+          }}
+        />
+      }
       slackAlert={slackAlert}
       onSlack={props.onSlack}
-      decisions={api.decisions.length}
-      decisionsOpen={props.decisionsOpen}
-      onDecisions={props.onDecisions}
       onStats={props.onStats}
       knowledge={knowledge.attention}
       knowledgeOpen={knowledge.open}

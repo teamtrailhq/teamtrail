@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
 
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
@@ -96,12 +96,12 @@ export async function verifyParallel({ browser, cli, log, shots }) {
     const onDisk = [a, b].every(
       (c) => c.workspace && sh(c.workspace.path, 'rev-parse', '--abbrev-ref', 'HEAD') === c.workspace.branch,
     );
-    await page.locator('.attention-queue li.att-item.k-overlap').waitFor({ timeout: 20_000 });
+    await (await openNeedsList(page)).locator('li.att-item.k-overlap').waitFor({ timeout: 20_000 });
     if (shots) await page.screenshot({ path: path.join(shots, '14-overlap.png') });
 
     changeShared(a.workspace, 'box');
     changeShared(b.workspace, 'rank');
-    const integration = page.locator('.attention-queue li.att-item.k-integration');
+    const integration = (await openNeedsList(page)).locator('li.att-item.k-integration');
     await integration.waitFor({ timeout: 30_000 });
     const files = (await integration.textContent()) ?? '';
     if (shots) await page.screenshot({ path: path.join(shots, '15-integration.png') });

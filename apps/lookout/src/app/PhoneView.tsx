@@ -1,32 +1,22 @@
 import type { ReactNode } from 'react';
-import { Panel } from '../components/ui';
-import type { PhoneTab } from './tabs';
 
-/** The single phone view: an open full view (Settings, the Logbook, Trail stats) covers it, otherwise the selected tab's layer. */
+/**
+ * The single phone view: a page or full view that covers the map (Plan, Activity, the Logbook, Settings, Trail
+ * stats), else the map with its bubble as a sheet under it, then the trail bar and its lists, and other projects.
+ */
 export function PhoneView(props: {
-  tab: PhoneTab;
-  decisions: ReactNode;
-  inbox: ReactNode;
-  /** Other projects, above the inbox on the home tab (renders nothing with one project). */
-  projects?: ReactNode;
+  covered: ReactNode;
   map: ReactNode;
-  ticket: ReactNode;
-  activity: ReactNode;
-  plan: ReactNode;
+  trailBar: ReactNode;
+  /** Other projects (renders nothing with one project). */
+  projects?: ReactNode;
 }) {
-  const layers: Record<PhoneTab, ReactNode> = {
-    home: props.projects ? (
-      <div className="phone-home">
-        {props.projects}
-        {props.inbox}
-      </div>
-    ) : (
-      props.inbox
-    ),
-    map: props.map,
-    ticket: <Panel className="zone">{props.ticket}</Panel>,
-    activity: <Panel className="zone">{props.activity}</Panel>,
-    plan: props.plan,
-  };
-  return <main className="phone-view">{props.decisions || layers[props.tab]}</main>;
+  if (props.covered) return <main className="phone-view">{props.covered}</main>;
+  return (
+    <main className="phone-view phone-map">
+      {props.map}
+      {props.trailBar}
+      {props.projects}
+    </main>
+  );
 }

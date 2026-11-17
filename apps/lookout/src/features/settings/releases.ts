@@ -22,6 +22,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.60.0',
+    date: '2026-11-17',
+    items: [
+      'The map takes the page: click a ticket and a bubble opens beside it, with what it needs from you first, then the ticket',
+      'Under the map, the trail bar: every ticket at a glance, what needs you, and More for agents at work and what is next',
+      'Cards move while something happens: waiting for an agent, an agent at work with its model and step, a halo when it needs you',
+      'Plan, Activity and the Logbook are pages of their own, from the tabs in the header',
+    ],
+  },
+  {
     version: '0.59.4',
     date: '2026-11-17',
     items: [

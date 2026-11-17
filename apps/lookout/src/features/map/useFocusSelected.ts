@@ -1,5 +1,6 @@
 import { NODE_H, NODE_W } from '@teamtrail/core';
 import { useEffect, useRef } from 'react';
+import { READABLE_ZOOM } from './openingView';
 
 type View = { k: number; x: number; y: number };
 type Node = { ticket: { id: string }; x: number; y: number };
@@ -17,25 +18,31 @@ export function useFocusSelected(opts: {
   pad: number;
   view: View;
   setView: (v: View) => void;
+  /** Kept free on the right for the bubble (bubbleRoom.ts). */
+  room: number;
   onFocus: () => void;
 }) {
   const { selId, size } = opts;
   const latest = useRef(opts);
   latest.current = opts;
-  const first = useRef(true);
+  /** The ticket the map last moved to: a selection made before the map had its size moves it once it has. */
+  const focused = useRef<string>();
+  const ready = size.w > 0;
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
-    const { nodes, pad, view, setView, onFocus } = latest.current;
+    if (!selId) focused.current = undefined;
+    const { nodes, pad, view, setView, onFocus, room } = latest.current;
     const n = selId ? nodes.find((x) => x.ticket.id === selId) : undefined;
-    if (!n || !size.w) return;
+    if (!n || !ready || focused.current === selId) return;
+    focused.current = selId;
+    // a card already in view, readable and with room beside it for its bubble, stays where it is
+    if (readableInView({ n, pad, view, size: { w: size.w - room, h: size.h } })) return;
     onFocus();
-    const k = Math.min(1.4, Math.max(view.k, 1.05));
+    const k = Math.min(1.4, Math.max(view.k, READABLE_ZOOM));
+    // with room for the bubble beside it, the ticket sits in the middle of what's left
+    const at = (size.w - room) / 2;
     const to = {
       k,
-      x: size.w / 2 - (pad + n.x + NODE_W / 2) * k,
+      x: at - (pad + n.x + NODE_W / 2) * k,
       y: size.h / 2 - (pad + n.y + NODE_H / 2) * k,
     };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return setView(to);
@@ -52,5 +59,15 @@ export function useFocusSelected(opts: {
     return () => cancelAnimationFrame(raf);
     // Only a new selection moves the map; layout and size changes keep the user's view.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selId]);
+  }, [selId, ready]);
+}
+
+/** The card is readable at this zoom and wholly inside the box, clear of its edges. */
+function readableInView(o: { n: Node; pad: number; view: View; size: { w: number; h: number } }) {
+  const { n, pad, view, size } = o;
+  const left = view.x + (pad + n.x) * view.k;
+  const top = view.y + (pad + n.y) * view.k;
+  const right = left + NODE_W * view.k;
+  const bottom = top + NODE_H * view.k;
+  return view.k >= READABLE_ZOOM && left >= 16 && top >= 16 && right <= size.w - 16 && bottom <= size.h - 16;
 }

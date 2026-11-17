@@ -1,79 +1,85 @@
 import { useEffect, useState } from 'react';
-import type { Breakpoint, LookoutApi } from '../hooks';
+import type { LookoutApi } from '../hooks';
 import type { Selection } from '../lib';
-import type { PhoneTab, SideTab } from './tabs';
+import type { Page } from './tabs';
+import { usePageRoute } from './usePageRoute';
 
 /**
- * Where the trail lead is looking: the laptop side tab, the phone tab, the decisions view, and the jumps between
- * them. Opening a ticket or a conversation lands on whichever layer shows it at the current breakpoint.
+ * Where the trail lead is looking: the map with a bubble on what's selected (and the full ticket on request), or a
+ * page over it (Plan, Activity, the Logbook), and the jumps between them. Opening a ticket, a question or checks on
+ * main lands on the map with its bubble open; opening a conversation lands on Activity.
  */
-export function useAppNavigation(api: LookoutApi, bp: Breakpoint) {
+export function useAppNavigation(api: LookoutApi) {
   const { activity, selection, setSelection, actions } = api;
-  const [sideTab, setSideTab] = useState<SideTab>('ticket');
-  const [phoneTab, setPhoneTab] = useState<PhoneTab>('home');
-  const [convRequest, setConvRequest] = useState(0);
-  /** Decisions view: closed, or open with an optional record to focus. */
-  const [decisionsView, setDecisionsView] = useState<{ focus?: string } | null>(null);
+  const route = usePageRoute();
+  const [fullTicket, setFullTicket] = useState(false);
+  /** The decision the Logbook opens on. */
+  const [logbookFocus, setLogbookFocus] = useState<string>();
   const [statsOpen, setStatsOpen] = useState(false);
-  const openDecisions = (focus?: string) => {
-    setStatsOpen(false);
-    setDecisionsView({ focus });
-  };
-  const toggleStats = () => {
-    setDecisionsView(null);
-    setStatsOpen((o) => !o);
-  };
   useEffect(() => {
     const s = activity.sessions.find((x) => x.id === api.chatSession);
     if (!selection && s?.ticketId && s.mapId === api.mapId) setSelection({ kind: 'ticket', id: s.ticketId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api.chatSession, api.mapId]);
 
-  /** Selecting from the map or a list shows the ticket wherever the ticket layer lives. */
+  const toMap = () => {
+    setStatsOpen(false);
+    route.close();
+  };
+  const openPage = (page: Page) => {
+    setStatsOpen(false);
+    route.open(page);
+  };
+  /** Selecting on the map, the trail bar or a list opens its bubble; nothing selected closes it and the full ticket. */
   const select = (s: Selection) => {
     setSelection(s);
-    if (!s) return;
-    if (bp === 'laptop') setSideTab('ticket');
-    if (bp === 'mobile') setPhoneTab('ticket');
+    if (!s) setFullTicket(false);
   };
-  const openChat = (sessionId: string, ticketId?: string, mapId?: string) => {
+  const onTrail = (mapId?: string) => {
     if (mapId && mapId !== api.mapId) actions.selectMap(mapId);
-    actions.openChat(sessionId);
-    const s = activity.sessions.find((x) => x.id === sessionId);
-    if (ticketId && s?.mapId === (mapId ?? api.mapId)) setSelection({ kind: 'ticket', id: ticketId });
-    if (bp === 'mobile') {
-      setPhoneTab('home');
-      setConvRequest((n) => n + 1);
-    }
-  };
-  /** Opens a conversation and shows it, on every layout (a deep link to a question). */
-  const showChat = (sessionId: string, ticketId?: string, mapId?: string) => {
-    openChat(sessionId, ticketId, mapId);
-    setConvRequest((n) => n + 1);
   };
   const openTicket = (mapId: string, ticketId: string) => {
-    if (mapId !== api.mapId) actions.selectMap(mapId);
+    onTrail(mapId);
     setSelection({ kind: 'ticket', id: ticketId });
-    setDecisionsView(null);
-    if (bp === 'laptop') setSideTab('ticket');
-    if (bp === 'mobile') setPhoneTab('ticket');
+    toMap();
+  };
+  const openQuestion = (questionId: string) => {
+    const q = activity.pending.find((p) => p.id === questionId);
+    if (!q) return;
+    onTrail(q.mapId);
+    setSelection(q.ticketId ? { kind: 'ticket', id: q.ticketId } : { kind: 'question', id: q.id });
+    toMap();
+  };
+  const openMainChecks = (mapId: string) => {
+    onTrail(mapId);
+    setSelection({ kind: 'main' });
+    toMap();
+  };
+  const openChat = (sessionId: string, _ticketId?: string, mapId?: string) => {
+    onTrail(mapId);
+    actions.openChat(sessionId);
+    openPage('activity');
+  };
+  const openDecisions = (focus?: string) => {
+    setLogbookFocus(focus);
+    openPage('logbook');
   };
 
   return {
-    sideTab,
-    setSideTab,
-    phoneTab,
-    setPhoneTab,
-    convRequest,
-    decisionsView,
-    setDecisionsView,
+    page: route.page,
+    openPage,
+    toMap,
+    fullTicket,
+    setFullTicket,
+    logbookFocus,
     openDecisions,
     statsOpen,
     setStatsOpen,
-    toggleStats,
+    toggleStats: () => setStatsOpen((o) => !o),
     select,
-    openChat,
-    showChat,
     openTicket,
+    openQuestion,
+    openMainChecks,
+    openChat,
   };
 }

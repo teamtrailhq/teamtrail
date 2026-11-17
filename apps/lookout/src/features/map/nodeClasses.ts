@@ -12,13 +12,16 @@ export function nodeClasses(f: {
   stalled?: boolean;
   mark?: DiffMark;
   frozen?: boolean;
+  /** Waiting for an agent to pick it up. */
+  pickUp?: boolean;
 }) {
   const classes = ['node', `st-${f.n.state}`, `tone-${f.tone}`, f.hitl ? 'hitl' : 'afk'];
   if (f.selected) classes.push('sel');
   if (f.live) classes.push('live');
   if (f.waiting) classes.push('waiting');
-  if (f.stalled && !f.waiting) classes.push('stalled');
+  if (f.stalled) classes.push('stalled');
   if (f.mark) classes.push(`mark-${f.mark}`);
   if (f.frozen) classes.push('frozen');
+  if (f.pickUp) classes.push('pick-up');
   return classes.join(' ');
 }

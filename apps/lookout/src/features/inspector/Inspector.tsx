@@ -36,7 +36,7 @@ export function Inspector(props: {
   let body: ReactNode;
   if (!snap) {
     body = <EmptyState title="No trail yet" hint="Once there's a trail, pick a ticket on the map to see it here." />;
-  } else if (!selection) {
+  } else if (selection?.kind !== 'ticket' && selection?.kind !== 'unspecified') {
     body = (
       <TrailGlance
         snap={snap}
@@ -85,5 +85,5 @@ export function Inspector(props: {
 function selectionKey(selection: Selection) {
   if (selection?.kind === 'ticket') return selection.id;
   if (selection?.kind === 'unspecified') return selection.item;
-  return '';
+  return selection?.kind ?? '';
 }

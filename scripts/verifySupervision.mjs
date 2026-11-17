@@ -2,7 +2,7 @@
 // the brief's assumption is already the trail's S-1. Asserts on what the user sees in the Lookout.
 import fs from 'node:fs';
 import path from 'node:path';
-import { shootThemes } from './e2eHelpers.mjs';
+import { openNeedsList, shootThemes } from './e2eHelpers.mjs';
 import { verifyFocus } from './verifyFocus.mjs';
 
 const refused = (p) =>
@@ -20,7 +20,7 @@ async function rankedQuestions({ call, page }) {
     urgency: 'blocking',
     waitSeconds: 0,
   });
-  const rows = page.locator('.attention-queue li.att-item.k-question');
+  const rows = (await openNeedsList(page)).locator('li.att-item.k-question');
   await rows.nth(1).waitFor({ timeout: 20_000 });
   const first = (await rows.first().getAttribute('class')) ?? '';
   const text = (await rows.first().textContent()) ?? '';

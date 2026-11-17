@@ -42,5 +42,8 @@ export function useSettingsPage() {
   /** Opens Settings at a group or section (`slack`, `guides`), or with no group chosen. */
   const open = (target?: string) => show(parseSettingsRoute(target ?? '') ?? {});
 
-  return { route, open, show, close, toggle: () => (route ? close() : open()) };
+  /** Leaves Settings for a page that takes its place in the URL (usePageRoute), without stepping back. */
+  const dismiss = () => setRoute(null);
+
+  return { route, open, show, close, dismiss, toggle: () => (route ? close() : open()) };
 }

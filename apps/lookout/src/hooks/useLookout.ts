@@ -63,7 +63,8 @@ export function useLookout(rt: Runtime) {
       if (id !== mapIdRef.current) setMapId(id);
     } else if (!id || !list.some((m) => m.id === id)) {
       id = activeTrails(list)[0]?.id;
-      setMapId(id);
+      // with no trail yet, every refresh lands here: only a new trail clears what's selected (a framing question)
+      if (id !== mapIdRef.current) setMapId(id);
     }
     const [snaps, recs] = await Promise.all([
       Promise.all(list.map((m) => rt.adapter.loadMap(m.id))),

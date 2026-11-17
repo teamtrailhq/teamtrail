@@ -11,7 +11,10 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { chromium } from 'playwright-core';
 import {
   answeringChecklists,
+  clickNode as clickNodeOn,
   lookoutLinks,
+  openFullTicket,
+  openNeedsList,
   pairLink,
   sessionHeaders,
   signInWith,
@@ -176,17 +179,35 @@ const call = answeringChecklists(async (name, args = {}) => {
 });
 
 /** Opening a ticket zooms the map onto it, so other tickets can be out of view: Fit first, as a user would. */
-async function clickNode(node) {
-  await page.locator('.fit-btn').click();
-  await page.waitForTimeout(500);
-  await node.click();
+const clickNode = (node) => clickNodeOn(page, node);
+
+/** A view tab in the header: Map, Plan, Activity or Logbook. */
+const view = (name) => page.locator('.view-tabs').getByRole('button', { name, exact: true }).click();
+
+/**
+ * The agent's open question in its bubble: "N need you" opens the most urgent thing, which a blocking question is;
+ * else its row in Needs you (the trail bar's More).
+ */
+async function openQuestion() {
+  await page.keyboard.press('Escape');
+  const asked = page.locator('.bubble .open-q');
+  await page.locator('.needs-btn').click({ timeout: 15_000 });
+  if (
+    await asked.waitFor({ timeout: 3_000 }).then(
+      () => true,
+      () => false,
+    )
+  )
+    return;
+  const list = await openNeedsList(page);
+  await list.locator('li.att-item.k-question .ds-row-main').first().click();
+  await asked.waitFor({ timeout: 15_000 });
 }
 
-/** Answer the open question in the Lookout inbox, by suggestion chip or by typing. */
+/** Answer the open question in its bubble on the map, by suggestion chip or by typing. */
 async function answerInUi(text, { chip = false } = {}) {
-  await page.locator('.inbox-list li button').first().waitFor({ timeout: 15_000 });
-  await page.locator('.inbox-list li button').first().click();
-  if (chip) await page.locator('.suggest .chip', { hasText: text }).click();
+  await openQuestion();
+  if (chip) await page.locator('.bubble .suggest .chip', { hasText: text }).click();
   else {
     await page.locator('.comms-input textarea').fill(text);
     await page.locator('.comms-input textarea').press('Enter');
@@ -199,7 +220,7 @@ const framing = call('ask_human', {
   suggestions: ['Users of the CLI', 'Contributors'],
   framing: true,
 });
-await page.locator('.inbox-list li').first().waitFor({ timeout: 15_000 });
+await page.locator('.needs-btn').waitFor({ timeout: 15_000 });
 await shot('01-framing-question-in-inbox');
 await answerInUi('Users of the CLI', { chip: true });
 const f = await framing;
@@ -268,8 +289,8 @@ const hitl = call('ask_human', {
   question: 'Timeline, or grouped by version with the newest first?',
   suggestions: ['Grouped by version', 'Timeline'],
 });
-await page.locator('.inbox-list li').first().waitFor({ timeout: 15_000 });
-await page.locator('.inbox-list li button').first().click();
+await page.locator('.node .card-chip', { hasText: 'waiting on you' }).waitFor({ timeout: 15_000 });
+await openQuestion();
 // On a junction, the question says what answering it decides.
 const stakesShown = await page
   .locator('.open-q', { hasText: /Answering this decides #\d+/ })
@@ -321,6 +342,7 @@ const d = status.delivery;
 const deliveryOk = d?.done === 2 && d.interventions.answers >= 1 && d.medianLeadMs >= 0 && /2 done/.test(d.summary);
 log(`delivery ${deliveryOk ? 'ok' : 'WRONG'}: ${d?.summary}`);
 const uiTokens = `${((measured * 2150) / 1000).toFixed(1)}k tok`;
+await view('Activity');
 await page
   .locator('.sessions-head .usage', { hasText: uiTokens })
   .first()
@@ -337,6 +359,7 @@ const ui = {
     .first()
     .evaluate((el) => [el.getAttribute('title'), el.getAttribute('data-tip')].filter(Boolean).join('\n')),
 };
+await view('Map');
 log(
   `Lookout shows: ${ui.sessions} live session(s), trail usage "${ui.usage}" (${ui.usageSource?.split('\n').slice(1).join('; ') || 'no source'})`,
 );
@@ -364,13 +387,15 @@ log(`claude-09 claimed ${crashed.claimed.key} (lease ${crashed.lease.length}) an
 const stalledNode = page.locator('.node.stalled', { hasText: 'Which date format?' });
 await stalledNode.waitFor({ timeout: 30_000 });
 await clickNode(stalledNode);
-await page.locator('.lease-stalled, .lease-expired').waitFor({ timeout: 10_000 });
+await page.locator('.bubble .lease-stalled, .bubble .lease-expired').waitFor({ timeout: 10_000 });
 await shot('05-stalled-claim');
+await view('Activity');
 const returnedLog = page.locator('.log-row', {
   hasText: `${crashed.claimed.key} returned to queue after claude-09 went silent`,
 });
 await returnedLog.first().waitFor({ timeout: 60_000 });
 log('Lookout returned the ticket to the queue: "ticket returned to queue after agent went silent" logged');
+await view('Map');
 const resumed = await call('claim_ticket', { ticket: added.ticket.key });
 const handoffOk =
   resumed.claimed.assignee !== 'claude-09' &&
@@ -382,8 +407,9 @@ log(
 
 // Manual release from the inspector; the agent learns on its next call and its session on the ticket ends.
 await clickNode(page.locator('.node', { hasText: 'Which date format?' }));
-await page.locator('.inspector .standing', { hasText: 'is working on it' }).waitFor({ timeout: 15_000 });
+await page.locator('.bubble .bubble-state', { hasText: 'is working on it' }).waitFor({ timeout: 15_000 });
 await ticketAction(page, 'Release to queue');
+await view('Activity');
 const releasedLog = page.locator('.log-row', {
   hasText: `${added.ticket.key} returned to queue · claim of ${resumed.claimed.assignee} released by trail lead`,
 });
@@ -393,6 +419,7 @@ const releaseOk =
   told.leaseLost?.tickets?.includes(added.ticket.key) && !told.trail.claimed.some((t) => t.key === added.ticket.key);
 log(`released in the Lookout; the agent ${releaseOk ? 'was told' : 'WAS NOT told'} its claim is gone`);
 await shot('06-released-to-queue');
+await view('Map');
 await crashClient.close().catch(() => {});
 
 // Signed state: an edit to the ticket's file instead of the tools doesn't count; the human reverts it in Approvals.
@@ -438,14 +465,16 @@ log(
 );
 const proofToolOk = await verifyProof({ call, cli, repo, ticket: route.ticket.key, log });
 await clickNode(page.locator('.node.st-decided', { hasText: /Add the \/changelog/ }));
+await openFullTicket(page);
 const proofPanel = await page
-  .locator('.ticket-proof', { hasText: 'Verified by Teamtrail' })
+  .locator('.ticket-drawer .ticket-proof', { hasText: 'Verified by Teamtrail' })
   .waitFor({ timeout: 15_000 })
   .then(
     () => true,
     () => false,
   );
-log(`${route.ticket.key} proof in the inspector: ${proofPanel ? 'shown, with Copy for PR' : 'NOT shown'}`);
+log(`${route.ticket.key} proof in the full ticket: ${proofPanel ? 'shown, with Copy for PR' : 'NOT shown'}`);
+await page.keyboard.press('Escape');
 const proofOk = proofToolOk && proofPanel;
 // Decision memory: a question #3's decision already answers comes back with it instead of reaching the human.
 const remembered = await call('find_precedent', {
@@ -496,11 +525,13 @@ const reviewed = await reviewCall('submit_review', {
   summary: 'The footer links to /changelog and the check passes.',
 });
 await reviewClient.close().catch(() => {});
-const approval = page.locator('.inbox-list.approvals li', { hasText: 'Link the changelog' });
+const footerCard = page.locator('.node', { hasText: 'Link the changelog' });
+const approval = footerCard.locator('.card-chip', { hasText: 'approve it' });
 await approval.waitFor({ timeout: 15_000 });
 await shot('09-approval-waiting-on-you');
-await approval.locator('button').first().click();
-await page.locator('.inspector .standing', { hasText: 'Waiting on you: approve it' }).waitFor({ timeout: 15_000 });
+await clickNode(footerCard);
+// the bubble leads with what it needs from you: approve it, with Approve in place
+await page.locator('.bubble .bubble-need', { hasText: 'Approve it' }).waitFor({ timeout: 15_000 });
 await ticketAction(page, 'Approve');
 await page.locator('.node.st-decided', { hasText: /Link the changelog/ }).waitFor({ timeout: 15_000 });
 await shot('10-approved');
@@ -510,7 +541,7 @@ const reviewOk =
   /worked on/.test(ownClaim) &&
   offered.type === 'review' &&
   reviewed.phase === 'verifying' &&
-  (await page.locator('.inbox-list.approvals li').count()) === 0;
+  (await approval.count()) === 0;
 log(
   `${footer.ticket.key} ${reviewOk ? 'reviewed and approved' : 'NOT reviewed and approved'}: own review refused (${ownClaim.replace(/^claim_ticket: /, '')}), ${offered.key} ${reviewed.verdict} by claude-02, approved in the Lookout`,
 );
@@ -530,6 +561,8 @@ const gated = await call('claim_ticket', { ticket: buildKey }).then(
 await page.locator('.trail-btn').click();
 await page.getByRole('menuitem').filter({ hasText: 'Search the changelog' }).first().click();
 await page.locator('.discovery-banner').waitFor({ timeout: 15_000 });
+// Needs you under the map (the trail bar's More), open before the "research is done" dialog covers the page
+const needsList = await openNeedsList(page);
 await call('submit_brief', {
   summary: 'Add a client-side search over the generated changelog page.',
   existing: '- `fixed.txt`: the repo check this project uses',
@@ -538,9 +571,9 @@ await call('submit_brief', {
 // Research is done: the Lookout says so once, the brief is in Waiting on you, and the build ticket waits on it.
 const ready = page.locator('.brief-ready');
 await ready.waitFor({ timeout: 15_000 });
-await page
-  .locator('.inbox')
+await needsList
   .getByText(/Review the discovery brief/)
+  .first()
   .waitFor();
 await page.locator('.node', { hasText: 'waits on brief' }).first().waitFor();
 await shot('11-brief-ready');
@@ -637,6 +670,8 @@ const chatOk =
 log(`answers: Lookout ones back decisions, a chat one guides only: ${chatOk ? 'ok' : `FAILED (${chatRefused})`}`);
 
 await client.close();
+await view('Activity');
+await page.locator('.sessions-list, .activity-page .empty').first().waitFor({ timeout: 15_000 });
 await page.waitForTimeout(1500);
 const after = await page.locator('.sessions-list li:not(.claim)').count();
 log(

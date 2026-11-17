@@ -7,10 +7,8 @@ const BRIEFING_TITLE: Record<BriefingStatus, string> = {
   none: 'No trip report yet. Scout writes one when you come back after being away.',
 };
 
-/** The views you open now and then, grouped behind one header button: briefing, knowledge and decisions. */
+/** The views you open now and then, grouped behind one header button: the trip report, the field guide and trail stats. */
 export function RecordsMenu(props: {
-  decisions: number;
-  onDecisions: () => void;
   onStats: () => void;
   knowledge: number;
   onKnowledge: () => void;
@@ -55,18 +53,6 @@ export function RecordsMenu(props: {
           >
             <span>Field guide</span>
             {props.knowledge > 0 && <span className="n hot">{props.knowledge}</span>}
-          </button>
-          <button
-            role="menuitem"
-            className="header-menu-item decisions-btn"
-            title="Every decision across your trails, with its reasoning. Search, filter and export"
-            onClick={() => {
-              close();
-              props.onDecisions();
-            }}
-          >
-            <span>Logbook</span>
-            <span className="n">{props.decisions}</span>
           </button>
           <button
             role="menuitem"

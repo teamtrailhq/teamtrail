@@ -17,18 +17,17 @@ function readyFor(item: AttentionItem, activity: ActivityState) {
 
 /**
  * Deep links to a queue item (`?item=<attention item id>`, set by All projects): once this project's queue has
- * loaded, the item opens exactly as its row in the inbox would open it: a ticket in the inspector, a question
- * in its conversation, a reroute in its review, a brief in the brief. `request` does the same without a reload.
+ * loaded, the item opens exactly as its row in Needs you would open it: a ticket, a question or checks on main in
+ * its bubble, a reroute in its review, a brief in the brief. `request` does the same without a reload.
  */
 export function useItemLink(input: {
   loaded: boolean;
   view?: AttentionView;
   activity: ActivityState;
-  handlers: Omit<AttentionHandlers, 'openQuestion'>;
-  showChat: (sessionId: string, ticketId?: string) => void;
+  handlers: AttentionHandlers;
 }) {
   const [pending, setPending] = useState(() => new URLSearchParams(location.search).get(ITEM_PARAM) ?? undefined);
-  const { loaded, view, activity, handlers, showChat } = input;
+  const { loaded, view, activity, handlers } = input;
   useEffect(() => {
     if (!pending || !loaded || !view) return;
     const item = view.items.find((i) => i.id === pending);
@@ -36,11 +35,7 @@ export function useItemLink(input: {
     setPending(undefined);
     dropParam();
     if (!item) return;
-    const openQuestion = (questionId: string) => {
-      const q = activity.pending.find((p) => p.id === questionId);
-      if (q) showChat(q.sessionId, q.ticketId);
-    };
-    openItem(item, { ...handlers, openQuestion });
-  }, [pending, loaded, view, activity, handlers, showChat]);
+    openItem(item, handlers);
+  }, [pending, loaded, view, activity, handlers]);
   return { request: useCallback((id: string) => setPending(id), []) };
 }
