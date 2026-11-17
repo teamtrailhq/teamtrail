@@ -4,6 +4,7 @@ import type { VerificationAttempt, VerificationVerdict } from '../model/verifica
 import { derivePhases } from '../planning/lifecycle/phase';
 import { readAttempts, readVerdicts } from './evidenceStore';
 import { levelFor } from './verifyCompletion';
+import { waivableChecks } from './waivableChecks';
 
 /** A ticket waiting on the trail lead: to approve a reviewed pass, or to decide a held one. */
 export interface ApprovalItem {
@@ -15,6 +16,8 @@ export interface ApprovalItem {
   attemptId?: string;
   /** Why it waits, in one line: the review, the failed checks, or what could not run. */
   reason: string;
+  /** Held by checks that failed: the ones the trail lead may accept it without (waivableChecks.ts). */
+  waivable?: string[];
   at: number;
 }
 
@@ -55,9 +58,11 @@ interface Waiting {
 
 /** A blocked ticket: a reviewer asked for the human, the checks failed too often, or they could not run. */
 function heldItem({ base, last, verdict }: Waiting, updatedAt: number): ApprovalItem {
+  const waivable = verdict?.verdict === 'NEEDS_HUMAN' ? [] : waivableChecks(last).map((c) => c.name);
   return {
     ...base,
     kind: 'held',
+    ...(waivable.length ? { waivable } : {}),
     reason: clip(heldReason(last, verdict)),
     at: verdict?.at ?? last?.finishedAt ?? updatedAt,
   };

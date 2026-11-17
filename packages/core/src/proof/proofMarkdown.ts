@@ -10,10 +10,18 @@ const md = (text: string, max = 200) => untrusted(text, max).replace(/[\\*_[\]()
 const date = (ms: number) => new Date(ms).toISOString().slice(0, 16).replace('T', ' ');
 const short = (sha: string | null) => (sha ? sha.slice(0, 8) : 'none');
 
+/** Each check the trail lead accepted the work without: who skipped it, and why. */
+const waivedLines = (p: Proof) =>
+  (p.waived ?? []).map((w) => `- ⏭️ \`${md(w.argv.join(' '), 120)}\` skipped by ${md(w.by, 60)}: ${md(w.reason)}`);
+
 function checkLines(p: Proof): string[] {
+  return [...ranLines(p), ...waivedLines(p)];
+}
+
+function ranLines(p: Proof): string[] {
   if (p.attempt.remote && !p.attempt.runner)
     return ['- No check ran here: the work was submitted from another machine.'];
-  if (!p.checks.length) return ['- No checks ran.'];
+  if (!p.checks.length) return p.waived?.length ? [] : ['- No checks ran.'];
   const by = p.attempt.runner ? [`Ran by ${md(p.attempt.runner, 60)}, on the pushed commit:`] : [];
   return [
     ...by,

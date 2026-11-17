@@ -1,5 +1,7 @@
 import type { TrustItem } from '@teamtrail/core';
 import { Button, MetaLine, Row } from '../../components/ui';
+import { settingsSectionLink } from '../../lib/settingsSectionLink';
+import { CheckFindingList } from '../check-screening';
 import { KIND_CAVEAT, KIND_EFFECT, standingText } from './approvalCopy';
 
 /**
@@ -32,6 +34,11 @@ export function TrustItemRow(props: { item: TrustItem; busy: boolean; local: boo
               ))}
             </ul>
           )}
+          <CheckFindingList
+            findings={item.screening ?? []}
+            named
+            actions={props.local && <a {...settingsSectionLink('verification')}>Edit checks</a>}
+          />
           {props.local && (
             <Button size="sm" disabled={props.busy} onClick={props.onApprove}>
               Approve

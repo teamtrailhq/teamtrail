@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { MarkdownAdapter } from '../adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../adapters/markdown/nodeMarkdownFs';
+import { localRepoFiles } from '../verification/localRepoFiles';
 import { handleAgents } from './agentRoutes';
 import { handleAttention } from './attentionRoutes';
 import { sendBridgeError } from './bridgeErrors';
@@ -35,7 +36,9 @@ import { createTrackerRoutes } from './trackerRoutes';
 import { handleTrackerSettings } from './trackerSettingsRoutes';
 import { handleTrust } from './trustRoutes';
 import { handleVerification } from './verificationRoutes';
+import { handleScreen } from './verificationScreenRoute';
 import { handleVerificationSync } from './verificationSyncRoutes';
+import { handleWaivers } from './waiverRoutes';
 import { watchAttention } from './watchAttention';
 import { watchIntegration } from './watchIntegration';
 import { watchLeases } from './watchLeases';
@@ -65,6 +68,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     peer,
     allowedHosts,
     streamKey = (req) => req.socket.remoteAddress ?? '',
+    repoFiles = localRepoFiles,
     ...trackers
   } = options;
   const abs = path.resolve(root);
@@ -82,7 +86,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   };
   const unwatch = watchTrackerFolder(abs, fs, send);
   const unwatchLeases = watchLeases(abs, () => routes.active(), send, leaseTiming);
-  const ctx = { root: abs, active: () => routes.active() };
+  const ctx = { root: abs, active: () => routes.active(), repoFiles: () => repoFiles(path.dirname(abs)) };
   const places = lanPlaces(abs, trackers.configDir);
   const proofs = postProofs(ctx, { access: routes.proofAccess, configDir: trackers.configDir });
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send, postProofs: proofs }, reconcilerTiming);
@@ -112,6 +116,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleLeases(ctx, req, res, url),
     (req, res, url) => handleJournal({ root: abs, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
+    (req, res, url) => handleScreen(ctx, req, res, url),
+    (req, res, url) => handleWaivers({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
     (req, res, url) => handleScorecard(ctx, req, res, url),
     (req, res, url) => handleDecisionMemory(ctx, req, res, url),

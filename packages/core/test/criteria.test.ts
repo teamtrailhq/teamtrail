@@ -52,6 +52,10 @@ describe('acceptance criteria', () => {
     expect(failing.failed).toEqual(['AC-1']);
     const notRun = checkCriteria(crit.slice(0, 1), [{ id: 'AC-1', evidence: 'check:e2e' }], [check('test', 0)]);
     expect(notRun.lines[0]).toContain("didn't run");
+    // a check the trail lead accepted the ticket without proves nothing either way: the agent's word
+    const waived = checkCriteria(crit.slice(0, 1), [{ id: 'AC-1', evidence: 'check:test' }], [], ['test']);
+    expect(waived).toMatchObject({ failed: [], claimed: ['AC-1'] });
+    expect(waived.lines[0]).toContain('check:test (waived)');
     const stated = checkCriteria(
       crit.slice(1, 2),
       [{ id: 'AC-2', evidence: 'test:workspace isolation', note: 'scoped' }],

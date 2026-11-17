@@ -116,6 +116,9 @@ export function buildProof(input: ProofInput): Proof {
       passed: passed(c),
       ...(latest?.knownFailures?.some((k) => k.name === c.name) ? { knownFailure: true as const } : {}),
     })),
+    ...(latest?.waived?.length
+      ? { waived: latest.waived.map((w) => ({ name: w.name, argv: w.argv, by: w.by, reason: w.reason })) }
+      : {}),
     criteria: criteriaOf(latest),
     git: gitOf(latest),
     reviews,

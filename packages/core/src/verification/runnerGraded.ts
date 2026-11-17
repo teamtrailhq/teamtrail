@@ -94,7 +94,13 @@ export async function runnerGraded(
   if ('error' in read) return { checks: [], result: 'error', note: read.error };
   const checked = gateOutcome(read.git) ?? outcomeOf(read.checks, asked.length);
   const outcome = withKnownFailures(checked, { root: env.root, known, asked: asked.length, folders: [] });
-  const at = { root: env.root, mapId: job.mapId, ticketId: job.ticket.id, evidence: job.sub.criteria };
+  const at = {
+    root: env.root,
+    mapId: job.mapId,
+    ticketId: job.ticket.id,
+    evidence: job.sub.criteria,
+    waived: job.waived,
+  };
   const criteria = gradeCriteria(at, outcome.checks);
   const unmet = criteria ? [...criteria.missing, ...criteria.failed] : [];
   const graded = { ...outcome, git: read.git, ...(criteria ? { criteria } : {}) };

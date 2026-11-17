@@ -25,6 +25,7 @@ export function proofGaps({ attempt, reviews }: { attempt?: VerificationAttempt;
   if (attempt.result !== 'pass') gaps.push(`The checks didn't pass (${attempt.result}).`);
   const known = attempt.knownFailures?.map((k) => k.name) ?? [];
   if (known.length) gaps.push(`Known failures, already failing on main: ${known.join(', ')}.`);
+  for (const w of attempt.waived ?? []) gaps.push(`${w.name} didn't run: ${w.by} accepted the work without it.`);
   const c = attempt.criteria;
   if (c?.missing.length) gaps.push(`Criteria with no evidence: ${c.missing.join(', ')}.`);
   if (c?.failed.length) gaps.push(`Criteria whose check failed: ${c.failed.join(', ')}.`);

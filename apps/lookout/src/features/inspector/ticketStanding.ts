@@ -38,7 +38,8 @@ function standingOf(s: StandingInput): Standing {
         edge: s.item?.edge ?? 'attention',
         title: `Blocked: ${whyBack(s)}`,
         parts: ['waits on you'],
-        primary: 'unblock',
+        // a check that can't pass: the way out is accepting it without that check
+        primary: s.latest?.failed.length ? 'waive' : 'unblock',
       };
     case 'claimed':
       return working(s);

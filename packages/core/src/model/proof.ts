@@ -35,6 +35,14 @@ export interface ProofDecision {
   superseded: boolean;
 }
 
+/** A check the trail lead accepted the work without: it didn't run, and the proof says who skipped it and why. */
+export interface ProofWaived {
+  name: string;
+  argv: string[];
+  by: string;
+  reason: string;
+}
+
 /** An Ed25519 signature over a proof's digest, by the machine key `keyId` names (proof-keys/<keyId>.pub). */
 export interface ProofSignature {
   keyId: string;
@@ -71,6 +79,8 @@ export interface Proof {
   /** Earlier attempts on the ticket, oldest first. */
   earlier: { id: string; result: AttemptResult }[];
   checks: ProofCheck[];
+  /** Checks the trail lead accepted it without. Missing when none, so older proofs and digests read as they did. */
+  waived?: ProofWaived[];
   criteria: {
     lines: string[];
     verified: number;

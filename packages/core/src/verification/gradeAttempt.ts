@@ -25,6 +25,8 @@ export interface GradeInput {
   evidence?: CriterionEvidence[];
   /** The trail's known failures on main: a check failing only as it does there doesn't fail the attempt. */
   known?: KnownFailure[];
+  /** Checks the trail lead waived for the ticket: a criterion they evidence is the agent's word, not a failure. */
+  waived?: string[];
   signal?: AbortSignal;
 }
 

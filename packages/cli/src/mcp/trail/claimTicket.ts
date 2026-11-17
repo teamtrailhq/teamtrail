@@ -12,6 +12,7 @@ import {
 } from '@teamtrail/core';
 import { baselineForClaim, levelFor, recordTypes, repoRootOf } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
+import { checkWarnings } from './checkWarnings';
 import { criteriaView } from './criteria';
 import { assertClaimable, briefView, claimable } from './discovery';
 import { givenGuides } from './guideChanges';
@@ -82,6 +83,7 @@ export async function claimTicket(
   const current = fresh.tickets.find((x) => x.id === t.id)!;
   const delivered = knowledgeFor(ctx.root, fresh, t);
   if (delivered) s.log(`knowledge delivered: ${delivered.map((k) => k.id).join(', ')}`);
+  const warned = await checkWarnings(ctx, fresh, current);
   return {
     claimed: ticketInfo(ctx.root, fresh, current, await ctx.decisions(snap.map.id)),
     ...tierFields(ctx, fresh, current, !!input.ticket),
@@ -100,6 +102,7 @@ export async function claimTicket(
     ...(parallel.workspace ? { workspace: parallel.workspace } : {}),
     ...(parallel.workspaceNote ? { workspaceNote: parallel.workspaceNote } : {}),
     ...(parallel.warnings.length ? { warnings: parallel.warnings } : {}),
+    ...(warned.length ? { checkWarnings: warned } : {}),
   };
 }
 

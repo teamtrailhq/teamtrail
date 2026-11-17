@@ -47,7 +47,9 @@ export type LifecycleEvent =
   | 'accept'
   | 'unblock'
   | 'cancel'
-  | 'reopen';
+  | 'reopen'
+  /** The trail lead accepted the work without its failing checks: the rest run again on the same submission. */
+  | 'waive';
 
 /**
  * How much evidence a completion needs before the ticket is done. Trails

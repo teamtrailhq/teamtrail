@@ -16,7 +16,11 @@ export const blockedSource: AttentionSource = {
         urgency: 'soon',
         ref: a.ticketId,
         holds: [a.ticketId],
-        notes: [clip(a.reason, 120)],
+        // the way out when a check can't pass, from the ticket: Accept without <check>
+        notes: [
+          clip(a.reason, 120),
+          ...(a.waivable ? [clip(`you can accept it without ${a.waivable.join(', ')}`, 120)] : []),
+        ],
       }));
   },
 };

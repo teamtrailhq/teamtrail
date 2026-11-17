@@ -1,7 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { RepoFiles } from '../model/checkScreening';
 import { OperationError } from '../planning/operations/operationError';
 import { checksApproval } from '../verification/checksApproval';
 import { readVerificationConfig, VERIFICATION_FILE } from '../verification/configFile';
+import { screenConfig } from '../verification/screenConfig';
 import { setChecks, StaleChecks } from '../verification/setChecks';
 import { BadRequest, readJson, sendJson } from './http';
 import { personOfRequest } from './requestPerson';
@@ -34,11 +36,12 @@ async function putChecks(o: { root: string; local?: boolean }, req: IncomingMess
 }
 
 /**
- * `/verification/config`: GET the parsed file, whether its commands are approved on this machine and the `base` a
- * change must name; PUT to set the checks (putChecks).
+ * `/verification/config`: GET the parsed file, whether its commands are approved on this machine, the `base` a
+ * change must name and `screening`, what reading the repo says about each check (CheckFinding[]); PUT to set the
+ * checks (putChecks).
  */
 export async function handleChecksConfig(
-  o: { root: string; local?: boolean },
+  o: { root: string; local?: boolean; repoFiles?: () => RepoFiles | undefined },
   req: IncomingMessage,
   res: ServerResponse,
 ) {
@@ -48,6 +51,16 @@ export async function handleChecksConfig(
   // Whether its commands run on this machine yet: only once the trail lead approved this exact file here. `base`:
   // what a change from the Lookout must name, the file as this read saw it (setChecks.ts).
   const { state, waiting, hash: base } = checksApproval(o.root);
-  sendJson(res, 200, { file: VERIFICATION_FILE, exists, errors, hash, config, approval: { state, waiting, base } });
+  // what reading the repo says about each check's command (advice, verification/screenChecks.ts)
+  const screening = await screenConfig({ config, files: o.repoFiles?.() });
+  sendJson(res, 200, {
+    file: VERIFICATION_FILE,
+    exists,
+    errors,
+    hash,
+    config,
+    approval: { state, waiting, base },
+    screening,
+  });
   return true;
 }

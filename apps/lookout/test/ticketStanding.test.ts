@@ -84,6 +84,15 @@ describe('ticketStanding', () => {
     expect(read({ question: { agent: 'a', at: NOW }, atRisk: true }).edge).toBe('urgent');
   });
 
+  it('a ticket held by a failing check offers Accept without it; held for anything else, Unblock', () => {
+    const latest = { result: 'fail' as const, agent: 'a', failed: ['test'] };
+    expect(read({ state: 'held', latest })).toMatchObject({
+      title: 'Blocked: checks failed (test)',
+      primary: 'waive',
+    });
+    expect(read({ state: 'held', sentBack: 'the reviewer asked for you' }).primary).toBe('unblock');
+  });
+
   it('a ready ticket that needs a person offers Resolve', () => {
     expect(read({ hitl: true })).toMatchObject({ title: 'Ready: needs a person', primary: 'resolve' });
   });

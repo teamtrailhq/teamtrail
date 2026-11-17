@@ -1,4 +1,4 @@
-import { type VerificationConfig } from '@teamtrail/core';
+import { type CheckFinding, type VerificationConfig } from '@teamtrail/core';
 import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
@@ -11,6 +11,8 @@ export interface VerificationConfigView {
   config?: VerificationConfig;
   /** Whether its commands run on this machine: `waiting` until the trail lead approves the file as it is. */
   approval?: { state: string; waiting: boolean; base?: string };
+  /** What reading the repo says about whether each check's command can run (advice). */
+  screening?: CheckFinding[];
 }
 
 async function fetchConfig(): Promise<VerificationConfigView | null> {

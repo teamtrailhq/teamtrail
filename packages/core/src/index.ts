@@ -5,6 +5,7 @@ export * from './model/types';
 export { activeTrails } from './model/activeTrails';
 export * from './model/lifecycle';
 export type * from './model/verification';
+export type * from './model/checkScreening';
 export type * from './model/evidence';
 export type * from './model/prEvidence';
 export * from './adapters/adapter';
@@ -165,7 +166,16 @@ export { checksOfGuides, resolveGuides, resolvedId, type ResolvedTicketGuide } f
 export { guidesPayload, GUIDES_PAYLOAD_BYTES, type GuidesPayload } from './guides/guidesPayload';
 export { parseCatalogIndex, searchCatalog } from './guides/catalogIndex';
 export { guideProblem } from './guides/guideProblem';
-export type { Proof, ProofCheck, ProofDecision, ProofReview, ProofSignature, ProofStatus } from './model/proof';
+export type {
+  Proof,
+  ProofCheck,
+  ProofDecision,
+  ProofReview,
+  ProofSignature,
+  ProofStatus,
+  ProofWaived,
+} from './model/proof';
+export type * from './model/checkWaiver';
 export type { ProofPostRecord } from './model/proofPost';
 export type { Scorecard, ScorecardRow, ScorecardSession, ScorecardTicket } from './model/scorecard';
 export { agentScorecard, SCORECARD_MIN_SAMPLE, UNKNOWN_MODEL } from './scorecard/agentScorecard';

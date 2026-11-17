@@ -48,6 +48,15 @@ describe('teamtrail approve', () => {
     expect(await runApprove({ root, io: io().io, hashes: ['sha256:nothing'] })).toBe(1);
   });
 
+  it('says a check command cannot run as the repo is, before asking', async () => {
+    const top = path.dirname(root);
+    fs.mkdirSync(path.join(top, '.git'));
+    fs.writeFileSync(path.join(top, 'package.json'), JSON.stringify({ scripts: { lint: 'eslint .' } }));
+    const t = io({ interactive: true, answers: [false, false] });
+    expect(await runApprove({ root, io: t.io, hashes: [] })).toBe(0);
+    expect(t.text()).toContain("t: won't run: No `test` script in package.json");
+  });
+
   it('in a terminal, shows each change and asks y/N for each', async () => {
     const t = io({ interactive: true, answers: [true, false] });
     expect(await runApprove({ root, io: t.io, hashes: [] })).toBe(0);

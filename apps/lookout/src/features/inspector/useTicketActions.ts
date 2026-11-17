@@ -1,3 +1,4 @@
+import type { WaivableCheck } from '@teamtrail/core';
 import { useState } from 'react';
 import type { ButtonVariant, MenuItem } from '../../components/ui';
 import type { LookoutApi } from '../../hooks';
@@ -12,6 +13,7 @@ import type { TicketView } from './useTicketView';
 const PRIMARY_ID: Record<PrimaryKind, string> = {
   answer: 'answer',
   approve: 'approve',
+  waive: 'waive',
   unblock: 'unblock',
   release: 'release-lease',
   resolve: 'resolve',
@@ -51,6 +53,14 @@ export function useTicketActions(input: {
       .act({ ...req, mapId: v.snap.map.id, ticketId: v.t.id, by: TRAIL_LEAD })
       .then(v.reloadVerification, (e: Error) => setError(e.message));
   };
+  const waive = (req: { checks: WaivableCheck[]; reason: string }) => {
+    const attemptId = v.verification?.attempts[0]?.id ?? '';
+    const checks = req.checks.map((c) => ({ name: c.name, hash: c.hash }));
+    setError(undefined);
+    return verificationApi
+      .waive({ mapId: v.snap.map.id, ticketId: v.t.id, attemptId, checks, reason: req.reason })
+      .then(v.reloadVerification, (e: Error) => setError(e.message));
+  };
   const runners: TicketRunners = {
     form: (f) => input.setForm(f),
     claim: () => void api.actions.claim(v.t.id),
@@ -58,6 +68,10 @@ export function useTicketActions(input: {
     releaseLease: () => void api.actions.releaseLease(v.t.id),
     approve: () => void act({ action: 'approve' }),
     rerun: () => void act({ action: 'rerun' }),
+    undoWaiver: () =>
+      void verificationApi
+        .undoWaiver({ mapId: v.snap.map.id, ticketId: v.t.id })
+        .then(v.reloadVerification, (e: Error) => setError(e.message)),
     criteria: (confirmed) => void v.criteria.setConfirmed(confirmed).then(failed),
     take: () => void v.criteria.take().then(failed),
     keep: () => void v.criteria.keep().then(failed),
@@ -85,7 +99,8 @@ export function useTicketActions(input: {
     urgent: v.standing.edge === 'urgent',
     named: !!named && primary !== fallback,
   });
-  return { primary, variant, menu: all.filter((a) => a !== primary), error, note, act };
+  const menu = all.filter((a) => a !== primary);
+  return { primary, variant, menu, error, note, act, waive, undoWaiver: runners.undoWaiver };
 }
 
 function answerItem(v: TicketView, open: (sessionId: string) => void): MenuItem | undefined {

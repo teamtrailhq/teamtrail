@@ -21,6 +21,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.59.0',
+    date: '2026-11-17',
+    items: [
+      "A check that can't pass in your repo no longer strands a ticket: Accept without it, with your reason. The other checks run again, the proof shows who skipped it and why, and Undo puts it back",
+      "Setting or approving checks now says which ones can't run as your repo is (a missing script, no go.mod, a missing make target), with Remove check or Keep anyway",
+    ],
+  },
+  {
     version: '0.58.0',
     date: '2026-11-17',
     items: [

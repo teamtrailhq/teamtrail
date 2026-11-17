@@ -9,9 +9,13 @@ type Item = MenuItem | false | undefined;
  * takes the one its standing names as its primary button; the rest stay in the menu.
  */
 export function ticketActionList(v: TicketView, run: TicketRunners): MenuItem[] {
-  return [...claimActions(v, run), ...checkActions(v, run), ...criteriaActions(v, run), ...otherActions(v, run)].filter(
-    (i): i is MenuItem => !!i,
-  );
+  return [
+    ...claimActions(v, run),
+    ...checkActions(v, run),
+    ...waiverActions(v, run),
+    ...criteriaActions(v, run),
+    ...otherActions(v, run),
+  ].filter((i): i is MenuItem => !!i);
 }
 
 function claimActions(v: TicketView, run: TicketRunners): Item[] {
@@ -72,6 +76,32 @@ function checkActions(v: TicketView, run: TicketRunners): Item[] {
       label: 'Accept anyway…',
       tip: 'Close it as done despite the checks',
       onSelect: () => run.form('accept'),
+    },
+  ];
+}
+
+/** States a failing check holds a ticket in: back for rework, held for the human, or claimed again after them. */
+const HELD_BY_CHECKS = new Set(['rework', 'held', 'claimed']);
+
+/** The way out when a check can't pass, and its Undo. */
+function waiverActions(v: TicketView, run: TicketRunners): Item[] {
+  const failing = v.verification?.waivable ?? [];
+  const waived = [...new Set((v.verification?.waivers ?? []).flatMap((w) => w.checks.map((c) => c.name)))];
+  const label = failing.length === 1 ? `Accept without ${failing[0].name}…` : 'Accept without failing checks…';
+  return [
+    failing.length > 0 &&
+      HELD_BY_CHECKS.has(v.state) &&
+      !v.verification?.running && {
+        id: 'waive',
+        label,
+        tip: "When a check can't pass in this repo: the ticket completes without it, with your reason",
+        onSelect: () => run.form('waive'),
+      },
+    waived.length > 0 && {
+      id: 'undo-waiver',
+      label: `Run ${waived.join(', ')} again`,
+      tip: 'Undo accepting it without them',
+      onSelect: run.undoWaiver,
     },
   ];
 }

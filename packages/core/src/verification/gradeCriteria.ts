@@ -7,10 +7,11 @@ import type { CheckResult } from '../model/verification';
  * whether the trail lead had confirmed them. Undefined when the ticket has none.
  */
 export function gradeCriteria(
-  at: { root: string; mapId: string; ticketId: string; evidence?: CriterionEvidence[] },
+  at: { root: string; mapId: string; ticketId: string; evidence?: CriterionEvidence[]; waived?: string[] },
   checks: CheckResult[],
 ): CriteriaResult | undefined {
   const entry = readCriteria(at.root, at.mapId).find((t) => t.ticketId === at.ticketId);
   if (!entry?.criteria.length) return undefined;
-  return { ...checkCriteria(entry.criteria, at.evidence ?? [], checks), confirmed: !!entry.confirmed };
+  const graded = checkCriteria(entry.criteria, at.evidence ?? [], checks, at.waived);
+  return { ...graded, confirmed: !!entry.confirmed };
 }

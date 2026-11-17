@@ -1,5 +1,6 @@
+import path from 'node:path';
 import type { MapSnapshot, TrustItem } from '@teamtrail/core';
-import { approveTrust, pendingTrust, withCommitted } from '@teamtrail/core/agents';
+import { approveTrust, localRepoFiles, pendingTrust, withCommitted, withScreening } from '@teamtrail/core/agents';
 import type { GuidesIo } from '../guides/types';
 import { showItem } from './showItem';
 
@@ -37,7 +38,9 @@ function byHash(input: ApproveInput, items: TrustItem[]): number {
  * `--hash` names the exact content to approve. Returns the exit code.
  */
 export async function runApprove(input: ApproveInput): Promise<number> {
-  const items = await withCommitted(input.root, pendingTrust(input.root, input.snaps));
+  const committed = await withCommitted(input.root, pendingTrust(input.root, input.snaps));
+  // check commands carry what reading the repo says about each; approving is keeping them anyway
+  const items = await withScreening(committed, localRepoFiles(path.dirname(input.root)));
   if (!items.length)
     return (input.io.out('\n  Nothing waiting: everything the repo asks for is approved here.\n\n'), 0);
   for (const item of items) input.io.out(showItem(item));
