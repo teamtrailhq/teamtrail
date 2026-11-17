@@ -1,4 +1,5 @@
 import { mainChecksHeld } from '../../mainChecks/mainChecksHeld';
+import { mainChecksItem } from '../../mainChecks/mainChecksItem';
 import type { AttentionSource, Candidate } from '../types';
 
 /**
@@ -16,12 +17,11 @@ export const mainChecksSource: AttentionSource = {
       const snap = snaps.find((s) => s.map.id === view.mapId);
       if (!snap) return [];
       const held = mainChecksHeld(snap, view);
-      const n = state.failing.length;
       return [
         {
           kind: 'main-checks',
           mapId: view.mapId,
-          title: `${state.failing.join(', ')} already ${n === 1 ? 'fails' : 'fail'} on main: choose how this trail goes on`,
+          title: mainChecksItem({ mapId: view.mapId, runId: run.id, failing: state.failing }).title,
           since: run.finishedAt ?? run.startedAt,
           urgency: 'blocking',
           ref: run.id,
