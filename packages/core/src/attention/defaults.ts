@@ -26,6 +26,7 @@ export const DEFAULT_WEIGHTS: Record<AttentionKind, number> = {
   trust: 55,
   precedent: 40,
   'review-limit': 55,
+  'main-checks': 60,
 };
 
 export const ATTENTION_KINDS = Object.keys(DEFAULT_WEIGHTS) as AttentionKind[];

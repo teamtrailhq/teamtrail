@@ -6,6 +6,7 @@ import type { KnowledgeEntry } from '../knowledge/knowledge';
 import type { AttentionItem, AttentionKind, AttentionPolicy, AttentionState } from '../model/attention';
 import type { DeliveryProblem } from '../model/delivery';
 import type { InstalledGuide } from '../model/guide';
+import type { MainChecksView } from '../model/mainChecks';
 import type { TicketSync } from '../model/prEvidence';
 import type { RerouteProposal } from '../model/reroute';
 import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
@@ -40,6 +41,8 @@ export interface AttentionInput {
   precedentConflicts?: PrecedentConflict[];
   /** Active claim branches that changed the same files (workspaces/scanIntegrations.ts). Missing: none. */
   integrations?: IntegrationOverlap[];
+  /** Checks on main per active trail (mainChecks/). Missing: none. */
+  mainChecks?: MainChecksView[];
   /** Installed guides, checked against the lock (guides/guideStore.ts). Missing: none. */
   guides?: InstalledGuide[];
   /** Connectors whose messages are being refused (delivery/deliveryStore.ts). Missing: none. */

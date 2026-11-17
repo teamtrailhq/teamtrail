@@ -17,6 +17,7 @@ import { assertClaimable, briefView, claimable } from './discovery';
 import { givenGuides } from './guideChanges';
 import { assertInGuides, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
+import { assertMainChecks, mainChecksField, mainGate, type MainGate } from './mainChecks';
 import { pickNext, stampModel, tierFields } from './models';
 import { heldElsewhere } from './ownClaim';
 import { claimParallel } from './parallel';
@@ -48,7 +49,8 @@ export async function claimTicket(
   const snap = await ctx.resolveTrail(input.trail);
   ctx.trail = snap.map.id;
   const agent = await ctx.agentId();
-  const target = await pickTarget(ctx, { snap, agent, ref: input.ticket, guides: input.guides });
+  const main = await mainGate(ctx, snap);
+  const target = await pickTarget(ctx, { snap, agent, ref: input.ticket, guides: input.guides, main });
   const alreadyMine =
     target.assignee === agent && deriveStates(snap.tickets, snap.map.mode).get(target.id) === 'claimed';
   const t = alreadyMine
@@ -88,6 +90,7 @@ export async function claimTicket(
     knowledge: delivered,
     criteria: criteriaView(ctx.root, fresh, current, levelFor(ctx.root, fresh, t).info.level),
     git: ctx.remote ? REMOTE_GIT_NOTE : baselineView(baseline),
+    ...mainChecksField(main),
     lease: {
       expiresAt: new Date(lease.expiresAt).toISOString(),
       length: leaseSpan(lease.ttlMs),
@@ -103,7 +106,7 @@ export async function claimTicket(
 /** The named ticket, or the best ready one; checked against review and discovery rules. */
 async function pickTarget(
   ctx: AgentContext,
-  at: { snap: MapSnapshot; agent: string; ref?: string; guides?: string[] },
+  at: { snap: MapSnapshot; agent: string; ref?: string; guides?: string[]; main: MainGate },
 ): Promise<Ticket> {
   const { snap, agent } = at;
   const frozen = frozenOn(ctx, snap.map.id);
@@ -113,6 +116,7 @@ async function pickTarget(
     ...frozen.keys(),
     ...outsideGuides(snap, at.guides),
     ...review.held.map((h) => h.id),
+    ...at.main.held.map((h) => h.id),
   ];
   const target = at.ref
     ? ctx.findTicket(snap, at.ref)
@@ -128,6 +132,7 @@ async function pickTarget(
     throw new OperationError(`${target.key} is frozen by reroute proposal ${proposal}, waiting on the human`);
   assertMayReview(ctx, snap, target, agent);
   assertUnderReviewLimit(review, target, agent);
+  assertMainChecks(at.main, target, agent);
   if (target.assignee !== agent) assertInGuides(snap, target, at.guides);
   if (target.assignee !== agent) assertClaimable(ctx.root, snap.map.id, target);
   return target;

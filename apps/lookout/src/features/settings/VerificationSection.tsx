@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Choice } from '../../components/ui';
 import { TRAIL_LEAD } from '../../lib';
 import { LEVEL_HELP, LEVEL_TEXT, verificationApi } from '../../lib/verification';
+import { MainChecksSetting } from '../main-checks';
 import { settingsHref } from './settingsHref';
 import { SettingsSection } from './SettingsSection';
 import { useThisMachine } from './useThisMachine';
@@ -80,6 +81,7 @@ export function VerificationSection(props: { map?: MapDoc }) {
         </div>
       )}
       <VerificationChecks view={view} local={local} file={file} />
+      {map && <MainChecksSetting mapId={map.id} />}
       <span className="set-hint t-meta">
         Saved here, checks are approved as you save them. A change to {file} made in the repo, by an agent or a
         teammate, runs nothing until you approve it.

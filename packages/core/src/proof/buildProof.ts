@@ -114,6 +114,7 @@ export function buildProof(input: ProofInput): Proof {
       exitCode: c.exitCode,
       durationMs: c.durationMs,
       passed: passed(c),
+      ...(latest?.knownFailures?.some((k) => k.name === c.name) ? { knownFailure: true as const } : {}),
     })),
     criteria: criteriaOf(latest),
     git: gitOf(latest),

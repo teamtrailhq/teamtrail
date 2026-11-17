@@ -9,6 +9,7 @@ import { guideSource } from './guideSource';
 import { hitlReadySource } from './hitlReadySource';
 import { integrationSource } from './integrationSource';
 import { knowledgeSource } from './knowledgeSource';
+import { mainChecksSource } from './mainChecksSource';
 import { modelSource } from './modelSource';
 import { overlapSource } from './overlapSource';
 import { policySource } from './policySource';
@@ -47,4 +48,5 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   trustSource,
   precedentSource,
   reviewLimitSource,
+  mainChecksSource,
 ];

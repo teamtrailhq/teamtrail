@@ -1,7 +1,29 @@
 import type { Release } from './releases';
 
-/** Releases 0.26–0.41, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.27–0.43, kept apart so `releases.ts` stays short. Newest first. */
 export const MID_RELEASES: Release[] = [
+  {
+    version: '0.43.1',
+    date: '2026-11-15',
+    items: [
+      'In a hosted Lookout that keeps your trails itself, Settings → Tracker says so instead of offering trackers',
+    ],
+  },
+  {
+    version: '0.43.0',
+    date: '2026-11-15',
+    items: [
+      'Where the server runs your agents, the Lookout says to turn them on for a trail there, instead of offering /scout commands for an agent of your own',
+    ],
+  },
+  {
+    version: '0.42.0',
+    date: '2026-11-15',
+    items: [
+      'A hosted Lookout has your menu in its header: back to all your workspaces, the server’s own pages, and Sign out',
+      'Where the server keeps your trails itself, the Lookout asks no tracker questions on its first run',
+    ],
+  },
   {
     version: '0.41.0',
     date: '2026-11-15',
@@ -171,28 +193,6 @@ export const MID_RELEASES: Release[] = [
     date: '2026-11-11',
     items: [
       'Teamtrail opens your browser ready to sign in with one click; `teamtrail pair` does the same for another tab',
-    ],
-  },
-  {
-    version: '0.26.2',
-    date: '2026-11-11',
-    items: ['The Lookout shows the new teamtrail. wordmark'],
-  },
-  {
-    version: '0.26.1',
-    date: '2026-11-11',
-    items: [
-      'A refreshed logo: the trail’s destination is larger, and there are light and dark versions that follow your theme',
-    ],
-  },
-  {
-    version: '0.26.0',
-    date: '2026-11-11',
-    items: [
-      'The Lookout asks you to sign in: open the link `teamtrail` prints, and pair your phone with a QR code (again after each restart)',
-      'Your answers count only when you give them in the Lookout or Slack, and skipping discovery or changing a trail’s mode or destination waits for your Approve',
-      'Check commands, briefs, criteria and other trusted settings run only once you approve them on this machine, in Settings → Approvals',
-      'Changes made to trail files outside Teamtrail have no effect until you accept them',
     ],
   },
 ];

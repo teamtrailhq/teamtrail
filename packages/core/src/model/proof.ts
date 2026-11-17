@@ -11,6 +11,8 @@ export interface ProofCheck {
   exitCode: number | null;
   durationMs: number;
   passed: boolean;
+  /** It failed as it already does on main: a known failure the trail lead accepted, never counted as passed. */
+  knownFailure?: true;
 }
 
 export interface ProofReview {

@@ -17,6 +17,7 @@ import { approveTrust, pendingTrust, writeBrief, writeKnowledge, writeTicketCrit
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { seedGuides } from './seedGuides';
 import { seedHistory } from './seedHistory';
+import { seedMainChecks } from './seedMainChecks';
 import { seedModels } from './seedModels';
 import { seedParallel } from './seedParallel';
 import { seedProjects } from './seedProjects';
@@ -264,6 +265,8 @@ await seedTimeline({ root, adapter, main, second, history, now });
 const seededSnaps = await Promise.all((await adapter.listMaps()).map((m) => adapter.loadMap(m.id)));
 for (const i of pendingTrust(root, seededSnaps))
   approveTrust({ root, items: [{ key: i.key, hash: i.hash }], by: 'trail lead', snaps: seededSnaps });
+// 14. Checks on main already passed at this commit, so the dev Lookout runs no typecheck and tests as it starts.
+seedMainChecks({ root, repoRoot, mapIds: seededSnaps.map((s) => s.map.id), now });
 
 console.log(`seeded ${root}`);
 console.log(`  ${main.key} ${main.title} · mid-flight`);

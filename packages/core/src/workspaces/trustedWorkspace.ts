@@ -32,6 +32,15 @@ export function recordWorktree(root: string, at: { mapId: string; ticketId: stri
   });
 }
 
+/** Teamtrail removed the worktree it prepared under this key. */
+export function forgetWorktree(root: string, at: { mapId: string; ticketId: string }) {
+  const store = machineStore(root);
+  withFileLock(store.file(`${FILE}.lock`), () => {
+    const { [keyOf(at.mapId, at.ticketId)]: _gone, ...rest } = store.read<Record<string, string>>(FILE) ?? {};
+    store.write(FILE, rest);
+  });
+}
+
 /** The worktree Teamtrail prepared for this ticket on this machine, as recorded here; whatever the repo's files say. */
 export function preparedWorktree(root: string, mapId: string, ticketId: string): string | undefined {
   try {

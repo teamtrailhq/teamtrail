@@ -30,10 +30,13 @@ export function outcomeOf(a: VerificationAttempt, failures: number, maxAttempts:
   const ran = a.checks.map(checkLine).join(', ') || 'no checks configured';
   if (a.result === 'pass') {
     const signOff = a.criteria?.manual ?? [];
+    const known = a.knownFailures?.length
+      ? ` (${a.knownFailures.map((k) => k.name).join(', ')} already failing on main)`
+      : '';
     return {
       event: 'checks.pass',
       to: a.level === 'checks' && !signOff.length ? 'done' : 'verifying',
-      reason: `${a.id} passed: ${ran}${signOff.length ? `; ${signOff.join(', ')} need your sign-off` : ''}`,
+      reason: `${a.id} passed: ${ran}${known}${signOff.length ? `; ${signOff.join(', ')} need your sign-off` : ''}`,
     };
   }
   if (a.result === 'fail') {

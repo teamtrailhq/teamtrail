@@ -19,7 +19,7 @@ function checkLines(p: Proof): string[] {
     ...by,
     ...p.checks.map(
       (c) =>
-        `- ${c.passed ? '✅' : '❌'} \`${md(c.argv.join(' '), 120)}\` (exit ${c.exitCode ?? 'none'}, ${Math.round(c.durationMs / 100) / 10}s)`,
+        `- ${c.passed ? '✅' : '❌'} \`${md(c.argv.join(' '), 120)}\` (exit ${c.exitCode ?? 'none'}, ${Math.round(c.durationMs / 100) / 10}s)${c.knownFailure ? ' · known failure, already failing on main' : ''}`,
     ),
   ];
 }

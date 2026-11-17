@@ -11,6 +11,7 @@ import type {
   TransitionEntry,
   TrustEntry,
 } from '../model/lifecycle';
+import type { MainChecksEntry } from '../model/mainChecks';
 import type { ProofPostEntry } from '../model/proofPost';
 
 /*
@@ -22,11 +23,19 @@ import type { ProofPostEntry } from '../model/proofPost';
  * `read` returns transitions only, so older readers (delivery report, Report tab) are unaffected by newer kinds;
  * `readAll` returns transitions and reroute steps and skips the rest (guide and remote-agent changes included, and
  * kinds a newer version wrote); `readGuides` returns the guide changes, `readRemoteAgents` the token changes,
- * `readSlack` the Slack owner changes, `readSignIn` the Lookout's sign-ins.
+ * `readSlack` the Slack owner changes, `readSignIn` the Lookout's sign-ins, `readMainChecks` runs on main asked for
+ * and the trail lead's choices about them.
  */
 const TRAIL_KINDS = new Set<string>(['transition', 'reroute']);
 type AnyEntry =
-  JournalEntry | GuideEntry | RemoteAgentEntry | SlackOwnerEntry | TrustEntry | SignInEntry | ProofPostEntry;
+  | JournalEntry
+  | GuideEntry
+  | RemoteAgentEntry
+  | SlackOwnerEntry
+  | TrustEntry
+  | SignInEntry
+  | ProofPostEntry
+  | MainChecksEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -44,6 +53,7 @@ export function journalFile(root: string): Journal & {
   readSignIn(mapId: string): SignInEntry[];
   readTrust(mapId: string): TrustEntry[];
   readProofPost(mapId: string): ProofPostEntry[];
+  readMainChecks(mapId: string): MainChecksEntry[];
 } {
   const raw = (mapId: string) => readEntries(root, mapId) as AnyEntry[];
   const readAll = (mapId: string) => raw(mapId).filter((e): e is JournalEntry => TRAIL_KINDS.has(e.kind));
@@ -61,6 +71,7 @@ export function journalFile(root: string): Journal & {
     readSignIn: (mapId) => raw(mapId).filter((e): e is SignInEntry => e.kind === 'sign-in'),
     readTrust: (mapId) => raw(mapId).filter((e): e is TrustEntry => e.kind === 'trust'),
     readProofPost: (mapId) => raw(mapId).filter((e): e is ProofPostEntry => e.kind === 'proof-post'),
+    readMainChecks: (mapId) => raw(mapId).filter((e): e is MainChecksEntry => e.kind === 'main-checks'),
   };
 }
 

@@ -21,6 +21,7 @@ import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
 import { verifyLinear } from './verifyLinear.mjs';
+import { verifyMainChecks } from './verifyMainChecks.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
@@ -587,6 +588,8 @@ const supervisionOk = await verifySupervision({
 
 // Safe parallel work: worktrees, overlapping claims and an integration ticket, on a scratch git repo.
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
+// Checks on main: a check already failing on main, the human's Start anyway and Drop, on a scratch git repo.
+const mainChecksOk = await verifyMainChecks({ browser, cli, log, shots });
 
 // Model-aware claiming: two agents on different models, matching switched on in the Lookout, on a scratch project.
 const modelsOk = await verifyModels({ browser, cli, log, shots });
@@ -683,6 +686,7 @@ if (
   !headersOk ||
   !signInOk ||
   !parallelOk ||
+  !mainChecksOk ||
   !modelsOk ||
   !projectsOk ||
   !guidesOk ||

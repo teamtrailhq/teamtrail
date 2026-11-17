@@ -52,6 +52,20 @@ export interface RunnerReport {
   error?: string;
 }
 
+/** What a runner is asked for checks on main: the approved checks on the default branch's head, before work starts. */
+export interface MainRunJob {
+  /** Names the run (`.evidence/_main/runs/<runId>.json`). */
+  runId: string;
+  /** The default branch, and its head as this checkout knows it; the runner may use the remote's newer head. */
+  branch?: string;
+  commit?: string;
+  /** In order, as for a completion. */
+  checks: RunnerCheck[];
+  totalTimeoutSec: number;
+  failFast: boolean;
+  signal?: AbortSignal;
+}
+
 /**
  * A check runner an embedding server provides: it runs a remote agent's approved checks where that agent's work is
  * (its pushed commit), since this checkout doesn't hold it. Only the server's own code sets one, never an agent; the
@@ -61,4 +75,9 @@ export interface CheckRunner {
   /** Shown on the attempt and the proof: who ran the checks. */
   name: string;
   run(job: CheckRunJob): Promise<RunnerReport>;
+  /**
+   * Runs the approved checks on the default branch's head (mainChecks/). The report's `git.head` is the commit they
+   * ran on; `changed` is ignored. Without it, checks on main are unavailable while this runner is in use.
+   */
+  runMain?(job: MainRunJob): Promise<RunnerReport>;
 }

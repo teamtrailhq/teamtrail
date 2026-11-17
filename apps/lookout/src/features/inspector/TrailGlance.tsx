@@ -3,6 +3,7 @@ import { DetailSection, MetaLine, Row } from '../../components/ui';
 import { ago, isRunning, TYPE_TEXT } from '../../lib';
 import { contextParts, edgeFor } from '../attention';
 import { useBrief } from '../discovery';
+import { MainChecksSection } from '../main-checks';
 import { trailPhase } from './trailPhase';
 import { TrailPhaseLine } from './TrailPhaseLine';
 
@@ -32,6 +33,7 @@ export function TrailGlance(props: {
   return (
     <div className="detail trail-glance">
       <TrailPhaseLine phase={phase} snap={snap} states={states} reason={done ? props.done?.reason : undefined} />
+      {!done && <MainChecksSection mapId={snap.map.id} now={props.now} />}
       {top && (
         <DetailSection label={`Waits on you · ${waiting.length}`}>
           <Row

@@ -2,8 +2,9 @@ import path from 'node:path';
 import type { CriteriaResult } from '../criteria/criteria';
 import { gateOutcome } from '../evidence/completionEvidence';
 import { ensureLocalDir } from '../lib/ensureLocalDir';
+import { trailKnownFailures, withKnownFailures } from '../mainChecks/withKnownFailures';
 import type { GitEvidence } from '../model/evidence';
-import type { CheckResult } from '../model/verification';
+import type { AttemptKnownFailure, CheckResult } from '../model/verification';
 import type { CheckRunJob, CheckRunner, RunnerReport } from './checkRunner';
 import type { ConfigRead } from './configFile';
 import { EVIDENCE_DIR, evidencePaths } from './evidenceStore';
@@ -14,7 +15,7 @@ import type { ChecksOutcome } from './runChecks';
 import { readRunnerReport } from './runnerReport';
 import type { VerifyJob } from './verifyCompletion';
 
-type Graded = ChecksOutcome & { git?: GitEvidence; criteria?: CriteriaResult };
+type Graded = ChecksOutcome & { git?: GitEvidence; criteria?: CriteriaResult; knownFailures?: AttemptKnownFailure[] };
 /** Beyond the checks' own total, what a runner gets to fetch the work and start: then the engine stops waiting. */
 const RUNNER_MARGIN_MS = 15 * 60_000;
 
@@ -60,6 +61,7 @@ export async function runnerGraded(
   const unknown = job.info.checks.filter((n) => !config.checks[n]);
   if (unknown.length) return { checks: [], result: 'error', note: `unknown check ${unknown.join(', ')}` };
   const asked = job.info.checks.map((name) => ({ name, spec: config.checks[name] }));
+  const known = trailKnownFailures(env.root, job.mapId);
   const runJob: CheckRunJob = {
     mapId: job.mapId,
     ticketId: job.ticket.id,
@@ -67,7 +69,8 @@ export async function runnerGraded(
     attemptId: run.id,
     checks: asked,
     totalTimeoutSec: config.totalTimeoutSec,
-    failFast: config.failFast,
+    // a known failure on main must not stop the checks after it
+    failFast: config.failFast && !known.length,
     ...(job.sub.origin ? { origin: job.sub.origin } : {}),
     ...(job.sub.pr ? { pr: job.sub.pr } : {}),
     ...(job.sub.declaredPaths ? { declaredPaths: job.sub.declaredPaths } : {}),
@@ -89,13 +92,15 @@ export async function runnerGraded(
     touches: job.sub.touches,
   });
   if ('error' in read) return { checks: [], result: 'error', note: read.error };
-  const outcome = gateOutcome(read.git) ?? outcomeOf(read.checks, asked.length);
+  const checked = gateOutcome(read.git) ?? outcomeOf(read.checks, asked.length);
+  const outcome = withKnownFailures(checked, { root: env.root, known, asked: asked.length, folders: [] });
   const at = { root: env.root, mapId: job.mapId, ticketId: job.ticket.id, evidence: job.sub.criteria };
   const criteria = gradeCriteria(at, outcome.checks);
   const unmet = criteria ? [...criteria.missing, ...criteria.failed] : [];
   const graded = { ...outcome, git: read.git, ...(criteria ? { criteria } : {}) };
   if (outcome.result !== 'pass' || !unmet.length) return graded;
-  return { ...graded, result: 'fail', note: `Acceptance criteria without passing evidence: ${unmet.join(', ')}` };
+  const { knownFailures: _known, ...rest } = graded;
+  return { ...rest, result: 'fail', note: `Acceptance criteria without passing evidence: ${unmet.join(', ')}` };
 }
 
 /** Pass only when every asked check ran and passed. With none failed, failFast explains no missing check. */
