@@ -1,3 +1,5 @@
+import { NPM_COMMANDS } from './npmCommands';
+
 /** What a package manager's command runs: a package.json script, a dependency's program, or nothing screening reads. */
 export type ScriptPlan =
   | {
@@ -6,6 +8,8 @@ export type ScriptPlan =
       /** It fails without the script (else it may run a program of that name). */ strict: boolean;
     }
   | { kind: 'tool'; spec?: string }
+  /** A command the package manager doesn't have, so it fails whatever the repo holds. */
+  | { kind: 'unknown'; name: string }
   | { kind: 'none' };
 
 export type PackageManager = 'npm' | 'pnpm' | 'yarn';
@@ -31,7 +35,8 @@ function npmPlan([sub, next]: string[]): ScriptPlan {
   if (sub in NPM_SCRIPT) return { kind: 'script', name: NPM_SCRIPT[sub], strict: true };
   if (NPM_RUN.has(sub)) return next ? { kind: 'script', name: next, strict: true } : NONE;
   if (sub === 'exec' || sub === 'x') return { kind: 'tool', spec: next };
-  return NONE;
+  if (NPM_COMMANDS.has(sub)) return NONE;
+  return { kind: 'unknown', name: sub };
 }
 
 function pnpmPlan([sub, next]: string[]): ScriptPlan {
