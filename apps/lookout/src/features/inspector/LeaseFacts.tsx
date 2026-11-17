@@ -1,61 +1,59 @@
 import { leaseHealth, type TicketLease } from '@teamtrail/core';
-import { Button, MetaLine, Pill } from '../../components/ui';
-import { useNow } from '../../hooks';
-import { ago, dur } from '../../lib';
+import { Disclosure, Fact, MetaLine } from '../../components/ui';
+import { ago, dur, hhmm } from '../../lib';
 
 /**
- * An agent's claim on the ticket: who and how recently, when it goes back to the queue, its worktree branch and the
- * files it said it would change, and manual release. Amber once the agent went quiet.
+ * An agent's claim in the Progress section: who and since when, when it goes back to the queue, its worktree branch,
+ * the files it said it would change, and its latest note (the earlier ones behind Details).
  */
-export function LeaseFacts({ lease, onRelease }: { lease: TicketLease; onRelease: () => void }) {
-  const now = useNow(1000);
+export function LeaseFacts({ lease, now }: { lease: TicketLease; now: number }) {
   const health = leaseHealth(lease, now);
-  const live = health === 'live';
+  const latest = lease.notes.at(-1);
   return (
-    <div className={`lease lease-${health} edge-note ${live ? '' : 'edge-attention'}`}>
-      <div className="edge-note-head">
+    <>
+      <Fact label="Claim">
+        <span className="t-body">
+          {lease.agent} since {hhmm(lease.claimedAt)}
+        </span>
         <MetaLine
-          parts={[{ text: `Claimed by ${lease.agent}`, strong: true }, `active ${ago(now - lease.renewedAt)} ago`]}
+          parts={[
+            `active ${ago(now - lease.renewedAt)} ago`,
+            health === 'live' && queueLine(span(lease.expiresAt - now)),
+          ]}
         />
-        {!live && <Pill tone="amber">Stalled</Pill>}
-      </div>
-      <p className="t-meta lease-line">{leaseLine(health, span(lease.expiresAt - now))}</p>
+      </Fact>
       {lease.workspace && (
-        <p className="t-meta lease-branch">
-          Works on <code className="t-code">{lease.workspace.branch}</code> in its own worktree
-        </p>
+        <Fact label="Branch">
+          <code className="t-code">{lease.workspace.branch}</code>
+          <MetaLine parts={['its own worktree']} />
+        </Fact>
       )}
-      {lease.touches && lease.touches.length > 0 && (
-        <p className="t-meta lease-touches">
-          Expects to change{' '}
-          {lease.touches.map((g, i) => (
-            <span key={g}>
-              {i > 0 && ', '}
-              <code className="t-code">{g}</code>
-            </span>
-          ))}
-        </p>
+      {!!lease.touches?.length && (
+        <Fact label="Changes">
+          <span className="t-code">{lease.touches.join(', ')}</span>
+        </Fact>
       )}
-      {lease.notes.length > 0 && (
-        <ul className="lease-notes t-meta">
-          {lease.notes.slice(-3).map((n, i) => (
-            <li key={i}>{n}</li>
-          ))}
-        </ul>
+      {latest && (
+        <Fact label="Latest note">
+          <span className="t-body">{latest}</span>
+          {lease.notes.length > 1 && (
+            <Disclosure label="Earlier notes">
+              <ul className="lease-notes t-meta">
+                {lease.notes.slice(0, -1).map((n, i) => (
+                  <li key={i}>{n}</li>
+                ))}
+              </ul>
+            </Disclosure>
+          )}
+        </Fact>
       )}
-      <div className="actions">
-        <Button variant={live ? 'default' : 'urgent'} onClick={onRelease}>
-          Release to queue
-        </Button>
-      </div>
-    </div>
+    </>
   );
 }
 
-function leaseLine(health: string, left: string) {
-  if (health === 'expired') return 'Lease expired, going back to the queue';
-  if (health === 'stalled') return `The agent went quiet. Back in the queue in ${left}.`;
-  return `Back in the queue after ${left} without activity.`;
+/** A live claim's timeout; once the agent went quiet, the state line says when it goes back. */
+function queueLine(left: string) {
+  return `back in the queue after ${left} without activity`;
 }
 
 /** Long leases read in days ("7 days"), short ones as hours and minutes. */

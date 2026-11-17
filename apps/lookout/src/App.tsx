@@ -3,6 +3,7 @@ import {
   AppBriefing,
   AppHeader,
   AppInbox,
+  AppInspector,
   useNewTrail,
   AppSettings,
   LaptopSide,
@@ -21,7 +22,6 @@ import {
 } from './app/index';
 import { StepZone, LogZone, ActivityStack } from './features/activity';
 import { SetupGuide } from './features/guide';
-import { Inspector } from './features/inspector';
 import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/knowledge';
 import { MapSections } from './features/plan';
 import { PhoneProjects, ProjectSwitcher } from './features/projects';
@@ -78,13 +78,7 @@ export function App() {
     />
   );
   const inspector = (bare: boolean) => (
-    <Inspector
-      api={api}
-      sessions={scoped.sessions}
-      bare={bare}
-      onOpenChat={(id) => nav.openChat(id)}
-      onOpenDecision={nav.openDecisions}
-    />
+    <AppInspector {...{ api, nav, attn, bare }} sessions={scoped.sessions} done={trail.done} />
   );
   const zoneProps = {
     activity: scoped,

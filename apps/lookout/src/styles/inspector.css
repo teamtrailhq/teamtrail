@@ -66,33 +66,6 @@
   color: var(--text);
   white-space: pre-wrap;
 }
-.comments summary {
-  cursor: pointer;
-}
-.comment {
-  margin-top: var(--sp-10);
-  font-size: var(--fs-sm);
-}
-.c-body {
-  white-space: pre-wrap;
-  margin-top: var(--sp-2);
-}
-
-/* An agent's claim (an edge note, amber once the agent went quiet). */
-.lease-line,
-.lease-branch,
-.lease-touches {
-  margin: 0;
-}
-.lease-touches .t-code,
-.lease-branch .t-code {
-  color: var(--text);
-}
-.lease-notes {
-  margin: 0;
-  padding-left: var(--sp-18);
-}
-
 /* Compact: the ticket reads as one column of text, without much air. */
 .inspector .detail {
   gap: var(--sp-10);
@@ -106,14 +79,15 @@
  * instead of reading as one run of text. Boxed notes (a claim, a resolution, a form) keep their own frame. */
 .detail > .facts,
 .detail > .d-section,
-.detail > .actions,
-.detail > .comments {
+.detail > .actions:not(.action-bar) {
   padding-top: var(--sp-10);
   border-top: 1px solid var(--line);
 }
+.detail > .actions:empty {
+  display: none;
+}
 .detail > .d-section > .t-label,
-.detail > .d-section > header .t-label,
-.detail > .d-section .guide-head > .t-label {
+.detail > .d-section > header .t-label {
   color: var(--text-hi);
 }
 /* The ticket title is a card title here, not a zone hero; each section keeps a little air before the next rule. */
@@ -124,6 +98,235 @@
 .detail > .d-section {
   padding-bottom: var(--sp-4);
 }
-.detail > .actions:empty {
-  display: none;
+
+/* ---------- The ticket, state first (features/inspector/TicketPanel.tsx) ----------
+ * Title and context, the state line, one action bar, then read-only sections: What, How, Progress, Proof, History.
+ * Text is body size; meta lines and labels are the only smaller type. */
+.ticket-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.ticket-head .t-title {
+  margin: 0;
+}
+.ticket-head .t-code {
+  color: var(--dim);
+}
+.standing {
+  gap: var(--sp-2);
+  padding: var(--sp-4) 0 var(--sp-4) var(--sp-10);
+}
+.standing .changed-notice {
+  margin-top: var(--sp-6);
+}
+.standing-notice {
+  color: var(--text);
+}
+.action-bar {
+  align-items: center;
+}
+.action-bar .merge-confirm {
+  display: contents;
+}
+.bar-note {
+  margin: 0;
+}
+
+/* The "⋯" menu: always last in the bar, its list opening leftwards under it. */
+.more-menu {
+  position: relative;
+  margin-left: auto;
+}
+.more-btn {
+  width: var(--h-md);
+  padding: 0;
+  font-size: var(--fs-title);
+  line-height: 1;
+}
+.more-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--sp-4));
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 232px;
+  padding: var(--sp-4) 0;
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.more-item {
+  padding: var(--sp-8) var(--sp-12);
+  border: 0;
+  background: none;
+  text-align: left;
+  font: var(--type-body);
+  color: var(--text);
+  cursor: pointer;
+}
+.more-item:hover,
+.more-item:focus-visible {
+  background: var(--panel2);
+  color: var(--text-hi);
+}
+.more-item.danger {
+  color: var(--urgent);
+}
+
+/* Sections: a label with an optional Edit link, then content that only reads. */
+.d-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+.d-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+}
+.d-edit {
+  margin-left: auto;
+}
+.d-edit,
+.d-more {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: var(--type-meta);
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+.d-edit:hover,
+.d-more:hover {
+  text-decoration: underline;
+}
+.disclosure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-6);
+}
+.disclosure-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  align-self: stretch;
+}
+.disclosure-body > .vf-panel {
+  padding-top: 0;
+  border-top: 0;
+}
+.clamp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+}
+.clamp-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.clamp-text.cut {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.facts > .fact {
+  display: contents;
+}
+.ticket-panel .facts,
+.trail-glance .facts {
+  font-size: var(--fs-body);
+  gap: var(--sp-8) var(--sp-12);
+}
+.ticket-panel .facts dt {
+  padding-top: 3px;
+}
+.ticket-panel .facts dd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.ws-path {
+  overflow-wrap: anywhere;
+}
+.lease-notes {
+  margin: 0;
+  padding-left: var(--sp-18);
+}
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
+.history-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.history-item .meta-line .d-more {
+  margin-left: var(--sp-8);
+}
+
+/* ---------- The trail at a glance (TrailGlance.tsx): no ticket selected ---------- */
+.glance-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+.glance-head .t-body {
+  margin: 0;
+}
+.phase-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4) var(--sp-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: var(--type-meta);
+  color: var(--faint);
+}
+.phase-steps li + li::before {
+  content: '›';
+  margin-right: var(--sp-6);
+  color: var(--faint);
+}
+.phase-steps .past {
+  color: var(--dim);
+}
+.phase-steps .now {
+  font: var(--type-row-title);
+  color: var(--text-hi);
+}
+.trail-glance .d-section .ds-row {
+  margin: 0 calc(-1 * var(--sp-4));
+}
+.glance-hint {
+  margin: 0;
+  padding-top: var(--sp-10);
+  border-top: 1px solid var(--line);
+}
+/* In a ticket, context lines wrap rather than cut: there is room below, and the cut part is often the point. */
+.ticket-panel .meta-line {
+  white-space: normal;
+}
+.ticket-panel .facts {
+  grid-template-columns: 96px minmax(0, 1fr);
+}
+.disclosure-body p {
+  margin: 0;
+}
+.how-editor .vf-level {
+  margin-left: 0;
 }

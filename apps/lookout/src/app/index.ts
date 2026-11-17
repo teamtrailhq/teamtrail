@@ -1,6 +1,7 @@
 export { AppBriefing } from './AppBriefing';
 export { AppHeader } from './AppHeader';
 export { AppInbox } from './AppInbox';
+export { AppInspector } from './AppInspector';
 export { AppNewTrail } from './AppNewTrail';
 export { useNewTrail } from './useNewTrail';
 export { AppSettings } from './AppSettings';

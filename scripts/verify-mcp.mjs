@@ -9,7 +9,14 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { chromium } from 'playwright-core';
-import { answeringChecklists, lookoutLinks, pairLink, sessionHeaders, signInWith } from './e2eHelpers.mjs';
+import {
+  answeringChecklists,
+  lookoutLinks,
+  pairLink,
+  sessionHeaders,
+  signInWith,
+  ticketAction,
+} from './e2eHelpers.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
@@ -372,7 +379,8 @@ log(
 
 // Manual release from the inspector; the agent learns on its next call and its session on the ticket ends.
 await clickNode(page.locator('.node', { hasText: 'Which date format?' }));
-await page.getByRole('button', { name: 'Release to queue' }).click();
+await page.locator('.inspector .standing', { hasText: 'is working on it' }).waitFor({ timeout: 15_000 });
+await ticketAction(page, 'Release to queue');
 const releasedLog = page.locator('.log-row', {
   hasText: `${added.ticket.key} returned to queue · claim of ${resumed.claimed.assignee} released by trail lead`,
 });
@@ -489,7 +497,8 @@ const approval = page.locator('.inbox-list.approvals li', { hasText: 'Link the c
 await approval.waitFor({ timeout: 15_000 });
 await shot('09-approval-waiting-on-you');
 await approval.locator('button').first().click();
-await page.getByRole('button', { name: 'Approve', exact: true }).click();
+await page.locator('.inspector .standing', { hasText: 'Waiting on you: approve it' }).waitFor({ timeout: 15_000 });
+await ticketAction(page, 'Approve');
 await page.locator('.node.st-decided', { hasText: /Link the changelog/ }).waitFor({ timeout: 15_000 });
 await shot('10-approved');
 const reviewOk =
