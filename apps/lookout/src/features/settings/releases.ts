@@ -21,6 +21,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.59.2',
+    date: '2026-11-17',
+    items: [
+      'Settings → Verification reads calmer: one line per check, a warning under its command with the fix one click away, and Save apart',
+    ],
+  },
+  {
     version: '0.59.1',
     date: '2026-11-17',
     items: [

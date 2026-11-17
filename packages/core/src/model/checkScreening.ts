@@ -9,6 +9,15 @@ export interface CheckFinding {
   severity: FindingSeverity;
   /** One plain line; file, script and target names in backticks. */
   text: string;
+  /** The command that would run instead, when reading the repo knows it. */
+  fix?: CheckFix;
+}
+
+/** The command a finding knows would run (`npm run web:lint` for `npm web:lint`), as words. */
+export interface CheckFix {
+  run: string[];
+  /** The finding's text without the suggestion, for when `run` is offered as an action next to it. */
+  problem: string;
 }
 
 /** A check as screening reads it: its name, argv and folder (relative to the repo root). */
