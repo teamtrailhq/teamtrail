@@ -64,7 +64,7 @@ function whyNothing(
   w: { held: Ticket[]; review: ReviewGate; main: MainGate; gate?: TicketType[] },
 ): string {
   if (w.review.reason && w.review.held.length) return w.review.reason;
-  if (w.main.view.reason && w.main.held.length) return w.main.view.reason;
+  if (w.main.reason && w.main.held.length) return w.main.reason;
   if (w.held.length) return heldReason(ctx, snap, w.held);
   return noTicketReason(snap, { gate: w.gate, next: w.gate ? briefView(ctx.root, snap)?.next : undefined });
 }

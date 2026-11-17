@@ -22,12 +22,20 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.59.3',
+    version: '0.59.4',
     date: '2026-11-17',
     items: [
       'A check that fails only as it already does on main no longer sends the first completion back for rework when an acceptance criterion names it',
       "Where Teamtrail merges pull requests, a done ticket that isn't verified offers Merge anyway: why in one line, one question, and it's kept as your decision",
       'A done ticket whose pull request is still open shows in your queue as ready to merge',
+    ],
+  },
+  {
+    version: '0.59.3',
+    date: '2026-11-17',
+    items: [
+      'Checks on main find the dependencies of a package folder with its own install, like apps/web/node_modules',
+      'An agent held by checks failing on main tells you to choose in the Lookout, instead of asking you a question',
     ],
   },
   {

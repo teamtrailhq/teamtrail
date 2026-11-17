@@ -1,6 +1,6 @@
 import type { Release } from './releases';
 
-/** Releases 0.44–0.49, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.44–0.49, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
 export const LATER_RELEASES: Release[] = [
   {
     version: '0.49.0',

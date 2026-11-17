@@ -1,39 +1,21 @@
-import { existsSync, lstatSync, readdirSync, symlinkSync, unlinkSync } from 'node:fs';
+import { existsSync, lstatSync, symlinkSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 import { git } from '../evidence/git';
 import { machineStore } from '../machine/machineStore';
 import { forgetWorktree, preparedWorktree, recordWorktree } from '../workspaces/trustedWorkspace';
 import { readWorkspaceSettings } from '../workspaces/workspaceStore';
 import { worktreeDir } from '../workspaces/worktreeDir';
+import { dependencyFolders } from './dependencyFolders';
 
 /** The key the prepared worktree is recorded under in worktrees.json: no trail is called this. */
 export const MAIN_WORKTREE_KEY = '_main';
 
-/** Folders a fresh checkout lacks and checks need: linked from the repo's own, never copied or installed. */
-const DEPENDENCIES = new Set(['node_modules', '.venv']);
-const SKIP = new Set(['.git', '.teamtrail', 'node_modules', '.venv', 'dist', 'build']);
-const DEPTH = 3;
-
 export type MainWorktree = { path: string; links: string[] } | { note: string };
 
-/** The dependency folders under `top`, a few levels deep (a monorepo's packages), as paths relative to it. */
-function dependencyFolders(top: string, rel = '', depth = 0): string[] {
-  let names: string[] = [];
-  try {
-    names = readdirSync(path.join(top, rel));
-  } catch {
-    return [];
-  }
-  const found = names.filter((n) => DEPENDENCIES.has(n)).map((n) => path.join(rel, n));
-  if (depth >= DEPTH) return found;
-  const deeper = names
-    .filter((n) => !SKIP.has(n) && !n.startsWith('.'))
-    .filter((n) => lstatSync(path.join(top, rel, n), { throwIfNoEntry: false })?.isDirectory())
-    .flatMap((n) => dependencyFolders(top, path.join(rel, n), depth + 1));
-  return [...found, ...deeper];
-}
-
-/** Links the repo's dependency folders into the worktree where the same parent folder exists and nothing is there. */
+/**
+ * Links the repo's dependency folders into the worktree where the same parent folder exists (a folder tracked in git at
+ * that commit) and nothing is there: `node_modules` at the root and in nested package folders like `apps/web`.
+ */
 function linkDependencies(top: string, wt: string): string[] {
   const links: string[] = [];
   for (const rel of dependencyFolders(top)) {

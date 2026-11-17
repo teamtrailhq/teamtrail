@@ -97,6 +97,7 @@ export { reviewLimitReason } from './reviewLoad/reviewLimitReason';
 export * from './model/mainChecks';
 export { mainChecksState, type MainChecksGate, type MainChecksStateInput } from './mainChecks/mainChecksState';
 export { mainChecksHeld } from './mainChecks/mainChecksHeld';
+export { mainChecksItem } from './mainChecks/mainChecksItem';
 export { failuresOf, knownFailuresOf } from './mainChecks/knownFailures';
 export * from './workspaces/workspace';
 export { parseWorkspaceSettings, serializeWorkspaceSettings } from './workspaces/workspaceFile';

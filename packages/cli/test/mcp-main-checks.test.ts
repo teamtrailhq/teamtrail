@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { chooseMain, trustKey, trustLedger } from '@teamtrail/core/agents';
+import { chooseMain, latestMainRun, trustKey, trustLedger } from '@teamtrail/core/agents';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
@@ -54,7 +54,7 @@ afterEach(async () => {
 type Next = {
   ticket: { key: string; type: string } | null;
   reason?: string;
-  mainChecks?: { waits?: string; knownFailures?: string[]; note?: string };
+  mainChecks?: { waits?: string; knownFailures?: string[]; note?: string; lookoutItem?: string };
 };
 
 async function trail(call: Call) {
@@ -84,7 +84,16 @@ describe('checks on main over MCP', () => {
     const impl = await call<Next>('next_ticket', { types: ['task'] });
     expect(impl.ticket).toBeNull();
     expect(impl.reason).toMatch(/fix main, drop the check for this trail or start anyway/);
-    await expect(call('claim_ticket', { ticket: task })).rejects.toThrow(/already fail on main/);
+    // only the trail lead's choice in the Lookout settles it: the agent sends the human to that item, never asks
+    expect(impl.reason).toMatch(
+      /Only the trail lead can choose .* the "test already fails on main" item in their queue/,
+    );
+    expect(impl.reason).toMatch(/Don't ask_human about it/);
+    const run = latestMainRun(root)!;
+    const item = encodeURIComponent(`main-checks:${mapId}:${run.id}`);
+    expect(next.mainChecks?.lookoutItem).toBe(`?item=${item}`);
+    expect(impl.reason).toContain(`?item=${item}`);
+    await expect(call('claim_ticket', { ticket: task })).rejects.toThrow(/already fail on main.*Tell the human/);
 
     chooseMain({ root, mapId, choice: { kind: 'proceed' } });
     const after = await call<Next>('next_ticket', { types: ['task'] });
