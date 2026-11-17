@@ -17,12 +17,16 @@ async function screenScriptName(i: ScreenInput, script: { name: string; strict: 
   return [{ severity: 'unsure', text: `${missing}; it runs only if \`${script.name}\` is an installed program` }];
 }
 
-/** `npm web:lint`: npm has no such command; a script of that name runs with `npm run`. */
+/** `npm web:lint`: npm has no such command; a script of that name runs with `npm run`, its other words kept. */
 async function screenUnknown(i: ScreenInput, name: string): Promise<Found[]> {
   const pkg = await readPackageJson(i.files, i.cwd);
+  const problem = `npm has no \`${name}\` command`;
   const hasScript = !!pkg && pkg !== 'invalid' && pkg.scripts.has(name);
-  const hint = hasScript ? `; the script runs with \`npm run ${name}\`` : '';
-  return [{ severity: 'wont-run', text: `npm has no \`${name}\` command${hint}` }];
+  if (!hasScript) return [{ severity: 'wont-run', text: problem }];
+  const at = i.args.indexOf(name);
+  const run = [i.program, ...i.args.slice(0, at), 'run', ...i.args.slice(at)];
+  const text = `${problem}; the script runs with \`npm run ${name}\``;
+  return [{ severity: 'wont-run', text, fix: { run, problem } }];
 }
 
 /** `npm test`, `npm run lint`, `pnpm build`, `yarn test`, `npm exec vitest`: read against the package.json. */

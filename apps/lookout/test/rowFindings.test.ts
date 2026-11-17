@@ -8,12 +8,10 @@ const finding = (check: string, command: string): RowFinding => ({
   text: 'No `nope` script in package.json',
 });
 
-test('each row shows the findings about its own command, until kept anyway', () => {
+test('each row shows the findings about its own command', () => {
   const findings = [finding('0', 'npm test'), finding('1', 'npm run nope')];
   const rows = [{ command: 'npm test' }, { command: ' npm  run nope ' }];
-  expect(rowFindings({ findings, rows, kept: new Set() }).map((f) => f.length)).toEqual([1, 1]);
-  // kept anyway: none until the command changes
-  expect(rowFindings({ findings, rows, kept: new Set(['npm run nope']) }).map((f) => f.length)).toEqual([1, 0]);
+  expect(rowFindings({ findings, rows }).map((f) => f.length)).toEqual([1, 1]);
   // a finding about the command a row had before (typing, or a row removed above it) doesn't show on it
-  expect(rowFindings({ findings, rows: [{ command: 'npm run nope' }], kept: new Set() })).toEqual([[]]);
+  expect(rowFindings({ findings, rows: [{ command: 'npm run nope' }] })).toEqual([[]]);
 });

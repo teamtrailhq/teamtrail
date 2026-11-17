@@ -16,9 +16,9 @@ function programOf(argv0: string) {
 }
 
 /** What screening finds for one command run in `cwd`. */
-async function screenArgv(run: string[], i: Omit<ScreenInput, 'args'>): Promise<Found[]> {
+async function screenArgv(run: string[], i: Omit<ScreenInput, 'args' | 'program'>): Promise<Found[]> {
   const program = programOf(run[0]);
-  const input = { ...i, args: run.slice(1) };
+  const input = { ...i, program: run[0], args: run.slice(1) };
   switch (program) {
     case 'npm':
     case 'pnpm':

@@ -1,33 +1,27 @@
 import type { CheckFinding } from '@teamtrail/core';
 import type { ReactNode } from 'react';
-import { FindingText } from './FindingText';
-
-const SEVERITY: Record<CheckFinding['severity'], string> = { 'wont-run': "Won't run", unsure: 'May not run' };
+import { FindingLine } from './FindingLine';
 
 /**
- * What reading the repo says about a check's command (verification/screenChecks.ts in core): one quiet line per
- * finding, `Won't run` ones on an amber edge, never red (it's advice, nothing waits on it), then any actions.
+ * What reading the repo says about a check's command (verification/screenChecks.ts in core): one quiet hint line
+ * per finding, right under what it's about, then any action for them all. `named` lists the check of each (several
+ * checks at once); `onFix` lets a finding that knows the command that runs offer it.
  */
-export function CheckFindingList(props: { findings: CheckFinding[]; named?: boolean; actions?: ReactNode }) {
+export function CheckFindingList(props: {
+  findings: CheckFinding[];
+  named?: boolean;
+  onFix?: (run: string[]) => void;
+  action?: ReactNode;
+}) {
   if (!props.findings.length) return null;
   return (
-    <div className="vf-findings">
+    <div className="cs-findings">
       <ul>
         {props.findings.map((f) => (
-          <li key={`${f.check} ${f.text}`} className={`t-meta vf-finding vf-finding-${f.severity}`}>
-            {SEVERITY[f.severity]}
-            {props.named ? (
-              <>
-                {' · '}
-                <code className="t-code">{f.check}</code>
-              </>
-            ) : null}
-            {' · '}
-            <FindingText text={f.text} />
-          </li>
+          <FindingLine key={`${f.check} ${f.text}`} finding={f} named={props.named} onFix={props.onFix} />
         ))}
       </ul>
-      {props.actions && <div className="vf-finding-actions">{props.actions}</div>}
+      {props.action}
     </div>
   );
 }

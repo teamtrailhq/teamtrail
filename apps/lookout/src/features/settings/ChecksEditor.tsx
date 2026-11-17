@@ -1,29 +1,21 @@
 import { useState } from 'react';
-import { Button } from '../../components/ui';
+import { Disclosure } from '../../components/ui';
 import { useCheckScreening } from '../../hooks/useCheckScreening';
 import { apiBase } from '../../lib/apiBase';
+import { commandWords } from '../../lib/commandWords';
 import { rowFindings } from '../../lib/rowFindings';
-import { CheckFindingList } from '../check-screening';
+import { CheckEditRow } from './CheckEditRow';
+import { ChecksAdd } from './ChecksAdd';
+import { ChecksSave, type SaveState } from './ChecksSave';
+import type { EditedCheck } from './editedCheck';
 import type { VerificationConfigView } from './useVerificationConfig';
 
-type Row = { name: string; command: string };
-
-/** Common checks, offered as one click each. */
-const SUGGESTED: Row[] = [
-  { name: 'test', command: 'npm test' },
-  { name: 'lint', command: 'npm run lint' },
-  { name: 'typecheck', command: 'npm run typecheck' },
-];
-
 /** The checks as the file has them, in the order they run. */
-function rowsOf(view: VerificationConfigView): Row[] {
+function rowsOf(view: VerificationConfigView): EditedCheck[] {
   const c = view.config;
   if (!c) return [];
   return c.run.filter((n) => c.checks[n]).map((n) => ({ name: n, command: c.checks[n].run.join(' ') }));
 }
-
-/** A command as words: split on spaces, never handed to a shell. */
-const words = (command: string) => command.trim().split(/\s+/).filter(Boolean);
 
 /**
  * Set the checks every completion runs, from here: each a name and a command, kept as words. Saving writes
@@ -31,28 +23,25 @@ const words = (command: string) => command.trim().split(/\s+/).filter(Boolean);
  * machine Teamtrail runs on), so it asks once that you know what they run.
  */
 export function ChecksEditor({ view }: { view: VerificationConfigView }) {
-  const [rows, setRows] = useState<Row[]>(() => rowsOf(view));
+  const [rows, setRows] = useState<EditedCheck[]>(() => rowsOf(view));
+  const [added, setAdded] = useState(false);
   const [sure, setSure] = useState(false);
-  const [state, setState] = useState<{ kind: 'idle' | 'saving' | 'saved' } | { kind: 'error'; text: string }>({
-    kind: 'idle',
-  });
-  const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
-  const remove = (i: number) => setRows(rows.filter((_, j) => j !== i));
-  // read against the repo as they're typed: a command that can't run is said next to it, never refused
-  const [kept, setKept] = useState<ReadonlySet<string>>(new Set());
+  const [state, setState] = useState<SaveState>({ kind: 'idle' });
+  const set = (i: number, patch: Partial<EditedCheck>) =>
+    setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  // read against the repo as they're typed: a command that can't run is said under it, never refused
   const screened = rows.map((r, n) => ({
     name: String(n),
-    run: words(r.command),
+    run: commandWords(r.command),
     cwd: view.config?.checks[r.name]?.cwd,
   }));
   const screening = useCheckScreening(screened);
-  const findings = rowFindings({ findings: screening, rows, kept });
-  const offered = SUGGESTED.filter((s) => !rows.some((r) => r.name === s.name));
+  const findings = rowFindings({ findings: screening, rows });
   const save = async () => {
     setState({ kind: 'saving' });
     const checks = rows
       .filter((r) => r.name.trim() && r.command.trim())
-      .map((r) => ({ name: r.name.trim(), run: words(r.command) }));
+      .map((r) => ({ name: r.name.trim(), run: commandWords(r.command) }));
     const res = await fetch(`${apiBase()}/verification/config`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -64,73 +53,36 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
   };
   return (
     <div className="vf-editor">
-      {rows.map((r, i) => (
-        <div key={i} className="vf-edit-check">
-          <div className="vf-edit-row">
-            <input
-              aria-label="Name"
-              value={r.name}
-              placeholder="name"
-              onChange={(e) => set(i, { name: e.target.value })}
+      {rows.length > 0 && (
+        <ul className="vf-edit-list">
+          {rows.map((r, i) => (
+            <CheckEditRow
+              key={i}
+              check={r}
+              findings={findings[i]}
+              focus={added && i === rows.length - 1}
+              onChange={(patch) => set(i, patch)}
+              onRemove={() => setRows(rows.filter((_, j) => j !== i))}
             />
-            <input
-              aria-label="Command"
-              className="t-code"
-              value={r.command}
-              placeholder="npm test"
-              onChange={(e) => set(i, { command: e.target.value })}
-            />
-            <Button size="sm" variant="ghost" onClick={() => remove(i)}>
-              Remove
-            </Button>
-          </div>
-          <CheckFindingList
-            findings={findings[i]}
-            actions={
-              <>
-                <Button size="sm" variant="ghost" onClick={() => remove(i)}>
-                  Remove check
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setKept(new Set([...kept, words(r.command).join(' ')]))}
-                >
-                  Keep anyway
-                </Button>
-              </>
-            }
-          />
-        </div>
-      ))}
-      <div className="vf-edit-add">
-        {offered.map((s) => (
-          <Button key={s.name} size="sm" variant="ghost" onClick={() => setRows([...rows, s])}>
-            + {s.command}
-          </Button>
-        ))}
-        <Button size="sm" variant="ghost" onClick={() => setRows([...rows, { name: '', command: '' }])}>
-          + Another
-        </Button>
-      </div>
-      {rows.some((r) => !SUGGESTED.some((s) => s.name === r.name)) && (
-        <p className="vf-edit-hint t-meta">
-          Run from the repository&apos;s root, as words (no pipes or <code>&amp;&amp;</code>): the script must already
-          be in the repo. For example <code>npm run e2e</code>, <code>make test</code>, <code>./scripts/check.sh</code>{' '}
-          or <code>pytest -q</code>.
-        </p>
+          ))}
+        </ul>
       )}
-      <label className="vf-edit-sure">
-        <input type="checkbox" checked={sure} onChange={(e) => setSure(e.target.checked)} />
-        <span>I know what these commands run, and approve them</span>
-      </label>
-      <div className="vf-edit-save">
-        <Button size="sm" disabled={!sure || state.kind === 'saving'} onClick={() => void save()}>
-          {state.kind === 'saving' ? 'Saving…' : 'Save checks'}
-        </Button>
-        {state.kind === 'saved' && <span className="t-meta">Saved and approved.</span>}
-        {state.kind === 'error' && <span className="vf-err">{state.text}</span>}
-      </div>
+      <ChecksAdd
+        empty={rows.length === 0}
+        onAdd={(check) => {
+          setAdded(true);
+          setRows([...rows, check]);
+        }}
+      />
+      <Disclosure label="How checks run">
+        <p className="t-meta">
+          Each command runs from the repository&apos;s root as words, never through a shell: no pipes or{' '}
+          <code className="t-code">&amp;&amp;</code>, and what it runs must already be in the repo. For example{' '}
+          <code className="t-code">npm run e2e</code>, <code className="t-code">make test</code>,{' '}
+          <code className="t-code">./scripts/check.sh</code> or <code className="t-code">pytest -q</code>.
+        </p>
+      </Disclosure>
+      <ChecksSave sure={sure} onSure={setSure} state={state} onSave={() => void save()} />
     </div>
   );
 }

@@ -46,6 +46,15 @@ describe('screenChecks', () => {
     expect(await screen('npm lint')).toEqual([
       { severity: 'wont-run', text: 'npm has no `lint` command; the script runs with `npm run lint`' },
     ]);
+    const [fixed] = await screenChecks({
+      checks: [{ name: 'c', run: ['npm', '--silent', 'lint', '--fix'] }],
+      files: REPO,
+    });
+    expect(fixed.fix).toEqual({
+      run: ['npm', '--silent', 'run', 'lint', '--fix'],
+      problem: 'npm has no `lint` command',
+    });
+    expect((await screenChecks({ checks: [{ name: 'c', run: ['npm', 'nope'] }], files: REPO }))[0].fix).toBeUndefined();
     expect(await screen('npm ci')).toEqual([]);
     expect(await screen('npm audit --omit dev')).toEqual([]);
   });

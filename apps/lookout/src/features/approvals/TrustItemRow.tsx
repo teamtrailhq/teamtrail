@@ -37,7 +37,7 @@ export function TrustItemRow(props: { item: TrustItem; busy: boolean; local: boo
           <CheckFindingList
             findings={item.screening ?? []}
             named
-            actions={props.local && <a {...settingsSectionLink('verification')}>Edit checks</a>}
+            action={props.local && <a {...settingsSectionLink('verification')}>Edit checks</a>}
           />
           {props.local && (
             <Button size="sm" disabled={props.busy} onClick={props.onApprove}>

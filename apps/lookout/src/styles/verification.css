@@ -182,49 +182,81 @@
   line-height: var(--lh-snug);
   word-break: normal;
 }
-/* The checks editor (settings/ChecksEditor.tsx): one row per check, then suggestions, the one question, Save. */
+/* The checks editor (settings/ChecksEditor.tsx): one line per check with its findings under the command, Add check,
+ * how checks run behind a disclosure, then a footer apart: the one question and Save. */
 .vf-editor {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-8);
+  gap: var(--sp-12);
   padding: var(--sp-12);
   border: 1px solid var(--line2);
 }
+.vf-edit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
 .vf-edit-row {
   display: grid;
-  grid-template-columns: minmax(80px, 140px) 1fr auto;
-  gap: var(--sp-8);
+  grid-template-columns: minmax(80px, 140px) minmax(0, 1fr) auto;
+  gap: var(--sp-6) var(--sp-8);
   align-items: center;
 }
-.vf-edit-add,
-.vf-edit-save {
+.vf-edit-row input {
+  min-width: 0;
+}
+.vf-edit-remove {
+  width: var(--h-md);
+  height: var(--h-md);
+}
+/* Findings sit under the command, in the field's hint place. */
+.vf-edit-row .cs-findings {
+  grid-column: 2 / 3;
+}
+.vf-edit-add {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-8);
 }
+.vf-edit-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8) var(--sp-12);
+  padding-top: var(--sp-12);
+  border-top: 1px solid var(--line);
+}
+.vf-edit-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+  margin-left: auto;
+}
 .vf-edit-sure {
   display: flex;
   align-items: center;
   gap: var(--sp-8);
-  font-size: var(--fs-sm);
+  font: var(--type-body);
 }
 .vf-edit-sure input {
   width: auto;
   height: auto;
 }
-.vf-edit-check {
+/* What reading the repo says about a check's command (check-screening/): quiet hint lines that wrap, a dot amber
+ * when it won't run, never red (it's advice, nothing waits on it). */
+.cs-findings {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-6);
+  align-items: flex-start;
+  gap: var(--sp-4);
 }
-/* What reading the repo says about a check's command (check-screening/CheckFindingList.tsx): advice, so amber at most. */
-.vf-findings {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-6);
-}
-.vf-findings ul {
+.cs-findings ul {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -232,25 +264,40 @@
   flex-direction: column;
   gap: var(--sp-4);
 }
-.vf-finding {
-  padding-left: var(--sp-8);
-  border-left: 2px solid var(--edge-neutral);
-}
-.vf-finding-wont-run {
-  border-left-color: var(--edge-attention);
-}
-.vf-finding-actions {
+.cs-finding {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-8);
+  align-items: baseline;
+  gap: var(--sp-6);
+  color: var(--dim);
+  overflow-wrap: anywhere;
+}
+.cs-finding .sep {
+  color: var(--faint);
+}
+.cs-severity {
+  color: var(--text);
+}
+.cs-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  background: var(--faint);
+  transform: translateY(-1px);
+}
+.cs-finding-wont-run .cs-dot {
+  background: var(--edge-attention);
 }
 @media (max-width: 640px) {
   .vf-edit-row {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
   .vf-edit-row input[aria-label='Command'] {
     grid-column: 1 / -1;
     grid-row: 2;
+  }
+  .vf-edit-row .cs-findings {
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 }
 
