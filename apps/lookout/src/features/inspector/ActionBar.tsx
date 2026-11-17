@@ -17,7 +17,6 @@ export function ActionBar(props: {
   const session = v.session;
   const chat = session && primary?.id !== 'answer';
   const done = v.t.state === 'closed' && v.t.closeReason === 'completed';
-  const verified = v.proof?.proof.status === 'verified';
   return (
     <>
       <div className="actions action-bar">
@@ -26,7 +25,7 @@ export function ActionBar(props: {
             {primary.label}
           </Button>
         )}
-        {done && <MergeOnApprove mapId={v.snap.map.id} ticketId={v.t.id} verified={verified} />}
+        {done && <MergeOnApprove mapId={v.snap.map.id} ticketId={v.t.id} proof={v.proof} />}
         {chat && (
           <Button onClick={() => props.onOpenChat(session.id)} data-tip={`The conversation with ${session.agent}`}>
             Open chat

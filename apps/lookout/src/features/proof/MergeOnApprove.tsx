@@ -1,68 +1,19 @@
-import { webUrl } from '@teamtrail/core';
-import { useState } from 'react';
-import { Button } from '../../components/ui';
 import { managedSignIn } from '../../lib/managedSignIn';
-
-type State =
-  | { kind: 'idle' }
-  | { kind: 'confirm' }
-  | { kind: 'working' }
-  | { kind: 'merged'; url?: string }
-  | { kind: 'error'; text: string };
+import { ApproveAndMerge } from './ApproveAndMerge';
+import { MergeAnyway } from './MergeAnyway';
+import type { TicketProofView } from './useTicketProof';
 
 /**
- * Behind a server that merges pull requests (managedSignIn.ts `merge`): on a done, verified ticket, Approve and merge.
- * The server checks it all again (done, verified, the pull request's head still the verified commit, who may approve)
- * and merges only at that commit; this asks once, then says what happened. Nothing elsewhere.
+ * Behind a server that merges pull requests (managedSignIn.ts `merge`), a done ticket always has a way to merge:
+ * verified, Approve and merge; not verified, Merge anyway, with why in one line and an explicit question first. The
+ * server checks it all again (done, the proof or the trail lead's acceptance of its gaps, the pull request's head
+ * still the proof's commit, who may approve) and merges only at that commit. Nothing elsewhere.
  */
-export function MergeOnApprove(props: { mapId: string; ticketId: string; verified: boolean }) {
-  const [state, setState] = useState<State>({ kind: 'idle' });
+export function MergeOnApprove(props: { mapId: string; ticketId: string; proof?: TicketProofView }) {
   const path = managedSignIn()?.merge;
-  if (!path || !props.verified) return null;
-  const merge = async () => {
-    setState({ kind: 'working' });
-    try {
-      const res = await fetch(path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trail: props.mapId, ticket: props.ticketId }),
-      });
-      const body = (await res.json().catch(() => ({}))) as { merged?: boolean; url?: string; error?: string };
-      if (res.ok && body.merged) return setState({ kind: 'merged', url: body.url ? webUrl(body.url) : undefined });
-      setState({ kind: 'error', text: String(body.error ?? `The server answered ${res.status}.`).slice(0, 300) });
-    } catch {
-      setState({ kind: 'error', text: "The server didn't answer. Try again." });
-    }
-  };
-  if (state.kind === 'merged')
-    return (
-      <span className="t-meta merge-note">
-        Approved and merged at the verified commit.{' '}
-        {state.url && (
-          <a href={state.url} target="_blank" rel="noreferrer">
-            See the pull request
-          </a>
-        )}
-      </span>
-    );
-  if (state.kind === 'confirm')
-    return (
-      <div className="merge-confirm">
-        <span className="t-meta">Merge its pull request, at exactly the commit Teamtrail verified?</span>
-        <Button size="sm" onClick={() => void merge()}>
-          Merge
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => setState({ kind: 'idle' })}>
-          Cancel
-        </Button>
-      </div>
-    );
-  return (
-    <div className="merge-confirm">
-      <Button size="sm" disabled={state.kind === 'working'} onClick={() => setState({ kind: 'confirm' })}>
-        {state.kind === 'working' ? 'Merging…' : 'Approve and merge'}
-      </Button>
-      {state.kind === 'error' && <span className="t-meta">{state.text}</span>}
-    </div>
-  );
+  const proof = props.proof?.proof;
+  if (!path || !proof) return null;
+  const at = { path, mapId: props.mapId, ticketId: props.ticketId };
+  if (proof.status === 'verified') return <ApproveAndMerge {...at} />;
+  return <MergeAnyway {...at} gaps={proof.gaps} />;
 }

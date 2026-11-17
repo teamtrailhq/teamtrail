@@ -26,8 +26,8 @@ export interface AttentionInput {
   sessions: SessionInfo[];
   /** Tickets waiting on the trail lead (verification/approvals.ts). */
   approvals: ApprovalItem[];
-  /** PR/CI snapshots with their open mismatch flags. */
-  syncs: Pick<TicketSync, 'mapId' | 'ticketId' | 'ticketKey' | 'flags'>[];
+  /** PR/CI snapshots with open mismatch flags or an open pull request. */
+  syncs: (Pick<TicketSync, 'mapId' | 'ticketId' | 'ticketKey' | 'flags'> & Partial<Pick<TicketSync, 'pr'>>)[];
   leases: TicketLease[];
   knowledge: KnowledgeEntry[];
   briefs: DiscoveryBrief[];

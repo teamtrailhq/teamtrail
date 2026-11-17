@@ -1,6 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { journalFile } from '../history/journalFile';
 import { PROOF_POST_JOURNAL } from '../model/proofPost';
+import { gapsHash } from '../proof/gapsHash';
+import { mergeAcceptances } from '../proof/mergeAcceptances';
 import { proofForTicket } from '../proof/proofForTicket';
 import { proofPostSetting } from '../proof/proofPostSetting';
 import { readProofPost } from '../proof/proofPostStore';
@@ -15,7 +17,8 @@ type ProofContext = RouteContext & { configDir?: string; kick?: () => void };
  * `/proof`: Verified by Teamtrail in the Lookout.
  *   GET /proof/settings                    `{ enabled }`: whether this machine posts proofs to pull requests
  *   PUT /proof/settings  body `{ enabled }`  the trail lead's switch, this machine only (thisMachineRoutes.ts), journaled
- *   GET /proof/ticket?mapId=&ticketId=     `{ proof, markdown, post? }`: the ticket's proof and what was last posted
+ *   GET /proof/ticket?mapId=&ticketId=     `{ proof, markdown, post?, gapsHash, mergeAnyway? }`: the ticket's proof, what
+ *     was last posted, the hash of its gaps and the trail lead's Merge anyway that accepted exactly them (mergeAnyway.ts)
  * False when the path doesn't match.
  */
 export async function handleProof(ctx: ProofContext, req: IncomingMessage, res: ServerResponse, url: URL) {
@@ -73,5 +76,14 @@ async function ticketProof(ctx: ProofContext, res: ServerResponse, url: URL) {
   const proof = proofForTicket({ root: ctx.root, snap, ticket, decisions: await adapter.listDecisions(mapId) });
   const post = readProofPost(ctx.root, mapId, ticketId);
   const { markdown, keyFile } = signedProofMarkdown(ctx.root, proof, ctx.configDir);
-  sendJson(res, 200, { proof, markdown, ...(keyFile ? { keyFile } : {}), ...(post ? { post } : {}) });
+  const hash = gapsHash({ head: proof.git?.head ?? null, gaps: proof.gaps });
+  const accepted = mergeAcceptances.covering(ctx.root, { mapId, ticketId, gapsHash: hash });
+  sendJson(res, 200, {
+    proof,
+    markdown,
+    gapsHash: hash,
+    ...(keyFile ? { keyFile } : {}),
+    ...(post ? { post } : {}),
+    ...(accepted ? { mergeAnyway: { by: accepted.by, at: accepted.at } } : {}),
+  });
 }

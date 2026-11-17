@@ -11,6 +11,10 @@ export interface TicketProofView {
   keyFile?: string;
   /** What this machine last posted to the ticket's pull request. */
   post?: ProofPostRecord;
+  /** `sha256:` of the proof's commit and gaps: what Merge anyway accepts (core's proof/gapsHash.ts). */
+  gapsHash?: string;
+  /** The trail lead's Merge anyway that accepted exactly these gaps, when there is one. */
+  mergeAnyway?: { by: string; at: number };
 }
 
 /** A ticket's proof as the server builds it, fresh after verification and posting events. null without a server. */

@@ -41,7 +41,11 @@ export async function gradeAttempt(i: GradeInput): Promise<{ outcome: Graded; cr
   const known = { root: i.root, known: i.known ?? [], asked: i.info.checks.length, folders: [i.repoRoot] };
   const outcome = withKnownFailures(checked, known);
   if (outcome.checks.length) await flagIfStale(i.root, i.git);
-  const criteria = gradeCriteria(i, outcome.checks);
+  const criteria = gradeCriteria(
+    i,
+    outcome.checks,
+    outcome.knownFailures?.map((k) => k.name),
+  );
   if (!criteria) return { outcome };
   const unmet = [...criteria.missing, ...criteria.failed];
   if (outcome.result !== 'pass' || !unmet.length) return { outcome, criteria };

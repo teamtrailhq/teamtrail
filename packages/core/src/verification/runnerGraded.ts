@@ -101,7 +101,11 @@ export async function runnerGraded(
     evidence: job.sub.criteria,
     waived: job.waived,
   };
-  const criteria = gradeCriteria(at, outcome.checks);
+  const criteria = gradeCriteria(
+    at,
+    outcome.checks,
+    outcome.knownFailures?.map((k) => k.name),
+  );
   const unmet = criteria ? [...criteria.missing, ...criteria.failed] : [];
   const graded = { ...outcome, git: read.git, ...(criteria ? { criteria } : {}) };
   if (outcome.result !== 'pass' || !unmet.length) return graded;

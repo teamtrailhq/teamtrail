@@ -53,9 +53,15 @@ describe('acceptance criteria', () => {
     const notRun = checkCriteria(crit.slice(0, 1), [{ id: 'AC-1', evidence: 'check:e2e' }], [check('test', 0)]);
     expect(notRun.lines[0]).toContain("didn't run");
     // a check the trail lead accepted the ticket without proves nothing either way: the agent's word
-    const waived = checkCriteria(crit.slice(0, 1), [{ id: 'AC-1', evidence: 'check:test' }], [], ['test']);
+    const waived = checkCriteria(crit.slice(0, 1), [{ id: 'AC-1', evidence: 'check:test' }], [], { waived: ['test'] });
     expect(waived).toMatchObject({ failed: [], claimed: ['AC-1'] });
     expect(waived.lines[0]).toContain('check:test (waived)');
+    // a check that failed only as it already does on main proves nothing either way: the agent's word, not a fail
+    const known = checkCriteria(crit.slice(0, 1), [{ id: 'AC-1', evidence: 'check:test' }], [check('test', 127)], {
+      known: ['test'],
+    });
+    expect(known).toMatchObject({ failed: [], claimed: ['AC-1'] });
+    expect(known.lines[0]).toContain('check:test (already failing on main)');
     const stated = checkCriteria(
       crit.slice(1, 2),
       [{ id: 'AC-2', evidence: 'test:workspace isolation', note: 'scoped' }],

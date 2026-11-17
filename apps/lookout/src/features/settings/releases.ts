@@ -22,6 +22,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.59.4',
+    date: '2026-11-17',
+    items: [
+      'A check that fails only as it already does on main no longer sends the first completion back for rework when an acceptance criterion names it',
+      "Where Teamtrail merges pull requests, a done ticket that isn't verified offers Merge anyway: why in one line, one question, and it's kept as your decision",
+      'A done ticket whose pull request is still open shows in your queue as ready to merge',
+    ],
+  },
+  {
     version: '0.59.3',
     date: '2026-11-17',
     items: [
@@ -156,36 +165,6 @@ export const RELEASES: Release[] = [
     items: [
       'On the map, a done ticket’s check is green when its work is verified, grey when it isn’t',
       'Cards say “checks running” while a completion is checked, and a Legend explains the dots',
-    ],
-  },
-  {
-    version: '0.49.0',
-    date: '2026-11-16',
-    items: [
-      'In Teamtrail Cloud, Start the trail right after New trail, or from the trail’s header: agents start in place',
-      'A trail started in the Lookout gets your project’s default verification level, as one an agent starts does',
-    ],
-  },
-  {
-    version: '0.48.1',
-    date: '2026-11-16',
-    items: ['Scout’s Get started sits in the bottom-right corner; adding your own check shows examples'],
-  },
-  {
-    version: '0.48.0',
-    date: '2026-11-16',
-    items: ['In Teamtrail Cloud, Scout keeps Get started in the corner until your workspace is set up'],
-  },
-  {
-    version: '0.47.0',
-    date: '2026-11-16',
-    items: ['Set the checks every finished ticket must pass in Settings → Verification, no file to edit'],
-  },
-  {
-    version: '0.46.0',
-    date: '2026-11-16',
-    items: [
-      'In Teamtrail Cloud, Approve and merge on a verified ticket merges its pull request at the commit that was checked',
     ],
   },
   ...LATER_RELEASES,
