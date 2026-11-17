@@ -42,6 +42,12 @@ describe('screenChecks', () => {
     expect((await screen('yarn e2e'))[0].severity).toBe('unsure');
     expect(await screen('pnpm install')).toEqual([]);
     expect(await screen('npm --workspace x run nope')).toEqual([]);
+    expect(await screen('npm web:asdasd')).toEqual([{ severity: 'wont-run', text: 'npm has no `web:asdasd` command' }]);
+    expect(await screen('npm lint')).toEqual([
+      { severity: 'wont-run', text: 'npm has no `lint` command; the script runs with `npm run lint`' },
+    ]);
+    expect(await screen('npm ci')).toEqual([]);
+    expect(await screen('npm audit --omit dev')).toEqual([]);
   });
 
   it('looks for a tool among the dependencies', async () => {

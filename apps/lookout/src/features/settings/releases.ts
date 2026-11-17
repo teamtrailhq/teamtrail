@@ -21,6 +21,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.59.1',
+    date: '2026-11-17',
+    items: [
+      "A check like `npm web:lint`, a command npm doesn't have, is now flagged, with `npm run web:lint` suggested",
+    ],
+  },
+  {
     version: '0.59.0',
     date: '2026-11-17',
     items: [
