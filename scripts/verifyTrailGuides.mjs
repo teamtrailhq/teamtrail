@@ -11,7 +11,12 @@ const OWN = 'team-notes';
 /** After a resize: the layout's transitions have finished and two frames were painted, so a shot shows one layout. */
 const settled = (page) =>
   page.evaluate(async () => {
-    await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)));
+    await Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    );
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   });
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Panel } from '../components/ui';
 import { WaitingOnYou } from '../features/inbox';
 import { AgentsAtWork, TrailBar, UpNextList, useTrailBarMore } from '../features/trail-bar';
@@ -18,6 +19,8 @@ export function AppTrailBar(props: {
   trail: ReturnType<typeof useLiveTrail>;
   /** On a phone the lists always show; on a wide screen three chips fit beside the bar, else two. */
   bp: Breakpoint;
+  /** The trail's brief while it waits for review, for Needs you before the ranked queue loads. */
+  brief?: ReactNode;
 }) {
   const { api, nav, attn, trail } = props;
   const [more, setMore] = useTrailBarMore();
@@ -54,6 +57,7 @@ export function AppTrailBar(props: {
                 if (q) nav.openQuestion(q.id);
               }}
               onOpenTicket={nav.openTicket}
+              brief={props.brief}
             />
           </Panel>
           <AgentsAtWork working={working} now={now} onTicket={onTicket} onOpenChat={(id) => nav.openChat(id)} />

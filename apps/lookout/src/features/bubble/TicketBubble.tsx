@@ -72,7 +72,12 @@ export function TicketBubble(
         />
       )}
       {need.kind === 'item' && <ItemNeed need={need} now={v.now} pr={pr} actions={actions} />}
-      <BubbleTicketPart v={v} under={need.kind !== 'none'} onFullTicket={props.onFullTicket} />
+      <BubbleTicketPart
+        v={v}
+        under={need.kind !== 'none'}
+        said={need.kind === 'item' ? need.item.title : undefined}
+        onFullTicket={props.onFullTicket}
+      />
       {need.kind !== 'item' && actions}
     </>
   );

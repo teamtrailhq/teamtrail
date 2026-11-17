@@ -8,7 +8,7 @@ import { trailPhase } from './trailPhase';
 import { TrailPhaseLine } from './TrailPhaseLine';
 
 /**
- * With no ticket selected, the trail as a whole: its phase, what waits on the human (how many, and the top item),
+ * The trail as a whole (on the Plan page): its phase, what waits on the human (how many, and the top item),
  * what each agent is on right now, and what is ready next. Each row opens its item or ticket.
  */
 export function TrailGlance(props: {
@@ -72,7 +72,7 @@ export function TrailGlance(props: {
           ))}
         </DetailSection>
       )}
-      <p className="t-meta glance-hint">Pick a ticket on the map to see it here.</p>
+      <p className="t-meta glance-hint">A ticket opens in its bubble on the map.</p>
     </div>
   );
 }

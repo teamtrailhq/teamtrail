@@ -71,7 +71,7 @@ export function App() {
     <AppSettings rt={rt} api={api} bp={bp} prefs={prefs} update={updatePrefs} settings={settings} />
   );
   const records = (nav.statsOpen || nav.page) && (
-    <RecordViews api={api} bp={bp} nav={nav} scoped={scoped} done={trail.done} />
+    <RecordViews api={api} bp={bp} nav={nav} scoped={scoped} done={trail.done} attn={attn} />
   );
   const covered = settingsPage || overview || records;
   useOpeningBubble({ ...api, view, busy: !!covered || !!api.selection, open: attn.open });
@@ -99,7 +99,7 @@ export function App() {
       )}
     />
   );
-  const trailBar = <AppTrailBar api={api} nav={nav} attn={attn} trail={live} bp={bp} />;
+  const trailBar = <AppTrailBar api={api} nav={nav} attn={attn} trail={live} bp={bp} brief={trail.inboxCard} />;
   const needs = view?.items ?? [];
   const briefing = (
     <AppBriefing

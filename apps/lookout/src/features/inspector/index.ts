@@ -6,3 +6,4 @@ export { useTicketActions } from './useTicketActions';
 export { useTicketView, type TicketView } from './useTicketView';
 export type { Form } from './types';
 export { UnspecifiedDetail } from './UnspecifiedDetail';
+export { TrailGlance } from './TrailGlance';

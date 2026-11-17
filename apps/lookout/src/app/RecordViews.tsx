@@ -1,9 +1,11 @@
 import type { ActivityState, TrailDone } from '@teamtrail/core';
 import { DecisionsView } from '../features/decisions';
+import { TrailGlance } from '../features/inspector';
 import { ActivityPage, PlanPage } from '../features/pages';
 import { PerformanceView } from '../features/performance';
-import type { Breakpoint, LookoutApi } from '../hooks';
+import { type Breakpoint, type LookoutApi, useNow } from '../hooks';
 import type { useAppNavigation } from './useAppNavigation';
+import type { useAttentionUi } from './useAttentionUi';
 
 /** The pages that cover the map: Trail stats (from Records), and Plan, Activity and the Logbook (the view tabs). */
 export function RecordViews({
@@ -12,6 +14,7 @@ export function RecordViews({
   nav,
   scoped,
   done,
+  attn,
 }: {
   api: LookoutApi;
   bp: Breakpoint;
@@ -19,7 +22,9 @@ export function RecordViews({
   /** This trail's sessions and feed. */
   scoped: ActivityState;
   done?: TrailDone;
+  attn: ReturnType<typeof useAttentionUi>;
 }) {
+  const now = useNow(5000);
   const onTicket = (id: string) => api.mapId && nav.openTicket(api.mapId, id);
   if (nav.statsOpen) return <PerformanceView api={api} bp={bp} onClose={() => nav.setStatsOpen(false)} />;
   switch (nav.page) {
@@ -36,6 +41,19 @@ export function RecordViews({
           selection={api.selection}
           onSelect={nav.select}
           onAudit={() => nav.openDecisions()}
+          glance={
+            api.snap && (
+              <TrailGlance
+                snap={api.snap}
+                sessions={scoped.sessions}
+                attention={attn.attention.view}
+                done={done}
+                now={now}
+                onTicket={onTicket}
+                onItem={attn.open}
+              />
+            )
+          }
         />
       );
     case 'activity':

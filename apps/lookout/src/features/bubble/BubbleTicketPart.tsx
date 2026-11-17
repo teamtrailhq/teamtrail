@@ -8,7 +8,13 @@ import { AgentLine } from './AgentLine';
  * The ticket in the bubble, under what it needs from you: its key and type, its title, where it stands (and the
  * agent on it, with its model and step), what it asks and what "done" means. Everything else is in the full ticket.
  */
-export function BubbleTicketPart(props: { v: TicketView; under: boolean; onFullTicket: () => void }) {
+export function BubbleTicketPart(props: {
+  v: TicketView;
+  under: boolean;
+  /** What the top of the bubble already says (the item it leads with): not said again here. */
+  said?: string;
+  onFullTicket: () => void;
+}) {
   const { v } = props;
   const s = v.standing;
   const health = v.lease && leaseHealth(v.lease, v.now);
@@ -22,11 +28,13 @@ export function BubbleTicketPart(props: { v: TicketView; under: boolean; onFullT
         <span className="state-title">{s.title}</span>
         <MetaLine parts={s.parts} />
       </div>
-      {v.notices.map((n) => (
-        <span key={n.text} className="t-meta bubble-notice">
-          {n.text}
-        </span>
-      ))}
+      {v.notices
+        .filter((n) => n.text !== props.said)
+        .map((n) => (
+          <span key={n.text} className="t-meta bubble-notice">
+            {n.text}
+          </span>
+        ))}
       {v.session && <AgentLine session={v.session} />}
       <WhatSection v={v} />
       <button type="button" className="link full-ticket" onClick={props.onFullTicket}>

@@ -37,10 +37,15 @@ license: MIT
 You make sure everyone can use what this ticket builds. Tab through every new control and check the labels.
 `;
 
-/** After a resize: the layout's transitions have finished and two frames were painted, so a shot shows one layout. */
+/** After a resize: the layout's transitions have finished (not the endless live-state animations) and two frames were painted, so a shot shows one layout. */
 const settled = (page) =>
   page.evaluate(async () => {
-    await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)));
+    await Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    );
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   });
 

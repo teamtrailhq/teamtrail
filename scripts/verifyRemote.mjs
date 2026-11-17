@@ -174,11 +174,15 @@ export async function verifyRemote({ browser, cli, log, shots }) {
     );
     await page.keyboard.press('Escape');
     await page.locator('.settings-page').waitFor({ state: 'detached' });
+    // the agents are on the Activity page
+    const views = page.locator('.view-tabs');
+    await views.getByRole('button', { name: 'Activity', exact: true }).click();
     await page
       .locator('.sessions-list li:not(.claim)', { hasText: taken.claimed.assignee })
       .first()
       .waitFor({ timeout: 20_000 });
     if (shots) await page.screenshot({ path: path.join(shots, '31-remote-agent-working.png') });
+    await views.getByRole('button', { name: 'Map', exact: true }).click();
     // The remote agent can't be the human's voice: no answer_question in its tools, and its own question stays open.
     const remoteTools = (await remote.client.listTools()).tools.map((t) => t.name);
     const localTools = (await stdio.listTools()).tools.map((t) => t.name);

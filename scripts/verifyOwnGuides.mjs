@@ -45,7 +45,12 @@ async function shotBoth(page, shot, name) {
     // shoot once colour transitions have settled, so no edge is caught halfway
     await page.evaluate((t) => {
       document.documentElement.dataset.theme = t;
-      return Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)));
+      return Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+          .map((a) => a.finished.catch(() => undefined)),
+      );
     }, theme);
     await shot(`${name}-${theme}`);
   }
@@ -64,9 +69,14 @@ async function approveInLookout({ page, url, shot }) {
   // approved looks like any other usable guide: the neutral edge, once its colour has finished changing
   await row.locator('.ds-row.edge-neutral').waitFor({ timeout: 15_000 });
   await page.mouse.move(0, 0);
-  await row
-    .locator('.ds-row')
-    .evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished.catch(() => undefined))));
+  await row.locator('.ds-row').evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations()
+        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
   await shotBoth(page, shot, '24-own-guide-approved');
   await page.keyboard.press('Escape');
   await page.locator('.settings-page').waitFor({ state: 'detached' });
