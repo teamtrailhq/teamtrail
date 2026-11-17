@@ -3,6 +3,7 @@
  * must equal packages/cli/package.json (a test checks). A feature PR adds a release with a minor bump and 1–4 short,
  * user-facing lines; a fix PR bumps the patch. `NEXT` only teases what's coming.
  */
+import { LATER_RELEASES } from './laterReleases';
 import { MID_RELEASES } from './midReleases';
 import { OLDER_RELEASES } from './olderReleases';
 
@@ -20,6 +21,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 ];
 
 export const RELEASES: Release[] = [
+  {
+    version: '0.59.3',
+    date: '2026-11-17',
+    items: [
+      'Checks on main find the dependencies of a package folder with its own install, like apps/web/node_modules',
+      'An agent held by checks failing on main tells you to choose in the Lookout, instead of asking you a question',
+    ],
+  },
   {
     version: '0.59.2',
     date: '2026-11-17',
@@ -179,26 +188,7 @@ export const RELEASES: Release[] = [
       'In Teamtrail Cloud, Approve and merge on a verified ticket merges its pull request at the commit that was checked',
     ],
   },
-  {
-    version: '0.45.0',
-    date: '2026-11-16',
-    items: ['In Teamtrail Cloud, Run agents on the trail takes you straight to its agents'],
-  },
-  {
-    version: '0.44.2',
-    date: '2026-11-16',
-    items: ['The middle of the Lookout gets the same margin at the top as at its sides'],
-  },
-  {
-    version: '0.44.1',
-    date: '2026-11-16',
-    items: ['Text you type in forms is full size (14px) again, not the small caps of the label above it'],
-  },
-  {
-    version: '0.44.0',
-    date: '2026-11-16',
-    items: ['In a hosted Lookout, the theme toggle and Settings → Appearance change your theme on the server too'],
-  },
+  ...LATER_RELEASES,
   ...MID_RELEASES,
   ...OLDER_RELEASES,
 ];
