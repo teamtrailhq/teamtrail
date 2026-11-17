@@ -1,7 +1,9 @@
 export { ChecklistAnswers } from './ChecklistAnswers';
+export { ChecklistSummary } from './ChecklistSummary';
 export { GuideChip } from './GuideChip';
 export { clipName } from './guideLabels';
 export { GuidesSection } from './GuidesSection';
+export { TicketGuideNames } from './TicketGuideNames';
 export { TicketGuides } from './TicketGuides';
 export { TrailGuidesSection } from './TrailGuidesSection';
 export { useGuides } from './useGuides';

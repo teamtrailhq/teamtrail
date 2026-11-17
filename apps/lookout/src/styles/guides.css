@@ -257,3 +257,14 @@
   padding-left: var(--sp-8);
   border-left: 3px solid var(--edge-attention);
 }
+/* A ticket's guides as they read in the inspector's How: names with how each came, no frames. */
+.ticket-guides.plain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-12);
+}
+.ticket-guides.plain .ticket-guide-chip {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}

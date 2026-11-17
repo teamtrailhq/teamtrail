@@ -101,6 +101,22 @@ export async function approveSkipInLookout({ started, page, url, project }) {
   return started;
 }
 
+/**
+ * Takes an action on the ticket open in the inspector, as a person does: the bar's button when it's the one on show
+ * (the primary action, Open chat), else from the bar's "⋯" menu.
+ */
+export async function ticketAction(page, name) {
+  const bar = page.locator('.inspector .action-bar');
+  const button = bar.getByRole('button', { name, exact: true });
+  const shown = await button.waitFor({ timeout: 5_000 }).then(
+    () => true,
+    () => false,
+  );
+  if (shown) return button.click();
+  await bar.getByRole('button', { name: 'More ticket actions' }).click();
+  await bar.getByRole('menuitem', { name, exact: true }).click();
+}
+
 const COMPLETIONS = ['close_ticket', 'report_completion', 'submit_review'];
 
 /**

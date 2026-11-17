@@ -22,7 +22,8 @@ console.log('external claim ignored:', (await page.locator('.node', { hasText: '
 
 // UI write: claim a frontier ticket as trail lead, verify the file changed.
 await page.locator('.node.st-frontier').first().click();
-await page.getByRole('button', { name: 'Claim', exact: true }).click();
+await page.getByRole('button', { name: 'More ticket actions' }).click();
+await page.getByRole('menuitem', { name: 'Claim', exact: true }).click();
 await page.waitForTimeout(1500);
 const claimed = fs
   .readdirSync(path.join(dataDir, mapDir, 'tickets'))

@@ -21,6 +21,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.57.0',
+    date: '2026-11-17',
+    items: [
+      'A ticket says where it stands first: who has it, or what it waits on, with the one thing to do next as a button',
+      'Every ticket action sits in one bar under it; the rest of the ticket reads as What, How, Progress, Proof and History, with details a click away',
+      'With no ticket selected, Trail step shows the trail at a glance: its phase, what waits on you, what each agent is on, and what is ready next',
+    ],
+  },
+  {
     version: '0.56.0',
     date: '2026-11-17',
     items: [
@@ -178,21 +187,6 @@ export const RELEASES: Release[] = [
     items: [
       'A hosted Lookout has your menu in its header: back to all your workspaces, the server’s own pages, and Sign out',
       'Where the server keeps your trails itself, the Lookout asks no tracker questions on its first run',
-    ],
-  },
-  {
-    version: '0.41.0',
-    date: '2026-11-15',
-    items: [
-      'In a hosted Lookout, someone who may not make high-risk calls sees who can answer or approve one, instead of a box that would turn their answer away',
-    ],
-  },
-  {
-    version: '0.40.0',
-    date: '2026-11-15',
-    items: [
-      'Decisions now say who made the call: your name from git on this machine, or the person signed in to a hosted Lookout, in the Logbook and in Verified by Teamtrail proofs',
-      'A hosted Lookout opens in the theme you picked in your account there',
     ],
   },
   ...MID_RELEASES,

@@ -48,8 +48,8 @@ const settled = (page) =>
 const answers = (guides = []) => guides.flatMap((g) => g.checklist.map((item) => ({ guide: g.id, item, done: true })));
 
 /**
- * The trail lead opens the ticket in the inspector: its guides are chips, each saying whether its type gives it or it
- * was added; then, mid-work, they add Docs to this ticket alone. Shot at wide, laptop and phone sizes.
+ * The trail lead opens the ticket in the inspector: its How section names its guides, each saying whether its type
+ * gives it or it was added; then, mid-work, they open Edit and add Docs to this ticket alone. Shot at wide, laptop and phone sizes.
  */
 async function addInInspector({ page, shot, title }) {
   await page.locator('.fit-btn').click();
@@ -63,6 +63,8 @@ async function addInInspector({ page, shot, title }) {
   const before = await chipsOf();
   await section.scrollIntoViewIfNeeded();
   await shot('22-ticket-guides');
+  // the How section reads; its Edit link opens the guides for this ticket
+  await page.locator('.inspector .ticket-how').getByRole('button', { name: 'Edit' }).click();
   await section.getByRole('combobox', { name: 'Add a guide to this ticket' }).click();
   await page.getByRole('option', { name: /^Docs/ }).click();
   await section.locator('.ticket-guide-chip[data-guide-id="docs"][data-via="ticket"]').waitFor({ timeout: 15_000 });

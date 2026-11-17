@@ -1,5 +1,4 @@
 import { webUrl } from '@teamtrail/core';
-import { Pill } from '../../components/ui';
 import { usePrSync } from '../../hooks';
 import { prSync, syncedAgo } from '../../lib';
 
@@ -12,8 +11,8 @@ const CHECKS: Record<string, string> = {
 };
 
 /**
- * The ticket's PR, its CI result and open mismatch flags. PR titles and
- * branch names are untrusted and only ever rendered as plain text.
+ * The ticket's PR and its CI result (the inspector's state line says its mismatch flags). PR titles and branch
+ * names are untrusted and only ever rendered as plain text.
  */
 export function PrFlagBadges({ mapId, ticketId }: { mapId: string; ticketId: string }) {
   const s = prSync.ticket(usePrSync(), mapId, ticketId);
@@ -33,11 +32,6 @@ export function PrFlagBadges({ mapId, ticketId }: { mapId: string; ticketId: str
         <span className={`ci ci-${s.checksSummary}`}>{CHECKS[s.checksSummary]}</span>
         <span className="when">{syncWhen(s)}</span>
       </span>
-      {s.flags.map((f) => (
-        <Pill key={f.kind} className={`flag flag-${f.severity}`} title={f.text}>
-          {f.kind}
-        </Pill>
-      ))}
     </div>
   );
 }
