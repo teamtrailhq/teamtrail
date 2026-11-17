@@ -20,8 +20,9 @@ export function AppHeader(props: {
   view?: View;
   onView: (view: View) => void;
   phone: boolean;
-  /** Everything that needs you, most urgent first: "N need you" opens the first. */
+  /** What needs you on this trail, most urgent first ("N need you" opens the first), and on other trails. */
   needs: AttentionItem[];
+  elsewhere: AttentionItem[];
   onNeed: (item: AttentionItem) => void;
   onStats: () => void;
   onNewTrail: () => void;
@@ -55,8 +56,12 @@ export function AppHeader(props: {
       needs={
         <NeedsButton
           count={props.needs.length}
+          elsewhere={props.elsewhere.length}
           top={props.needs[0]?.title}
-          onOpen={() => props.needs[0] && props.onNeed(props.needs[0])}
+          onOpen={() => {
+            const top = props.needs[0] ?? props.elsewhere[0];
+            if (top) props.onNeed(top);
+          }}
         />
       }
       slackAlert={slackAlert}

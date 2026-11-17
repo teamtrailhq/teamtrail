@@ -2,6 +2,7 @@ import { leaseHealth, NODE_H, NODE_W } from '@teamtrail/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNow, usePrSync } from '../../hooks';
 import { heldLeases, prSync, worstFlag } from '../../lib';
+import { bubbleRoom } from './bubbleRoom';
 import { GraphDefs } from './GraphDefs';
 import { GraphEdges } from './GraphEdges';
 import { GraphNode } from './GraphNode';
@@ -59,9 +60,12 @@ export function MapGraph(props: MapGraphProps) {
     touched.current = false;
   }, [snap.map.id]);
   useEffect(() => {
-    if (!touched.current && size.w) setView(openingView({ fit: fitView(), nodes: shifted, size, pad: PAD }));
+    if (!touched.current && size.w)
+      setView(
+        openingView({ fit: fitView(), nodes: shifted, size, pad: PAD, focus: props.focus, room: bubbleRoom(size.w) }),
+      );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [size.w, size.h, W, H, snap.map.id]);
+  }, [size.w, size.h, W, H, snap.map.id, props.focus?.[0]]);
 
   const gestures = useMapGestures({ box, view, setView, onTouch: () => (touched.current = true) });
   useWheelZoom(box, (factor, at) => {
@@ -74,7 +78,11 @@ export function MapGraph(props: MapGraphProps) {
   const sync = usePrSync();
   const holds = useCardHolds(snap);
   const selId = selection?.kind === 'ticket' ? selection.id : undefined;
-  useFocusSelected({ selId, nodes: shifted, size, pad: PAD, view, setView, onFocus: () => (touched.current = true) });
+  useFocusSelected({
+    ...{ selId, nodes: shifted, size, pad: PAD, view, setView },
+    room: bubbleRoom(size.w),
+    onFocus: () => (touched.current = true),
+  });
 
   const anchorOf: AnchorOf = (id) => {
     const rect = id === 'main' ? main && { x: main.x, y: main.y, w: MAIN_W, h: MAIN_H } : nodeRect(id);

@@ -89,6 +89,7 @@ export function App() {
       api={api}
       live={live.live}
       main={main.tone}
+      focus={live.focus}
       onSelect={nav.select}
       onNewTrail={newTrail.open}
       minFit={phone ? 0.7 : 0}
@@ -100,7 +101,6 @@ export function App() {
     />
   );
   const trailBar = <AppTrailBar api={api} nav={nav} attn={attn} trail={live} bp={bp} brief={trail.inboxCard} />;
-  const needs = view?.items ?? [];
   const briefing = (
     <AppBriefing
       brief={brief}
@@ -126,7 +126,8 @@ export function App() {
           view={settingsPage || overview ? undefined : shown}
           onView={onView}
           phone={phone}
-          needs={needs}
+          needs={live.items}
+          elsewhere={live.elsewhere}
           onNeed={attn.open}
           onStats={() => {
             settings.dismiss();
@@ -146,7 +147,12 @@ export function App() {
               trailBar={trailBar}
               projects={projects.many && <PhoneProjects projects={projects} onOverview={openOverview} />}
             />
-            <PhoneTabBar view={shown} covered={!!settingsPage || !!overview} needs={needs.length} onPick={onView} />
+            <PhoneTabBar
+              view={shown}
+              covered={!!settingsPage || !!overview}
+              needs={live.items.length}
+              onPick={onView}
+            />
           </>
         ) : (
           <>

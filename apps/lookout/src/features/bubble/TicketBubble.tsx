@@ -5,7 +5,7 @@ import { edgeFor } from '../attention';
 import { ActionBar, type Form, TicketForms, useTicketActions, useTicketView } from '../inspector';
 import { BubbleTicketPart } from './BubbleTicketPart';
 import { ItemNeed } from './ItemNeed';
-import { needOf } from './needOf';
+import { type BubbleNeed, needOf } from './needOf';
 import { QuestionNeed } from './QuestionNeed';
 
 /** Where the bubble's actions lead: the full ticket, the conversation, Approvals and the brief. */
@@ -72,13 +72,15 @@ export function TicketBubble(
         />
       )}
       {need.kind === 'item' && <ItemNeed need={need} now={v.now} pr={pr} actions={actions} />}
-      <BubbleTicketPart
-        v={v}
-        under={need.kind !== 'none'}
-        said={need.kind === 'item' ? need.item.title : undefined}
-        onFullTicket={props.onFullTicket}
-      />
+      <BubbleTicketPart v={v} need={shownNeed(need, v.question?.text)} onFullTicket={props.onFullTicket} />
       {need.kind !== 'item' && actions}
     </>
   );
+}
+
+/** What the top of the bubble says, for the ticket part under it not to say again. */
+function shownNeed(need: BubbleNeed, question?: string) {
+  if (need.kind === 'item') return { text: need.title, item: need.item.title };
+  if (need.kind === 'question') return { text: question ?? '' };
+  return undefined;
 }

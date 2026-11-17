@@ -25,6 +25,8 @@ export function MapZone(props: {
   api: LookoutApi;
   live: Map<string, LiveTicket>;
   main?: MainTone;
+  /** Tickets that need you, most urgent first: the map opens on them. */
+  focus: string[];
   onSelect: (s: Selection) => void;
   onNewTrail: () => void;
   minFit: number;
@@ -55,6 +57,7 @@ export function MapZone(props: {
             proofs={props.trail?.proofs}
             done={props.trail?.done}
             main={props.main}
+            focus={props.focus}
             overlay={props.docked ? undefined : (anchorOf, box) => props.bubble({ anchorOf, box })}
           />
         ) : (

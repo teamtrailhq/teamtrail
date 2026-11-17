@@ -129,7 +129,7 @@ export async function verifyWaiver({ browser, cli, log, shots }) {
     const item = (await openNeedsList(page)).locator('li.att-item.k-blocked', { hasText: 'accept it without test' });
     await item.waitFor({ timeout: 20_000 });
     await item.locator('.ds-row-main').click();
-    const standing = page.locator('.bubble .bubble-state', { hasText: 'Blocked: checks failed (test)' });
+    const standing = page.locator('.bubble .bubble-need', { hasText: 'Blocked' });
     await standing.waitFor({ timeout: 15_000 });
     await ticketAction(page, 'Accept without test…');
     const form = page.locator('.waive-form');

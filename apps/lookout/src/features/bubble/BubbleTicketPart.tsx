@@ -7,29 +7,34 @@ import { AgentLine } from './AgentLine';
 /**
  * The ticket in the bubble, under what it needs from you: its key and type, its title, where it stands (and the
  * agent on it, with its model and step), what it asks and what "done" means. Everything else is in the full ticket.
+ * Under a needs-you part it says nothing twice: no title when the top already names the ticket, no state line when
+ * that line is the same ask (answer, approve, decide, unblock…), no notice the top already gives.
  */
 export function BubbleTicketPart(props: {
   v: TicketView;
-  under: boolean;
-  /** What the top of the bubble already says (the item it leads with): not said again here. */
-  said?: string;
+  /** What the top of the bubble says, when it has a needs-you part: its title (or the question), and the item. */
+  need?: { text: string; item?: string };
   onFullTicket: () => void;
 }) {
-  const { v } = props;
+  const { v, need } = props;
   const s = v.standing;
   const health = v.lease && leaseHealth(v.lease, v.now);
+  const named = !!need && need.text.toLowerCase().includes(v.t.title.toLowerCase());
+  const asks = !!need && !!s.primary;
   return (
-    <div className={cx('bubble-ticket', props.under && 'under')}>
+    <div className={cx('bubble-ticket', need && 'under', health && `lease-${health}`, v.modelWait && 'model-wait')}>
       <span className="t-label">
         <span className="t-code">{v.t.key}</span> · {TYPE_TEXT[v.t.type]}
       </span>
-      <h3 className={cx('bubble-title', props.under && 'small')}>{v.t.title}</h3>
-      <div className={cx('bubble-state', `edge-${s.edge}`, health && `lease-${health}`, v.modelWait && 'model-wait')}>
-        <span className="state-title">{s.title}</span>
-        <MetaLine parts={s.parts} />
-      </div>
+      {!named && <h3 className={cx('bubble-title', need && 'small')}>{v.t.title}</h3>}
+      {!asks && (
+        <div className={cx('bubble-state', `edge-${s.edge}`)}>
+          <span className="state-title">{s.title}</span>
+          <MetaLine parts={s.parts} />
+        </div>
+      )}
       {v.notices
-        .filter((n) => n.text !== props.said)
+        .filter((n) => n.text !== need?.item)
         .map((n) => (
           <span key={n.text} className="t-meta bubble-notice">
             {n.text}

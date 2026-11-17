@@ -103,9 +103,7 @@ export async function verifyProjects({ browser, cli, log, shots }) {
     });
     const ticketItem = page.locator('.projects-view .pj-item', { hasText: 'Which currency ships first?' });
     await ticketItem.locator('.ds-row-main').click({ timeout: 20_000 });
-    await page
-      .locator('.bubble .bubble-ticket .bubble-title', { hasText: 'Which currency ships first?' })
-      .waitFor({ timeout: 20_000 });
+    await page.locator('.bubble', { hasText: 'Which currency ships first?' }).waitFor({ timeout: 20_000 });
     await page.locator('.header .repo', { hasText: 'billing' }).waitFor({ timeout: 15_000 });
     const ticketLink = visited.find((u) => /[?&]project=[0-9a-f]+/.test(u) && /[?&]item=/.test(u)) ?? '';
     const ticketOpened = !!ticketLink && !/[?&]item=/.test(page.url());

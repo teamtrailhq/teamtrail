@@ -1,5 +1,6 @@
 import { NODE_H, NODE_W } from '@teamtrail/core';
 import { useEffect, useRef } from 'react';
+import { READABLE_ZOOM } from './openingView';
 
 type View = { k: number; x: number; y: number };
 type Node = { ticket: { id: string }; x: number; y: number };
@@ -17,6 +18,8 @@ export function useFocusSelected(opts: {
   pad: number;
   view: View;
   setView: (v: View) => void;
+  /** Kept free on the right for the bubble (bubbleRoom.ts). */
+  room: number;
   onFocus: () => void;
 }) {
   const { selId, size } = opts;
@@ -27,16 +30,16 @@ export function useFocusSelected(opts: {
   const ready = size.w > 0;
   useEffect(() => {
     if (!selId) focused.current = undefined;
-    const { nodes, pad, view, setView, onFocus } = latest.current;
+    const { nodes, pad, view, setView, onFocus, room } = latest.current;
     const n = selId ? nodes.find((x) => x.ticket.id === selId) : undefined;
     if (!n || !ready || focused.current === selId) return;
     focused.current = selId;
     // a card already in view, readable and with room beside it for its bubble, stays where it is
-    if (readableInView({ n, pad, view, size })) return;
+    if (readableInView({ n, pad, view, size: { w: size.w - room, h: size.h } })) return;
     onFocus();
-    const k = Math.min(1.4, Math.max(view.k, 0.9));
-    // with room for the bubble beside it, the ticket sits left of centre
-    const at = size.w > 900 ? size.w * 0.34 : size.w / 2;
+    const k = Math.min(1.4, Math.max(view.k, READABLE_ZOOM));
+    // with room for the bubble beside it, the ticket sits in the middle of what's left
+    const at = (size.w - room) / 2;
     const to = {
       k,
       x: at - (pad + n.x + NODE_W / 2) * k,
@@ -66,5 +69,5 @@ function readableInView(o: { n: Node; pad: number; view: View; size: { w: number
   const top = view.y + (pad + n.y) * view.k;
   const right = left + NODE_W * view.k;
   const bottom = top + NODE_H * view.k;
-  return view.k >= 0.72 && left >= 16 && top >= 16 && right <= size.w - 16 && bottom <= size.h - 16;
+  return view.k >= READABLE_ZOOM && left >= 16 && top >= 16 && right <= size.w - 16 && bottom <= size.h - 16;
 }

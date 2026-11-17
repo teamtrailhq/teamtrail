@@ -37,6 +37,8 @@ export interface MapGraphProps {
   done?: TrailDone;
   /** Checks on main, drawn as `main` at the start of the trail; none while they're off. */
   main?: MainTone;
+  /** Tickets that need you, most urgent first: the map opens on them (openingView.ts). */
+  focus?: string[];
   /** Drawn over the map, beside what's selected: the bubble. */
   overlay?: (anchorOf: AnchorOf, box: { w: number; h: number }) => ReactNode;
 }

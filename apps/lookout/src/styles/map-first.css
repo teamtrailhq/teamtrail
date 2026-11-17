@@ -147,6 +147,15 @@
   padding-top: var(--sp-12);
   border-top: 1px solid var(--line);
 }
+/* Nothing in the bubble is cut mid-sentence: its lines wrap. */
+.bubble .meta-line,
+.bubble .ds-row-title,
+.bubble .ds-row-context,
+.bubble .ds-row-detail {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
 .bubble-state .state-title {
   font: var(--type-row-title);
   color: var(--dim);
@@ -330,8 +339,14 @@
   min-height: 0;
   overflow: auto;
 }
-.trail-list .inbox-part {
+.trail-list .inbox-part,
+.trail-list .other-trails {
+  flex: none;
   max-height: none;
+}
+.trail-list .other-trails {
+  margin-top: var(--sp-8);
+  border-top: 1px solid var(--line);
 }
 .trail-list-rows {
   list-style: none;
