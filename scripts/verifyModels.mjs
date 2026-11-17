@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
 
 async function startServer(cli, cwd) {
   const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd });
@@ -92,9 +92,12 @@ async function matching({ fast, strong, page, shot }) {
   const j = await strong.call('claim_ticket');
   const r = await fast.call('claim_ticket');
   const fallback = await strong.call('claim_ticket');
+  // the agents and their tiers are on the Activity page; the model each runs on shows on its map card too
+  await page.locator('.view-tabs').getByRole('button', { name: 'Activity', exact: true }).click();
   await page.locator('.sessions-list .session-tier', { hasText: 'strongest' }).first().waitFor({ timeout: 20_000 });
   await page.locator('.sessions-list .session-tier', { hasText: 'fast' }).first().waitFor({ timeout: 20_000 });
   await shot('18-session-tiers');
+  await page.locator('.view-tabs').getByRole('button', { name: 'Map', exact: true }).click();
   return {
     ok:
       j.claimed.type === 'junction' &&
@@ -113,11 +116,11 @@ async function waiting({ fast, strong, page, shot }) {
   // this ticket's item, not any model item: the junction charted with the trail waited the same way until the strong
   // agent's first call reported its model, and a queue that hasn't caught up yet can still show that one
   const title = new RegExp(`^${added.ticket.key} needs a strongest model`);
-  const item = page.locator('.attention-queue li.att-item.k-model', { hasText: title });
+  const item = (await openNeedsList(page)).locator('li.att-item.k-model', { hasText: title });
   await item.waitFor({ timeout: 20_000 });
   const shown = (await item.textContent()) ?? '';
-  await item.click();
-  await page.locator('.model-wait').waitFor({ timeout: 15_000 });
+  await item.locator('.ds-row-main').click();
+  await page.locator('.bubble .model-wait').waitFor({ timeout: 15_000 });
   await shot('19-needs-a-strongest-model');
   const next = await fast.call('next_ticket');
   const auto = await refused(fast.call('claim_ticket'));

@@ -8,7 +8,7 @@ import {
 } from '@teamtrail/core';
 import { Empty, MetaLine, Row, type EdgeTone } from '../../components/ui';
 import { useNow } from '../../hooks';
-import { type Selection, tokens, usd, hms, isRunning, heldLeases } from '../../lib';
+import { type Selection, tokens, usd, hms, isRunning, heldLeases, shortModel } from '../../lib';
 import { LeasePill } from './LeasePill';
 import { Segments } from './Segments';
 
@@ -56,6 +56,7 @@ export function Sessions({
               <MetaLine
                 parts={[
                   { text: s.agent, strong: true },
+                  modelPart(s),
                   matching && tierPart(s),
                   s.waitingOn ? { text: 'Waiting on you', urgent: true } : `${s.mode} · ${s.stepLabel.toLowerCase()}`,
                   hitl && !s.waitingOn && 'with you',
@@ -102,6 +103,12 @@ function sessionEdge(s: Session, stalled: boolean): EdgeTone {
 function tierPart(s: Session) {
   const tip = s.model ? `Runs ${s.model}` : 'No model reported, so it counts as balanced';
   return { text: s.tier ?? 'balanced', tip, className: 'session-tier' };
+}
+
+/** The model the agent runs on, short, the full id on hover. */
+function modelPart(s: Session) {
+  const model = shortModel(s.model);
+  return model && { text: model, tip: s.model, className: 'agent-model' };
 }
 
 /** Spend in plain words (where the numbers come from is in the trail spend tooltip). */

@@ -13,6 +13,8 @@ import {
   answeringChecklists,
   approveSkipInLookout,
   lookoutLinks,
+  openFullTicket,
+  openNeedsList,
   sessionHeaders,
   signInWith,
   ticketAction,
@@ -124,21 +126,22 @@ export async function verifyWaiver({ browser, cli, log, shots }) {
     fs.writeFileSync(path.join(top, 'feed.xml'), '<rss/>');
     const held = await one.call('close_ticket', { ticket: key, resolution: 'Added /feed.xml' });
     // the queue says the way out, and opens the ticket
-    const item = page.locator('.attention-queue li.att-item.k-blocked', { hasText: 'accept it without test' });
+    const item = (await openNeedsList(page)).locator('li.att-item.k-blocked', { hasText: 'accept it without test' });
     await item.waitFor({ timeout: 20_000 });
-    await item.click();
-    const standing = page.locator('.inspector .standing', { hasText: 'Blocked: checks failed (test)' });
+    await item.locator('.ds-row-main').click();
+    const standing = page.locator('.bubble .bubble-state', { hasText: 'Blocked: checks failed (test)' });
     await standing.waitFor({ timeout: 15_000 });
     await ticketAction(page, 'Accept without test…');
     const form = page.locator('.waive-form');
     await form.getByLabel('Why it can go without test').fill(REASON);
     if (shots) await page.screenshot({ path: path.join(shots, 'waive-form.png') });
     await form.getByRole('button', { name: 'Accept without test' }).click();
-    await page.locator('.inspector .standing', { hasText: 'Done' }).waitFor({ timeout: 20_000 });
-    const proofPanel = page.locator('.ticket-proof', { hasText: 'Not verified' });
+    await page.locator('.bubble .bubble-state', { hasText: 'Done' }).waitFor({ timeout: 20_000 });
+    await openFullTicket(page);
+    const proofPanel = page.locator('.ticket-drawer .ticket-proof', { hasText: 'Not verified' });
     await proofPanel.waitFor({ timeout: 15_000 });
     const gapShown = await proofPanel.getByText(/test didn't run: .+ accepted the work without it\./).isVisible();
-    const accepted = page.locator('.inspector .fact', { hasText: 'Skipped' });
+    const accepted = page.locator('.ticket-drawer .fact', { hasText: 'Skipped' });
     const reasonShown = await accepted.getByText(REASON).isVisible();
     if (shots) await page.screenshot({ path: path.join(shots, 'waived-done.png') });
     const report = await one.call('proof_report', { ticket: key });

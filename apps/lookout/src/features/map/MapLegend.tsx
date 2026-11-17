@@ -2,11 +2,12 @@ import { useState } from 'react';
 import type { NodeTone } from './nodeTone';
 import { StatusDot } from './StatusDot';
 
-const ROWS: { tone: NodeTone; verified?: boolean; text: string }[] = [
+const ROWS: { tone: NodeTone; verified?: boolean; spin?: boolean; urgent?: boolean; text: string }[] = [
   { tone: 'working', text: 'An agent is on it' },
-  { tone: 'attention', text: 'Waits on you, or held up' },
-  { tone: 'ready', text: 'Ready for an agent' },
-  { tone: 'backlog', text: 'Not ready yet' },
+  { tone: 'attention', urgent: true, text: 'Needs you' },
+  { tone: 'attention', text: 'Held up' },
+  { tone: 'ready', spin: true, text: 'Waiting for an agent' },
+  { tone: 'backlog', text: 'Not started yet' },
   { tone: 'done', verified: true, text: 'Done and verified' },
   { tone: 'done', text: 'Done, not verified' },
   { tone: 'cancelled', text: 'Ruled out' },
@@ -21,8 +22,14 @@ export function MapLegend() {
         <ul className="map-legend-list">
           {ROWS.map((r) => (
             <li key={r.text}>
-              <svg className="node" width="22" height="16" viewBox="4 0 18 16" aria-hidden="true">
-                <StatusDot tone={r.tone} cy={8} verified={r.verified} />
+              <svg
+                className={r.urgent ? 'node waiting' : 'node'}
+                width="22"
+                height="16"
+                viewBox="4 0 18 16"
+                aria-hidden="true"
+              >
+                <StatusDot tone={r.tone} cy={8} verified={r.verified} spin={r.spin} />
               </svg>
               {r.text}
             </li>

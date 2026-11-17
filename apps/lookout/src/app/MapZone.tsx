@@ -1,22 +1,36 @@
 import type { TrailDone } from '@teamtrail/core';
 import type { ReactNode } from 'react';
 import { Button, EmptyState, Panel } from '../components/ui';
-import { MapGraph, MapLegend, type MapPreview, type ProofStatuses } from '../features/map';
-import { StatusDrawer } from '../features/status';
+import {
+  type AnchorOf,
+  type MainTone,
+  MapGraph,
+  MapLegend,
+  type MapPreview,
+  type ProofStatuses,
+} from '../features/map';
 import { AgentCommand, CommandBar } from '../features/trail';
 import type { LookoutApi } from '../hooks';
 import type { Selection } from '../lib';
 import { hostedAgents, openHostedAgents } from '../lib/hostedAgents';
+import type { LiveTicket } from '../lib/liveTickets';
 import { noTrailHint } from '../lib/noTrailHint';
-import { Legend } from './Legend';
 
+/**
+ * The map, filling the page between the header and the trail bar: the trail's banners over it, the graph with its
+ * live cards and `main`, the legend in its corner, and the bubble on what's selected: inside the map beside it, or on
+ * a phone (`docked`), as a sheet under the map.
+ */
 export function MapZone(props: {
   api: LookoutApi;
-  sessions: LookoutApi['activity']['sessions'];
+  live: Map<string, LiveTicket>;
+  main?: MainTone;
   onSelect: (s: Selection) => void;
   onNewTrail: () => void;
-  compact: boolean;
   minFit: number;
+  docked: boolean;
+  /** The bubble for what's selected, placed by the map (`anchorOf`) or docked under it. */
+  bubble: (place?: { anchorOf: AnchorOf; box: { w: number; h: number } }) => ReactNode;
   /**
    * The trail's banners (discovery, reroute) above the map, a pending reroute's preview drawn on it, its tickets'
    * proofs and whether it's done.
@@ -29,11 +43,10 @@ export function MapZone(props: {
       {snap && !hostedAgents() && <CommandBar />}
       {props.trail?.banner}
       <div className="map-area">
-        {snap && !props.compact && <StatusDrawer snap={snap} sessions={props.sessions} />}
         {snap ? (
           <MapGraph
             snap={snap}
-            sessions={props.sessions}
+            live={props.live}
             leases={props.api.leases}
             selection={selection}
             onSelect={props.onSelect}
@@ -41,6 +54,8 @@ export function MapZone(props: {
             preview={props.trail?.preview}
             proofs={props.trail?.proofs}
             done={props.trail?.done}
+            main={props.main}
+            overlay={props.docked ? undefined : (anchorOf, box) => props.bubble({ anchorOf, box })}
           />
         ) : (
           <div className="nomap">
@@ -57,11 +72,10 @@ export function MapZone(props: {
             )}
           </div>
         )}
-        {snap && props.compact && <MapLegend />}
-        {snap && props.compact && (
-          <Legend planOnly={snap.map.mode === 'plan-only'} verifies={(snap.map.verification ?? 'off') !== 'off'} />
-        )}
+        {!snap && !props.docked && props.bubble({ anchorOf: () => undefined, box: { w: 0, h: 0 } })}
+        {snap && <MapLegend />}
       </div>
+      {props.docked && props.bubble()}
     </Panel>
   );
 }

@@ -1,28 +1,15 @@
 import { Badge } from '../components/ui';
-import type { PhoneTab } from './tabs';
+import { type View, VIEW_TABS } from './tabs';
 
-const TABS: [PhoneTab, string][] = [
-  ['home', 'Inbox'],
-  ['map', 'Map'],
-  ['ticket', 'Ticket'],
-  ['activity', 'Activity'],
-  ['plan', 'Plan'],
-];
-
-/** Fixed bottom tab bar on phones; the inbox tab carries the waiting-on-you count. */
-export function PhoneTabBar(props: {
-  tab: PhoneTab;
-  covered: boolean;
-  pending: number;
-  onPick: (tab: PhoneTab) => void;
-}) {
-  const { tab, covered, pending } = props;
+/** Fixed bottom tab bar on phones, the header's views: the map carries how many things need you. */
+export function PhoneTabBar(props: { view: View; covered: boolean; needs: number; onPick: (view: View) => void }) {
+  const { view, covered, needs } = props;
   return (
     <nav className="tabbar">
-      {TABS.map(([id, label]) => (
-        <button key={id} className={tab === id && !covered ? 'on' : ''} onClick={() => props.onPick(id)}>
+      {VIEW_TABS.map(({ id, label }) => (
+        <button key={id} className={view === id && !covered ? 'on' : ''} onClick={() => props.onPick(id)}>
           {label}
-          {id === 'home' && pending > 0 && <Badge key={pending} n={pending} urgent pop />}
+          {id === 'map' && needs > 0 && <Badge key={needs} n={needs} urgent pop />}
         </button>
       ))}
     </nav>

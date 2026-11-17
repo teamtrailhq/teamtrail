@@ -10,10 +10,11 @@ export function AppBriefing(props: {
   openTicket: (mapId: string, ticketId: string) => void;
   openChat: (sessionId: string, ticketId?: string, mapId?: string) => void;
   openDecisions: (focus?: string) => void;
-  closeDecisions: () => void;
-  showPhoneHome: () => void;
+  openQuestion: (questionId: string) => void;
+  toMap: () => void;
 }) {
   const { brief, bp } = props;
+  if (!brief.shown) return null;
   return (
     <BriefingDialog
       briefing={brief.briefing}
@@ -27,12 +28,10 @@ export function AppBriefing(props: {
       }}
       onAnswer={(q: PendingQuestion) => {
         brief.dismiss();
-        props.closeDecisions();
-        props.openChat(q.sessionId, q.ticketId, q.mapId);
+        props.openQuestion(q.id);
       }}
       onSession={(s: SessionInfo) => {
         brief.dismiss();
-        props.closeDecisions();
         props.openChat(s.id, s.ticketId, s.mapId);
       }}
       onDecision={(id) => {
@@ -41,8 +40,7 @@ export function AppBriefing(props: {
       }}
       onResume={() => {
         brief.dismiss();
-        props.closeDecisions();
-        if (bp === 'mobile') props.showPhoneHome();
+        props.toMap();
       }}
     />
   );

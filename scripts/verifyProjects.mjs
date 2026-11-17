@@ -88,7 +88,7 @@ export async function verifyProjects({ browser, cli, log, shots }) {
     const visited = [];
     page.on('framenavigated', (f) => f === page.mainFrame() && visited.push(f.url()));
 
-    // A ticket item from another project: it opens that project with the ticket selected in the inspector.
+    // A ticket item from another project: it opens that project with the ticket's bubble open on its map.
     // Skipping discovery is a request the trail lead approves: here through billing's own API, as its Lookout would.
     await approveSkipInLookout({
       started: await two.call('start_trail', {
@@ -104,14 +104,14 @@ export async function verifyProjects({ browser, cli, log, shots }) {
     const ticketItem = page.locator('.projects-view .pj-item', { hasText: 'Which currency ships first?' });
     await ticketItem.locator('.ds-row-main').click({ timeout: 20_000 });
     await page
-      .locator('.inspector .ticket-head', { hasText: 'Which currency ships first?' })
+      .locator('.bubble .bubble-ticket .bubble-title', { hasText: 'Which currency ships first?' })
       .waitFor({ timeout: 20_000 });
     await page.locator('.header .repo', { hasText: 'billing' }).waitFor({ timeout: 15_000 });
     const ticketLink = visited.find((u) => /[?&]project=[0-9a-f]+/.test(u) && /[?&]item=/.test(u)) ?? '';
     const ticketOpened = !!ticketLink && !/[?&]item=/.test(page.url());
     if (shots) await page.screenshot({ path: path.join(shots, '18-project-b.png') });
 
-    // A question item from the home project: it opens home with that question's conversation open.
+    // A question item from the home project: it opens home with that question open in its bubble.
     await page.locator('.project-switcher .project-btn').click();
     await page.locator('.project-switcher .all-projects').click();
     await page.locator('.projects-view .pj-item', { hasText: 'Show prices with tax?' }).locator('.ds-row-main').click();
@@ -135,7 +135,7 @@ export async function verifyProjects({ browser, cli, log, shots }) {
       answeredA.answer === 'Yes, with tax' &&
       !errors.length;
     log(
-      `all projects ${ok ? 'ok' : 'WRONG'}: agents registered ${registered.join(' and ')}, ${cardCount} project rows, both questions in one queue (${both}), billing's answered from the overview ("${answeredB.answer}"), billing's ticket opened in its inspector from the queue (${ticketOpened}), storefront's question opened in its conversation from the queue (${questionOpened}) and answered there ("${answeredA.answer}")${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `all projects ${ok ? 'ok' : 'WRONG'}: agents registered ${registered.join(' and ')}, ${cardCount} project rows, both questions in one queue (${both}), billing's answered from the overview ("${answeredB.answer}"), billing's ticket opened in its bubble from the queue (${ticketOpened}), storefront's question opened in its bubble from the queue (${questionOpened}) and answered there ("${answeredA.answer}")${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {

@@ -1,6 +1,7 @@
 import { changeFocus, type AttentionItem } from '@teamtrail/core';
 import {
   AttentionHeader,
+  openItem,
   useAttention,
   useAttentionNotifications,
   type AttentionHandlers,
@@ -11,9 +12,10 @@ import type { useAppNavigation } from './useAppNavigation';
 import { useItemLink } from './useItemLink';
 
 /**
- * The attention queue, wired to the app: where each kind of item opens, the header's focus control and
- * interrupt count, and browser notifications. `openReroute` defaults to the item's ticket, else its trail;
- * the reroute review dialog takes it over when present.
+ * The attention queue, wired to the app: where each kind of item opens (a ticket, a question or checks on main in its
+ * bubble; the brief, a reroute, approvals, guides and connectors in their own dialog or page), the header's focus
+ * control, and browser notifications. `openReroute` defaults to the item's ticket, else its trail; the reroute review
+ * dialog takes it over when present.
  */
 export function useAttentionUi(input: {
   api: LookoutApi;
@@ -33,7 +35,8 @@ export function useAttentionUi(input: {
   const attention = useAttention(api.allSnaps);
   useAttentionNotifications(attention.view);
   const selectTrail = (mapId: string) => mapId && api.actions.selectMap(mapId);
-  const handlers: Omit<AttentionHandlers, 'openQuestion'> = {
+  const handlers: AttentionHandlers = {
+    openQuestion: nav.openQuestion,
     openTicket: nav.openTicket,
     openKnowledge: () => input.knowledge.setOpen(true),
     openBrief: (mapId) => (mapId === api.mapId ? input.reviewBrief() : selectTrail(mapId)),
@@ -44,9 +47,10 @@ export function useAttentionUi(input: {
     openGuides: input.openGuides,
     openConnector: input.openConnector,
     openApprovals: input.openApprovals,
+    openMainChecks: nav.openMainChecks,
   };
   const view = attention.view;
-  const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers, showChat: nav.showChat });
+  const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers });
   const header = view && (
     <AttentionHeader
       view={view}
@@ -54,5 +58,5 @@ export function useAttentionUi(input: {
       onSettings={input.openFocusSettings}
     />
   );
-  return { attention, handlers, header, link };
+  return { attention, handlers, header, link, open: (item: AttentionItem) => openItem(item, handlers) };
 }

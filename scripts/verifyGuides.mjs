@@ -11,7 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, clickNode, lookoutLinks, openFullTicket, signInWith } from './e2eHelpers.mjs';
 import { PERF, verifyOwnGuides } from './verifyOwnGuides.mjs';
 import { verifyTrailGuides } from './verifyTrailGuides.mjs';
 
@@ -48,13 +48,14 @@ const settled = (page) =>
 const answers = (guides = []) => guides.flatMap((g) => g.checklist.map((item) => ({ guide: g.id, item, done: true })));
 
 /**
- * The trail lead opens the ticket in the inspector: its How section names its guides, each saying whether its type
- * gives it or it was added; then, mid-work, they open Edit and add Docs to this ticket alone. Shot at wide, laptop and phone sizes.
+ * The trail lead opens the ticket's bubble, then the full ticket: its How section names its guides, each saying
+ * whether its type gives it or it was added; then, mid-work, they open Edit and add Docs to this ticket alone. Shot at
+ * wide, laptop and phone sizes.
  */
 async function addInInspector({ page, shot, title }) {
-  await page.locator('.fit-btn').click();
-  await page.locator('.node', { hasText: title }).click();
-  const section = page.locator('.ticket-guides');
+  await clickNode(page, page.locator('.node', { hasText: title }));
+  await openFullTicket(page);
+  const section = page.locator('.ticket-drawer .ticket-guides');
   await section.locator('.ticket-guide-chip[data-guide-id="security"][data-via="type"]').waitFor({ timeout: 15_000 });
   const chipsOf = () =>
     section
@@ -64,26 +65,26 @@ async function addInInspector({ page, shot, title }) {
   await section.scrollIntoViewIfNeeded();
   await shot('22-ticket-guides');
   // the How section reads; its Edit link opens the guides for this ticket
-  await page.locator('.inspector .ticket-how').getByRole('button', { name: 'Edit' }).click();
+  await page.locator('.ticket-drawer .ticket-how').getByRole('button', { name: 'Edit' }).click();
   await section.getByRole('combobox', { name: 'Add a guide to this ticket' }).click();
   await page.getByRole('option', { name: /^Docs/ }).click();
   await section.locator('.ticket-guide-chip[data-guide-id="docs"][data-via="ticket"]').waitFor({ timeout: 15_000 });
   const after = await chipsOf();
   await section.scrollIntoViewIfNeeded();
   await shot('22-ticket-guides-added-wide');
-  // the laptop layout keeps the ticket in its side panel, the phone in its Ticket tab
+  // the full ticket stays open at laptop size, and covers the map on a phone
   await page.setViewportSize({ width: 1280, height: 800 });
   await section.locator('.ticket-guide-chip[data-guide-id="docs"]').waitFor({ timeout: 15_000 });
   await settled(page);
   await shot('22-ticket-guides-added-laptop');
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('nav.tabbar').getByRole('button', { name: 'Ticket' }).click();
   await section.locator('.ticket-guide-chip[data-guide-id="docs"]').waitFor({ timeout: 15_000 });
   // the layer re-renders as it opens: scroll once it holds still
   await section.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   await settled(page);
   await shot('22-ticket-guides-added-phone');
   await page.setViewportSize({ width: 1440, height: 900 });
+  await page.keyboard.press('Escape');
   const ok =
     before === 'qa:type,security:type,a11y:ticket' && after === 'qa:type,security:type,a11y:ticket,docs:ticket';
   return { ok, chips: after };

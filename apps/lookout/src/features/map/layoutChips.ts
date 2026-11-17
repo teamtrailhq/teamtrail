@@ -27,17 +27,20 @@ export interface CardChip {
  */
 export function layoutChips(input: {
   key: string;
-  type: string;
+  /** Left out when the state says enough (waiting for an agent, what it waits on). */
+  type?: string;
   guide?: string;
   state?: string;
   needsYou?: boolean;
   reserve?: number;
+  /** Told how much the row's text had to be squeezed to fit (1: not at all). */
+  onScale?: (scale: number) => void;
 }): CardChip[] {
   const room = NODE_W - CARD_TEXT_X - 8 - (input.reserve ?? 0);
   const states = input.state?.split(' · ') ?? [];
   const parts: { kind: ChipKind; text: string }[] = [
     { kind: 'key', text: input.key },
-    { kind: 'type', text: input.type },
+    ...(input.type ? [{ kind: 'type' as const, text: input.type }] : []),
     ...(input.guide === undefined ? [] : [{ kind: 'guide' as const, text: input.guide }]),
     ...states.map((text) => ({ kind: 'state' as const, text })),
     ...(input.needsYou ? [{ kind: 'needs' as const, text: 'needs you' }] : []),
@@ -48,6 +51,7 @@ export function layoutChips(input: {
   const guideChars = Math.max(GUIDE_MIN, Math.floor((textRoom - others) / META_CHAR));
   const fitted = parts.map((p) => (p.kind === 'guide' ? { ...p, text: clipName(p.text, guideChars) } : p));
   const scale = Math.min(1, textRoom / fitted.reduce((n, p) => n + width(p), 0));
+  if (input.onScale) input.onScale(scale);
   let x = 0;
   return fitted.map((p) => {
     const textW = width(p) * scale;

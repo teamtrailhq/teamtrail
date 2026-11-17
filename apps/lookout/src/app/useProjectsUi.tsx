@@ -18,9 +18,9 @@ export function useProjectsUi(
   return {
     projects,
     overview,
+    closeOverview: () => setOpen(false),
     openOverview: () => {
-      nav.setDecisionsView(null);
-      nav.setStatsOpen(false);
+      nav.toMap();
       setOpen(true);
     },
   };

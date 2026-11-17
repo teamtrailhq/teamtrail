@@ -102,11 +102,12 @@ export async function approveSkipInLookout({ started, page, url, project }) {
 }
 
 /**
- * Takes an action on the ticket open in the inspector, as a person does: the bar's button when it's the one on show
- * (the primary action, Open chat), else from the bar's "⋯" menu.
+ * Takes an action on the ticket open in its bubble (or the full ticket, when open), as a person does: the bar's button
+ * when it's the one on show (the primary action, Open chat), else from the bar's "⋯" menu.
  */
 export async function ticketAction(page, name) {
-  const bar = page.locator('.inspector .action-bar');
+  const drawer = page.locator('.ticket-drawer .action-bar');
+  const bar = (await drawer.isVisible()) ? drawer : page.locator('.bubble .action-bar');
   const button = bar.getByRole('button', { name, exact: true });
   const shown = await button.waitFor({ timeout: 5_000 }).then(
     () => true,
@@ -115,6 +116,35 @@ export async function ticketAction(page, name) {
   if (shown) return button.click();
   await bar.getByRole('button', { name: 'More ticket actions' }).click();
   await bar.getByRole('menuitem', { name, exact: true }).click();
+}
+
+/** Opens the ticket in its bubble on the map, as a person does: Fit the trail, then click its card. */
+export async function clickNode(page, node) {
+  await page.keyboard.press('Escape');
+  await page.locator('.fit-btn').click();
+  await page.waitForTimeout(500);
+  await node.click();
+}
+
+/** The full ticket (the inspector), from the open bubble's "Full ticket". */
+export async function openFullTicket(page) {
+  await page.locator('.bubble').getByRole('button', { name: 'Full ticket' }).click();
+  await page.locator('.ticket-drawer').waitFor({ timeout: 15_000 });
+}
+
+/** Everything that needs you, ranked: the trail bar's More opens it under the map (once per browser it stays). */
+export async function openNeedsList(page) {
+  const list = page.locator('.trail-lists .needs-list');
+  if (await list.isVisible()) return list;
+  await page.locator('.trail-bar').getByRole('button', { name: 'More', exact: true }).click();
+  await list.waitFor({ timeout: 15_000 });
+  return list;
+}
+
+/** Opens the most urgent thing that needs you, as the header's "N need you" does, and waits for its bubble. */
+export async function openMostUrgent(page) {
+  await page.locator('.needs-btn').click({ timeout: 15_000 });
+  await page.locator('.bubble').waitFor({ timeout: 15_000 });
 }
 
 const COMPLETIONS = ['close_ticket', 'report_completion', 'submit_review'];

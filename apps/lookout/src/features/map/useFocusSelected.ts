@@ -33,9 +33,11 @@ export function useFocusSelected(opts: {
     if (!n || !size.w) return;
     onFocus();
     const k = Math.min(1.4, Math.max(view.k, 1.05));
+    // with room for the bubble beside it, the ticket sits left of centre
+    const at = size.w > 900 ? size.w * 0.34 : size.w / 2;
     const to = {
       k,
-      x: size.w / 2 - (pad + n.x + NODE_W / 2) * k,
+      x: at - (pad + n.x + NODE_W / 2) * k,
       y: size.h / 2 - (pad + n.y + NODE_H / 2) * k,
     };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return setView(to);

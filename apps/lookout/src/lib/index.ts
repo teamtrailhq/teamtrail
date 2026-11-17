@@ -14,6 +14,7 @@ export type { Selection } from './selection';
 export { isRunning, isWaiting } from './sessions';
 export { pickPending } from './pickPending';
 export { sinceLabel } from './sinceLabel';
+export { shortModel } from './shortModel';
 export { actorLabel } from './actorLabel';
 export { deciderLabel } from './deciderLabel';
 export type { SlackPeople } from './actorLabel';

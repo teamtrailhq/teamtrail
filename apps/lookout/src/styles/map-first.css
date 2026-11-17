@@ -1,0 +1,455 @@
+/* ---------- The map first: view tabs, the bubble, the trail bar, the pages over the map, the full ticket ---------- */
+
+/* Header: the views, underlined when on screen, and "N need you". */
+.view-tabs {
+  display: flex;
+  gap: var(--sp-2);
+  align-self: stretch;
+  align-items: center;
+}
+.view-tab {
+  height: var(--h-md);
+  padding: 0 var(--sp-10);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  cursor: pointer;
+  color: var(--dim);
+  font: var(--type-body);
+}
+.view-tab:hover {
+  color: var(--text-hi);
+}
+.view-tab.on {
+  color: var(--text-hi);
+  border-bottom-color: var(--text-hi);
+}
+.needs-btn {
+  font-weight: 600;
+}
+/* Until the screen is very wide, the view tabs take the elapsed time's room; below 1600px the spend's too (it is on
+ * the Activity page and in Trail stats). A header with more than fits (a server's own controls) wraps to a second
+ * row rather than cut the last ones off. */
+@media (max-width: 1699px) {
+  .bp-wide .trail-meta .readout:not(.spend) {
+    display: none;
+  }
+}
+@media (max-width: 1599px) {
+  .bp-wide .trail-meta,
+  .bp-laptop .trail-meta {
+    display: none;
+  }
+}
+.app.bp-wide,
+.app.bp-laptop {
+  grid-template-rows: minmax(62px, auto) minmax(0, 1fr) auto;
+}
+.bp-wide .header,
+.bp-laptop .header {
+  flex-wrap: wrap;
+  row-gap: var(--sp-6);
+  padding-top: var(--sp-8);
+  padding-bottom: var(--sp-8);
+}
+.bp-wide .h-right,
+.bp-laptop .h-right {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: var(--sp-6);
+}
+
+/* The bubble: beside its ticket inside the map, or a sheet under it on a phone. */
+.bubble {
+  position: absolute;
+  z-index: 4;
+  width: 360px;
+  max-width: calc(100% - 16px);
+  overflow: auto;
+  padding: var(--sp-14) var(--sp-14) var(--sp-14) var(--sp-14);
+  background: var(--panel-solid);
+  border: 1px solid var(--line2);
+  box-shadow: 0 10px 30px var(--shadow-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+.bubble.urgent {
+  border-left: 2px solid var(--urgent);
+}
+.bubble.docked {
+  position: relative;
+  width: auto;
+  max-width: none;
+  box-shadow: none;
+  border-width: 1px 0 0;
+}
+.bubble.docked.urgent {
+  border-left: 0;
+  border-top: 2px solid var(--urgent);
+}
+.bubble-close {
+  position: absolute;
+  top: var(--sp-8);
+  right: var(--sp-8);
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+.bubble-close:hover {
+  color: var(--text-hi);
+}
+.bubble .t-label {
+  padding-right: 36px;
+}
+.t-label.urgent {
+  color: var(--urgent);
+}
+.bubble-title {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-hi);
+  padding-right: 28px;
+}
+.bubble-title.small {
+  font: var(--type-row-title);
+  padding-right: 0;
+}
+.bubble-need {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+.bubble-need .suggest {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.bubble-need .suggest .chip {
+  text-align: left;
+  min-height: 34px;
+  padding: var(--sp-6) var(--sp-12);
+  font-size: var(--fs-body);
+}
+.bubble-ticket {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.bubble-ticket.under {
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-12);
+  border-top: 1px solid var(--line);
+}
+.bubble-state .state-title {
+  font: var(--type-row-title);
+  color: var(--dim);
+  margin-right: var(--sp-6);
+}
+.bubble-state.edge-urgent .state-title {
+  color: var(--urgent);
+}
+.bubble-state.edge-attention .state-title {
+  color: var(--amber);
+}
+.bubble-agent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.bubble .detail-section,
+.bubble .ticket-body {
+  padding: 0;
+  border: 0;
+}
+.bubble .action-bar {
+  flex-wrap: wrap;
+}
+.bubble .link {
+  align-self: flex-start;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--sans);
+  font-size: var(--fs-body);
+}
+
+/* The legend sits top left, clear of the out-of-scope strip along the bottom; it opens downwards. */
+.map-area > .map-legend {
+  top: var(--sp-8);
+  bottom: auto;
+  left: var(--sp-10);
+  z-index: 3;
+  flex-direction: column-reverse;
+}
+
+/* An agent's steps: short segments, the ones behind it filled. */
+.step-segments {
+  display: flex;
+  gap: 3px;
+}
+.step-segments > span {
+  flex: 1;
+  height: 3px;
+  background: var(--line2);
+}
+.step-segments > span.done {
+  background: rgb(var(--decided-rgb));
+}
+.step-segments > span.now {
+  background: rgb(var(--decided-rgb));
+  animation: node-breathe 1.8s ease-in-out infinite;
+}
+.step-segments.mini {
+  width: 60px;
+  gap: 2px;
+}
+
+/* The trail bar: the trail in one line, More opens the three lists. */
+.trail-bar-zone {
+  grid-area: trailbar;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+  min-width: 0;
+}
+.trail-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8) var(--sp-14);
+  padding: var(--sp-10) var(--gutter);
+}
+.trail-segments {
+  display: flex;
+  gap: 3px;
+  flex: 1 1 220px;
+  min-width: 160px;
+  height: 10px;
+}
+.seg {
+  flex: 1;
+  min-width: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+  background: var(--line2);
+  opacity: 0.55;
+}
+.seg-done {
+  background: rgb(var(--decided-rgb));
+  opacity: 1;
+}
+.seg-working {
+  background: rgb(var(--decided-rgb));
+  opacity: 1;
+  animation: node-breathe 1.8s ease-in-out infinite;
+}
+.seg-needs {
+  background: var(--urgent);
+  opacity: 1;
+}
+.seg-waiting-agent {
+  background: none;
+  border: 1px dashed var(--dim);
+  opacity: 1;
+}
+.seg.on {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.trail-counts {
+  font: var(--type-body);
+  color: var(--text);
+  white-space: nowrap;
+}
+.bp-mobile .trail-bar {
+  flex-wrap: wrap;
+}
+.bp-mobile .trail-counts {
+  white-space: normal;
+}
+.trail-counts .strong {
+  color: var(--text-hi);
+  font-weight: 600;
+}
+.trail-counts .urgent {
+  color: var(--urgent);
+  font-weight: 600;
+}
+.need-chips {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  gap: var(--sp-6);
+}
+.bp-mobile .need-chips {
+  flex-wrap: wrap;
+}
+.need-chip {
+  flex: 0 1 auto;
+  min-width: 48px;
+  height: var(--h-md);
+  padding: 0 var(--sp-10);
+  border: 1px solid var(--line2);
+  border-left: 2px solid var(--urgent);
+  background: var(--panel);
+  color: var(--text-hi);
+  cursor: pointer;
+  font: var(--type-body);
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.need-chip:hover,
+.need-chip.on {
+  background: var(--panel2);
+}
+.need-chip.more {
+  flex: none;
+  border-left-color: var(--line2);
+  color: var(--dim);
+}
+.trail-lists {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-10);
+  height: 260px;
+  min-height: 0;
+}
+.trail-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+.trail-list .inbox-part {
+  max-height: none;
+}
+.trail-list-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Pages over the map: Plan and Activity, side by side columns under the header. */
+.page {
+  grid-row: 2 / -1;
+  grid-column: 1 / -1;
+  z-index: 6;
+  display: grid;
+  gap: 0;
+  background: var(--panel-solid);
+}
+.plan-page {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.activity-page {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+.page-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--line);
+}
+.page-col:last-child {
+  border-right: 0;
+}
+.page-col > .sections {
+  flex: 1;
+  min-height: 0;
+}
+.page .status-panel {
+  visibility: visible;
+  height: auto;
+  border-top: 0;
+  padding: 0;
+  background: none;
+}
+.conversation-col .comms {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The full ticket: a drawer over the map's right side. */
+.ticket-drawer {
+  position: fixed;
+  z-index: 8;
+  top: 82px;
+  right: var(--sp-12);
+  bottom: var(--sp-10);
+  width: min(440px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel-solid);
+  box-shadow: 0 10px 30px var(--shadow-color);
+}
+.ticket-drawer > .inspector,
+.ticket-drawer > .zone {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.ticket-drawer .bubble-close {
+  z-index: 1;
+}
+
+/* Phone: the map, its bubble as a sheet, the trail bar and its lists, scrolling as one. */
+.phone-map {
+  overflow: auto;
+  gap: var(--sp-10);
+}
+.phone-view.phone-map > .map-zone {
+  flex: none;
+  overflow: visible;
+  border-width: 0 0 1px;
+}
+.phone-map .map-area {
+  flex: none;
+  height: 56vh;
+  min-height: 320px;
+}
+.phone-map .trail-bar-zone {
+  padding: 0 var(--sp-10) var(--sp-10);
+}
+.bp-mobile .trail-lists {
+  grid-template-columns: minmax(0, 1fr);
+  height: auto;
+}
+.bp-mobile .trail-list {
+  overflow: visible;
+}
+.bp-mobile .page {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  flex: 1;
+}
+.bp-mobile .page-col {
+  flex: none;
+  overflow: visible;
+  border-right: 0;
+  border-bottom: 1px solid var(--line);
+}
+.bp-mobile .ticket-drawer {
+  inset: 0 0 58px;
+  width: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seg-working,
+  .step-segments > span.now {
+    animation: none;
+  }
+}

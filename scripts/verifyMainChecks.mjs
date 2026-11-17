@@ -8,7 +8,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { answeringChecklists, approveSkipInLookout, lookoutLinks, sessionHeaders, signInWith } from './e2eHelpers.mjs';
+import {
+  answeringChecklists,
+  approveSkipInLookout,
+  lookoutLinks,
+  openNeedsList,
+  sessionHeaders,
+  signInWith,
+} from './e2eHelpers.mjs';
 
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
@@ -118,11 +125,13 @@ export async function verifyMainChecks({ browser, cli, log, shots }) {
     // the claim starts the run on main and waits for it: the check already fails there, so the task waits
     const held = await one.call('next_ticket', { trail: first.mapId, types: ['task'] });
     const waits = /Checks already fail on main \(test\)/.test(held.mainChecks?.waits ?? '') && held.ticket === null;
-    const item = page.locator('.attention-queue li.att-item.k-main-checks');
+    const item = (await openNeedsList(page)).locator('li.att-item.k-main-checks');
     await item.waitFor({ timeout: 20_000 });
+    // `main` at the start of the trail turns red, and the item opens its bubble there
+    await page.locator('.node.main-mark.main-needs').waitFor({ timeout: 20_000 });
     const blocking = (await item.getAttribute('class'))?.includes('u-blocking');
-    await item.click();
-    const section = page.locator('.trail-glance .main-checks');
+    await item.locator('.ds-row-main').click();
+    const section = page.locator('.bubble .main-checks');
     await section.getByText('test fails on main').waitFor({ timeout: 15_000 });
     if (shots) await page.screenshot({ path: path.join(shots, '17-main-checks-failed.png') });
     await section.getByRole('button', { name: 'Start anyway' }).click();

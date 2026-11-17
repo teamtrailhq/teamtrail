@@ -20,7 +20,6 @@ export async function verifyFocus({ page, shot, repo }) {
   await choose(page, 'Focus for 1 hour');
   await page.locator('.focus-menu .focus-state.focus-manual').waitFor({ timeout: 15_000 });
   const onText = (await state.textContent()) ?? '';
-  await page.locator('.attention-head .waiting-chip.interrupting').waitFor({ state: 'detached', timeout: 15_000 });
   await page.locator('.focus-menu > .btn').click();
   const held = (await page.locator('.focus-panel .focus-held').textContent()) ?? '';
   await shot?.('focus-on');
