@@ -32,6 +32,14 @@ export const RELEASES: Release[] = [
     ],
   },
   {
+    version: '0.66.2',
+    date: '2026-11-18',
+    items: [
+      'Agents pick up work the moment you confirm criteria, approve the plan or free the review limit, instead of checking back minutes later',
+      'Needs you keeps long titles and reasons inside their card at every width, with Read more for long reasons',
+    ],
+  },
+  {
     version: '0.66.1',
     date: '2026-11-18',
     items: [

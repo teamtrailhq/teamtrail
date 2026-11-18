@@ -10,10 +10,11 @@ import { flagKnowledge, proposeKnowledge, searchKnowledgeOp } from './trail/know
 import { recordDecision, report, sessionView } from './trail/reporting';
 import { submitReviewTool } from './trail/reviews';
 import { startTrail } from './trail/startTrail';
-import { addTicket, nextTicket, releaseTicket } from './trail/ticketOps';
+import { addTicket, releaseTicket } from './trail/ticketOps';
 import { resumeTrail, status, updateTrail } from './trail/trailOps';
 import type { AgentOptions, CloseInput, WaitControl } from './trail/types';
 import { ticketView } from './trail/views';
+import { nextTicketWaiting } from './trail/waitForWork';
 
 export { OperationError };
 export { trailNameFamily } from './trail/trailName';
@@ -95,8 +96,9 @@ export class TrailAgent {
     return updateTrail(this.ctx, input);
   }
 
-  nextTicket(input: Input<typeof nextTicket> = {}) {
-    return nextTicket(this.ctx, input);
+  /** With `wait`, until something is claimable for this agent or the wait runs out (waitForWork.ts). */
+  nextTicket(input: Input<typeof nextTicketWaiting> = {}, ctl: WaitControl = {}) {
+    return nextTicketWaiting(this.ctx, input, ctl);
   }
 
   claimTicket(input: Input<typeof claimTicket> = {}) {

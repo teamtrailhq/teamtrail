@@ -1,6 +1,7 @@
 import type { AttentionItem } from '@teamtrail/core';
-import { Button, MetaLine } from '../../components/ui';
+import { Button } from '../../components/ui';
 import { detailReasons, openItem } from '../attention';
+import { NeedWhy } from './NeedWhy';
 import type { NeedContext } from './types';
 
 /** Kinds handled outside a ticket, and the words for going there. */
@@ -26,7 +27,7 @@ export function ItemBody({ item, ctx }: { item: AttentionItem; ctx: NeedContext 
   const label = PLACE[item.kind] ?? (ticketId ? undefined : 'Open');
   return (
     <>
-      {reasons.length > 0 && <MetaLine parts={reasons} />}
+      <NeedWhy parts={reasons} />
       <div className="home-need-links">
         {label && (
           <Button size="sm" variant="primary" onClick={() => openItem(item, ctx.handlers)}>
