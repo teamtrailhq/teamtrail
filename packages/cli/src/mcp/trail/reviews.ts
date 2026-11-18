@@ -9,6 +9,7 @@ import {
 import { readAgentDocs, readAttempts, reviewConflict, submitReview } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { checkedAnswers, keepAnswers } from './guideChecklists';
+import { sessionTier } from './models';
 import { assertOwnClaim } from './ownClaim';
 
 /** Why this agent may not take review ticket `r`, or undefined. */
@@ -83,6 +84,7 @@ export async function submitReviewTool(
     sessionIds: ctx.sessionIds,
     origin: ctx.origin,
     sessionId: s?.id,
+    model: sessionTier(ctx).model,
     verdict: input.verdict,
     summary: input.summary,
     findings: input.findings,
@@ -100,13 +102,16 @@ export async function submitReviewTool(
       ? `The code changed since its checks passed, so they run again (${r.attemptId}).`
       : `${reviewed.key} waits for the human to approve.`,
   }[r.phase as 'done'];
+  const held = r.held
+    ? `You run ${r.held.model}, the model that did ${reviewed.key}, so your PASS doesn't count yet: ${r.held.review ?? 'a new review'} waits for an agent on another model, and the human can approve it meanwhile. Take other work.`
+    : undefined;
   const worker = readAttempts(ctx.root, snap.map.id, reviewed.id).at(-1)?.agent;
   return {
     review: review.key,
     verdict: r.verdict.id,
     ticket: reviewed.key,
     phase: r.phase,
-    next,
+    next: held ?? next,
     ...(worker ? { crossVendor: vendorOf(worker) !== vendorOf(agent) } : {}),
   };
 }

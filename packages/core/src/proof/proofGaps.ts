@@ -20,6 +20,14 @@ function guardGap(a: VerificationAttempt, reviews: ProofReview[]): string[] {
   return [`The work changed what its checks run: ${guardReason(a.guard.findings)}.`];
 }
 
+/** Why no review counts as independent: a PASS the `independent-review` gate held names the shared model. */
+function noIndependentReview(reviews: ProofReview[]): string {
+  const held = reviews.find((r) => r.sameModel === 'held' && r.verdict === 'PASS');
+  if (!held) return 'No independent review passed it.';
+  const on = held.model ? ` on ${held.model}` : '';
+  return `No independent review passed it: ${held.by} reviewed it${on}, the model that did the work.`;
+}
+
 /** A diff rule's question nobody answered, or that the trail lead let the work go without. */
 const ruleGaps = (a: VerificationAttempt) =>
   (a.rules ?? []).flatMap((r) => {
@@ -50,7 +58,7 @@ export function proofGaps({ attempt, reviews }: { attempt?: VerificationAttempt;
   gaps.push(...ruleGaps(attempt));
   if (reviews.some((r) => r.verdict !== 'PASS')) gaps.push('A review or the trail lead did not pass it.');
   if (attempt.level !== 'checks' && !reviews.some((r) => r.byKind === 'agent' && r.verdict === 'PASS' && r.independent))
-    gaps.push('No independent review passed it.');
+    gaps.push(noIndependentReview(reviews));
   if (
     attempt.level === 'checks+review+human' &&
     !reviews.some((r) => r.byKind === 'trail lead' && r.verdict === 'PASS')

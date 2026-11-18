@@ -28,6 +28,7 @@ import { recoverStalled } from './recoverStalled';
 import { sessionView } from './reporting';
 import { frozenOn } from './reroutes';
 import { assertUnderReviewLimit, reviewGate } from './reviewLimit';
+import { assertModelMayReview, reviewModelNote, sameModelReviews } from './reviewModels';
 import { assertMayReview, ownReviews } from './reviews';
 import { ticketInfo } from './ticketInfo';
 import { nextTicket } from './ticketOps';
@@ -88,6 +89,7 @@ export async function claimTicket(
   return {
     claimed: ticketInfo(ctx.root, fresh, current, await ctx.decisions(snap.map.id)),
     ...tierFields(ctx, fresh, current, !!input.ticket),
+    ...(await reviewModelNote(ctx, fresh, current)),
     session: sessionView(ctx),
     discovery: briefView(ctx.root, fresh),
     knowledge: delivered,
@@ -116,8 +118,10 @@ async function pickTarget(
   const { snap, agent } = at;
   const frozen = frozenOn(ctx, snap.map.id);
   const review = await reviewGate(ctx, snap);
+  const models = await sameModelReviews(ctx, snap);
   const exclude = [
     ...(await ownReviews(ctx, snap, agent)),
+    ...models.filter((r) => r.waits).map((r) => r.ticket.id),
     ...frozen.keys(),
     ...outsideGuides(snap, at.guides),
     ...review.held.map((h) => h.id),
@@ -125,7 +129,8 @@ async function pickTarget(
   ];
   const target = at.ref
     ? ctx.findTicket(snap, at.ref)
-    : pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude }).ticket;
+    : pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude, later: models.map((r) => r.ticket.id) })
+        .ticket;
   if (!target) {
     const r = await nextTicket(ctx, { trail: snap.map.id, guides: at.guides });
     throw new OperationError(('reason' in r ? r.reason : undefined) ?? 'No ready ticket');
@@ -136,6 +141,7 @@ async function pickTarget(
   if (proposal && target.assignee !== agent)
     throw new OperationError(`${target.key} is frozen by reroute proposal ${proposal}, waiting on the human`);
   assertMayReview(ctx, snap, target, agent);
+  if (target.assignee !== agent) assertModelMayReview(models, target);
   assertUnderReviewLimit(review, target, agent);
   assertMainChecks(at.main, target, agent);
   if (target.assignee !== agent) assertInGuides(snap, target, at.guides);

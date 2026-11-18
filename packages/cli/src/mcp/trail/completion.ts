@@ -22,6 +22,7 @@ import {
   type Submission,
 } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
+import { sessionTier } from './models';
 import type { WaitControl } from './types';
 import { checksOf, feedbackOf, gitView, settledView } from './verificationView';
 
@@ -115,7 +116,9 @@ export async function submitVerified(
   const touches = readLease(ctx.root, snap.map.id, t.id)?.touches;
   ctx.leases.drop(snap.map.id, t.id);
   ctx.sessions.running()?.log(`${t.key} submitted · checks: ${info.checks.join(', ') || 'none'}`, 'step');
-  const scoped = touches?.length ? { ...sub, touches } : sub;
+  // the model it ran on, from its own logs: a review on the same model doesn't count as independent (reviewModels.ts)
+  const model = sub.model ?? sessionTier(ctx).model;
+  const scoped = { ...sub, ...(touches?.length ? { touches } : {}), ...(model ? { model } : {}) };
   const run = track(
     ctx,
     snap.map.id,

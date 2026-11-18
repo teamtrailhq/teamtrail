@@ -52,8 +52,8 @@ export interface VerifyEnv {
 /** The repo a tracker's checks and git evidence use. */
 export const repoRootOf = (env: Pick<VerifyEnv, 'root' | 'repoRoot'>) => env.repoRoot ?? path.dirname(env.root);
 
-/** What the agent claimed, kept on the attempt and used to resolve the ticket when it passes. */
-export interface Submission {
+/** What the agent claimed, kept on the attempt and used to resolve the ticket when it passes; `model` it ran on. */
+export interface Submission extends Pick<VerificationAttempt, 'model'> {
   agent: string;
   sessionId?: string;
   resolution: string;
