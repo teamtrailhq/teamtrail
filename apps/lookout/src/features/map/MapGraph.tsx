@@ -43,7 +43,10 @@ export function MapGraph(props: MapGraphProps) {
     main: !!props.main,
   });
   const main = useMemo(
-    () => (props.main ? mainSpot({ direction: L.direction, nodes: L.nodes, graphH: L.graphH, width: L.width }) : null),
+    () =>
+      props.main
+        ? mainSpot({ direction: L.direction, nodes: L.nodes, groups: L.groups, graphH: L.graphH, width: L.width })
+        : null,
     [props.main, L],
   );
   /** The cards where they are drawn, `main`'s room included: for the terrain, the opening view and the focus. */
