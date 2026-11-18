@@ -2,7 +2,7 @@ import type { PendingTracker, TrustItem } from '@teamtrail/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiBase } from '../../lib/apiBase';
 import { newestWins } from '../../lib/newestWins';
-import { onStreamOpen, onTrackerChange } from '../../lib/trackerChanges';
+import { onServerEvent, onStreamOpen, onTrackerChange } from '../../lib/trackerChanges';
 
 export interface OldQueue {
   writes: number;
@@ -102,6 +102,8 @@ export function useApprovals() {
   }, []);
   useEffect(() => void load(), [load]);
   useEffect(() => onTrackerChange((p) => void (p.startsWith('.') || recheck())), [recheck]);
+  // approvals live in this machine's store: one made in another tab, on another device or with `teamtrail approve`
+  useEffect(() => onServerEvent('trust', () => void recheck()), [recheck]);
   // what changed while the event stream was down (before it opened, or while it reconnected) was never sent
   useEffect(() => onStreamOpen(() => void recheck()), [recheck]);
   /** Runs one of this page's actions, then shows the list as it is now. */

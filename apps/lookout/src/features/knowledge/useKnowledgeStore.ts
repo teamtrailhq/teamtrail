@@ -2,6 +2,7 @@ import { type KnowledgeCall, type KnowledgeEntry } from '@teamtrail/core';
 import { useMemo, useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
+import { trustChanged } from '../../lib/trustChanged';
 import type { KnowledgeDraft, KnowledgeStore } from './knowledgeContext';
 
 const api = `${apiBase()}/knowledge`;
@@ -46,6 +47,7 @@ export function useKnowledgeStore(briefText: string): KnowledgeStore {
       setHashes(b.hashes ?? {});
     },
     changed: (path) => path.startsWith('knowledge/'),
+    events: { trust: (data) => trustChanged(data).approvals },
   });
   const attention = useMemo(
     () => entries.filter((e) => e.status === 'suggested' || e.flag || (stale[e.id] && e.status !== 'outdated')).length,

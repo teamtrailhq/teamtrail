@@ -22,13 +22,21 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.5',
+    version: '0.66.6',
     date: '2026-11-18',
     items: [
       'A ticket reopened after its proof was posted takes the green Teamtrail proof off its pull request, and a proof that names no commit never passes',
       'A pull request closed and replaced by a new one on the same branch: the ticket follows the new one, and a trail whose work closed unmerged or was reverted no longer says Destination reached',
       'A pull request waiting to merge says what stands in its way: a draft, conflicts, changes requested or its checks',
       "The review limit no longer holds agents back for deleted tickets or a PR sync that isn't running, and PR sync asks GitHub less as your history grows",
+    ],
+  },
+  {
+    version: '0.66.5',
+    date: '2026-11-18',
+    items: [
+      'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
+      'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
     ],
   },
   {
@@ -182,21 +190,6 @@ export const RELEASES: Release[] = [
       'A check that fails only as it already does on main no longer sends the first completion back for rework when an acceptance criterion names it',
       "Where Teamtrail merges pull requests, a done ticket that isn't verified offers Merge anyway: why in one line, one question, and it's kept as your decision",
       'A done ticket whose pull request is still open shows in your queue as ready to merge',
-    ],
-  },
-  {
-    version: '0.59.3',
-    date: '2026-11-17',
-    items: [
-      'Checks on main find the dependencies of a package folder with its own install, like apps/web/node_modules',
-      'An agent held by checks failing on main tells you to choose in the Lookout, instead of asking you a question',
-    ],
-  },
-  {
-    version: '0.59.2',
-    date: '2026-11-17',
-    items: [
-      'Settings → Verification reads calmer: one line per check, a warning under its command with the fix one click away, and Save apart',
     ],
   },
   ...LATER_RELEASES,

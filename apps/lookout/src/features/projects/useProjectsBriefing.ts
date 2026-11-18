@@ -1,5 +1,6 @@
 import { PREFS_KEY, type ProjectsBriefing } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
+import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { projectsApi } from './projectsApi';
 
 const SEEN_KEY = `${PREFS_KEY}:projects:seen`;
@@ -24,17 +25,19 @@ function markSeen(at: number) {
 
 /**
  * What changed in each project since All projects was last open (the last day the first time), built by the
- * server with the same briefing each Lookout shows. Leaving the overview marks it seen.
+ * server with the same briefing each Lookout shows, kept current while it is open (the `projects` event, at most
+ * every few seconds). Leaving the overview marks it seen.
  */
 export function useProjectsBriefing(): ProjectsBriefing | undefined {
   const [briefing, setBriefing] = useState<ProjectsBriefing>();
-  useEffect(() => {
-    const opened = Date.now();
-    void projectsApi
-      .briefing(lastSeen(opened))
-      .then(setBriefing)
-      .catch(() => {});
-    return () => markSeen(opened);
-  }, []);
+  const [opened] = useState(Date.now);
+  const since = useState(() => lastSeen(opened))[0];
+  useEffect(() => () => markSeen(opened), [opened]);
+  useLiveLoad({
+    load: () => projectsApi.briefing(since),
+    show: setBriefing,
+    events: { projects: () => true },
+    throttleMs: 5000,
+  });
   return briefing;
 }

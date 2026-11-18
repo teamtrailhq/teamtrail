@@ -18,6 +18,9 @@ export function useDecisionMemory() {
     show: setMemory,
     failed: () => setMemory(null),
     changed: (p) => p.includes('/decisions/') || p.endsWith('map.md'),
+    // a decision's area is what its ticket's latest passing attempt changed
+    events: { verification: (data) => (data as { kind?: unknown } | undefined)?.kind === 'evidence' },
+    throttleMs: 2000,
   });
   return memory;
 }

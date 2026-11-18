@@ -1,5 +1,6 @@
 import { BRAND, type SignInView, signInShortId } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
+import { useNow } from '../../hooks/useNow';
 import { sinceLabel } from '../../lib/sinceLabel';
 import { RevokeSignInButton } from './RevokeSignInButton';
 
@@ -7,7 +8,7 @@ const WHERE = { machine: 'This machine', device: 'Another device' };
 
 /** One row per paired browser: where it is, when it paired and was last used, and Revoke (Sign out for this one). */
 export function SignInList(props: { sessions: SignInView[]; onRevoke: (id: string) => Promise<string | undefined> }) {
-  const now = Date.now();
+  const now = useNow(30_000);
   return (
     <ul className="ra-list si-list">
       {props.sessions.map((s) => (
