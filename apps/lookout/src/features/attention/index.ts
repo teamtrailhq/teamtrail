@@ -7,3 +7,4 @@ export { edgeFor } from './rowText';
 export { ItemAction } from './ItemAction';
 export { contextParts, detailReasons } from './rowText';
 export { cardNeedText, needLabel } from './needLabel';
+export { KIND_LABEL } from './attentionLabels';

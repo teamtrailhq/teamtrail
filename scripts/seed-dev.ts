@@ -239,6 +239,22 @@ if (instrument)
     ],
   });
 
+// 5b. The plan to approve in one step (Hands-off's Approve the plan): two implementation tickets on the second trail
+// with criteria, waiting with its submitted brief.
+const invite = await adapter.createTicket(second.id, { title: 'Invite members by email', type: 'task', body: '' });
+const memberList = await adapter.createTicket(second.id, { title: 'Members list for admins', type: 'task', body: '' });
+await adapter.addBlocking(second.id, roles.id, invite.id);
+await adapter.addBlocking(second.id, roles.id, memberList.id);
+writeTicketCriteria(root, second, invite, {
+  criteria: [
+    { id: 'AC-1', kind: 'unit', text: 'An invite link works once and expires after 7 days' },
+    { id: 'AC-2', kind: 'manual', text: 'An invited member sees the team’s notebooks and no other team’s' },
+  ],
+});
+writeTicketCriteria(root, second, memberList, {
+  criteria: [{ id: 'AC-1', kind: 'unit', text: 'Admins see every member with their role and last sign-in' }],
+});
+
 // 6. Less supervision: risk policy, attention rules, a risky change, assumptions and two pending proposals.
 await seedSupervision({ root, adapter, main, second, mainBrief, now });
 

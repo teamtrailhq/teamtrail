@@ -1,9 +1,10 @@
 import type { AttentionPrefs, FocusHours, NotifyChannel } from '../model/attention';
+import { LOOKOUT_MODES, type LookoutMode } from '../model/lookoutMode';
 import { DEFAULT_ATTENTION_PREFS } from './defaults';
 import type { Parsed } from './parsePolicy';
 
 const CHANNELS: NotifyChannel[] = ['browser', 'slack-dm', 'slack-channel', 'none'];
-const KEYS = ['v', 'focus', 'focusUntil', 'focusOffUntil', 'channel'];
+const KEYS = ['v', 'focus', 'focusUntil', 'focusOffUntil', 'channel', 'mode'];
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -27,6 +28,14 @@ function parseFocus(raw: unknown, errors: string[]): FocusHours | undefined {
   return { from: from as string, to: to as string, ...(dayList ? { days: dayList as number[] } : {}) };
 }
 
+/** Hands-off or Hands-on; missing is no error (the default). */
+function parseMode(raw: unknown, errors: string[]): LookoutMode | undefined {
+  if (raw === undefined) return undefined;
+  const mode = LOOKOUT_MODES.find((m) => m === raw);
+  if (!mode) errors.push(`"mode" must be one of ${LOOKOUT_MODES.join(', ')}`);
+  return mode;
+}
+
 /** One person's attention preferences; also validates what the Lookout PUTs. */
 export function parseAttentionPrefs(raw: unknown): Parsed<AttentionPrefs> {
   const errors: string[] = [];
@@ -37,6 +46,8 @@ export function parseAttentionPrefs(raw: unknown): Parsed<AttentionPrefs> {
     if (CHANNELS.includes(raw.channel as NotifyChannel)) value.channel = raw.channel as NotifyChannel;
     else errors.push(`"channel" must be one of ${CHANNELS.join(', ')}`);
   }
+  const mode = parseMode(raw.mode, errors);
+  if (mode) value.mode = mode;
   if (raw.focus !== undefined) {
     const focus = parseFocus(raw.focus, errors);
     if (focus) value.focus = focus;

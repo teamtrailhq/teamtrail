@@ -1,9 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { TrackerAdapter } from '../adapters/adapter';
+import { acceptBrief } from '../discovery/acceptBrief';
 import { decided, EMPTY_SECTIONS, type DiscoveryBrief } from '../discovery/brief';
-import { approveBriefHere, readBrief, readBriefFile, writeBrief, writeBriefText } from '../discovery/briefStore';
+import { readBrief, readBriefFile, writeBrief, writeBriefText } from '../discovery/briefStore';
 import { discoverySkipped, requiresDiscovery } from '../discovery/discoveryGate';
-import { seedFromBrief } from '../planning/assumptions/assumptionOps';
 import { contentHash } from '../trust/trustLedger';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
@@ -88,30 +87,16 @@ async function decide(i: {
     const shown = checkShown(b.hash, readBriefFile(root, brief.mapId)?.text, 'The brief');
     if (!shown.ok) return { status: shown.status, body: { error: shown.error } };
   }
-  let next: DiscoveryBrief;
   try {
-    next = decided(
-      brief,
-      kind === 'accept' ? { kind } : { kind, note: typeof b.note === 'string' ? b.note.slice(0, 2000) : '' },
-    );
+    if (kind === 'accept') {
+      const { brief: next, assumptions } = await acceptBrief({ root, adapter: i.active, brief });
+      return { status: 200, body: { brief: next, ...(assumptions.length ? { assumptions } : {}) } };
+    }
+    const note = typeof b.note === 'string' ? b.note.slice(0, 2000) : '';
+    const next = decided(brief, { kind, note });
+    writeBriefText(root, next);
+    return { status: 200, body: { brief: next } };
   } catch (e) {
     return { status: 409, body: { error: (e as Error).message } };
-  }
-  const written = writeBriefText(root, next);
-  if (kind === 'accept') approveBriefHere(root, brief.mapId, 'trail lead', written);
-  const seeded = kind === 'accept' ? await seedAssumptions(await i.active(), next) : [];
-  return { status: 200, body: { brief: next, ...(seeded.length ? { assumptions: seeded } : {}) } };
-}
-
-/**
- * The accepted brief's assumptions become the trail's. The brief is already accepted by then, so a failure here
- * (the tracker unreachable, say) is logged and the accept still succeeds; accepting again seeds what's missing.
- */
-async function seedAssumptions(adapter: TrackerAdapter, brief: DiscoveryBrief) {
-  try {
-    return await seedFromBrief(adapter, brief);
-  } catch (e) {
-    console.error(`could not add the brief's assumptions to the trail: ${(e as Error).message}`);
-    return [];
   }
 }

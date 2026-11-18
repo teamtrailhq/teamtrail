@@ -124,6 +124,20 @@ test('prefs: bad input lists every error; focus mode holds interruptions back', 
   assert.equal(JSON.parse(readFileSync(path.join(configDir, 'attention.json'), 'utf8')).channel, 'slack-dm');
 });
 
+test('mode: Hands-off by default; PUT /attention/mode keeps the other prefs and refuses an unknown mode', async () => {
+  const before = await call<AttentionView>('GET', '/attention');
+  assert.equal(before.json.prefs.mode, undefined);
+  const on = await call<{ mode: string; channel: string }>('PUT', '/attention/mode', { mode: 'hands-on' });
+  assert.equal(on.status, 200);
+  assert.equal(on.json.mode, 'hands-on');
+  assert.equal(on.json.channel, 'slack-dm');
+  assert.equal(JSON.parse(readFileSync(path.join(configDir, 'attention.json'), 'utf8')).mode, 'hands-on');
+  const bad = await call<{ errors: string[] }>('PUT', '/attention/mode', { mode: 'hands-free' });
+  assert.equal(bad.status, 400);
+  assert.deepEqual(bad.json.errors, ['"mode" must be one of hands-off, hands-on']);
+  assert.equal((await call('PUT', '/attention/mode', { mode: 'hands-off' })).status, 200);
+});
+
 test('an invalid attention.json is reported, and the queue keeps the defaults', async () => {
   writeFileSync(path.join(root, 'attention.json'), JSON.stringify({ v: 1, interrupt: -1, weights: { gossip: 3 } }));
   const r = await call<AttentionView>('GET', '/attention');

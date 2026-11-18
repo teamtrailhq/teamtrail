@@ -11,7 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
-import { lookoutLinks, responseGate, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { handsOn, lookoutLinks, responseGate, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const KEY = 'lin_api_e2e_never_shown_5b1c';
@@ -82,6 +82,7 @@ export async function verifyLinear({ browser, cli, log, shots }) {
     TEAMTRAIL_GITHUB_API: fake.url,
     GITHUB_TOKEN: 'gho_unused_in_linear_steps',
   };
+  handsOn(env.TEAMTRAIL_CONFIG_DIR);
   delete env.GH_TOKEN;
   const { server, url, pair } = await startLookout(cli, repo, env);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

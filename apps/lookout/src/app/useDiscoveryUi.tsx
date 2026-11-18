@@ -5,8 +5,10 @@ import {
   BriefInboxCard,
   BriefReadyDialog,
   DiscoveryBanner,
+  PlanApproval,
   useBrief,
   useBriefReady,
+  usePlanApproval,
 } from '../features/discovery';
 import { useShown } from '../hooks/useShown';
 
@@ -22,6 +24,8 @@ export function useDiscoveryUi(snap?: MapSnapshot) {
   const ready = useBriefReady(b);
   // Accept binds to the brief as the dialog opened it; a resubmission meanwhile waits for "Review again".
   const shown = useShown(open ? b?.mapId : undefined, d.hash);
+  // the brief and every ticket's criteria, approved in one step from the same dialog
+  const plan = usePlanApproval({ snap, brief: b, hash: d.hash });
   const s = b?.sections;
   const reviewing = b && open && (
     <BriefDialog
@@ -29,6 +33,8 @@ export function useDiscoveryUi(snap?: MapSnapshot) {
       error={d.error}
       changed={shown.changed}
       onReviewAgain={shown.reviewAgain}
+      planOffered={plan.available}
+      plan={plan.available && <PlanApproval plan={plan} onApproved={() => setOpen(false)} />}
       onAccept={() => void d.accept(shown.hash).then((ok) => ok && setOpen(false))}
       onRequestChanges={(note) => void d.requestChanges(note).then((ok) => ok && setOpen(false))}
       onClose={() => setOpen(false)}

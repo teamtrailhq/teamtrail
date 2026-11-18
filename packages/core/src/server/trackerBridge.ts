@@ -24,6 +24,7 @@ import { handleMainChecks } from './mainChecksRoutes';
 import { handleMergeAnyway } from './mergeAnywayRoute';
 import { handleModels } from './modelRoutes';
 import { neverCrash } from './neverCrash';
+import { handlePlan } from './planRoutes';
 import { handlePolicy } from './policyRoutes';
 import { postProofs } from './postProofs';
 import { handleProof } from './proofRoutes';
@@ -137,6 +138,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       handleProof({ ...ctx, configDir: trackers.configDir, kick: () => reconciler.kick() }, req, res, url),
     (req, res, url) => handleAgents(abs, req, res, url),
     (req, res, url) => handleBriefs(ctx, req, res, url),
+    (req, res, url) => handlePlan(ctx, req, res, url),
     (req, res, url) => handleReroutes(ctx, req, res, url),
     (req, res, url) => handleKnowledge(abs, req, res, url),
     (req, res, url) => handleCriteriaProposals(abs, req, res, url),

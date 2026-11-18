@@ -1,12 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import {
-  confirmCriteriaHere,
-  criteriaContent,
-  readCriteria,
-  readCriteriaFile,
-  writeTicketCriteria,
-} from '../criteria/criteriaStore';
-import { contentHash, trustKey, trustLedger } from '../trust/trustLedger';
+import { criteriaContent, readCriteria, readCriteriaFile } from '../criteria/criteriaStore';
+import { criteriaShownText, setCriteriaConfirmed } from '../criteria/setCriteriaConfirmed';
+import { contentHash } from '../trust/trustLedger';
 import { BadRequest, readJson, sendJson } from './http';
 import { checkShown } from './shownHash';
 
@@ -37,21 +32,16 @@ export async function handleCriteria(root: string, req: IncomingMessage, res: Se
     if (!current?.criteria.length)
       return (sendJson(res, 404, { error: 'this ticket has no acceptance criteria' }), true);
     const confirming = b.confirmed !== false;
-    const onDisk = readCriteriaFile(root, b.mapId as string).find((t) => t.ticketId === b.ticketId);
-    const content = onDisk && criteriaContent(onDisk);
+    const content = criteriaShownText(root, b.mapId as string, b.ticketId as string);
     const shown = confirming ? checkShown(b.hash, content, 'These criteria') : ({ ok: true } as const);
     if (!shown.ok) return (sendJson(res, shown.status, { error: shown.error }), true);
-    const saved = writeTicketCriteria(
+    const saved = setCriteriaConfirmed({
       root,
-      { id: b.mapId as string, title: text(b.title) ? (b.title as string) : (b.mapId as string) },
-      { id: b.ticketId as string, key: b.ticketKey as string },
-      { confirmed: confirming },
-    );
-    // The confirmation that counts is this machine's record of these exact criteria, not the flag in the file.
-    const key = trustKey.criteria(b.mapId as string, b.ticketId as string);
-    const at = { mapId: b.mapId as string, ticketId: b.ticketId as string, content: content! };
-    if (saved.confirmed) confirmCriteriaHere(root, at, 'trail lead');
-    else trustLedger(root).drop(key);
+      map: { id: b.mapId as string, title: text(b.title) ? (b.title as string) : (b.mapId as string) },
+      ticket: { id: b.ticketId as string, key: b.ticketKey as string },
+      confirmed: confirming,
+      content,
+    });
     sendJson(res, 200, { ticket: saved });
     return true;
   }

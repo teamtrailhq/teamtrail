@@ -1,14 +1,15 @@
 import { useMemo } from 'react';
 import {
+  AppBody,
   AppBriefing,
   AppBubble,
   AppHeader,
+  AppHome,
   AppSettings,
   AppTicketDrawer,
   AppTrailBar,
   MapZone,
   PhoneTabBar,
-  PhoneView,
   RecordViews,
   useAppNavigation,
   useAttentionUi,
@@ -25,10 +26,11 @@ import {
   type View,
 } from './app/index';
 import { SetupGuide } from './features/guide';
+import { ModeSwitch } from './features/hands-off';
 import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/knowledge';
 import { PhoneProjects, ProjectSwitcher } from './features/projects';
 import { FirstRun, openRulePrefilled } from './features/settings';
-import { useBriefing, useBreakpoint, useLookout, useThemedPrefs } from './hooks';
+import { useBriefing, useBreakpoint, useLookout, useLookoutMode, useThemedPrefs } from './hooks';
 import { createRuntime, trackerKind } from './lib';
 
 /**
@@ -70,7 +72,8 @@ export function App() {
     openFocusSettings: () => settings.open('attention'),
   });
   const view = attn.attention.view;
-  const brief = useBriefing(rt, api, prefs.briefing, view?.items);
+  const mode = useLookoutMode(view);
+  const brief = useBriefing(rt, api, mode.briefing(prefs.briefing), view?.items);
   const live = useLiveTrail({ snap, sessions: scoped.sessions, view });
   const main = useMainMark(api.mapId, live.items);
   const { projects, overview, openOverview, closeOverview } = useProjectsUi(bp, nav, attn.link.request);
@@ -83,13 +86,14 @@ export function App() {
       update={updatePrefs}
       settings={settings}
       openTicket={nav.openTicket}
+      mode={mode}
     />
   );
   const records = (nav.statsOpen || nav.page) && (
     <RecordViews api={api} bp={bp} nav={nav} scoped={scoped} done={trail.done} attn={attn} />
   );
   const covered = settingsPage || overview || records;
-  useOpeningBubble({ ...api, view, busy: !!covered || !!api.selection, open: attn.open });
+  useOpeningBubble({ ...api, view, busy: !!(covered || api.selection || mode.handsOff), open: attn.open });
 
   const shown: View = nav.page ?? 'map';
   const onView = (v: View) => {
@@ -115,6 +119,22 @@ export function App() {
       )}
     />
   );
+  const homeSnap = mode.homeOf(snap);
+  const home = homeSnap && (
+    <AppHome
+      api={api}
+      snap={homeSnap}
+      nav={nav}
+      attn={attn}
+      live={live}
+      trail={trail}
+      brief={brief}
+      sessions={scoped.sessions}
+      phone={phone}
+      onFullMap={() => mode.setMode('hands-on')}
+      onProofSettings={() => settings.open('proof')}
+    />
+  );
   const trailBar = <AppTrailBar api={api} nav={nav} attn={attn} trail={live} bp={bp} brief={trail.inboxCard} />;
   const briefing = (
     <AppBriefing
@@ -131,7 +151,7 @@ export function App() {
 
   return (
     <KnowledgeContext.Provider value={knowledge}>
-      <div className={`app bp-${bp} view-${shown}`}>
+      <div className={`app bp-${bp} view-${shown} ${mode.layout(snap)}`}>
         <AppHeader
           api={api}
           rt={rt}
@@ -153,29 +173,25 @@ export function App() {
           onSettings={settings.toggle}
           onSlack={() => settings.open('slack')}
           onToggleTheme={(night) => updatePrefs({ theme: night ? 'night' : 'day' })}
+          modeSwitch={<ModeSwitch mode={mode.mode} onChange={mode.setMode} />}
+          handsOff={mode.layout(snap) === 'hands-off'}
         />
-        {phone ? (
-          <>
-            <PhoneView
-              covered={covered}
-              map={map}
-              trailBar={trailBar}
-              projects={projects.many && <PhoneProjects projects={projects} onOverview={openOverview} />}
-            />
+        <AppBody
+          phone={phone}
+          home={home}
+          map={map}
+          trailBar={trailBar}
+          covered={covered}
+          projects={projects.many && <PhoneProjects projects={projects} onOverview={openOverview} />}
+          tabBar={
             <PhoneTabBar
               view={shown}
               covered={!!settingsPage || !!overview}
               needs={live.items.length}
               onPick={onView}
             />
-          </>
-        ) : (
-          <>
-            {map}
-            {trailBar}
-            {covered}
-          </>
-        )}
+          }
+        />
         <AppTicketDrawer api={api} nav={nav} attn={attn} sessions={scoped.sessions} done={trail.done} />
         {briefing}
         {trail.dialog}

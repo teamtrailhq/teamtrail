@@ -3,17 +3,19 @@ import { Choice } from '../../components/ui';
 import { managedSignIn } from '../../lib/managedSignIn';
 import { managedThemeFixed, shownTheme } from '../../lib/managedTheme';
 import { DevicesSlot } from './DevicesSlot';
+import { HandsSection } from './HandsSection';
 import { SettingsSection } from './SettingsSection';
 import { SettingsSlot } from './SettingsSlot';
 import { ThemeChoice } from './ThemeChoice';
 import { TranscriptChoice } from './TranscriptChoice';
 import type { SettingsData } from './types';
 
-/** Settings → You: appearance, the HITL transcript, the coding agent, and the browsers signed in. */
+/** Settings → You: Hands-off or Hands-on, appearance, the HITL transcript, the coding agent, and the browsers signed in. */
 export function YouGroup({ data }: { data: SettingsData }) {
   const { prefs, update } = data;
   return (
     <>
+      <HandsSection mode={data.lookoutMode.mode} onChange={data.lookoutMode.setMode} />
       <SettingsSlot id="appearance" storage="browser">
         <SettingsSection title="Appearance">
           {managedThemeFixed() ? (

@@ -1,3 +1,4 @@
+import type { LookoutMode } from './lookoutMode';
 import type { ReviewLoad } from './reviewLoad';
 
 /**
@@ -105,6 +106,8 @@ export interface AttentionPrefs {
   /** Quiet hours set aside by hand until this time (epoch ms): focus ended early, interruptions are back. */
   focusOffUntil?: number;
   channel: NotifyChannel;
+  /** Hands-off or Hands-on in the Lookout (model/lookoutMode.ts); missing means Hands-off. */
+  mode?: LookoutMode;
 }
 
 /**

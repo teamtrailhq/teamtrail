@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { lookoutLinks, pairLink, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { handsOn, lookoutLinks, pairLink, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
 import { verifyLoopback } from './verifyLoopback.mjs';
 import { verifyOpenSignedIn } from './verifyOpenSignedIn.mjs';
 
@@ -163,6 +163,7 @@ export async function verifySignIn({ browser, cli, log, shots }) {
   const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-sign-in-e2e-'));
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const env = { ...process.env, TEAMTRAIL_CONFIG_DIR: path.join(top, 'config') };
+  handsOn(env.TEAMTRAIL_CONFIG_DIR);
   const started = await startLookout(cli, top, env);
   const { url, pair } = started;
   let server = started.server;

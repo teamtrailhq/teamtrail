@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, handsOn, lookoutLinks, signInWith } from './e2eHelpers.mjs';
 
 function repo(top, name) {
   const dir = path.join(top, name);
@@ -52,6 +52,7 @@ export async function verifyProjects({ browser, cli, log, shots }) {
   const top = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-projects-e2e-')));
   const config = path.join(top, 'config');
   const env = { ...process.env, TEAMTRAIL_CONFIG_DIR: config };
+  handsOn(env.TEAMTRAIL_CONFIG_DIR);
   delete env.TEAMTRAIL_NO_REGISTER;
   const a = repo(top, 'storefront');
   const b = repo(top, 'billing');

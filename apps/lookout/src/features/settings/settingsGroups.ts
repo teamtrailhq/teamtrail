@@ -46,6 +46,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     label: 'You',
     intro: 'How the Lookout looks and reads for you, and the browsers and devices signed in to it.',
     sections: [
+      { id: 'hands', title: 'Hands-off or Hands-on' },
       { id: 'appearance', title: 'Appearance' },
       { id: 'transcript', title: 'HITL transcript' },
       { id: 'agent', title: 'Agent' },

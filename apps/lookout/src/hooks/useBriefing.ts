@@ -1,6 +1,7 @@
 import { type AttentionItem, type Briefing, buildBriefing, briefingLine } from '@teamtrail/core';
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { type Runtime, type Prefs } from '../lib';
+import { type AwayVisit, awayVisit } from '../lib/awayVisit';
 import type { LookoutApi } from './useLookout';
 
 export const TICK_MS = 15_000;
@@ -30,6 +31,8 @@ export function useBriefing(
   const [unread, setUnread] = useState(false);
   /** Last-seen times the most recent briefing was built from, for the header button. */
   const lastSince = useRef<{ seen: Record<string, number>; any?: number }>();
+  /** The visit "Since you were away" counts from (Hands-off's home): set on arrival, kept across reloads. */
+  const [visit, setVisit] = useState<AwayVisit>();
   const lastInput = useRef(Date.now());
   const started = useRef(false);
   const awayMs = prefs.awayMinutes * 60_000;
@@ -68,7 +71,11 @@ export function useBriefing(
     const p = rt.presence;
     if (!p) return;
     const any = p.lastSeenAny();
-    if (any !== undefined && Date.now() - any >= awayMs) {
+    const away = any !== undefined && Date.now() - any >= awayMs;
+    const last = { seen: p.snapshot(), any };
+    if (away) setVisit(awayVisit(last, last));
+    else setVisit((v) => v ?? awayVisit(undefined, last));
+    if (away) {
       const seen = p.snapshot();
       if (compute(seen, any).changed) {
         lastSince.current = { seen, any };
@@ -121,6 +128,11 @@ export function useBriefing(
     [since, compute, api.allSnaps, api.decisions, api.activity, attention],
   );
   const line = useMemo(() => (briefing ? briefingLine(briefing) : ''), [briefing]);
+  const sinceAway = useMemo(
+    () => visit && compute(visit.seen, visit.any),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visit, compute, api.allSnaps, api.decisions, api.activity, attention],
+  );
 
   useEffect(() => {
     if (since) setUnread(false);
@@ -134,6 +146,10 @@ export function useBriefing(
     status,
     briefing,
     line,
+    /** What changed since the person's last visit, for Hands-off's home; undefined until they arrive. */
+    sinceAway,
+    /** When the person was last on a trail before this visit (else on any); undefined until they arrive. */
+    awaySince: (mapId?: string) => visit && ((mapId && visit.seen[mapId]) || visit.any),
     /** Header button: the last briefing again. */
     open: () => {
       const l = lastSince.current;

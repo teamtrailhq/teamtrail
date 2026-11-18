@@ -30,8 +30,19 @@ async function putReviewLimit(root: string, req: IncomingMessage, res: ServerRes
 }
 
 /**
+ * Sets this person's Hands-off or Hands-on (`{ mode }`), keeping the rest of their prefs. Unlike the prefs as a
+ * whole, another device of theirs may set it: it changes only what the Lookout shows them, never what runs here.
+ */
+async function putMode(configDir: string | undefined, req: IncomingMessage, res: ServerResponse) {
+  const body = await readJson<{ mode?: unknown }>(req, '{}');
+  const parsed = writeAttentionPrefs({ ...readAttentionPrefs(configDir), mode: body.mode }, configDir);
+  sendJson(res, parsed.errors.length ? 400 : 200, parsed.errors.length ? { errors: parsed.errors } : parsed.value);
+}
+
+/**
  * `/attention` routes: the ranked queue (GET), snooze, dismiss and restore (POST), and this person's
- * prefs (GET and PUT `/attention/prefs`, kept in `configDir`), and the team's review limit (PUT
+ * prefs (GET and PUT `/attention/prefs`, kept in `configDir`; PUT `/attention/mode { mode }` for Hands-off or
+ * Hands-on alone), and the team's review limit (PUT
  * `/attention/review-limit { limit }`, written to attention.json). False when none matches.
  */
 export async function handleAttention(
@@ -58,6 +69,7 @@ export async function handleAttention(
     sendJson(res, parsed.errors.length ? 400 : 200, parsed.errors.length ? { errors: parsed.errors } : parsed.value);
     return true;
   }
+  if (p === '/attention/mode' && req.method === 'PUT') return (await putMode(configDir, req, res), true);
   if (p === '/attention/review-limit' && req.method === 'PUT') return (await putReviewLimit(root, req, res), true);
   if (req.method !== 'POST') return false;
   const body = await readJson<{ id?: unknown; minutes?: unknown; until?: unknown }>(req, '{}');

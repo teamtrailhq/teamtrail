@@ -1,4 +1,4 @@
-import type { AnsweredQuestion, MapDoc, MapMode, MapSnapshot, ModelMatching } from '@teamtrail/core';
+import type { AnsweredQuestion, LookoutMode, MapDoc, MapMode, MapSnapshot, ModelMatching } from '@teamtrail/core';
 import type { Prefs, TrackerChoice } from '../../lib';
 
 /** The groups of the Settings page, in side-nav order. */
@@ -23,6 +23,7 @@ export type SettingsSectionId =
   | 'attention'
   | 'slack'
   | 'trip-report'
+  | 'hands'
   | 'appearance'
   | 'transcript'
   | 'agent'
@@ -62,6 +63,8 @@ export interface SettingsData {
   snaps: MapSnapshot[];
   answered: AnsweredQuestion[];
   onModelMatching: (value: ModelMatching) => void;
+  /** This person's Hands-off or Hands-on, and switching it. */
+  lookoutMode: { mode: LookoutMode; setMode: (mode: LookoutMode) => void };
   /** Opens a ticket on the map, leaving Settings. */
   onOpenTicket: (mapId: string, ticketId: string) => void;
 }

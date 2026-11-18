@@ -1,6 +1,8 @@
 export { AppBriefing } from './AppBriefing';
+export { AppBody } from './AppBody';
 export { AppBubble } from './AppBubble';
 export { AppHeader } from './AppHeader';
+export { AppHome } from './AppHome';
 export { AppNewTrail } from './AppNewTrail';
 export { AppSettings } from './AppSettings';
 export { AppTicketDrawer } from './AppTicketDrawer';
