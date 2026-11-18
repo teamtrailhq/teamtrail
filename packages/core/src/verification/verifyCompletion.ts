@@ -1,5 +1,7 @@
 import path from 'node:path';
 import type { TrackerAdapter } from '../adapters/adapter';
+import { applyGuard } from '../checkGuard/applyGuard';
+import { localGuard } from '../checkGuard/localGuard';
 import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
 import { listGuides } from '../guides/guideStore';
@@ -200,7 +202,10 @@ async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; conf
     waived: job.waived,
     signal: env.signal,
   });
-  return { ...outcome, git, ...(criteria ? { criteria } : {}) };
+  // the check guard: did the work change what these checks run, or weaken their tests (checkGuard/)
+  const guard = await localGuard({ config: run.config.config, checks: info.checks, git, checkout: repoRoot });
+  const graded = { ...outcome, git, ...(criteria ? { criteria } : {}) };
+  return applyGuard(graded, { guard, root: env.root, mapId, ticket: { id: t.id, key: t.key } });
 }
 
 /** Records that a pass went stale while its checks ran, and runs the checks again on the code as it is now. */

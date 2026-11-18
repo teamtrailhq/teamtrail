@@ -1,4 +1,5 @@
 import type { CriteriaResult } from '../criteria/criteria';
+import type { AttemptGuard } from './checkGuard';
 import type { WaivedCheck } from './checkWaiver';
 import type { GitEvidence } from './evidence';
 import type { GateModes } from './gateMode';
@@ -13,6 +14,11 @@ export interface CheckSpec {
   timeoutSec: number;
   /** Relative to the repo root; must stay inside it. */
   cwd?: string;
+  /**
+   * Repo-relative globs of files the check depends on beyond what the check guard reads from its command (fixtures,
+   * helpers its scripts import): a completion that changes one doesn't count as passing it (checkGuard/).
+   */
+  guards?: string[];
 }
 
 /** `.teamtrail/verification.json`: the only source of commands Teamtrail runs. */
@@ -122,6 +128,11 @@ export interface VerificationAttempt {
   git?: GitEvidence;
   /** The ticket's acceptance criteria matched to the evidence the agent gave. */
   criteria?: CriteriaResult;
+  /**
+   * What the check guard found: the work changed what its checks run, or weakened their tests (checkGuard/). With
+   * `enforce`, a pass waits for the trail lead; missing when it found nothing (or is off).
+   */
+  guard?: AttemptGuard;
 }
 
 export type VerdictKind = 'PASS' | 'FAIL' | 'NEEDS_HUMAN';

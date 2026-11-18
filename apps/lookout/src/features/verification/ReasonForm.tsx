@@ -10,9 +10,13 @@ const FORM: Record<Reasoned, { label: string; submit: string; hint: string }> = 
   unblock: { label: 'Why', submit: 'Unblock', hint: 'Back to the queue without running checks.' },
 };
 
+const GUARDED_HINT = 'The pass counts although the work changed what its checks run. The proof says you accepted it.';
+
 /** A trail lead override on a verifying or held ticket. Each needs a reason, which is kept as a verdict. */
 export function ReasonForm(props: {
   kind: Reasoned;
+  /** Accepting a pass the check guard held: the checks passed, the work changed what they run. */
+  guarded?: boolean;
   onSubmit: (req: Omit<ActionRequest, 'mapId' | 'ticketId'>) => void;
   onCancel: () => void;
 }) {
@@ -42,7 +46,7 @@ export function ReasonForm(props: {
           />
         </Field>
       )}
-      <span className="t-meta">{FORM[kind].hint}</span>
+      <span className="t-meta">{kind === 'accept' && props.guarded ? GUARDED_HINT : FORM[kind].hint}</span>
       <div className="form-actions">
         <Button variant="ghost" onClick={props.onCancel}>
           Cancel

@@ -1,3 +1,4 @@
+import { guardReason } from '../checkGuard/guardReason';
 import { evidenceLines } from '../evidence/evidenceSummary';
 import type { LifecycleEvent, TicketPhase } from '../model/lifecycle';
 import type { CheckResult, VerificationAttempt } from '../model/verification';
@@ -22,12 +23,19 @@ function checkStatus(c: CheckResult): string {
 
 /**
  * Where a finished attempt sends the ticket. A pass is done at level `checks`
- * and waits for review above it; a fail goes back for rework until
+ * and waits for review above it, unless the check guard holds it: then it waits for the trail lead, blocked, since
+ * the work changed what its checks run (checkGuard/). A fail goes back for rework until
  * `maxAttempts` failures, then to a human; an error (checks that cannot run
  * as configured) always goes to a human.
  */
 export function outcomeOf(a: VerificationAttempt, failures: number, maxAttempts: number): Outcome {
   const ran = a.checks.map(checkLine).join(', ') || 'no checks configured';
+  if (a.result === 'pass' && a.guard?.mode === 'enforce')
+    return {
+      event: 'checks.pass',
+      to: 'blocked',
+      reason: `${a.id} passed, but the work changed what its checks run: ${guardReason(a.guard.findings)}`,
+    };
   if (a.result === 'pass') {
     const signOff = a.criteria?.manual ?? [];
     const known = a.knownFailures?.length
@@ -72,13 +80,18 @@ export function criteriaLines(a: Pick<VerificationAttempt, 'criteria' | 'agent'>
   return ['', '**Acceptance criteria**', '', ...c.lines.map((l) => `- ${l}`), ...(notes.length ? ['', ...notes] : [])];
 }
 
+function blockedHead(a: VerificationAttempt) {
+  if (a.result === 'pass') return 'passed · held for the trail lead';
+  return a.result === 'fail' ? 'failed · needs a human' : 'could not run · needs a human';
+}
+
 /** The ticket comment for a finished attempt: result, checks, and the output of the first failing one. */
 export function attemptComment(a: VerificationAttempt, o: Outcome) {
   const head = {
     done: 'passed · done',
     verifying: 'passed · waiting for review',
     rework: 'failed · back for rework',
-    blocked: a.result === 'fail' ? 'failed · needs a human' : 'could not run · needs a human',
+    blocked: blockedHead(a),
   }[o.to as 'done'];
   const failed = a.checks.find((c) => !ok(c));
   const tail = failed?.tail.split('\n').slice(-20).join('\n');

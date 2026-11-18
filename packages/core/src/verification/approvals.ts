@@ -1,3 +1,4 @@
+import { guardReason } from '../checkGuard/guardReason';
 import type { VerificationLevel } from '../model/lifecycle';
 import type { MapSnapshot } from '../model/types';
 import type { VerificationAttempt, VerificationVerdict } from '../model/verification';
@@ -71,6 +72,9 @@ function heldItem({ base, last, verdict }: Waiting, updatedAt: number): Approval
 function heldReason(last?: VerificationAttempt, verdict?: VerificationVerdict): string {
   if (verdict?.verdict === 'NEEDS_HUMAN') return `${verdict.by} asks you to decide: ${verdict.summary}`;
   if (last?.result === 'fail') return `${last.id} failed its checks too many times`;
+  // a pass the check guard holds: what the work changed of what its checks run (checkGuard/)
+  if (last?.result === 'pass' && last.guard?.mode === 'enforce')
+    return `Checks passed, but the work changed what they run: ${guardReason(last.guard.findings)}`;
   return last?.note ?? 'verification could not run';
 }
 

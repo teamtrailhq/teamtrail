@@ -301,6 +301,24 @@
   }
 }
 
+/* The check guard: what a completion changed of what its checks run. Red only while it holds a pass for you. */
+.vf-guard {
+  margin: var(--sp-6) 0;
+  font-size: var(--fs-sm);
+}
+.vf-guard-head {
+  margin: 0;
+  font-weight: 600;
+  color: var(--amber);
+}
+.vf-guard.held .vf-guard-head {
+  color: var(--urgent);
+}
+.vf-guard ul {
+  margin: var(--sp-6) 0;
+  padding-left: var(--sp-18);
+}
+
 /* Acceptance criteria: the evidence of an attempt, and the ticket's criteria in the inspector. */
 .vf-criteria {
   list-style: none;

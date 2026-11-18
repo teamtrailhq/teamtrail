@@ -5,7 +5,8 @@ import { parseVerificationConfig } from './config';
 
 const argv = (s: CheckSpec) => JSON.stringify(s.run);
 const where = (s: CheckSpec) => (s.cwd && s.cwd !== '.' ? ` in ${s.cwd}` : '');
-const shown = (s: CheckSpec) => `${argv(s)}${where(s)}`;
+const guarded = (s: CheckSpec) => (s.guards?.length ? `, guarding ${s.guards.join(', ')}` : '');
+const shown = (s: CheckSpec) => `${argv(s)}${where(s)}${guarded(s)}`;
 const config = (text: string | undefined) => (text ? parseVerificationConfig(text).config : undefined);
 
 /** Settings besides the commands, each as one comparable line. */

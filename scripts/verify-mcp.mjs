@@ -20,6 +20,7 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { verifyCheckGuard } from './verifyCheckGuard.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
@@ -640,6 +641,8 @@ const linearOk = await verifyLinear({ browser, cli, log, shots });
 const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const screeningOk = await verifyScreening({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
+// The check guard: work that changed what its check runs is held, and the trail lead accepts the pass in the Lookout.
+const checkGuardOk = await verifyCheckGuard({ browser, cli, log, shots });
 // The page's Content-Security-Policy in a real browser, API headers, and a frame from another origin refused.
 const headersOk = await verifyHeaders({ browser, url, log, pair: () => pairLink({ cli, cwd: repo }) });
 // Sign-in: pairing links work once, the API answers no one else, a revoked browser is signed out live.
@@ -734,6 +737,7 @@ if (
   !remoteOk ||
   !screeningOk ||
   !waiverOk ||
+  !checkGuardOk ||
   !slackOk
 )
   process.exit(1);

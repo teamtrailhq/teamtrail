@@ -45,13 +45,27 @@ export function parseCheckSpec(name: string, v: unknown, errors: string[]): Chec
     return void errors.push(`${at}.run must be a non-empty array of strings`);
   if (v.timeoutSec !== undefined && !posInt(v.timeoutSec)) errors.push(`${at}.timeoutSec must be a positive integer`);
   if (v.cwd !== undefined && typeof v.cwd !== 'string') errors.push(`${at}.cwd must be a path`);
-  const unknown = Object.keys(v).filter((k) => !['run', 'timeoutSec', 'cwd'].includes(k));
+  const guards = parseGuards(v.guards, at, errors);
+  const unknown = Object.keys(v).filter((k) => !['run', 'timeoutSec', 'cwd', 'guards'].includes(k));
   if (unknown.length) errors.push(`${at}: unknown ${unknown.join(', ')}`);
   return {
     run: v.run as string[],
     timeoutSec: (v.timeoutSec as number) ?? DEFAULT_CHECK_TIMEOUT_SEC,
     ...(typeof v.cwd === 'string' ? { cwd: v.cwd } : {}),
+    ...(guards?.length ? { guards } : {}),
   };
+}
+
+/** A check's `guards`: repo-relative globs, never absolute or leaving the repo. */
+function parseGuards(v: unknown, at: string, errors: string[]): string[] | undefined {
+  if (v === undefined) return undefined;
+  const ok = (g: unknown) =>
+    typeof g === 'string' && g.length > 0 && g.length <= 300 && !g.startsWith('/') && !g.split('/').includes('..');
+  if (!Array.isArray(v) || v.length > 50 || !v.every(ok)) {
+    errors.push(`${at}.guards must list up to 50 repo-relative path globs`);
+    return undefined;
+  }
+  return v as string[];
 }
 
 type Take = <T>(v: unknown, valid: (v: unknown) => v is T, set: (v: T) => void, error: string) => void;

@@ -34,13 +34,7 @@ function standingOf(s: StandingInput): Standing {
     case 'verifying':
       return verifying(s);
     case 'held':
-      return {
-        edge: s.item?.edge ?? 'attention',
-        title: `Blocked: ${whyBack(s)}`,
-        parts: ['waits on you'],
-        // a check that can't pass: the way out is accepting it without that check
-        primary: s.latest?.failed.length ? 'waive' : 'unblock',
-      };
+      return held(s);
     case 'claimed':
       return working(s);
     case 'rework':
@@ -56,6 +50,25 @@ function standingOf(s: StandingInput): Standing {
       return never;
     }
   }
+}
+
+function held(s: StandingInput): Standing {
+  const edge = s.item?.edge ?? 'attention';
+  // the checks passed, but the work changed what they run: the way past is accepting the pass, or sending it back
+  if (s.latest?.guarded)
+    return {
+      edge,
+      title: 'Held: the work changed what its checks run',
+      parts: [s.latest.guarded, 'waits on you'],
+      primary: 'accept',
+    };
+  return {
+    edge,
+    title: `Blocked: ${whyBack(s)}`,
+    parts: ['waits on you'],
+    // a check that can't pass: the way out is accepting it without that check
+    primary: s.latest?.failed.length ? 'waive' : 'unblock',
+  };
 }
 
 function asked(s: StandingInput, q: { agent: string; at: number }): Standing {

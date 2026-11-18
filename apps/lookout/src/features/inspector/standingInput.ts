@@ -1,4 +1,4 @@
-import { attention, DISCOVERY_TYPES, leaseHealth, type VerificationVerdict } from '@teamtrail/core';
+import { attention, DISCOVERY_TYPES, guardReason, leaseHealth, type VerificationVerdict } from '@teamtrail/core';
 import { checkOk, type TicketVerification } from '../../lib/verification';
 import { edgeFor } from '../attention';
 import type { LatestAttempt, LoadedTicket, StandingInput } from './types';
@@ -48,7 +48,9 @@ function briefHeld(v: LoadedTicket): StandingInput['briefHeld'] {
 }
 
 function latestOf(a: TicketVerification['attempts'][number]): LatestAttempt {
-  return { result: a.result, agent: a.agent, failed: a.checks.filter((c) => !checkOk(c)).map((c) => c.name) };
+  const failed = a.checks.filter((c) => !checkOk(c)).map((c) => c.name);
+  const held = a.result === 'pass' && a.guard?.mode === 'enforce';
+  return { result: a.result, agent: a.agent, failed, ...(held ? { guarded: guardReason(a.guard!.findings) } : {}) };
 }
 
 const SENT_BACK: Partial<Record<VerificationVerdict['verdict'], string>> = {

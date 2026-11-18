@@ -1,6 +1,7 @@
 import { untrusted } from '../evidence/github/prText';
 import { canonicalJson } from '../lib/canonicalJson';
 import type { Proof, ProofSignature } from '../model/proof';
+import { guardLines } from './guardLines';
 import { proofBadge } from './proofBadge';
 import { proofMarker } from './proofMarker';
 
@@ -116,6 +117,7 @@ export function proofMarkdown(p: Proof, signature?: ProofSignature): string {
     ...(p.gaps.length ? ['**Not yet proven:**', ...p.gaps.map((g) => `- ${md(g)}`), ''] : []),
     '**Checks Teamtrail ran:**',
     ...checkLines(p),
+    ...guardLines(p, md),
     '',
     '**Acceptance criteria:**',
     ...criteriaLines(p),
