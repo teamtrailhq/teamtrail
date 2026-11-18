@@ -51,8 +51,8 @@ export interface VerifyEnv {
 /** The repo a tracker's checks and git evidence use. */
 export const repoRootOf = (env: Pick<VerifyEnv, 'root' | 'repoRoot'>) => env.repoRoot ?? path.dirname(env.root);
 
-/** What the agent claimed, kept on the attempt and used to resolve the ticket when it passes. */
-export interface Submission {
+/** What the agent claimed, kept on the attempt and used to resolve the ticket when it passes; `model` it ran on. */
+export interface Submission extends Pick<VerificationAttempt, 'model'> {
   agent: string;
   sessionId?: string;
   resolution: string;
@@ -74,8 +74,6 @@ export interface Submission {
   remote?: boolean;
   /** Who is behind the agent (see `VerificationAttempt.origin`). */
   origin?: string;
-  /** The model the agent ran on, from its own logs. */
-  model?: string;
   /** The repo-relative files the agent said it changed. */
   declaredPaths?: string[];
   /** The path globs the agent declared at its claim (`touches`), read from its lease before it's dropped. */
