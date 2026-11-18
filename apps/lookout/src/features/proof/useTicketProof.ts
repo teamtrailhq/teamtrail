@@ -32,7 +32,8 @@ export function useTicketProof(mapId: string, ticketId: string) {
     failed: () => setView(null),
     view: `${mapId}/${ticketId}`,
     changed: (p) => p.includes(`tickets/${ticketId}.md`),
-    events: { verification: () => true, proof: () => true },
+    // `tracker`: a GitHub or Linear trail changed (its decisions are part of the proof); markdown has `changed`
+    events: { verification: () => true, proof: () => true, tracker: () => true },
   });
   return view;
 }

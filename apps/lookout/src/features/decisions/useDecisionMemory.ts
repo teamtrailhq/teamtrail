@@ -18,6 +18,8 @@ export function useDecisionMemory() {
     show: setMemory,
     failed: () => setMemory(null),
     changed: (p) => p.includes('/decisions/') || p.endsWith('map.md'),
+    // GitHub and Linear trails have no files: the server says when one changed
+    events: { tracker: () => true, verification: () => true },
   });
   return memory;
 }

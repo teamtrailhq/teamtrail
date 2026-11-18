@@ -1,89 +1,14 @@
-import type { DecisionRecord, MapDoc, MapMode, Ticket, TicketType } from '../../../model/types';
-import { OperationError } from '../../../planning/operations/operationError';
-import type { MapInput } from '../../adapter';
-import { withMapMeta } from '../../mapMeta';
-import { reopened, withEdit } from '../../ticketEdits';
-import { withMeta } from '../../ticketMeta';
 import { isTransient, type TrackerError } from '../http';
-import { applyWrite, CHECKED, hasLanded, ticketOf, writeId } from './queuedWrites';
-import { SyncedStore } from './syncedStore';
-import type { CacheEntry, EventInit, QueuedChange, QueuedWrite, RemoteComment } from './types';
+import { applyWrite, CHECKED, hasLanded, writeId } from './queuedWrites';
+import { SyncedSend } from './syncedSend';
+import type { CacheEntry, EventInit, QueuedChange, QueuedWrite } from './types';
 
 /**
- * Write side of a synced adapter: the remote primitives each tracker supplies,
- * and the queue that sends them in order (or holds them while the tracker is
- * unreachable). The public write methods are added by `SyncedAdapter`.
+ * Write side of a synced adapter: the queue that sends writes in order (or holds them while the tracker is
+ * unreachable). The remote primitives are in `SyncedSend`; the public write methods are added by `SyncedAdapter`.
  */
-export abstract class SyncedWriter extends SyncedStore {
-  protected abstract remoteCreateMap(input: MapInput & { mode: MapMode }): Promise<MapDoc>;
-  protected abstract remoteCreateTicket(
-    map: MapDoc,
-    input: { title: string; type: TicketType; body: string; hitl?: boolean },
-  ): Promise<Ticket>;
-  protected abstract remoteAddBlocking(map: MapDoc, blocker: Ticket, blocked: Ticket): Promise<void>;
-  /** Drop the relation; a relation that is already gone is not an error. */
-  protected abstract remoteRemoveBlocking(map: MapDoc, blocker: Ticket, blocked: Ticket): Promise<void>;
-  /** Persist the title and body (with its `ticketMeta`) of an already-edited ticket. */
-  protected abstract remoteEditTicket(map: MapDoc, t: Ticket): Promise<void>;
-  protected abstract remoteReopen(map: MapDoc, t: Ticket): Promise<void>;
-  /** Persist the claim and status (`ticketMeta`) of an already-updated ticket. */
-  /** `confirm`: the trail lead set this ticket's settings (TicketMetaPatch.confirm); any other write never accepts them. */
-  protected abstract remoteSetMeta(map: MapDoc, t: Ticket, o?: { confirm?: boolean }): Promise<void>;
-  /** `c.writeId` must be readable back as the comment's `writeId`. */
-  protected abstract remoteComment(map: MapDoc, t: Ticket, c: RemoteComment): Promise<void>;
-  protected abstract remoteClose(map: MapDoc, t: Ticket, reason: 'completed' | 'not_planned'): Promise<void>;
-  protected abstract remoteUpdateMap(map: MapDoc, o?: { confirm?: boolean }): Promise<void>;
-  protected abstract remoteSetMode(map: MapDoc, mode: MapMode): Promise<void>;
-  /** Adds or removes the ARCHIVED_LABEL on the trail issue. */
-  protected abstract remoteSetArchived(map: MapDoc, archived: boolean): Promise<void>;
-  /** Post a decision record on its ticket, or on the trail when it has none. */
-  protected abstract remotePostDecision(map: MapDoc, d: DecisionRecord, ticket?: Ticket): Promise<void>;
-  protected abstract remoteUpdateDecision(map: MapDoc, d: DecisionRecord): Promise<void>;
-
+export abstract class SyncedWriter extends SyncedSend {
   private writes = 0;
-
-  /** Sends a queueable write, reading tickets and decisions from `e` (the trail before the write is applied). */
-  private send(e: CacheEntry, w: QueuedWrite): Promise<unknown> {
-    const c = w.change;
-    const map = e.snap.map;
-    switch (c.kind) {
-      case 'mode':
-        return this.remoteSetMode(map, c.mode);
-      case 'archived':
-        return this.remoteSetArchived(map, c.archived);
-      case 'sections':
-        return this.remoteUpdateMap({ ...map, sections: c.sections });
-      case 'mapMeta':
-        return this.remoteUpdateMap(withMapMeta(map, c.patch), { confirm: !!c.patch.confirm });
-      case 'blocking':
-        return this.remoteAddBlocking(map, ticketOf(e, c.blockerId), ticketOf(e, c.blockedId));
-      case 'unblocking':
-        return this.remoteRemoveBlocking(map, ticketOf(e, c.blockerId), ticketOf(e, c.blockedId));
-      case 'edit':
-        return this.remoteEditTicket(map, withEdit(ticketOf(e, c.ticketId), c.edit));
-      case 'reopen':
-        return this.remoteReopen(map, reopened(ticketOf(e, c.ticketId)));
-      case 'claim':
-        return this.remoteSetMeta(map, { ...ticketOf(e, c.ticketId), assignee: c.assignee });
-      case 'meta':
-        return this.remoteSetMeta(map, withMeta(ticketOf(e, c.ticketId), c.patch), { confirm: !!c.patch.confirm });
-      case 'comment':
-        return this.remoteComment(map, ticketOf(e, c.ticketId), { author: c.author, body: c.body, writeId: w.id });
-      case 'close':
-        return this.remoteClose(map, ticketOf(e, c.ticketId), c.reason);
-      case 'decision':
-        return this.remotePostDecision(
-          map,
-          c.decision,
-          c.decision.ticketId ? e.snap.tickets.find((t) => t.id === c.decision.ticketId) : undefined,
-        );
-      case 'supersede': {
-        const d = e.decisions.find((x) => x.id === c.decisionId);
-        if (!d) throw new OperationError(`decision ${c.decisionId} not found in ${w.mapId}`);
-        return this.remoteUpdateDecision(map, { ...d, supersededBy: c.supersededBy });
-      }
-    }
-  }
 
   protected async flush() {
     /** Uncached remote state read during this flush, to check writes that may have landed. */
@@ -102,17 +27,28 @@ export abstract class SyncedWriter extends SyncedStore {
         const check = w.verify && CHECKED.has(w.change.kind);
         if (check || !this.entries.has(w.mapId)) await read(w.mapId);
         if (!(check && hasLanded(remote.get(w.mapId)!, w))) await this.send(await this.entry(w.mapId), w);
+        this.touch(w.mapId);
       } catch (err) {
         if (isTransient(err)) throw this.keepQueued(w, err);
-        // the tracker rejected it for good (deleted issue, revoked access): drop it rather than block the queue
-        this.queue.shift();
-        this.health.set({ error: `Dropped queued write (${w.label}): ${(err as Error).message}` });
+        this.drop(w, err);
         continue;
       }
       this.queue.shift();
       this.health.online();
       this.health.set({});
     }
+  }
+
+  /**
+   * The tracker rejected a queued write for good (deleted issue, revoked access, claimed meanwhile): it is dropped
+   * rather than block the queue, kept in the status, and its trail read again so the cache stops showing it.
+   */
+  private drop(w: QueuedWrite, err: unknown) {
+    this.queue.shift();
+    this.health.dropped(w.label, String((err as Error)?.message ?? err));
+    this.pending.add(w.mapId);
+    const cached = this.entries.get(w.mapId);
+    if (cached) cached.at = 0;
   }
 
   /**
@@ -148,22 +84,35 @@ export abstract class SyncedWriter extends SyncedStore {
         at: this.now(),
         change: c,
       };
-      if (this.queue.length) this.enqueue(w);
-      else {
-        try {
-          await this.send(e, w);
-          this.health.online();
-        } catch (err) {
-          this.health.failed(err);
-          if (!isTransient(err)) throw err;
-          this.enqueue({ ...w, verify: err.code === 'offline' || undefined });
-        }
-      }
+      this.touch(mapId);
+      const current = await this.sendOrQueue(e, w);
       applyWrite(e, w, this.now);
       e.at = this.now();
       e.snap.map.updatedAt = this.now();
+      // the trail as the tracker had it just before, with this write: what a teammate changed meanwhile shows now
+      if (current) {
+        applyWrite(current, w, this.now);
+        current.snap.map.updatedAt = this.now();
+        this.replace(mapId, current);
+      }
+      this.touch(mapId);
       this.emit(event);
     });
+  }
+
+  /** Sends `w` now, or queues it behind other queued writes or when the tracker can't be reached. */
+  private async sendOrQueue(e: CacheEntry, w: QueuedWrite): Promise<CacheEntry | undefined> {
+    if (this.queue.length) return void this.enqueue(w);
+    try {
+      const current = await this.send(e, w);
+      this.health.online();
+      return current;
+    } catch (err) {
+      this.health.failed(err);
+      if (!isTransient(err)) throw err;
+      this.enqueue({ ...w, verify: err.code === 'offline' || undefined });
+      return undefined;
+    }
   }
 
   private enqueue(w: QueuedWrite) {

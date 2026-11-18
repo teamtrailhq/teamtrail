@@ -262,9 +262,14 @@ export function fakeGitHub(
     if (method === 'GET' && rest_ === '/issues') {
       const want = (url.searchParams.get('labels') ?? '').split(',').filter(Boolean);
       let list = [...issues.values()].filter((i) => want.every((l) => i.labels.includes(l)));
+      // `since`: updated at or after, as api.github.com answers it
+      const since = url.searchParams.get('since');
+      if (since) list = list.filter((i) => i.updated_at >= since);
       if (url.searchParams.get('sort') === 'updated') list.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
       else list.sort((a, b) => b.number - a.number);
-      list = list.slice(0, Number(url.searchParams.get('per_page') ?? 30));
+      const per = Number(url.searchParams.get('per_page') ?? 30);
+      const page = Number(url.searchParams.get('page') ?? 1);
+      list = list.slice((page - 1) * per, page * per);
       const out = list.map(rest);
       const etag = etagOf(out);
       if (headers.get('if-none-match') === etag) return { status: 304, headers: { etag, ...rate() } };

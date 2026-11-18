@@ -6,10 +6,15 @@ export function SyncLine({ status }: { status?: SyncStatus }) {
   const rate = status.rate?.limit
     ? `${status.rate.remaining?.toLocaleString() ?? '?'}/${status.rate.limit.toLocaleString()} req`
     : '';
-  const queued = status.queued ? ` · ${status.queued} queued` : '';
+  const dropped = status.dropped ?? [];
+  const refused = dropped.length ? ` · ${dropped.length} not sent` : '';
+  const queued = `${status.queued ? ` · ${status.queued} queued` : ''}${refused}`;
   const [cls, text] = stateLine(status, queued);
+  // the writes the tracker refused for good stay listed (online again doesn't clear them), with why
+  const error = status.error?.startsWith('Dropped queued write') ? undefined : status.error;
+  const title = [error, ...dropped.map((d) => `Not sent (${d.label}): ${d.error}`)].filter(Boolean).join('\n');
   return (
-    <div className={`sync-line ${cls}`} title={status.error}>
+    <div className={`sync-line ${cls}`} title={title || undefined}>
       <span className="dot" />
       <span>{text}</span>
       {rate && <span className="rate">{rate}</span>}

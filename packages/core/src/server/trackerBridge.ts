@@ -49,6 +49,7 @@ import { watchIntegration } from './watchIntegration';
 import { watchLeases } from './watchLeases';
 import { watchMainChecks } from './watchMainChecks';
 import { watchRemoteAgents } from './watchRemoteAgents';
+import { watchRemoteTracker } from './watchRemoteTracker';
 import { watchTrackerFolder } from './watchTrackerFolder';
 import { watchTrailChecks } from './watchTrailChecks';
 import { watchVerification } from './watchVerification';
@@ -99,7 +100,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send, postProofs: proofs }, reconcilerTiming);
   const attention = watchAttention(ctx, send, { ...attentionTiming, configDir: trackers.configDir });
   const unwatchIntegration = watchIntegration(abs, integrationTiming);
-  const unwatchRemoteAgents = watchRemoteAgents(abs, send);
+  const unwatchRemote = [watchRemoteAgents(abs, send), watchRemoteTracker(() => routes.active(), send)];
   // checks on main: in Cloud the server's runner runs them, never this process (mainChecks/startMainRun.ts)
   const mainEnv = { root: abs, ...(checkRunner ? { checkRunner } : {}) };
   const mainCtx = { ...ctx, env: mainEnv, changed: () => send('event: main-checks\ndata: {}\n\n') };
@@ -207,7 +208,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       unwatchLeases();
       attention.stop();
       unwatchIntegration();
-      unwatchRemoteAgents();
+      for (const stop of unwatchRemote) stop();
       unwatchMainChecks();
       unwatchTrailChecks();
       reconciler.stop();

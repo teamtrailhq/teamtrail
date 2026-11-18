@@ -15,7 +15,7 @@ export function useFlakyChecks() {
     load: fetchFlaky,
     show: setView,
     failed: () => setView(null),
-    events: { verification: () => true },
+    events: { verification: () => true, tracker: () => true },
     changed: (p) => p.includes('/tickets/'),
   });
   return view;

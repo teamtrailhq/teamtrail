@@ -1,10 +1,11 @@
 import type { TicketMetaPatch } from '../../../model/lifecycle';
-import type { Ticket } from '../../../model/types';
+import type { MapSections, Ticket } from '../../../model/types';
 import { OperationError } from '../../../planning/operations/operationError';
 import { withMapMeta } from '../../mapMeta';
 import { reopened, withEdit, withoutBlocker } from '../../ticketEdits';
-import { META_FIELDS, withMeta } from '../../ticketMeta';
+import { withMeta } from '../../ticketMeta';
 import { withArchived } from '../../withArchived';
+import { roundtrip } from './fingerprint';
 import type { CacheEntry, QueuedChange, QueuedWrite } from './types';
 
 /** Changes that would duplicate if sent twice; the rest set state, so sending them again is harmless. */
@@ -21,12 +22,19 @@ function touch(t: Ticket, patch: Partial<Ticket>, now: () => number): Ticket {
   return t;
 }
 
-/** A meta patch on a cached ticket; a field the patch cleared goes (Object.assign alone would keep it). */
+/**
+ * A meta patch on a cached ticket; a field the patch cleared goes (Object.assign alone would keep it), and so does
+ * `settingsUnconfirmed` once the trail lead confirmed the settings.
+ */
 function applyMeta(t: Ticket, patch: TicketMetaPatch, now: () => number) {
   const next = withMeta(t, patch);
-  for (const k of META_FIELDS) if (next[k] === undefined) delete t[k];
+  for (const k of Object.keys(t) as (keyof Ticket)[]) if (next[k] === undefined) delete t[k];
   touch(t, next, now);
 }
+
+/** The sections a write leaves on a trail: its patch over the trail's own, or (older writes) all of them. */
+export const sectionsAfter = (current: MapSections, c: { sections: MapSections; patch?: Partial<MapSections> }) =>
+  c.patch ? roundtrip({ ...current, ...c.patch }) : c.sections;
 
 /** Applies a queueable write to a cached (or freshly fetched) trail. Safe to repeat. */
 export function applyWrite(e: CacheEntry, w: QueuedWrite, now: () => number) {
@@ -39,7 +47,7 @@ export function applyWrite(e: CacheEntry, w: QueuedWrite, now: () => number) {
       e.snap.map = withArchived(e.snap.map, c.archived);
       break;
     case 'sections':
-      e.snap.map.sections = c.sections;
+      e.snap.map.sections = sectionsAfter(e.snap.map.sections, c);
       break;
     case 'mapMeta':
       e.snap.map = withMapMeta(e.snap.map, c.patch);

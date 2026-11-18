@@ -209,7 +209,14 @@ export function fakeLinear(
             i.labelIds.some((id) => labels.get(id)!.name === want) &&
             (!v.filter.project || i.projectId === v.filter.project.id.eq),
         );
-        return { issues: { nodes: nodes.map((i) => ({ id: i.id, identifier: i.identifier, title: i.title })) } };
+        const page = paged(nodes, 100, v.after);
+        const summary = (i: LIssue) => ({
+          id: i.id,
+          identifier: i.identifier,
+          title: i.title,
+          labels: { nodes: i.labelIds.map((id) => ({ name: labels.get(id)!.name })) },
+        });
+        return { issues: { nodes: page.nodes.map(summary), pageInfo: page.pageInfo } };
       }
       case 'Trail': {
         const root = issues.get(v.id);
@@ -221,30 +228,39 @@ export function fakeLinear(
         };
       }
       case 'Changes': {
-        const since = v.issues.updatedAt.gt;
+        // `gte` now (`gt` from older recordings): changes at or after the cursor
+        const at = (f: { gt?: string; gte?: string }) => (s: string) => (f.gte ? s >= f.gte : s > f.gt!);
+        const issueAt = at(v.issues.updatedAt);
+        const commentAt = at(v.comments.updatedAt);
+        const first = v.first ?? 50;
+        const changedIssues = [...issues.values()].filter((i) => issueAt(i.updatedAt));
+        const changedComments = comments.filter((c) => commentAt(c.updatedAt));
         return {
           issues: {
-            nodes: [...issues.values()]
-              .filter((i) => i.updatedAt > since)
-              .map((i) => ({
-                id: i.id,
-                updatedAt: i.updatedAt,
-                parent: i.parentId ? { id: i.parentId } : null,
-                labels: { nodes: i.labelIds.map((id) => ({ name: labels.get(id)!.name })) },
-              })),
+            nodes: changedIssues.slice(0, first).map((i) => ({
+              id: i.id,
+              updatedAt: i.updatedAt,
+              parent: i.parentId ? { id: i.parentId } : null,
+              labels: { nodes: i.labelIds.map((id) => ({ name: labels.get(id)!.name })) },
+            })),
+            pageInfo: { hasNextPage: changedIssues.length > first },
           },
           comments: {
-            nodes: comments
-              .filter((c) => c.updatedAt > since)
-              .map((c) => ({
-                updatedAt: c.updatedAt,
-                issue: {
-                  id: c.issueId,
-                  parent: issues.get(c.issueId)!.parentId ? { id: issues.get(c.issueId)!.parentId } : null,
-                },
-              })),
+            nodes: changedComments.slice(0, first).map((c) => ({
+              id: c.id,
+              updatedAt: c.updatedAt,
+              issue: {
+                id: c.issueId,
+                parent: issues.get(c.issueId)!.parentId ? { id: issues.get(c.issueId)!.parentId } : null,
+              },
+            })),
+            pageInfo: { hasNextPage: changedComments.length > first },
           },
         };
+      }
+      case 'Latest': {
+        const newest = [...issues.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+        return { issues: { nodes: newest ? [{ updatedAt: newest.updatedAt }] : [] } };
       }
       case 'Create':
         return { issueCreate: { issue: view(create(v.input), false) } };

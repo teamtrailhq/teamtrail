@@ -8,13 +8,16 @@ const obj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isA
 const SHAPES: Record<QueuedChange['kind'], (c: Obj) => boolean> = {
   mode: (c) => str(c.mode),
   archived: (c) => typeof c.archived === 'boolean',
-  sections: (c) => obj(c.sections),
+  sections: (c) => obj(c.sections) && (c.patch === undefined || obj(c.patch)),
   mapMeta: (c) => obj(c.patch),
   blocking: (c) => str(c.blockerId) && str(c.blockedId),
   unblocking: (c) => str(c.blockerId) && str(c.blockedId),
   edit: (c) => str(c.ticketId) && obj(c.edit),
   reopen: (c) => str(c.ticketId),
-  claim: (c) => str(c.ticketId) && (c.assignee === undefined || typeof c.assignee === 'string'),
+  claim: (c) =>
+    str(c.ticketId) &&
+    (c.assignee === undefined || typeof c.assignee === 'string') &&
+    (c.was === undefined || c.was === null || typeof c.was === 'string'),
   meta: (c) => str(c.ticketId) && obj(c.patch),
   comment: (c) => str(c.ticketId) && str(c.author) && typeof c.body === 'string',
   close: (c) => str(c.ticketId) && (c.reason === 'completed' || c.reason === 'not_planned'),

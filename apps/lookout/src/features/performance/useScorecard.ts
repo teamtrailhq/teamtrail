@@ -15,7 +15,7 @@ export function useScorecard() {
     load: fetchScorecard,
     show: setCard,
     failed: () => setCard(null),
-    events: { verification: () => true },
+    events: { verification: () => true, tracker: () => true },
     changed: (p) => p.includes('/tickets/'),
   });
   return card;

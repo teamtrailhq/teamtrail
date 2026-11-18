@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T22:37:12.746Z",
+  "recordedAt": "2026-11-18T21:46:05.810Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema).",
   "exchanges": [
     {
@@ -270,7 +270,9 @@
         "body": {
           "title": "Ship offline sync",
           "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-          "labels": ["teamtrail:map"]
+          "labels": [
+            "teamtrail:map"
+          ]
         }
       },
       "res": {
@@ -332,7 +334,9 @@
         "body": {
           "title": "Survey CRDT libraries",
           "body": "Compare Automerge and Yjs.\n\nPart of trail #1.",
-          "labels": ["teamtrail:research"]
+          "labels": [
+            "teamtrail:research"
+          ]
         }
       },
       "res": {
@@ -408,7 +412,9 @@
         "body": {
           "title": "Pick a conflict policy",
           "body": "Last-writer-wins or merge?\n\nPart of trail #1.",
-          "labels": ["teamtrail:junction"]
+          "labels": [
+            "teamtrail:junction"
+          ]
         }
       },
       "res": {
@@ -516,6 +522,152 @@
     },
     {
       "req": {
+        "method": "POST",
+        "url": "/graphql",
+        "operation": "Trail",
+        "variables": {
+          "owner": "octo-org",
+          "name": "launchpad",
+          "number": 1
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4990",
+          "x-ratelimit-reset": "1793451606"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "login": "octo-dev"
+            },
+            "repository": {
+              "issue": {
+                "id": "I_kwDOfake1",
+                "databaseId": 3100000001,
+                "number": 1,
+                "title": "Ship offline sync",
+                "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
+                "state": "OPEN",
+                "stateReason": null,
+                "createdAt": "2026-10-31T12:00:01Z",
+                "updatedAt": "2026-10-31T12:00:05Z",
+                "closedAt": null,
+                "author": {
+                  "login": "octo-dev"
+                },
+                "userContentEdits": {
+                  "totalCount": 0,
+                  "nodes": []
+                },
+                "lastEditedAt": null,
+                "authorAssociation": "COLLABORATOR",
+                "labels": {
+                  "nodes": [
+                    {
+                      "name": "teamtrail:map"
+                    }
+                  ]
+                },
+                "assignees": {
+                  "nodes": []
+                },
+                "comments": {
+                  "nodes": []
+                },
+                "subIssues": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOfake2",
+                      "databaseId": 3100000002,
+                      "number": 2,
+                      "title": "Survey CRDT libraries",
+                      "body": "Compare Automerge and Yjs.\n\nPart of trail #1.",
+                      "state": "OPEN",
+                      "stateReason": null,
+                      "createdAt": "2026-10-31T12:00:02Z",
+                      "updatedAt": "2026-10-31T12:00:02Z",
+                      "closedAt": null,
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "userContentEdits": {
+                        "totalCount": 0,
+                        "nodes": []
+                      },
+                      "lastEditedAt": null,
+                      "authorAssociation": "COLLABORATOR",
+                      "labels": {
+                        "nodes": [
+                          {
+                            "name": "teamtrail:research"
+                          }
+                        ]
+                      },
+                      "assignees": {
+                        "nodes": []
+                      },
+                      "comments": {
+                        "nodes": []
+                      },
+                      "blockedBy": {
+                        "nodes": []
+                      }
+                    },
+                    {
+                      "id": "I_kwDOfake3",
+                      "databaseId": 3100000003,
+                      "number": 3,
+                      "title": "Pick a conflict policy",
+                      "body": "Last-writer-wins or merge?\n\nPart of trail #1.",
+                      "state": "OPEN",
+                      "stateReason": null,
+                      "createdAt": "2026-10-31T12:00:04Z",
+                      "updatedAt": "2026-10-31T12:00:06Z",
+                      "closedAt": null,
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "userContentEdits": {
+                        "totalCount": 0,
+                        "nodes": []
+                      },
+                      "lastEditedAt": null,
+                      "authorAssociation": "COLLABORATOR",
+                      "labels": {
+                        "nodes": [
+                          {
+                            "name": "teamtrail:junction"
+                          }
+                        ]
+                      },
+                      "assignees": {
+                        "nodes": []
+                      },
+                      "comments": {
+                        "nodes": []
+                      },
+                      "blockedBy": {
+                        "nodes": [
+                          {
+                            "number": 2
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
         "method": "PATCH",
         "url": "/repos/octo-org/launchpad/issues/2",
         "body": {
@@ -548,6 +700,165 @@
           "updated_at": "2026-10-31T12:00:08Z",
           "closed_at": null,
           "html_url": "https://github.com/octo-org/launchpad/issues/2"
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
+        "operation": "Trail",
+        "variables": {
+          "owner": "octo-org",
+          "name": "launchpad",
+          "number": 1
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4990",
+          "x-ratelimit-reset": "1793451608"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "login": "octo-dev"
+            },
+            "repository": {
+              "issue": {
+                "id": "I_kwDOfake1",
+                "databaseId": 3100000001,
+                "number": 1,
+                "title": "Ship offline sync",
+                "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
+                "state": "OPEN",
+                "stateReason": null,
+                "createdAt": "2026-10-31T12:00:01Z",
+                "updatedAt": "2026-10-31T12:00:05Z",
+                "closedAt": null,
+                "author": {
+                  "login": "octo-dev"
+                },
+                "userContentEdits": {
+                  "totalCount": 0,
+                  "nodes": []
+                },
+                "lastEditedAt": null,
+                "authorAssociation": "COLLABORATOR",
+                "labels": {
+                  "nodes": [
+                    {
+                      "name": "teamtrail:map"
+                    }
+                  ]
+                },
+                "assignees": {
+                  "nodes": []
+                },
+                "comments": {
+                  "nodes": []
+                },
+                "subIssues": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOfake2",
+                      "databaseId": 3100000002,
+                      "number": 2,
+                      "title": "Survey CRDT libraries",
+                      "body": "Compare Automerge and Yjs.\n\nPart of trail #1.\n\n<!-- teamtrail:meta {\"assignee\":\"claude-07\"} -->",
+                      "state": "OPEN",
+                      "stateReason": null,
+                      "createdAt": "2026-10-31T12:00:02Z",
+                      "updatedAt": "2026-10-31T12:00:08Z",
+                      "closedAt": null,
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "userContentEdits": {
+                        "totalCount": 2,
+                        "nodes": [
+                          {
+                            "createdAt": "2026-10-31T12:00:07Z",
+                            "editor": {
+                              "login": "octo-dev"
+                            }
+                          },
+                          {
+                            "createdAt": "2026-10-31T12:00:02Z",
+                            "editor": {
+                              "login": "octo-dev"
+                            }
+                          }
+                        ]
+                      },
+                      "lastEditedAt": "2026-10-31T12:00:07Z",
+                      "authorAssociation": "COLLABORATOR",
+                      "labels": {
+                        "nodes": [
+                          {
+                            "name": "teamtrail:research"
+                          }
+                        ]
+                      },
+                      "assignees": {
+                        "nodes": []
+                      },
+                      "comments": {
+                        "nodes": []
+                      },
+                      "blockedBy": {
+                        "nodes": []
+                      }
+                    },
+                    {
+                      "id": "I_kwDOfake3",
+                      "databaseId": 3100000003,
+                      "number": 3,
+                      "title": "Pick a conflict policy",
+                      "body": "Last-writer-wins or merge?\n\nPart of trail #1.",
+                      "state": "OPEN",
+                      "stateReason": null,
+                      "createdAt": "2026-10-31T12:00:04Z",
+                      "updatedAt": "2026-10-31T12:00:06Z",
+                      "closedAt": null,
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "userContentEdits": {
+                        "totalCount": 0,
+                        "nodes": []
+                      },
+                      "lastEditedAt": null,
+                      "authorAssociation": "COLLABORATOR",
+                      "labels": {
+                        "nodes": [
+                          {
+                            "name": "teamtrail:junction"
+                          }
+                        ]
+                      },
+                      "assignees": {
+                        "nodes": []
+                      },
+                      "comments": {
+                        "nodes": []
+                      },
+                      "blockedBy": {
+                        "nodes": [
+                          {
+                            "number": 2
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -672,6 +983,208 @@
     },
     {
       "req": {
+        "method": "POST",
+        "url": "/graphql",
+        "operation": "Trail",
+        "variables": {
+          "owner": "octo-org",
+          "name": "launchpad",
+          "number": 1
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4990",
+          "x-ratelimit-reset": "1793451613"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "login": "octo-dev"
+            },
+            "repository": {
+              "issue": {
+                "id": "I_kwDOfake1",
+                "databaseId": 3100000001,
+                "number": 1,
+                "title": "Ship offline sync",
+                "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
+                "state": "OPEN",
+                "stateReason": null,
+                "createdAt": "2026-10-31T12:00:01Z",
+                "updatedAt": "2026-10-31T12:00:05Z",
+                "closedAt": null,
+                "author": {
+                  "login": "octo-dev"
+                },
+                "userContentEdits": {
+                  "totalCount": 0,
+                  "nodes": []
+                },
+                "lastEditedAt": null,
+                "authorAssociation": "COLLABORATOR",
+                "labels": {
+                  "nodes": [
+                    {
+                      "name": "teamtrail:map"
+                    }
+                  ]
+                },
+                "assignees": {
+                  "nodes": []
+                },
+                "comments": {
+                  "nodes": []
+                },
+                "subIssues": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOfake2",
+                      "databaseId": 3100000002,
+                      "number": 2,
+                      "title": "Survey CRDT libraries",
+                      "body": "Compare Automerge and Yjs.\n\nPart of trail #1.\n\n<!-- teamtrail:meta {\"assignee\":\"claude-07\"} -->",
+                      "state": "CLOSED",
+                      "stateReason": "COMPLETED",
+                      "createdAt": "2026-10-31T12:00:02Z",
+                      "updatedAt": "2026-10-31T12:00:13Z",
+                      "closedAt": "2026-10-31T12:00:11Z",
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "userContentEdits": {
+                        "totalCount": 2,
+                        "nodes": [
+                          {
+                            "createdAt": "2026-10-31T12:00:07Z",
+                            "editor": {
+                              "login": "octo-dev"
+                            }
+                          },
+                          {
+                            "createdAt": "2026-10-31T12:00:02Z",
+                            "editor": {
+                              "login": "octo-dev"
+                            }
+                          }
+                        ]
+                      },
+                      "lastEditedAt": "2026-10-31T12:00:07Z",
+                      "authorAssociation": "COLLABORATOR",
+                      "labels": {
+                        "nodes": [
+                          {
+                            "name": "teamtrail:research"
+                          }
+                        ]
+                      },
+                      "assignees": {
+                        "nodes": []
+                      },
+                      "comments": {
+                        "nodes": [
+                          {
+                            "databaseId": 9001,
+                            "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0o2cehr -->\nYjs has the smaller bundle.",
+                            "createdAt": "2026-10-31T12:00:09Z",
+                            "author": {
+                              "login": "octo-dev"
+                            },
+                            "userContentEdits": {
+                              "totalCount": 0,
+                              "nodes": []
+                            },
+                            "lastEditedAt": null,
+                            "authorAssociation": "COLLABORATOR"
+                          },
+                          {
+                            "databaseId": 9002,
+                            "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0tdlvyr -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support.",
+                            "createdAt": "2026-10-31T12:00:10Z",
+                            "author": {
+                              "login": "octo-dev"
+                            },
+                            "userContentEdits": {
+                              "totalCount": 0,
+                              "nodes": []
+                            },
+                            "lastEditedAt": null,
+                            "authorAssociation": "COLLABORATOR"
+                          },
+                          {
+                            "databaseId": 9003,
+                            "body": "**Decision D-1** · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"2\",\"ticketKey\":\"#2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"1\",\"decidedAt\":1793448000000} -->",
+                            "createdAt": "2026-10-31T12:00:13Z",
+                            "author": {
+                              "login": "octo-dev"
+                            },
+                            "userContentEdits": {
+                              "totalCount": 0,
+                              "nodes": []
+                            },
+                            "lastEditedAt": null,
+                            "authorAssociation": "COLLABORATOR"
+                          }
+                        ]
+                      },
+                      "blockedBy": {
+                        "nodes": []
+                      }
+                    },
+                    {
+                      "id": "I_kwDOfake3",
+                      "databaseId": 3100000003,
+                      "number": 3,
+                      "title": "Pick a conflict policy",
+                      "body": "Last-writer-wins or merge?\n\nPart of trail #1.",
+                      "state": "OPEN",
+                      "stateReason": null,
+                      "createdAt": "2026-10-31T12:00:04Z",
+                      "updatedAt": "2026-10-31T12:00:06Z",
+                      "closedAt": null,
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "userContentEdits": {
+                        "totalCount": 0,
+                        "nodes": []
+                      },
+                      "lastEditedAt": null,
+                      "authorAssociation": "COLLABORATOR",
+                      "labels": {
+                        "nodes": [
+                          {
+                            "name": "teamtrail:junction"
+                          }
+                        ]
+                      },
+                      "assignees": {
+                        "nodes": []
+                      },
+                      "comments": {
+                        "nodes": []
+                      },
+                      "blockedBy": {
+                        "nodes": [
+                          {
+                            "number": 2
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
         "method": "PATCH",
         "url": "/repos/octo-org/launchpad/issues/1",
         "body": {
@@ -758,6 +1271,248 @@
     },
     {
       "req": {
+        "method": "POST",
+        "url": "/graphql",
+        "operation": "Trail",
+        "variables": {
+          "owner": "octo-org",
+          "name": "launchpad",
+          "number": 1
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4990",
+          "x-ratelimit-reset": "1793451617"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "login": "octo-dev"
+            },
+            "repository": {
+              "issue": {
+                "id": "I_kwDOfake1",
+                "databaseId": 3100000001,
+                "number": 1,
+                "title": "Ship offline sync",
+                "body": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n- #2: Use Yjs. It has the smaller bundle and mature offline support.\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
+                "state": "OPEN",
+                "stateReason": null,
+                "createdAt": "2026-10-31T12:00:01Z",
+                "updatedAt": "2026-10-31T12:00:15Z",
+                "closedAt": null,
+                "author": {
+                  "login": "octo-dev"
+                },
+                "userContentEdits": {
+                  "totalCount": 2,
+                  "nodes": [
+                    {
+                      "createdAt": "2026-10-31T12:00:14Z",
+                      "editor": {
+                        "login": "octo-dev"
+                      }
+                    },
+                    {
+                      "createdAt": "2026-10-31T12:00:01Z",
+                      "editor": {
+                        "login": "octo-dev"
+                      }
+                    }
+                  ]
+                },
+                "lastEditedAt": "2026-10-31T12:00:14Z",
+                "authorAssociation": "COLLABORATOR",
+                "labels": {
+                  "nodes": [
+                    {
+                      "name": "teamtrail:map"
+                    }
+                  ]
+                },
+                "assignees": {
+                  "nodes": []
+                },
+                "comments": {
+                  "nodes": []
+                },
+                "subIssues": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOfake2",
+                      "databaseId": 3100000002,
+                      "number": 2,
+                      "title": "Survey CRDT libraries",
+                      "body": "Compare Automerge and Yjs.\n\nPart of trail #1.\n\n<!-- teamtrail:meta {\"assignee\":\"claude-07\"} -->",
+                      "state": "CLOSED",
+                      "stateReason": "COMPLETED",
+                      "createdAt": "2026-10-31T12:00:02Z",
+                      "updatedAt": "2026-10-31T12:00:16Z",
+                      "closedAt": "2026-10-31T12:00:11Z",
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "userContentEdits": {
+                        "totalCount": 2,
+                        "nodes": [
+                          {
+                            "createdAt": "2026-10-31T12:00:07Z",
+                            "editor": {
+                              "login": "octo-dev"
+                            }
+                          },
+                          {
+                            "createdAt": "2026-10-31T12:00:02Z",
+                            "editor": {
+                              "login": "octo-dev"
+                            }
+                          }
+                        ]
+                      },
+                      "lastEditedAt": "2026-10-31T12:00:07Z",
+                      "authorAssociation": "COLLABORATOR",
+                      "labels": {
+                        "nodes": [
+                          {
+                            "name": "teamtrail:research"
+                          }
+                        ]
+                      },
+                      "assignees": {
+                        "nodes": []
+                      },
+                      "comments": {
+                        "nodes": [
+                          {
+                            "databaseId": 9001,
+                            "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0o2cehr -->\nYjs has the smaller bundle.",
+                            "createdAt": "2026-10-31T12:00:09Z",
+                            "author": {
+                              "login": "octo-dev"
+                            },
+                            "userContentEdits": {
+                              "totalCount": 0,
+                              "nodes": []
+                            },
+                            "lastEditedAt": null,
+                            "authorAssociation": "COLLABORATOR"
+                          },
+                          {
+                            "databaseId": 9002,
+                            "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0tdlvyr -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support.",
+                            "createdAt": "2026-10-31T12:00:10Z",
+                            "author": {
+                              "login": "octo-dev"
+                            },
+                            "userContentEdits": {
+                              "totalCount": 0,
+                              "nodes": []
+                            },
+                            "lastEditedAt": null,
+                            "authorAssociation": "COLLABORATOR"
+                          },
+                          {
+                            "databaseId": 9003,
+                            "body": "**Decision D-1** · ~~superseded by D-2~~ · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"2\",\"ticketKey\":\"#2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"1\",\"decidedAt\":1793448000000,\"supersededBy\":\"D-2\"} -->",
+                            "createdAt": "2026-10-31T12:00:13Z",
+                            "author": {
+                              "login": "octo-dev"
+                            },
+                            "userContentEdits": {
+                              "totalCount": 2,
+                              "nodes": [
+                                {
+                                  "createdAt": "2026-10-31T12:00:17Z",
+                                  "editor": {
+                                    "login": "octo-dev"
+                                  }
+                                },
+                                {
+                                  "createdAt": "2026-10-31T12:00:13Z",
+                                  "editor": {
+                                    "login": "octo-dev"
+                                  }
+                                }
+                              ]
+                            },
+                            "lastEditedAt": "2026-10-31T12:00:17Z",
+                            "authorAssociation": "COLLABORATOR"
+                          },
+                          {
+                            "databaseId": 9004,
+                            "body": "**Decision D-2** · trail lead · Lookout\n\n> Use Automerge. Its history model fits the audit trail.\n\n**Question:** Survey CRDT libraries\n**Supersedes:** D-1\n\n<!-- teamtrail:decision {\"ticketId\":\"2\",\"ticketKey\":\"#2\",\"answer\":\"Use Automerge. Its history model fits the audit trail.\",\"decidedBy\":\"trail lead\",\"source\":{\"kind\":\"lookout\"},\"question\":\"Survey CRDT libraries\",\"supersedes\":\"D-1\",\"id\":\"D-2\",\"mapId\":\"1\",\"decidedAt\":1793448000000,\"summary\":\"Use Automerge. Its history model fits the audit trail.\",\"alternatives\":[],\"rationale\":\"\",\"participants\":[{\"id\":\"trail lead\"}],\"transcript\":[]} -->",
+                            "createdAt": "2026-10-31T12:00:16Z",
+                            "author": {
+                              "login": "octo-dev"
+                            },
+                            "userContentEdits": {
+                              "totalCount": 0,
+                              "nodes": []
+                            },
+                            "lastEditedAt": null,
+                            "authorAssociation": "COLLABORATOR"
+                          }
+                        ]
+                      },
+                      "blockedBy": {
+                        "nodes": []
+                      }
+                    },
+                    {
+                      "id": "I_kwDOfake3",
+                      "databaseId": 3100000003,
+                      "number": 3,
+                      "title": "Pick a conflict policy",
+                      "body": "Last-writer-wins or merge?\n\nPart of trail #1.",
+                      "state": "OPEN",
+                      "stateReason": null,
+                      "createdAt": "2026-10-31T12:00:04Z",
+                      "updatedAt": "2026-10-31T12:00:06Z",
+                      "closedAt": null,
+                      "author": {
+                        "login": "octo-dev"
+                      },
+                      "userContentEdits": {
+                        "totalCount": 0,
+                        "nodes": []
+                      },
+                      "lastEditedAt": null,
+                      "authorAssociation": "COLLABORATOR",
+                      "labels": {
+                        "nodes": [
+                          {
+                            "name": "teamtrail:junction"
+                          }
+                        ]
+                      },
+                      "assignees": {
+                        "nodes": []
+                      },
+                      "comments": {
+                        "nodes": []
+                      },
+                      "blockedBy": {
+                        "nodes": [
+                          {
+                            "number": 2
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
         "method": "PATCH",
         "url": "/repos/octo-org/launchpad/issues/1",
         "body": {
@@ -798,7 +1553,9 @@
         "method": "POST",
         "url": "/repos/octo-org/launchpad/issues/1/labels",
         "body": {
-          "labels": ["teamtrail:plan-only"]
+          "labels": [
+            "teamtrail:plan-only"
+          ]
         }
       },
       "res": {

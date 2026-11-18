@@ -153,6 +153,7 @@ test('live recording (api.github.com): test connection, empty trail list, ETag p
   a.subscribe(() => {});
   await a.tick();
   await a.tick();
+  await a.tick();
   rp.done();
   assert.equal(a.status.state, 'online');
 });

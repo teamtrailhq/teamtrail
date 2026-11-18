@@ -34,7 +34,10 @@ const MAX_DECISION = 999_999_999;
  * - with an `outbox` store the queue survives an exit or crash and is replayed
  *   by the next run; writes that may already have landed are checked first;
  * - polling (while subscribed) picks up changes made in the tracker and emits
- *   `external.changed` only when the trail really differs from the cache.
+ *   `external.changed` only when the trail really differs from the cache; a trail that failed to read stays
+ *   pending until it reads, and every trail is read again every few minutes (syncedRefresh.ts);
+ * - writes that rewrite an issue body are laid over the issue as the tracker has it, read just before
+ *   (syncedSend.ts), so a teammate's edit since the last poll is never overwritten from the cache.
  */
 export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapter {
   abstract readonly kind: 'github' | 'linear';
@@ -61,6 +64,7 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
     }
     map = { ...map, sections: roundtrip(map.sections) };
     this.entries.set(map.id, { snap: { map, tickets: [] }, decisions: [], at: this.now() });
+    this.touch(map.id);
     if (this.maps) this.maps.list.push({ id: map.id, key: map.key, title: map.title });
     this.emit({ kind: 'map.created', mapId: map.id });
     return structuredClone(map);
@@ -90,7 +94,7 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
       (e) => {
         const sections = roundtrip({ ...e.snap.map.sections, ...patch });
         assertMapBodyFits({ ...e.snap.map, sections }, { limit: this.mapBodyLimit, tracker: this.label });
-        return { kind: 'sections', sections };
+        return { kind: 'sections', sections, patch };
       },
       {
         kind: 'map.updated',
@@ -116,6 +120,7 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
         throw err;
       }
       e.snap.tickets.push(r);
+      this.touch(mapId);
       e.at = this.now();
       e.snap.map.updatedAt = this.now();
       return r;
@@ -138,7 +143,7 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
     await this.change(
       mapId,
       `${assignee ? 'claim' : 'release'} ${t.key}`,
-      { kind: 'claim', ticketId, assignee: assignee ?? undefined },
+      { kind: 'claim', ticketId, assignee: assignee ?? undefined, was: t.assignee ?? null },
       assignee ? { kind: 'ticket.claimed', mapId, ticketId, assignee } : { kind: 'ticket.released', mapId, ticketId },
     );
   }
