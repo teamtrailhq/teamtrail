@@ -22,7 +22,7 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.3',
+    version: '0.66.5',
     date: '2026-11-18',
     items: [
       'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
