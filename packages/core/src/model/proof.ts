@@ -51,6 +51,16 @@ export interface ProofWaived {
 }
 
 /**
+ * The check guard's findings on the attempt (checkGuard/), one line each. `enforce`: the pass counted only once the
+ * trail lead accepted it (`accepted`, from their PASS on the attempt); until then it's a gap. `observe`: shown only.
+ */
+export interface ProofGuard {
+  mode: 'observe' | 'enforce';
+  findings: string[];
+  accepted?: { by: string; reason: string };
+}
+
+/**
  * A diff rule the work's changed files matched: its check as it ran here (`passed`, null when it didn't run), and its
  * question with the agent's answer (claimed, never verified), the trail lead's waiver, or `unanswered`.
  */
@@ -105,6 +115,8 @@ export interface Proof {
   checks: ProofCheck[];
   /** Checks the trail lead accepted it without. Missing when none, so older proofs and digests read as they did. */
   waived?: ProofWaived[];
+  /** What the check guard found: the work changed what its checks run. Missing when it found nothing. */
+  guard?: ProofGuard;
   criteria: {
     lines: string[];
     verified: number;

@@ -45,6 +45,8 @@ function checkActions(v: TicketView, run: TicketRunners): Item[] {
   // the queue's approval item says it was submitted before the ticket's own record has loaded
   const submitted = !!v.verification?.attempts.length || v.items.some((i) => i.kind === 'approval');
   const held = v.state === 'held';
+  const latest = v.verification?.attempts[0];
+  const guarded = latest?.result === 'pass' && latest.guard?.mode === 'enforce';
   return [
     v.state === 'verifying' &&
       submitted && {
@@ -73,8 +75,10 @@ function checkActions(v: TicketView, run: TicketRunners): Item[] {
     },
     held && {
       id: 'accept',
-      label: 'Accept anyway…',
-      tip: 'Close it as done despite the checks',
+      label: guarded ? 'Accept the pass…' : 'Accept anyway…',
+      tip: guarded
+        ? 'Count the checks although the work changed what they run; the proof says you accepted it'
+        : 'Close it as done despite the checks',
       onSelect: () => run.form('accept'),
     },
   ];

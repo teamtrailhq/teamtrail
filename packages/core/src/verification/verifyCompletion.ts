@@ -1,5 +1,6 @@
 import path from 'node:path';
 import type { TrackerAdapter } from '../adapters/adapter';
+import { withLocalGuard } from '../checkGuard/withLocalGuard';
 import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
 import { listGuides } from '../guides/guideStore';
@@ -186,10 +187,9 @@ async function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: 
 /** Git evidence, checks and criteria for work that is in this checkout (or the ticket's worktree). */
 async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; checkout: string }) {
   const { mapId, ticket: t, sub } = job;
-  const repoRoot = run.checkout;
   const git = await completionEvidence({
     ...env,
-    repoRoot,
+    repoRoot: run.checkout,
     mapId,
     ticket: t,
     config: run.config,
@@ -197,11 +197,10 @@ async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; conf
     touches: sub.touches,
   });
   // the diff rules the changed files match: their checks run with the ticket's, their answers go on the attempt
-  const files = git.changed.map((c) => c.path);
-  const ruled = withRules({ root: env.root, config: run.config.config, job, files });
+  const ruled = withRules({ root: env.root, config: run.config.config, job, files: git.changed.map((c) => c.path) });
   const { outcome, criteria } = await gradeAttempt({
     root: env.root,
-    repoRoot,
+    repoRoot: run.checkout,
     mapId,
     ticketId: t.id,
     attemptId: run.id,
@@ -213,7 +212,8 @@ async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; conf
     waived: job.waived,
     signal: env.signal,
   });
-  return { ...outcome, git, ...(criteria ? { criteria } : {}), ...ruled.extra };
+  const graded = { ...outcome, git, ...(criteria ? { criteria } : {}), ...ruled.extra };
+  return withLocalGuard(graded, { root: env.root, job, run, checks: ruled.info.checks }); // checkGuard/
 }
 
 /** Records that a pass went stale while its checks ran, and runs the checks again on the code as it is now. */

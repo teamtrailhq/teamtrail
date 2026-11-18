@@ -51,7 +51,8 @@ export type EvidenceFlagKind =
   | 'config-changed'
   | 'stale'
   | 'outside-scope'
-  | 'in-scope';
+  | 'in-scope'
+  | 'check-guard';
 
 /** Something a human should know about a completion. `effect` is what it does to the attempt, if anything. */
 export interface EvidenceFlag {

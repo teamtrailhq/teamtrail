@@ -93,6 +93,15 @@ describe('ticketStanding', () => {
     expect(read({ state: 'held', sentBack: 'the reviewer asked for you' }).primary).toBe('unblock');
   });
 
+  it('a pass the check guard holds says what changed, and offers accepting the pass', () => {
+    const latest = { result: 'pass' as const, agent: 'a', failed: [], guarded: 'package.json scripts.test changed' };
+    expect(read({ state: 'held', latest })).toMatchObject({
+      title: 'Held: the work changed what its checks run',
+      parts: ['package.json scripts.test changed', 'waits on you'],
+      primary: 'accept',
+    });
+  });
+
   it('a ready ticket that needs a person offers Resolve', () => {
     expect(read({ hitl: true })).toMatchObject({ title: 'Ready: needs a person', primary: 'resolve' });
   });

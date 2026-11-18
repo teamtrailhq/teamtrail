@@ -24,6 +24,7 @@ export type Form = 'resolve' | 'rule' | 'rework' | 'accept' | 'unblock' | 'waive
 export type PrimaryKind =
   | 'answer'
   | 'approve'
+  | 'accept'
   | 'waive'
   | 'unblock'
   | 'release'
@@ -47,6 +48,8 @@ export interface LatestAttempt {
   agent: string;
   /** Names of the checks that failed or could not run. */
   failed: string[];
+  /** The checks passed and the check guard holds the pass: what the work changed of what they run, in one line. */
+  guarded?: string;
 }
 
 /** What `ticketStanding` reads, gathered from what the inspector already loads. */

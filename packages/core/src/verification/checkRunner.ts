@@ -87,4 +87,10 @@ export interface CheckRunner {
    * ran on; `changed` is ignored. Without it, checks on main are unavailable while this runner is in use.
    */
   runMain?(job: MainRunJob): Promise<RunnerReport>;
+  /**
+   * A file's text at a commit where the work is (the report's base or head): `null` when the commit has no such file,
+   * undefined when it can't tell. The check guard reads scripts, configs and tests through it (checkGuard/); without
+   * it, it reads this checkout's git, and a file it needs and can't read holds the pass for the human.
+   */
+  read?(o: { commit: string; path: string }): Promise<string | null | undefined>;
 }

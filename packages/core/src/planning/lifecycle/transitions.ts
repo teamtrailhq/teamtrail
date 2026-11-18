@@ -22,7 +22,7 @@ export const TRANSITIONS: TransitionRule[] = [
   /** Decision tickets and verification `off`; backlog and ready too, as resolving always allowed. */
   { event: 'complete', from: ['backlog', 'ready', 'working', 'rework'], to: ['done'], actors: PEOPLE },
   { event: 'submit', from: ['working'], to: ['verifying'], actors: PEOPLE },
-  { event: 'checks.pass', from: ['verifying'], to: ['verifying', 'done'], actors: ['engine'] },
+  { event: 'checks.pass', from: ['verifying'], to: ['verifying', 'done', 'blocked'], actors: ['engine'] },
   { event: 'checks.fail', from: ['verifying'], to: ['rework', 'blocked'], actors: ['engine'] },
   { event: 'checks.error', from: ['verifying'], to: ['blocked'], actors: ['engine'] },
   { event: 'reverify', from: ['verifying'], to: ['verifying'], actors: ['engine', 'trail lead'] },

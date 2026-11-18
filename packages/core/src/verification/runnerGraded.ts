@@ -1,8 +1,11 @@
 import path from 'node:path';
+import { applyGuard } from '../checkGuard/applyGuard';
+import { runnerGuard } from '../checkGuard/runnerGuard';
 import type { CriteriaResult } from '../criteria/criteria';
 import { gateOutcome } from '../evidence/completionEvidence';
 import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { trailKnownFailures, withKnownFailures } from '../mainChecks/withKnownFailures';
+import type { AttemptGuard } from '../model/checkGuard';
 import type { GitEvidence } from '../model/evidence';
 import type { AttemptKnownFailure, CheckResult } from '../model/verification';
 import type { CheckRunJob, CheckRunner, RunnerReport } from './checkRunner';
@@ -15,7 +18,12 @@ import type { ChecksOutcome } from './runChecks';
 import { readRunnerReport } from './runnerReport';
 import type { VerifyJob } from './verifyCompletion';
 
-type Graded = ChecksOutcome & { git?: GitEvidence; criteria?: CriteriaResult; knownFailures?: AttemptKnownFailure[] };
+type Graded = ChecksOutcome & {
+  git?: GitEvidence;
+  criteria?: CriteriaResult;
+  knownFailures?: AttemptKnownFailure[];
+  guard?: AttemptGuard;
+};
 /** Beyond the checks' own total, what a runner gets to fetch the work and start: then the engine stops waiting. */
 const RUNNER_MARGIN_MS = 15 * 60_000;
 
@@ -46,7 +54,7 @@ async function ask(runner: CheckRunner, job: CheckRunJob, ms: number): Promise<R
  * or reports an error makes the attempt an error for a human.
  */
 export async function runnerGraded(
-  env: { root: string; checkRunner: CheckRunner; signal?: AbortSignal },
+  env: { root: string; repoRoot?: string; checkRunner: CheckRunner; signal?: AbortSignal },
   job: VerifyJob,
   run: { id: string; config: ConfigRead; waiting?: string },
 ): Promise<Graded> {
@@ -108,9 +116,20 @@ export async function runnerGraded(
   );
   const unmet = criteria ? [...criteria.missing, ...criteria.failed] : [];
   const graded = { ...outcome, git: read.git, ...(criteria ? { criteria } : {}) };
-  if (outcome.result !== 'pass' || !unmet.length) return graded;
+  // the check guard: did the work change what these checks run (checkGuard/)
+  const repoRoot = env.repoRoot ?? path.dirname(env.root);
+  const guard = await runnerGuard({
+    config,
+    checks: job.info.checks,
+    git: read.git,
+    runner: env.checkRunner,
+    repoRoot,
+  });
+  const guarded = { guard, root: env.root, mapId: job.mapId, ticket: { id: job.ticket.id, key: job.ticket.key } };
+  if (outcome.result !== 'pass' || !unmet.length) return applyGuard(graded, guarded);
   const { knownFailures: _known, ...rest } = graded;
-  return { ...rest, result: 'fail', note: `Acceptance criteria without passing evidence: ${unmet.join(', ')}` };
+  const note = `Acceptance criteria without passing evidence: ${unmet.join(', ')}`;
+  return applyGuard({ ...rest, result: 'fail' as const, note }, guarded);
 }
 
 /** Pass only when every asked check ran and passed. With none failed, failFast explains no missing check. */

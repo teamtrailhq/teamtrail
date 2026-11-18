@@ -8,6 +8,12 @@ import type { Form } from './types';
 import type { ReasonRequest } from './useTicketActions';
 import type { TicketView } from './useTicketView';
 
+/** The latest completion's checks passed and the check guard holds the pass. */
+const guarded = (v: TicketView) => {
+  const a = v.verification?.attempts[0];
+  return a?.result === 'pass' && a.guard?.mode === 'enforce';
+};
+
 /** The form an action in the bar opened: resolve, rule out, a reasoned override, or removing a worktree. */
 export function TicketForms(props: {
   form: Form;
@@ -46,6 +52,7 @@ export function TicketForms(props: {
       return (
         <ReasonForm
           kind={form}
+          guarded={guarded(v)}
           onSubmit={(req) => {
             void props.act(req);
             close();
