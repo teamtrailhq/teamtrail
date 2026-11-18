@@ -1,35 +1,12 @@
-/* ---------- The map first: view tabs, the bubble, the trail bar, the pages over the map, the full ticket ---------- */
+/* ---------- The map first: the bubble, the trail bar, the pages over the map, the full ticket ---------- */
 
-/* Header: the views, underlined when on screen, and "N need you". */
-.view-tabs {
-  display: flex;
-  gap: var(--sp-2);
-  align-self: stretch;
-  align-items: center;
-}
-.view-tab {
-  height: var(--h-md);
-  padding: 0 var(--sp-10);
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: none;
-  cursor: pointer;
-  color: var(--dim);
-  font: var(--type-body);
-}
-.view-tab:hover {
-  color: var(--text-hi);
-}
-.view-tab.on {
-  color: var(--text-hi);
-  border-bottom-color: var(--text-hi);
-}
+/* Header: "N need you". */
 .needs-btn {
   font-weight: 600;
 }
-/* Until the screen is very wide, the view tabs take the elapsed time's room; below 1600px the spend's too (it is on
- * the Activity page and in Trail stats). A header with more than fits (a server's own controls) wraps to a second
- * row rather than cut the last ones off. */
+/* Until the screen is very wide, the header leaves out the elapsed time; below 1600px the spend too (it is on the
+ * Activity page and in Trail stats). A header with more than fits (a server's own controls) wraps to a second row
+ * rather than cut the last ones off. */
 @media (max-width: 1699px) {
   .bp-wide .trail-meta .readout:not(.spend) {
     display: none;

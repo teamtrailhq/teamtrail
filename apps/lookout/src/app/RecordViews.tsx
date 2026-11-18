@@ -7,7 +7,7 @@ import { type Breakpoint, type LookoutApi, useNow } from '../hooks';
 import type { useAppNavigation } from './useAppNavigation';
 import type { useAttentionUi } from './useAttentionUi';
 
-/** The pages that cover the map: Trail stats (from Records), and Plan, Activity and the Logbook (the view tabs). */
+/** The pages that cover the map: Trail stats (from Records), and Plan, Activity and the Logbook (the bar of views). */
 export function RecordViews({
   api,
   bp,

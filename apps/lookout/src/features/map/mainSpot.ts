@@ -2,6 +2,7 @@ import { type LaidOutNode, type LayoutDirection, type LayoutGroup, NODE_H, NODE_
 import { bracketedGroups } from './bracketedGroups';
 import { cardRects } from './cardRects';
 import { groupBracket } from './groupBracket';
+import { lineAcross } from './lineAcross';
 import { nodeGaps } from './nodeGaps';
 import { routeEdge } from './routeEdge';
 
@@ -18,7 +19,8 @@ export function mainRoom(direction: LayoutDirection, shown: boolean) {
 }
 
 /**
- * Where `main` sits, in the trail's coordinates (left of or above its first tickets), and the thin connectors from it
+ * Where `main` sits, in the trail's coordinates (left of or above its first tickets, in line with the first one when
+ * there is one), and the thin connectors from it
  * to every ticket that waits on no other: the trail starts from the default branch. A wrapped layer of first tickets
  * gets one connector, to a bracket along its near side.
  */
@@ -36,10 +38,11 @@ export function mainSpot(input: {
   const { whole, single } = bracketedGroups({ groups, nodes, ends });
   const cards = cardRects(nodes);
   const gap = GAP[direction];
+  const line = lineAcross({ direction, nodes, groups, ends });
   const spot =
     direction === 'LR'
-      ? { x: -ROOM.LR.x + 20, y: input.graphH / 2 - MAIN_H / 2 }
-      : { x: input.width / 2 - MAIN_W / 2, y: -ROOM.TB.y + 16 };
+      ? { x: -ROOM.LR.x + 20, y: (line ?? input.graphH / 2) - MAIN_H / 2 }
+      : { x: (line ?? input.width / 2) - MAIN_W / 2, y: -ROOM.TB.y + 16 };
   const a =
     direction === 'LR'
       ? { x: spot.x + MAIN_W, y: spot.y + MAIN_H / 2 }

@@ -29,3 +29,31 @@ export interface LayoutGroup {
   subs: number;
   lanes: number;
 }
+
+/**
+ * Where a card wants to sit across the trail when its layer is placed (`placeLayer`): `at` a position, or `beside`
+ * another card of the layer (a review beside the ticket it reviews), with a `weight` (the higher is placed first and
+ * moves least) and how many cards it connects to (`links`, which breaks ties).
+ */
+export interface LaneWish {
+  at?: number;
+  beside?: number;
+  weight: number;
+  links: number;
+}
+
+/** One layer to place: its tickets in order, and how many lanes and sub-columns (LR) or sub-rows (TB) it takes. */
+export interface LayoutLayer {
+  tickets: Ticket[];
+  lanes: number;
+  subs: number;
+}
+
+/** Which way a sweep looks: at the tickets a card waits on, or at the ones that wait on it. */
+export type Toward = 'blockers' | 'blocked';
+
+/** Each placed ticket's blockers and the tickets it blocks, among the cards on the map. */
+export interface LaneLinks {
+  blockers: Map<string, string[]>;
+  blocked: Map<string, string[]>;
+}
