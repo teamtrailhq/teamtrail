@@ -1,5 +1,6 @@
 import type { TrackerAdapter } from '../../adapters/adapter';
 import type { VerificationLevel } from '../../model/lifecycle';
+import { trailTextProblem } from '../../model/trailTextProblem';
 import {
   type TicketType,
   type MapMode,
@@ -8,6 +9,7 @@ import {
   type Ticket,
   DEFAULT_MAP_MODE,
 } from '../../model/types';
+import { OperationError } from './operationError';
 
 export interface ChartPlanTicket {
   /** Local reference used to wire blocking before real ids exist. */
@@ -36,6 +38,9 @@ export interface ChartHooks {
 
 /** Create map, then create all tickets, then wire blocking (in that order, as trackers need ids first). */
 export async function chartMap(adapter: TrackerAdapter, input: ChartPlan, hooks: ChartHooks = {}) {
+  const { destination, notes, assumptions } = input.sections;
+  const tooLong = trailTextProblem({ destination, notes, assumptions: assumptions?.map((a) => a.text) });
+  if (tooLong) throw new OperationError(tooLong);
   const plan = withMode(input, input.mode ?? DEFAULT_MAP_MODE);
   const map = await adapter.createMap({
     title: plan.title,

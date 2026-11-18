@@ -46,6 +46,8 @@ export interface GitHubOptions extends SyncOptions, HttpOptions {
 export class GitHubAdapter extends SyncedAdapter {
   readonly kind = 'github' as const;
   readonly label = 'GitHub Issues';
+  /** GitHub refuses an issue body over 65,536 characters. */
+  protected override readonly mapBodyLimit = 65_536;
   readonly location: string;
   private gh: GitHubClient;
   /** Issue number → REST id (sub-issue and dependency endpoints take ids, not numbers). */

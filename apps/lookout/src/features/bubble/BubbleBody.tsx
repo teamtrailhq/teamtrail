@@ -4,6 +4,7 @@ import { useNow, type LookoutApi } from '../../hooks';
 import type { Selection } from '../../lib';
 import { MainChecksSection } from '../main-checks';
 import { TrailChecksSection } from '../trail-checks';
+import { DestinationPart } from './DestinationPart';
 import { QuestionNeed } from './QuestionNeed';
 import { TicketBubble, type TicketBubbleLinks } from './TicketBubble';
 
@@ -33,7 +34,13 @@ export function BubbleBody(
     case 'main':
       return snap ? <MainChecksSection mapId={snap.map.id} now={now} /> : null;
     case 'together':
-      return snap ? <TrailChecksSection mapId={snap.map.id} now={now} onUrgent={props.onUrgent} /> : null;
+      if (!snap) return null;
+      return (
+        <>
+          <DestinationPart text={snap.map.sections.destination} />
+          <TrailChecksSection mapId={snap.map.id} now={now} onUrgent={props.onUrgent} />
+        </>
+      );
     case 'question': {
       const q = api.activity.pending.find((p) => p.id === sel.id);
       if (!q) return <Empty>Answered.</Empty>;

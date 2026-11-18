@@ -30,6 +30,7 @@ import { verifyHeaders } from './verifyHeaders.mjs';
 import { verifyLinear } from './verifyLinear.mjs';
 import { verifyMainChecks } from './verifyMainChecks.mjs';
 import { verifyModels } from './verifyModels.mjs';
+import { verifyNewTrail } from './verifyNewTrail.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifyProof } from './verifyProof.mjs';
@@ -647,6 +648,9 @@ const trailChecksOk = await verifyTrailChecks({ browser, cli, log, shots });
 // Escapes: verified work reverted on main asks for a rule and counts on the scorecard, on a scratch git repo.
 const escapesOk = await verifyEscapes({ browser, cli, log, shots });
 
+// New trail with whole documents: a markdown destination, notes loaded from a file, the header still one line.
+const newTrailOk = await verifyNewTrail({ browser, cli, log, shots });
+
 // Model-aware claiming: two agents on different models, matching switched on in the Lookout, on a scratch project.
 const modelsOk = await verifyModels({ browser, cli, log, shots });
 // Several repos: All projects, the merged queue and answering another repo's agent from it.
@@ -780,6 +784,7 @@ if (
   !mainChecksOk ||
   !trailChecksOk ||
   !escapesOk ||
+  !newTrailOk ||
   !modelsOk ||
   !projectsOk ||
   !guidesOk ||

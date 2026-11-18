@@ -18,6 +18,8 @@ export type * from './planning/layout/types';
 export * from './model/modelTier';
 export * from './planning/matching';
 export * from './model/mapBody';
+export { TRAIL_TEXT_LIMITS } from './model/trailTextLimits';
+export { trailTextProblem } from './model/trailTextProblem';
 export * from './model/steps';
 export * from './planning/operations';
 export * from './planning/lifecycle';
