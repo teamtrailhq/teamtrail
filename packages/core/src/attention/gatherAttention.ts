@@ -7,7 +7,7 @@ import { readLeases } from '../agents/leaseStore';
 import { criteriaHeld } from '../criteria/criteriaHeld';
 import { readDeliveryProblems } from '../delivery/deliveryStore';
 import { readBrief } from '../discovery/briefStore';
-import { readTicketSyncs } from '../evidence/syncStore';
+import { liveSyncs } from '../evidence/liveSyncs';
 import { listGuides } from '../guides/guideStore';
 import { listKnowledge } from '../knowledge/knowledgeStore';
 import { readMainChecks } from '../mainChecks/readMainChecks';
@@ -48,7 +48,7 @@ export async function gatherAttention(input: {
   const snaps = allSnaps.filter((s) => active.has(s.map.id));
   const docs = await readAgentDocs(root);
   const briefs = snaps.map((s) => readBrief(root, s.map.id)).filter((b) => b !== undefined);
-  const syncs = readTicketSyncs(root).filter((s) => s.flags.length || s.pr?.state === 'open');
+  const syncs = liveSyncs({ root, snaps: allSnaps, now }).filter((s) => s.flags.length || s.pr?.state === 'open');
   return {
     snaps,
     questions: docs.flatMap((d) => d.pending),

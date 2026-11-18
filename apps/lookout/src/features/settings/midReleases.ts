@@ -1,7 +1,39 @@
 import type { Release } from './releases';
 
-/** Releases 0.27–0.43, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.29–0.47, kept apart so `releases.ts` stays short. Newest first. */
 export const MID_RELEASES: Release[] = [
+  {
+    version: '0.47.0',
+    date: '2026-11-16',
+    items: ['Set the checks every finished ticket must pass in Settings → Verification, no file to edit'],
+  },
+  {
+    version: '0.46.0',
+    date: '2026-11-16',
+    items: [
+      'In Teamtrail Cloud, Approve and merge on a verified ticket merges its pull request at the commit that was checked',
+    ],
+  },
+  {
+    version: '0.45.0',
+    date: '2026-11-16',
+    items: ['In Teamtrail Cloud, Run agents on the trail takes you straight to its agents'],
+  },
+  {
+    version: '0.44.2',
+    date: '2026-11-16',
+    items: ['The middle of the Lookout gets the same margin at the top as at its sides'],
+  },
+  {
+    version: '0.44.1',
+    date: '2026-11-16',
+    items: ['Text you type in forms is full size (14px) again, not the small caps of the label above it'],
+  },
+  {
+    version: '0.44.0',
+    date: '2026-11-16',
+    items: ['In a hosted Lookout, the theme toggle and Settings → Appearance change your theme on the server too'],
+  },
   {
     version: '0.43.1',
     date: '2026-11-15',
@@ -158,41 +190,6 @@ export const MID_RELEASES: Release[] = [
       'Ask Scout in Slack: @Scout inbox or @Scout status in a channel answers only you, or DM Scout; if you added Scout before, Settings asks you to reconnect once',
       'A question your agent waits on gets its own Slack message with answer buttons, even right after it asked another one',
       'Scout can be installed straight from Slack (scout.teamtrail.app/install-slack); each person then connects in Settings → Slack',
-    ],
-  },
-  {
-    version: '0.28.0',
-    date: '2026-11-12',
-    items: [
-      'Scout is now one Slack app: Settings → Slack → Add Scout to Slack, no app to create and no tokens to paste',
-      'You confirm which Slack account becomes Scout’s owner before it connects; if you made your own Slack app before, add Scout again',
-      'High-risk calls are answered in the Lookout only, and so is approving an agent’s request to change your settings: Slack shows Open in Lookout, and Decline still works there',
-    ],
-  },
-  {
-    version: '0.27.3',
-    date: '2026-11-11',
-    items: [
-      'On Linux, the Lookout sees every change an agent makes to a ticket again, not only the first: a claimed ticket no longer stays in the queue as waiting',
-    ],
-  },
-  {
-    version: '0.27.2',
-    date: '2026-11-11',
-    items: [
-      'Settings, briefs, criteria, guides, reroutes and the other panels stay current through reconnects, and a GitHub or Linear map updates live again',
-    ],
-  },
-  {
-    version: '0.27.1',
-    date: '2026-11-11',
-    items: ['The map and the queue no longer miss a change made while the Lookout was loading or reconnecting'],
-  },
-  {
-    version: '0.27.0',
-    date: '2026-11-11',
-    items: [
-      'Teamtrail opens your browser ready to sign in with one click; `teamtrail pair` does the same for another tab',
     ],
   },
 ];

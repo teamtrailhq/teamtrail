@@ -1,7 +1,34 @@
 import type { Release } from './releases';
 
-/** Releases 0.44–0.59.4, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
+/** Releases 0.48–0.61.1, kept apart so `releases.ts` stays short (0.29–0.47 in `midReleases.ts`). Newest first. */
 export const LATER_RELEASES: Release[] = [
+  {
+    version: '0.61.1',
+    date: '2026-11-18',
+    items: [
+      'A trail with many tickets side by side lays them out in a grid, in order of number, instead of one tall column',
+    ],
+  },
+  {
+    version: '0.61.0',
+    date: '2026-11-18',
+    items: [
+      "A pass counts only when the work didn't change what the check runs, skip or delete tests, or pass only on a retry",
+      'A trail is verified only when your checks pass again on main with every ticket merged',
+      'Reviews go first to an agent on another model, and rules you write ask agents about the files they touch',
+      'Settings → This trail → Gates: try each gate in Observe first; the scorecard shows verified work that came back',
+    ],
+  },
+  {
+    version: '0.60.0',
+    date: '2026-11-17',
+    items: [
+      'The map takes the page: click a ticket and a bubble opens beside it, with what it needs from you first, then the ticket',
+      'Under the map, the trail bar: every ticket at a glance, what needs you, and More for agents at work and what is next',
+      'Cards move while something happens: waiting for an agent, an agent at work with its model and step, a halo when it needs you',
+      'Plan, Activity and the Logbook are pages of their own, from the tabs in the header',
+    ],
+  },
   {
     version: '0.59.4',
     date: '2026-11-17',
@@ -165,37 +192,5 @@ export const LATER_RELEASES: Release[] = [
     version: '0.48.0',
     date: '2026-11-16',
     items: ['In Teamtrail Cloud, Scout keeps Get started in the corner until your workspace is set up'],
-  },
-  {
-    version: '0.47.0',
-    date: '2026-11-16',
-    items: ['Set the checks every finished ticket must pass in Settings → Verification, no file to edit'],
-  },
-  {
-    version: '0.46.0',
-    date: '2026-11-16',
-    items: [
-      'In Teamtrail Cloud, Approve and merge on a verified ticket merges its pull request at the commit that was checked',
-    ],
-  },
-  {
-    version: '0.45.0',
-    date: '2026-11-16',
-    items: ['In Teamtrail Cloud, Run agents on the trail takes you straight to its agents'],
-  },
-  {
-    version: '0.44.2',
-    date: '2026-11-16',
-    items: ['The middle of the Lookout gets the same margin at the top as at its sides'],
-  },
-  {
-    version: '0.44.1',
-    date: '2026-11-16',
-    items: ['Text you type in forms is full size (14px) again, not the small caps of the label above it'],
-  },
-  {
-    version: '0.44.0',
-    date: '2026-11-16',
-    items: ['In a hosted Lookout, the theme toggle and Settings → Appearance change your theme on the server too'],
   },
 ];

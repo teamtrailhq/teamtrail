@@ -82,6 +82,21 @@ describe('prBlock', () => {
     expect(text(prBlock(sync({}, { error: 'rate limited' }))!.parts)).toContain('sync failed');
   });
 
+  it("says an open PR's review and merge conflicts, and is as fresh as the PR sync's last good tick", () => {
+    const b = prBlock(sync({ review: 'changes_requested', mergeable: 'conflicting' }), HEAD)!;
+    expect(text(b.parts)).toEqual([
+      'checks passing',
+      'changes requested',
+      'merge conflicts',
+      'at the commit its proof covers',
+      expect.stringMatching(/^synced /),
+    ]);
+    expect(text(prBlock(sync({ review: 'approved' }), HEAD)!.parts)).toContain('approved');
+    const old = sync({}, { syncedAt: Date.now() - 14 * 60_000 });
+    expect(text(prBlock(old, HEAD)!.parts).at(-1)).toBe('synced 14m ago');
+    expect(text(prBlock(old, HEAD, Date.now())!.parts).at(-1)).not.toBe('synced 14m ago');
+  });
+
   it('renders the state chip, the title as text and a safe Open pull request link', () => {
     const html = renderToStaticMarkup(
       createElement(PullRequestBlock, {

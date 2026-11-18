@@ -77,6 +77,7 @@ const approval: Judge = (c) =>
 /** What each kind of gap waits on, and what the human can do when it's theirs. */
 const JUDGES: Record<ProofGapKind, Judge> = {
   'no-completion': () => nobody('Closed without a completion: there is nothing to check.'),
+  reopened: () => agent('Reopened: back with an agent, and a new completion proves it.'),
   'verification-off': () => nobody(`Verification was off for it. ${NEW_COMPLETION}`),
   'remote-unchecked': () => nobody(`No runner checked it. ${NEW_COMPLETION}`),
   'runner-no-commit': () => nobody(`The runner named no commit. ${NEW_COMPLETION}`),

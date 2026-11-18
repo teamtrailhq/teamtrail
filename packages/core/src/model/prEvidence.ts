@@ -86,7 +86,10 @@ export interface SyncFlag {
   since: number;
 }
 
-/** `.evidence/<mapId>/<ticketId>/sync.json`: the last PR/CI snapshot and open flags. Rewritten every tick. */
+/**
+ * `.evidence/<mapId>/<ticketId>/sync.json`: the last PR/CI snapshot and open flags. Rewritten when a tick changes it;
+ * how fresh it is is the reconciler's (PrSyncStatus `lastOkAt`).
+ */
 export interface TicketSync {
   v: 1;
   mapId: string;
@@ -98,8 +101,10 @@ export interface TicketSync {
   checks: CiCheck[];
   checksSummary: ChecksSummary;
   flags: SyncFlag[];
-  /** Last tick that read this PR successfully. */
+  /** The tick that last changed this snapshot; every ok tick since read it the same (PrSyncStatus `lastOkAt`). */
   syncedAt?: number;
+  /** PRs closed without merging that a newer PR for this ticket replaced: never linked again by branch or marker. */
+  replaced?: number[];
   /** Set when the last tick failed for this ticket; `pr`, `checks` and `flags` are then from `syncedAt`. */
   error?: string;
 }

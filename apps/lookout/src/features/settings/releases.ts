@@ -22,12 +22,22 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.6',
+    version: '0.66.7',
     date: '2026-11-18',
     items: [
       "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
       'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
       'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
+    ],
+  },
+  {
+    version: '0.66.6',
+    date: '2026-11-18',
+    items: [
+      'A ticket reopened after its proof was posted takes the green Teamtrail proof off its pull request, and a proof that names no commit never passes',
+      'A pull request closed and replaced by a new one on the same branch: the ticket follows the new one, and a trail whose work closed unmerged or was reverted no longer says Destination reached',
+      'A pull request waiting to merge says what stands in its way: a draft, conflicts, changes requested or its checks',
+      "The review limit no longer holds agents back for deleted tickets or a PR sync that isn't running, and PR sync asks GitHub less as your history grows",
     ],
   },
   {
@@ -153,33 +163,6 @@ export const RELEASES: Release[] = [
       'Went without a diff rule by mistake? Undo it in the ticket, and the rule asks again on the next completion',
       "Where a ticket's work started is kept on your machine, not in the repo, so an agent can't move it to slip a change past the check guard",
       'In Teamtrail Cloud, a trail is checked on exactly the commit Teamtrail names on main',
-    ],
-  },
-  {
-    version: '0.61.1',
-    date: '2026-11-18',
-    items: [
-      'A trail with many tickets side by side lays them out in a grid, in order of number, instead of one tall column',
-    ],
-  },
-  {
-    version: '0.61.0',
-    date: '2026-11-18',
-    items: [
-      "A pass counts only when the work didn't change what the check runs, skip or delete tests, or pass only on a retry",
-      'A trail is verified only when your checks pass again on main with every ticket merged',
-      'Reviews go first to an agent on another model, and rules you write ask agents about the files they touch',
-      'Settings → This trail → Gates: try each gate in Observe first; the scorecard shows verified work that came back',
-    ],
-  },
-  {
-    version: '0.60.0',
-    date: '2026-11-17',
-    items: [
-      'The map takes the page: click a ticket and a bubble opens beside it, with what it needs from you first, then the ticket',
-      'Under the map, the trail bar: every ticket at a glance, what needs you, and More for agents at work and what is next',
-      'Cards move while something happens: waiting for an agent, an agent at work with its model and step, a halo when it needs you',
-      'Plan, Activity and the Logbook are pages of their own, from the tabs in the header',
     ],
   },
   ...LATER_RELEASES,

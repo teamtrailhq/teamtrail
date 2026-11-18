@@ -38,8 +38,13 @@ afterEach(async () => {
 const setLimit = (reviewLimit: number | null) =>
   fs.writeFileSync(path.join(root, 'attention.json'), JSON.stringify({ v: 1, reviewLimit }));
 
-/** A done ticket whose pull request still waits for review, as the PR reconciler records it. */
-function openPr(mapId: string, ticketId: string) {
+/**
+ * A ticket whose pull request still waits for review, as the PR reconciler records it. Only a ticket that exists
+ * counts (a deleted ticket's snapshot never does), so `n` picks the trail's n-th ticket file.
+ */
+function openPr(mapId: string, n: number) {
+  const files = fs.readdirSync(path.join(root, mapId, 'tickets')).filter((f) => f.endsWith('.md'));
+  const ticketId = files.sort()[n].replace(/\.md$/, '');
   const dir = path.join(root, '.evidence', mapId, ticketId);
   fs.mkdirSync(dir, { recursive: true });
   const flag = { kind: 'done-pr-open', severity: 'warn', text: 'PR open', since: Date.now() - 60_000 };
@@ -69,8 +74,8 @@ describe('the review limit over MCP', () => {
     const mapId = await trail(call);
     const task = (await call<Next>('next_ticket', { types: ['task'] })).ticket!;
     setLimit(2);
-    openPr(mapId, 'done-1');
-    openPr(mapId, 'done-2');
+    openPr(mapId, 0);
+    openPr(mapId, 1);
 
     const next = await call<Next>('next_ticket');
     expect(next.ticket?.type).toBe('research');
@@ -89,8 +94,8 @@ describe('the review limit over MCP', () => {
   it('lets work start again once the queue is under the limit, or the limit is off', async () => {
     const call = await connect('claude-01');
     const mapId = await trail(call);
-    openPr(mapId, 'done-1');
-    openPr(mapId, 'done-2');
+    openPr(mapId, 0);
+    openPr(mapId, 1);
 
     setLimit(3);
     const under = await call<Next>('next_ticket', { types: ['task'] });

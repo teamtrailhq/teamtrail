@@ -68,11 +68,16 @@ export type TrailChecksState =
   | { kind: 'failed'; failing: string[] }
   | { kind: 'unavailable'; reason: string };
 
-/** What `trailDone` needs: whether the trail was verified together, and why not when it wasn't. */
+/**
+ * What `trailDone` needs: whether the trail was verified together, and why not when it wasn't. `not-landed`: a done
+ * ticket's work didn't reach the default branch (its PR closed without merging, or it was reverted), so the trail
+ * isn't at its destination.
+ */
 export type TrailTogether =
   | { kind: 'passed'; commit: string; branch: string | null; runId: string }
   | { kind: 'failed'; reason: string; runId: string }
-  | { kind: 'pending'; reason: string };
+  | { kind: 'pending'; reason: string }
+  | { kind: 'not-landed'; reason: string };
 
 /** What the Lookout, agents and an embedding server read for one trail. */
 export interface TrailChecksView {
