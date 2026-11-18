@@ -29,6 +29,8 @@ const WRITES: RegExp[] = [
   /^\/verification\/scope$/,
   // The diff rules: checks a change's files make run and questions they make agents answer (verification/setRules.ts).
   /^\/verification\/rules$/,
+  // How each verification gate acts, off, observe or enforce, set and approved in the same step (setGateMode.ts).
+  /^\/verification\/gates$/,
   // Reverting a trail file changed outside Teamtrail: Teamtrail writes the signed values back (signedState/).
   /^\/trust\/revert$/,
   // This person's own attention preferences, kept in their config dir.

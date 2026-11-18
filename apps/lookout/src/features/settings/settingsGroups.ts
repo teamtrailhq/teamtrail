@@ -5,10 +5,12 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     id: 'trail',
     label: 'This trail',
-    intro: 'How agents work on the trail on screen: its mode, the checks that prove work done, models and guides.',
+    intro:
+      'How agents work on the trail on screen: its mode, the checks that prove work done, the gates, diff rules, models and guides.',
     sections: [
       { id: 'mode', title: 'Trail mode' },
       { id: 'verification', title: 'Verification' },
+      { id: 'gates', title: 'Gates' },
       { id: 'rules', title: 'Diff rules' },
       { id: 'models', title: 'Model matching' },
       { id: 'trail-guides', title: 'Guides by type' },

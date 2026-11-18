@@ -9,6 +9,7 @@ export type SettingsSectionId =
   | 'mode'
   | 'verification'
   | 'rules'
+  | 'gates'
   | 'models'
   | 'trail-guides'
   | 'approvals'
@@ -61,4 +62,6 @@ export interface SettingsData {
   snaps: MapSnapshot[];
   answered: AnsweredQuestion[];
   onModelMatching: (value: ModelMatching) => void;
+  /** Opens a ticket on the map, leaving Settings. */
+  onOpenTicket: (mapId: string, ticketId: string) => void;
 }
