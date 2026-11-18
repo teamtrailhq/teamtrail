@@ -1,4 +1,5 @@
 import { checkArgv, checkNotice } from '../guides/checkArgv';
+import { GATE_NAMES } from '../model/gateMode';
 import type { CheckSpec, VerificationConfig } from '../model/verification';
 import { parseVerificationConfig } from './config';
 
@@ -17,6 +18,7 @@ function settings(c: VerificationConfig): Record<string, string> {
     'a completion without changes': `${c.noChanges.else} (allowed for ${c.noChanges.allow.join(', ') || 'none'})`,
     'stops at the first failure': String(c.failFast),
     'a pass on code that changed': c.stale,
+    'verification gates': GATE_NAMES.map((g) => `${g} ${c.gates[g]}`).join(', '),
     'required GitHub checks': c.github.requiredChecks.join(', ') || 'none',
   };
 }

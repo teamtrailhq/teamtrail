@@ -1,6 +1,7 @@
 import type { CriteriaResult } from '../criteria/criteria';
 import type { WaivedCheck } from './checkWaiver';
 import type { GitEvidence } from './evidence';
+import type { GateModes } from './gateMode';
 import type { AttemptGuide, ChecklistAnswer, GuideAnswers } from './guide';
 import type { VerificationLevel } from './lifecycle';
 import type { TicketType } from './types';
@@ -35,6 +36,8 @@ export interface VerificationConfig {
    */
   scope: 'flag' | 'fail' | 'human';
   stale: 'reverify' | 'flag';
+  /** How each verification gate acts (model/gateMode.ts); a gate the file leaves out takes its default. */
+  gates: GateModes;
   github: { enabled: 'auto' | 'off'; requiredChecks: string[]; pollSec: number };
 }
 

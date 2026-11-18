@@ -2,6 +2,7 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ensureLocalDir } from '../lib/ensureLocalDir';
 import type { WaiverEntry } from '../model/checkWaiver';
+import type { GateEntry } from '../model/gateMode';
 import type {
   GuideEntry,
   Journal,
@@ -27,7 +28,8 @@ import type { ProofPostEntry } from '../model/proofPost';
  * kinds a newer version wrote); `readGuides` returns the guide changes, `readRemoteAgents` the token changes,
  * `readSlack` the Slack owner changes, `readSignIn` the Lookout's sign-ins, `readMainChecks` runs on main asked for
  * and the trail lead's choices about them, `readWaivers` the trail lead's waivers of failing checks, `readMergeAnyway`
- * their merges of tickets whose proof isn't verified.
+ * their merges of tickets whose proof isn't verified, `readGates` the verification gates that held work back or
+ * would have.
  */
 const TRAIL_KINDS = new Set<string>(['transition', 'reroute']);
 type AnyEntry =
@@ -40,7 +42,8 @@ type AnyEntry =
   | ProofPostEntry
   | MainChecksEntry
   | WaiverEntry
-  | MergeAnywayEntry;
+  | MergeAnywayEntry
+  | GateEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -61,6 +64,7 @@ export function journalFile(root: string): Journal & {
   readMainChecks(mapId: string): MainChecksEntry[];
   readWaivers(mapId: string): WaiverEntry[];
   readMergeAnyway(mapId: string): MergeAnywayEntry[];
+  readGates(mapId: string): GateEntry[];
 } {
   const raw = (mapId: string) => readEntries(root, mapId) as AnyEntry[];
   const readAll = (mapId: string) => raw(mapId).filter((e): e is JournalEntry => TRAIL_KINDS.has(e.kind));
@@ -81,6 +85,7 @@ export function journalFile(root: string): Journal & {
     readMainChecks: (mapId) => raw(mapId).filter((e): e is MainChecksEntry => e.kind === 'main-checks'),
     readWaivers: (mapId) => raw(mapId).filter((e): e is WaiverEntry => e.kind === 'waiver'),
     readMergeAnyway: (mapId) => raw(mapId).filter((e): e is MergeAnywayEntry => e.kind === 'merge-anyway'),
+    readGates: (mapId) => raw(mapId).filter((e): e is GateEntry => e.kind === 'gate'),
   };
 }
 
