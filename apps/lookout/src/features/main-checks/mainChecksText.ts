@@ -43,9 +43,9 @@ function stateText(state: MainChecksState, holds: boolean): Omit<MainChecksRowTe
       return { edge: 'attention', title: "Checks on main couldn't run", detail: state.reason };
     case 'failed':
       return {
-        edge: state.fixing ? 'attention' : 'urgent',
+        edge: state.fixing || state.moved ? 'attention' : 'urgent',
         title: fails(state.failing),
-        why: failedWhy(state.fixing, holds),
+        why: state.moved ? 'Main moved since the failing run: running again' : failedWhy(state.fixing, holds),
       };
     case 'accepted':
       return { edge: 'attention', title: acceptedTitle(state.known, state.dropped) };

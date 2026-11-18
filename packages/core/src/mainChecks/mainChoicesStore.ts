@@ -39,3 +39,20 @@ export function updateMainChoices(root: string, mapId: string, change: (c: Trail
     return next;
   });
 }
+
+/**
+ * A failing run made again because main moved: the trail lead's Fix main first and Start anyway on it hold for the new
+ * run too, on every trail, so moving main neither asks them again nor holds work they let start.
+ */
+export function carryMainChoices(root: string, from: string, to: string) {
+  const store = machineStore(root);
+  mkdirSync(store.dir, { recursive: true, mode: 0o700 });
+  withFileLock(store.file(`${FILE}.lock`), () => {
+    const all = readAll(root);
+    const carry = <T extends { runId: string }>(m: T | undefined) => (m?.runId === from ? { ...m, runId: to } : m);
+    const next = Object.fromEntries(
+      Object.entries(all).map(([id, c]) => [id, { ...c, fixMain: carry(c.fixMain), proceed: carry(c.proceed) }]),
+    );
+    store.write(FILE, next);
+  });
+}

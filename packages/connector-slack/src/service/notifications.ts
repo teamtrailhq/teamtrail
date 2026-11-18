@@ -30,21 +30,28 @@ export async function runTick(ctx: SlackContext) {
   }
 }
 
+/**
+ * Trail changes go to the digests of active trails; approval and setting cards are synced over every trail, as the
+ * attention queue keeps approvals (attention/gatherAttention.ts): archiving a trail doesn't close a card for what still
+ * waits on the human from it.
+ */
 export async function syncTrails(ctx: SlackContext, docs: AgentSessionDoc[], c: SlackConfig) {
   const adapter = await ctx.o.active();
   const ev = new Set(c.notify.events);
-  const snaps: MapSnapshot[] = [];
-  for (const m of activeTrails(await adapter.listMaps())) {
-    const snap = await adapter.loadMap(m.id);
-    snaps.push(snap);
+  const maps = await adapter.listMaps();
+  const active = new Set(activeTrails(maps).map((m) => m.id));
+  const all: MapSnapshot[] = [];
+  for (const m of maps) all.push(await adapter.loadMap(m.id));
+  const snaps = all.filter((s) => active.has(s.map.id));
+  for (const snap of snaps) {
     const now = notesOf(snap);
-    const prev = ctx.trails.get(m.id);
-    ctx.trails.set(m.id, now);
+    const prev = ctx.trails.get(snap.map.id);
+    ctx.trails.set(snap.map.id, now);
     if (!prev) continue;
-    for (const line of trailChanges({ snap, docs, prev, now, events: ev })) queueLine(ctx, m.id, line);
+    for (const line of trailChanges({ snap, docs, prev, now, events: ev })) queueLine(ctx, snap.map.id, line);
   }
-  await syncApprovals(ctx, snaps, c);
-  await syncSettingRequests(ctx, snaps, c);
+  await syncApprovals(ctx, all, c);
+  await syncSettingRequests(ctx, all, c);
 }
 
 /** How much one digest message carries; the rest is in the Lookout. */

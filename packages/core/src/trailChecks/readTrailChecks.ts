@@ -21,20 +21,25 @@ function doneness(tickets: Ticket[]) {
   return { done: true, reason: '' };
 }
 
-/** A done ticket whose verified work was reverted on the default branch since is not merged any more. */
-async function withReverts(root: string, snap: MapSnapshot, merges: TicketMerge[]): Promise<TicketMerge[]> {
-  const reverted = new Set(
-    (await readEscapes(root, [snap])).filter((e) => e.kind === 'reverted').map((e) => e.ticketId),
-  );
-  if (!reverted.size) return merges;
-  return merges.map((m) => (reverted.has(m.ticketId) ? { ...m, state: 'reverted' as const } : m));
+/** A done ticket whose verified work was reverted on the default branch (at `at`, when known) is not merged any more. */
+async function withReverts(o: { root: string; snap: MapSnapshot; merges: TicketMerge[]; at?: string }) {
+  const escapes = await readEscapes(o.root, [o.snap], o.at ? { at: o.at } : {});
+  const reverted = new Set(escapes.filter((e) => e.kind === 'reverted').map((e) => e.ticketId));
+  if (!reverted.size) return o.merges;
+  return o.merges.map((m) => (reverted.has(m.ticketId) ? { ...m, state: 'reverted' as const } : m));
 }
 
-/** The merges marked with whether the default branch here holds them (a runner checks them itself). */
-async function marked(env: MainRunEnv, merges: TicketMerge[]): Promise<TicketMerge[]> {
-  const commits = merges.flatMap((m) => (m.state === 'merged' && m.commit ? [m.commit] : []));
-  if (env.checkRunner || !commits.length) return merges;
+/**
+ * The merges as the commit a run would use sees them (trailHead.ts, as runTrailChecks.ts picks it): reverted when
+ * that commit's history reverts them, and whether it holds the rest. One commit for both, so a revert on the remote
+ * branch counts when the run would use the remote branch. A runner checks the merges itself, on its own head.
+ */
+async function marked(env: MainRunEnv, snap: MapSnapshot, found: TicketMerge[]): Promise<TicketMerge[]> {
+  const commits = found.flatMap((m) => (m.state === 'merged' && m.commit ? [m.commit] : []));
+  if (env.checkRunner || !commits.length) return withReverts({ root: env.root, snap, merges: found });
   const head = await trailHead(env.repoRoot ?? path.dirname(env.root), commits);
+  const at = 'note' in head ? undefined : head.commit;
+  const merges = await withReverts({ root: env.root, snap, merges: found, ...(at ? { at } : {}) });
   const has = (c: string) => !('note' in head) && head.contained.has(c);
   return merges.map((m) => (m.state === 'merged' && m.commit ? { ...m, contained: has(m.commit) } : m));
 }
@@ -53,7 +58,7 @@ export async function readTrailChecks(
   const plan = mainChecksPlan(env.root);
   const done = doneness(snap.tickets);
   const found = readTrailMerges(env.root, snap);
-  const merges = done.done && plan.kind === 'run' ? await marked(env, await withReverts(env.root, snap, found)) : found;
+  const merges = done.done && plan.kind === 'run' ? await marked(env, snap, found) : found;
   const key = plan.kind === 'run' ? trailRunKey(plan.hash, merges) : '';
   let run = latestTrailRun(env.root, mapId, plan.kind === 'run' ? plan.budgetMs : 0);
   const hashed = plan.kind === 'off' ? plan : { kind: 'run' as const, hash: plan.hash };
