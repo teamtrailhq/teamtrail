@@ -2,7 +2,8 @@
 // with a rule prefilled from the address bar (`?settings=rules&when=…&why=…`, as an "add a rule?" link does), adds its
 // question and saves it, approved in the same step. An agent claiming src/session/** is told the rule will likely
 // apply; its completion without the answer is refused with the rule's question; the full ticket shows the held rule
-// with Go without; answering it completes the ticket, and the proof shows the rule with the answer as claimed.
+// with Go without; going without it shows Went without R-1 with Undo, and after Undo the next completion is held for
+// R-1 again (verifyRuleUndo.mjs); answering it completes the ticket, and the proof shows the answer as claimed.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -18,6 +19,7 @@ import {
   shootThemes,
   signInWith,
 } from './e2eHelpers.mjs';
+import { goWithoutThenUndo } from './verifyRuleUndo.mjs';
 
 const WHY = 'D-12: old sessions failed to load after #34';
 const ASK = 'Does a new field load from older transcripts that lack it?';
@@ -154,6 +156,7 @@ export async function verifyRules({ browser, cli, log, shots }) {
     await held.getByText(ASK).waitFor({ timeout: 15_000 });
     const offered = await held.getByRole('button', { name: 'Go without' }).count();
     if (shots) await page.screenshot({ path: path.join(shots, 'diff-rules-held.png') });
+    const undone = await goWithoutThenUndo({ page, call: one.call, key, ask: ASK, shots });
     const answer = 'Yes: the loader defaults the field, and a test loads an old transcript.';
     const done = await one.call('close_ticket', {
       ticket: key,
@@ -163,9 +166,9 @@ export async function verifyRules({ browser, cli, log, shots }) {
     const report = await one.call('proof_report', { ticket: key });
     const proven = /\*\*Diff rules:\*\*/.test(report.markdown) && /claimed, not verified/.test(report.markdown);
     await held.waitFor({ state: 'detached', timeout: 15_000 });
-    const ok = prefilled && told && refused && offered > 0 && done.closed === key && proven && !errors.length;
+    const ok = prefilled && told && refused && offered > 0 && undone && done.closed === key && proven && !errors.length;
     log(
-      `diff rules ${ok ? 'ok' : 'WRONG'}: prefilled from the link ${prefilled}, saved and approved as R-1, the claim ${told ? 'named it' : 'did NOT name it'}, a completion without the answer ${refused ? 'refused with the question' : `NOT refused (${refusal})`}, the ticket offered Go without ${offered > 0}, answered and ${done.closed === key ? 'done' : `NOT done (${JSON.stringify(done)})`}, the proof ${proven ? 'shows the answer as claimed' : 'MISSING the rule'}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `diff rules ${ok ? 'ok' : 'WRONG'}: prefilled from the link ${prefilled}, saved and approved as R-1, the claim ${told ? 'named it' : 'did NOT name it'}, a completion without the answer ${refused ? 'refused with the question' : `NOT refused (${refusal})`}, the ticket offered Go without ${offered > 0}, ${undone ? 'went without R-1 and undid it, asked again' : 'Go without and Undo did NOT work'}, answered and ${done.closed === key ? 'done' : `NOT done (${JSON.stringify(done)})`}, the proof ${proven ? 'shows the answer as claimed' : 'MISSING the rule'}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {

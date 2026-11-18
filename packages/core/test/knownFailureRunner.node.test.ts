@@ -55,7 +55,8 @@ const runner: CheckRunner = {
   runMain: (job) =>
     Promise.resolve({
       checks: lintFails(job),
-      git: { head: MAIN, branch: 'main', base: { head: null, branch: null }, changed: [] },
+      // on exactly the commit asked for, as Cloud's runner does; MAIN when none was named
+      git: { head: job.commit ?? MAIN, branch: 'main', base: { head: null, branch: null }, changed: [] },
     }),
 };
 

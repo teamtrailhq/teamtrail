@@ -21,7 +21,7 @@ export function applyGuard<T extends { result: AttemptResult; note?: string; git
     kind: 'check-guard',
     level: held ? 'alert' : 'warn',
     message: `the work changed what its checks run: ${reason}`,
-    files: [...new Set(guard.findings.map((f) => f.file))],
+    files: [...new Set(guard.findings.map((f) => f.file).filter(Boolean))],
   };
   if (graded.git) graded.git.flags.push(flag);
   if (graded.result === 'pass')

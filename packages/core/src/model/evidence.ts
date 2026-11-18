@@ -12,7 +12,7 @@ export interface GitTreeState {
   dirty: Record<string, string | null>;
 }
 
-/** The worktree as a claim found it: `<tracker>/.evidence/<mapId>/<ticketId>/baseline-<n>.json`, written once. */
+/** The worktree as a claim found it, in this machine's store, signed (evidence/baselineStore.ts); written once. */
 export interface GitBaseline {
   v: 1;
   id: string;

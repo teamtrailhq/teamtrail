@@ -186,7 +186,27 @@ test('a journal with rule waivers among older kinds still reads', () => {
     actor: 'Ada',
     actorKind: 'trail lead',
   });
+  j.append({
+    v: 1,
+    kind: 'rule-waiver',
+    at: 3,
+    mapId: 'm',
+    ticketId: 't',
+    ticketKey: '#1',
+    rule: 'R-1',
+    action: 'undone',
+    reason: 'n/a',
+    actor: 'Ada',
+    actorKind: 'trail lead',
+  });
   assert.equal(j.readGates('m').length, 1);
-  assert.equal(j.readRuleWaivers('m')[0].rule, 'R-1');
+  assert.deepEqual(
+    j.readRuleWaivers('m').map((e) => [e.rule, e.action]),
+    [
+      ['R-1', undefined],
+      ['R-1', 'undone'],
+    ],
+    'a waiver from before Undo has no action',
+  );
   assert.deepEqual(j.readAll('m'), []);
 });

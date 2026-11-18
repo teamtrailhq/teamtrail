@@ -41,4 +41,25 @@ export const ruleWaivers = {
       );
     }
   },
+
+  /** Removes the ticket's waiver of `rule` under the file's lock; returns it, or undefined when there was none. */
+  remove(root: string, at: { mapId: string; ticketId: string; rule: string }): RuleWaiver | undefined {
+    try {
+      const store = machineStore(root);
+      mkdirSync(store.dir, { recursive: true, mode: 0o700 });
+      return withFileLock(store.file(`${FILE}.lock`), () => {
+        const all = store.read<Waivers>(FILE) ?? {};
+        const key = keyOf(at.mapId, at.ticketId);
+        const gone = all[key]?.find((x) => x.rule === at.rule);
+        if (!gone) return undefined;
+        const left = all[key].filter((x) => x !== gone);
+        if (left.length) all[key] = left;
+        else delete all[key];
+        store.write(FILE, all);
+        return gone;
+      });
+    } catch (e) {
+      throw new OperationError(`Couldn't change Teamtrail's config folder on this machine: ${(e as Error).message}`);
+    }
+  },
 };

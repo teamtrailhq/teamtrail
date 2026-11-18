@@ -9,6 +9,7 @@ import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { agentPaths } from '../src/agents/agentLink';
 import { createTrackerBridge } from '../src/bridge';
+import { baselineForClaim } from '../src/evidence/baseline';
 import { journalFile } from '../src/history/journalFile';
 import { writeLocalJson } from '../src/lib/ensureLocalDir';
 import type { VerificationLevel } from '../src/model/lifecycle';
@@ -62,6 +63,8 @@ async function setup(level: VerificationLevel = 'checks', maxAttempts = 3) {
   await run();
   const resubmit = async () => {
     await transition(adapter, map.id, id, { ...agent, event: 'claim' });
+    // the claim's baseline, in this machine's store: a git repo made after setup has its first one here
+    await baselineForClaim({ root, cwd: repo, mapId: map.id, ticket: tickets[0], agent: 'Scout-1', resume: true });
     await transition(adapter, map.id, id, { ...agent, event: 'submit' });
     await run();
   };

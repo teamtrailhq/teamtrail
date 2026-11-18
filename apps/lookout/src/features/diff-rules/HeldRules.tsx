@@ -1,50 +1,21 @@
-import { useState } from 'react';
-import { Button, DetailSection, MetaLine, Row } from '../../components/ui';
+import { DetailSection } from '../../components/ui';
+import { HeldRuleList } from './HeldRuleList';
 import { useHeldRules } from './useHeldRules';
-import { WaiveRuleForm } from './WaiveRuleForm';
+import { WaivedRules } from './WaivedRules';
 
 /**
- * The diff rules a ticket's latest completion was refused for: each question the agent still has to answer, why the
- * rule exists and the files that triggered it. The agent answers and completes again; Go without lets the ticket
- * complete without that answer. Shown only while a completion is held.
+ * A ticket's diff rules in the full ticket: the questions its latest completion was refused for, each with Go without
+ * (the agent answers and completes again, or the ticket completes without that answer), and the rules the trail lead
+ * let it go without, each with Undo. Shown only while there is one of either.
  */
 export function HeldRules(props: { mapId: string; ticketId: string }) {
-  const { held, reload } = useHeldRules(props.mapId, props.ticketId);
-  const [waiving, setWaiving] = useState<string>();
-  if (!held?.rules.length) return null;
+  const { held, waived, reload } = useHeldRules(props.mapId, props.ticketId);
+  const holding = held && held.rules.length > 0;
+  if (!holding && !waived.length) return null;
   return (
-    <DetailSection label="Diff rules" className="dr-held">
-      <p className="t-meta">{held.agent}&apos;s completion waits for these answers.</p>
-      <ul className="dr-list">
-        {held.rules.map((r) => (
-          <Row
-            as="li"
-            key={r.id}
-            edge="attention"
-            title={r.ask}
-            context={<MetaLine parts={[{ text: r.id, code: true }, `Why: ${r.why}`]} />}
-            detail={r.files.join(', ')}
-            actions={
-              <Button size="sm" onClick={() => setWaiving(r.id)}>
-                Go without
-              </Button>
-            }
-            below={
-              waiving === r.id && (
-                <WaiveRuleForm
-                  mapId={props.mapId}
-                  ticketId={props.ticketId}
-                  rule={r.id}
-                  onDone={() => {
-                    setWaiving(undefined);
-                    reload();
-                  }}
-                />
-              )
-            }
-          />
-        ))}
-      </ul>
+    <DetailSection label="Diff rules" className="dr-rules">
+      {holding && <HeldRuleList mapId={props.mapId} ticketId={props.ticketId} held={held} onWaived={reload} />}
+      <WaivedRules mapId={props.mapId} ticketId={props.ticketId} waived={waived} onUndone={reload} />
     </DetailSection>
   );
 }

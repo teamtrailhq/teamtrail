@@ -5,8 +5,8 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { MarkdownAdapter } from '@teamtrail/core';
-import { journalFile, readAttempts } from '@teamtrail/core/agents';
-import { nodeMarkdownFs, waiveRule } from '@teamtrail/core/node';
+import { journalFile, lookoutOnlyTickets, readAttempts } from '@teamtrail/core/agents';
+import { nodeMarkdownFs, undoRuleWaiver, waiveRule } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
@@ -160,5 +160,49 @@ describe('diff rules over MCP', () => {
     expect(done.closed).toBe(key);
     const proof = await call<{ gaps: string[] }>('proof_report', { ticket: key });
     expect(proof.gaps).toContain("R-1's question wasn't answered: Ada let the work go without it.");
+  });
+
+  it('asks again once the trail lead undoes Go without, with the same refusals as the waiver', async () => {
+    writeConfig();
+    const call = await connect();
+    const { key, mapId, id } = await claimSession(call);
+    write('src/session/store.ts');
+    const env = { adapter: new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root), root };
+    const ids = { mapId, ticketId: id, rule: 'R-1', local: true };
+    await expect(undoRuleWaiver(env, { ...ids, via: 'lookout' })).rejects.toThrow(`${key} isn't going without R-1.`);
+    await waiveRule(env, { ...ids, reason: 'no transcripts exist yet', via: 'lookout', person: 'Ada' });
+    await expect(undoRuleWaiver(env, { ...ids, via: 'slack' })).rejects.toThrow(/is for the Lookout/);
+    await expect(undoRuleWaiver(env, { ...ids, via: 'chat' })).rejects.toThrow(/is for the Lookout/);
+    await expect(undoRuleWaiver(env, { ...ids, via: 'lookout', person: 'Ada' })).resolves.toEqual({
+      rule: 'R-1',
+      waived: false,
+    });
+    expect(
+      journalFile(root)
+        .readRuleWaivers(mapId)
+        .map((e) => [e.action, e.actor]),
+    ).toEqual([
+      ['waived', 'Ada'],
+      ['undone', 'Ada'],
+    ]);
+    const t = (await env.adapter.loadMap(mapId)).tickets.find((x) => x.id === id)!;
+    expect(t.comments.at(-1)!.body).toContain('**R-1 asks again**');
+    // the next completion is held for the rule's answer again
+    await expect(call('close_ticket', { resolution: 'Added the field' })).rejects.toThrow(/R-1 asks/);
+  });
+
+  it('on a high-risk ticket, Undo is for the Lookout on its machine and a caller allowed high-risk calls', async () => {
+    writeConfig();
+    const call = await connect();
+    const { key, mapId, id } = await claimSession(call);
+    const env = { adapter: new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root), root };
+    const ids = { mapId, ticketId: id, rule: 'R-1' };
+    await waiveRule(env, { ...ids, reason: 'no transcripts exist yet', via: 'lookout', local: true });
+    lookoutOnlyTickets.mark(root, { mapId, ticketId: id, categories: ['auth-permissions'] });
+    await expect(undoRuleWaiver(env, { ...ids, via: 'lookout-limited', local: true })).rejects.toThrow(key);
+    await expect(undoRuleWaiver(env, { ...ids, via: 'lookout', local: false })).rejects.toThrow(
+      `${key} is high risk: change its rules in the Lookout on its machine.`,
+    );
+    await expect(undoRuleWaiver(env, { ...ids, via: 'lookout', local: true })).resolves.toMatchObject({ rule: 'R-1' });
   });
 });

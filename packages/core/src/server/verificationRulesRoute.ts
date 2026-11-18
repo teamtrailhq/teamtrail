@@ -5,6 +5,7 @@ import { rulesLastMatched } from '../verification/rulesLastMatched';
 import { ruleWaivers } from '../verification/ruleWaivers';
 import { StaleChecks } from '../verification/setChecks';
 import { setRules } from '../verification/setRules';
+import { undoRuleWaiver } from '../verification/undoRuleWaiver';
 import { waiveRule } from '../verification/waiveRule';
 import { BadRequest, readJson, sendJson } from './http';
 import { lookoutVia } from './lookoutVia';
@@ -31,8 +32,11 @@ async function putRules(o: Ctx, req: IncomingMessage, res: ServerResponse) {
   }
 }
 
-/** `POST /verification/rules/waive` `{mapId, ticketId, rule, reason}`: Go without a rule for one ticket. */
-async function waive(o: Ctx, req: IncomingMessage, res: ServerResponse) {
+/**
+ * `POST /verification/rules/waive` `{mapId, ticketId, rule, reason}`: Go without a rule for one ticket; and
+ * `POST /verification/rules/waive/undo` `{mapId, ticketId, rule}`: its Undo.
+ */
+async function waive(o: Ctx, req: IncomingMessage, res: ServerResponse, undo: boolean) {
   const b = await readJson<Record<string, unknown>>(req, '{}');
   const [mapId, ticketId, rule] = [str(b.mapId), str(b.ticketId), str(b.rule, 20)];
   const reason = typeof b.reason === 'string' ? b.reason : '';
@@ -40,7 +44,8 @@ async function waive(o: Ctx, req: IncomingMessage, res: ServerResponse) {
   const who = { person: personOfRequest(req)?.name, via: lookoutVia(req), local: o.local !== false };
   try {
     const env = { adapter: await o.active(), root: o.root };
-    sendJson(res, 200, await waiveRule(env, { mapId, ticketId, rule, reason, ...who }));
+    const ids = { mapId, ticketId, rule, ...who };
+    sendJson(res, 200, undo ? await undoRuleWaiver(env, ids) : await waiveRule(env, { ...ids, reason }));
   } catch (e) {
     if (!(e instanceof OperationError)) throw e;
     sendJson(res, 409, { error: e.message });
@@ -54,6 +59,7 @@ async function waive(o: Ctx, req: IncomingMessage, res: ServerResponse) {
  *                                                     step; this machine only (thisMachineRoutes.ts)
  *   GET  /verification/rules/held?mapId=&ticketId=    `{ held?, waived }`: the rules a completion was refused for
  *   POST /verification/rules/waive                    `{mapId, ticketId, rule, reason}` → `{ rule, waived }`
+ *   POST /verification/rules/waive/undo               `{mapId, ticketId, rule}` → `{ rule, waived: false }`
  * Writes are never cross-site; who did it is the sign-in's person and how the route's (lookoutVia.ts), never the body's.
  */
 export async function handleRules(o: Ctx, req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
@@ -66,14 +72,14 @@ export async function handleRules(o: Ctx, req: IncomingMessage, res: ServerRespo
     const held = heldRulesStore.read(o.root, q('mapId'), q('ticketId'));
     const waived = ruleWaivers
       .list(o.root, q('mapId'), q('ticketId'))
-      .map((w) => ({ rule: w.rule, by: w.by, at: w.at }));
+      .map((w) => ({ rule: w.rule, by: w.by, at: w.at, reason: w.reason }));
     return (sendJson(res, 200, { ...(held ? { held } : {}), waived }), true);
   }
-  const write =
-    (p === '/verification/rules' && req.method === 'PUT') ||
-    (p === '/verification/rules/waive' && req.method === 'POST');
+  const waiving =
+    req.method === 'POST' && (p === '/verification/rules/waive' || p === '/verification/rules/waive/undo');
+  const write = (p === '/verification/rules' && req.method === 'PUT') || waiving;
   if (!write) return false;
   if (crossSite(req)) return (sendJson(res, 403, { error: 'cross-site request refused' }), true);
-  await (req.method === 'PUT' ? putRules(o, req, res) : waive(o, req, res));
+  await (waiving ? waive(o, req, res, p.endsWith('/undo')) : putRules(o, req, res));
   return true;
 }

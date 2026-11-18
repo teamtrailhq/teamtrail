@@ -1,7 +1,15 @@
 import type { Release } from './releases';
 
-/** Releases 0.44–0.49, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
+/** Releases 0.44–0.50, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
 export const LATER_RELEASES: Release[] = [
+  {
+    version: '0.50.0',
+    date: '2026-11-16',
+    items: [
+      'On the map, a done ticket’s check is green when its work is verified, grey when it isn’t',
+      'Cards say “checks running” while a completion is checked, and a Legend explains the dots',
+    ],
+  },
   {
     version: '0.49.0',
     date: '2026-11-16',

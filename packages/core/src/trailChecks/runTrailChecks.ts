@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { defaultHead } from '../mainChecks/defaultHead';
 import type { MainChecksPlan } from '../mainChecks/mainChecksPlan';
 import type { MainRunOutcome } from '../mainChecks/mainRunOutcome';
 import { runMainHere } from '../mainChecks/runMainHere';
@@ -33,10 +32,20 @@ async function here(env: MainRunEnv, o: { mapId: string; id: string; plan: Plan;
   return { ...found, merges: marked(o.merges, (c) => head.contained.has(c)) };
 }
 
-/** On the embedding server's runner (Cloud), which says which merges the commit it ran on holds. */
+/** The commit to name to a runner: the default branch's here when it holds every merge, else none (its own head). */
+async function namedHead(repoRoot: string, commits: string[]) {
+  const head = await trailHead(repoRoot, commits);
+  if ('note' in head || head.contained.size < commits.length) return { note: 'not every merge is here' };
+  return head;
+}
+
+/**
+ * On the embedding server's runner (Cloud), which says which merges the commit it ran on holds. It runs on exactly
+ * the commit named here when this checkout's default branch holds every merge; else on the default branch's head.
+ */
 async function onRunner(env: MainRunEnv, o: { mapId: string; id: string; plan: Plan; merges: TicketMerge[] }) {
   const repoRoot = env.repoRoot ?? path.dirname(env.root);
-  const known = await defaultHead(repoRoot);
+  const known = await namedHead(repoRoot, commitsOf(o.merges));
   const found = await runMainOnRunner({
     root: env.root,
     repoRoot,
@@ -45,7 +54,7 @@ async function onRunner(env: MainRunEnv, o: { mapId: string; id: string; plan: P
     config: o.plan.config,
     names: o.plan.names,
     signal: env.signal,
-    ...('note' in known ? {} : { head: { branch: known.branch, commit: known.commit } }),
+    head: 'note' in known ? null : { branch: known.branch, commit: known.commit },
     contains: commitsOf(o.merges),
     logRel: trailPaths.logs(o.mapId, o.id),
   });

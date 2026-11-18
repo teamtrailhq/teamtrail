@@ -22,6 +22,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.61.1',
+    date: '2026-11-18',
+    items: [
+      'Went without a diff rule by mistake? Undo it in the ticket, and the rule asks again on the next completion',
+      "Where a ticket's work started is kept on your machine, not in the repo, so an agent can't move it to slip a change past the check guard",
+      'In Teamtrail Cloud, a trail is checked on exactly the commit Teamtrail names on main',
+    ],
+  },
+  {
     version: '0.61.0',
     date: '2026-11-18',
     items: [
@@ -177,14 +186,6 @@ export const RELEASES: Release[] = [
       'Review limit: set how much finished work may wait for your review, and agents start no new work past it',
       'Agents finish rework and keep researching meanwhile, and Waiting on you shows what to review first',
       'Set it in Settings → Attention; in Teamtrail Cloud, workspace owners set it there too',
-    ],
-  },
-  {
-    version: '0.50.0',
-    date: '2026-11-16',
-    items: [
-      'On the map, a done ticket’s check is green when its work is verified, grey when it isn’t',
-      'Cards say “checks running” while a completion is checked, and a Legend explains the dots',
     ],
   },
   ...LATER_RELEASES,

@@ -44,6 +44,9 @@
 .dr-held .dr-list {
   margin-top: var(--sp-6);
 }
+.dr-held + .dr-waived {
+  margin-top: var(--sp-8);
+}
 .dr-waive {
   display: flex;
   flex-wrap: wrap;
