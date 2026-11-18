@@ -58,7 +58,8 @@ const map = { id: 'm1', title: 'M' };
 const ticket = { id: '1', key: '#1' };
 
 describe('confirming criteria binds to what was shown', () => {
-  const h: Handler = (req, res, url) => handleCriteria(root, req, res, url);
+  const h: Handler = (req, res, url) =>
+    handleCriteria({ root, active: () => Promise.reject(new Error('no tracker')) }, req, res, url);
   it('refuses without the hash, and with a hash of criteria that changed since', async () => {
     writeTicketCriteria(root, map, ticket, { criteria: numbered([{ text: 'Exports every row', kind: 'unit' }]) });
     const read = await call(h, 'GET', '/criteria?mapId=m1');

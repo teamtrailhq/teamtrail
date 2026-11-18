@@ -10,6 +10,7 @@ import {
   type Ticket,
 } from '@teamtrail/core';
 import { assertConfirmed, levelFor } from '@teamtrail/core/agents';
+import { trailDoneFor } from '@teamtrail/core/node';
 import { assertHumanDecided } from '../remoteGate';
 import type { AgentContext } from './agentContext';
 import { assertCloseable } from './assertCloseable';
@@ -34,6 +35,7 @@ import { pathRoots } from './pathRoots';
 import { resolveDirectly } from './resolveDirectly';
 import { checkRisk, riskOf } from './riskCheck';
 import { ruleOut } from './ruleOut';
+import { trailEnv } from './trailEnv';
 import type { CloseInput, WaitControl } from './types';
 
 type Wait = { seconds: number; ctl?: WaitControl };
@@ -213,7 +215,7 @@ async function finish(c: Closing, done: { before: Set<string>; verified: object;
   const unblocked = after.tickets.filter((x) => nowOpen.has(x.id) && !done.before.has(x.id));
   if (s.info.ticketId === t.id) ctx.sessions.end(true, `${t.key} decided · session closed`);
   const next = chooseNext(after);
-  const open = after.tickets.filter((x) => x.state === 'open').length;
+  const trail = await trailDoneFor({ env: trailEnv(ctx), snap: after, decisions: await ctx.decisions(after.map.id) });
   const d = done.decision;
   return {
     closed: t.key,
@@ -222,6 +224,8 @@ async function finish(c: Closing, done: { before: Set<string>; verified: object;
     decision: d ? { id: d.id, summary: d.summary, decidedBy: d.decidedBy } : null,
     unblocked: unblocked.map((x) => ({ key: x.key, title: x.title, type: x.type })),
     next: next ? { key: next.key, title: next.title, type: next.type, attention: attention(next) } : null,
-    trailDone: open === 0,
+    // core's trailDone, as the Lookout judges it: done once nothing in scope is open and the plan is charted
+    trailDone: trail.kind !== 'not-done',
+    trail: trail.reason,
   };
 }

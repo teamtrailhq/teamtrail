@@ -61,9 +61,9 @@ describe('ticketStanding', () => {
     expect(s).toMatchObject({ title: 'Waiting on you: approve it', parts: ['checks passed'], primary: 'approve' });
   });
 
-  it('says done, verified and the open pull request', () => {
-    const s = read({ state: 'decided', verified: true, pr: { number: 3, state: 'open' } });
-    expect(s).toEqual({ edge: 'done', title: 'Done', parts: ['verified', 'PR #3 open'] });
+  it('says done and verified; the pull request has its own block under the state line', () => {
+    const s = read({ state: 'decided', verified: true });
+    expect(s).toEqual({ edge: 'done', title: 'Done', parts: ['verified'] });
   });
 
   it('holds a ticket the brief gates, with Review the brief once it is submitted', () => {

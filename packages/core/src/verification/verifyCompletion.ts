@@ -4,19 +4,16 @@ import { withLocalGuard } from '../checkGuard/withLocalGuard';
 import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
 import { writeGated } from '../flaky/flakyGate';
-import { listGuides } from '../guides/guideStore';
-import { checksOfGuides, resolveGuides } from '../guides/resolveGuides';
-import { droppedChecks, trailKnownFailures } from '../mainChecks/withKnownFailures';
+import { trailKnownFailures } from '../mainChecks/withKnownFailures';
 import { BRAND } from '../model/brand';
 import type { RuleAnswer } from '../model/diffRule';
 import type { AttemptGuide } from '../model/guide';
 import type { Journal, TicketPhase } from '../model/lifecycle';
-import type { MapSnapshot, Ticket } from '../model/types';
+import type { Ticket } from '../model/types';
 import type { VerificationAttempt } from '../model/verification';
 import { transition } from '../planning/lifecycle/transition';
 import { OperationError } from '../planning/operations/operationError';
 import { resolve, type DecisionMeta } from '../planning/operations/resolve';
-import { withApprovedLevel } from './approvedLevel';
 import { assertConfirmed } from './assertConfirmed';
 import { attemptBase } from './attemptBase';
 import { checkoutFor } from './checkoutFor';
@@ -27,7 +24,7 @@ import type { ConfigRead } from './configFile';
 import { nextAttemptId, readAttempts } from './evidenceStore';
 import { gradeAttempt } from './gradeAttempt';
 import { attemptComment, outcomeOf } from './outcome';
-import { verificationFor, type LevelInfo } from './policy';
+import { type LevelInfo } from './policy';
 import { remoteGraded } from './remoteCompletion';
 import { requestReview } from './reviewRequest';
 import { acquireRunLock, releaseRunLock } from './runLock';
@@ -54,7 +51,7 @@ export interface VerifyEnv {
 export const repoRootOf = (env: Pick<VerifyEnv, 'root' | 'repoRoot'>) => env.repoRoot ?? path.dirname(env.root);
 
 /** What the agent claimed, kept on the attempt and used to resolve the ticket when it passes; `model` it ran on. */
-export interface Submission extends Pick<VerificationAttempt, 'model'> {
+export interface Submission extends Pick<VerificationAttempt, 'model' | 'supersedes'> {
   agent: string;
   sessionId?: string;
   resolution: string;
@@ -104,24 +101,7 @@ export interface Settled {
   maxAttempts: number;
 }
 
-/**
- * The level a completion of `t` needs, with the config it was read from. A ticket's guides add the checks they
- * require, the union of them all (resolveGuides.ts); they never change the level or drop a check. A disabled guide
- * keeps adding the checks of its last approved version.
- */
-export function levelFor(root: string, snap: MapSnapshot, t: Ticket): { info: LevelInfo; config: ConfigRead } {
-  // the approved config and the approved level: an edit to verification.json or to a trail's or ticket's level in
-  // the tracker files lowers nothing until the trail lead approves it (approvedLevel.ts)
-  const { config } = trustedChecks(root);
-  const asked = verificationFor(config.config, snap.map, t);
-  const approved = withApprovedLevel(root, { config: config.config, map: snap.map, t, info: asked });
-  // checks the trail lead dropped for this trail because they fail on main (mainChecks/chooseMain.ts)
-  const dropped = droppedChecks(root, snap.map.id);
-  const info = dropped.length ? { ...approved, checks: approved.checks.filter((c) => !dropped.includes(c)) } : approved;
-  const guides = resolveGuides(listGuides(root), { map: snap.map, ticket: t });
-  if (!guides.length) return { info, config };
-  return { info: { ...info, checks: checksOfGuides(info.checks, guides) }, config };
-}
+export { levelFor } from './levelFor';
 
 /**
  * Runs the checks for a ticket that is verifying, writes the attempt and moves
@@ -252,10 +232,12 @@ async function settle(env: VerifyEnv, a: VerificationAttempt, sub: Submission, m
       summary: a.summary,
       author: a.agent,
       transcript: sub.transcript,
+      supersedes: a.supersedes,
       decision: { ...d, rationale: d.rationale ?? a.rationale, alternatives: a.alternatives ?? d.alternatives },
     });
   } else
     await transition(env.adapter, a.mapId, a.ticketId, { ...engine, event: o.event, to: o.to, expect: 'verifying' });
-  if (o.to === 'verifying') await requestReview(env, a);
+  // a review when the level asks for one, or for sign-off criteria (as before); not for criteria waiting on the human
+  if (o.to === 'verifying' && (a.level !== 'checks' || a.criteria?.manual.length)) await requestReview(env, a);
   return { attempt: a, phase: o.to, failures, maxAttempts };
 }

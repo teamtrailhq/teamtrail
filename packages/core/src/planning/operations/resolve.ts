@@ -4,7 +4,7 @@ import type { Participant, DecisionSource, TranscriptEntry } from '../../model/t
 import { firstSentence } from '../decisions/decisionRecord';
 import { transition } from '../lifecycle/transition';
 import type { ActorOptions } from './claims';
-import { recordDecision } from './decisionOps';
+import { recordDecision, supersedeDecision } from './decisionOps';
 import { assertLookoutGuard, type LookoutGuard } from './lookoutGuard';
 import { OperationError } from './operationError';
 
@@ -42,6 +42,11 @@ export interface ResolveInput {
   transcript?: string;
   decision?: DecisionMeta;
   trailLine?: string;
+  /**
+   * The decision this resolution replaces: the ticket's own from its earlier close, when a completion is verified
+   * again (verification/verifyAgain.ts). One decision per close, never two of the same.
+   */
+  supersedes?: string;
 }
 
 export interface ResolveOptions extends ActorOptions {
@@ -79,8 +84,23 @@ export async function resolve(
     journal: input.journal,
     ...(input.event && input.event !== 'complete' ? { to: 'done' as const } : {}),
   });
-  await recordDecision(adapter, mapId, decisionOf(t, input), { trailLine: input.trailLine, guard: input.guard });
+  await keepDecision(adapter, mapId, { t, input });
   return t;
+}
+
+/** Records the resolution's decision, replacing the one it supersedes when that one still stands. */
+async function keepDecision(
+  adapter: TrackerAdapter,
+  mapId: string,
+  o: { t: { id: string; key: string; title: string }; input: ResolveInput & ResolveOptions },
+) {
+  const { t, input } = o;
+  const old = input.supersedes && (await adapter.listDecisions(mapId)).find((d) => d.id === input.supersedes);
+  if (old && !old.supersededBy && !old.postedBy) {
+    const { question: _q, ...next } = decisionOf(t, input);
+    return supersedeDecision(adapter, mapId, old.id, { ...next, guard: input.guard });
+  }
+  return recordDecision(adapter, mapId, decisionOf(t, input), { trailLine: input.trailLine, guard: input.guard });
 }
 
 /** The decision record a resolution keeps: the caller's audit fields, defaulted from the ticket and the author. */

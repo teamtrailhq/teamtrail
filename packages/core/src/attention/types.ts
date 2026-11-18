@@ -1,6 +1,7 @@
 import type { UnacceptedSettings } from '../adapters/remote/settingsInForce';
 import type { PendingTracker } from '../adapters/remote/types';
 import type { TicketLease } from '../agents/ticketLease';
+import type { CriteriaWaiting } from '../criteria/criteriaHeld';
 import type { DiscoveryBrief } from '../discovery/brief';
 import type { KnowledgeEntry } from '../knowledge/knowledge';
 import type { AttentionItem, AttentionKind, AttentionPolicy, AttentionState } from '../model/attention';
@@ -65,6 +66,8 @@ export interface AttentionInput {
   legacyOutbox?: { writes: number; targets: string[] };
   /** Agents connected now, with their model tier (model matching). Missing: none. */
   agents?: ConnectedAgent[];
+  /** Tickets whose criteria wait for the trail lead before work starts (criteria/criteriaHeld.ts). Missing: none. */
+  criteria?: CriteriaWaiting[];
   /** Missing: the defaults. */
   policy?: AttentionPolicy;
   /** Missing: nothing snoozed or dismissed. */

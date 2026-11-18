@@ -34,4 +34,9 @@ describe('layoutChips', () => {
     const chips = layoutChips({ key: '#13', type: 'Task', guide: 'Security review', reserve: 44 });
     expect(right(chips)).toBeLessThanOrEqual(NODE_W - CARD_TEXT_X - 8 - 44 + 0.01);
   });
+
+  it('puts the pull request last in the row', () => {
+    const chips = layoutChips({ key: '#3', type: 'Task', state: 'done', pr: 'PR #12 merged' });
+    expect(chips.map((c) => c.kind)).toEqual(['key', 'type', 'state', 'pr']);
+  });
 });

@@ -16,11 +16,12 @@ import {
   rejectReroute,
   writeAgentAnswer,
   writeBrief,
+  writeTicketCriteria,
 } from '@teamtrail/core/agents';
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { agents, type Call } from './fakes/agents';
-import { approveAllHere } from './fakes/trailLead';
+import { approveAllHere, confirmCriteriaHereNow } from './fakes/trailLead';
 
 let repo: string;
 let root: string;
@@ -336,6 +337,9 @@ describe('a ticket reaches done only through every gate its trail sets', () => {
     await a('claim_ticket', { ticket: x });
     await expect(a('report_completion', { resolution: 'Built' })).rejects.toThrow(/needs acceptance criteria/);
     await a('set_criteria', { ticket: x, criteria: [{ text: 'Exports rows', kind: 'unit' }] });
+    // the trail lead confirms them in the Lookout: a pass against criteria nobody confirmed would wait for that
+    writeTicketCriteria(root, { id: m.trail.id, title: 'Exports' }, { id: x.slice(1), key: x }, { confirmed: true });
+    confirmCriteriaHereNow(root, m.trail.id, x.slice(1));
     const done = await a<{ status: string }>('report_completion', {
       resolution: 'Built',
       criteria: [{ id: 'AC-1', evidence: 'check:check' }],

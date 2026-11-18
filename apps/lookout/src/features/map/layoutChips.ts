@@ -9,7 +9,7 @@ const GAP = 3;
 /** The guide's name keeps at least this much room, so it stays recognisable. */
 const GUIDE_MIN = 6;
 
-export type ChipKind = 'key' | 'type' | 'guide' | 'state' | 'needs';
+export type ChipKind = 'key' | 'type' | 'guide' | 'state' | 'needs' | 'pr';
 export interface CardChip {
   kind: ChipKind;
   text: string;
@@ -22,7 +22,7 @@ export interface CardChip {
 
 /**
  * Lays out a card's meta row as label chips: key, type, guide, state (one chip per part: the agent, its step) and
- * "needs you". The guide's name is clipped to the room the others leave; a row still too long has its text squeezed
+ * "needs you", then the pull request. The guide's name is clipped to the room the others leave; a row still too long has its text squeezed
  * to the card's width, never run past its edge. `reserve` keeps room on the right for a reroute tag or the ❄.
  */
 export function layoutChips(input: {
@@ -32,6 +32,8 @@ export function layoutChips(input: {
   guide?: string;
   state?: string;
   needsYou?: boolean;
+  /** The pull request, e.g. `PR #12 merged`, last in the row. */
+  pr?: string;
   reserve?: number;
   /** Told how much the row's text had to be squeezed to fit (1: not at all). */
   onScale?: (scale: number) => void;
@@ -44,6 +46,7 @@ export function layoutChips(input: {
     ...(input.guide === undefined ? [] : [{ kind: 'guide' as const, text: input.guide }]),
     ...states.map((text) => ({ kind: 'state' as const, text })),
     ...(input.needsYou ? [{ kind: 'needs' as const, text: 'needs you' }] : []),
+    ...(input.pr ? [{ kind: 'pr' as const, text: input.pr }] : []),
   ];
   const textRoom = room - parts.length * 2 * PAD - (parts.length - 1) * GAP;
   const width = (p: { kind: ChipKind; text: string }) => metaTextWidth(p.text, p.kind === 'key' ? 'mono' : 'sans');

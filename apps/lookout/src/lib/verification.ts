@@ -34,7 +34,7 @@ export interface WaiveRequest {
   reason: string;
 }
 
-export type OperatorAction = 'rerun' | 'approve' | 'accept' | 'rework' | 'unblock' | 'level';
+export type OperatorAction = 'rerun' | 'approve' | 'accept' | 'rework' | 'unblock' | 'level' | 'verify-again';
 
 export interface ActionRequest {
   action: OperatorAction;

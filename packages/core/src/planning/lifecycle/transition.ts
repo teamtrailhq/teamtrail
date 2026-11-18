@@ -54,6 +54,7 @@ async function apply(adapter: TrackerAdapter, mapId: string, t: Ticket, step: { 
       return;
     case 'verifying':
     case 'blocked':
+      if (t.state === 'closed') await adapter.reopen(mapId, t.id);
       await status(to);
       return;
     case 'done':

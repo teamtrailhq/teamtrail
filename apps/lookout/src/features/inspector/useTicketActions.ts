@@ -1,10 +1,11 @@
-import type { AttentionItem, WaivableCheck } from '@teamtrail/core';
+import type { AttentionItem, GapAction, WaivableCheck } from '@teamtrail/core';
 import { useState } from 'react';
 import type { ButtonVariant, MenuItem } from '../../components/ui';
 import type { LookoutApi } from '../../hooks';
 import { TRAIL_LEAD } from '../../lib';
 import { type ActionRequest, verificationApi } from '../../lib/verification';
 import { useKnowledge } from '../knowledge';
+import { gapActionList } from './gapActionList';
 import { needPrimary } from './needPrimary';
 import { ticketActionList } from './ticketActionList';
 import type { Form, PrimaryKind, TicketRunners } from './types';
@@ -25,6 +26,9 @@ const PRIMARY_ID: Record<Exclude<PrimaryKind, 'need'>, string> = {
   'confirm-criteria': 'confirm-criteria',
   'take-criteria': 'take-criteria',
 };
+
+/** Gap actions that come before the standing's own: confirming criteria makes approving the work as it is moot. */
+const CRITERIA_GAPS = new Set<GapAction>(['confirm-criteria', 'confirm-and-verify', 'verify-again']);
 
 export type ReasonRequest = Omit<ActionRequest, 'mapId' | 'ticketId'>;
 
@@ -96,20 +100,36 @@ export function useTicketActions(input: {
         })
         .then((e) => e && flash(`Saved as ${e.id} in the field guide`)),
   };
-  const all = ticketActionList(v, runners);
+  const own = ticketActionList(v, runners);
+  const gapActions = gapActionList(v.proof?.plan ?? [], own, {
+    confirm: () => void v.criteria.setConfirmed(true).then((e) => (e ? failed(e) : v.reloadVerification())),
+    verifyAgain: () => void act({ action: 'verify-again' }),
+    openMain: mainItem(v, input.onItem),
+  });
+  // what closes the proof's first gap that is the human's: criteria to confirm come before approving as it is
+  const [firstGap] = gapActions.keys();
+  const gap = firstGap && gapActions.get(firstGap);
+  const criteriaFirst = !!firstGap && CRITERIA_GAPS.has(firstGap);
+  const all = [...own, ...[...gapActions.values()].filter((g) => !own.includes(g))];
   const answer = answerItem(v, input.onOpenChat);
   const named = v.standing.primary;
   // nothing waits on the human: an agent's proposed criteria, else unconfirmed ones, are the useful next step
   const fallback = all.find((a) => a.id === 'take-criteria') ?? all.find((a) => a.id === 'confirm-criteria');
   const need = named === 'need' ? needPrimary({ v, all, onItem: input.onItem, onDismiss: input.onDismiss }) : undefined;
   const byName = named && named !== 'need' ? all.find((a) => a.id === PRIMARY_ID[named]) : undefined;
-  const primary = answer ?? need ?? byName ?? fallback;
+  const primary = answer ?? need ?? (criteriaFirst ? gap : undefined) ?? byName ?? gap ?? fallback;
   const variant: ButtonVariant = primaryVariant({
     urgent: v.standing.edge === 'urgent',
-    named: !!named && primary !== fallback,
+    named: (!!named && primary !== fallback) || (!!gap && primary === gap),
   });
   const menu = all.filter((a) => a !== primary);
-  return { primary, variant, menu, error, note, act, waive, undoWaiver: runners.undoWaiver };
+  return { primary, variant, menu, error, note, act, waive, undoWaiver: runners.undoWaiver, gapActions };
+}
+
+/** Opens the checks on main the queue holds on the ticket's trail, when it does. */
+function mainItem(v: TicketView, open?: (item: AttentionItem) => void) {
+  const item = v.items.find((i) => i.kind === 'main-checks' || i.kind === 'trail-checks');
+  return item && open ? () => open(item) : undefined;
 }
 
 function answerItem(v: TicketView, open: (sessionId: string) => void): MenuItem | undefined {

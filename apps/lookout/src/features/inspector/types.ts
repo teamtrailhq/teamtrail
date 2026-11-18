@@ -87,7 +87,6 @@ export interface StandingInput {
   /** The level takes a review, and no review passed the latest completion yet. */
   reviewWaits: boolean;
   verified?: boolean;
-  pr?: { number: number; state: string };
   openBlockers: string[];
   closedAt?: number;
   /** Something else holds it up or puts it at risk (a notice under the state line): the edge turns amber. */

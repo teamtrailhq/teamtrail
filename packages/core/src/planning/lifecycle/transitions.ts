@@ -40,6 +40,11 @@ export const TRANSITIONS: TransitionRule[] = [
   { event: 'reopen', from: ['done', 'cancelled'], to: ['ready'], actors: ['trail lead'] },
   /** The trail lead accepts the work without the checks that failed (verification/waiveChecks.ts). */
   { event: 'waive', from: ['rework', 'blocked'], to: ['verifying'], actors: ['trail lead'] },
+  /**
+   * The trail lead confirmed a done ticket's criteria after its completion: the same submission is checked again on
+   * the same commit (verification/verifyAgain.ts), a new attempt; a pass closes it again, anything else follows.
+   */
+  { event: 'verify-again', from: ['done'], to: ['verifying'], actors: ['trail lead'] },
 ];
 
 export const ruleFor = (event: LifecycleEvent) => TRANSITIONS.find((r) => r.event === event)!;

@@ -178,6 +178,7 @@ export { guidesPayload, GUIDES_PAYLOAD_BYTES, type GuidesPayload } from './guide
 export { parseCatalogIndex, searchCatalog } from './guides/catalogIndex';
 export { guideProblem } from './guides/guideProblem';
 export type * from './model/proof';
+export type * from './model/proofGap';
 export type * from './model/checkWaiver';
 export type * from './model/mergeAnyway';
 export type { ProofPostRecord } from './model/proofPost';

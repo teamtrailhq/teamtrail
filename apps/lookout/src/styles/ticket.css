@@ -163,12 +163,18 @@
   padding-top: var(--sp-10);
   border-top: 1px solid var(--line);
 }
+/* A sticky element stops at its scroll container's padding edge, so the zone's bottom padding would leave a strip
+ * under the footer where the ticket shows through: the container that holds the full ticket drops it, and the
+ * footer, opaque on the sheet's own surface, keeps that air inside itself, flush with the bottom edge. */
+.zone-b:has(> .ticket-panel) {
+  padding-bottom: 0;
+}
 .ticket-footer.sticky {
   position: sticky;
   bottom: 0;
   z-index: 2;
   margin-top: auto;
-  padding-bottom: var(--sp-10);
+  padding-bottom: var(--gutter);
   background: var(--panel-solid);
 }
 .action-bar-end {

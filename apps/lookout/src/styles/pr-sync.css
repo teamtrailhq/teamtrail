@@ -14,44 +14,48 @@
 .pr-sync.tone-unknown .tl {
   color: var(--faint);
 }
-.pr-flags {
+.pr-block {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-6);
-  margin: var(--sp-8) 0;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-8) var(--sp-10);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel2);
 }
-.pr-chip {
-  display: inline-flex;
-  align-items: center;
+.pr-block-head {
+  display: flex;
+  align-items: flex-start;
   gap: var(--sp-8);
-  font-family: var(--label);
-  font-size: var(--fs-label);
-  letter-spacing: var(--ls-label);
-  text-transform: uppercase;
-  color: var(--dim);
-  font-weight: 500;
+  min-width: 0;
 }
-.pr-chip a {
-  color: var(--text-hi);
+/* The title in two lines at most (the full title on hover). */
+.pr-block-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
-.pr-chip .ci-passed {
+.pr-block .pr-state {
+  margin-top: 2px;
+}
+.pr-block .pr-open {
+  flex: none;
+}
+.pr-block.pr-merged .pr-state {
   color: var(--st-decided);
+  border-color: var(--st-decided);
 }
-.pr-chip .ci-failing {
-  color: var(--urgent);
+.pr-block.pr-closed .pr-state,
+.pr-block.pr-unread .pr-state {
+  color: var(--faint);
 }
-.pr-chip .ci-pending,
-.pr-chip .ci-unknown {
+.pr-block .meta-line .strong {
   color: var(--amber);
-}
-.pr-flags .flag-alert {
-  color: var(--urgent);
-  border-color: var(--urgent);
-}
-.pr-flags .flag-warn {
-  color: var(--amber);
-  border-color: rgba(var(--amber-rgb), 0.5);
 }
 .pr-flag-dot.alert {
   fill: var(--urgent);

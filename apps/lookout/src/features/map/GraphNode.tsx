@@ -45,6 +45,7 @@ export function GraphNode({
   needs,
   verified,
   briefHeld,
+  pr,
 }: {
   n: LaidOutNode;
   /** Where the ticket is right now (lib/liveTickets.ts): its session, the queue's items on it, what it waits on. */
@@ -66,6 +67,8 @@ export function GraphNode({
   verified?: boolean;
   /** The discovery gate holds it until the trail lead accepts the brief. */
   briefHeld?: boolean;
+  /** Its pull request, as its chip says it (`PR #12 merged`). */
+  pr?: string;
 }) {
   const t = n.ticket;
   const s = live?.session;
@@ -80,7 +83,7 @@ export function GraphNode({
   const needsYou = hitl && !marked && (t.type === 'task' || t.type === 'execute');
   const reserve = reserveFor(mark, frozen);
   const card = cardState({
-    ...{ n, live, now, marked, waiting, stalled, brief, wait, verified, needsYou, reserve },
+    ...{ n, live, now, marked, waiting, stalled, brief, wait, verified, needsYou, reserve, pr },
     guide: guide?.name,
   });
   const urgent = waiting || live?.tone === 'needs';
