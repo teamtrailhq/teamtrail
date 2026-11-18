@@ -48,7 +48,11 @@ export interface TrackerAdapter {
   readonly location: string;
 
   listMaps(): Promise<MapSummary[]>;
-  loadMap(mapId: string): Promise<MapSnapshot>;
+  /**
+   * `fresh`: read the tracker itself rather than a cache (a claim checking who won the race). Local trackers
+   * always read the files and ignore it.
+   */
+  loadMap(mapId: string, opts?: { fresh?: boolean }): Promise<MapSnapshot>;
 
   createMap(input: MapInput): Promise<MapDoc>;
   /** Real trackers: add/remove the PLAN_ONLY_LABEL on the map issue. */

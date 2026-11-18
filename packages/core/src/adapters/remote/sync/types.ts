@@ -15,7 +15,16 @@ export interface SyncStatus {
   resetAt?: number;
   /** Last failure, cleared on the next success. */
   error?: string;
+  /** Queued writes the tracker refused for good, newest last (a few at most); kept until this process ends. */
+  dropped?: DroppedWrite[];
   rate?: RateInfo;
+}
+
+/** A queued write the tracker refused for good (a deleted issue, revoked access, a ticket claimed meanwhile). */
+export interface DroppedWrite {
+  label: string;
+  error: string;
+  at: number;
 }
 
 export interface SyncOptions {
@@ -24,6 +33,8 @@ export interface SyncOptions {
   maxBackoffMs?: number;
   /** How long a cached trail is trusted when nothing is polling (e.g. an agent-only server). */
   ttlMs?: number;
+  /** How often every cached trail and the trail list are read again while polling (default five minutes). */
+  resyncMs?: number;
   now?: () => number;
   /** No timers: the caller drives polling and queue flushes with `tick()` (tests). */
   manual?: boolean;
@@ -35,13 +46,15 @@ export interface SyncOptions {
 export type QueuedChange =
   | { kind: 'mode'; mode: MapMode }
   | { kind: 'archived'; archived: boolean }
-  | { kind: 'sections'; sections: MapSections }
+  /** `patch`: the sections changed, laid over the trail as it is in the tracker when sent (older writes lack it). */
+  | { kind: 'sections'; sections: MapSections; patch?: Partial<MapSections> }
   | { kind: 'mapMeta'; patch: MapMetaPatch }
   | { kind: 'blocking'; blockerId: string; blockedId: string }
   | { kind: 'unblocking'; blockerId: string; blockedId: string }
   | { kind: 'edit'; ticketId: string; edit: TicketEdit }
   | { kind: 'reopen'; ticketId: string }
-  | { kind: 'claim'; ticketId: string; assignee?: string }
+  /** `was`: the assignee the claim replaces (null: none); a different one in the tracker refuses it. */
+  | { kind: 'claim'; ticketId: string; assignee?: string; was?: string | null }
   | { kind: 'meta'; ticketId: string; patch: TicketMetaPatch }
   | { kind: 'comment'; ticketId: string; author: string; body: string }
   | { kind: 'close'; ticketId: string; reason: 'completed' | 'not_planned' }

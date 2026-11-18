@@ -1,5 +1,5 @@
 import { cachedUntilFailure } from '../../../lib/cachedUntilFailure';
-import { ARCHIVED_LABEL, BRAND, MAP_LABEL, PLAN_ONLY_LABEL } from '../../../model/brand';
+import { ARCHIVED_LABEL, MAP_LABEL, PLAN_ONLY_LABEL } from '../../../model/brand';
 import { guardMarkers } from '../../../model/safeText';
 import type { DecisionRecord, MapDoc, MapMode, MapSnapshot, Ticket, TicketType } from '../../../model/types';
 import type { MapInput } from '../../adapter';
@@ -12,13 +12,14 @@ import type { RemoteComment, SyncOptions } from '../sync/types';
 import { authoredIn } from './authoredIn';
 import { createdTicket } from './createdTicket';
 import { ensureGitHubLabels } from './ensureGitHubLabels';
+import { GitHubChanges } from './githubChanges';
 import { GitHubClient } from './githubClient';
 import { GitHubPermissions } from './githubPermissions';
 import { githubViewer } from './githubViewer';
 import { loginsToCheck } from './githubWriter';
 import { listGitHubTrails } from './listGitHubTrails';
 import { readTrail } from './readTrail';
-import { labelNames, TRAIL_QUERY, type GqlIssue, type RestIssue } from './schema';
+import { TRAIL_QUERY, type GqlIssue, type RestIssue } from './schema';
 import { setIssueLabel } from './setIssueLabel';
 
 /*
@@ -30,7 +31,7 @@ import { setIssueLabel } from './setIssueLabel';
  *   decision   comment on the ticket (decisionComment.ts)
  * Reads: one GraphQL query per trail, which also says who the token is: markers count only from that account,
  * or as a teammate's (githubWriter.ts). Polling: an ETag-conditional issue
- * list, so an idle repo costs nothing against the rate limit (304s are free).
+ * list from the last change on (githubChanges.ts), so an idle repo costs nothing against the rate limit.
  */
 
 export interface GitHubOptions extends SyncOptions, HttpOptions {
@@ -54,8 +55,7 @@ export class GitHubAdapter extends SyncedAdapter {
   private issueIds = new Map<string, number>();
   /** `<trail>/<D-n>` → comment id holding the record. */
   private decisionComments = new Map<string, number>();
-  private etag?: string;
-  private cursor?: string;
+  private changes: GitHubChanges;
   private ledger: SettingsLedger;
   private permissions: GitHubPermissions;
 
@@ -64,6 +64,7 @@ export class GitHubAdapter extends SyncedAdapter {
     this.gh = new GitHubClient(o);
     this.ledger = new SettingsLedger(() => githubViewer(this.gh), o.accepted);
     this.permissions = new GitHubPermissions(this.gh, this.now);
+    this.changes = new GitHubChanges(this.gh);
     this.location = `${this.gh.owner}/${this.gh.name}`;
   }
 
@@ -98,28 +99,8 @@ export class GitHubAdapter extends SyncedAdapter {
     return { snap: m.snap, decisions: m.decisions };
   }
 
-  protected async changedSince(known: (ref: string) => string | undefined): Promise<string[] | 'all'> {
-    const r = await this.gh.repo<RestIssue[]>(
-      'GET',
-      '/issues?state=all&sort=updated&direction=desc&per_page=50',
-      undefined,
-      this.etag ? { 'If-None-Match': this.etag } : {},
-    );
-    if (r.status === 304) return [];
-    this.etag = r.headers.get('etag') ?? undefined;
-    const items = Array.isArray(r.body) ? r.body : [];
-    const newest = items.reduce((m, i) => (i.updated_at > m ? i.updated_at : m), this.cursor ?? '');
-    const since = this.cursor;
-    this.cursor = newest;
-    // the cached list predates this baseline: anything created in between only shows up through a full resync
-    if (since === undefined) return 'all';
-    const out: string[] = [];
-    for (const i of items.filter((x) => x.updated_at > since && !x.pull_request)) {
-      const trail = known(String(i.number));
-      if (trail) out.push(trail);
-      else if (labelNames(i.labels).some((l) => l.startsWith(`${BRAND.labelPrefix}:`))) return 'all';
-    }
-    return out;
+  protected changedSince(known: (ref: string) => string | undefined): Promise<string[] | 'all'> {
+    return this.changes.poll(known);
   }
 
   private async issueId(number: string) {

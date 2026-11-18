@@ -45,16 +45,32 @@ export const TEAM_QUERY = `query Team($id: String!, $prefix: String!) {
   issueLabels(first: 100, filter: { name: { startsWith: $prefix } }) { nodes { id name team { id } } }
 }`;
 
-export const CHANGES_QUERY = `query Changes($issues: IssueFilter, $comments: CommentFilter) {
-        issues(first: 50, filter: $issues) { nodes { id updatedAt parent { id } labels { nodes { name } } } }
-        comments(first: 50, filter: $comments) { nodes { updatedAt issue { id parent { id } } } }
+/** Issues and comments changed at or after a stamp; a page with more after it means "read everything again". */
+export const CHANGES_QUERY = `query Changes($issues: IssueFilter, $comments: CommentFilter, $first: Int) {
+        issues(first: $first, filter: $issues) {
+          nodes { id updatedAt parent { id } labels { nodes { name } } }
+          pageInfo { hasNextPage }
+        }
+        comments(first: $first, filter: $comments) {
+          nodes { id updatedAt issue { id parent { id } } }
+          pageInfo { hasNextPage }
+        }
+      }`;
+
+/** The team's most recently updated issue: where the change cursor starts, by Linear's clock rather than ours. */
+export const LATEST_QUERY = `query Latest($issues: IssueFilter) {
+        issues(first: 1, orderBy: updatedAt, filter: $issues) { nodes { updatedAt } }
       }`;
 
 export interface LChanges {
   issues: {
     nodes: { id: string; updatedAt: string; parent: { id: string } | null; labels: { nodes: { name: string }[] } }[];
+    pageInfo?: { hasNextPage: boolean };
   };
-  comments: { nodes: { updatedAt: string; issue: { id: string; parent: { id: string } | null } | null }[] };
+  comments: {
+    nodes: { id?: string; updatedAt: string; issue: { id: string; parent: { id: string } | null } | null }[];
+    pageInfo?: { hasNextPage: boolean };
+  };
 }
 
 export const isClosed = (s: { type: string }) => s.type === 'completed' || s.type === 'canceled';

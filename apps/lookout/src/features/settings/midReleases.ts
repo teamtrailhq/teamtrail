@@ -1,7 +1,22 @@
 import type { Release } from './releases';
 
-/** Releases 0.27–0.43, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.27.3–0.44, kept apart so `releases.ts` stays short. Newest first. */
 export const MID_RELEASES: Release[] = [
+  {
+    version: '0.44.2',
+    date: '2026-11-16',
+    items: ['The middle of the Lookout gets the same margin at the top as at its sides'],
+  },
+  {
+    version: '0.44.1',
+    date: '2026-11-16',
+    items: ['Text you type in forms is full size (14px) again, not the small caps of the label above it'],
+  },
+  {
+    version: '0.44.0',
+    date: '2026-11-16',
+    items: ['In a hosted Lookout, the theme toggle and Settings → Appearance change your theme on the server too'],
+  },
   {
     version: '0.43.1',
     date: '2026-11-15',
@@ -174,25 +189,6 @@ export const MID_RELEASES: Release[] = [
     date: '2026-11-11',
     items: [
       'On Linux, the Lookout sees every change an agent makes to a ticket again, not only the first: a claimed ticket no longer stays in the queue as waiting',
-    ],
-  },
-  {
-    version: '0.27.2',
-    date: '2026-11-11',
-    items: [
-      'Settings, briefs, criteria, guides, reroutes and the other panels stay current through reconnects, and a GitHub or Linear map updates live again',
-    ],
-  },
-  {
-    version: '0.27.1',
-    date: '2026-11-11',
-    items: ['The map and the queue no longer miss a change made while the Lookout was loading or reconnecting'],
-  },
-  {
-    version: '0.27.0',
-    date: '2026-11-11',
-    items: [
-      'Teamtrail opens your browser ready to sign in with one click; `teamtrail pair` does the same for another tab',
     ],
   },
 ];

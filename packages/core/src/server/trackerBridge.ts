@@ -50,6 +50,7 @@ import { watchLeases } from './watchLeases';
 import { watchMachineStore } from './watchMachineStore';
 import { watchMainChecks } from './watchMainChecks';
 import { watchRemoteAgents } from './watchRemoteAgents';
+import { watchRemoteTracker } from './watchRemoteTracker';
 import { watchTrackerFolder } from './watchTrackerFolder';
 import { watchTrailChecks } from './watchTrailChecks';
 import { watchVerification } from './watchVerification';
@@ -99,10 +100,10 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const proofs = postProofs(ctx, { access: routes.proofAccess, configDir: trackers.configDir });
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send, postProofs: proofs }, reconcilerTiming);
   const attention = watchAttention(ctx, send, { ...attentionTiming, configDir: trackers.configDir });
-  const unwatchIntegration = watchIntegration(abs, integrationTiming);
   // approvals and accepted changes live in the machine store, outside the watched folder
   const store = { root: abs, configDir: trackers.configDir, send };
-  const unwatchOutside = [watchRemoteAgents(abs, send), watchMachineStore(store)];
+  const unwatchOutside = [watchRemoteAgents(abs, send), watchMachineStore(store), watchRemoteTracker({ ...ctx, send })];
+  unwatchOutside.push(watchIntegration(abs, integrationTiming));
   // checks on main: in Cloud the server's runner runs them, never this process (mainChecks/startMainRun.ts)
   const mainEnv = { root: abs, ...(checkRunner ? { checkRunner } : {}) };
   const mainCtx = { ...ctx, env: mainEnv, changed: () => send('event: main-checks\ndata: {}\n\n') };
@@ -208,7 +209,6 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       unwatch();
       unwatchLeases();
       attention.stop();
-      unwatchIntegration();
       for (const stop of unwatchOutside) stop();
       unwatchMainChecks();
       unwatchTrailChecks();

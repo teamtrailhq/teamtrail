@@ -5,7 +5,7 @@ import type { CacheEntry } from './types';
 /** Map sections exactly as they read back from the tracker, so cache and remote compare equal. */
 export const roundtrip = (s: MapSections) => parseMapBody(serializeMapBody(s));
 
-/** Everything about a trail the tracker can change; equal fingerprints mean nothing to resync. */
+/** Everything about a trail people see change; equal fingerprints mean nothing to tell listeners about. */
 export function fingerprint(e: CacheEntry) {
   const { map, tickets } = e.snap;
   return JSON.stringify([
@@ -16,6 +16,7 @@ export function fingerprint(e: CacheEntry) {
     map.guides ?? [],
     map.guidesByType ?? null,
     map.modelMatching ?? null,
+    !!map.settingsUnconfirmed,
     roundtrip(map.sections),
     [...tickets]
       .sort((a, b) => a.id.localeCompare(b.id))
@@ -30,6 +31,8 @@ export function fingerprint(e: CacheEntry) {
         t.status ?? '',
         t.verification ?? '',
         t.checks ?? null,
+        !!t.settingsUnconfirmed,
+        t.reviewOf ?? '',
         t.guide ?? '',
         t.guidesAdded ?? [],
         t.guidesRemoved ?? [],
@@ -37,6 +40,6 @@ export function fingerprint(e: CacheEntry) {
         t.body.trim(),
         t.comments.map((c) => [c.author, c.body.trim()]),
       ]),
-    e.decisions.map((d) => `${d.id}>${d.supersededBy ?? ''}`).sort(),
+    [...e.decisions].sort((a, b) => a.id.localeCompare(b.id)).map((d) => JSON.stringify(d)),
   ]);
 }

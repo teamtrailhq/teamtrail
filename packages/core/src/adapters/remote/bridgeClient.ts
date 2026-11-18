@@ -89,7 +89,8 @@ export class BridgeAdapter implements TrackerAdapter {
   }
 
   listMaps = () => this.call<MapSummary[]>('listMaps');
-  loadMap = (mapId: string) => this.call<MapSnapshot>('loadMap', mapId);
+  loadMap = (mapId: string, opts?: { fresh?: boolean }) =>
+    opts ? this.call<MapSnapshot>('loadMap', mapId, opts) : this.call<MapSnapshot>('loadMap', mapId);
   createMap = (input: MapInput) => this.call<MapDoc>('createMap', input);
   setMapMode = (mapId: string, mode: MapMode) => this.call<void>('setMapMode', mapId, mode);
   setMapArchived = (mapId: string, archived: boolean) => this.call<void>('setMapArchived', mapId, archived);

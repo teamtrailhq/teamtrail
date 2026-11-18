@@ -15,7 +15,7 @@ export function useFlakyChecks() {
     load: fetchFlaky,
     show: setView,
     failed: () => setView(null),
-    events: { verification: () => true, agent: () => true },
+    events: { verification: () => true, agent: () => true, tracker: () => true },
     throttleMs: 5000,
     changed: (p) => p.includes('/tickets/'),
   });

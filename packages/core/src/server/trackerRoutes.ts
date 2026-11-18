@@ -147,8 +147,7 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
   async function remoteRoute(req: IncomingMessage, res: ServerResponse, match: RegExpMatchArray): Promise<boolean> {
     const [, kind, action] = match;
     if (!isKind(kind)) throw new BadRequest('unknown tracker');
-    if (action === 'events' && req.method === 'GET')
-      return (streamTrackerEvents(() => remotes.get(kind), req, res), true);
+    if (action === 'events' && req.method === 'GET') return (streamTrackerEvents(streamSource(kind), req, res), true);
     // Only the tracker the project uses: another one with stored credentials is not this project's to drive.
     if (ctx.project.read().active !== kind)
       return (void sendJson(res, 409, { error: `${kind} is not the tracker this project uses` }), true);
@@ -165,6 +164,14 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
       return (void sendJson(res, 200, { result: result ?? null }), true);
     }
     return false;
+  }
+
+  /** The adapter an event stream follows, and when it is replaced. */
+  function streamSource(kind: RemoteKind) {
+    return {
+      adapter: () => remotes.get(kind),
+      onReplaced: (fn: () => void) => remotes.onReplaced((k) => k === kind && fn()),
+    };
   }
 
   async function callAdapter(kind: RemoteKind, b: { method?: string; args?: unknown[] }): Promise<unknown> {

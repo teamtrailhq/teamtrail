@@ -1,8 +1,27 @@
 import { EARLIEST_RELEASES } from './earliestReleases';
 import type { Release } from './releases';
 
-/** Releases 0.14–0.26.2 (0.1–0.13 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.14–0.27.2 (0.1–0.13 in `earliestReleases.ts`), kept apart so `releases.ts` stays short. Newest first. */
 export const OLDER_RELEASES: Release[] = [
+  {
+    version: '0.27.2',
+    date: '2026-11-11',
+    items: [
+      'Settings, briefs, criteria, guides, reroutes and the other panels stay current through reconnects, and a GitHub or Linear map updates live again',
+    ],
+  },
+  {
+    version: '0.27.1',
+    date: '2026-11-11',
+    items: ['The map and the queue no longer miss a change made while the Lookout was loading or reconnecting'],
+  },
+  {
+    version: '0.27.0',
+    date: '2026-11-11',
+    items: [
+      'Teamtrail opens your browser ready to sign in with one click; `teamtrail pair` does the same for another tab',
+    ],
+  },
   {
     version: '0.26.2',
     date: '2026-11-11',

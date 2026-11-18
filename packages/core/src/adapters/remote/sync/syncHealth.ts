@@ -8,6 +8,9 @@ export interface SyncHealthOptions {
   rate: () => RateInfo | undefined;
 }
 
+/** Refused writes kept in the status. */
+const MAX_DROPPED = 5;
+
 /** The adapter's `SyncStatus`, moved by request outcomes and published to `onStatus` listeners. */
 export class SyncHealth {
   private current: SyncStatus;
@@ -43,6 +46,12 @@ export class SyncHealth {
       this.set({ state: 'rate-limited', resetAt: e.resetAt, error: e.message });
     else if (e instanceof TrackerError && e.code === 'auth') this.set({ state: 'auth-error', error: e.message });
     else this.set({ error: String((err as Error)?.message ?? err) });
+  }
+
+  /** A queued write the tracker refused for good: kept in the status (online() doesn't clear it) and shown. */
+  dropped(label: string, error: string) {
+    const dropped = [...(this.current.dropped ?? []), { label, error, at: this.o.now() }].slice(-MAX_DROPPED);
+    this.set({ dropped, error: `Dropped queued write (${label}): ${error}` });
   }
 
   /** Records an error without notifying listeners; the next status change carries it. */

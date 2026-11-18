@@ -9,14 +9,14 @@ import { HttpClient, TrackerError, linear, type HttpOptions } from '../http';
 import { SettingsLedger, type AcceptedStore } from '../settingsLedger';
 import { SyncedAdapter } from '../sync/syncedAdapter';
 import type { RemoteComment, SyncOptions } from '../sync/types';
-import { changedTrails } from './changedTrails';
+import { LinearChanges } from './linearChanges';
 import { linearGql, type LinearGql } from './linearGql';
 import { fetchLinearTeam } from './linearTeam';
 import { linearWrites, type LinearWrites } from './linearWrites';
 import { listLinearTrails } from './listLinearTrails';
 import { linearTicket, readTrail, type DecisionFound } from './readTrail';
 import { removeBlocksRelation } from './removeBlocksRelation';
-import { CHANGES_QUERY, TRAIL_QUERY, type LChanges, type LIssue } from './schema';
+import { TRAIL_QUERY, type LIssue } from './schema';
 
 /*
  * Linear mapping:
@@ -27,7 +27,7 @@ import { CHANGES_QUERY, TRAIL_QUERY, type LChanges, type LIssue } from './schema
  *   decision   comment on the ticket (decisionComment.ts)
  * Reads: one query per trail, which also says who the key is: markers in comments count only from that user, or
  * as a teammate's; a description's settings only once this machine put or accepted them (linear/readTrail.ts).
- * Polling: issues and comments with `updatedAt > cursor`, one request per poll.
+ * Polling: issues and comments updated from the cursor on (linearChanges.ts), one request per poll.
  */
 
 export interface LinearOptions extends SyncOptions, HttpOptions {
@@ -42,6 +42,10 @@ export interface LinearOptions extends SyncOptions, HttpOptions {
   accepted?: AcceptedStore;
 }
 
+/** What api.linear.app answers for an issue that was deleted or that the key can no longer see. */
+const goneIssue = (err: unknown) =>
+  err instanceof TrackerError && err.code === 'invalid' && /entity not found/i.test(err.message);
+
 export class LinearAdapter extends SyncedAdapter {
   readonly kind = 'linear' as const;
   readonly label = 'Linear';
@@ -49,7 +53,7 @@ export class LinearAdapter extends SyncedAdapter {
   private http: HttpClient;
   private gql: LinearGql;
   private decisionComments = new Map<string, string>();
-  private cursor?: string;
+  private changes: LinearChanges;
   private ledger: SettingsLedger;
   private mutations: LinearWrites;
   private found: DecisionFound = (d, commentId) => this.decisionComments.set(`${d.mapId}/${d.id}`, commentId);
@@ -63,6 +67,7 @@ export class LinearAdapter extends SyncedAdapter {
       return d.viewer?.id;
     }, o.accepted);
     this.mutations = linearWrites(this.gql, o);
+    this.changes = new LinearChanges(this.gql, o.teamId);
     this.location = o.display ?? o.teamId;
   }
 
@@ -99,7 +104,9 @@ export class LinearAdapter extends SyncedAdapter {
 
   protected async fetchMap(mapId: string): Promise<{ snap: MapSnapshot; decisions: DecisionRecord[] }> {
     type Trail = { viewer?: { id: string } | null; issue: LIssue | null };
-    const d = await this.gql<Trail>(TRAIL_QUERY, { id: mapId });
+    const d = await this.gql<Trail>(TRAIL_QUERY, { id: mapId }).catch((err) => {
+      throw goneIssue(err) ? new TrackerError('not_found', `Linear: ${mapId} is not a trail`) : err;
+    });
     const root = d.issue;
     if (!root || !root.labels.nodes.some((l) => l.name === MAP_LABEL))
       throw new TrackerError('not_found', `Linear: ${mapId} is not a trail`);
@@ -109,19 +116,8 @@ export class LinearAdapter extends SyncedAdapter {
     return trail;
   }
 
-  protected async changedSince(known: (ref: string) => string | undefined): Promise<string[] | 'all'> {
-    if (this.cursor === undefined) {
-      this.cursor = new Date(this.now()).toISOString();
-      return 'all';
-    }
-    const since = this.cursor;
-    const d = await this.gql<LChanges>(CHANGES_QUERY, {
-      issues: { team: { id: { eq: this.o.teamId } }, updatedAt: { gt: since } },
-      comments: { updatedAt: { gt: since }, issue: { team: { id: { eq: this.o.teamId } } } },
-    });
-    const stamps = [...d.issues.nodes.map((i) => i.updatedAt), ...d.comments.nodes.map((c) => c.updatedAt)];
-    this.cursor = stamps.reduce((m, s) => (s > m ? s : m), since);
-    return changedTrails(d, known);
+  protected changedSince(known: (ref: string) => string | undefined): Promise<string[] | 'all'> {
+    return this.changes.poll(known);
   }
 
   protected async remoteCreateMap(input: MapInput & { mode: MapMode }): Promise<MapDoc> {

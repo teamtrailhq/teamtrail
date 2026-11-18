@@ -1,7 +1,7 @@
 {
   "source": "live",
   "recordedAt": "2026-10-31T16:16:11.911Z",
-  "notes": "Read-only, teamtrailhq/teamtrail on api.github.com: test connection, list trails, two ETag polls (200 then 304). Bodies trimmed to the fields the adapter reads.",
+  "notes": "Read-only, teamtrailhq/teamtrail on api.github.com: test connection, list trails, two ETag polls (200 then 304). Bodies trimmed to the fields the adapter reads. The polls after the first were adapted by hand to the `since=` window (githubChanges.ts): the same response shapes, the first poll per_page=100, then one 200 and one 304 for the windowed request.",
   "exchanges": [
     {
       "req": {
@@ -77,7 +77,7 @@
     {
       "req": {
         "method": "GET",
-        "url": "/repos/teamtrailhq/teamtrail/issues?state=all&sort=updated&direction=desc&per_page=50"
+        "url": "/repos/teamtrailhq/teamtrail/issues?state=all&sort=updated&direction=desc&per_page=100"
       },
       "res": {
         "status": 200,
@@ -151,8 +151,35 @@
     {
       "req": {
         "method": "GET",
-        "url": "/repos/teamtrailhq/teamtrail/issues?state=all&sort=updated&direction=desc&per_page=50",
-        "ifNoneMatch": "W/\"9183498f1c713412bcaac0fdd55028da51f078721046e65b8ae226a1a60465b0\""
+        "url": "/repos/teamtrailhq/teamtrail/issues?state=all&sort=updated&direction=desc&per_page=100&since=2026-10-31T16%3A10%3A00Z"
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "etag": "W/\"7c1f0d8e2b6a4c3e9f5d1a0b8c7e6d5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d\"",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4917",
+          "x-ratelimit-reset": "1793463672",
+          "x-ratelimit-resource": "core",
+          "x-ratelimit-used": "83"
+        },
+        "body": [
+          {
+            "number": 5,
+            "title": "Compact the HITL question card",
+            "labels": [],
+            "updated_at": "2026-10-31T16:11:00Z",
+            "pull_request": {}
+          }
+        ]
+      }
+    },
+    {
+      "req": {
+        "method": "GET",
+        "url": "/repos/teamtrailhq/teamtrail/issues?state=all&sort=updated&direction=desc&per_page=100&since=2026-10-31T16%3A10%3A00Z",
+        "ifNoneMatch": "W/\"7c1f0d8e2b6a4c3e9f5d1a0b8c7e6d5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d\""
       },
       "res": {
         "status": 304,

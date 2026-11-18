@@ -61,7 +61,7 @@ const AUTHORED = `author { login } lastEditedAt authorAssociation userContentEdi
 const ISSUE_FIELDS = `id databaseId number title body state stateReason createdAt updatedAt closedAt ${AUTHORED}
   labels(first: 30) { nodes { name } }
   assignees(first: 5) { nodes { login } }
-  comments(first: 100) { nodes { databaseId body createdAt ${AUTHORED} } }`;
+  comments(last: 100) { nodes { databaseId body createdAt ${AUTHORED} } }`;
 
 /** One trail with its tickets, and `viewer`: the account behind the token, whose markers are this machine's own. */
 export const TRAIL_QUERY = `query Trail($owner: String!, $name: String!, $number: Int!) {

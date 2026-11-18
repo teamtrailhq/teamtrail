@@ -16,7 +16,7 @@ export function useScorecard() {
     show: setCard,
     failed: () => setCard(null),
     // a running session's model and spend count too; a busy agent writes its doc often
-    events: { verification: () => true, agent: () => true },
+    events: { verification: () => true, agent: () => true, tracker: () => true },
     throttleMs: 5000,
     changed: (p) => p.includes('/tickets/'),
   });

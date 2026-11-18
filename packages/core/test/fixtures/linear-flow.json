@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-10T22:37:12.768Z",
+  "recordedAt": "2026-11-18T21:46:07.330Z",
   "notes": "Recorded against test/fakes; request and response shapes follow the live API (see *-live-* fixtures and the introspected schema).",
   "exchanges": [
     {
@@ -36,7 +36,11 @@
         "body": {
           "data": {
             "issues": {
-              "nodes": []
+              "nodes": [],
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": null
+              }
             }
           }
         }
@@ -437,7 +441,7 @@
           "data": {
             "issueLabelCreate": {
               "issueLabel": {
-                "id": "lbl-archived-fake",
+                "id": "lbl-0010-fake",
                 "name": "teamtrail:archived"
               }
             }
@@ -455,7 +459,9 @@
             "teamId": "team-eng",
             "title": "Ship offline sync",
             "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
-            "labelIds": ["lbl-0001-fake"]
+            "labelIds": [
+              "lbl-0001-fake"
+            ]
           }
         }
       },
@@ -471,7 +477,7 @@
           "data": {
             "issueCreate": {
               "issue": {
-                "id": "iss-0010-fake",
+                "id": "iss-0011-fake",
                 "identifier": "ENG-1",
                 "title": "Ship offline sync",
                 "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
@@ -533,8 +539,10 @@
             "teamId": "team-eng",
             "title": "Survey CRDT libraries",
             "description": "Compare Automerge and Yjs.\n\nPart of trail ENG-1.",
-            "parentId": "iss-0010-fake",
-            "labelIds": ["lbl-0004-fake"]
+            "parentId": "iss-0011-fake",
+            "labelIds": [
+              "lbl-0004-fake"
+            ]
           }
         }
       },
@@ -550,7 +558,7 @@
           "data": {
             "issueCreate": {
               "issue": {
-                "id": "iss-0011-fake",
+                "id": "iss-0012-fake",
                 "identifier": "ENG-2",
                 "title": "Survey CRDT libraries",
                 "description": "Compare Automerge and Yjs.\n\nPart of trail ENG-1.",
@@ -589,8 +597,10 @@
             "teamId": "team-eng",
             "title": "Pick a conflict policy",
             "description": "Last-writer-wins or merge?\n\nPart of trail ENG-1.",
-            "parentId": "iss-0010-fake",
-            "labelIds": ["lbl-0006-fake"]
+            "parentId": "iss-0011-fake",
+            "labelIds": [
+              "lbl-0006-fake"
+            ]
           }
         }
       },
@@ -606,7 +616,7 @@
           "data": {
             "issueCreate": {
               "issue": {
-                "id": "iss-0012-fake",
+                "id": "iss-0013-fake",
                 "identifier": "ENG-3",
                 "title": "Pick a conflict policy",
                 "description": "Last-writer-wins or merge?\n\nPart of trail ENG-1.",
@@ -642,8 +652,8 @@
         "operation": "Block",
         "variables": {
           "input": {
-            "issueId": "iss-0011-fake",
-            "relatedIssueId": "iss-0012-fake",
+            "issueId": "iss-0012-fake",
+            "relatedIssueId": "iss-0013-fake",
             "type": "blocks"
           }
         }
@@ -669,9 +679,127 @@
       "req": {
         "method": "POST",
         "url": "/graphql",
+        "operation": "Trail",
+        "variables": {
+          "id": "iss-0011-fake"
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451603000"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "id": "usr-ada"
+            },
+            "issue": {
+              "id": "iss-0011-fake",
+              "identifier": "ENG-1",
+              "title": "Ship offline sync",
+              "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
+              "createdAt": "2026-10-31T12:00:01.000Z",
+              "updatedAt": "2026-10-31T12:00:01.000Z",
+              "completedAt": null,
+              "canceledAt": null,
+              "state": {
+                "type": "unstarted"
+              },
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "lbl-0001-fake",
+                    "name": "teamtrail:map"
+                  }
+                ]
+              },
+              "assignee": null,
+              "comments": {
+                "nodes": []
+              },
+              "children": {
+                "nodes": [
+                  {
+                    "id": "iss-0012-fake",
+                    "identifier": "ENG-2",
+                    "title": "Survey CRDT libraries",
+                    "description": "Compare Automerge and Yjs.\n\nPart of trail ENG-1.",
+                    "createdAt": "2026-10-31T12:00:02.000Z",
+                    "updatedAt": "2026-10-31T12:00:02.000Z",
+                    "completedAt": null,
+                    "canceledAt": null,
+                    "state": {
+                      "type": "unstarted"
+                    },
+                    "labels": {
+                      "nodes": [
+                        {
+                          "id": "lbl-0004-fake",
+                          "name": "teamtrail:research"
+                        }
+                      ]
+                    },
+                    "assignee": null,
+                    "comments": {
+                      "nodes": []
+                    },
+                    "inverseRelations": {
+                      "nodes": []
+                    }
+                  },
+                  {
+                    "id": "iss-0013-fake",
+                    "identifier": "ENG-3",
+                    "title": "Pick a conflict policy",
+                    "description": "Last-writer-wins or merge?\n\nPart of trail ENG-1.",
+                    "createdAt": "2026-10-31T12:00:03.000Z",
+                    "updatedAt": "2026-10-31T12:00:03.000Z",
+                    "completedAt": null,
+                    "canceledAt": null,
+                    "state": {
+                      "type": "unstarted"
+                    },
+                    "labels": {
+                      "nodes": [
+                        {
+                          "id": "lbl-0006-fake",
+                          "name": "teamtrail:junction"
+                        }
+                      ]
+                    },
+                    "assignee": null,
+                    "comments": {
+                      "nodes": []
+                    },
+                    "inverseRelations": {
+                      "nodes": [
+                        {
+                          "type": "blocks",
+                          "issue": {
+                            "id": "iss-0012-fake"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
         "operation": "Update",
         "variables": {
-          "id": "iss-0011-fake",
+          "id": "iss-0012-fake",
           "input": {
             "description": "Compare Automerge and Yjs.\n\nPart of trail ENG-1.\n\n<!-- teamtrail:meta {\"assignee\":\"claude-07\"} -->"
           }
@@ -698,12 +826,9 @@
       "req": {
         "method": "POST",
         "url": "/graphql",
-        "operation": "Comment",
+        "operation": "Trail",
         "variables": {
-          "input": {
-            "issueId": "iss-0011-fake",
-            "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0dxwaoj -->\nYjs has the smaller bundle."
-          }
+          "id": "iss-0011-fake"
         }
       },
       "res": {
@@ -716,9 +841,99 @@
         },
         "body": {
           "data": {
-            "commentCreate": {
-              "comment": {
-                "id": "cmt-0014-fake"
+            "viewer": {
+              "id": "usr-ada"
+            },
+            "issue": {
+              "id": "iss-0011-fake",
+              "identifier": "ENG-1",
+              "title": "Ship offline sync",
+              "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
+              "createdAt": "2026-10-31T12:00:01.000Z",
+              "updatedAt": "2026-10-31T12:00:01.000Z",
+              "completedAt": null,
+              "canceledAt": null,
+              "state": {
+                "type": "unstarted"
+              },
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "lbl-0001-fake",
+                    "name": "teamtrail:map"
+                  }
+                ]
+              },
+              "assignee": null,
+              "comments": {
+                "nodes": []
+              },
+              "children": {
+                "nodes": [
+                  {
+                    "id": "iss-0012-fake",
+                    "identifier": "ENG-2",
+                    "title": "Survey CRDT libraries",
+                    "description": "Compare Automerge and Yjs.\n\nPart of trail ENG-1.\n\n<!-- teamtrail:meta {\"assignee\":\"claude-07\"} -->",
+                    "createdAt": "2026-10-31T12:00:02.000Z",
+                    "updatedAt": "2026-10-31T12:00:04.000Z",
+                    "completedAt": null,
+                    "canceledAt": null,
+                    "state": {
+                      "type": "unstarted"
+                    },
+                    "labels": {
+                      "nodes": [
+                        {
+                          "id": "lbl-0004-fake",
+                          "name": "teamtrail:research"
+                        }
+                      ]
+                    },
+                    "assignee": null,
+                    "comments": {
+                      "nodes": []
+                    },
+                    "inverseRelations": {
+                      "nodes": []
+                    }
+                  },
+                  {
+                    "id": "iss-0013-fake",
+                    "identifier": "ENG-3",
+                    "title": "Pick a conflict policy",
+                    "description": "Last-writer-wins or merge?\n\nPart of trail ENG-1.",
+                    "createdAt": "2026-10-31T12:00:03.000Z",
+                    "updatedAt": "2026-10-31T12:00:03.000Z",
+                    "completedAt": null,
+                    "canceledAt": null,
+                    "state": {
+                      "type": "unstarted"
+                    },
+                    "labels": {
+                      "nodes": [
+                        {
+                          "id": "lbl-0006-fake",
+                          "name": "teamtrail:junction"
+                        }
+                      ]
+                    },
+                    "assignee": null,
+                    "comments": {
+                      "nodes": []
+                    },
+                    "inverseRelations": {
+                      "nodes": [
+                        {
+                          "type": "blocks",
+                          "issue": {
+                            "id": "iss-0012-fake"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
               }
             }
           }
@@ -732,8 +947,8 @@
         "operation": "Comment",
         "variables": {
           "input": {
-            "issueId": "iss-0011-fake",
-            "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc01f3b0if -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support."
+            "issueId": "iss-0012-fake",
+            "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0wpwbkd -->\nYjs has the smaller bundle."
           }
         }
       },
@@ -743,7 +958,7 @@
           "content-type": "application/json",
           "x-ratelimit-requests-limit": "1500",
           "x-ratelimit-requests-remaining": "1490",
-          "x-ratelimit-requests-reset": "1793451605000"
+          "x-ratelimit-requests-reset": "1793451604000"
         },
         "body": {
           "data": {
@@ -760,9 +975,40 @@
       "req": {
         "method": "POST",
         "url": "/graphql",
+        "operation": "Comment",
+        "variables": {
+          "input": {
+            "issueId": "iss-0012-fake",
+            "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc014wupa9 -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support."
+          }
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451605000"
+        },
+        "body": {
+          "data": {
+            "commentCreate": {
+              "comment": {
+                "id": "cmt-0016-fake"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
         "operation": "Update",
         "variables": {
-          "id": "iss-0011-fake",
+          "id": "iss-0012-fake",
           "input": {
             "stateId": "st-done"
           }
@@ -792,8 +1038,8 @@
         "operation": "Comment",
         "variables": {
           "input": {
-            "issueId": "iss-0011-fake",
-            "body": "**Decision D-1** · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0011-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0010-fake\",\"decidedAt\":1793448000000} -->"
+            "issueId": "iss-0012-fake",
+            "body": "**Decision D-1** · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0012-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0011-fake\",\"decidedAt\":1793448000000} -->"
           }
         }
       },
@@ -809,7 +1055,162 @@
           "data": {
             "commentCreate": {
               "comment": {
-                "id": "cmt-0016-fake"
+                "id": "cmt-0017-fake"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
+        "operation": "Trail",
+        "variables": {
+          "id": "iss-0011-fake"
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451609000"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "id": "usr-ada"
+            },
+            "issue": {
+              "id": "iss-0011-fake",
+              "identifier": "ENG-1",
+              "title": "Ship offline sync",
+              "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
+              "createdAt": "2026-10-31T12:00:01.000Z",
+              "updatedAt": "2026-10-31T12:00:01.000Z",
+              "completedAt": null,
+              "canceledAt": null,
+              "state": {
+                "type": "unstarted"
+              },
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "lbl-0001-fake",
+                    "name": "teamtrail:map"
+                  }
+                ]
+              },
+              "assignee": null,
+              "comments": {
+                "nodes": []
+              },
+              "children": {
+                "nodes": [
+                  {
+                    "id": "iss-0012-fake",
+                    "identifier": "ENG-2",
+                    "title": "Survey CRDT libraries",
+                    "description": "Compare Automerge and Yjs.\n\nPart of trail ENG-1.\n\n<!-- teamtrail:meta {\"assignee\":\"claude-07\"} -->",
+                    "createdAt": "2026-10-31T12:00:02.000Z",
+                    "updatedAt": "2026-10-31T12:00:08.000Z",
+                    "completedAt": "2026-10-31T12:00:07.000Z",
+                    "canceledAt": null,
+                    "state": {
+                      "type": "completed"
+                    },
+                    "labels": {
+                      "nodes": [
+                        {
+                          "id": "lbl-0004-fake",
+                          "name": "teamtrail:research"
+                        }
+                      ]
+                    },
+                    "assignee": null,
+                    "comments": {
+                      "nodes": [
+                        {
+                          "id": "cmt-0015-fake",
+                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0wpwbkd -->\nYjs has the smaller bundle.",
+                          "createdAt": "2026-10-31T12:00:05.000Z",
+                          "user": {
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
+                          }
+                        },
+                        {
+                          "id": "cmt-0016-fake",
+                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc014wupa9 -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support.",
+                          "createdAt": "2026-10-31T12:00:06.000Z",
+                          "user": {
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
+                          }
+                        },
+                        {
+                          "id": "cmt-0017-fake",
+                          "body": "**Decision D-1** · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0012-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0011-fake\",\"decidedAt\":1793448000000} -->",
+                          "createdAt": "2026-10-31T12:00:09.000Z",
+                          "user": {
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
+                          }
+                        }
+                      ]
+                    },
+                    "inverseRelations": {
+                      "nodes": []
+                    }
+                  },
+                  {
+                    "id": "iss-0013-fake",
+                    "identifier": "ENG-3",
+                    "title": "Pick a conflict policy",
+                    "description": "Last-writer-wins or merge?\n\nPart of trail ENG-1.",
+                    "createdAt": "2026-10-31T12:00:03.000Z",
+                    "updatedAt": "2026-10-31T12:00:03.000Z",
+                    "completedAt": null,
+                    "canceledAt": null,
+                    "state": {
+                      "type": "unstarted"
+                    },
+                    "labels": {
+                      "nodes": [
+                        {
+                          "id": "lbl-0006-fake",
+                          "name": "teamtrail:junction"
+                        }
+                      ]
+                    },
+                    "assignee": null,
+                    "comments": {
+                      "nodes": []
+                    },
+                    "inverseRelations": {
+                      "nodes": [
+                        {
+                          "type": "blocks",
+                          "issue": {
+                            "id": "iss-0012-fake"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
               }
             }
           }
@@ -822,7 +1223,7 @@
         "url": "/graphql",
         "operation": "Update",
         "variables": {
-          "id": "iss-0010-fake",
+          "id": "iss-0011-fake",
           "input": {
             "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n- ENG-2: Use Yjs. It has the smaller bundle and mature offline support.\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n"
           }
@@ -852,8 +1253,8 @@
         "operation": "Comment",
         "variables": {
           "input": {
-            "issueId": "iss-0011-fake",
-            "body": "**Decision D-2** · trail lead · Lookout\n\n> Use Automerge. Its history model fits the audit trail.\n\n**Question:** Survey CRDT libraries\n**Supersedes:** D-1\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0011-fake\",\"ticketKey\":\"ENG-2\",\"answer\":\"Use Automerge. Its history model fits the audit trail.\",\"decidedBy\":\"trail lead\",\"source\":{\"kind\":\"lookout\"},\"question\":\"Survey CRDT libraries\",\"supersedes\":\"D-1\",\"id\":\"D-2\",\"mapId\":\"iss-0010-fake\",\"decidedAt\":1793448000000,\"summary\":\"Use Automerge. Its history model fits the audit trail.\",\"alternatives\":[],\"rationale\":\"\",\"participants\":[{\"id\":\"trail lead\"}],\"transcript\":[]} -->"
+            "issueId": "iss-0012-fake",
+            "body": "**Decision D-2** · trail lead · Lookout\n\n> Use Automerge. Its history model fits the audit trail.\n\n**Question:** Survey CRDT libraries\n**Supersedes:** D-1\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0012-fake\",\"ticketKey\":\"ENG-2\",\"answer\":\"Use Automerge. Its history model fits the audit trail.\",\"decidedBy\":\"trail lead\",\"source\":{\"kind\":\"lookout\"},\"question\":\"Survey CRDT libraries\",\"supersedes\":\"D-1\",\"id\":\"D-2\",\"mapId\":\"iss-0011-fake\",\"decidedAt\":1793448000000,\"summary\":\"Use Automerge. Its history model fits the audit trail.\",\"alternatives\":[],\"rationale\":\"\",\"participants\":[{\"id\":\"trail lead\"}],\"transcript\":[]} -->"
           }
         }
       },
@@ -869,7 +1270,7 @@
           "data": {
             "commentCreate": {
               "comment": {
-                "id": "cmt-0017-fake"
+                "id": "cmt-0018-fake"
               }
             }
           }
@@ -882,9 +1283,9 @@
         "url": "/graphql",
         "operation": "EditComment",
         "variables": {
-          "id": "cmt-0016-fake",
+          "id": "cmt-0017-fake",
           "input": {
-            "body": "**Decision D-1** · ~~superseded by D-2~~ · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0011-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0010-fake\",\"decidedAt\":1793448000000,\"supersededBy\":\"D-2\"} -->"
+            "body": "**Decision D-1** · ~~superseded by D-2~~ · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0012-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0011-fake\",\"decidedAt\":1793448000000,\"supersededBy\":\"D-2\"} -->"
           }
         }
       },
@@ -909,9 +1310,176 @@
       "req": {
         "method": "POST",
         "url": "/graphql",
+        "operation": "Trail",
+        "variables": {
+          "id": "iss-0011-fake"
+        }
+      },
+      "res": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-ratelimit-requests-limit": "1500",
+          "x-ratelimit-requests-remaining": "1490",
+          "x-ratelimit-requests-reset": "1793451612000"
+        },
+        "body": {
+          "data": {
+            "viewer": {
+              "id": "usr-ada"
+            },
+            "issue": {
+              "id": "iss-0011-fake",
+              "identifier": "ENG-1",
+              "title": "Ship offline sync",
+              "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n- ENG-2: Use Yjs. It has the smaller bundle and mature offline support.\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
+              "createdAt": "2026-10-31T12:00:01.000Z",
+              "updatedAt": "2026-10-31T12:00:10.000Z",
+              "completedAt": null,
+              "canceledAt": null,
+              "state": {
+                "type": "unstarted"
+              },
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "lbl-0001-fake",
+                    "name": "teamtrail:map"
+                  }
+                ]
+              },
+              "assignee": null,
+              "comments": {
+                "nodes": []
+              },
+              "children": {
+                "nodes": [
+                  {
+                    "id": "iss-0012-fake",
+                    "identifier": "ENG-2",
+                    "title": "Survey CRDT libraries",
+                    "description": "Compare Automerge and Yjs.\n\nPart of trail ENG-1.\n\n<!-- teamtrail:meta {\"assignee\":\"claude-07\"} -->",
+                    "createdAt": "2026-10-31T12:00:02.000Z",
+                    "updatedAt": "2026-10-31T12:00:08.000Z",
+                    "completedAt": "2026-10-31T12:00:07.000Z",
+                    "canceledAt": null,
+                    "state": {
+                      "type": "completed"
+                    },
+                    "labels": {
+                      "nodes": [
+                        {
+                          "id": "lbl-0004-fake",
+                          "name": "teamtrail:research"
+                        }
+                      ]
+                    },
+                    "assignee": null,
+                    "comments": {
+                      "nodes": [
+                        {
+                          "id": "cmt-0015-fake",
+                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0wpwbkd -->\nYjs has the smaller bundle.",
+                          "createdAt": "2026-10-31T12:00:05.000Z",
+                          "user": {
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
+                          }
+                        },
+                        {
+                          "id": "cmt-0016-fake",
+                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc014wupa9 -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support.",
+                          "createdAt": "2026-10-31T12:00:06.000Z",
+                          "user": {
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
+                          }
+                        },
+                        {
+                          "id": "cmt-0017-fake",
+                          "body": "**Decision D-1** · ~~superseded by D-2~~ · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0012-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0011-fake\",\"decidedAt\":1793448000000,\"supersededBy\":\"D-2\"} -->",
+                          "createdAt": "2026-10-31T12:00:09.000Z",
+                          "user": {
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
+                          }
+                        },
+                        {
+                          "id": "cmt-0018-fake",
+                          "body": "**Decision D-2** · trail lead · Lookout\n\n> Use Automerge. Its history model fits the audit trail.\n\n**Question:** Survey CRDT libraries\n**Supersedes:** D-1\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0012-fake\",\"ticketKey\":\"ENG-2\",\"answer\":\"Use Automerge. Its history model fits the audit trail.\",\"decidedBy\":\"trail lead\",\"source\":{\"kind\":\"lookout\"},\"question\":\"Survey CRDT libraries\",\"supersedes\":\"D-1\",\"id\":\"D-2\",\"mapId\":\"iss-0011-fake\",\"decidedAt\":1793448000000,\"summary\":\"Use Automerge. Its history model fits the audit trail.\",\"alternatives\":[],\"rationale\":\"\",\"participants\":[{\"id\":\"trail lead\"}],\"transcript\":[]} -->",
+                          "createdAt": "2026-10-31T12:00:11.000Z",
+                          "user": {
+                            "id": "usr-ada",
+                            "displayName": "Ada Ops",
+                            "email": "ada@octo.dev",
+                            "guest": false,
+                            "active": true
+                          }
+                        }
+                      ]
+                    },
+                    "inverseRelations": {
+                      "nodes": []
+                    }
+                  },
+                  {
+                    "id": "iss-0013-fake",
+                    "identifier": "ENG-3",
+                    "title": "Pick a conflict policy",
+                    "description": "Last-writer-wins or merge?\n\nPart of trail ENG-1.",
+                    "createdAt": "2026-10-31T12:00:03.000Z",
+                    "updatedAt": "2026-10-31T12:00:03.000Z",
+                    "completedAt": null,
+                    "canceledAt": null,
+                    "state": {
+                      "type": "unstarted"
+                    },
+                    "labels": {
+                      "nodes": [
+                        {
+                          "id": "lbl-0006-fake",
+                          "name": "teamtrail:junction"
+                        }
+                      ]
+                    },
+                    "assignee": null,
+                    "comments": {
+                      "nodes": []
+                    },
+                    "inverseRelations": {
+                      "nodes": [
+                        {
+                          "type": "blocks",
+                          "issue": {
+                            "id": "iss-0012-fake"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "req": {
+        "method": "POST",
+        "url": "/graphql",
         "operation": "Update",
         "variables": {
-          "id": "iss-0010-fake",
+          "id": "iss-0011-fake",
           "input": {
             "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n- ENG-2: Use Automerge. Its history model fits the audit trail.\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n"
           }
@@ -940,9 +1508,11 @@
         "url": "/graphql",
         "operation": "Update",
         "variables": {
-          "id": "iss-0010-fake",
+          "id": "iss-0011-fake",
           "input": {
-            "addedLabelIds": ["lbl-0002-fake"]
+            "addedLabelIds": [
+              "lbl-0002-fake"
+            ]
           }
         }
       },
@@ -998,11 +1568,25 @@
             "issues": {
               "nodes": [
                 {
-                  "id": "iss-0010-fake",
+                  "id": "iss-0011-fake",
                   "identifier": "ENG-1",
-                  "title": "Ship offline sync"
+                  "title": "Ship offline sync",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "name": "teamtrail:map"
+                      },
+                      {
+                        "name": "teamtrail:plan-only"
+                      }
+                    ]
+                  }
                 }
-              ]
+              ],
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "1"
+              }
             }
           }
         }
@@ -1014,7 +1598,7 @@
         "url": "/graphql",
         "operation": "Trail",
         "variables": {
-          "id": "iss-0010-fake"
+          "id": "iss-0011-fake"
         }
       },
       "res": {
@@ -1031,7 +1615,7 @@
               "id": "usr-ada"
             },
             "issue": {
-              "id": "iss-0010-fake",
+              "id": "iss-0011-fake",
               "identifier": "ENG-1",
               "title": "Ship offline sync",
               "description": "## Destination\n\nEdits made offline sync without data loss.\n\n## Notes\n\n_None yet._\n\n## Decisions so far\n\n- ENG-2: Use Automerge. Its history model fits the audit trail.\n\n## Not yet specified\n\n- Conflict policy for deletes\n\n## Out of scope\n\n_None yet._\n",
@@ -1061,7 +1645,7 @@
               "children": {
                 "nodes": [
                   {
-                    "id": "iss-0011-fake",
+                    "id": "iss-0012-fake",
                     "identifier": "ENG-2",
                     "title": "Survey CRDT libraries",
                     "description": "Compare Automerge and Yjs.\n\nPart of trail ENG-1.\n\n<!-- teamtrail:meta {\"assignee\":\"claude-07\"} -->",
@@ -1084,8 +1668,8 @@
                     "comments": {
                       "nodes": [
                         {
-                          "id": "cmt-0014-fake",
-                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0dxwaoj -->\nYjs has the smaller bundle.",
+                          "id": "cmt-0015-fake",
+                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc0wpwbkd -->\nYjs has the smaller bundle.",
                           "createdAt": "2026-10-31T12:00:05.000Z",
                           "user": {
                             "id": "usr-ada",
@@ -1096,8 +1680,8 @@
                           }
                         },
                         {
-                          "id": "cmt-0015-fake",
-                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc01f3b0if -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support.",
+                          "id": "cmt-0016-fake",
+                          "body": "<!-- teamtrail:author claude-07 -->\n<!-- teamtrail:write mvwcmtc014wupa9 -->\n**Resolution**\n\nUse Yjs. It has the smaller bundle and mature offline support.",
                           "createdAt": "2026-10-31T12:00:06.000Z",
                           "user": {
                             "id": "usr-ada",
@@ -1108,8 +1692,8 @@
                           }
                         },
                         {
-                          "id": "cmt-0016-fake",
-                          "body": "**Decision D-1** · ~~superseded by D-2~~ · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0011-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0010-fake\",\"decidedAt\":1793448000000,\"supersededBy\":\"D-2\"} -->",
+                          "id": "cmt-0017-fake",
+                          "body": "**Decision D-1** · ~~superseded by D-2~~ · claude-07 · Agent\n\n> Use Yjs. It has the smaller bundle and mature offline support.\n\n**Question:** Survey CRDT libraries\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0012-fake\",\"ticketKey\":\"ENG-2\",\"question\":\"Survey CRDT libraries\",\"answer\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"summary\":\"Use Yjs. It has the smaller bundle and mature offline support.\",\"alternatives\":[],\"rationale\":\"\",\"decidedBy\":\"claude-07\",\"participants\":[{\"id\":\"claude-07\"}],\"source\":{\"kind\":\"agent\",\"label\":\"claude-07\"},\"transcript\":[],\"id\":\"D-1\",\"mapId\":\"iss-0011-fake\",\"decidedAt\":1793448000000,\"supersededBy\":\"D-2\"} -->",
                           "createdAt": "2026-10-31T12:00:09.000Z",
                           "user": {
                             "id": "usr-ada",
@@ -1120,8 +1704,8 @@
                           }
                         },
                         {
-                          "id": "cmt-0017-fake",
-                          "body": "**Decision D-2** · trail lead · Lookout\n\n> Use Automerge. Its history model fits the audit trail.\n\n**Question:** Survey CRDT libraries\n**Supersedes:** D-1\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0011-fake\",\"ticketKey\":\"ENG-2\",\"answer\":\"Use Automerge. Its history model fits the audit trail.\",\"decidedBy\":\"trail lead\",\"source\":{\"kind\":\"lookout\"},\"question\":\"Survey CRDT libraries\",\"supersedes\":\"D-1\",\"id\":\"D-2\",\"mapId\":\"iss-0010-fake\",\"decidedAt\":1793448000000,\"summary\":\"Use Automerge. Its history model fits the audit trail.\",\"alternatives\":[],\"rationale\":\"\",\"participants\":[{\"id\":\"trail lead\"}],\"transcript\":[]} -->",
+                          "id": "cmt-0018-fake",
+                          "body": "**Decision D-2** · trail lead · Lookout\n\n> Use Automerge. Its history model fits the audit trail.\n\n**Question:** Survey CRDT libraries\n**Supersedes:** D-1\n\n<!-- teamtrail:decision {\"ticketId\":\"iss-0012-fake\",\"ticketKey\":\"ENG-2\",\"answer\":\"Use Automerge. Its history model fits the audit trail.\",\"decidedBy\":\"trail lead\",\"source\":{\"kind\":\"lookout\"},\"question\":\"Survey CRDT libraries\",\"supersedes\":\"D-1\",\"id\":\"D-2\",\"mapId\":\"iss-0011-fake\",\"decidedAt\":1793448000000,\"summary\":\"Use Automerge. Its history model fits the audit trail.\",\"alternatives\":[],\"rationale\":\"\",\"participants\":[{\"id\":\"trail lead\"}],\"transcript\":[]} -->",
                           "createdAt": "2026-10-31T12:00:11.000Z",
                           "user": {
                             "id": "usr-ada",
@@ -1138,7 +1722,7 @@
                     }
                   },
                   {
-                    "id": "iss-0012-fake",
+                    "id": "iss-0013-fake",
                     "identifier": "ENG-3",
                     "title": "Pick a conflict policy",
                     "description": "Last-writer-wins or merge?\n\nPart of trail ENG-1.",
@@ -1166,7 +1750,7 @@
                         {
                           "type": "blocks",
                           "issue": {
-                            "id": "iss-0011-fake"
+                            "id": "iss-0012-fake"
                           }
                         }
                       ]

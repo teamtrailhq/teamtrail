@@ -22,6 +22,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.8',
+    date: '2026-11-18',
+    items: [
+      "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
+      'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
+      'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
+    ],
+  },
+  {
     version: '0.66.7',
     date: '2026-11-18',
     items: [
@@ -180,25 +189,6 @@ export const RELEASES: Release[] = [
       'A trail is verified only when your checks pass again on main with every ticket merged',
       'Reviews go first to an agent on another model, and rules you write ask agents about the files they touch',
       'Settings → This trail → Gates: try each gate in Observe first; the scorecard shows verified work that came back',
-    ],
-  },
-  {
-    version: '0.60.0',
-    date: '2026-11-17',
-    items: [
-      'The map takes the page: click a ticket and a bubble opens beside it, with what it needs from you first, then the ticket',
-      'Under the map, the trail bar: every ticket at a glance, what needs you, and More for agents at work and what is next',
-      'Cards move while something happens: waiting for an agent, an agent at work with its model and step, a halo when it needs you',
-      'Plan, Activity and the Logbook are pages of their own, from the tabs in the header',
-    ],
-  },
-  {
-    version: '0.59.4',
-    date: '2026-11-17',
-    items: [
-      'A check that fails only as it already does on main no longer sends the first completion back for rework when an acceptance criterion names it',
-      "Where Teamtrail merges pull requests, a done ticket that isn't verified offers Merge anyway: why in one line, one question, and it's kept as your decision",
-      'A done ticket whose pull request is still open shows in your queue as ready to merge',
     ],
   },
   ...LATER_RELEASES,
