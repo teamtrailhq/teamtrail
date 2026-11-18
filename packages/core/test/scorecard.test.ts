@@ -127,3 +127,39 @@ describe('the scorecard by guide', () => {
     expect(scorecardMarkdown(card)).toContain('| Guide | Tickets');
   });
 });
+
+describe('verified, then came back', () => {
+  it('counts escapes against each group and against every check that had passed on them', () => {
+    const came = (t: ScorecardTicket, passedChecks: string[], escaped = false) => ({
+      ...t,
+      passedChecks,
+      ...(escaped ? { escaped, verified: false } : {}),
+    });
+    const card = agentScorecard({
+      tickets: [
+        came(ticket('task', 'claude-01:s1', ['pass']), ['test', 'lint'], true),
+        came(ticket('task', 'claude-01:s1', ['pass']), ['test']),
+        came(ticket('research', 'codex-02:s2', ['pass']), ['test']),
+        ticket('task', 'codex-02:s2', ['fail']),
+      ],
+      sessions: [
+        { id: 'claude-01:s1', model: 'claude-sonnet-5-5' },
+        { id: 'codex-02:s2', model: 'gpt-5.2-codex' },
+      ],
+      minSample: 2,
+    });
+    expect(card.byModel.find((r) => r.key === 'claude-sonnet-5-5')).toMatchObject({ escaped: 1, escapeRate: 0.5 });
+    expect(card.byModel.find((r) => r.key === 'gpt-5.2-codex')).toMatchObject({ escaped: 0, escapeRate: 0 });
+    expect(card.byType?.map((r) => [r.key, r.escaped])).toEqual([
+      ['task', 1],
+      ['research', 0],
+    ]);
+    expect(card.byCheck).toEqual([
+      { key: 'test', verified: 3, escaped: 1, escapeRate: 0.333, enough: true },
+      { key: 'lint', verified: 1, escaped: 1, escapeRate: 1, enough: false },
+    ]);
+    const md = scorecardMarkdown(card);
+    expect(md).toContain('| Came back |');
+    expect(md).toContain('| lint (too few) | 1 | 100% (1) |');
+  });
+});

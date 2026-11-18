@@ -6,6 +6,7 @@ import {
   type CriterionEvidence,
   type CriterionKind,
   type RiskCategory,
+  type RuleAnswer,
   type TicketType,
   type TrackerAdapter,
 } from '@teamtrail/core';
@@ -100,6 +101,8 @@ export interface CloseInput {
   criteria?: CriterionEvidence[];
   /** Answers to the ticket guide's checklist. */
   checklist?: ChecklistAnswer[];
+  /** Answers to the diff rules the change matched that ask a question. */
+  ruleAnswers?: RuleAnswer[];
   /** What the call touches and the files it changes, for the risk policy. */
   category?: RiskCategory;
   paths?: string[];

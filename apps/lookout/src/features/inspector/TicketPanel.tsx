@@ -1,6 +1,7 @@
 import type { AttentionView, MapSnapshot, SessionInfo, Ticket } from '@teamtrail/core';
 import { useState } from 'react';
 import type { LookoutApi } from '../../hooks';
+import { HeldRules } from '../diff-rules';
 import { TicketProof } from '../proof';
 import { ActionBar } from './ActionBar';
 import { HistorySection } from './HistorySection';
@@ -61,6 +62,7 @@ export function TicketPanel(props: {
       <WhatSection v={v} />
       <HowSection v={v} editing={editing} setEditing={setEditing} act={bar.act} />
       <ProgressSection v={v} onUndoWaiver={bar.undoWaiver} />
+      <HeldRules mapId={snap.map.id} ticketId={t.id} />
       <TicketProof ticket={t} view={v.proof} />
       <HistorySection t={t} decisions={decisions} onOpenDecision={props.onOpenDecision} />
     </div>

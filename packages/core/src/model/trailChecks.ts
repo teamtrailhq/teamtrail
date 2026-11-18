@@ -13,8 +13,9 @@ import type { MainCheckResult, MainRunResult } from './mainChecks';
  * - `open`: its pull request is still open. `closed`: closed without merging.
  * - `unknown`: work was expected but no commit or pull request was recorded.
  * - `nothing`: nothing to merge (a research or junction ticket, or no file changed).
+ * - `reverted`: its verified work was reverted on the default branch since (an escape, scorecard/findEscapes.ts).
  */
-export type MergeState = 'merged' | 'open' | 'closed' | 'unknown' | 'nothing';
+export type MergeState = 'merged' | 'open' | 'closed' | 'unknown' | 'nothing' | 'reverted';
 
 export interface TicketMerge {
   ticketId: string;

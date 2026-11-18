@@ -20,12 +20,14 @@ const list = (ms: TicketMerge[]) => ms.map(label).join(', ');
 /** What still keeps the merges from being checked together, in words; empty when nothing does. */
 function waitingFor(merges: TicketMerge[], runner: boolean): string[] {
   const of = (s: TicketMerge['state']) => merges.filter((m) => m.state === s);
+  const reverted = of('reverted');
   const closed = of('closed');
   const unknown = of('unknown');
   const open = of('open');
   const absent = runner ? [] : of('merged').filter((m) => m.contained === false);
   const verb = (n: number) => (n === 1 ? 'is' : 'are');
   return [
+    ...(reverted.length ? [`${list(reverted)} ${verb(reverted.length)} reverted on main`] : []),
     ...(closed.length ? [`${list(closed)} closed without merging`] : []),
     ...(unknown.length ? [`no commit or pull request recorded for ${list(unknown)}`] : []),
     ...(open.length ? [`waiting for ${list(open)} to merge`] : []),

@@ -19,6 +19,8 @@ export interface AttentionHandlers {
   openMainChecks: (mapId: string) => void;
   /** The trail's checks failing on main together: their bubble at the destination. */
   openTrailChecks: (mapId: string) => void;
+  /** A rule an item suggests (escapes): Settings → Verification → Rules, prefilled. */
+  openRule: (rule: NonNullable<AttentionItem['rule']>) => void;
 }
 
 function openTicketOrTrail(item: AttentionItem, h: AttentionHandlers) {
@@ -65,6 +67,8 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
       return h.openMainChecks(item.mapId);
     case 'trail-checks':
       return h.openTrailChecks(item.mapId);
+    case 'escape':
+      return item.rule ? h.openRule(item.rule) : openTicketOrTrail(item, h);
     default:
       return openTicketOrTrail(item, h);
   }

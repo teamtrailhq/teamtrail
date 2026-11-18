@@ -1,0 +1,66 @@
+/* Diff rules (features/diff-rules/): the editor in Settings, one block per rule (its files on the first line, then
+ * the check, the question and why), the read-only list, and the rules a held completion waits on in the ticket. */
+.dr-edit-rule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding-bottom: var(--sp-10);
+  border-bottom: 1px solid var(--line);
+}
+.dr-edit-rule:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.dr-edit-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--sp-8);
+  align-items: center;
+}
+.dr-id {
+  min-width: 3.5em;
+  color: var(--dim);
+}
+.dr-edit-body {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) minmax(0, 1fr);
+  gap: var(--sp-6) var(--sp-8);
+  align-items: center;
+}
+.dr-edit-body input[aria-label='Why'],
+.dr-edit-body .t-meta {
+  grid-column: 2 / 3;
+}
+.dr-edit-rule input {
+  min-width: 0;
+}
+.dr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dr-held .dr-list {
+  margin-top: var(--sp-6);
+}
+.dr-waive {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-6) 0;
+}
+.dr-waive input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .dr-edit-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dr-edit-body input[aria-label='Why'],
+  .dr-edit-body .t-meta {
+    grid-column: 1 / -1;
+  }
+}

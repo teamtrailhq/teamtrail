@@ -125,6 +125,15 @@ describe('trailChecksState', () => {
     });
   });
 
+  it('never verifies a trail whose verified work was reverted on main since', () => {
+    const back = [{ ...merges[0], state: 'reverted' as const }, merges[1]];
+    const passed = run({ merges });
+    expect(trailChecksState({ ...base, merges: back, key: trailRunKey('h1', back), run: passed })).toEqual({
+      kind: 'waiting',
+      reason: '#1 is reverted on main.',
+    });
+  });
+
   it('is due when everything is merged and no run was made for these merges', () => {
     expect(trailChecksState(base)).toEqual({ kind: 'due' });
     const other = run({ merges: [merged('#1', 'aaaaaaa', true)] });

@@ -3,6 +3,7 @@ import { mainChecksPlan } from '../mainChecks/mainChecksPlan';
 import type { MainRunEnv } from '../mainChecks/startMainRun';
 import type { TicketMerge, TrailChecksView } from '../model/trailChecks';
 import type { MapSnapshot, Ticket } from '../model/types';
+import { readEscapes } from '../scorecard/readEscapes';
 import { readTrailMerges } from './readTrailMerges';
 import { startTrailRun } from './startTrailRun';
 import { trailChecksState } from './trailChecksState';
@@ -18,6 +19,15 @@ function doneness(tickets: Ticket[]) {
   if (!inScope.length) return { done: false, reason: 'No tickets in scope yet.' };
   if (open) return { done: false, reason: `Runs once every ticket is done: ${open} still open.` };
   return { done: true, reason: '' };
+}
+
+/** A done ticket whose verified work was reverted on the default branch since is not merged any more. */
+async function withReverts(root: string, snap: MapSnapshot, merges: TicketMerge[]): Promise<TicketMerge[]> {
+  const reverted = new Set(
+    (await readEscapes(root, [snap])).filter((e) => e.kind === 'reverted').map((e) => e.ticketId),
+  );
+  if (!reverted.size) return merges;
+  return merges.map((m) => (reverted.has(m.ticketId) ? { ...m, state: 'reverted' as const } : m));
 }
 
 /** The merges marked with whether the default branch here holds them (a runner checks them itself). */
@@ -43,7 +53,7 @@ export async function readTrailChecks(
   const plan = mainChecksPlan(env.root);
   const done = doneness(snap.tickets);
   const found = readTrailMerges(env.root, snap);
-  const merges = done.done && plan.kind === 'run' ? await marked(env, found) : found;
+  const merges = done.done && plan.kind === 'run' ? await marked(env, await withReverts(env.root, snap, found)) : found;
   const key = plan.kind === 'run' ? trailRunKey(plan.hash, merges) : '';
   let run = latestTrailRun(env.root, mapId, plan.kind === 'run' ? plan.budgetMs : 0);
   const hashed = plan.kind === 'off' ? plan : { kind: 'run' as const, hash: plan.hash };

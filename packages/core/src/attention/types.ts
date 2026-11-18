@@ -5,6 +5,7 @@ import type { DiscoveryBrief } from '../discovery/brief';
 import type { KnowledgeEntry } from '../knowledge/knowledge';
 import type { AttentionItem, AttentionKind, AttentionPolicy, AttentionState } from '../model/attention';
 import type { DeliveryProblem } from '../model/delivery';
+import type { Escape } from '../model/escape';
 import type { InstalledGuide } from '../model/guide';
 import type { MainChecksView } from '../model/mainChecks';
 import type { TicketSync } from '../model/prEvidence';
@@ -40,6 +41,8 @@ export interface AttentionInput {
   violations?: PolicyViolation[];
   /** Verified work that changed files an earlier decision of the human's covers (precedent/). Missing: none. */
   precedentConflicts?: PrecedentConflict[];
+  /** Verified work that came back: reopened or reverted (scorecard/findEscapes.ts). Missing: none. */
+  escapes?: Escape[];
   /** Active claim branches that changed the same files (workspaces/scanIntegrations.ts). Missing: none. */
   integrations?: IntegrationOverlap[];
   /** Checks on main per active trail (mainChecks/). Missing: none. */
@@ -72,7 +75,7 @@ export interface AttentionInput {
 /** What a source says about one thing that needs the human; scoring and batching turn it into an item. */
 export interface Candidate extends Pick<
   AttentionItem,
-  'kind' | 'mapId' | 'ticketId' | 'title' | 'since' | 'urgency' | 'ref' | 'agent'
+  'kind' | 'mapId' | 'ticketId' | 'title' | 'since' | 'urgency' | 'ref' | 'agent' | 'rule'
 > {
   /** Tickets that can't move until this is handled; their open dependents count too. */
   holds: string[];

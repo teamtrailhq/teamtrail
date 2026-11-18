@@ -29,6 +29,7 @@ export const DEFAULT_WEIGHTS: Record<AttentionKind, number> = {
   'main-checks': 60,
   'trail-checks': 50,
   merge: 45,
+  escape: 40,
 };
 
 export const ATTENTION_KINDS = Object.keys(DEFAULT_WEIGHTS) as AttentionKind[];
