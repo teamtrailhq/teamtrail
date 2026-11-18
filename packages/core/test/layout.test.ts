@@ -72,6 +72,86 @@ describe('layout', () => {
     expect(l.graphH).toBe(168);
   });
 
+  it('runs a chain straight, a review beside the ticket it reviews', () => {
+    const tickets = [
+      ticket(1),
+      ticket(2, { blockedBy: ['1'] }),
+      ticket(3, { blockedBy: ['2'] }),
+      ticket(4, { type: 'review', reviewOf: '3' }),
+    ];
+    for (const direction of ['LR', 'TB'] as const) {
+      const l = layout(tickets, direction);
+      const at = (id: string) => l.nodes.find((n) => n.ticket.id === id)!;
+      const across = (id: string) => (direction === 'LR' ? at(id).y : at(id).x);
+      expect([across('1'), across('2'), across('3')]).toEqual([0, 0, 0]);
+      expect(at('4').layer).toBe(at('3').layer);
+      expect(across('4')).toBe(LAYOUT_SPACING[direction].lane);
+    }
+  });
+
+  it('lines a ticket alone in its layer up with what it waits on, and the first ticket with what follows it', () => {
+    const tickets = [
+      ticket(1),
+      ticket(2, { blockedBy: ['1'] }),
+      ticket(3, { blockedBy: ['1'] }),
+      ticket(4, { blockedBy: ['1'] }),
+      ticket(5, { blockedBy: ['2', '3', '4'] }),
+      ticket(6, { blockedBy: ['5'] }),
+    ];
+    const l = layout(tickets, 'LR');
+    const y = (id: string) => l.nodes.find((n) => n.ticket.id === id)!.y;
+    const lane = LAYOUT_SPACING.LR.lane;
+    expect([y('3'), y('2'), y('4')].sort((a, b) => a - b)).toEqual([0, lane, 2 * lane]);
+    expect([y('1'), y('5'), y('6')]).toEqual([lane, lane, lane]);
+    expect(l.graphH).toBe(2 * lane + NODE_H);
+  });
+
+  it('keeps a chain on its line when its neighbours have to move', () => {
+    // 1 opens 3 and 4; 2 opens only 5, which opens only 6: 2, 5 and 6 stay on one line.
+    const tickets = [
+      ticket(1),
+      ticket(2),
+      ticket(3, { blockedBy: ['1'] }),
+      ticket(4, { blockedBy: ['1'] }),
+      ticket(5, { blockedBy: ['2'] }),
+      ticket(6, { blockedBy: ['5'] }),
+    ];
+    const l = layout(tickets, 'LR');
+    const y = (id: string) => l.nodes.find((n) => n.ticket.id === id)!.y;
+    expect(y('5')).toBe(y('2'));
+    expect(y('6')).toBe(y('2'));
+    const ys = l.nodes.map((n) => `${n.x},${n.y}`);
+    expect(new Set(ys).size).toBe(ys.length);
+  });
+
+  it('never puts two cards on top of each other, and starts the map at 0', () => {
+    let seed = 7;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let round = 0; round < 60; round++) {
+      const count = 3 + Math.floor(random() * 18);
+      const tickets = range(1, count).map((n) => {
+        if (n > 2 && random() < 0.15)
+          return ticket(n, { type: 'review', reviewOf: String(1 + Math.floor(random() * (n - 1))) });
+        const blockedBy = range(1, n - 1)
+          .filter(() => random() < 2 / n)
+          .map(String);
+        return ticket(n, { blockedBy });
+      });
+      for (const direction of ['LR', 'TB'] as const) {
+        const l = layout(tickets, direction);
+        const s = LAYOUT_SPACING[direction];
+        const along = (n: (typeof l.nodes)[number]) => (direction === 'LR' ? n.x : n.y);
+        const across = (n: (typeof l.nodes)[number]) => (direction === 'LR' ? n.y : n.x);
+        for (const a of l.nodes)
+          for (const b of l.nodes)
+            if (a !== b && along(a) === along(b))
+              expect(Math.abs(across(a) - across(b))).toBeGreaterThanOrEqual(s.lane);
+        expect(Math.min(...l.nodes.map(across))).toBe(0);
+        expect(Math.max(...l.nodes.map(across)) + s.across).toBe(direction === 'LR' ? l.graphH : l.width);
+      }
+    }
+  });
+
   it('moves later layers past a wrapped one', () => {
     const tickets = [
       ticket(1),

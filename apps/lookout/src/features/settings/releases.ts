@@ -22,12 +22,21 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.62.0',
+    version: '0.63.0',
     date: '2026-11-18',
     items: [
       'Tickets read as their agents wrote them: lists, bold, code and links, in the bubble and the full ticket',
       'Every ticket has the same shape: its title and chips (state, agent and model, verified, risk), then What, Acceptance criteria, How, Progress, Proof and History, and its actions at the end',
       'Merge anyway shows only on done work with something to merge, never on a research ticket',
+    ],
+  },
+  {
+    version: '0.62.0',
+    date: '2026-11-18',
+    items: [
+      'Map, Plan, Activity and Logbook sit in a bar of their own under the header',
+      'The map runs a chain of tickets in a straight line, from main to the destination, with a review beside the ticket it reviews',
+      'Legend has a background, like Fit',
     ],
   },
   {
@@ -175,11 +184,6 @@ export const RELEASES: Release[] = [
       "Your trail's agents are one header menu: what they're doing, with Pause and Runs inside",
       'Legend sits next to Summary under the map, no longer behind it',
     ],
-  },
-  {
-    version: '0.52.2',
-    date: '2026-11-16',
-    items: ['Teamtrail Cloud: Scout and Get started show in the corner of the Lookout again'],
   },
   ...LATER_RELEASES,
   ...MID_RELEASES,

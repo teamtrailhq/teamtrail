@@ -175,7 +175,7 @@ export async function verifyRemote({ browser, cli, log, shots }) {
     await page.keyboard.press('Escape');
     await page.locator('.settings-page').waitFor({ state: 'detached' });
     // the agents are on the Activity page
-    const views = page.locator('.view-tabs');
+    const views = page.locator('.view-bar');
     await views.getByRole('button', { name: 'Activity', exact: true }).click();
     await page
       .locator('.sessions-list li:not(.claim)', { hasText: taken.claimed.assignee })

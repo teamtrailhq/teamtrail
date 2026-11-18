@@ -3,6 +3,11 @@ import type { Release } from './releases';
 /** Releases 0.44–0.52, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
 export const LATER_RELEASES: Release[] = [
   {
+    version: '0.52.2',
+    date: '2026-11-16',
+    items: ['Teamtrail Cloud: Scout and Get started show in the corner of the Lookout again'],
+  },
+  {
     version: '0.52.1',
     date: '2026-11-16',
     items: ['Start the trail is a full-size button, like Create trail, and closes New trail once your agents are on'],
