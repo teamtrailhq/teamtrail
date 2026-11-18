@@ -65,7 +65,7 @@ export interface RuleWaiverEntry {
   ticketId: string;
   ticketKey: string;
   rule: string;
-  /** `undone`: the trail lead's Undo, so the rule asks again; absent (journals before 0.61.1) or `waived`: Go without. */
+  /** `undone`: the trail lead's Undo, so the rule asks again; absent (journals before 0.61.2) or `waived`: Go without. */
   action?: 'waived' | 'undone';
   /** Why it went without; for an undo, the reason it had. */
   reason: string;

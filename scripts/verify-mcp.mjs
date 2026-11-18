@@ -696,6 +696,30 @@ const chatOk =
   /guide agents but can't approve this; answer in the Lookout or Slack/.test(chatRefused);
 log(`answers: Lookout ones back decisions, a chat one guides only: ${chatOk ? 'ok' : `FAILED (${chatRefused})`}`);
 
+// Many tickets side by side: the map wraps them into a grid, in order of number, not one tall column.
+await call('start_trail', {
+  title: 'Polish the docs',
+  destination: 'Every docs page reads well',
+  tickets: Array.from({ length: 12 }, (_, i) => ({
+    ref: `p${i + 1}`,
+    title: `Polish docs page ${i + 1}`,
+    type: 'task',
+  })),
+});
+await view('Map');
+await page.locator('.trail-btn').click();
+await page.getByRole('menuitem').filter({ hasText: 'Polish the docs' }).first().click();
+await page.locator('.node', { hasText: 'Polish docs page 12' }).waitFor({ timeout: 15_000 });
+const cardSpots = await page
+  .locator('.graph .node')
+  .evaluateAll((els) =>
+    els.map((el) => /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(el.style.transform)).filter(Boolean),
+  );
+const gridColumns = new Set(cardSpots.map((m) => m[1])).size;
+const gridOk = cardSpots.length >= 12 && gridColumns > 1 && gridColumns < cardSpots.length;
+await shot('16-wide-layer-grid');
+log(`a wide layer: ${cardSpots.length} cards in ${gridColumns} columns ${gridOk ? 'ok' : 'WRONG (one column)'}`);
+
 await client.close();
 await view('Activity');
 await page.locator('.sessions-list, .activity-page .empty').first().waitFor({ timeout: 15_000 });
@@ -767,7 +791,8 @@ if (
   !flakyOk ||
   !rulesOk ||
   !checkGuardOk ||
-  !slackOk
+  !slackOk ||
+  !gridOk
 )
   process.exit(1);
 console.log('\nOK');
