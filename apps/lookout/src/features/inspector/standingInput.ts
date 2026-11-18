@@ -49,7 +49,6 @@ export function standingInput(v: LoadedTicket): StandingInput {
     sentBack: sentBack(v.verification),
     reviewWaits: reviewWaits(v.verification),
     verified: v.proof && workToProve(v.t, v.proof.proof) ? v.proof.proof.status === 'verified' : undefined,
-    pr: v.pr?.pr && { number: v.pr.pr.number, state: v.pr.pr.state },
     openBlockers: t.blockedBy.filter((b) => byId.get(b)?.state === 'open').map((b) => byId.get(b)?.key ?? b),
     closedAt: t.closedAt,
   };

@@ -10,9 +10,10 @@ import {
   type Ticket,
   type TicketType,
 } from '@teamtrail/core';
-import { levelFor, listGuides, recordCharted, recordTypes } from '@teamtrail/core/agents';
+import { discoverySkipped, levelFor, listGuides, recordCharted, recordTypes } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaView, saveCriteria, type CriterionInput } from './criteria';
+import { criteriaGate, criteriaReason } from './criteriaGate';
 import { briefView, claimable } from './discovery';
 import { assertGuide, outsideGuides } from './guides';
 import { knowledgeFor } from './knowledge';
@@ -40,7 +41,9 @@ export async function nextTicket(
   const review = await reviewGate(ctx, snap);
   const main = await mainGate(ctx, snap);
   const models = await sameModelReviews(ctx, snap);
+  const criteria = criteriaGate(ctx.root, snap);
   const exclude = [
+    ...criteria.map((c) => c.id),
     ...(await ownReviews(ctx, snap, await ctx.agentId())),
     ...models.filter((r) => r.waits).map((r) => r.ticket.id),
     ...frozenOn(ctx, snap.map.id).keys(),
@@ -58,22 +61,34 @@ export async function nextTicket(
       knowledge: knowledgeFor(ctx.root, snap, t),
       ...extra,
     };
-  return { ticket: null, reason: whyNothing(ctx, snap, { held, review, main, gate, models }), ...extra };
+  return { ticket: null, reason: whyNothing(ctx, snap, { held, review, main, gate, models, criteria }), ...extra };
 }
 
 /** Why nothing was offered: the review limit holds the ready work, model matching does, or what's in the way. */
 function whyNothing(
   ctx: AgentContext,
   snap: MapSnapshot,
-  w: { held: Ticket[]; review: ReviewGate; main: MainGate; gate?: TicketType[]; models: SameModelReview[] },
+  w: {
+    held: Ticket[];
+    review: ReviewGate;
+    main: MainGate;
+    gate?: TicketType[];
+    models: SameModelReview[];
+    criteria: Ticket[];
+  },
 ): string {
   if (w.review.reason && w.review.held.length) return w.review.reason;
   if (w.main.reason && w.main.held.length) return w.main.reason;
   if (w.held.length) return heldReason(ctx, snap, w.held);
+  if (w.criteria.length) return criteriaReason(w.criteria);
   const waiting = w.models.find((r) => r.waits);
   if (waiting)
     return `${waitsReason(waiting)}, the model you run, so it isn't yours to review. No other ticket is ready.`;
-  return noTicketReason(snap, { gate: w.gate, next: w.gate ? briefView(ctx.root, snap)?.next : undefined });
+  return noTicketReason(snap, {
+    gate: w.gate,
+    next: w.gate ? briefView(ctx.root, snap)?.next : undefined,
+    skipped: discoverySkipped(ctx.root, snap.map.id),
+  });
 }
 
 export async function releaseTicket(ctx: AgentContext, input: { ticket?: string; trail?: string; reason?: string }) {

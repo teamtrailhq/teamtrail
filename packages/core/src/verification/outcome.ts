@@ -35,14 +35,14 @@ export function outcomeOf(a: VerificationAttempt, failures: number, maxAttempts:
   const held = heldPass(a);
   if (held.length) return { event: 'checks.pass', to: 'blocked', reason: `${a.id} passed, but ${held.join('; and ')}` };
   if (a.result === 'pass') {
-    const signOff = a.criteria?.manual ?? [];
+    const waits = waitsForHuman(a);
     const known = a.knownFailures?.length
       ? ` (${a.knownFailures.map((k) => k.name).join(', ')} already failing on main)`
       : '';
     return {
       event: 'checks.pass',
-      to: a.level === 'checks' && !signOff.length ? 'done' : 'verifying',
-      reason: `${a.id} passed: ${ran}${known}${signOff.length ? `; ${signOff.join(', ')} need your sign-off` : ''}`,
+      to: a.level === 'checks' && !waits.length ? 'done' : 'verifying',
+      reason: `${a.id} passed: ${ran}${known}${waits.map((w) => `; ${w}`).join('')}`,
     };
   }
   if (a.result === 'fail') {
@@ -59,6 +59,18 @@ export function outcomeOf(a: VerificationAttempt, failures: number, maxAttempts:
     };
   }
   return { event: 'checks.error', to: 'blocked', reason: `${a.id} could not verify: ${a.note ?? ran}` };
+}
+
+/**
+ * What a pass still waits on the trail lead for, one clause each: criteria only they sign off, and criteria nobody
+ * confirmed (done means verified, so it doesn't close on them: they confirm, and it is checked again by itself).
+ */
+export function waitsForHuman(a: Pick<VerificationAttempt, 'criteria'>): string[] {
+  const signOff = a.criteria?.manual ?? [];
+  return [
+    ...(signOff.length ? [`${signOff.join(', ')} need your sign-off`] : []),
+    ...(a.criteria?.confirmed === false ? ['its criteria wait for your confirmation'] : []),
+  ];
 }
 
 /**

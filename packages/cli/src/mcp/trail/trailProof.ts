@@ -1,6 +1,6 @@
-import { repoRootOf } from '@teamtrail/core/agents';
 import { signedTrailProofMarkdown, trailProofFor } from '@teamtrail/core/node';
 import type { AgentContext } from './agentContext';
+import { trailEnv } from './trailEnv';
 
 /**
  * `proof_report` with `wholeTrail`: the trail's proof, each done ticket's proof and the approved checks run on the
@@ -10,9 +10,7 @@ import type { AgentContext } from './agentContext';
 export async function trailProofReport(ctx: AgentContext, input: { trail?: string }) {
   const running = ctx.sessions.running()?.info;
   const snap = await ctx.resolveTrail(input.trail ?? (running?.mapId || undefined));
-  const runner = ctx.opts.checkRunner;
-  const env = { root: ctx.root, repoRoot: repoRootOf(ctx.verifyEnv()), ...(runner ? { checkRunner: runner } : {}) };
-  const proof = await trailProofFor({ env, snap, decisions: await ctx.decisions(snap.map.id) });
+  const proof = await trailProofFor({ env: trailEnv(ctx), snap, decisions: await ctx.decisions(snap.map.id) });
   const signed = signedTrailProofMarkdown(ctx.root, proof);
   return {
     trail: snap.map.title,

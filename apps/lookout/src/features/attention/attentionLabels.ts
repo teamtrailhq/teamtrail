@@ -27,6 +27,7 @@ export const KIND_LABEL: Record<AttentionKind, string> = {
   'trail-checks': 'Together',
   merge: 'Merge',
   escape: 'Came back',
+  criteria: 'Criteria',
 };
 
 /** What a batch of one kind is called: "3 questions from Reminders, answer together". */
@@ -56,6 +57,7 @@ export const KIND_PLURAL: Record<AttentionKind, string> = {
   'trail-checks': 'trails failing on main together',
   merge: 'pull requests ready to merge',
   escape: 'verified work that came back',
+  criteria: 'criteria to confirm',
 };
 
 /** Snooze choices, in minutes. */

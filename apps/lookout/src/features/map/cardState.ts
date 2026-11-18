@@ -9,7 +9,8 @@ import { statePart } from './statePart';
 /**
  * A card's meta row, laid out: its state in words (statePart) and the chips. The agent's model goes on the agent's
  * chip when the row has room for it without squeezing; else the agent's name alone. The type steps aside when the
- * state already says enough (waiting for an agent, what it waits on).
+ * state already says enough (waiting for an agent, what it waits on). The pull request (`PR #12 merged`, else
+ * `PR merged`) gets a chip only when the row has room for it without squeezing.
  */
 export function cardState(input: {
   n: LaidOutNode;
@@ -23,6 +24,8 @@ export function cardState(input: {
   verified?: boolean;
   guide?: string;
   needsYou: boolean;
+  /** The ticket's pull request, e.g. `PR #12 merged`. */
+  pr?: string;
   /** Room kept on the right for a reroute tag or the ❄. */
   reserve: number;
 }): { chips: CardChip[]; tone?: string } {
@@ -50,7 +53,7 @@ export function cardState(input: {
           waitsOn,
           verified: input.verified,
         });
-  const lay = (model?: string) => {
+  const lay = (model?: string, pr?: string) => {
     let scale = 1;
     const state = part(model);
     const chips = layoutChips({
@@ -59,13 +62,20 @@ export function cardState(input: {
       guide: input.guide,
       state: state?.text,
       needsYou: input.needsYou && !need,
+      pr,
       reserve: input.reserve,
       onScale: (s) => (scale = s),
     });
     return { chips, tone: state?.tone, scale };
   };
   const model = shortModel(live?.session?.model);
-  const withModel = model ? lay(model) : undefined;
-  if (withModel && withModel.scale >= 1) return withModel;
+  // richest first: the model and the pull request, then either (the PR without its number when that fits), then
+  // neither (squeezed if it must be)
+  const short = input.pr?.replace(/ #\d+/, '');
+  const options = [...(model ? [{ model, pr: input.pr }, { model }] : []), { pr: input.pr }, { pr: short }];
+  for (const o of options) {
+    const laid = lay(o.model, o.pr);
+    if (laid.scale >= 1) return laid;
+  }
   return lay();
 }

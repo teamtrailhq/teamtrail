@@ -94,7 +94,7 @@ describe('verified completion over MCP', () => {
     const claimed = await call<{ claimed: Record<string, unknown> }>('claim_ticket', { ticket: m.tickets[1].key });
     expect(claimed.claimed.verification).toBeUndefined();
     const r = await call<Done>('close_ticket', { resolution: 'Built it' });
-    expect(Object.keys(r).sort()).toEqual(['closed', 'decision', 'next', 'outcome', 'trailDone', 'unblocked']);
+    expect(Object.keys(r).sort()).toEqual(['closed', 'decision', 'next', 'outcome', 'trail', 'trailDone', 'unblocked']);
     expect(r.closed).toBe(m.tickets[1].key);
   });
 

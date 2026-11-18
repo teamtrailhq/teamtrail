@@ -2,6 +2,7 @@ import type { AttentionItem, AttentionView, MapSnapshot, SessionInfo, Ticket } f
 import { useState } from 'react';
 import type { LookoutApi } from '../../hooks';
 import { HeldRules } from '../diff-rules';
+import { PullRequestBlock } from '../pr-sync';
 import { TicketProof } from '../proof';
 import { CriteriaSection } from './CriteriaSection';
 import { HistorySection } from './HistorySection';
@@ -53,12 +54,13 @@ export function TicketPanel(props: {
     <div className="detail ticket-panel">
       <TicketHead v={v} />
       <StandingLine v={v} />
+      <PullRequestBlock sync={v.pr} proofHead={v.proof?.proof.git?.head} />
       <WhatSection v={v} />
       <CriteriaSection v={v} />
       <HowSection v={v} editing={editing} setEditing={setEditing} act={bar.act} />
       <ProgressSection v={v} onUndoWaiver={bar.undoWaiver} />
       <HeldRules mapId={snap.map.id} ticketId={t.id} />
-      <TicketProof ticket={t} view={v.proof} />
+      <TicketProof ticket={t} view={v.proof} actions={bar.gapActions} />
       <HistorySection t={t} decisions={v.decisions} onOpenDecision={props.onOpenDecision} />
       <TicketFooter
         v={v}

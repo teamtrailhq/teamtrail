@@ -20,7 +20,7 @@ const SETTINGS = new Map([
   ['/verification/scope', putScope],
   ['/verification/gates', handleGates],
 ]);
-const ACTIONS = new Set<OperatorAction>(['rerun', 'approve', 'accept', 'rework', 'unblock', 'level']);
+const ACTIONS = new Set<OperatorAction>(['rerun', 'approve', 'accept', 'rework', 'unblock', 'level', 'verify-again']);
 const str = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
 
 function request(b: Record<string, unknown>): OperatorRequest {

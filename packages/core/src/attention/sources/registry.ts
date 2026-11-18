@@ -2,6 +2,7 @@ import type { AttentionSource } from '../types';
 import { approvalSource } from './approvalSource';
 import { blockedSource } from './blockedSource';
 import { briefSource } from './briefSource';
+import { criteriaSource } from './criteriaSource';
 import { deliverySource } from './deliverySource';
 import { escapeSource } from './escapeSource';
 import { flagSource } from './flagSource';
@@ -55,4 +56,5 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   trailChecksSource,
   mergeSource,
   escapeSource,
+  criteriaSource,
 ];

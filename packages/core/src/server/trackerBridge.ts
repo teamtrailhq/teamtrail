@@ -142,7 +142,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleReroutes(ctx, req, res, url),
     (req, res, url) => handleKnowledge(abs, req, res, url),
     (req, res, url) => handleCriteriaProposals(abs, req, res, url),
-    (req, res, url) => handleCriteria(abs, req, res, url),
+    (req, res, url) => handleCriteria(ctx, req, res, url),
     (req, res, url) => handlePolicy(ctx, req, res, url),
     (req, res, url) =>
       handleAttention({ ...ctx, configDir: trackers.configDir, served: attention.served }, req, res, url),

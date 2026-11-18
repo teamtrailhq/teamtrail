@@ -1,3 +1,4 @@
+import type { GapStanding } from '@teamtrail/core';
 import { Button } from '../../components/ui';
 import { MergedNote } from './MergedNote';
 import { ProofGapsLine } from './ProofGapsLine';
@@ -8,7 +9,13 @@ import { useMergeRequest } from './useMergeRequest';
  * lead's decision, accepting exactly the gaps shown (the engine's `POST /proof/merge-anyway`), then asks the server to
  * merge at the commit the proof covers; the server checks it all again.
  */
-export function MergeAnyway(props: { path: string; mapId: string; ticketId: string; gaps: string[] }) {
+export function MergeAnyway(props: {
+  path: string;
+  mapId: string;
+  ticketId: string;
+  gaps: string[];
+  plan?: GapStanding[];
+}) {
   const m = useMergeRequest(props);
   const { state } = m;
   if (state.kind === 'merged') return <MergedNote url={state.url} anyway />;
@@ -24,7 +31,7 @@ export function MergeAnyway(props: { path: string; mapId: string; ticketId: stri
         <Button size="sm" variant="ghost" onClick={m.cancel}>
           Cancel
         </Button>
-        <ProofGapsLine gaps={props.gaps} />
+        <ProofGapsLine gaps={props.gaps} plan={props.plan} />
       </div>
     );
   return (
@@ -33,7 +40,7 @@ export function MergeAnyway(props: { path: string; mapId: string; ticketId: stri
         {state.kind === 'working' ? 'Merging…' : 'Merge anyway'}
       </Button>
       {state.kind === 'error' && <span className="t-meta">{state.text}</span>}
-      <ProofGapsLine gaps={props.gaps} />
+      <ProofGapsLine gaps={props.gaps} plan={props.plan} />
     </div>
   );
 }

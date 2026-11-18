@@ -11,6 +11,7 @@ import { MAIN_H, MAIN_W, mainSpot } from './mainSpot';
 import { MapDestination } from './MapDestination';
 import { openingView } from './openingView';
 import { OutOfScopeStrip } from './OutOfScopeStrip';
+import { prChip } from './prChip';
 import { TerrainLayer } from './TerrainLayer';
 import type { AnchorOf, MapGraphProps } from './types';
 import { useCardHolds } from './useCardHolds';
@@ -148,6 +149,7 @@ export function MapGraph(props: MapGraphProps) {
                     now={now}
                     stalled={!!lease && leaseHealth(lease, now) !== 'live'}
                     flag={worstFlag(prSync.ticket(sync, snap.map.id, n.ticket.id))}
+                    pr={prChip(prSync.ticket(sync, snap.map.id, n.ticket.id))}
                     selected={selId === n.ticket.id}
                     onSelect={onSelect}
                     mark={preview?.marks.get(n.ticket.id)}

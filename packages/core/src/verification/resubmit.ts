@@ -15,6 +15,7 @@ export const submissionOf = (a: VerificationAttempt): Submission => ({
   alternatives: a.alternatives,
   noCodeReason: a.noCodeReason,
   pr: a.pr,
+  supersedes: a.supersedes,
   // A remote attempt stays remote: its checks run again on the runner, or nowhere, never on this checkout.
   ...(a.remote ? { remote: true } : {}),
   criteria: a.criteria?.evidence,

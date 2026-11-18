@@ -35,7 +35,8 @@ export type AttentionKind =
   | 'main-checks'
   | 'trail-checks'
   | 'merge'
-  | 'escape';
+  | 'escape'
+  | 'criteria';
 
 /** `blocking`: the agent can do no useful work until answered. `soon`: the default. `fyi`: whenever convenient. */
 export type AttentionUrgency = 'blocking' | 'soon' | 'fyi';

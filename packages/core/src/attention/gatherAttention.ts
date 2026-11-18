@@ -4,6 +4,7 @@ import { reportsSettings } from '../adapters/remote/settingsLedger';
 import { readAgentDocs } from '../agents/agentDocs';
 import { connectedAgents } from '../agents/connectedAgents';
 import { readLeases } from '../agents/leaseStore';
+import { criteriaHeld } from '../criteria/criteriaHeld';
 import { readDeliveryProblems } from '../delivery/deliveryStore';
 import { readBrief } from '../discovery/briefStore';
 import { readTicketSyncs } from '../evidence/syncStore';
@@ -57,6 +58,7 @@ export async function gatherAttention(input: {
     leases: readLeases(root),
     knowledge: listKnowledge(root),
     briefs,
+    criteria: snaps.flatMap((s) => criteriaHeld(root, s)),
     ...(await rerouteInputs({ root, adapter, snaps, syncs })),
     violations: await readViolations({ root, adapter, snaps, docs }),
     precedentConflicts: await readPrecedentConflicts({ root, adapter, snaps }),

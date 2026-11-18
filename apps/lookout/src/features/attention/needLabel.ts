@@ -18,6 +18,7 @@ const CARD_TEXT: Partial<Record<AttentionKind, string>> = {
   'tracker-settings': 'settings changed',
   'review-limit': 'review waits',
   escape: 'came back',
+  criteria: 'confirm criteria',
 };
 
 /** What a chip says the human does, after the key: "#6 Decide", "#12 Approve". */
@@ -43,6 +44,7 @@ const CHIP_VERB: Partial<Record<AttentionKind, string>> = {
   'tracker-settings': 'Settings changed',
   'review-limit': 'Review waits',
   escape: 'Came back',
+  criteria: 'Confirm criteria',
 };
 
 /** The words on a card that needs you: by the most urgent item on it. */

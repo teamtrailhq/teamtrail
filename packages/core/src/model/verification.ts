@@ -121,6 +121,11 @@ export interface VerificationAttempt {
   touches?: string[];
   /** The guides the ticket took on at completion. Missing on attempts from before guides came by type. */
   guides?: AttemptGuide[];
+  /**
+   * A done ticket's completion checked again (verification/verifyAgain.ts): the decision of its earlier close, which
+   * the close this attempt leads to replaces.
+   */
+  supersedes?: string;
   checks: CheckResult[];
   /** Checks the trail lead accepted the ticket without: not run for this attempt (verification/waivedChecks.ts). */
   waived?: WaivedCheck[];

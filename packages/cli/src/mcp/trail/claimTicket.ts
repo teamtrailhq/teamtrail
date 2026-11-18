@@ -14,6 +14,7 @@ import { baselineForClaim, levelFor, recordTypes, repoRootOf } from '@teamtrail/
 import type { AgentContext } from './agentContext';
 import { checkWarnings } from './checkWarnings';
 import { criteriaView } from './criteria';
+import { assertCriteriaConfirmed, criteriaGate } from './criteriaGate';
 import { rulesAtClaim } from './diffRules';
 import { assertClaimable, briefView, claimable } from './discovery';
 import { givenGuides } from './guideChanges';
@@ -119,7 +120,9 @@ async function pickTarget(
   const frozen = frozenOn(ctx, snap.map.id);
   const review = await reviewGate(ctx, snap);
   const models = await sameModelReviews(ctx, snap);
+  const criteria = criteriaGate(ctx.root, snap);
   const exclude = [
+    ...criteria.map((t) => t.id),
     ...(await ownReviews(ctx, snap, agent)),
     ...models.filter((r) => r.waits).map((r) => r.ticket.id),
     ...frozen.keys(),
@@ -146,6 +149,7 @@ async function pickTarget(
   assertMainChecks(at.main, target, agent);
   if (target.assignee !== agent) assertInGuides(snap, target, at.guides);
   if (target.assignee !== agent) assertClaimable(ctx.root, snap.map.id, target);
+  if (target.assignee !== agent) assertCriteriaConfirmed(criteria, target);
   return target;
 }
 
