@@ -1,7 +1,7 @@
-import type { AttentionItem, AttentionKind, MapSnapshot, PendingQuestion } from '@teamtrail/core';
+import type { AttentionItem, AttentionKind, MapSnapshot, PendingQuestion, Ticket } from '@teamtrail/core';
 import type { MetaPart } from '../../components/ui';
 import { ago } from '../../lib';
-import { KIND_LABEL } from '../attention';
+import { detailReasons, KIND_LABEL } from '../attention';
 import type { NeedText } from './types';
 
 /** The one thing each kind asks, on the row's button; "Review" for the rest. */
@@ -46,4 +46,13 @@ export function needMeta(input: { item: AttentionItem; snap?: MapSnapshot; curre
 export function needsShown(items: AttentionItem[]): AttentionItem[] {
   const planned = new Set(items.filter((i) => i.kind === 'brief').map((i) => i.mapId));
   return items.filter((i) => i.kind !== 'criteria' || !planned.has(i.mapId));
+}
+
+/**
+ * Why an open ticket row ranks here, under its title: the ticket only when the title doesn't already name it (say it
+ * once), then the item's reasons.
+ */
+export function needWhy(item: AttentionItem, t: Pick<Ticket, 'key' | 'title'>): MetaPart[] {
+  const named = item.title.includes(t.key);
+  return [...(named ? [] : [`${t.key} ${t.title}`]), ...detailReasons(item)];
 }

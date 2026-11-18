@@ -2,7 +2,7 @@ import { CRITERION_KINDS, type CriterionKind } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
 import { text } from '../lineSafety';
-import { type DefineTool, guideId, guidesFilter, trail, ticket, ticketType } from '../toolKit';
+import { type DefineTool, guideId, guidesFilter, trail, ticket, ticketType, waitControl } from '../toolKit';
 
 /** Ticket tools: pick, claim, release and add tickets. */
 const criteriaInput = z.array(
@@ -20,11 +20,26 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Next ready ticket',
       description:
-        'The oldest open, unblocked, unclaimed ticket, with its body, blockers and the decisions they produced. Does not claim it.',
+        'The oldest open, unblocked, unclaimed ticket, with its body, blockers and the decisions they produced. Does not claim it. With wait=true and nothing claimable, it waits (up to waitSeconds, default 120, max 600) until something on the trail becomes claimable for you (criteria confirmed, a brief or plan accepted, a ticket unblocked or released, a reroute decided, the review limit freed, checks on main settled) and returns it, with `waited` saying what woke it; on timeout it returns what next_ticket says now. It never claims or holds anything while waiting.',
       readOnly: true,
     },
-    { trail, types: z.array(ticketType).optional(), guides: guidesFilter },
-    (a) => agent.nextTicket(a),
+    {
+      trail,
+      types: z.array(ticketType).optional(),
+      guides: guidesFilter,
+      wait: z
+        .boolean()
+        .optional()
+        .describe('When nothing is claimable now, wait until something is, instead of returning at once.'),
+      waitSeconds: z
+        .number()
+        .int()
+        .min(0)
+        .max(600)
+        .optional()
+        .describe('With wait: how long to wait at most (default 120; 50 for Codex).'),
+    },
+    (a, extra) => agent.nextTicket(a, waitControl(extra, 'Waiting for work to become claimable')),
   );
 
   tool(
