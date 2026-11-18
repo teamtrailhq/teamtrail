@@ -1,4 +1,5 @@
 import { Empty } from '../../components/ui';
+import { RulesSection } from '../diff-rules';
 import { TrailGuidesSection } from '../guides';
 import { ModeChoice } from '../trail';
 import { ModelMatchingSection } from './ModelMatchingSection';
@@ -23,6 +24,9 @@ export function TrailGroup({ data }: { data: SettingsData }) {
       )}
       <SettingsSlot id="verification" storage="repo">
         <VerificationSection map={map} />
+      </SettingsSlot>
+      <SettingsSlot id="rules" storage="repo">
+        <RulesSection />
       </SettingsSlot>
       <SettingsSlot id="models">
         <ModelMatchingSection map={map} snaps={data.snaps} answered={data.answered} onChange={data.onModelMatching} />

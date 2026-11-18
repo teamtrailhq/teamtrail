@@ -8,6 +8,7 @@ export type SettingsGroupId = 'trail' | 'project' | 'alerts' | 'you' | 'projects
 export type SettingsSectionId =
   | 'mode'
   | 'verification'
+  | 'rules'
   | 'models'
   | 'trail-guides'
   | 'approvals'

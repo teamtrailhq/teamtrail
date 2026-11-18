@@ -2,6 +2,7 @@ import { DEFAULT_GATES, GATE_MODES, GATE_NAMES, type GateName } from '../model/g
 import { VERIFICATION_LEVELS } from '../model/lifecycle';
 import { TICKET_TYPES, type TicketType } from '../model/types';
 import type { CheckSpec, VerificationConfig } from '../model/verification';
+import { parseRules } from './parseRules';
 
 export const DEFAULT_CHECK_TIMEOUT_SEC = 600;
 
@@ -19,6 +20,7 @@ export const DEFAULT_CONFIG: VerificationConfig = {
   scope: 'flag',
   stale: 'reverify',
   gates: { ...DEFAULT_GATES },
+  rules: [],
   github: { enabled: 'auto', requiredChecks: [], pollSec: 60 },
 };
 
@@ -107,6 +109,7 @@ export function parseVerificationConfig(text: string): { config?: VerificationCo
   take(raw.stale, oneOf('reverify', 'flag'), (v) => (c.stale = v), '"stale" must be reverify or flag');
   parseGithub(raw.github, c, errors);
   parseGates(raw.gates, c, errors);
+  if (raw.rules !== undefined) c.rules = parseRules(raw.rules, c.checks, errors);
   return errors.length ? { errors } : { config: c, errors };
 }
 

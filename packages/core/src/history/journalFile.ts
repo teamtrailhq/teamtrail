@@ -2,6 +2,7 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ensureLocalDir } from '../lib/ensureLocalDir';
 import type { WaiverEntry } from '../model/checkWaiver';
+import type { RuleWaiverEntry } from '../model/diffRule';
 import type { GateEntry } from '../model/gateMode';
 import type {
   GuideEntry,
@@ -29,7 +30,7 @@ import type { ProofPostEntry } from '../model/proofPost';
  * `readSlack` the Slack owner changes, `readSignIn` the Lookout's sign-ins, `readMainChecks` runs on main asked for
  * and the trail lead's choices about them, `readWaivers` the trail lead's waivers of failing checks, `readMergeAnyway`
  * their merges of tickets whose proof isn't verified, `readGates` the verification gates that held work back or
- * would have.
+ * would have, `readRuleWaivers` the diff rules the trail lead let a ticket go without.
  */
 const TRAIL_KINDS = new Set<string>(['transition', 'reroute']);
 type AnyEntry =
@@ -43,7 +44,8 @@ type AnyEntry =
   | MainChecksEntry
   | WaiverEntry
   | MergeAnywayEntry
-  | GateEntry;
+  | GateEntry
+  | RuleWaiverEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -65,6 +67,7 @@ export function journalFile(root: string): Journal & {
   readWaivers(mapId: string): WaiverEntry[];
   readMergeAnyway(mapId: string): MergeAnywayEntry[];
   readGates(mapId: string): GateEntry[];
+  readRuleWaivers(mapId: string): RuleWaiverEntry[];
 } {
   const raw = (mapId: string) => readEntries(root, mapId) as AnyEntry[];
   const readAll = (mapId: string) => raw(mapId).filter((e): e is JournalEntry => TRAIL_KINDS.has(e.kind));
@@ -86,6 +89,7 @@ export function journalFile(root: string): Journal & {
     readWaivers: (mapId) => raw(mapId).filter((e): e is WaiverEntry => e.kind === 'waiver'),
     readMergeAnyway: (mapId) => raw(mapId).filter((e): e is MergeAnywayEntry => e.kind === 'merge-anyway'),
     readGates: (mapId) => raw(mapId).filter((e): e is GateEntry => e.kind === 'gate'),
+    readRuleWaivers: (mapId) => raw(mapId).filter((e): e is RuleWaiverEntry => e.kind === 'rule-waiver'),
   };
 }
 
