@@ -27,6 +27,14 @@ export const RELEASES: Release[] = [
     items: ['Two trails with the same title no longer share a folder'],
   },
   {
+    version: '0.64.1',
+    date: '2026-11-18',
+    items: [
+      'Fix: what you open while the Lookout is still loading stays open; what needs you no longer opens over it on its own',
+      'Fix: changing a gate twice in quick succession no longer refuses the second change as stale',
+    ],
+  },
+  {
     version: '0.64.0',
     date: '2026-11-18',
     items: [
@@ -161,34 +169,6 @@ export const RELEASES: Release[] = [
       'Guides come with the ticket type: the architect on research, junctions and prototypes, QA and security on tasks, the reviewer on reviews. Change them per trail in Settings → Guides by type, your own guides included',
       'A ticket can take several guides: add or remove one for that ticket alone in the inspector',
       'A guide you add while an agent works reaches it at its next report, and its checklist counts at completion',
-    ],
-  },
-  {
-    version: '0.55.2',
-    date: '2026-11-16',
-    items: ['Teamtrail Cloud: the agents menu says which model your agents are working on'],
-  },
-  {
-    version: '0.55.1',
-    date: '2026-11-16',
-    items: ['Teamtrail Cloud: Get started ticks off your trail and your agents as soon as you start them'],
-  },
-  {
-    version: '0.55.0',
-    date: '2026-11-16',
-    items: [
-      'A finished trail looks finished: the stretches you walked turn solid green, and a flag stands where the X was',
-      'Destination reached, once per trail, with a way to the pull requests still waiting to be merged',
-      'Done but not verified stays honest: a grey flag, and how many tickets were closed without a verified proof',
-    ],
-  },
-  {
-    version: '0.54.0',
-    date: '2026-11-16',
-    items: [
-      'When discovery ends, the Lookout tells you research is done and opens the brief for your review',
-      'A brief waiting for your review counts in Waiting on you',
-      'Tickets held until you accept the brief show as waiting on it, on the map and in Up next, not as ready',
     ],
   },
   ...LATER_RELEASES,
