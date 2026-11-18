@@ -1,2 +1,2 @@
-export { PrFlagBadges } from './PrFlagBadges';
 export { PrSyncIndicator } from './PrSyncIndicator';
+export { PullRequestBlock } from './PullRequestBlock';

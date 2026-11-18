@@ -1,6 +1,7 @@
 import { leaseHealth } from '@teamtrail/core';
 import { cx } from '../../lib';
 import { CriteriaSection, StandingLine, TicketHead, WhatSection, type TicketView } from '../inspector';
+import { PullRequestBlock } from '../pr-sync';
 import { AgentLine } from './AgentLine';
 
 /**
@@ -23,6 +24,7 @@ export function BubbleTicketPart(props: {
       <TicketHead v={v} titled={!named} small={!!need} />
       <StandingLine v={v} className="bubble-state" asked={asks} shownItem={need?.item} />
       {v.session && <AgentLine session={v.session} />}
+      <PullRequestBlock sync={v.pr} proofHead={v.proof?.proof.git?.head} />
       <WhatSection v={v} />
       <CriteriaSection v={v} />
     </div>

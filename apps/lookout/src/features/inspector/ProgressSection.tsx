@@ -1,17 +1,15 @@
 import { DetailSection, Fact } from '../../components/ui';
 import { ChecklistSummary } from '../guides';
-import { PrFlagBadges } from '../pr-sync';
 import { AttemptsSummary, WaivedChecks } from '../verification';
 import { LeaseFacts } from './LeaseFacts';
 import type { TicketView } from './useTicketView';
 
 /**
- * What has happened on the ticket so far: the claim, the branch or finished workspace, the pull request, the
- * completions and the checklist answers. Only once there is some.
+ * What has happened on the ticket so far: the claim, the branch or finished workspace, the completions and the checklist answers. Only once there is some.
  */
 export function ProgressSection({ v, onUndoWaiver }: { v: TicketView; onUndoWaiver: () => void }) {
   const attempts = v.verification?.attempts.length ?? 0;
-  if (!v.lease && !v.workspace && !attempts && !v.pr) return null;
+  if (!v.lease && !v.workspace && !attempts) return null;
   const mapId = v.snap.map.id;
   return (
     <DetailSection label="Progress" className="ticket-progress">
@@ -23,11 +21,6 @@ export function ProgressSection({ v, onUndoWaiver }: { v: TicketView; onUndoWaiv
             <span className="t-meta ws-path" title={v.workspace.path}>
               {v.workspace.path}
             </span>
-          </Fact>
-        )}
-        {v.pr && (
-          <Fact label="Pull request">
-            <PrFlagBadges mapId={mapId} ticketId={v.t.id} />
           </Fact>
         )}
         {attempts > 0 && v.verification && (
