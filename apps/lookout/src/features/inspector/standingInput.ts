@@ -1,4 +1,11 @@
-import { attention, DISCOVERY_TYPES, leaseHealth, type VerificationVerdict } from '@teamtrail/core';
+import {
+  attention,
+  DISCOVERY_TYPES,
+  flakyReason,
+  heldAsFlaky,
+  leaseHealth,
+  type VerificationVerdict,
+} from '@teamtrail/core';
 import { checkOk, type TicketVerification } from '../../lib/verification';
 import { edgeFor } from '../attention';
 import type { LatestAttempt, LoadedTicket, StandingInput } from './types';
@@ -48,7 +55,9 @@ function briefHeld(v: LoadedTicket): StandingInput['briefHeld'] {
 }
 
 function latestOf(a: TicketVerification['attempts'][number]): LatestAttempt {
-  return { result: a.result, agent: a.agent, failed: a.checks.filter((c) => !checkOk(c)).map((c) => c.name) };
+  const failed = a.checks.filter((c) => !checkOk(c)).map((c) => c.name);
+  const retried = a.flaky && heldAsFlaky(a) ? flakyReason(a.flaky.checks) : undefined;
+  return { result: a.result, agent: a.agent, failed, ...(retried ? { retried } : {}) };
 }
 
 const SENT_BACK: Partial<Record<VerificationVerdict['verdict'], string>> = {

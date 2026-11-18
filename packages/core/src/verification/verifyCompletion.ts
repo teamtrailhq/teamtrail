@@ -2,6 +2,7 @@ import path from 'node:path';
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
+import { withFlakyGate } from '../flaky/flakyGate';
 import { listGuides } from '../guides/guideStore';
 import { checksOfGuides, resolveGuides } from '../guides/resolveGuides';
 import { droppedChecks, trailKnownFailures } from '../mainChecks/withKnownFailures';
@@ -148,7 +149,7 @@ export async function verify(env: VerifyEnv, asked: VerifyJob): Promise<{ attemp
     let attempt: VerificationAttempt;
     try {
       const graded = await grade(env, job, { id, config, waiting });
-      attempt = { ...base, id, finishedAt: Date.now(), ...graded };
+      attempt = withFlakyGate(env.root, { ...base, id, finishedAt: Date.now(), ...graded }, config.config);
       writeAttempt(env.root, attempt);
     } finally {
       releaseRunLock(env.root, mapId, t.id);

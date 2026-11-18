@@ -1,3 +1,4 @@
+import { heldAsFlaky } from '@teamtrail/core';
 import type { MenuItem } from '../../components/ui';
 import type { TicketRunners } from './types';
 import type { TicketView } from './useTicketView';
@@ -45,6 +46,9 @@ function checkActions(v: TicketView, run: TicketRunners): Item[] {
   // the queue's approval item says it was submitted before the ticket's own record has loaded
   const submitted = !!v.verification?.attempts.length || v.items.some((i) => i.kind === 'approval');
   const held = v.state === 'held';
+  // a pass only a retry got: another run proves nothing, so the choice is counting it or fixing the test
+  const retried = held && heldAsFlaky(v.verification?.attempts[0]);
+  if (retried) return flakyActions(run);
   return [
     v.state === 'verifying' &&
       submitted && {
@@ -75,6 +79,24 @@ function checkActions(v: TicketView, run: TicketRunners): Item[] {
       id: 'accept',
       label: 'Accept anyway…',
       tip: 'Close it as done despite the checks',
+      onSelect: () => run.form('accept'),
+    },
+  ];
+}
+
+/** A held pass the checks got only on retry: send it back to fix the flaky test, or count the pass. */
+function flakyActions(run: TicketRunners): Item[] {
+  return [
+    {
+      id: 'rework',
+      label: 'Send to rework…',
+      tip: 'The agent finds why the test is flaky and fixes it: no sleeps, retries or skipped tests',
+      onSelect: () => run.form('rework'),
+    },
+    {
+      id: 'accept',
+      label: 'Accept the pass…',
+      tip: 'Count the pass on retry and close it as done; the proof says it passed on retry',
       onSelect: () => run.form('accept'),
     },
   ];

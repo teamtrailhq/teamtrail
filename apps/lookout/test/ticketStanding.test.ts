@@ -93,6 +93,17 @@ describe('ticketStanding', () => {
     expect(read({ state: 'held', sentBack: 'the reviewer asked for you' }).primary).toBe('unblock');
   });
 
+  it('a pass only a retry got is held with what flipped, and sends it back to fix the test', () => {
+    const retried = 'test failed in A-1, then passed on abc1234 with no change';
+    const latest = { result: 'pass' as const, agent: 'a', failed: [], retried };
+    expect(read({ state: 'held', latest })).toEqual({
+      edge: 'attention',
+      title: 'Held: passed only on retry',
+      parts: [retried],
+      primary: 'rework',
+    });
+  });
+
   it('a ready ticket that needs a person offers Resolve', () => {
     expect(read({ hitl: true })).toMatchObject({ title: 'Ready: needs a person', primary: 'resolve' });
   });

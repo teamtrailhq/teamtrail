@@ -15,6 +15,7 @@ const PRIMARY_ID: Record<PrimaryKind, string> = {
   approve: 'approve',
   waive: 'waive',
   unblock: 'unblock',
+  rework: 'rework',
   release: 'release-lease',
   resolve: 'resolve',
   'review-brief': 'review-brief',

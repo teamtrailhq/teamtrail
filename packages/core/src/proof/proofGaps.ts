@@ -1,3 +1,5 @@
+import { flakyLine } from '../flaky/flakyReason';
+import { heldAsFlaky } from '../flaky/heldAsFlaky';
 import type { ProofReview } from '../model/proof';
 import type { VerificationAttempt } from '../model/verification';
 
@@ -10,6 +12,12 @@ function cannotProve(attempt: VerificationAttempt | undefined): string[] | undef
     return ['Submitted from another machine: no check ran here and no git was read.'];
   if (attempt.runner && !attempt.git?.tree?.head) return [`${attempt.runner} named no commit the checks ran on.`];
   return undefined;
+}
+
+/** A pass the flaky gate held counts once the trail lead accepted it; until then each retried check is a gap. */
+function retriedGaps(attempt: VerificationAttempt, reviews: ProofReview[]): string[] {
+  if (!heldAsFlaky(attempt) || reviews.some((r) => r.byKind === 'trail lead' && r.verdict === 'PASS')) return [];
+  return (attempt.flaky?.checks ?? []).map((f) => `${flakyLine(f)}; the trail lead hasn't accepted the pass.`);
 }
 
 /**
@@ -26,6 +34,7 @@ export function proofGaps({ attempt, reviews }: { attempt?: VerificationAttempt;
   const known = attempt.knownFailures?.map((k) => k.name) ?? [];
   if (known.length) gaps.push(`Known failures, already failing on main: ${known.join(', ')}.`);
   for (const w of attempt.waived ?? []) gaps.push(`${w.name} didn't run: ${w.by} accepted the work without it.`);
+  gaps.push(...retriedGaps(attempt, reviews));
   const c = attempt.criteria;
   if (c?.missing.length) gaps.push(`Criteria with no evidence: ${c.missing.join(', ')}.`);
   if (c?.failed.length) gaps.push(`Criteria whose check failed: ${c.failed.join(', ')}.`);

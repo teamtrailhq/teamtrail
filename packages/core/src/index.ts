@@ -21,6 +21,8 @@ export { DEFAULT_CHECK_TIMEOUT_SEC, DEFAULT_CONFIG, parseVerificationConfig } fr
 export { DEFAULT_GATES, GATE_MODES, GATE_NAMES } from './model/gateMode';
 export type { GateEntry, GateMode, GateModes, GateName } from './model/gateMode';
 export { gateModeFor } from './verification/gateModeFor';
+export type * from './model/flaky';
+export * from './flaky';
 export type { ApprovalItem } from './verification/approvals';
 export { verificationFor, type LevelInfo } from './verification/policy';
 export { prSyncView, type PrSyncView } from './evidence/prSyncView';
@@ -170,15 +172,7 @@ export { checksOfGuides, resolveGuides, resolvedId, type ResolvedTicketGuide } f
 export { guidesPayload, GUIDES_PAYLOAD_BYTES, type GuidesPayload } from './guides/guidesPayload';
 export { parseCatalogIndex, searchCatalog } from './guides/catalogIndex';
 export { guideProblem } from './guides/guideProblem';
-export type {
-  Proof,
-  ProofCheck,
-  ProofDecision,
-  ProofReview,
-  ProofSignature,
-  ProofStatus,
-  ProofWaived,
-} from './model/proof';
+export type * from './model/proof';
 export type * from './model/checkWaiver';
 export type * from './model/mergeAnyway';
 export type { ProofPostRecord } from './model/proofPost';

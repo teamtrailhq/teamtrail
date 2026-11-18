@@ -43,6 +43,21 @@ export interface ProofWaived {
   reason: string;
 }
 
+/**
+ * A check that passed only on retry: it had failed on the same code in an earlier attempt (the `flaky` gate). Held
+ * work counts only once the trail lead accepted the pass (`accepted`); observed work went through, flagged.
+ */
+export interface ProofRetried {
+  name: string;
+  test?: string;
+  /** The attempt it failed in, and the commit both runs were on. */
+  failedIn: string;
+  head: string | null;
+  mode: 'observe' | 'enforce';
+  /** The trail lead counted the pass. */
+  accepted: boolean;
+}
+
 /** An Ed25519 signature over a proof's digest, by the machine key `keyId` names (proof-keys/<keyId>.pub). */
 export interface ProofSignature {
   keyId: string;
@@ -81,6 +96,8 @@ export interface Proof {
   checks: ProofCheck[];
   /** Checks the trail lead accepted it without. Missing when none, so older proofs and digests read as they did. */
   waived?: ProofWaived[];
+  /** Checks that passed only on retry. Missing when none, so older proofs and digests read as they did. */
+  retried?: ProofRetried[];
   criteria: {
     lines: string[];
     verified: number;

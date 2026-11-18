@@ -1,4 +1,4 @@
-import type { WaivableCheck } from '@teamtrail/core';
+import { heldAsFlaky, type WaivableCheck } from '@teamtrail/core';
 import type { LookoutApi } from '../../hooks';
 import { ReasonForm, WaiveForm } from '../verification';
 import { RemoveWorkspaceForm } from '../workspaces';
@@ -46,6 +46,7 @@ export function TicketForms(props: {
       return (
         <ReasonForm
           kind={form}
+          retried={v.state === 'held' && heldAsFlaky(v.verification?.attempts[0])}
           onSubmit={(req) => {
             void props.act(req);
             close();

@@ -1,6 +1,7 @@
 import type { CriteriaResult } from '../criteria/criteria';
 import type { WaivedCheck } from './checkWaiver';
 import type { GitEvidence } from './evidence';
+import type { AttemptFlaky } from './flaky';
 import type { GateModes } from './gateMode';
 import type { AttemptGuide, ChecklistAnswer, GuideAnswers } from './guide';
 import type { VerificationLevel } from './lifecycle';
@@ -122,6 +123,8 @@ export interface VerificationAttempt {
   git?: GitEvidence;
   /** The ticket's acceptance criteria matched to the evidence the agent gave. */
   criteria?: CriteriaResult;
+  /** Checks that passed only on retry, on code they had failed on (the `flaky` gate, flaky/flakyGate.ts). */
+  flaky?: AttemptFlaky;
 }
 
 export type VerdictKind = 'PASS' | 'FAIL' | 'NEEDS_HUMAN';

@@ -1,4 +1,13 @@
-import type { GitBaseline, GitEvidence, MapSnapshot, Ticket, VerificationAttempt } from '@teamtrail/core';
+import {
+  FLAKY_REWORK,
+  flakyLine,
+  flakyReason,
+  type GitBaseline,
+  type GitEvidence,
+  type MapSnapshot,
+  type Ticket,
+  type VerificationAttempt,
+} from '@teamtrail/core';
 import {
   activeWaivers,
   checkPassed,
@@ -40,6 +49,8 @@ export function verificationView(root: string, snap: MapSnapshot, t: Ticket) {
   if (info.level === 'off') return {};
   const last = readAttempts(root, snap.map.id, t.id).at(-1);
   const failed = t.status === 'rework' && last?.result === 'fail';
+  // a pass only a retry got, sent back by the trail lead: the test is flaky, so the agent fixes its cause
+  const flaky = t.status === 'rework' && last?.result === 'pass' && last.flaky;
   return {
     verification: {
       level: info.level,
@@ -63,6 +74,7 @@ export function verificationView(root: string, snap: MapSnapshot, t: Ticket) {
           },
         }
       : {}),
+    ...(flaky && last ? { rework: { attempt: last.id, flaky: flaky.checks.map(flakyLine), note: FLAKY_REWORK } } : {}),
   };
 }
 
@@ -84,6 +96,8 @@ export function settledView(s: Settled) {
     ...(a.waived?.length ? { skipped: a.waived.map((w) => ({ check: w.name, by: w.by, reason: w.reason })) } : {}),
     ...(a.criteria ? { criteria: a.criteria.lines } : {}),
     ...(a.git ? { git: gitView(a.git) } : {}),
+    // passed only on retry: shown even when the gate only observes, so the agent knows its test is flaky
+    ...(a.flaky ? { flaky: a.flaky.checks.map(flakyLine) } : {}),
   };
   const unmet = a.criteria ? [...a.criteria.missing, ...a.criteria.failed] : [];
   if (s.phase === 'rework')
@@ -114,6 +128,8 @@ export function settledView(s: Settled) {
 /** Why a blocked completion waits on the human, in the agent's terms. */
 function blockedNote(s: Settled) {
   const { attempt: a } = s;
+  if (a.result === 'pass' && a.flaky)
+    return `Passed only on retry, on code that had failed: ${flakyReason(a.flaky.checks)}. A retry is not a fix: the human decides whether the pass counts. Move on to another ticket.`;
   if (a.runner && a.result === 'error')
     return `${a.runner} couldn't run the checks (${a.note}). Make sure your branch is pushed; the human decides in the Lookout. Move on to another ticket.`;
   if (a.remote && !a.runner)

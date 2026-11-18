@@ -34,13 +34,7 @@ function standingOf(s: StandingInput): Standing {
     case 'verifying':
       return verifying(s);
     case 'held':
-      return {
-        edge: s.item?.edge ?? 'attention',
-        title: `Blocked: ${whyBack(s)}`,
-        parts: ['waits on you'],
-        // a check that can't pass: the way out is accepting it without that check
-        primary: s.latest?.failed.length ? 'waive' : 'unblock',
-      };
+      return held(s);
     case 'claimed':
       return working(s);
     case 'rework':
@@ -56,6 +50,20 @@ function standingOf(s: StandingInput): Standing {
       return never;
     }
   }
+}
+
+function held(s: StandingInput): Standing {
+  const edge = s.item?.edge ?? 'attention';
+  // a pass only a retry got: the human counts it or sends it back to fix the flaky test
+  if (s.latest?.retried)
+    return { edge, title: 'Held: passed only on retry', parts: [s.latest.retried], primary: 'rework' };
+  return {
+    edge,
+    title: `Blocked: ${whyBack(s)}`,
+    parts: ['waits on you'],
+    // a check that can't pass: the way out is accepting it without that check
+    primary: s.latest?.failed.length ? 'waive' : 'unblock',
+  };
 }
 
 function asked(s: StandingInput, q: { agent: string; at: number }): Standing {

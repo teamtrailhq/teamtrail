@@ -1,4 +1,6 @@
 import { staleAction } from '../evidence/stale';
+import { FLAKY_REWORK } from '../flaky/flakyRework';
+import { heldAsFlaky } from '../flaky/heldAsFlaky';
 import type { AnswerVia } from '../model/answerVia';
 import type { TicketPhase, VerificationLevel } from '../model/lifecycle';
 import type { VerdictKind, VerificationAttempt } from '../model/verification';
@@ -109,8 +111,11 @@ async function decide(a: Act, action: 'approve' | 'accept') {
   const highRisk = async (mapId: string, id: string) =>
     needsLookout.approval(env.root, { mapId, ticketId: id, attemptId: last?.id }) ||
     (await ticketNeedsLookout(env.root, mapId, id));
+  // journaled as what it is: the trail lead counted a pass only a retry got
+  const retried = last && heldAsFlaky(last) ? `accepted the pass on retry of ${retriedNames(last)}: ${reason}` : reason;
   await resolve(env.adapter, r.mapId, ticketId, {
     ...a.operator,
+    reason: retried,
     event: action,
     answer,
     summary: last?.summary,
@@ -121,6 +126,8 @@ async function decide(a: Act, action: 'approve' | 'accept') {
   await withdraw(a);
   return {};
 }
+
+const retriedNames = (a: VerificationAttempt) => (a.flaky?.checks ?? []).map((c) => c.name).join(', ');
 
 /** An approval only counts for the code that was checked. */
 async function assertCurrent(env: VerifyEnv, last: VerificationAttempt) {
@@ -134,7 +141,9 @@ async function assertCurrent(env: VerifyEnv, last: VerificationAttempt) {
 async function rework(a: Act) {
   const { env, r, ticketId, reason = '' } = a;
   await transition(env.adapter, r.mapId, ticketId, { ...a.operator, event: 'reject', to: 'rework' });
-  await env.adapter.comment(r.mapId, ticketId, r.by, `**Sent back to rework**\n\n${reason}`);
+  // a pass only a retry got: the agent is told to fix the cause, never to retry or hide it
+  const flaky = a.last?.flaky ? `\n\n${FLAKY_REWORK}` : '';
+  await env.adapter.comment(r.mapId, ticketId, r.by, `**Sent back to rework**\n\n${reason}${flaky}`);
   verdict(a, 'FAIL', reason);
   await withdraw(a);
   return {};

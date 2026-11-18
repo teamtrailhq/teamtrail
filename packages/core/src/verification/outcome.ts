@@ -1,4 +1,6 @@
 import { evidenceLines } from '../evidence/evidenceSummary';
+import { flakyReason } from '../flaky/flakyReason';
+import { heldAsFlaky } from '../flaky/heldAsFlaky';
 import type { LifecycleEvent, TicketPhase } from '../model/lifecycle';
 import type { CheckResult, VerificationAttempt } from '../model/verification';
 
@@ -28,6 +30,13 @@ function checkStatus(c: CheckResult): string {
  */
 export function outcomeOf(a: VerificationAttempt, failures: number, maxAttempts: number): Outcome {
   const ran = a.checks.map(checkLine).join(', ') || 'no checks configured';
+  // a pass a retry got, on code that had failed: the human decides whether it counts (flaky/flakyGate.ts)
+  if (a.flaky && heldAsFlaky(a))
+    return {
+      event: 'checks.pass',
+      to: 'blocked',
+      reason: `${a.id} passed only on retry: ${flakyReason(a.flaky.checks)}`,
+    };
   if (a.result === 'pass') {
     const signOff = a.criteria?.manual ?? [];
     const known = a.knownFailures?.length
@@ -72,13 +81,19 @@ export function criteriaLines(a: Pick<VerificationAttempt, 'criteria' | 'agent'>
   return ['', '**Acceptance criteria**', '', ...c.lines.map((l) => `- ${l}`), ...(notes.length ? ['', ...notes] : [])];
 }
 
+function blockedHead(a: VerificationAttempt) {
+  if (a.result === 'fail') return 'failed · needs a human';
+  if (a.result === 'pass') return 'passed only on retry · needs a human';
+  return 'could not run · needs a human';
+}
+
 /** The ticket comment for a finished attempt: result, checks, and the output of the first failing one. */
 export function attemptComment(a: VerificationAttempt, o: Outcome) {
   const head = {
     done: 'passed · done',
     verifying: 'passed · waiting for review',
     rework: 'failed · back for rework',
-    blocked: a.result === 'fail' ? 'failed · needs a human' : 'could not run · needs a human',
+    blocked: blockedHead(a),
   }[o.to as 'done'];
   const failed = a.checks.find((c) => !ok(c));
   const tail = failed?.tail.split('\n').slice(-20).join('\n');
@@ -87,6 +102,7 @@ export function attemptComment(a: VerificationAttempt, o: Outcome) {
     '',
     ...a.checks.map((c) => `- ${checkLine(c)} · ${(c.durationMs / 1000).toFixed(1)} s`),
     ...(a.note ? ['', a.note] : []),
+    ...(a.flaky ? ['', `Passed only on retry: ${flakyReason(a.flaky.checks)}.`] : []),
     ...criteriaLines(a),
     ...(a.git ? ['', ...evidenceLines(a.git)] : []),
     ...(failed && tail

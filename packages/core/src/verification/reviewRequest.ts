@@ -1,4 +1,5 @@
 import { evidenceLines } from '../evidence/evidenceSummary';
+import { flakyReason } from '../flaky/flakyReason';
 import type { Ticket } from '../model/types';
 import type { VerificationAttempt } from '../model/verification';
 import { createReviewTicket, withdrawReviews } from '../planning/lifecycle/reviewTicket';
@@ -7,6 +8,15 @@ import { CHECK_RUNNER, type VerifyEnv } from './verifyCompletion';
 
 const MAX_FILES = 20;
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
+/** A pass the checks got only on retry (the `flaky` gate observing): the reviewer looks for why. */
+const retriedLines = (a: VerificationAttempt) =>
+  a.flaky
+    ? [
+        '',
+        `**Passed only on retry:** ${flakyReason(a.flaky.checks)}. Look for what makes it flaky in this change: timing, order, shared state.`,
+      ]
+    : [];
 
 /** What the reviewer gets: the claim, the code it changed, the checks that passed, and how to answer. */
 export function reviewBody(t: Ticket, a: VerificationAttempt) {
@@ -28,6 +38,7 @@ export function reviewBody(t: Ticket, a: VerificationAttempt) {
     `**Checks:** ${a.checks.map(checkLine).join(', ') || 'none configured'}`,
     ...criteriaLines(a),
     ...(a.criteria?.claimed?.length ? ['', 'Check the criteria marked ? yourself: nothing here verified them.'] : []),
+    ...retriedLines(a),
     ...(g?.flags.some((f) => f.kind === 'outside-scope')
       ? ['', 'Start with the files changed outside the declared scope: is each one needed for what the ticket asks?']
       : []),

@@ -8,6 +8,7 @@ export function proofParts(proof: Proof): (MetaPart | false)[] {
   return [
     proof.checks.length > 0 && `${passed}/${proof.checks.length} checks passed`,
     !!proof.waived?.length && `${proof.waived.map((w) => w.name).join(', ')} skipped`,
+    !!proof.retried?.length && `${proof.retried.map((r) => r.name).join(', ')} passed on retry`,
     proof.criteria.lines.length > 0 &&
       `${proof.criteria.verified} criteria verified, ${proof.criteria.claimed} claimed`,
     reviews > 0 && `${reviews} review${reviews > 1 ? 's' : ''}`,

@@ -10,13 +10,32 @@ const FORM: Record<Reasoned, { label: string; submit: string; hint: string }> = 
   unblock: { label: 'Why', submit: 'Unblock', hint: 'Back to the queue without running checks.' },
 };
 
-/** A trail lead override on a verifying or held ticket. Each needs a reason, which is kept as a verdict. */
+/** The same forms for a pass the checks got only on retry. */
+const RETRIED: Partial<Record<Reasoned, { label: string; submit: string; hint: string }>> = {
+  rework: {
+    label: 'What to fix',
+    submit: 'Send to rework',
+    hint: 'The agent is told to find the root cause: no sleeps, retries or skipped tests.',
+  },
+  accept: {
+    label: 'Why the pass counts',
+    submit: 'Accept the pass',
+    hint: 'Closes it as done. The proof says it passed on retry.',
+  },
+};
+
+/**
+ * A trail lead override on a verifying or held ticket. Each needs a reason, which is kept as a verdict. `retried`:
+ * the ticket is held because its checks passed only on retry.
+ */
 export function ReasonForm(props: {
   kind: Reasoned;
+  retried?: boolean;
   onSubmit: (req: Omit<ActionRequest, 'mapId' | 'ticketId'>) => void;
   onCancel: () => void;
 }) {
   const { kind } = props;
+  const text = (props.retried && RETRIED[kind]) || FORM[kind];
   const [reason, setReason] = useState('');
   const [to, setTo] = useState<'ready' | 'rework'>('rework');
   const submit = (e: FormEvent) => {
@@ -26,7 +45,7 @@ export function ReasonForm(props: {
   };
   return (
     <Card as="form" tone="inset" className="inline-form" onSubmit={submit}>
-      <Field label={FORM[kind].label}>
+      <Field label={text.label}>
         <textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
       </Field>
       {kind === 'unblock' && (
@@ -42,13 +61,13 @@ export function ReasonForm(props: {
           />
         </Field>
       )}
-      <span className="t-meta">{FORM[kind].hint}</span>
+      <span className="t-meta">{text.hint}</span>
       <div className="form-actions">
         <Button variant="ghost" onClick={props.onCancel}>
           Cancel
         </Button>
         <Button type="submit" variant={kind === 'accept' ? 'danger' : 'primary'} disabled={!reason.trim()}>
-          {FORM[kind].submit}
+          {text.submit}
         </Button>
       </div>
     </Card>

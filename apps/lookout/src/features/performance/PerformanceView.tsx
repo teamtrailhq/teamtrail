@@ -2,6 +2,7 @@ import { performanceReport } from '@teamtrail/core';
 import { useEffect, useMemo, useState } from 'react';
 import { Choice, Empty, Label, MetaLine, Panel } from '../../components/ui';
 import type { Breakpoint, LookoutApi } from '../../hooks';
+import { FlakyChecksSection } from './FlakyChecksSection';
 import { PerformanceRows } from './PerformanceRows';
 import { ScorecardSection } from './ScorecardSection';
 import { useAllJournals } from './useAllJournals';
@@ -60,6 +61,7 @@ export function PerformanceView({ api, bp, onClose }: { api: LookoutApi; bp: Bre
           )}
         </section>
         <ScorecardSection />
+        <FlakyChecksSection />
         <section className="perf-section">
           <div className="choice-row compact">
             {GROUPS.map((g) => (

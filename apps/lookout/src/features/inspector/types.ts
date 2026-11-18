@@ -26,6 +26,7 @@ export type PrimaryKind =
   | 'approve'
   | 'waive'
   | 'unblock'
+  | 'rework'
   | 'release'
   | 'resolve'
   | 'review-brief'
@@ -47,6 +48,8 @@ export interface LatestAttempt {
   agent: string;
   /** Names of the checks that failed or could not run. */
   failed: string[];
+  /** Held by the `flaky` gate: what passed only on retry, in words. */
+  retried?: string;
 }
 
 /** What `ticketStanding` reads, gathered from what the inspector already loads. */

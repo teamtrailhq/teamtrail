@@ -70,6 +70,23 @@ function scopeOf(a?: VerificationAttempt) {
   return { scope: { declared: a?.touches ?? [], outside: f.kind === 'outside-scope' ? (f.files ?? []) : [] } };
 }
 
+/** Checks that passed only on retry, and whether the trail lead counted the pass; nothing when there are none. */
+function retriedOf(a: VerificationAttempt | undefined, reviews: ProofReview[]): Pick<Proof, 'retried'> {
+  const f = a?.flaky;
+  if (!f?.checks.length) return {};
+  const accepted = reviews.some((r) => r.byKind === 'trail lead' && r.verdict === 'PASS');
+  return {
+    retried: f.checks.map((c) => ({
+      name: c.name,
+      ...(c.test ? { test: c.test } : {}),
+      failedIn: c.failedIn,
+      head: c.head,
+      mode: f.mode,
+      accepted,
+    })),
+  };
+}
+
 /** The latest attempt as the proof shows it; an empty, failed one when nothing was submitted. */
 function attemptOf(a?: VerificationAttempt): Proof['attempt'] {
   if (!a) return { id: '', agent: '', result: 'error', submittedAt: 0, finishedAt: 0, resolution: '', remote: false };
@@ -119,6 +136,7 @@ export function buildProof(input: ProofInput): Proof {
     ...(latest?.waived?.length
       ? { waived: latest.waived.map((w) => ({ name: w.name, argv: w.argv, by: w.by, reason: w.reason })) }
       : {}),
+    ...retriedOf(latest, reviews),
     criteria: criteriaOf(latest),
     git: gitOf(latest),
     reviews,
