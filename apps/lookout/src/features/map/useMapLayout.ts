@@ -43,6 +43,7 @@ export function useMapLayout(input: {
       slack,
       nodes: [...moved.values()],
       edges: base.edges.map((e) => ({ from: moved.get(e.from)!, to: moved.get(e.to)! })),
+      groups: base.groups.map((g) => ({ ...g, y: g.y + slack / 2 })),
       quarantineY: base.quarantineY + slack,
       height: base.height + slack,
     };
