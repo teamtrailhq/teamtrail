@@ -32,6 +32,8 @@ export function useTrailUi(input: {
     proofs: done.proofs,
     done: done.done,
     openReroute: reroute.openReroute,
+    /** Hands-on only: "research is done" (Hands-off's home lists the plan to approve instead). */
+    announce: discovery.announce,
     dialog: (
       <>
         {discovery.dialog}

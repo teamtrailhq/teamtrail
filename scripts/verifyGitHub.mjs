@@ -14,7 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
-import { lookoutLinks, responseGate, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { handsOn, lookoutLinks, responseGate, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const TOKEN = 'gho_e2e_never_shown_7f3a';
@@ -92,6 +92,7 @@ async function pickerSteps({ browser, cli, shots, top, fake }) {
     TEAMTRAIL_GITHUB_CLIENT_ID: CLIENT_ID,
     GITHUB_TOKEN: TOKEN,
   };
+  handsOn(env.TEAMTRAIL_CONFIG_DIR);
   delete env.GH_TOKEN;
   const { server, url, pair } = await startLookout(cli, repo, env);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -187,6 +188,7 @@ async function signInSteps({ browser, cli, shots, top, fake }) {
     TEAMTRAIL_GITHUB_WEB: fake.url,
     TEAMTRAIL_GITHUB_CLIENT_ID: CLIENT_ID,
   };
+  handsOn(env.TEAMTRAIL_CONFIG_DIR);
   delete env.GITHUB_TOKEN;
   delete env.GH_TOKEN;
   const { server, url, pair } = await startLookout(cli, repo, env);

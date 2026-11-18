@@ -12,6 +12,7 @@ import { chromium } from 'playwright-core';
 import {
   answeringChecklists,
   clickNode as clickNodeOn,
+  handsOn,
   lookoutLinks,
   openFullTicket,
   openNeedsList,
@@ -26,6 +27,7 @@ import { verifyFlaky } from './verifyFlaky.mjs';
 import { verifyGates } from './verifyGates.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
+import { verifyHandsOff } from './verifyHandsOff.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
 import { verifyLinear } from './verifyLinear.mjs';
 import { verifyMainChecks } from './verifyMainChecks.mjs';
@@ -55,6 +57,9 @@ const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-'));
 // Never the user's config dir, and no projects registry for the single-repo steps: they must look exactly as with
 // one repo. verifyProjects.mjs uses its own config dir with auto-registration on.
 process.env.TEAMTRAIL_CONFIG_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-config-'));
+// The steps below were written for the map: this person works Hands-on. Hands-off, everyone's default, has its own
+// steps on their own config dir (verifyHandsOff.mjs).
+handsOn(process.env.TEAMTRAIL_CONFIG_DIR);
 process.env.TEAMTRAIL_NO_REGISTER = '1';
 // Nor the credentials of whoever runs this: no `gh` login, no token from the shell. Steps that need a token set
 // their own, for a fake tracker.
@@ -704,6 +709,8 @@ const headersOk = await verifyHeaders({ browser, url, log, pair: () => pairLink(
 const signInOk = await verifySignIn({ browser, cli, log, shots });
 // Slack: Add Scout to Slack through the Scout service, an answer from Slack, the high-risk rule and Disconnect.
 const slackOk = await verifySlack({ browser, cli, log, shots });
+// Hands-off, the default: the home, a question answered from its list, the plan approved in one step, the switch.
+const handsOffOk = await verifyHandsOff({ browser, cli, log, shots });
 
 // Answered in the agent's own chat (/scout inbox): delivered as guidance, never the human's word at a gate.
 const side = await call('ask_human', { question: 'Show dates in UTC?', urgency: 'fyi', waitSeconds: 0 });
@@ -789,6 +796,7 @@ if (
   f.answer !== 'Users of the CLI' ||
   h.answer !== 'Grouped by version, newest first' ||
   !chatOk ||
+  !handsOffOk ||
   !stakesShown ||
   !skipApproved ||
   !askShown ||

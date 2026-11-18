@@ -33,6 +33,9 @@ export function AppHeader(props: {
   onSettings: () => void;
   onSlack: () => void;
   onToggleTheme: (night: boolean) => void;
+  /** Hands-off or Hands-on; Hands-off has no bar of views (its home is the one view). */
+  modeSwitch: ReactNode;
+  handsOff: boolean;
 }) {
   const { api, rt, brief } = props;
   const { snap, actions } = api;
@@ -75,9 +78,11 @@ export function AppHeader(props: {
       briefingOpen={brief.shown}
       briefingStatus={brief.status}
       onBriefing={() => (brief.shown ? brief.dismiss() : brief.open())}
+      modeSwitch={props.modeSwitch}
+      handsOff={props.handsOff}
     />
   );
-  if (props.phone) return header;
+  if (props.phone || props.handsOff) return header;
   return (
     <div className="app-top">
       {header}

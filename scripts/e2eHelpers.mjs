@@ -1,5 +1,6 @@
 // Small helpers shared by the steps of the end-to-end check.
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 
 /**
@@ -183,4 +184,15 @@ export function answeringChecklists(call) {
     }
     return r;
   };
+}
+
+/**
+ * Hands-on for the person whose config dir this is (their attention.json there, the rest kept): the steps written
+ * for the map start on it. Everyone else starts Hands-off, the default (verifyHandsOff.mjs).
+ */
+export function handsOn(configDir) {
+  const file = path.join(configDir, 'attention.json');
+  const was = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : { v: 1, channel: 'browser' };
+  fs.mkdirSync(configDir, { recursive: true });
+  fs.writeFileSync(file, JSON.stringify({ ...was, mode: 'hands-on' }));
 }

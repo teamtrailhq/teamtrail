@@ -1,0 +1,301 @@
+/* ---------- Hands-off (features/hands-off): the home in place of the map, and the mode switch ----------
+ * One centred column, most important first: Needs you, Progress, Since you were away, today's work. */
+.app.hands-off.bp-wide,
+.app.hands-off.bp-laptop {
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'header'
+    'map';
+}
+.app.hands-off.bp-mobile {
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'header'
+    'view';
+}
+.hands-off-home {
+  grid-row: 2 / -1;
+  grid-column: 1 / -1;
+  min-height: 0;
+  overflow: auto;
+}
+.home-column {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: calc(var(--sp-18) + var(--sp-8)) 0 var(--sp-18);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--sp-18) * 2);
+}
+.bp-mobile .home-column {
+  padding: var(--sp-18) var(--sp-12);
+  gap: calc(var(--sp-18) + var(--sp-8));
+}
+.phone-view.phone-map > .hands-off-home {
+  flex: 1;
+}
+.home-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+  min-width: 0;
+}
+.home-section > h2,
+.home-head h2 {
+  margin: 0;
+  color: var(--dim);
+}
+.home-section > h2.urgent {
+  color: var(--urgent);
+}
+.home-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-10);
+}
+.home-clear {
+  margin: 0;
+  padding: var(--sp-18);
+  border: 1px dashed var(--line2);
+  color: var(--dim);
+}
+.home-clear b {
+  color: var(--text-hi);
+}
+
+/* Needs you: one row each, the open one with its choices under it. */
+.home-need-list,
+.home-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.home-need,
+.home-since-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.home-need > .ds-row-main,
+.home-since-row > .ds-row-main {
+  flex: 1 1 0;
+  width: auto;
+}
+/* The row's one action stays in view: it is what the row asks. */
+.home-need > .ds-row-actions,
+.home-since-row > .ds-row-actions {
+  position: static;
+  opacity: 1;
+  pointer-events: auto;
+  background: none;
+  margin: 0;
+  padding: 0 var(--sp-10) 0 0;
+  align-self: center;
+}
+.home-need > .ds-row-below,
+.home-since-row > .ds-row-below {
+  flex: 1 0 100%;
+}
+.home-need.open {
+  background: var(--accent-bg);
+}
+.home-chip {
+  margin-right: var(--sp-4);
+  vertical-align: 1px;
+}
+.home-chip.urgent {
+  color: var(--urgent);
+  border-color: rgba(var(--urgent-rgb), 0.6);
+  background: var(--urgent-bg);
+}
+.home-need-body,
+.home-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+  padding: var(--sp-2) 0 var(--sp-8);
+}
+.home-review p {
+  margin: 0;
+}
+.home-need-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-10);
+}
+.home-answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+.home-ticket-footer {
+  padding: 0;
+  border: 0;
+}
+.home-more {
+  padding: var(--sp-6) 0;
+}
+
+/* Approve the plan: the brief and each ticket's criteria, readable in place. */
+.plan-approval {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
+.plan-approval > p {
+  margin: 0;
+}
+.plan-approval-items {
+  max-height: 360px;
+  overflow: auto;
+  padding: var(--sp-10) var(--sp-12);
+  border: 1px solid var(--line);
+  background: var(--sunken);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+}
+.plan-approval-ticket h3 {
+  margin: 0 0 var(--sp-4);
+}
+.plan-approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-8);
+}
+
+/* Progress: the strip as wide as the column. */
+.home-progress .trail-segments {
+  flex: none;
+  min-width: 0;
+  width: 100%;
+}
+.home-counts .strong {
+  color: var(--text-hi);
+}
+.home-map-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-10);
+  padding: var(--sp-10) var(--sp-12);
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.home-map-strip ol {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.home-map-strip li + li::before {
+  content: '→';
+  color: var(--faint);
+  margin-right: var(--sp-6);
+}
+.home-map-strip li .link {
+  padding: 0;
+}
+.map-strip-chip.tone-needs {
+  color: var(--urgent);
+  border-color: rgba(var(--urgent-rgb), 0.6);
+}
+.map-strip-chip.tone-done {
+  color: rgb(var(--decided-rgb));
+  border-color: rgba(var(--decided-rgb), 0.6);
+}
+
+/* Since you were away. */
+.since-icon {
+  display: inline-block;
+  width: 1.2em;
+  color: var(--dim);
+}
+.since-icon.decided {
+  color: var(--accent);
+}
+.since-icon.done {
+  color: rgb(var(--decided-rgb));
+}
+.home-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-10);
+  padding-top: var(--sp-14);
+  border-top: 1px solid var(--line);
+}
+
+/* Phone: rows a thumb can hit. */
+.bp-mobile .home-need > .ds-row-main,
+.bp-mobile .home-since-row > .ds-row-main {
+  min-height: 44px;
+}
+.bp-mobile .home-need .btn.sm {
+  min-height: 36px;
+}
+
+/* The mode switch: two halves, the one in force filled. */
+.mode-switch {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--line2);
+}
+.mode-switch-btn {
+  height: var(--h-md);
+  padding: 0 var(--sp-12);
+  border: 0;
+  background: none;
+  color: var(--dim);
+  font: 600 var(--fs-sm) / 1 var(--strong);
+  cursor: pointer;
+}
+.mode-switch-btn + .mode-switch-btn {
+  border-left: 1px solid var(--line2);
+}
+.mode-switch-btn:hover {
+  color: var(--text-hi);
+  background: var(--panel2);
+}
+.mode-switch-btn.on {
+  color: var(--text-hi);
+  background: var(--accent-bg);
+}
+.mode-switch-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.bp-mobile .mode-switch-btn {
+  height: 28px;
+  padding: 0 var(--sp-8);
+}
+
+/* Hands-off's header: the home says what needs you and how far the trail is. */
+.header.hands-off .trail-meta,
+.header.hands-off .needs-btn,
+.header.hands-off .waiting-chip {
+  display: none;
+}
+.plan-approval-items .brief-body {
+  flex: none;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+}
+.meta-line.home-counts {
+  white-space: normal;
+}
+.sp-slot .mode-switch {
+  align-self: flex-start;
+  width: fit-content;
+}

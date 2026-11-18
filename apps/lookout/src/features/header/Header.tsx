@@ -52,6 +52,10 @@ export function Header(props: {
   briefingOpen: boolean;
   briefingStatus: BriefingStatus;
   onBriefing: () => void;
+  /** Hands-off or Hands-on (features/hands-off ModeSwitch). */
+  modeSwitch?: ReactNode;
+  /** Hands-off: the home lists what needs you and the progress, so the header leaves out its counts and readouts. */
+  handsOff?: boolean;
 }) {
   const { map } = props;
   const now = useNow(1000);
@@ -61,7 +65,7 @@ export function Header(props: {
   // One line however long the destination is: its first sentence, markdown stripped. Plan → Destination has it all.
   const dest = map ? summaryLine(map.sections.destination) : '';
   return (
-    <Panel as="header" className="header">
+    <Panel as="header" className={props.handsOff ? 'header hands-off' : 'header'}>
       <div className="h-title">
         <div className="h-line1">
           {props.repo}
@@ -74,6 +78,7 @@ export function Header(props: {
         </div>
       </div>
       <div className="h-right">
+        {props.modeSwitch}
         <TrackerChip label={props.trackerLabel} health={props.health} now={now} />
         <PrSyncIndicator now={now} />
         {map && cur && (

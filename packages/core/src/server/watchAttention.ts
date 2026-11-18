@@ -9,6 +9,7 @@ function signature(v: AttentionView) {
     v.interrupting,
     v.focus,
     v.policy.errors,
+    v.prefs.mode,
   ]);
 }
 

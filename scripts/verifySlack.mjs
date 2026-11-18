@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout, lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, handsOn, lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ANA = 'U0ANA0001';
@@ -73,6 +73,7 @@ export async function verifySlack({ browser, cli, log, shots }) {
     },
   );
   const env = { ...process.env, TEAMTRAIL_CONFIG_DIR: config, TEAMTRAIL_SCOUT_SERVICE: fake.service };
+  handsOn(env.TEAMTRAIL_CONFIG_DIR);
   const lookout = await started(process.execPath, [cli, '--no-open', '--port', '0'], { cwd: top, env }, lookoutLinks);
   const control = (p, body) =>
     fetch(`${fake.slack}/control/${p}`, body ? { method: 'POST', body: JSON.stringify(body) } : {}).then((r) =>

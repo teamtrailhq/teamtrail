@@ -1,4 +1,4 @@
-import { webUrl } from '@teamtrail/core';
+import { LOOKOUT_MODES, type LookoutMode, webUrl } from '@teamtrail/core';
 import { managedPages, type ManagedPage } from './managedPages';
 import { applyTheme, type ThemeChoice } from './theme';
 
@@ -17,6 +17,19 @@ const pathOf = (value: unknown) => (typeof value === 'string' && /^\/[\w/-]{1,10
 function themeSaveOf(value: unknown): { themeSave?: string } {
   const p = pathOf(value);
   return p ? { themeSave: p } : {};
+}
+
+/** This person's Hands-off or Hands-on as the server keeps it, and where it saves another. */
+function modeOf(value: unknown, save: unknown): { mode?: LookoutMode; modeSave?: string } {
+  const mode = LOOKOUT_MODES.find((m) => m === value);
+  const p = pathOf(save);
+  return { ...(mode ? { mode } : {}), ...(p ? { modeSave: p } : {}) };
+}
+
+/** Where the server says what it merged by itself (lib/autoMerge.ts). */
+function autoMergeOf(value: unknown): { autoMerge?: string } {
+  const p = pathOf(value);
+  return p ? { autoMerge: p } : {};
 }
 
 /** Where the server starts and pauses agents on a trail. */
@@ -79,6 +92,22 @@ export interface ManagedSignIn {
    * trail's header then offer Start the trail in place (features/trail/StartTrail.tsx).
    */
   trailAgents?: string;
+  /**
+   * This person's Hands-off or Hands-on, as the server keeps it: it wins over the Lookout's own preference
+   * (lib/lookoutMode.ts). Missing: the Lookout's preference on this machine.
+   */
+  mode?: LookoutMode;
+  /**
+   * Where the server saves this person's mode (a path on this origin): the switch then posts `{ mode }` there as JSON.
+   * Without it, a mode picked here is kept in the Lookout's own preference.
+   */
+  modeSave?: string;
+  /**
+   * The server merges verified pull requests by itself: where it says what it merged (a path on this origin;
+   * `GET <path>?since=<ms>&trail=<id>` gives `{ on, merged, settings, … }`, lib/autoMerge.ts). Hands-off's footer
+   * then says how many it merged today and links to its setting.
+   */
+  autoMerge?: string;
   /** `false`: this person may not make high-risk calls, so the page routes those to someone who may. */
   highRisk?: boolean;
   /** The server's own home (all of this person's workspaces, say), on any web origin: a way out of the Lookout. */
@@ -114,6 +143,8 @@ export function learnManagedSignIn(reply: { managed?: unknown }) {
     ...(theme ? { theme } : {}),
     ...themeSaveOf(m.themeSave),
     ...mergeOf(m.merge),
+    ...modeOf(m.mode, m.modeSave),
+    ...autoMergeOf(m.autoMerge),
     ...setupOf(m.setup),
     ...trailAgentsOf(m.trailAgents),
     ...(m.highRisk === false ? { highRisk: false } : {}),

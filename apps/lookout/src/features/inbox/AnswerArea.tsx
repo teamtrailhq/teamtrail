@@ -14,6 +14,8 @@ export function AnswerArea(props: {
   onDraft: (draft: string) => void;
   onSend: (text: string) => void;
   inputRef: RefObject<HTMLTextAreaElement>;
+  /** The answer row's hint; "Answer" by default. */
+  placeholder?: string;
 }) {
   const { pending } = props;
   if (pending?.lookoutOnly && highRiskElsewhere()) return <p className="vf-intro">{HIGH_RISK_ELSEWHERE}</p>;
@@ -27,7 +29,7 @@ export function AnswerArea(props: {
         onValueChange={props.onDraft}
         onSubmit={props.onSend}
         disabled={!pending}
-        placeholder={pending ? 'Answer' : ''}
+        placeholder={pending ? (props.placeholder ?? 'Answer') : ''}
       />
     </>
   );

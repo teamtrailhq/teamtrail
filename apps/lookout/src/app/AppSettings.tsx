@@ -1,5 +1,5 @@
 import { SettingsPage } from '../features/settings';
-import type { Breakpoint, LookoutApi } from '../hooks';
+import type { Breakpoint, LookoutApi, LookoutModeApi } from '../hooks';
 import type { Prefs, Runtime } from '../lib';
 import type { useSettingsPage } from './useSettingsPage';
 
@@ -12,6 +12,7 @@ export function AppSettings(props: {
   update: (p: Partial<Prefs>) => void;
   settings: ReturnType<typeof useSettingsPage>;
   openTicket: (mapId: string, ticketId: string) => void;
+  mode: LookoutModeApi;
 }) {
   const { rt, api, settings } = props;
   if (!settings.route) return null;
@@ -31,6 +32,7 @@ export function AppSettings(props: {
         snaps: Object.values(api.allSnaps),
         answered: api.activity.answered,
         onModelMatching: api.actions.setModelMatching,
+        lookoutMode: { mode: props.mode.mode, setMode: props.mode.setMode },
         onOpenTicket: (mapId, ticketId) => {
           settings.dismiss();
           props.openTicket(mapId, ticketId);

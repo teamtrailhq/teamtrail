@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { handsOn, lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const NOTES_FILE = path.join(here, 'fixtures', 'new-trail-notes.md');
@@ -85,6 +85,7 @@ export async function verifyNewTrail({ browser, cli, log, shots }) {
   const top = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-new-trail-e2e-')));
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const env = { ...process.env, TEAMTRAIL_CONFIG_DIR: path.join(top, 'config') };
+  handsOn(env.TEAMTRAIL_CONFIG_DIR);
   const { server, pair } = await startServer(cli, top, env);
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();

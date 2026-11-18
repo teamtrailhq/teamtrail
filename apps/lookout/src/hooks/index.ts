@@ -6,4 +6,5 @@ export { useLeases } from './useLeases';
 export { useNow } from './useNow';
 export { usePrefs } from './usePrefs';
 export { useThemedPrefs } from './useThemedPrefs';
+export { type LookoutModeApi, useLookoutMode } from './useLookoutMode';
 export { usePrSync } from './usePrSync';
