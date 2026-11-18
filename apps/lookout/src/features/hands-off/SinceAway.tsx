@@ -23,6 +23,7 @@ function when(at: number, now: number) {
  */
 export function SinceAway(props: {
   trail?: TrailBriefing;
+  /** The person's last visit; none on their first, when the story starts with the trail. */
   since?: number;
   chartedAt: number;
   decisions: AuditDecision[];
@@ -32,7 +33,6 @@ export function SinceAway(props: {
   onSupersede: (d: AuditDecision, input: { answer: string; rationale?: string; alternatives?: string[] }) => void;
 }) {
   const [all, setAll] = useState(false);
-  if (props.since === undefined) return null;
   const rows = props.trail ? sinceRows(props.trail, props.chartedAt) : [];
   const shown = all ? rows : rows.slice(0, SHOWN);
   const row = (r: SinceRow, i: number) => {
@@ -63,7 +63,9 @@ export function SinceAway(props: {
   return (
     <section className="home-section home-since" aria-labelledby="home-since">
       <h2 id="home-since" className="t-label">
-        Since you were away · {when(props.since, props.now)}
+        {props.since === undefined
+          ? `Since the trail was charted · ${when(props.chartedAt, props.now)}`
+          : `Since you were away · ${when(props.since, props.now)}`}
       </h2>
       {rows.length === 0 ? (
         <p className="t-meta">Nothing new on this trail since then.</p>

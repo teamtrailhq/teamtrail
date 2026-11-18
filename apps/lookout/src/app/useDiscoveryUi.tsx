@@ -58,11 +58,8 @@ export function useDiscoveryUi(snap?: MapSnapshot) {
     banner: b && <DiscoveryBanner brief={b} onReview={review} />,
     /** Only while a brief waits for review: non-null means one does. */
     inboxCard: b?.status === 'submitted' && <BriefInboxCard brief={b} onReview={review} />,
-    dialog: (
-      <>
-        {reviewing}
-        {announce}
-      </>
-    ),
+    dialog: reviewing,
+    /** "Research is done", once per submitted brief: Hands-on's way in (Hands-off lists the plan instead). */
+    announce,
   };
 }

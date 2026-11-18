@@ -65,6 +65,8 @@ async function chart(call) {
     assumptions: ['Teams stay under a hundred members'],
   });
   const asked = call('ask_human', { question: 'Invite by email or by link?', suggestions: ['By email', 'By link'] });
+  // closing the agent on a failed step ends the wait: that is not the failure to report
+  asked.catch(() => undefined);
   return { invite, asked };
 }
 
@@ -86,15 +88,15 @@ async function home({ page, asked, shots }) {
 }
 
 /** Approve the plan: the brief and the ticket's criteria shown in its row, approved in one step. */
-async function approvePlan({ page, call, invite, top, shots }) {
+async function approvePlan({ page, call, invite, repo, shots }) {
   const plan = needRow(page, 'Plan');
   if (!(await plan.locator('.plan-approval').isVisible())) await plan.locator('.ds-row-main').click();
   const shown = await plan.locator('.plan-approval-items').innerText();
   await shootThemes(page, shots, 'hands-off-plan');
-  await plan.getByRole('button', { name: 'Approve the plan' }).click();
+  await plan.locator('.plan-approval').getByRole('button', { name: 'Approve the plan', exact: true }).click();
   await plan.waitFor({ state: 'detached', timeout: 20_000 });
   const claimed = await call('claim_ticket', { ticket: invite });
-  const journal = path.join(top, '.teamtrail', '.events', '_trust.jsonl');
+  const journal = path.join(repo, '.teamtrail', '.events', '_trust.jsonl');
   const lines = fs.existsSync(journal) ? fs.readFileSync(journal, 'utf8').trim().split('\n') : [];
   return {
     showed: shown.includes('Add team workspaces') && shown.includes('expires after 7 days'),
@@ -132,7 +134,7 @@ export async function verifyHandsOff({ browser, cli, log, shots }) {
     const { invite, asked } = await chart(call);
     // the brief's "research is done" dialog is Hands-on's way in; here the plan is a row
     const h = await home({ page, asked, shots });
-    const p = await approvePlan({ page, call, invite, top, shots });
+    const p = await approvePlan({ page, call, invite, repo, shots });
     const switched = await switchModes({ page, config });
     const ok = h.noMap && h.answered && p.showed && p.claimed && p.journaled && switched;
     log(

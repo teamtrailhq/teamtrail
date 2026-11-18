@@ -195,6 +195,7 @@ export function App() {
         <AppTicketDrawer api={api} nav={nav} attn={attn} sessions={scoped.sessions} done={trail.done} />
         {briefing}
         {trail.dialog}
+        {!mode.handsOff && trail.announce}
         {api.error && <div className="error-toast">{api.error}</div>}
         {newTrail.dialog}
         {!prefs.onboarded && <FirstRun prefs={prefs} update={updatePrefs} activeTracker={rt.kind} />}
