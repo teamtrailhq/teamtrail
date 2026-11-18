@@ -11,6 +11,7 @@ export function AppSettings(props: {
   prefs: Prefs;
   update: (p: Partial<Prefs>) => void;
   settings: ReturnType<typeof useSettingsPage>;
+  openTicket: (mapId: string, ticketId: string) => void;
 }) {
   const { rt, api, settings } = props;
   if (!settings.route) return null;
@@ -30,6 +31,10 @@ export function AppSettings(props: {
         snaps: Object.values(api.allSnaps),
         answered: api.activity.answered,
         onModelMatching: api.actions.setModelMatching,
+        onOpenTicket: (mapId, ticketId) => {
+          settings.dismiss();
+          props.openTicket(mapId, ticketId);
+        },
       }}
     />
   );

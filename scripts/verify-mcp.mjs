@@ -21,6 +21,7 @@ import {
   ticketAction,
 } from './e2eHelpers.mjs';
 import { verifyFlaky } from './verifyFlaky.mjs';
+import { verifyGates } from './verifyGates.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
@@ -477,6 +478,17 @@ const proofPanel = await page
 log(`${route.ticket.key} proof in the full ticket: ${proofPanel ? 'shown, with Copy for PR' : 'NOT shown'}`);
 await page.keyboard.press('Escape');
 const proofOk = proofToolOk && proofPanel;
+// Gates: what each would have held, Observe → Enforce in Settings, and a held ticket opened from there.
+const gatesOk = await verifyGates({
+  page,
+  url,
+  repo,
+  mapId: started.trail.id,
+  ticket: route.ticket,
+  title: 'Add the /changelog route',
+  shots,
+  log,
+});
 // Decision memory: a question #3's decision already answers comes back with it instead of reaching the human.
 const remembered = await call('find_precedent', {
   text: 'How should versions be grouped in the changelog?',
@@ -720,6 +732,7 @@ if (
   !signedOk ||
   !verifiedOk ||
   !proofOk ||
+  !gatesOk ||
   !precedentOk ||
   !scorecardOk ||
   !reviewOk ||
