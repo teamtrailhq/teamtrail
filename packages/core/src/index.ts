@@ -19,7 +19,7 @@ export * from './planning/lifecycle';
 export { httpJournal } from './history/httpJournal';
 export { DEFAULT_CHECK_TIMEOUT_SEC, DEFAULT_CONFIG, parseVerificationConfig } from './verification/config';
 export { DEFAULT_GATES, GATE_MODES, GATE_NAMES } from './model/gateMode';
-export type { GateEntry, GateMode, GateModes, GateName } from './model/gateMode';
+export type { GateEntry, GateLog, GateMode, GateModes, GateName } from './model/gateMode';
 export { gateModeFor } from './verification/gateModeFor';
 export type { ApprovalItem } from './verification/approvals';
 export { verificationFor, type LevelInfo } from './verification/policy';
