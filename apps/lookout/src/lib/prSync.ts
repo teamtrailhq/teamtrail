@@ -56,8 +56,10 @@ function load() {
 }
 
 function onVerification(raw: string) {
-  const e = JSON.parse(raw) as VerificationSyncEvent | { kind?: string };
+  const e = JSON.parse(raw) as VerificationSyncEvent | { kind?: string; sync?: boolean };
   if (e.kind === 'evidence') for (const l of evidenceListeners) l();
+  // A ticket's PR snapshot written or dropped outside the reconciler (a server that merges pull requests): read again.
+  if (e.kind === 'evidence' && 'sync' in e && e.sync) return load();
   if (e.kind !== 'sync') return;
   const sync = e as VerificationSyncEvent;
   statusAt = ++events;
@@ -79,6 +81,16 @@ function start() {
   load();
 }
 
+/**
+ * A ticket's snapshot an action's reply carried (a merge: its pull request merged): shown at once, and newer than a
+ * load already under way, which would otherwise land the snapshot from before.
+ */
+function push(sync: TicketSync) {
+  const key = keyOf(sync.mapId, sync.ticketId);
+  sentAt.set(key, ++events);
+  set({ ...snap, tickets: { ...snap.tickets, [key]: sync } });
+}
+
 /** PR/CI evidence from the reconciler: one fetch plus the SSE `verification` event, shared by every reader. */
 export const prSync = {
   subscribe(l: () => void) {
@@ -87,6 +99,7 @@ export const prSync = {
     return () => void listeners.delete(l);
   },
   get: () => snap,
+  push,
   /** Attempts, verdicts, check logs or a run lock changed (`kind: 'evidence'` on the same stream). */
   onEvidence(l: () => void) {
     if (!started) start();

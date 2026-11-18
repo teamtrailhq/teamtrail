@@ -22,6 +22,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.3',
+    date: '2026-11-18',
+    items: [
+      'A merged pull request shows as merged on its ticket as soon as it merges, and nothing offers to merge it again',
+      'Teamtrail Cloud: checks on main run on your repository’s main, never on a commit from somewhere else',
+    ],
+  },
+  {
     version: '0.66.1',
     date: '2026-11-18',
     items: [
