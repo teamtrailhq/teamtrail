@@ -51,7 +51,7 @@ Take the subcommand from the first word of the arguments. With no arguments, run
    - If the ticket lists `verification.checks`, run those commands yourself before completing. If it has `rework`, a previous completion failed: fix what `rework.failures` shows first. If the claim returns `checkWarnings`, a check can't run as the repo is now (a missing script, no `go.mod`, …): tell the human right away; only they change or waive checks. The same when a check can't pass in this repo: say so; only the human can accept the ticket without it (then `verification.waived` lists it and it no longer runs on your completion).
 3. Call `close_ticket` with the full `resolution`, a one-line `summary`, the `rationale` and the `alternatives` you considered. When the ticket needs verification, its checks run first and the result has a `status`:
    - `done`: closed, carry on.
-   - `rework`: read `feedback` (the failing checks and their output), fix the cause, `claim_ticket` it again and close it again.
+   - `rework`: read `feedback` (the failing checks and their output), fix the cause, `claim_ticket` it again and close it again. Never close it again on unchanged code hoping the check passes this time, and never add sleeps or retries or skip a test to get a pass: a check that failed and then passes on the same code is flaky, and that pass waits for the human. If `rework.flaky` says a test is flaky, find the root cause and fix it; if you can't, delete the test and say why.
    - `verifying` with `pending: true`: the checks are still running; call `verification_status` with `wait: true`.
    - `waiting-approval`: the human hasn't approved the check commands on this machine yet. Your work is kept; tell them and take another ticket.
 

@@ -17,7 +17,19 @@ const waivedLines = (p: Proof) =>
   (p.waived ?? []).map((w) => `- ⏭️ \`${md(w.argv.join(' '), 120)}\` skipped by ${md(w.by, 60)}: ${md(w.reason)}`);
 
 function checkLines(p: Proof): string[] {
-  return [...ranLines(p), ...waivedLines(p)];
+  return [...ranLines(p), ...waivedLines(p), ...retriedLines(p)];
+}
+
+/** Each check that passed only on retry, on code it had failed on, and what the trail lead made of it. */
+const retriedLines = (p: Proof) =>
+  (p.retried ?? []).map(
+    (r) =>
+      `- 🔁 ${md(r.name, 60)}${r.test ? ` (${md(r.test, 120)})` : ''} passed on retry: it failed in ${md(r.failedIn, 20)} on ${short(r.head)} with no change · ${retriedStatus(r)}`,
+  );
+
+function retriedStatus(r: NonNullable<Proof['retried']>[number]) {
+  if (r.accepted) return 'the trail lead accepted the pass';
+  return r.mode === 'enforce' ? 'waiting for the trail lead' : 'flagged, not held';
 }
 
 function ranLines(p: Proof): string[] {

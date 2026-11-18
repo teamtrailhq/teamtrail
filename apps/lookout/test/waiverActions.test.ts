@@ -36,6 +36,16 @@ describe('Accept without a failing check', () => {
     expect(ids(view({ state: 'decided', waivable: ['test'] })).map(([id]) => id)).not.toContain('waive');
   });
 
+  it('a pass held as flaky offers rework and Accept the pass, not another run', () => {
+    const v = view({ state: 'held' });
+    const flaky = { mode: 'enforce', checks: [{ name: 'test' }] };
+    Object.assign(v.verification!.attempts[0], { result: 'pass', flaky });
+    const got = ids(v).map(([id]) => id);
+    expect(got).toEqual(expect.arrayContaining(['rework', 'accept']));
+    expect(got).not.toContain('rerun');
+    expect(ids(v)).toContainEqual(['accept', 'Accept the pass…']);
+  });
+
   it('a waiver in force can be undone', () => {
     expect(ids(view({ state: 'decided', waived: ['test'] }))).toContainEqual(['undo-waiver', 'Run test again']);
   });

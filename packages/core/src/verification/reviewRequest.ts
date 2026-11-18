@@ -1,4 +1,5 @@
 import { evidenceLines } from '../evidence/evidenceSummary';
+import { flakyReason } from '../flaky/flakyReason';
 import type { GitEvidence } from '../model/evidence';
 import type { Ticket } from '../model/types';
 import type { VerificationAttempt } from '../model/verification';
@@ -10,6 +11,14 @@ import { CHECK_RUNNER, type VerifyEnv } from './verifyCompletion';
 const MAX_FILES = 20;
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
+/** A pass the checks got only on retry (the `flaky` gate observing): the reviewer looks for why. */
+const retriedLines = (a: VerificationAttempt) =>
+  a.flaky
+    ? [
+        '',
+        `**Passed only on retry:** ${flakyReason(a.flaky.checks)}. Look for what makes it flaky in this change: timing, order, shared state.`,
+      ]
+    : [];
 /** Where the reviewer starts, from the evidence's flags: what changed of what the checks run, then out of scope. */
 function startWith(g?: GitEvidence): string[] {
   const has = (kind: string) => !!g?.flags.some((f) => f.kind === kind);
@@ -47,6 +56,7 @@ export function reviewBody(t: Ticket, a: VerificationAttempt) {
     ...criteriaLines(a),
     ...ruleReviewLines(a),
     ...(a.criteria?.claimed?.length ? ['', 'Check the criteria marked ? yourself: nothing here verified them.'] : []),
+    ...retriedLines(a),
     ...startWith(g),
     '',
     `Read the change${range ? ` (\`git diff ${range}\`)` : ''} against what ${t.key} asks, run what you need, then call \`submit_review\` with PASS, FAIL (findings the author can act on) or NEEDS_HUMAN. You cannot review a ticket you worked on.`,

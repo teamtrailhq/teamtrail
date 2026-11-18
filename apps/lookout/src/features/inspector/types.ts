@@ -27,6 +27,7 @@ export type PrimaryKind =
   | 'accept'
   | 'waive'
   | 'unblock'
+  | 'rework'
   | 'release'
   | 'resolve'
   | 'review-brief'
@@ -48,6 +49,8 @@ export interface LatestAttempt {
   agent: string;
   /** Names of the checks that failed or could not run. */
   failed: string[];
+  /** Held by the `flaky` gate: what passed only on retry, in words. */
+  retried?: string;
   /** The checks passed and the check guard holds the pass: what the work changed of what they run, in one line. */
   guarded?: string;
 }
