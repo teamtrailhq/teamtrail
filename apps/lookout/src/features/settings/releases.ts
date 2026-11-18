@@ -22,11 +22,20 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.4',
+    version: '0.66.5',
     date: '2026-11-18',
     items: [
       'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
       'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
+    ],
+  },
+  {
+    version: '0.66.4',
+    date: '2026-11-18',
+    items: [
+      'Slack: each question’s card shows its own answer; one passed on in an agent’s chat says it decided nothing',
+      'Slack: archiving a trail no longer closes cards for what still waits on you, and a card that becomes high risk switches to Open in Lookout',
+      'Checks on main run again when main moves after a failure, and say so meanwhile; trail checks read reverts on the commit they run on',
     ],
   },
   {
@@ -186,13 +195,6 @@ export const RELEASES: Release[] = [
     date: '2026-11-17',
     items: [
       'Settings → Verification reads calmer: one line per check, a warning under its command with the fix one click away, and Save apart',
-    ],
-  },
-  {
-    version: '0.59.1',
-    date: '2026-11-17',
-    items: [
-      "A check like `npm web:lint`, a command npm doesn't have, is now flagged, with `npm run web:lint` suggested",
     ],
   },
   ...LATER_RELEASES,

@@ -1,4 +1,4 @@
-import { gitText } from '../evidence/git';
+import { git, gitText } from '../evidence/git';
 import { isBranchName, isObjectId } from '../workspaces/gitNames';
 
 export type DefaultHead = { top: string; branch: string; commit: string } | { note: string };
@@ -15,9 +15,19 @@ async function commitOf(top: string, ref: string) {
   return sha && isObjectId(sha) ? sha : undefined;
 }
 
+/** The remote's branch when it is ahead of the local one (holds it and more): merged on the code host, not pulled. */
+async function aheadOnRemote(top: string, branch: string, local: string) {
+  const remote = await commitOf(top, `refs/remotes/origin/${branch}`);
+  if (!remote || remote === local) return undefined;
+  const r = await git(top, ['merge-base', '--is-ancestor', '--end-of-options', local, remote]);
+  return r.code === 0 ? remote : undefined;
+}
+
 /**
  * The default branch and its head commit, as this checkout knows them: the remote's default branch (a local branch
- * of that name first, else the remote one), else a local `main` or `master`. Nothing is fetched.
+ * of that name first, unless the remote one is ahead of it; else the remote one), else a local `main` or `master`.
+ * Nothing is fetched. The one place the default branch's head is read: checks on main, trail checks (trailHead.ts)
+ * and reverts (scorecard/readReverts.ts) all start here, so they see the same commit.
  */
 export async function defaultHead(repoRoot: string): Promise<DefaultHead> {
   const top = await gitText(repoRoot, ['rev-parse', '--show-toplevel']);
@@ -34,7 +44,9 @@ export async function defaultHead(repoRoot: string): Promise<DefaultHead> {
       ];
   for (const c of candidates) {
     const commit = await commitOf(top, c.ref);
-    if (commit) return { top, branch: c.branch, commit };
+    if (!commit) continue;
+    const ahead = c.ref.startsWith('refs/heads/') ? await aheadOnRemote(top, c.branch, commit) : undefined;
+    return { top, branch: c.branch, commit: ahead ?? commit };
   }
   return { note: `no default branch found (${candidates.map((c) => c.branch).join(' or ')})` };
 }

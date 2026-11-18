@@ -16,13 +16,20 @@ export type TrailOutcome = MainRunOutcome & { merges: TicketMerge[] };
 const commitsOf = (merges: TicketMerge[]) =>
   merges.flatMap((m) => (m.state === 'merged' && m.commit ? [m.commit] : []));
 
+/**
+ * The commits that pick the head to run on: the merged ones and the reverted ones, as readTrailChecks.ts picked it
+ * before it read the reverts in that head's history, so the run uses the commit those reverts were read at.
+ */
+const headCommitsOf = (merges: TicketMerge[]) =>
+  merges.flatMap((m) => ((m.state === 'merged' || m.state === 'reverted') && m.commit ? [m.commit] : []));
+
 const marked = (merges: TicketMerge[], has: (c: string) => boolean): TicketMerge[] =>
   merges.map((m) => (m.state === 'merged' && m.commit ? { ...m, contained: has(m.commit) } : m));
 
 /** Here: on the default branch's commit that holds the most of the merges, in a worktree Teamtrail prepares. */
 async function here(env: MainRunEnv, o: { mapId: string; id: string; plan: Plan; merges: TicketMerge[] }) {
   const repoRoot = env.repoRoot ?? path.dirname(env.root);
-  const head = await trailHead(repoRoot, commitsOf(o.merges));
+  const head = await trailHead(repoRoot, headCommitsOf(o.merges));
   if ('note' in head) {
     const none = { commit: null, branch: null, checks: [], result: 'unavailable' as const, note: head.note };
     return { ...none, merges: o.merges };

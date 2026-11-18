@@ -4,6 +4,7 @@ import { AnswerError, LookoutOnlyAnswer, attentionView, readAgentDocs, writeAgen
 import { askClosedMessage, askMessage, clip, label, mention, type AskRef, type AskView } from '../blocks';
 import type { SlackConfig } from '../store';
 import { takeAskSlot } from './askLimit';
+import { askOutcome } from './askOutcome';
 import { askRoute } from './askRoute';
 import { queueLine } from './queueLine';
 import { refusedForGood } from './refusedForGood';
@@ -79,23 +80,20 @@ export async function answer(ctx: SlackContext, ref: AskRef, text: string, user:
   return r;
 }
 
-/** Replace the ask's buttons with its outcome. */
+const bySlack = (by: { user: string; text: string }, agent: string) =>
+  `✓ Answered by ${mention(by.user)} via Slack: “${label(clip(by.text, 300))}”. ${label(agent)} resumed.`;
+
+/** Replace the ask's buttons with its outcome (askOutcome.ts when it was answered or dropped elsewhere). */
 export async function closeAsk(ctx: SlackContext, questionId: string, docs?: AgentSessionDoc[]) {
   const asks = ctx.asks.read();
   const rec = asks[questionId];
   if (!rec || rec.closed || !rec.view) return;
-  let line: string;
-  let answered = true;
-  if (rec.by)
-    line = `✓ Answered by ${mention(rec.by.user)} via Slack: “${label(clip(rec.by.text, 300))}”. ${label(rec.view.agent)} resumed.`;
-  else {
-    const doc = (docs ?? (await readAgentDocs(ctx.o.root))).find((d) => d.session.id === rec.sessionId);
-    const reply = doc?.chats.find((c) => c.from === 'human' && c.at >= rec.view!.at);
-    answered = !!reply;
-    line = reply
-      ? `✓ Answered in ${BRAND.name} by ${label(reply.author)}: “${label(clip(reply.text, 300))}”.`
-      : `No longer waiting: ${label(rec.view.agent)} ${doc?.session.status === 'running' ? 'withdrew the question' : 'session ended'}.`;
-  }
+  const doc = rec.by
+    ? undefined
+    : (docs ?? (await readAgentDocs(ctx.o.root))).find((d) => d.session.id === rec.sessionId);
+  const { line, answered, guidance } = rec.by
+    ? { line: bySlack(rec.by, rec.view.agent), answered: true, guidance: undefined }
+    : askOutcome({ doc, questionId, agent: rec.view.agent });
   rec.closed = true;
   ctx.asks.write(asks);
   const detail = ctx.store.read().notify.detail;
@@ -103,7 +101,7 @@ export async function closeAsk(ctx: SlackContext, questionId: string, docs?: Age
     .call('chat.update', {
       channel: rec.channel,
       ts: rec.ts,
-      ...askClosedMessage(rec.view, line, { detail, answered }),
+      ...askClosedMessage(rec.view, line, { detail, answered, ...(guidance ? { url: ctx.o.url() } : {}) }),
     })
     .catch(() => {});
 }
@@ -115,6 +113,29 @@ export async function syncAsks(ctx: SlackContext, docs: AgentSessionDoc[], c: Sl
   if (fresh.length && !(await postAsks(ctx, fresh, c))) return;
   const open = new Set(pending.map((q) => q.id));
   for (const [id, rec] of Object.entries(asks)) if (!rec.closed && !open.has(id)) await closeAsk(ctx, id, docs);
+  await refreshModes(ctx, pending, c);
+}
+
+/**
+ * A waiting question whose risk changed since its message was posted (the risk policy, or a ticket that became the
+ * Lookout's) is shown again: buttons where Slack may answer it, Open in Lookout where only the Lookout may.
+ */
+async function refreshModes(ctx: SlackContext, pending: PendingQuestion[], c: SlackConfig) {
+  const asks = ctx.asks.read();
+  for (const q of pending) {
+    const rec = asks[q.id];
+    if (!rec || rec.closed || !rec.view) continue;
+    const mode = askMode(ctx, q);
+    if (mode === (rec.mode ?? 'buttons')) continue;
+    const message = askMessage(rec.view, { url: ctx.o.url(), detail: c.notify.detail, mode });
+    const ok = await ctx.call('chat.update', { channel: rec.channel, ts: rec.ts, ...message }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) continue;
+    rec.mode = mode;
+    ctx.asks.write(asks);
+  }
 }
 
 /**
@@ -141,12 +162,13 @@ async function postAsks(ctx: SlackContext, fresh: PendingQuestion[], c: SlackCon
     adapter ??= await ctx.o.active();
     const view = await askView(ctx, q, adapter);
     try {
+      const mode = askMode(ctx, q);
       const r = await ctx.call<{ channel: string; ts: string }>('chat.postMessage', {
         channel,
-        ...askMessage(view, { url: ctx.o.url(), detail: c.notify.detail, mode: askMode(ctx, q) }),
+        ...askMessage(view, { url: ctx.o.url(), detail: c.notify.detail, mode }),
       });
       const asks = ctx.asks.read();
-      asks[q.id] = { sessionId: q.sessionId, channel: r.channel, ts: r.ts, view };
+      asks[q.id] = { sessionId: q.sessionId, channel: r.channel, ts: r.ts, view, mode };
       ctx.asks.write(asks);
     } catch (e) {
       if (!refusedForGood(e)) throw e;

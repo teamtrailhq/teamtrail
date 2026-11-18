@@ -6,7 +6,7 @@ import type { MainChecksView, MainRun } from '../model/mainChecks';
 import { defaultHead } from './defaultHead';
 import { mainChecksPlan, type MainChecksPlan } from './mainChecksPlan';
 import { mainChecksState } from './mainChecksState';
-import { readMainChoices } from './mainChoicesStore';
+import { carryMainChoices, readMainChoices } from './mainChoicesStore';
 import { latestMainRun, MAIN_DIR } from './mainRunStore';
 import { startMainRun, type MainRunEnv } from './startMainRun';
 
@@ -20,17 +20,25 @@ function markSeen(root: string, mapId: string, runId: string) {
   if (all[mapId] !== runId) writeLocalJson(root, SEEN, { ...all, [mapId]: runId });
 }
 
+/** The default branch's head here now; none with a runner (it runs on its own head) or outside git. */
+async function headHere(env: MainRunEnv) {
+  if (env.checkRunner) return undefined;
+  const head = await defaultHead(env.repoRoot ?? path.dirname(env.root));
+  return 'commit' in head ? head.commit : undefined;
+}
+
 /**
- * A run is due for a trail ready for work: none yet, one with other checks, or (the first time this trail asks) one
- * on another commit than the default branch's head now.
+ * A run is due for a trail ready for work: none yet, one with other checks, one that failed on another commit than
+ * the default branch's head now (main moved, perhaps fixed), or (the first time this trail asks) one on another commit.
  */
 async function due(env: MainRunEnv, o: { mapId: string; run?: MainRun; hash: string }) {
   const { run } = o;
   if (!run || run.configHash !== o.hash) return true;
-  if (run.result === 'running' || seenRun(env.root, o.mapId)) return false;
-  if (env.checkRunner) return false;
-  const head = await defaultHead(env.repoRoot ?? path.dirname(env.root));
-  return 'commit' in head && !!run.commit && head.commit !== run.commit;
+  if (run.result === 'running') return false;
+  const head = await headHere(env);
+  const moved = !!head && !!run.commit && head !== run.commit;
+  if (run.result === 'fail') return moved;
+  return moved && !seenRun(env.root, o.mapId);
 }
 
 async function triggered(env: MainRunEnv, o: { mapId: string; plan: MainChecksPlan; by: string; waitMs: number }) {
@@ -40,6 +48,7 @@ async function triggered(env: MainRunEnv, o: { mapId: string; plan: MainChecksPl
   const start = startMainRun(env, o.by);
   if (start.kind === 'running') return start.run ?? run;
   if (start.kind === 'off') return run;
+  if (run?.result === 'fail' && run.configHash === o.plan.hash) carryMainChoices(env.root, run.id, start.run.id);
   return settledWithin(start, o.waitMs);
 }
 
@@ -77,6 +86,7 @@ export async function readMainChecks(
   if (by && ready && run) markSeen(env.root, mapId, run.id);
   const choices = readMainChoices(env.root, mapId);
   const hashed = plan.kind === 'off' ? plan : { kind: 'run' as const, hash: plan.hash };
-  const gate = mainChecksState({ plan: hashed, ready, run, choices });
+  const headNow = run?.result === 'fail' ? await headHere(env) : undefined;
+  const gate = mainChecksState({ plan: hashed, ready, run, choices, ...(headNow ? { headNow } : {}) });
   return { mapId, ...gate, ...(run ? { run } : {}), choices };
 }
