@@ -1,6 +1,7 @@
 import { BRAND, webUrl, type Ticket } from '@teamtrail/core';
 import { DetailSection, Disclosure, MetaLine, Pill } from '../../components/ui';
 import { proofParts } from './proofParts';
+import { reviewModelParts } from './reviewModelParts';
 import type { TicketProofView } from './useTicketProof';
 
 /**
@@ -23,6 +24,11 @@ export function TicketProof(props: { ticket: Ticket; view?: TicketProofView }) {
         <Pill tone={verified ? 'fill' : 'amber'}>{verified ? 'Verified by Teamtrail' : 'Not verified'}</Pill>
         <MetaLine parts={parts.slice(0, -1)} />
       </div>
+      {reviewModelParts(proof).map((parts, i) => (
+        <div key={i} className="proof-review-model">
+          <MetaLine parts={parts} />
+        </div>
+      ))}
       {proof.gaps.length > 0 && (
         <ul className="proof-gaps t-meta">
           {proof.gaps.map((g) => (

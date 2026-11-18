@@ -6,3 +6,5 @@ export { tierOfModel, type SessionTier } from './tierOfModel';
 export { effectiveTiers, tierOfTicket } from './tierOfTicket';
 export { tierRank } from './tierRank';
 export type { ModelsView } from './modelsView';
+export { modelIdentity, type ModelIdentity } from './modelIdentity';
+export { sameModel } from './sameModel';

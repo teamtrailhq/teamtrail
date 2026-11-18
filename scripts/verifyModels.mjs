@@ -2,7 +2,8 @@
 // whose Claude Code transcripts show different models, the trail lead switching model matching on in the Lookout,
 // research reaching the fast session and the junction the strong one, the strong session taking research when nothing
 // else is ready, a junction waiting for a strongest model once the strong agent leaves, and an explicit claim of it
-// succeeding with a tierNote. Waits on what the user sees, never on sleeps.
+// succeeding with a tierNote; then reviews across models (verifyReviewModels.mjs). Waits on what the user sees, never on
+// sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -10,6 +11,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { approveSkipInLookout, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
+import { verifyReviewModels } from './verifyReviewModels.mjs';
 
 async function startServer(cli, cwd) {
   const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd });
@@ -173,13 +175,22 @@ export async function verifyModels({ browser, cli, log, shots }) {
     const on = await switchOn({ page, top, shot });
     const matched = await matching({ fast, strong, page, shot });
     const waited = await waiting({ fast, strong, page, shot });
-    const ok = on && matched.ok && waited.ok && !errors.length;
+    // a model of its own: while connected it would count as another model for the review step
+    await fast.client.close();
+    const reviewed = await verifyReviewModels({
+      page,
+      top,
+      url,
+      shot,
+      agent: ({ name, model }) => agent({ cli, top, config, name, model }),
+    });
+    const ok = on && matched.ok && waited.ok && reviewed.ok && !errors.length;
     log(
-      `model matching ${ok ? 'ok' : 'WRONG'}: switched on in Settings (${on}); ${matched.text}; ${waited.text}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `model matching ${ok ? 'ok' : 'WRONG'}: switched on in Settings (${on}); ${matched.text}; ${waited.text}; review across models: ${reviewed.text}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {
-    await fast.client.close();
+    await fast.client.close().catch(() => undefined);
     await strong.client.close().catch(() => undefined);
     await page.close();
     server.kill('SIGTERM');
