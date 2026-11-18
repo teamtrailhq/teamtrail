@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { cardRects } from '../src/features/map/cardRects';
 import { destinationSpot, destinationTrail } from '../src/features/map/destination';
 import { edgePath } from '../src/features/map/edgePath';
-import { mainSpot } from '../src/features/map/mainSpot';
+import { MAIN_H, MAIN_W, mainSpot } from '../src/features/map/mainSpot';
 
 const ticket = (n: number, blockedBy: number[] = []): Ticket => ({
   id: String(n),
@@ -87,5 +87,52 @@ describe('a wrapped layer on the map', () => {
     // its last turn is 30px before the card: the middle of the 60px gap between sub-columns
     expect(pts.some((p) => p.x === inner.x - 30)).toBe(true);
     expect(NODE_W).toBe(200);
+  });
+});
+
+describe('a small trail on the map', () => {
+  const review = (n: number, of: number): Ticket => ({ ...ticket(n), type: 'review', reviewOf: String(of) });
+  const chain = [ticket(1), ticket(2, [1]), review(3, 2)];
+
+  for (const direction of ['LR', 'TB'] as const) {
+    it(`puts main and the destination on the line of the chain, past a review beside it (${direction})`, () => {
+      const { l, cards, edges, main, end } = everyPath(chain, direction);
+      const mid = (id: string) => {
+        const n = l.nodes.find((x) => x.ticket.id === id)!;
+        return direction === 'LR' ? n.y + NODE_H / 2 : n.x + NODE_W / 2;
+      };
+      const spot = mainSpot({ direction, nodes: l.nodes, groups: l.groups, graphH: l.graphH, width: l.width });
+      const flag = destinationSpot(l);
+      expect(mid('1')).toBe(mid('2'));
+      expect(direction === 'LR' ? spot.y + MAIN_H / 2 : spot.x + MAIN_W / 2).toBe(mid('1'));
+      expect(direction === 'LR' ? flag.y : flag.x).toBe(mid('2'));
+      expect(crossings([...edges, ...main, ...end], cards)).toEqual([]);
+    });
+  }
+
+  it('keeps main and the destination in the middle when they join several cards', () => {
+    const l = layout([ticket(1), ticket(2), ticket(3, [1, 2]), ticket(4, [1, 2])], 'LR');
+    const spot = mainSpot({ direction: 'LR', nodes: l.nodes, groups: l.groups, graphH: l.graphH, width: l.width });
+    expect(spot.y + MAIN_H / 2).toBe(l.graphH / 2);
+    expect(destinationSpot(l).y).toBe(l.graphH / 2);
+  });
+
+  it('routes no connector through a card in small trails of every shape', () => {
+    let seed = 11;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const pick = (n: number) => {
+      if (n > 2 && random() < 0.2) return review(n, 1 + Math.floor(random() * (n - 1)));
+      return ticket(
+        n,
+        range(1, n - 1).filter(() => random() < 1.5 / n),
+      );
+    };
+    for (let round = 0; round < 40; round++) {
+      const tickets = range(1, 2 + Math.floor(random() * 9)).map(pick);
+      for (const direction of ['LR', 'TB'] as const) {
+        const { cards, edges, main, end } = everyPath(tickets, direction);
+        expect(crossings([...edges, ...main, ...end], cards)).toEqual([]);
+      }
+    }
   });
 });

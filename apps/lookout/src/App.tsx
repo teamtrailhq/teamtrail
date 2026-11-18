@@ -32,8 +32,9 @@ import { useBriefing, useBreakpoint, useLookout, useThemedPrefs } from './hooks'
 import { createRuntime, trackerKind } from './lib';
 
 /**
- * The map first. The header (with the view tabs and "N need you"), the map filling the page with a bubble on what's
- * selected (what it needs from you first, then the ticket), and the trail bar under it, minimal or with its lists.
+ * The map first. The header (with "N need you") and the bar of views under it, the map filling the page with a bubble
+ * on what's selected (what it needs from you first, then the ticket), and the trail bar under it, minimal or with its
+ * lists.
  * Plan, Activity and the Logbook are pages over the map; Settings and Trail stats too. On a phone the same, one view
  * at a time, the bubble a sheet under the map and the views in a bottom tab bar.
  */

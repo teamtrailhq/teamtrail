@@ -188,7 +188,7 @@ const call = answeringChecklists(async (name, args = {}) => {
 const clickNode = (node) => clickNodeOn(page, node);
 
 /** A view tab in the header: Map, Plan, Activity or Logbook. */
-const view = (name) => page.locator('.view-tabs').getByRole('button', { name, exact: true }).click();
+const view = (name) => page.locator('.view-bar').getByRole('button', { name, exact: true }).click();
 
 /**
  * The agent's open question in its bubble: "N need you" opens the most urgent thing, which a blocking question is;

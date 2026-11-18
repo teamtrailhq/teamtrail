@@ -22,6 +22,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.62.0',
+    date: '2026-11-18',
+    items: [
+      'Map, Plan, Activity and Logbook sit in a bar of their own under the header',
+      'The map runs a chain of tickets in a straight line, from main to the destination, with a review beside the ticket it reviews',
+      'Legend has a background, like Fit',
+    ],
+  },
+  {
     version: '0.61.2',
     date: '2026-11-18',
     items: [
@@ -165,25 +174,6 @@ export const RELEASES: Release[] = [
     items: [
       "Your trail's agents are one header menu: what they're doing, with Pause and Runs inside",
       'Legend sits next to Summary under the map, no longer behind it',
-    ],
-  },
-  {
-    version: '0.52.2',
-    date: '2026-11-16',
-    items: ['Teamtrail Cloud: Scout and Get started show in the corner of the Lookout again'],
-  },
-  {
-    version: '0.52.1',
-    date: '2026-11-16',
-    items: ['Start the trail is a full-size button, like Create trail, and closes New trail once your agents are on'],
-  },
-  {
-    version: '0.52.0',
-    date: '2026-11-16',
-    items: [
-      'Scope check: files an agent changed beyond the ones it said it would are listed first for whoever reviews',
-      'Choose in Settings → Verification whether they are only shown, sent back for rework, or left for you to decide',
-      'Proofs on pull requests say whether every change stayed inside the declared files',
     ],
   },
   ...LATER_RELEASES,

@@ -41,8 +41,6 @@ export function Header(props: {
   onSlack: () => void;
   /** Focus mode (features/attention); replaces the plain waiting count when given. */
   attention?: ReactNode;
-  /** The view tabs: Map, Plan, Activity, Logbook. */
-  views?: ReactNode;
   /** "N need you", opening the most urgent. */
   needs?: ReactNode;
   onStats: () => void;
@@ -95,7 +93,6 @@ export function Header(props: {
             )}
           </span>
         )}
-        {props.views}
         {props.attention}
         {props.needs}
         {!props.attention && !props.needs && waiting > 0 && (

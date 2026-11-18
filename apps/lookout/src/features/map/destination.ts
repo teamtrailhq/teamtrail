@@ -2,6 +2,7 @@ import { type LaidOutNode, type LayoutDirection, type LayoutGroup, NODE_H, NODE_
 import { bracketedGroups } from './bracketedGroups';
 import { cardRects } from './cardRects';
 import { groupBracket } from './groupBracket';
+import { lineAcross } from './lineAcross';
 import { nodeGaps } from './nodeGaps';
 import { routeEdge } from './routeEdge';
 
@@ -18,14 +19,24 @@ interface Laid {
 /** Where the last stretches turn before the X: halfway across the room before it. */
 const GAP = { LR: 96, TB: 48 };
 
-/** Where the X goes, after the last tickets, and the map size once it's included. */
+/**
+ * Where the X goes, after the last tickets (in line with the last one when there is one), and the map size once it's
+ * included.
+ */
 export function destinationSpot(l: Laid) {
+  const line = lineAcross({ ...l, ends: lastTickets(l) });
   if (l.direction === 'LR') {
     const x = l.width + 96;
-    return { x, y: l.graphH / 2, right: x + 34, bottom: l.height };
+    return { x, y: line ?? l.graphH / 2, right: x + 34, bottom: l.height };
   }
   const y = l.graphH + 76;
-  return { x: l.width / 2, y, right: l.width, bottom: Math.max(l.height, y + 40) };
+  return { x: line ?? l.width / 2, y, right: l.width, bottom: Math.max(l.height, y + 40) };
+}
+
+/** The tickets nothing else on the map waits for. */
+function lastTickets(l: Laid) {
+  const blocking = new Set(l.edges.map((e) => e.from));
+  return l.nodes.filter((n) => n.state !== 'out-of-scope' && !blocking.has(n));
 }
 
 /**
@@ -34,9 +45,7 @@ export function destinationSpot(l: Laid) {
  */
 export function destinationTrail(l: Laid, spot: { x: number; y: number }) {
   const { direction } = l;
-  const blocking = new Set(l.edges.map((e) => e.from));
-  const ends = l.nodes.filter((n) => n.state !== 'out-of-scope' && !blocking.has(n));
-  const { whole, single } = bracketedGroups({ groups: l.groups, nodes: l.nodes, ends });
+  const { whole, single } = bracketedGroups({ groups: l.groups, nodes: l.nodes, ends: lastTickets(l) });
   const cards = cardRects(l.nodes);
   const gap = GAP[direction];
   const b = direction === 'LR' ? { x: spot.x - 30, y: spot.y } : { x: spot.x, y: spot.y - 30 };

@@ -95,11 +95,11 @@ async function matching({ fast, strong, page, shot }) {
   const r = await fast.call('claim_ticket');
   const fallback = await strong.call('claim_ticket');
   // the agents and their tiers are on the Activity page; the model each runs on shows on its map card too
-  await page.locator('.view-tabs').getByRole('button', { name: 'Activity', exact: true }).click();
+  await page.locator('.view-bar').getByRole('button', { name: 'Activity', exact: true }).click();
   await page.locator('.sessions-list .session-tier', { hasText: 'strongest' }).first().waitFor({ timeout: 20_000 });
   await page.locator('.sessions-list .session-tier', { hasText: 'fast' }).first().waitFor({ timeout: 20_000 });
   await shot('18-session-tiers');
-  await page.locator('.view-tabs').getByRole('button', { name: 'Map', exact: true }).click();
+  await page.locator('.view-bar').getByRole('button', { name: 'Map', exact: true }).click();
   return {
     ok:
       j.claimed.type === 'junction' &&

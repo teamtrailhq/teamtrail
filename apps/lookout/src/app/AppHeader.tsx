@@ -1,13 +1,16 @@
 import type { AttentionItem } from '@teamtrail/core';
 import type { ReactNode } from 'react';
-import { Header, NeedsButton, ViewTabs } from '../features/header';
+import { Header, NeedsButton, ViewBar } from '../features/header';
 import { useKnowledge } from '../features/knowledge';
 import { slackNeeds, useSlackStatus } from '../features/slack';
 import type { LookoutApi, useBriefing } from '../hooks';
 import type { Runtime } from '../lib';
 import { type View, VIEW_TABS } from './tabs';
 
-/** The header, wired to the app's trail actions, views, dialogs and the Slack connection alert. */
+/**
+ * The header, wired to the app's trail actions, dialogs and the Slack connection alert, and under it the bar of views
+ * (on a phone, its tab bar has them instead).
+ */
 export function AppHeader(props: {
   api: LookoutApi;
   rt: Runtime;
@@ -16,7 +19,7 @@ export function AppHeader(props: {
   brief: ReturnType<typeof useBriefing>;
   /** Focus mode (features/attention). */
   attention?: ReactNode;
-  /** The view on screen (none while Settings covers it), and the tabs' choice; no tabs on a phone (its tab bar). */
+  /** The view on screen (none while Settings covers it), and the bar's choice; no bar on a phone (its tab bar). */
   view?: View;
   onView: (view: View) => void;
   phone: boolean;
@@ -36,7 +39,7 @@ export function AppHeader(props: {
   const [slack] = useSlackStatus(15000);
   const knowledge = useKnowledge();
   const slackAlert = slack ? slackNeeds(slack) : undefined;
-  return (
+  const header = (
     <Header
       repo={props.repo}
       snaps={api.allSnaps}
@@ -52,7 +55,6 @@ export function AppHeader(props: {
       onSettings={props.onSettings}
       onToggleTheme={props.onToggleTheme}
       attention={props.attention}
-      views={!props.phone && <ViewTabs tabs={VIEW_TABS} value={props.view} onChange={props.onView} />}
       needs={
         <NeedsButton
           count={props.needs.length}
@@ -74,5 +76,12 @@ export function AppHeader(props: {
       briefingStatus={brief.status}
       onBriefing={() => (brief.shown ? brief.dismiss() : brief.open())}
     />
+  );
+  if (props.phone) return header;
+  return (
+    <div className="app-top">
+      {header}
+      <ViewBar tabs={VIEW_TABS} value={props.view} onChange={props.onView} />
+    </div>
   );
 }

@@ -253,3 +253,52 @@ a.header-menu-item {
   padding: 0;
   justify-content: center;
 }
+
+/* The bar of views under the header (features/header/ViewBar.tsx): the main way between the map and the pages over
+ * it. Header and bar share the header's row, so the pages cover what is under them and the bar stays. */
+.app-top {
+  grid-area: header;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+.view-bar {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-4);
+  height: var(--h-zone);
+  padding: 0 var(--sp-6);
+}
+.view-bar-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--sp-14);
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--dim);
+  font: 600 var(--fs-body) / 1 var(--strong);
+}
+.view-bar-tab:hover {
+  color: var(--text-hi);
+  background: var(--panel2);
+}
+.view-bar-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.view-bar-tab.on {
+  color: var(--text-hi);
+  background: var(--accent-bg);
+}
+.view-bar-tab.on::after {
+  content: '';
+  position: absolute;
+  left: var(--sp-8);
+  right: var(--sp-8);
+  bottom: -1px;
+  height: 3px;
+  background: var(--accent);
+}
