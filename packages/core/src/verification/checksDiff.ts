@@ -2,6 +2,7 @@ import { checkArgv, checkNotice } from '../guides/checkArgv';
 import { GATE_NAMES } from '../model/gateMode';
 import type { CheckSpec, VerificationConfig } from '../model/verification';
 import { parseVerificationConfig } from './config';
+import { rulesDiff } from './rulesDiff';
 
 const argv = (s: CheckSpec) => JSON.stringify(s.run);
 const where = (s: CheckSpec) => (s.cwd && s.cwd !== '.' ? ` in ${s.cwd}` : '');
@@ -52,7 +53,7 @@ function settingLines(before: VerificationConfig | undefined, after: Verificatio
 export function checksDiff(approved: string | undefined, current: string | undefined) {
   const before = config(approved);
   const after = config(current);
-  const lines = [...commandLines(before, after), ...settingLines(before, after)];
+  const lines = [...commandLines(before, after), ...rulesDiff(before, after), ...settingLines(before, after)];
   if (current === undefined) lines.unshift('the file was deleted: no check would run');
   else if (!after) lines.push('the file has errors: completions that need checks would wait for you');
   else if (!lines.length && !before) lines.push('no check commands yet: approving lets you add them from guides');

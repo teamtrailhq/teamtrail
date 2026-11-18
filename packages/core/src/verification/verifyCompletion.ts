@@ -1,13 +1,13 @@
 import path from 'node:path';
 import type { TrackerAdapter } from '../adapters/adapter';
-import { applyGuard } from '../checkGuard/applyGuard';
-import { localGuard } from '../checkGuard/localGuard';
+import { withLocalGuard } from '../checkGuard/withLocalGuard';
 import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
 import { listGuides } from '../guides/guideStore';
 import { checksOfGuides, resolveGuides } from '../guides/resolveGuides';
 import { droppedChecks, trailKnownFailures } from '../mainChecks/withKnownFailures';
 import { BRAND } from '../model/brand';
+import type { RuleAnswer } from '../model/diffRule';
 import type { AttemptGuide } from '../model/guide';
 import type { Journal, TicketPhase } from '../model/lifecycle';
 import type { MapSnapshot, Ticket } from '../model/types';
@@ -32,6 +32,7 @@ import { requestReview } from './reviewRequest';
 import { acquireRunLock, releaseRunLock } from './runLock';
 import { runnerGraded } from './runnerGraded';
 import { withoutWaived } from './withoutWaived';
+import { withRules } from './withRules';
 
 /** The engine as an actor: comments and journal lines of the check runner. */
 export const CHECK_RUNNER = BRAND.slug;
@@ -80,6 +81,8 @@ export interface Submission {
   touches?: string[];
   /** The guides the ticket takes on now, kept on the attempt for its proof. */
   guides?: AttemptGuide[];
+  /** Answers to the diff rules the change matched that ask a question (model/diffRule.ts). */
+  ruleAnswers?: RuleAnswer[];
 }
 
 /** One ticket's completion to verify: its level, and what the agent submitted. */
@@ -165,10 +168,16 @@ export async function verify(env: VerifyEnv, asked: VerifyJob): Promise<{ attemp
  * What an attempt finds: for a remote agent, the embedding server's runner (else nothing runs); nothing for
  * unapproved commands; else the checks here.
  */
-function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; waiting?: string }) {
+async function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; waiting?: string }) {
   const runner = env.checkRunner;
-  if (job.sub.remote && runner) return runnerGraded({ ...env, checkRunner: runner }, job, run);
-  if (job.sub.remote) return remoteGraded(env, job);
+  if (job.sub.remote) {
+    // a remote agent's files are its word: its declared paths decide which rules apply
+    const ruled = withRules({ root: env.root, config: run.config.config, job, files: job.sub.declaredPaths ?? [] });
+    const graded = runner
+      ? await runnerGraded({ ...env, checkRunner: runner }, { ...job, info: ruled.info }, run)
+      : remoteGraded(env, job);
+    return { ...graded, ...ruled.extra };
+  }
   const checkout = checkoutFor(env, job.mapId, job.ticket.id);
   const none = run.waiting ?? (checkout.kind === 'none' ? `No check ran: ${checkout.reason}.` : undefined);
   if (none || checkout.kind === 'none') return { checks: [], result: 'error' as const, note: none };
@@ -177,35 +186,34 @@ function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: Config
 
 /** Git evidence, checks and criteria for work that is in this checkout (or the ticket's worktree). */
 async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; checkout: string }) {
-  const { mapId, ticket: t, info, sub } = job;
-  const repoRoot = run.checkout;
+  const { mapId, ticket: t, sub } = job;
   const git = await completionEvidence({
     ...env,
-    repoRoot,
+    repoRoot: run.checkout,
     mapId,
     ticket: t,
     config: run.config,
     noCodeReason: sub.noCodeReason,
     touches: sub.touches,
   });
+  // the diff rules the changed files match: their checks run with the ticket's, their answers go on the attempt
+  const ruled = withRules({ root: env.root, config: run.config.config, job, files: git.changed.map((c) => c.path) });
   const { outcome, criteria } = await gradeAttempt({
     root: env.root,
-    repoRoot,
+    repoRoot: run.checkout,
     mapId,
     ticketId: t.id,
     attemptId: run.id,
     config: run.config,
-    info,
+    info: ruled.info,
     git,
     evidence: sub.criteria,
     known: trailKnownFailures(env.root, mapId),
     waived: job.waived,
     signal: env.signal,
   });
-  // the check guard: did the work change what these checks run, or weaken their tests (checkGuard/)
-  const guard = await localGuard({ config: run.config.config, checks: info.checks, git, checkout: repoRoot });
-  const graded = { ...outcome, git, ...(criteria ? { criteria } : {}) };
-  return applyGuard(graded, { guard, root: env.root, mapId, ticket: { id: t.id, key: t.key } });
+  const graded = { ...outcome, git, ...(criteria ? { criteria } : {}), ...ruled.extra };
+  return withLocalGuard(graded, { root: env.root, job, run, checks: ruled.info.checks }); // checkGuard/
 }
 
 /** Records that a pass went stale while its checks ran, and runs the checks again on the code as it is now. */

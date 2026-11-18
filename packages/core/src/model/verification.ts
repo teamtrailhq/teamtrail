@@ -1,11 +1,14 @@
 import type { CriteriaResult } from '../criteria/criteria';
 import type { AttemptGuard } from './checkGuard';
 import type { WaivedCheck } from './checkWaiver';
+import type { AttemptRule, DiffRule } from './diffRule';
 import type { GitEvidence } from './evidence';
 import type { GateModes } from './gateMode';
 import type { AttemptGuide, ChecklistAnswer, GuideAnswers } from './guide';
 import type { VerificationLevel } from './lifecycle';
 import type { TicketType } from './types';
+
+export type { AttemptRule, DiffRule, HeldRules, RuleAnswer, RuleWaiver, RuleWaiverEntry } from './diffRule';
 
 /** One configured command. `run` is an argv array, never a shell string. */
 export interface CheckSpec {
@@ -44,6 +47,8 @@ export interface VerificationConfig {
   stale: 'reverify' | 'flag';
   /** How each verification gate acts (model/gateMode.ts); a gate the file leaves out takes its default. */
   gates: GateModes;
+  /** Diff rules: a check to run or a question to answer when a change touches certain files (model/diffRule.ts). */
+  rules: DiffRule[];
   github: { enabled: 'auto' | 'off'; requiredChecks: string[]; pollSec: number };
 }
 
@@ -133,6 +138,8 @@ export interface VerificationAttempt {
    * `enforce`, a pass waits for the trail lead; missing when it found nothing (or is off).
    */
   guard?: AttemptGuard;
+  /** The diff rules the changed files matched, with the agent's answers. Missing when none matched. */
+  rules?: AttemptRule[];
 }
 
 export type VerdictKind = 'PASS' | 'FAIL' | 'NEEDS_HUMAN';

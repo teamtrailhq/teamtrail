@@ -4,6 +4,7 @@ import type { Proof, ProofSignature } from '../model/proof';
 import { guardLines } from './guardLines';
 import { proofBadge } from './proofBadge';
 import { proofMarker } from './proofMarker';
+import { proofRuleLines } from './proofRuleLines';
 
 /** Agent-written text as inert Markdown: flattened and capped, then every character Markdown acts on escaped. */
 const md = (text: string, max = 200) => untrusted(text, max).replace(/[\\*_[\]()#|!~+-]/g, (c) => `\\${c}`);
@@ -127,6 +128,7 @@ export function proofMarkdown(p: Proof, signature?: ProofSignature): string {
     '',
     '**Decisions this relies on:**',
     ...decisionLines(p),
+    ...proofRuleLines(p, md),
     ...guideLines(p),
     ...gitLines(p),
     '',

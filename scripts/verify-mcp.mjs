@@ -21,6 +21,7 @@ import {
   ticketAction,
 } from './e2eHelpers.mjs';
 import { verifyCheckGuard } from './verifyCheckGuard.mjs';
+import { verifyEscapes } from './verifyEscapes.mjs';
 import { verifyGates } from './verifyGates.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
@@ -32,6 +33,7 @@ import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifyProof } from './verifyProof.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
+import { verifyRules } from './verifyRules.mjs';
 import { verifyScreening } from './verifyScreening.mjs';
 import { verifySignedState } from './verifySignedState.mjs';
 import { verifySignIn } from './verifySignIn.mjs';
@@ -638,6 +640,8 @@ const supervisionOk = await verifySupervision({
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 // Checks on main: a check already failing on main, the human's Start anyway and Drop, on a scratch git repo.
 const mainChecksOk = await verifyMainChecks({ browser, cli, log, shots });
+// Escapes: verified work reverted on main asks for a rule and counts on the scorecard, on a scratch git repo.
+const escapesOk = await verifyEscapes({ browser, cli, log, shots });
 
 // Model-aware claiming: two agents on different models, matching switched on in the Lookout, on a scratch project.
 const modelsOk = await verifyModels({ browser, cli, log, shots });
@@ -653,6 +657,8 @@ const linearOk = await verifyLinear({ browser, cli, log, shots });
 const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const screeningOk = await verifyScreening({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
+// Diff rules: a rule prefilled from a link and saved in Settings, an agent's completion held for its answer.
+const rulesOk = await verifyRules({ browser, cli, log, shots });
 // The check guard: work that changed what its check runs is held, and the trail lead accepts the pass in the Lookout.
 const checkGuardOk = await verifyCheckGuard({ browser, cli, log, shots });
 // The page's Content-Security-Policy in a real browser, API headers, and a frame from another origin refused.
@@ -742,6 +748,7 @@ if (
   !signInOk ||
   !parallelOk ||
   !mainChecksOk ||
+  !escapesOk ||
   !modelsOk ||
   !projectsOk ||
   !guidesOk ||
@@ -750,6 +757,7 @@ if (
   !remoteOk ||
   !screeningOk ||
   !waiverOk ||
+  !rulesOk ||
   !checkGuardOk ||
   !slackOk
 )
