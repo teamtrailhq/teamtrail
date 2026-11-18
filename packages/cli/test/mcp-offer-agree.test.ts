@@ -76,10 +76,13 @@ function failingMain() {
 
 /** A done ticket whose pull request still waits for review, as the PR reconciler records it. */
 function openPr(mapId: string) {
-  const dir = path.join(root, '.evidence', mapId, 'done-1');
+  // Only a ticket that exists counts toward the review queue (liveSyncs), so flag the trail's first ticket file.
+  const files = fs.readdirSync(path.join(root, mapId, 'tickets')).filter((f) => f.endsWith('.md'));
+  const ticketId = files.sort()[0].replace(/\.md$/, '');
+  const dir = path.join(root, '.evidence', mapId, ticketId);
   fs.mkdirSync(dir, { recursive: true });
   const flag = { kind: 'done-pr-open', severity: 'warn', text: 'PR open', since: Date.now() - 60_000 };
-  const sync = { v: 1, mapId, ticketId: 'done-1', ticketKey: '#done-1', provider: 'github', link: {}, checks: [] };
+  const sync = { v: 1, mapId, ticketId, ticketKey: `#${ticketId}`, provider: 'github', link: {}, checks: [] };
   fs.writeFileSync(path.join(dir, 'sync.json'), JSON.stringify({ ...sync, checksSummary: 'none', flags: [flag] }));
 }
 
