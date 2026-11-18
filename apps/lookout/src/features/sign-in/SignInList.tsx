@@ -1,8 +1,8 @@
 import { BRAND, type SignInView, signInShortId } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
+import { useNow } from '../../hooks/useNow';
 import { sinceLabel } from '../../lib/sinceLabel';
 import { RevokeSignInButton } from './RevokeSignInButton';
-import { useNow } from '../../hooks/useNow';
 
 const WHERE = { machine: 'This machine', device: 'Another device' };
 

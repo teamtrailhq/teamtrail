@@ -1,16 +1,16 @@
 import type { RemoteTokenView } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
+import { useNow } from '../../hooks/useNow';
 import { sinceLabel } from '../../lib/sinceLabel';
 import { RevokeTokenButton } from './RevokeTokenButton';
-import { useNow } from '../../hooks/useNow';
 
 /** Settings → Project → Remote agents: one row per token, with when it was made and last used, and Revoke. */
 export function RemoteTokenList(props: {
   tokens: RemoteTokenView[];
   onRevoke: (id: string) => Promise<string | undefined>;
 }) {
-  if (!props.tokens.length) return null;
   const now = useNow(30_000);
+  if (!props.tokens.length) return null;
   return (
     <ul className="ra-list">
       {props.tokens.map((t) => (

@@ -1,7 +1,7 @@
 import { type LiveLoader, liveLoad } from '../../lib/liveLoad';
+import { trustChanged } from '../../lib/trustChanged';
 import { getGuides } from './guidesApi';
 import type { GuidesView } from './types';
-import { trustChanged } from '../../lib/trustChanged';
 
 /*
  * One shared copy of GET /guides for every component that shows a guide (map nodes, the inspector, Settings), so a map

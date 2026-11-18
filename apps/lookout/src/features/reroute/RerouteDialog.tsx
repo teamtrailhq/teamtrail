@@ -1,6 +1,7 @@
 import type { MapSnapshot } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
 import { Button, Empty, Field, MetaLine, Panel } from '../../components/ui';
+import { useNow } from '../../hooks/useNow';
 import { ago } from '../../lib';
 import { highRiskElsewhere } from '../../lib/highRiskElsewhere';
 import { changedSinceProposed } from './changedSinceProposed';
@@ -10,7 +11,6 @@ import { RerouteDrift } from './RerouteDrift';
 import { DECLINE_NOTE, DISMISS_NOTE } from './rerouteText';
 import { ticketNamer } from './ticketNamer';
 import type { RerouteView } from './types';
-import { useNow } from '../../hooks/useNow';
 
 /**
  * Review a reroute proposal: why, the evidence, the assumptions it invalidates, every change and the tickets it

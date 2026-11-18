@@ -1,7 +1,17 @@
 import type { Release } from './releases';
 
-/** Releases 0.44–0.57, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
+/** Releases 0.44–0.58, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
 export const LATER_RELEASES: Release[] = [
+  {
+    version: '0.58.0',
+    date: '2026-11-17',
+    items: [
+      'Before agents build, the approved checks run once on the default branch, so a check already failing on main is known before any agent is blamed for it',
+      'When one fails, the trail waits for your call: fix main first, drop that check for the trail, or start anyway. Each can be undone',
+      'After Start anyway, a completion that fails only in those checks, the same way, isn’t sent back, and its proof marks them as known failures, not verified',
+      'Run checks on main again any time, from the trail at a glance or Settings → Verification',
+    ],
+  },
   {
     version: '0.57.0',
     date: '2026-11-17',

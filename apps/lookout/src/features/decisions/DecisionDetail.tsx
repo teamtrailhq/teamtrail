@@ -10,12 +10,12 @@ import {
 import { useState, useEffect, type FormEvent } from 'react';
 import { Pill, Meta, MetaLine, Button, Card, Field, Empty } from '../../components/ui';
 import type { LookoutApi } from '../../hooks';
+import { useNow } from '../../hooks/useNow';
 import { actorLabel, stamp, ago, day, deciderLabel, hm } from '../../lib';
 import { PromoteButton } from '../knowledge';
 import { OutsideChangeNote } from '../signed-state';
 import { useSlackPeople } from '../slack';
 import { UnverifiedNote } from './UnverifiedNote';
-import { useNow } from '../../hooks/useNow';
 
 export function DecisionDetail(props: {
   d: AuditDecision;

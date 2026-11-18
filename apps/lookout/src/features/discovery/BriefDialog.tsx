@@ -1,9 +1,9 @@
 import type { DiscoveryBrief } from '@teamtrail/core';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Button, ChangedNotice, Field, Panel } from '../../components/ui';
+import { useNow } from '../../hooks/useNow';
 import { ago } from '../../lib';
 import { BriefBody } from './BriefBody';
-import { useNow } from '../../hooks/useNow';
 
 /** Review a discovery brief: every section, then Accept or Request changes (with a note the agent gets). */
 export function BriefDialog(props: {

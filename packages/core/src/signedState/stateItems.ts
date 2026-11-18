@@ -2,20 +2,12 @@ import type { TrustItem } from '../trust/trustItem';
 import { contentHash } from '../trust/trustLedger';
 import { outsideChanges, type OutsideChange } from './outsideChanges';
 import type { Fields } from './stateFields';
-import { stateItemFor } from './stateItem';
 import { addedLines, changeLines } from './stateLines';
 
 /** The trust key of an outside change: `state:<trail>:<item key>`, or `state:<trail>:added` for a trail's group. */
 export const stateTrustKey = (c: Pick<OutsideChange, 'mapId' | 'key'>) => `state:${c.mapId}:${c.key}`;
 
 const ADDED = 'added';
-
-/** The trail file a state trust key is about: the item's own file, or the trail's map for a group. */
-export function stateKeyFile(key: string): string | undefined {
-  const m = key.match(/^state:([^:]+):(.+)$/);
-  if (!m) return undefined;
-  return m[2] === ADDED ? `${m[1]}/map.md` : stateItemFor(m[1], m[2])?.rel;
-}
 
 /** What accepting an outside change records, exactly: the file's gate fields as shown (none: accept the removal). */
 export interface StateContent {

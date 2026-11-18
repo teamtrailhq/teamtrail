@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
-import { verificationOfTrail } from '../../lib/verificationOfTrail';
 import { trustChanged } from '../../lib/trustChanged';
+import { verificationOfTrail } from '../../lib/verificationOfTrail';
 
 /** Each done ticket's proof: verified or not. */
 export type ProofStatuses = Record<string, 'verified' | 'not-verified'>;

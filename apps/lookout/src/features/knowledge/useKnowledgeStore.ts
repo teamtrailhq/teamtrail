@@ -2,8 +2,8 @@ import { type KnowledgeCall, type KnowledgeEntry } from '@teamtrail/core';
 import { useMemo, useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
-import type { KnowledgeDraft, KnowledgeStore } from './knowledgeContext';
 import { trustChanged } from '../../lib/trustChanged';
+import type { KnowledgeDraft, KnowledgeStore } from './knowledgeContext';
 
 const api = `${apiBase()}/knowledge`;
 
