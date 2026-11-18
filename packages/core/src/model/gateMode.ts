@@ -47,3 +47,10 @@ export interface GateEntry {
   actor: string;
   actorKind: ActorKind;
 }
+
+/** `GET /verification/gates`: what the gates held back or would have, every trail, newest first, the last `days`. */
+export interface GateLog {
+  since: number;
+  days: number;
+  entries: GateEntry[];
+}

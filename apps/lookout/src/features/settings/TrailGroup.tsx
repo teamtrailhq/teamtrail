@@ -1,4 +1,5 @@
 import { Empty } from '../../components/ui';
+import { GatesSection } from '../gates';
 import { TrailGuidesSection } from '../guides';
 import { ModeChoice } from '../trail';
 import { ModelMatchingSection } from './ModelMatchingSection';
@@ -7,7 +8,7 @@ import { SettingsSlot } from './SettingsSlot';
 import type { SettingsData } from './types';
 import { VerificationSection } from './VerificationSection';
 
-/** Settings → This trail: the trail on screen's mode, verification, model matching and guides by type. */
+/** Settings → This trail: the trail on screen's mode, verification, gates, model matching and guides by type. */
 export function TrailGroup({ data }: { data: SettingsData }) {
   const { map } = data;
   return (
@@ -23,6 +24,9 @@ export function TrailGroup({ data }: { data: SettingsData }) {
       )}
       <SettingsSlot id="verification" storage="repo">
         <VerificationSection map={map} />
+      </SettingsSlot>
+      <SettingsSlot id="gates" storage="repo">
+        <GatesSection onOpenTicket={data.onOpenTicket} />
       </SettingsSlot>
       <SettingsSlot id="models">
         <ModelMatchingSection map={map} snaps={data.snaps} answered={data.answered} onChange={data.onModelMatching} />
