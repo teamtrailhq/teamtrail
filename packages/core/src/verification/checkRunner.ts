@@ -50,6 +50,8 @@ export interface RunnerReport {
   };
   /** Why nothing could run (no work found, the runner failed): the attempt is then an error for a human. */
   error?: string;
+  /** For a run with `contains`: those of the commits asked for that the commit it ran on contains. */
+  contains?: string[];
 }
 
 /** What a runner is asked for checks on main: the approved checks on the default branch's head, before work starts. */
@@ -63,6 +65,11 @@ export interface MainRunJob {
   checks: RunnerCheck[];
   totalTimeoutSec: number;
   failFast: boolean;
+  /**
+   * A trail verified together (trailChecks/): the merges of its tickets, which the commit run on must contain. Run on
+   * the default branch's head that holds them, and list in the report's `contains` the ones it does.
+   */
+  contains?: string[];
   signal?: AbortSignal;
 }
 

@@ -45,6 +45,8 @@ export interface PullRequestSnapshot {
   review: PrReview;
   mergeable: PrMergeable;
   updatedAt: number;
+  /** The commit a merge put on the base branch (a squash or rebase too); only when merged, '' when GitHub gave none. */
+  mergeCommit?: string;
 }
 
 /** A recently updated PR with the tickets its body or branch names. The body itself is discarded. */

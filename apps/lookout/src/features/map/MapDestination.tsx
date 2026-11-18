@@ -9,13 +9,25 @@ export function MapDestination(props: {
   spot: { x: number; y: number };
   text?: string;
   done?: TrailDone;
+  selected?: boolean;
+  /** Opens the trail's checks on main together in the bubble. */
+  onSelect?: () => void;
 }) {
   const { laid, spot, done } = props;
   const reached = !!done && done.kind !== 'not-done';
   return (
     <>
       <DestinationTrail trails={destinationTrail(laid, spot)} travelled={reached} />
-      {laid.nodes.length > 0 && <DestinationMark x={spot.x} y={spot.y} text={props.text} done={done} />}
+      {laid.nodes.length > 0 && (
+        <DestinationMark
+          x={spot.x}
+          y={spot.y}
+          text={props.text}
+          done={done}
+          selected={props.selected}
+          onSelect={props.onSelect}
+        />
+      )}
     </>
   );
 }

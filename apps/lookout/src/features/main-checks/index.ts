@@ -1,3 +1,5 @@
+export { MainCheckOutput } from './MainCheckOutput';
+export { MainChecksBar } from './MainChecksBar';
 export { MainChecksSection } from './MainChecksSection';
 export { MainChecksSetting } from './MainChecksSetting';
 export { mainTone } from './mainTone';

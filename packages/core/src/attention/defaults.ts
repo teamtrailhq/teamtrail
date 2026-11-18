@@ -27,6 +27,7 @@ export const DEFAULT_WEIGHTS: Record<AttentionKind, number> = {
   precedent: 40,
   'review-limit': 55,
   'main-checks': 60,
+  'trail-checks': 50,
   merge: 45,
   escape: 40,
 };
