@@ -172,4 +172,17 @@ describe('trailTogether', () => {
     });
     expect(trailTogether({ kind: 'due' })).toEqual({ kind: 'pending', reason: 'checks run on main next' });
   });
+
+  it("says the work hasn't landed when a done ticket's PR closed without merging or its work was reverted", () => {
+    const closed: TicketMerge = { ticketId: '2', key: '#2', state: 'closed', pr: 7 };
+    const reverted: TicketMerge = { ticketId: '3', key: '#3', state: 'reverted', commit: 'c'.repeat(40) };
+    const merges = [merged('#1', 'aaaaaaa', true), closed, reverted];
+    const waiting = { kind: 'waiting' as const, reason: 'PR #7 closed without merging.' };
+    expect(trailTogether(waiting, undefined, merges)).toEqual({
+      kind: 'not-landed',
+      reason: '#3 is reverted on main; PR #7 closed without merging',
+    });
+    expect(trailTogether({ kind: 'off', reason: 'No approved checks' }, undefined, [closed]).kind).toBe('not-landed');
+    expect(trailTogether({ kind: 'passed' }, run({ merges }), merges).kind).toBe('passed');
+  });
 });

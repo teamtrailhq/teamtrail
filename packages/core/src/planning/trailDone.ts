@@ -21,6 +21,8 @@ function togetherText(t: TrailTogether): string {
  * yet, and the implementation tickets are still to come. A done trail is `verified` only when every done
  * ticket's proof is and the approved checks passed together on the default branch at a commit holding all of their
  * merges; otherwise it's `unverified` and says why. Each ticket passing alone is not enough.
+ * A trail whose done work didn't land (a PR closed without merging, work reverted on the default branch) isn't done:
+ * no flag and no Destination reached until it does.
  */
 export function trailDone(input: TrailDoneInput): TrailDone {
   const inScope = input.tickets.filter((t) => !(t.state === 'closed' && t.closeReason === 'not_planned'));
@@ -30,8 +32,9 @@ export function trailDone(input: TrailDoneInput): TrailDone {
   if (!input.discoverySkipped && inScope.every((t) => t.type && DISCOVERY_TYPES.includes(t.type)))
     return { kind: 'not-done', reason: "The plan isn't charted yet" };
   if (input.pendingReroutes) return { kind: 'not-done', reason: 'A reroute waits for your review' };
-  const done = inScope.length;
   const { together } = input;
+  if (together.kind === 'not-landed') return { kind: 'not-done', reason: `The work hasn't landed: ${together.reason}` };
+  const done = inScope.length;
   const unverified = inScope.filter((t) => input.proofs[t.id] !== 'verified').map((t) => t.id);
   if (!unverified.length && together.kind === 'passed')
     return { kind: 'verified', done, together, reason: `All ${tickets(done)} verified · ${togetherText(together)}` };

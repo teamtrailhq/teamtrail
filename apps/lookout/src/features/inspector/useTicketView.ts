@@ -36,7 +36,8 @@ export function useTicketView(input: {
   const criteria = useTicketCriteria(snap, t);
   const signed = useSignedState();
   const models = useModels();
-  const pr = prSync.ticket(usePrSync(), mapId, t.id);
+  const prs = usePrSync();
+  const pr = prSync.ticket(prs, mapId, t.id);
   const brief = useBrief(snap);
   const workspaces = useWorkspaces();
   const same = (i: { mapId: string; kind: string; id: string }) =>
@@ -55,6 +56,7 @@ export function useTicketView(input: {
     verification: verification.data,
     proof: proof ?? undefined,
     pr,
+    prOkAt: prs.status?.lastOkAt,
     change: signed?.changes.find(same),
     textEdited: !!signed?.textEdits.some(same),
     brief: brief.gated ? brief.brief : null,

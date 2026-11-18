@@ -4,6 +4,7 @@
  */
 export type ProofGapKind =
   | 'no-completion'
+  | 'reopened'
   | 'verification-off'
   | 'remote-unchecked'
   | 'runner-no-commit'

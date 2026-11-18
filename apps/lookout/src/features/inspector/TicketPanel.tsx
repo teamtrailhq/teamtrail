@@ -54,7 +54,13 @@ export function TicketPanel(props: {
     <div className="detail ticket-panel">
       <TicketHead v={v} />
       <StandingLine v={v} />
-      <PullRequestBlock mapId={snap.map.id} ticketId={t.id} sync={v.pr} proofHead={v.proof?.proof.git?.head} />
+      <PullRequestBlock
+        mapId={snap.map.id}
+        ticketId={t.id}
+        sync={v.pr}
+        proofHead={v.proof?.proof.git?.head}
+        lastOkAt={v.prOkAt}
+      />
       <WhatSection v={v} />
       <CriteriaSection v={v} />
       <HowSection v={v} editing={editing} setEditing={setEditing} act={bar.act} />

@@ -65,5 +65,5 @@ export async function readTrailChecks(
       state = { kind: 'running' };
     }
   }
-  return { mapId, state, together: trailTogether(state, run), ...(run ? { run } : {}), merges };
+  return { mapId, state, together: trailTogether(state, run, merges), ...(run ? { run } : {}), merges };
 }

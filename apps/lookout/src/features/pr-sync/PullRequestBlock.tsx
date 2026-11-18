@@ -16,9 +16,11 @@ export function PullRequestBlock(props: {
   ticketId: string;
   sync?: TicketSync;
   proofHead?: string | null;
+  /** The PR sync's last good tick: how fresh the snapshot is (prBlock). */
+  lastOkAt?: number;
 }) {
   const auto = useTicketAutoMerge(props.mapId, props.ticketId);
-  const b = prBlock(props.sync, props.proofHead);
+  const b = prBlock(props.sync, props.proofHead, props.lastOkAt);
   if (!b) return null;
   const url = webUrl(b.url);
   return (

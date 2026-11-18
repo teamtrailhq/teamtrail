@@ -86,11 +86,19 @@ function reviewGaps(attempt: VerificationAttempt, reviews: ProofReview[]): Proof
  * Why a ticket's latest completion isn't proven, one gap each with its kind; none means it is. Deterministic: the same
  * attempt and reviews always give the same gaps. What the level asks for: `checks` a passing run here, `+review` an
  * independent agent's PASS, `+human` the trail lead's PASS; any FAIL or NEEDS_HUMAN on the attempt stands until a new
- * attempt.
+ * attempt. `reopened`: the ticket was done and isn't any more (reopened, or ruled out), so its last completion proves nothing (a proof posted to its
+ * pull request is withdrawn this way, publishProofs.ts).
  */
-export function proofGapItems(input: { attempt?: VerificationAttempt; reviews: ProofReview[] }): ProofGapItem[] {
+export function proofGapItems(input: {
+  attempt?: VerificationAttempt;
+  reviews: ProofReview[];
+  reopened?: boolean;
+}): ProofGapItem[] {
   const { attempt, reviews } = input;
+  const first = input.reopened
+    ? [gap('reopened', "The ticket isn't done any more, so this completion doesn't count.")]
+    : [];
   const unproven = cannotProve(attempt);
-  if (unproven || !attempt) return unproven ?? [];
-  return [...attemptGaps(attempt, reviews), ...reviewGaps(attempt, reviews)];
+  if (unproven || !attempt) return [...first, ...(unproven ?? [])];
+  return [...first, ...attemptGaps(attempt, reviews), ...reviewGaps(attempt, reviews)];
 }

@@ -9,6 +9,8 @@ interface TicketProofInput {
   snap: MapSnapshot;
   ticket: Ticket;
   decisions: DecisionRecord[];
+  /** The ticket was done and is open again (buildProof's `reopened`). */
+  reopened?: boolean;
 }
 
 /**
@@ -27,5 +29,6 @@ export function proofWithGaps(input: TicketProofInput): { proof: Proof; gaps: Pr
     attempts: readAttempts(root, snap.map.id, ticket.id),
     verdicts: readVerdicts(root, snap.map.id, ticket.id),
     decisions: input.decisions.filter((d) => d.ticketId !== undefined && relied.has(d.ticketId)),
+    ...(input.reopened ? { reopened: true } : {}),
   });
 }
