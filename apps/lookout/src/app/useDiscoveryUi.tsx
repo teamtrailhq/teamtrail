@@ -46,6 +46,8 @@ export function useDiscoveryUi(snap?: MapSnapshot) {
   return {
     /** Opens the review dialog for the current trail's brief. */
     review,
+    /** Whether discovery was skipped on this trail, once loaded (for trailDone). */
+    discovery: d.discovery,
     briefText: s ? [s.existing, s.conventions, s.dataModel, s.api].join('\n') : '',
     banner: b && <DiscoveryBanner brief={b} onReview={review} />,
     /** Only while a brief waits for review: non-null means one does. */

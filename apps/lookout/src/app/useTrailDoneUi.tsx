@@ -16,11 +16,13 @@ import { usePrSync } from '../hooks';
 export function useTrailDoneUi(input: {
   snap?: MapSnapshot;
   pendingReroutes: number;
+  /** Whether discovery was skipped here, once loaded: the trail isn't judged before. */
+  discovery?: { skipped: boolean };
   openTicket: (mapId: string, ticketId: string) => void;
   openTrailChecks: (mapId: string) => void;
 }) {
   const { snap } = input;
-  const { proofs, done } = useTrailDone(snap, input.pendingReroutes);
+  const { proofs, done } = useTrailDone({ snap, pendingReroutes: input.pendingReroutes, discovery: input.discovery });
   const announce = useTrailDoneDialog(snap, done);
   const sync = usePrSync();
   const pulls = snap ? openPullRequests(sync, snap) : [];

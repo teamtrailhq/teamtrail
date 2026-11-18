@@ -29,6 +29,7 @@ export function DestinationMark(props: {
       transform={`translate(${x} ${y})`}
       aria-label={tip}
       data-tip={tip}
+      data-done={done?.kind}
       tabIndex={0}
       role={onSelect ? 'button' : undefined}
       onClick={(e) => {

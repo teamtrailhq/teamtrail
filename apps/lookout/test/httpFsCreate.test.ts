@@ -26,4 +26,21 @@ describe('httpFs.create', () => {
       ['PUT', '*'],
     ]);
   });
+
+  it('asks the server for a new trail’s or ticket’s number, which it hands out once', async () => {
+    vi.stubGlobal('location', { search: '' });
+    const calls: [string, RequestInit][] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init: RequestInit) => {
+        calls.push([url, init]);
+        return Response.json({ n: 9 });
+      }),
+    );
+    const { httpFs } = await import('../src/lib/httpFs');
+    expect(await httpFs.reserveNumber!(4)).toBe(9);
+    expect(calls.map(([url, init]) => [url.endsWith('/file/number'), init.method, init.body])).toEqual([
+      [true, 'POST', JSON.stringify({ atLeast: 4 })],
+    ]);
+  });
 });
