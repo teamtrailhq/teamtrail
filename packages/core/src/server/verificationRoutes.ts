@@ -12,8 +12,14 @@ import type { RouteContext } from './routeContext';
 import { ELSEWHERE } from './thisMachineRoutes';
 import { crossSite } from './trackerErrors';
 import { handleChecksConfig } from './verificationConfigRoute';
+import { handleGates } from './verificationGatesRoute';
 import { putScope } from './verificationScopeRoute';
 
+/** Verification settings the trail lead sets from the Lookout, each approved as it's saved. */
+const SETTINGS = new Map([
+  ['/verification/scope', putScope],
+  ['/verification/gates', handleGates],
+]);
 const ACTIONS = new Set<OperatorAction>(['rerun', 'approve', 'accept', 'rework', 'unblock', 'level']);
 const str = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
 
@@ -46,6 +52,9 @@ function request(b: Record<string, unknown>): OperatorRequest {
  *                                                 sets the check commands and approves them in one step
  *                                                 (verification/setChecks.ts); this machine only, never an agent's
  *                                                 token (thisMachineRoutes.ts), over the file as they loaded it.
+ *   GET  /verification/gates                      what the gates held or would have, the last two weeks (GateLog)
+ *   PUT  /verification/gates                      `{gate, mode, base}`: one gate off, observe or enforce, approved
+ *                                                 in the same step (verification/setGateMode.ts); this machine only.
  */
 export async function handleVerification(
   { root, active, local, repoFiles }: RouteContext & { local?: boolean },
@@ -56,7 +65,8 @@ export async function handleVerification(
   const p = url.pathname;
   const q = (k: string) => url.searchParams.get(k) ?? '';
   if (p === '/verification/config') return handleChecksConfig({ root, local, repoFiles }, req, res);
-  if (p === '/verification/scope') return putScope({ root, local }, req, res);
+  const setting = SETTINGS.get(p);
+  if (setting) return setting({ root, active, local }, req, res);
   if (p === '/verification/ticket' && req.method === 'GET') {
     if (!q('mapId') || !q('ticketId')) throw new BadRequest('"mapId" and "ticketId" are required');
     const snap = await (await active()).loadMap(q('mapId'));
