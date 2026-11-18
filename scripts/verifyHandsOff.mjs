@@ -10,6 +10,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { needsYouFits } from './verifyNeedsYouFit.mjs';
 
 async function startServer(cli, cwd, env) {
   const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd, env });
@@ -118,12 +119,20 @@ async function approvePlan({ page, call, invite, repo, shots }) {
   if (!(await plan.locator('.plan-approval').isVisible())) await plan.locator('.ds-row-main').click();
   const shown = await plan.locator('.plan-approval-items').innerText();
   await shootThemes(page, shots, 'hands-off-plan');
+  // The agent has nothing to claim until the plan is approved: it waits for work instead of polling, and picks the
+  // ticket up as soon as the human approves (next_ticket wait=true).
+  const waiting = call('next_ticket', { types: ['execute'], wait: true, waitSeconds: 60 });
+  const approvedAt = Date.now();
   await plan.locator('.plan-approval').getByRole('button', { name: 'Approve the plan', exact: true }).click();
+  const woke = await waiting;
+  const pickupMs = Date.now() - approvedAt;
   await plan.waitFor({ state: 'detached', timeout: 20_000 });
-  const claimed = await call('claim_ticket', { ticket: invite });
+  const claimed = await call('claim_ticket', { ticket: woke.ticket?.key ?? invite });
   const journal = path.join(repo, '.teamtrail', '.events', '_trust.jsonl');
   const lines = fs.existsSync(journal) ? fs.readFileSync(journal, 'utf8').trim().split('\n') : [];
   return {
+    pickupMs,
+    pickedUp: woke.ticket?.key === invite && woke.waited?.woke === 'work' && pickupMs < 5000,
     showed: shown.includes('Add team workspaces') && shown.includes('expires after 7 days'),
     claimed: claimed.claimed?.key === invite,
     journaled: lines.filter((l) => l.includes('approved with the plan')).length === 2,
@@ -161,10 +170,12 @@ export async function verifyHandsOff({ browser, cli, log, shots }) {
     const phone = await phoneHeader({ page, shots });
     const h = await home({ page, asked, shots });
     const p = await approvePlan({ page, call, invite, repo, shots });
+    const fit = await needsYouFits({ page, call, shots });
     const switched = await switchModes({ page, config });
-    const ok = h.noMap && h.answered && p.showed && p.claimed && p.journaled && switched && phone;
+    const ok =
+      h.noMap && h.answered && p.showed && p.pickedUp && p.claimed && p.journaled && fit.ok && switched && phone;
     log(
-      `hands-off ${ok ? 'ok' : 'FAILED'}: home by default (no map: ${h.noMap}), answered from the list (${h.answered}), plan shown and approved in one step (shown ${p.showed}, ${invite} claimable ${p.claimed}, journaled ${p.journaled}), Hands-on and back saved per person (${switched}), the phone header one row with More (${phone})`,
+      `hands-off ${ok ? 'ok' : 'FAILED'}: home by default (no map: ${h.noMap}), answered from the list (${h.answered}), plan shown and approved in one step (shown ${p.showed}, ${invite} claimable ${p.claimed}, journaled ${p.journaled}), a waiting agent picked ${invite} up ${p.pickupMs} ms after the approval (${p.pickedUp}), a long row stays inside its card at every width (${fit.ok ? 'yes' : fit.failures.slice(0, 3).join(' | ')}), Hands-on and back saved per person (${switched}), the phone header one row with More (${phone})`,
     );
     return ok;
   } finally {

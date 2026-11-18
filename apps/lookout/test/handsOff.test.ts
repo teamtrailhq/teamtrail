@@ -1,7 +1,7 @@
 import type { AttentionItem, MapSnapshot, Ticket, TrailBriefing } from '@teamtrail/core';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { footerText } from '../src/features/hands-off/footerText';
-import { needMeta, needsShown, needText } from '../src/features/hands-off/needText';
+import { needMeta, needsShown, needText, needWhy } from '../src/features/hands-off/needText';
 import { progressWords } from '../src/features/hands-off/progressWords';
 import { sinceRows } from '../src/features/hands-off/sinceRows';
 import type { PrSyncSnapshot } from '../src/lib';
@@ -57,6 +57,15 @@ describe('Needs you rows', () => {
     expect(needMeta({ item: item({ ticketId: '10' }), snap: s, current: 'm2', now })[0]).toBe('Offline sync');
     const named = item({ kind: 'approval', ticketId: '10', title: '#10 ready', agent: undefined });
     expect(needMeta({ item: named, snap: s, current: 'm1', now })).toEqual(['22m']);
+  });
+
+  test('an open row says why once: the ticket only when the title does not name it, then the reasons', () => {
+    const t = ticket('9', { title: 'Add Bye component with looping fade in/out' });
+    const reasons = ['Sign off AC-2, AC-3', 'The text fades in, holds, fades out and repeats forever'];
+    const named = item({ kind: 'approval', ticketId: '9', title: 'Approve #9 Add Bye component', reasons });
+    expect(needWhy(named, t)).toEqual(reasons);
+    const unnamed = item({ kind: 'blocked', ticketId: '9', title: 'Blocked on a decision', reasons: ['Waits on #3'] });
+    expect(needWhy(unnamed, t)).toEqual(['#9 Add Bye component with looping fade in/out', 'Waits on #3']);
   });
 });
 
