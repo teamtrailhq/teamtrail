@@ -74,16 +74,18 @@
   flex-direction: column;
   gap: var(--sp-4);
 }
+/* A row is a grid, so nothing in it can push past the card: the main part takes what the action leaves, and what
+ * opens under it spans both columns. */
 .home-need,
 .home-since-row {
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
 }
 .home-need > .ds-row-main,
 .home-since-row > .ds-row-main {
-  flex: 1 1 0;
   width: auto;
+  min-width: 0;
 }
 /* The row's one action stays in view: it is what the row asks. */
 .home-need > .ds-row-actions,
@@ -98,13 +100,44 @@
 }
 .home-need > .ds-row-below,
 .home-since-row > .ds-row-below {
-  flex: 1 0 100%;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+/* Its main part: the chip in a column of its own, the title (two lines at most) and its meta line beside it, so a
+ * second line of the title starts under the first, never under the chip. */
+.home-need > .ds-row-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--sp-8);
+  row-gap: var(--sp-2);
+  align-items: baseline;
+}
+.home-need > .ds-row-main > .ds-row-top,
+.home-need > .ds-row-main > .ds-row-top > .ds-row-title {
+  display: contents;
+}
+/* (rows.css keeps room for a trailing slot this row doesn't have) */
+.home-need.ds-row:has(.ds-row-actions) > .ds-row-main > .ds-row-top::after {
+  content: none;
+}
+.home-need-title {
+  grid-column: 2;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.home-need > .ds-row-main > .ds-row-context {
+  grid-column: 2;
 }
 .home-need.open {
   background: var(--accent-bg);
 }
 .home-chip {
-  margin-right: var(--sp-4);
+  grid-column: 1;
+  justify-self: start;
   vertical-align: 1px;
 }
 .home-chip.urgent {
@@ -112,8 +145,33 @@
   border-color: rgba(var(--urgent-rgb), 0.6);
   background: var(--urgent-bg);
 }
+/* Why it ranks here: wrapped inside the card, three lines at most until Read more. */
+.home-why {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.home-why-text {
+  min-width: 0;
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.home-why-text.all {
+  display: block;
+}
+.home-why-text > .meta-line {
+  display: inline;
+  white-space: normal;
+}
 .home-need-body,
 .home-review {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--sp-10);
@@ -243,6 +301,15 @@
 }
 .bp-mobile .home-need .btn.sm {
   min-height: 36px;
+}
+/* The chip on a line of its own, so the title gets the width beside the action. */
+.bp-mobile .home-need > .ds-row-main {
+  grid-template-columns: minmax(0, 1fr);
+}
+.bp-mobile .home-chip,
+.bp-mobile .home-need-title,
+.bp-mobile .home-need > .ds-row-main > .ds-row-context {
+  grid-column: 1;
 }
 
 /* The mode switch: two halves, the one in force filled. */
