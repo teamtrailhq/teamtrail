@@ -22,6 +22,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.5',
+    date: '2026-11-18',
+    items: [
+      'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
+      'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
+    ],
+  },
+  {
     version: '0.66.4',
     date: '2026-11-18',
     items: [

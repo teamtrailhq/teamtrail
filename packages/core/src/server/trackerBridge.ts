@@ -47,6 +47,7 @@ import { handleWaivers } from './waiverRoutes';
 import { watchAttention } from './watchAttention';
 import { watchIntegration } from './watchIntegration';
 import { watchLeases } from './watchLeases';
+import { watchMachineStore } from './watchMachineStore';
 import { watchMainChecks } from './watchMainChecks';
 import { watchRemoteAgents } from './watchRemoteAgents';
 import { watchTrackerFolder } from './watchTrackerFolder';
@@ -99,7 +100,9 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send, postProofs: proofs }, reconcilerTiming);
   const attention = watchAttention(ctx, send, { ...attentionTiming, configDir: trackers.configDir });
   const unwatchIntegration = watchIntegration(abs, integrationTiming);
-  const unwatchRemoteAgents = watchRemoteAgents(abs, send);
+  // approvals and accepted changes live in the machine store, outside the watched folder
+  const store = { root: abs, configDir: trackers.configDir, send };
+  const unwatchOutside = [watchRemoteAgents(abs, send), watchMachineStore(store)];
   // checks on main: in Cloud the server's runner runs them, never this process (mainChecks/startMainRun.ts)
   const mainEnv = { root: abs, ...(checkRunner ? { checkRunner } : {}) };
   const mainCtx = { ...ctx, env: mainEnv, changed: () => send('event: main-checks\ndata: {}\n\n') };
@@ -151,8 +154,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleTrailChecks(trailCtx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
-    (req, res, url) =>
-      handleTrust({ ...ctx, changed: (rel) => send(`data: ${JSON.stringify({ path: rel })}\n\n`) }, req, res, url),
+    (req, res, url) => handleTrust(ctx, req, res, url),
     (req, res, url) => handleRemoteAgents({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
   ];
 
@@ -207,7 +209,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       unwatchLeases();
       attention.stop();
       unwatchIntegration();
-      unwatchRemoteAgents();
+      for (const stop of unwatchOutside) stop();
       unwatchMainChecks();
       unwatchTrailChecks();
       reconciler.stop();

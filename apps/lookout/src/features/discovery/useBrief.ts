@@ -2,6 +2,7 @@ import { type DiscoveryBrief, type MapSnapshot } from '@teamtrail/core';
 import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
+import { trustChanged } from '../../lib/trustChanged';
 
 const api = `${apiBase()}/briefs`;
 
@@ -39,6 +40,8 @@ export function useBrief(snap?: MapSnapshot) {
     },
     failed: () => (setBrief(null), setGated(false), setStage({ mapId, skipped: false })),
     changed: (path) => path.startsWith('briefs/'),
+    // accepting or skipping is recorded on this machine only (the trust ledger), wherever it was done
+    events: { trust: (data) => trustChanged(data).approvals },
   });
   /** `shown`: the hash of the brief as the trail lead opened it (useShown), sent with accept. */
   const post = (action: 'accept' | 'request-changes', note?: string, shown?: string) =>

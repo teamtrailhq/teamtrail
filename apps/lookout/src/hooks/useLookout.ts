@@ -12,7 +12,8 @@ import {
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createActions, TRAIL_LEAD, type Runtime, type Selection, isRunning } from '../lib';
 import { newestWins } from '../lib/newestWins';
-import { onStreamOpen } from '../lib/trackerChanges';
+import { onServerEvent, onStreamOpen } from '../lib/trackerChanges';
+import { trustChanged } from '../lib/trustChanged';
 import { useLeases } from './useLeases';
 
 /** What the trail lead reads when a change hit a file that moved on since it was loaded (httpFs.ts, 409). */
@@ -89,6 +90,11 @@ export function useLookout(rt: Runtime) {
     };
     // changes made before the event stream opened (or while it reconnected) never arrive as events
     const offOpen = onStreamOpen(schedule);
+    // an outside change accepted anywhere changes how the trail's files read, without touching them
+    const offTrust = onServerEvent('trust', (raw) => {
+      const changed = trustChanged(JSON.parse(raw) as unknown);
+      if (changed.signed || changed.accepted) schedule();
+    });
     const agentWrote = (s: SessionInfo, mapId?: string) =>
       isRunning(s) && rt.activity.isRemote(s.id) && (!mapId || !s.mapId || s.mapId === mapId);
     const ticketById = (id: string) => snapRef.current?.tickets.find((t) => t.id === id);
@@ -117,6 +123,7 @@ export function useLookout(rt: Runtime) {
       offT();
       offA();
       offOpen();
+      offTrust();
       clearTimeout(timer);
     };
   }, [rt, refresh]);

@@ -25,6 +25,7 @@ import { parseMapFile, serializeMapFile } from './mapFile';
 import type { MarkdownFs } from './markdownFs';
 import { newTrailFile } from './newTrailFile';
 import { isTicketFile, segment } from './paths';
+import { SelfWrites } from './selfWrites';
 import { parseTicket, serializeTicket } from './ticketFile';
 import { unreadDecision } from './unreadDecision';
 
@@ -40,7 +41,7 @@ export class MarkdownAdapter implements TrackerAdapter {
   readonly kind = 'markdown' as const;
   readonly label = 'Local markdown';
   private events = new Emitter<TrackerEvent>();
-  private selfWrites = new Map<string, number>();
+  private selfWrites = new SelfWrites((path) => this.fs.read(path));
   private external = new ExternalChanges(
     (path) => this.fs.read(path),
     (e) => this.events.emit(e),
@@ -51,21 +52,19 @@ export class MarkdownAdapter implements TrackerAdapter {
     readonly location = `./${BRAND.dataDir}`,
   ) {
     fs.watch?.((path) => {
-      const t = this.selfWrites.get(path);
-      if (t && Date.now() - t < 1500) return;
-      this.external.queue(path);
+      void this.selfWrites.echo(path).then((echo) => echo || this.external.queue(path));
     });
   }
 
   /** `base`: the file as read before this change, so a write never undoes one made in between (signedWrite.ts). */
   private async put(path: string, text: string, base?: string) {
-    this.selfWrites.set(path, Date.now());
+    this.selfWrites.wrote(path, text);
     await this.fs.write(path, text, base === undefined ? undefined : { base });
   }
 
   /** A new numbered file under a number nobody else has (createNumbered.ts). */
   private putNew<T>(make: () => Promise<NumberedFile<T>>): Promise<T> {
-    return createNumbered(this.fs, make, (path) => this.selfWrites.set(path, Date.now()));
+    return createNumbered(this.fs, make, (path) => this.selfWrites.wrote(path));
   }
 
   private async readMap(mapId: string): Promise<MapDoc> {
@@ -93,7 +92,7 @@ export class MarkdownAdapter implements TrackerAdapter {
   }
 
   async createMap(input: MapInput) {
-    const map = await newTrailFile(this.fs, input, (path) => this.selfWrites.set(path, Date.now()));
+    const map = await newTrailFile(this.fs, input, (path) => this.selfWrites.wrote(path));
     this.events.emit({ kind: 'map.created', mapId: map.id, at: Date.now() });
     return map;
   }

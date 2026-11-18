@@ -1,5 +1,6 @@
 import { BRAND, type SignInView } from '@teamtrail/core';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { forgetSession } from '../../lib/session';
 
 export interface SignInsView {
@@ -27,6 +28,13 @@ async function post<T>(path: string, body: unknown = {}): Promise<{ ok: boolean;
   return { ok: r.ok, reply: (await r.json().catch(() => ({}))) as T & { error?: string } };
 }
 
+async function fetchSessions(): Promise<SignInsView | 'elsewhere' | null> {
+  const r = await fetch(`${url}/sessions`);
+  if (r.ok) return (await r.json()) as SignInsView;
+  const refused = (await r.json().catch(() => ({}))) as { elsewhere?: boolean };
+  return refused.elsewhere ? 'elsewhere' : null;
+}
+
 /**
  * Settings → You → Browsers & devices: the paired browsers, a code for another device, Revoke and Sign out.
  * undefined while loading, null without a server, `elsewhere` on a device (the list is managed on the machine).
@@ -34,16 +42,13 @@ async function post<T>(path: string, body: unknown = {}): Promise<{ ok: boolean;
 export function useSignIns() {
   const [view, setView] = useState<SignInsView | 'elsewhere' | null>();
   const [device, setDevice] = useState<DeviceCode>();
-  const load = useCallback(() => {
-    fetch(`${url}/sessions`)
-      .then(async (r) => {
-        if (r.ok) return (await r.json()) as SignInsView;
-        const refused = (await r.json().catch(() => ({}))) as { elsewhere?: boolean };
-        return refused.elsewhere ? 'elsewhere' : null;
-      })
-      .then(setView, () => setView(null));
-  }, []);
-  useEffect(load, [load]);
+  // live: a browser paired with the code shown, in another tab or with `teamtrail pair`, or revoked elsewhere
+  const { reload: load } = useLiveLoad({
+    load: fetchSessions,
+    show: setView,
+    failed: () => setView(null),
+    events: { 'sign-in': () => true },
+  });
   const pairDevice = useCallback(async () => {
     const { ok, reply } = await post<DeviceCode>('/codes');
     if (!ok) return reply.error ?? 'No code could be made.';

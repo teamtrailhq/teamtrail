@@ -2,6 +2,7 @@ import { type RiskPolicy } from '@teamtrail/core';
 import { useCallback, useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
+import { trustChanged } from '../../lib/trustChanged';
 
 export interface PolicyView {
   policy: RiskPolicy;
@@ -29,6 +30,8 @@ export function usePolicy() {
     show: setView,
     failed: () => setView(null),
     changed: (p) => p.endsWith('policy.json'),
+    // whether the policy waits for approval is this machine's ledger, not the file
+    events: { trust: (data) => trustChanged(data).approvals },
   });
   const save = useCallback(
     async (policy: RiskPolicy): Promise<string | undefined> => {
