@@ -38,6 +38,7 @@ import { createTrackerRoutes } from './trackerRoutes';
 import { handleTrackerSettings } from './trackerSettingsRoutes';
 import { handleTrust } from './trustRoutes';
 import { handleVerification } from './verificationRoutes';
+import { handleRules } from './verificationRulesRoute';
 import { handleScreen } from './verificationScreenRoute';
 import { handleVerificationSync } from './verificationSyncRoutes';
 import { handleWaivers } from './waiverRoutes';
@@ -120,6 +121,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleScreen(ctx, req, res, url),
     (req, res, url) => handleWaivers({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
+    (req, res, url) => handleRules({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
     (req, res, url) => handleScorecard(ctx, req, res, url),
     (req, res, url) => handleFlakyChecks(ctx, req, res, url),

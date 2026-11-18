@@ -1,5 +1,5 @@
 import type { VerificationAttempt, VerificationConfig } from '../model/verification';
-import { readAttempts } from '../verification/evidenceStore';
+import { readAttempts, writeAttempt } from '../verification/evidenceStore';
 import { gateModeFor } from '../verification/gateModeFor';
 import { recordGate } from '../verification/recordGate';
 import { flakyReason } from './flakyReason';
@@ -30,4 +30,11 @@ export function withFlakyGate(
     ticket: { id: a.ticketId, key: a.ticketKey },
   });
   return { ...a, flaky: { mode, checks } };
+}
+
+/** Writes a finished attempt once, with the flaky gate applied, and returns it as written. */
+export function writeGated(root: string, a: VerificationAttempt, config: VerificationConfig | undefined) {
+  const gated = withFlakyGate(root, a, config);
+  writeAttempt(root, gated);
+  return gated;
 }

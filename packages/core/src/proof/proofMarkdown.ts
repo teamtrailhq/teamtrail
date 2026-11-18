@@ -3,6 +3,7 @@ import { canonicalJson } from '../lib/canonicalJson';
 import type { Proof, ProofSignature } from '../model/proof';
 import { proofBadge } from './proofBadge';
 import { proofMarker } from './proofMarker';
+import { proofRuleLines } from './proofRuleLines';
 
 /** Agent-written text as inert Markdown: flattened and capped, then every character Markdown acts on escaped. */
 const md = (text: string, max = 200) => untrusted(text, max).replace(/[\\*_[\]()#|!~+-]/g, (c) => `\\${c}`);
@@ -51,11 +52,18 @@ function criteriaLines(p: Proof): string[] {
   return [`${head}:`, ...c.lines.map((l) => `- ${md(l)}`)];
 }
 
+/** Which model a review ran on against the author's, when it reported one; same-model reviews say so. */
+function reviewModel(r: Proof['reviews'][number], author?: string): string {
+  if (!r.model) return '';
+  if (r.sameModel) return `, reviewed by the same model (${md(r.model, 60)})`;
+  return author ? `, on ${md(r.model, 60)}, author on ${md(author, 60)}` : `, on ${md(r.model, 60)}`;
+}
+
 function reviewLines(p: Proof): string[] {
   if (!p.reviews.length) return ['- No review.'];
   return p.reviews.map(
     (r) =>
-      `- ${r.verdict} by ${md(r.by, 60)} (${r.byKind}${r.independent ? ', not the author' : ', NOT independent'}): ${md(r.summary)}`,
+      `- ${r.verdict} by ${md(r.by, 60)} (${r.byKind}${r.independent ? ', not the author' : ', NOT independent'}${reviewModel(r, p.attempt.model)}): ${md(r.summary)}`,
   );
 }
 
@@ -137,6 +145,7 @@ export function proofMarkdown(p: Proof, signature?: ProofSignature): string {
     '',
     '**Decisions this relies on:**',
     ...decisionLines(p),
+    ...proofRuleLines(p, md),
     ...guideLines(p),
     ...gitLines(p),
     '',

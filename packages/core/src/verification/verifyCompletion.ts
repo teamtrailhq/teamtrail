@@ -2,11 +2,12 @@ import path from 'node:path';
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
-import { withFlakyGate } from '../flaky/flakyGate';
+import { writeGated } from '../flaky/flakyGate';
 import { listGuides } from '../guides/guideStore';
 import { checksOfGuides, resolveGuides } from '../guides/resolveGuides';
 import { droppedChecks, trailKnownFailures } from '../mainChecks/withKnownFailures';
 import { BRAND } from '../model/brand';
+import type { RuleAnswer } from '../model/diffRule';
 import type { AttemptGuide } from '../model/guide';
 import type { Journal, TicketPhase } from '../model/lifecycle';
 import type { MapSnapshot, Ticket } from '../model/types';
@@ -22,7 +23,7 @@ import type { CheckRunner } from './checkRunner';
 import { checksWaitReason, trustedChecks } from './checksApproval';
 import { DEFAULT_CONFIG } from './config';
 import type { ConfigRead } from './configFile';
-import { nextAttemptId, readAttempts, writeAttempt } from './evidenceStore';
+import { nextAttemptId, readAttempts } from './evidenceStore';
 import { gradeAttempt } from './gradeAttempt';
 import { attemptComment, outcomeOf } from './outcome';
 import { verificationFor, type LevelInfo } from './policy';
@@ -31,6 +32,7 @@ import { requestReview } from './reviewRequest';
 import { acquireRunLock, releaseRunLock } from './runLock';
 import { runnerGraded } from './runnerGraded';
 import { withoutWaived } from './withoutWaived';
+import { withRules } from './withRules';
 
 /** The engine as an actor: comments and journal lines of the check runner. */
 export const CHECK_RUNNER = BRAND.slug;
@@ -50,8 +52,8 @@ export interface VerifyEnv {
 /** The repo a tracker's checks and git evidence use. */
 export const repoRootOf = (env: Pick<VerifyEnv, 'root' | 'repoRoot'>) => env.repoRoot ?? path.dirname(env.root);
 
-/** What the agent claimed, kept on the attempt and used to resolve the ticket when it passes. */
-export interface Submission {
+/** What the agent claimed, kept on the attempt and used to resolve the ticket when it passes; `model` it ran on. */
+export interface Submission extends Pick<VerificationAttempt, 'model'> {
   agent: string;
   sessionId?: string;
   resolution: string;
@@ -79,6 +81,8 @@ export interface Submission {
   touches?: string[];
   /** The guides the ticket takes on now, kept on the attempt for its proof. */
   guides?: AttemptGuide[];
+  /** Answers to the diff rules the change matched that ask a question (model/diffRule.ts). */
+  ruleAnswers?: RuleAnswer[];
 }
 
 /** One ticket's completion to verify: its level, and what the agent submitted. */
@@ -149,8 +153,8 @@ export async function verify(env: VerifyEnv, asked: VerifyJob): Promise<{ attemp
     let attempt: VerificationAttempt;
     try {
       const graded = await grade(env, job, { id, config, waiting });
-      attempt = withFlakyGate(env.root, { ...base, id, finishedAt: Date.now(), ...graded }, config.config);
-      writeAttempt(env.root, attempt);
+      // written once, with the flaky gate's finding on it
+      attempt = writeGated(env.root, { ...base, id, finishedAt: Date.now(), ...graded }, config.config);
     } finally {
       releaseRunLock(env.root, mapId, t.id);
     }
@@ -164,10 +168,16 @@ export async function verify(env: VerifyEnv, asked: VerifyJob): Promise<{ attemp
  * What an attempt finds: for a remote agent, the embedding server's runner (else nothing runs); nothing for
  * unapproved commands; else the checks here.
  */
-function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; waiting?: string }) {
+async function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; waiting?: string }) {
   const runner = env.checkRunner;
-  if (job.sub.remote && runner) return runnerGraded({ ...env, checkRunner: runner }, job, run);
-  if (job.sub.remote) return remoteGraded(env, job);
+  if (job.sub.remote) {
+    // a remote agent's files are its word: its declared paths decide which rules apply
+    const ruled = withRules({ root: env.root, config: run.config.config, job, files: job.sub.declaredPaths ?? [] });
+    const graded = runner
+      ? await runnerGraded({ ...env, checkRunner: runner }, { ...job, info: ruled.info }, run)
+      : remoteGraded(env, job);
+    return { ...graded, ...ruled.extra };
+  }
   const checkout = checkoutFor(env, job.mapId, job.ticket.id);
   const none = run.waiting ?? (checkout.kind === 'none' ? `No check ran: ${checkout.reason}.` : undefined);
   if (none || checkout.kind === 'none') return { checks: [], result: 'error' as const, note: none };
@@ -176,7 +186,7 @@ function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: Config
 
 /** Git evidence, checks and criteria for work that is in this checkout (or the ticket's worktree). */
 async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; checkout: string }) {
-  const { mapId, ticket: t, info, sub } = job;
+  const { mapId, ticket: t, sub } = job;
   const repoRoot = run.checkout;
   const git = await completionEvidence({
     ...env,
@@ -187,6 +197,9 @@ async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; conf
     noCodeReason: sub.noCodeReason,
     touches: sub.touches,
   });
+  // the diff rules the changed files match: their checks run with the ticket's, their answers go on the attempt
+  const files = git.changed.map((c) => c.path);
+  const ruled = withRules({ root: env.root, config: run.config.config, job, files });
   const { outcome, criteria } = await gradeAttempt({
     root: env.root,
     repoRoot,
@@ -194,14 +207,14 @@ async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; conf
     ticketId: t.id,
     attemptId: run.id,
     config: run.config,
-    info,
+    info: ruled.info,
     git,
     evidence: sub.criteria,
     known: trailKnownFailures(env.root, mapId),
     waived: job.waived,
     signal: env.signal,
   });
-  return { ...outcome, git, ...(criteria ? { criteria } : {}) };
+  return { ...outcome, git, ...(criteria ? { criteria } : {}), ...ruled.extra };
 }
 
 /** Records that a pass went stale while its checks ran, and runs the checks again on the code as it is now. */

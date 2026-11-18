@@ -6,6 +6,7 @@ export const submissionOf = (a: VerificationAttempt): Submission => ({
   agent: a.agent,
   sessionId: a.sessionId,
   origin: a.origin,
+  model: a.model,
   declaredPaths: a.declaredPaths,
   touches: a.touches,
   resolution: a.resolution,
@@ -17,4 +18,5 @@ export const submissionOf = (a: VerificationAttempt): Submission => ({
   // A remote attempt stays remote: its checks run again on the runner, or nowhere, never on this checkout.
   ...(a.remote ? { remote: true } : {}),
   criteria: a.criteria?.evidence,
+  ruleAnswers: a.rules?.flatMap((r) => (r.answer ? [{ rule: r.id, answer: r.answer }] : [])),
 });

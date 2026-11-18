@@ -1,3 +1,4 @@
+import type { Escape } from './escape';
 import type { AttemptResult } from './verification';
 
 /** One ticket's completion record, as the scorecard reads it. */
@@ -15,6 +16,10 @@ export interface ScorecardTicket {
   leadMs?: number;
   /** The guides of its latest attempt; missing on attempts from before guides came by type. */
   guides?: string[];
+  /** Verified, then came back: reopened or reverted (model/escape.ts). */
+  escaped?: boolean;
+  /** The checks that passed on its verified attempt (the one that came back, when it did). */
+  passedChecks?: string[];
 }
 
 /** A session's model and spend, as its session record has them. */
@@ -44,7 +49,22 @@ export interface ScorecardRow {
   costPerVerifiedUsd?: number;
   medianLeadMs?: number;
   findings: { info: number; warn: number; error: number };
+  /** Tickets verified, then reopened or reverted. */
+  escaped: number;
+  /** escaped / tickets ever verified, 0–1; missing with none verified. */
+  escapeRate?: number;
   /** At least `minSample` tickets: only these are compared or suggested. */
+  enough: boolean;
+}
+
+/** One check: the verified tickets it passed on, and how many of those came back anyway. */
+export interface EscapeCheckRow {
+  key: string;
+  verified: number;
+  escaped: number;
+  /** escaped / verified, 0–1. */
+  escapeRate: number;
+  /** At least `minSample` verified tickets. */
   enough: boolean;
 }
 
@@ -57,4 +77,10 @@ export interface Scorecard {
   byVendor: ScorecardRow[];
   /** One row per guide the work was done under; a ticket with several guides counts in each. */
   byGuide: ScorecardRow[];
+  /** One row per ticket type. Missing from older servers. */
+  byType?: ScorecardRow[];
+  /** Per check that passed on verified work: what it let through. Missing from older servers. */
+  byCheck?: EscapeCheckRow[];
+  /** Verified work that came back, newest first. Missing from older servers. */
+  escapes?: Escape[];
 }

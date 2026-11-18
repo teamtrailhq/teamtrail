@@ -1,11 +1,14 @@
 import type { CriteriaResult } from '../criteria/criteria';
 import type { WaivedCheck } from './checkWaiver';
+import type { AttemptRule, DiffRule } from './diffRule';
 import type { GitEvidence } from './evidence';
 import type { AttemptFlaky } from './flaky';
 import type { GateModes } from './gateMode';
 import type { AttemptGuide, ChecklistAnswer, GuideAnswers } from './guide';
 import type { VerificationLevel } from './lifecycle';
 import type { TicketType } from './types';
+
+export type { AttemptRule, DiffRule, HeldRules, RuleAnswer, RuleWaiver, RuleWaiverEntry } from './diffRule';
 
 /** One configured command. `run` is an argv array, never a shell string. */
 export interface CheckSpec {
@@ -39,6 +42,8 @@ export interface VerificationConfig {
   stale: 'reverify' | 'flag';
   /** How each verification gate acts (model/gateMode.ts); a gate the file leaves out takes its default. */
   gates: GateModes;
+  /** Diff rules: a check to run or a question to answer when a change touches certain files (model/diffRule.ts). */
+  rules: DiffRule[];
   github: { enabled: 'auto' | 'off'; requiredChecks: string[]; pollSec: number };
 }
 
@@ -83,6 +88,8 @@ export interface VerificationAttempt {
    * sessions under different names), `local:<id>` for a connection on this machine. A review must come from another.
    */
   origin?: string;
+  /** The model the agent ran on when it submitted, read from its own logs; unset when it reports none. */
+  model?: string;
   level: VerificationLevel;
   configHash: string;
   submittedAt: number;
@@ -125,6 +132,8 @@ export interface VerificationAttempt {
   criteria?: CriteriaResult;
   /** Checks that passed only on retry, on code they had failed on (the `flaky` gate, flaky/flakyGate.ts). */
   flaky?: AttemptFlaky;
+  /** The diff rules the changed files matched, with the agent's answers. Missing when none matched. */
+  rules?: AttemptRule[];
 }
 
 export type VerdictKind = 'PASS' | 'FAIL' | 'NEEDS_HUMAN';
@@ -141,6 +150,15 @@ export interface VerificationVerdict {
   sessionId?: string;
   /** The reviewer's origin (see `VerificationAttempt.origin`), for an agent's verdict. */
   origin?: string;
+  /** The model the reviewer ran on, from its own logs; unset when it reports none. */
+  model?: string;
+  /** The model the work's author ran on (the attempt's, else its session's), as the review compared it. */
+  authorModel?: string;
+  /**
+   * The reviewer ran the author's model (planning/matching/sameModel.ts) while the `independent-review` gate was on:
+   * `observed` counted, `held` did not count until an agent on another model reviews or the trail lead approves.
+   */
+  sameModel?: 'observed' | 'held';
   verdict: VerdictKind;
   summary: string;
   findings: { path?: string; line?: number; severity: 'info' | 'warn' | 'error'; text: string }[];

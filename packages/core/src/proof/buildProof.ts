@@ -4,6 +4,7 @@ import type { Proof, ProofReview } from '../model/proof';
 import type { DecisionRecord } from '../model/types';
 import type { CheckResult, VerificationAttempt, VerificationVerdict } from '../model/verification';
 import { proofGaps } from './proofGaps';
+import { proofRules } from './proofRules';
 
 export interface ProofInput {
   ticket: Proof['ticket'];
@@ -27,7 +28,10 @@ function review(v: VerificationVerdict, a: VerificationAttempt): ProofReview {
     byKind: v.byKind,
     verdict: v.verdict,
     summary: v.summary,
-    independent: v.byKind === 'trail lead' || (otherSession && otherOrigin && v.by !== a.agent),
+    independent:
+      v.byKind === 'trail lead' || (otherSession && otherOrigin && v.by !== a.agent && v.sameModel !== 'held'),
+    ...(v.model ? { model: v.model } : {}),
+    ...(v.sameModel ? { sameModel: v.sameModel } : {}),
   };
 }
 
@@ -86,9 +90,12 @@ function retriedOf(a: VerificationAttempt | undefined, reviews: ProofReview[]): 
     })),
   };
 }
+/** The author's model: the attempt's own, else what a review of it compared against. */
+const authorModel = (a: VerificationAttempt | undefined, verdicts: VerificationVerdict[]) =>
+  a && (a.model ?? verdicts.find((v) => v.attemptId === a.id && v.authorModel)?.authorModel);
 
 /** The latest attempt as the proof shows it; an empty, failed one when nothing was submitted. */
-function attemptOf(a?: VerificationAttempt): Proof['attempt'] {
+function attemptOf(a?: VerificationAttempt, model?: string): Proof['attempt'] {
   if (!a) return { id: '', agent: '', result: 'error', submittedAt: 0, finishedAt: 0, resolution: '', remote: false };
   return {
     id: a.id,
@@ -100,6 +107,7 @@ function attemptOf(a?: VerificationAttempt): Proof['attempt'] {
     pr: a.pr,
     remote: a.remote === true,
     ...(a.remote && a.runner ? { runner: a.runner } : {}),
+    ...(model ? { model } : {}),
   };
 }
 
@@ -123,7 +131,7 @@ export function buildProof(input: ProofInput): Proof {
     status: gaps.length ? 'not-verified' : 'verified',
     gaps,
     level: latest?.level ?? 'off',
-    attempt: attemptOf(latest),
+    attempt: attemptOf(latest, authorModel(latest, input.verdicts)),
     earlier: input.attempts.slice(0, -1).map((a) => ({ id: a.id, result: a.result })),
     checks: (latest?.checks ?? []).map((c) => ({
       name: c.name,
@@ -151,6 +159,7 @@ export function buildProof(input: ProofInput): Proof {
         superseded: Boolean(d.supersededBy),
       })),
     ...(latest?.guides ? { guides: latest.guides } : {}),
+    ...(latest?.rules?.length ? { rules: proofRules(latest) } : {}),
   };
   return { ...body, digest: `sha256:${createHash('sha256').update(canonicalJson(body)).digest('hex')}` };
 }

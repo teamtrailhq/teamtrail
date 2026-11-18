@@ -35,16 +35,21 @@ export function stampModel(ctx: AgentContext) {
 
 const matchingOn = (snap: MapSnapshot) => snap.map.modelMatching?.enabled === true;
 
+/** `later` moved after everything else, the order kept otherwise. */
+const lastOf = (order: Ticket[], later?: string[]) =>
+  later?.length ? [...order.filter((t) => !later.includes(t.id)), ...order.filter((t) => later.includes(t.id))] : order;
+
 /**
  * The ticket to offer this agent next. With matching off it's `chooseNext`'s pick. With it on, the best ticket at
- * the agent's tier, else a lower one; `held` lists ready tickets left for a stronger model.
+ * the agent's tier, else a lower one; `held` lists ready tickets left for a stronger model. `later` (reviews of work
+ * done on this agent's own model, reviewModels.ts) come after everything else.
  */
 export function pickNext(
   ctx: AgentContext,
   snap: MapSnapshot,
-  opts: { types?: TicketType[]; exclude?: string[] },
+  opts: { types?: TicketType[]; exclude?: string[]; later?: string[] },
 ): { ticket?: Ticket; held: Ticket[] } {
-  const order = orderNext(snap, opts);
+  const order = lastOf(orderNext(snap, opts), opts.later);
   if (!matchingOn(snap)) return { ticket: order[0], held: [] };
   const tier = sessionTier(ctx).tier;
   const fits = rankForSession(order, tier, snap.map);

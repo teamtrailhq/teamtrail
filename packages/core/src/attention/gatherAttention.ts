@@ -13,6 +13,7 @@ import { readMainChecks } from '../mainChecks/readMainChecks';
 import { activeTrails } from '../model/activeTrails';
 import type { AttentionPolicy } from '../model/attention';
 import type { InstalledGuide } from '../model/guide';
+import { readEscapes } from '../scorecard/readEscapes';
 import { trackerPin, trackerTargetKey, trackerTargetLabel } from '../server/trackerPin';
 import { pendingTrust } from '../trust/pendingTrust';
 import { approvalItems } from '../verification/approvals';
@@ -58,6 +59,7 @@ export async function gatherAttention(input: {
     ...(await rerouteInputs({ root, adapter, snaps, syncs })),
     violations: await readViolations({ root, adapter, snaps, docs }),
     precedentConflicts: await readPrecedentConflicts({ root, adapter, snaps }),
+    escapes: await readEscapes(root, snaps),
     integrations: integrationsOf(root),
     mainChecks: await Promise.all(snaps.map((s) => readMainChecks({ root }, s.map.id))),
     guides: listGuides(root).flatMap(guideFiles),

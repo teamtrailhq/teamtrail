@@ -32,7 +32,8 @@ export type AttentionKind =
   | 'precedent'
   | 'review-limit'
   | 'main-checks'
-  | 'merge';
+  | 'merge'
+  | 'escape';
 
 /** `blocking`: the agent can do no useful work until answered. `soon`: the default. `fyi`: whenever convenient. */
 export type AttentionUrgency = 'blocking' | 'soon' | 'fyi';
@@ -61,6 +62,11 @@ export interface AttentionItem {
   ref: string;
   /** Who raised it, when an agent did. */
   agent?: string;
+  /**
+   * A diff rule the item suggests (escapes): the globs it would trigger on and its reason, to prefill Settings →
+   * Verification → Rules. Nothing is written until the human saves it there.
+   */
+  rule?: { when: string[]; why: string };
 }
 
 /** `<tracker dir>/attention.json`. Every field is optional; a missing file means the defaults. */

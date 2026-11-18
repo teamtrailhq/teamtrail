@@ -20,6 +20,22 @@ function retriedGaps(attempt: VerificationAttempt, reviews: ProofReview[]): stri
   return (attempt.flaky?.checks ?? []).map((f) => `${flakyLine(f)}; the trail lead hasn't accepted the pass.`);
 }
 
+/** Why no review counts as independent: a PASS the `independent-review` gate held names the shared model. */
+function noIndependentReview(reviews: ProofReview[]): string {
+  const held = reviews.find((r) => r.sameModel === 'held' && r.verdict === 'PASS');
+  if (!held) return 'No independent review passed it.';
+  const on = held.model ? ` on ${held.model}` : '';
+  return `No independent review passed it: ${held.by} reviewed it${on}, the model that did the work.`;
+}
+
+/** A diff rule's question nobody answered, or that the trail lead let the work go without. */
+const ruleGaps = (a: VerificationAttempt) =>
+  (a.rules ?? []).flatMap((r) => {
+    if (r.unanswered) return [`${r.id}'s question went unanswered: ${r.ask}`];
+    if (r.waived) return [`${r.id}'s question wasn't answered: ${r.waived.by} let the work go without it.`];
+    return [];
+  });
+
 /**
  * Why a ticket's latest completion isn't proven, one line each; none means it is. Deterministic: the same attempt and
  * reviews always give the same lines. What the level asks for: `checks` a passing run here, `+review` an independent
@@ -39,9 +55,10 @@ export function proofGaps({ attempt, reviews }: { attempt?: VerificationAttempt;
   if (c?.missing.length) gaps.push(`Criteria with no evidence: ${c.missing.join(', ')}.`);
   if (c?.failed.length) gaps.push(`Criteria whose check failed: ${c.failed.join(', ')}.`);
   if (c && c.confirmed === false) gaps.push("The trail lead hadn't confirmed the criteria.");
+  gaps.push(...ruleGaps(attempt));
   if (reviews.some((r) => r.verdict !== 'PASS')) gaps.push('A review or the trail lead did not pass it.');
   if (attempt.level !== 'checks' && !reviews.some((r) => r.byKind === 'agent' && r.verdict === 'PASS' && r.independent))
-    gaps.push('No independent review passed it.');
+    gaps.push(noIndependentReview(reviews));
   if (
     attempt.level === 'checks+review+human' &&
     !reviews.some((r) => r.byKind === 'trail lead' && r.verdict === 'PASS')

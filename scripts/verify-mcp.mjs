@@ -20,6 +20,7 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { verifyEscapes } from './verifyEscapes.mjs';
 import { verifyFlaky } from './verifyFlaky.mjs';
 import { verifyGates } from './verifyGates.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
@@ -32,6 +33,7 @@ import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifyProof } from './verifyProof.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
+import { verifyRules } from './verifyRules.mjs';
 import { verifyScreening } from './verifyScreening.mjs';
 import { verifySignedState } from './verifySignedState.mjs';
 import { verifySignIn } from './verifySignIn.mjs';
@@ -638,6 +640,8 @@ const supervisionOk = await verifySupervision({
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 // Checks on main: a check already failing on main, the human's Start anyway and Drop, on a scratch git repo.
 const mainChecksOk = await verifyMainChecks({ browser, cli, log, shots });
+// Escapes: verified work reverted on main asks for a rule and counts on the scorecard, on a scratch git repo.
+const escapesOk = await verifyEscapes({ browser, cli, log, shots });
 
 // Model-aware claiming: two agents on different models, matching switched on in the Lookout, on a scratch project.
 const modelsOk = await verifyModels({ browser, cli, log, shots });
@@ -655,6 +659,8 @@ const screeningOk = await verifyScreening({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
 // Flaky checks: a pass on retry with no change held for the trail lead, accepted, and shown on the proof.
 const flakyOk = await verifyFlaky({ browser, cli, log, shots });
+// Diff rules: a rule prefilled from a link and saved in Settings, an agent's completion held for its answer.
+const rulesOk = await verifyRules({ browser, cli, log, shots });
 // The page's Content-Security-Policy in a real browser, API headers, and a frame from another origin refused.
 const headersOk = await verifyHeaders({ browser, url, log, pair: () => pairLink({ cli, cwd: repo }) });
 // Sign-in: pairing links work once, the API answers no one else, a revoked browser is signed out live.
@@ -742,6 +748,7 @@ if (
   !signInOk ||
   !parallelOk ||
   !mainChecksOk ||
+  !escapesOk ||
   !modelsOk ||
   !projectsOk ||
   !guidesOk ||
@@ -751,6 +758,7 @@ if (
   !screeningOk ||
   !waiverOk ||
   !flakyOk ||
+  !rulesOk ||
   !slackOk
 )
   process.exit(1);

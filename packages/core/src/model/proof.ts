@@ -20,8 +20,15 @@ export interface ProofReview {
   byKind: 'agent' | 'trail lead';
   verdict: VerdictKind;
   summary: string;
-  /** The reviewer was not the author: another session, and another origin when both are known. */
+  /**
+   * The reviewer was not the author: another session, and another origin when both are known. A review the
+   * `independent-review` gate held, on the author's own model, is not independent.
+   */
   independent: boolean;
+  /** The model the reviewer ran on. Missing when it reported none, so older proofs and digests read as they did. */
+  model?: string;
+  /** The reviewer ran the author's model: `held` didn't count (the gate enforces), `observed` did. */
+  sameModel?: 'observed' | 'held';
 }
 
 export interface ProofDecision {
@@ -58,6 +65,21 @@ export interface ProofRetried {
   accepted: boolean;
 }
 
+/**
+ * A diff rule the work's changed files matched: its check as it ran here (`passed`, null when it didn't run), and its
+ * question with the agent's answer (claimed, never verified), the trail lead's waiver, or `unanswered`.
+ */
+export interface ProofRule {
+  id: string;
+  why: string;
+  files: string[];
+  check?: { name: string; passed: boolean | null };
+  ask?: string;
+  answer?: string;
+  waived?: { by: string; reason: string };
+  unanswered?: true;
+}
+
 /** An Ed25519 signature over a proof's digest, by the machine key `keyId` names (proof-keys/<keyId>.pub). */
 export interface ProofSignature {
   keyId: string;
@@ -90,6 +112,8 @@ export interface Proof {
     remote: boolean;
     /** For a remote completion, the runner that ran its checks where its work is (the embedding server's). */
     runner?: string;
+    /** The model the author ran on, when known. */
+    model?: string;
   };
   /** Earlier attempts on the ticket, oldest first. */
   earlier: { id: string; result: AttemptResult }[];
@@ -128,6 +152,8 @@ export interface Proof {
    * by type, so their proofs and digests read as they always did.
    */
   guides?: AttemptGuide[];
+  /** The diff rules the changes matched. Missing when none did, so older proofs and digests read as they did. */
+  rules?: ProofRule[];
   /** `sha256:` of the canonical JSON of every other field. */
   digest: string;
 }
