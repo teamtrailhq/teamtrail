@@ -6,8 +6,12 @@ import {
   readCriteriaFile,
   writeTicketCriteria,
 } from '../criteria/criteriaStore';
+import { journalFile } from '../history/journalFile';
 import { contentHash, trustKey, trustLedger } from '../trust/trustLedger';
+import { checkAgainOnConfirm } from '../verification/checkAgainOnConfirm';
+import { readAttempts } from '../verification/evidenceStore';
 import { BadRequest, readJson, sendJson } from './http';
+import type { RouteContext } from './routeContext';
 import { checkShown } from './shownHash';
 
 const text = (v: unknown) => typeof v === 'string' && v.length > 0 && v.length < 300;
@@ -18,7 +22,8 @@ const text = (v: unknown) => typeof v === 'string' && v.length > 0 && v.length <
  * `confirmed`, and `hash`: the criteria as the page showed them) is the trail lead confirming a ticket's criteria (or
  * taking that back, which needs no hash).
  */
-export async function handleCriteria(root: string, req: IncomingMessage, res: ServerResponse, url: URL) {
+export async function handleCriteria(ctx: RouteContext, req: IncomingMessage, res: ServerResponse, url: URL) {
+  const { root } = ctx;
   if (!url.pathname.startsWith('/criteria')) return false;
   if (url.pathname === '/criteria' && req.method === 'GET') {
     const mapId = url.searchParams.get('mapId');
@@ -52,8 +57,18 @@ export async function handleCriteria(root: string, req: IncomingMessage, res: Se
     const at = { mapId: b.mapId as string, ticketId: b.ticketId as string, content: content! };
     if (saved.confirmed) confirmCriteriaHere(root, at, 'trail lead');
     else trustLedger(root).drop(key);
-    sendJson(res, 200, { ticket: saved });
+    // a completion that passed all but these criteria is checked again against them, on the same commit
+    const again = saved.confirmed ? await againAfter(ctx, at) : undefined;
+    sendJson(res, 200, { ticket: saved, ...(again ? { again } : {}) });
     return true;
   }
   return false;
+}
+
+/** The ticket's last completion checked again against the criteria just confirmed, when it waits on them. */
+async function againAfter(ctx: RouteContext, at: { mapId: string; ticketId: string }) {
+  const last = readAttempts(ctx.root, at.mapId, at.ticketId).at(-1);
+  if (last?.criteria?.confirmed !== false) return undefined;
+  const env = { adapter: await ctx.active(), root: ctx.root, journal: journalFile(ctx.root) };
+  return checkAgainOnConfirm(env, { ...at, by: 'trail lead' });
 }

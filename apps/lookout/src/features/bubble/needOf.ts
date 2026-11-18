@@ -22,6 +22,7 @@ const LABEL: Partial<Record<AttentionKind, string>> = {
   'tracker-settings': 'Settings changed',
   'review-limit': 'Review waits',
   escape: 'Verified, then came back',
+  criteria: 'Confirm its criteria',
 };
 
 /** The item's title without the ticket key the bubble already shows ("#21: PR #412 ready to merge" → "PR #412 …"). */

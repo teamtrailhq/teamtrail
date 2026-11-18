@@ -16,9 +16,10 @@ import { trustedChecks } from './checksApproval';
 import { DEFAULT_CONFIG } from './config';
 import { readAttempts, writeVerdict } from './evidenceStore';
 import { rerunChecks } from './operatorRerun';
+import { verifyAgain } from './verifyAgain';
 import { CHECK_RUNNER, type VerifyEnv } from './verifyCompletion';
 
-export type OperatorAction = 'rerun' | 'approve' | 'accept' | 'rework' | 'unblock' | 'level';
+export type OperatorAction = 'rerun' | 'approve' | 'accept' | 'rework' | 'unblock' | 'level' | 'verify-again';
 
 export interface OperatorRequest {
   action: OperatorAction;
@@ -75,6 +76,11 @@ export async function operatorAction(env: VerifyEnv, r: OperatorRequest): Promis
       return rework(a);
     case 'unblock':
       return unblock(a);
+    case 'verify-again': {
+      const run = await verifyAgain(env, { mapId: r.mapId, ticketId: a.ticketId, by: r.by });
+      void run.done.catch(() => {});
+      return { attemptId: run.attemptId };
+    }
     default: {
       const unhandled: never = r.action;
       throw new OperationError(`unknown action ${unhandled}`);
@@ -120,6 +126,7 @@ async function decide(a: Act, action: 'approve' | 'accept') {
     answer,
     summary: last?.summary,
     author,
+    ...(last?.supersedes ? { supersedes: last.supersedes } : {}),
     guard: { via, highRisk },
   });
   verdict(a, 'PASS', reason ?? (action === 'approve' ? 'approved' : 'accepted'));

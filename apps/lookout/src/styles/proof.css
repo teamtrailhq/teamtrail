@@ -13,6 +13,21 @@
   margin: 0;
   padding-left: var(--sp-18);
 }
+/* Each gap with who is on it, and the human's action when it's theirs (features/proof/ProofGapList.tsx). */
+.proof-gap-list {
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  align-self: stretch;
+}
+.proof-gap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+}
 .ticket-proof code {
   overflow-wrap: anywhere;
 }

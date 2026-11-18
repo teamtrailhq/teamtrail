@@ -60,7 +60,7 @@ export function TicketPanel(props: {
       <HowSection v={v} editing={editing} setEditing={setEditing} act={bar.act} />
       <ProgressSection v={v} onUndoWaiver={bar.undoWaiver} />
       <HeldRules mapId={snap.map.id} ticketId={t.id} />
-      <TicketProof ticket={t} view={v.proof} />
+      <TicketProof ticket={t} view={v.proof} actions={bar.gapActions} />
       <HistorySection t={t} decisions={v.decisions} onOpenDecision={props.onOpenDecision} />
       <TicketFooter
         v={v}

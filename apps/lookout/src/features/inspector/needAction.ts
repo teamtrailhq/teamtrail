@@ -30,6 +30,7 @@ const NEEDS: Partial<Record<AttentionKind, NeedAction>> = {
   'reroute-suggested': { ask: 'decide whether to reroute', act: open('Review the reroute') },
   trust: { ask: 'review what changed', act: open('Open Approvals') },
   escape: { ask: 'decide on a rule', act: open('Add a rule') },
+  criteria: { ask: 'confirm its criteria', act: { kind: 'menu', id: 'confirm-criteria' } },
   knowledge: { ask: 'review the field guide', act: open('Open the field guide') },
   guide: { ask: 'review the guide', act: open('Review the guide') },
   'guide-checks': { ask: "review the guide's checks", act: open('Review the guide') },

@@ -1,10 +1,12 @@
-import type { Proof, ProofPostRecord } from '@teamtrail/core';
+import type { GapStanding, Proof, ProofPostRecord } from '@teamtrail/core';
 import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
 
 export interface TicketProofView {
   proof: Proof;
+  /** Who is on each gap and what closes it (core's proof/gapPlan.ts); missing from an older server. */
+  plan?: GapStanding[];
   /** Signed with this machine's key, ready for a pull request. */
   markdown: string;
   /** This machine's public key file, relative to the tracker folder, to commit. */

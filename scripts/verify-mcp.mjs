@@ -34,6 +34,7 @@ import { verifyNewTrail } from './verifyNewTrail.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifyProof } from './verifyProof.mjs';
+import { verifyProofGaps } from './verifyProofGaps.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
 import { verifyRules } from './verifyRules.mjs';
 import { verifyScreening } from './verifyScreening.mjs';
@@ -689,6 +690,8 @@ const linearOk = await verifyLinear({ browser, cli, log, shots });
 const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const screeningOk = await verifyScreening({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
+// Done means verified: missing evidence back to rework and the review opened by themselves, Confirm criteria → verified.
+const proofGapsOk = await verifyProofGaps({ browser, cli, log, shots });
 // Flaky checks: a pass on retry with no change held for the trail lead, accepted, and shown on the proof.
 const flakyOk = await verifyFlaky({ browser, cli, log, shots });
 // Diff rules: a rule prefilled from a link and saved in Settings, an agent's completion held for its answer.
@@ -818,6 +821,7 @@ if (
   !remoteOk ||
   !screeningOk ||
   !waiverOk ||
+  !proofGapsOk ||
   !flakyOk ||
   !rulesOk ||
   !checkGuardOk ||

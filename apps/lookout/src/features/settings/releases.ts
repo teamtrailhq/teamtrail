@@ -22,6 +22,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.65.0',
+    date: '2026-11-18',
+    items: [
+      'Done means verified: work that passed against criteria you never confirmed waits for you, and confirming checks it again by itself',
+      'Criteria charted with a ticket are yours to confirm before any agent starts it',
+      'Every proof gap says who is on it, and what closes it when it is yours: Confirm criteria and verify again, Approve, Send to rework',
+      'The pull request up top in the ticket and on its map card; the full ticket’s actions sit flush at the bottom',
+    ],
+  },
+  {
     version: '0.64.3',
     date: '2026-11-18',
     items: [

@@ -20,5 +20,5 @@ export function MergeOnApprove(props: { mapId: string; ticketId: string; proof?:
   if (!work || settled) return null;
   const at = { path, mapId: props.mapId, ticketId: props.ticketId };
   if (proof.status === 'verified') return <ApproveAndMerge {...at} />;
-  return <MergeAnyway {...at} gaps={proof.gaps} />;
+  return <MergeAnyway {...at} gaps={proof.gaps} plan={props.proof?.plan} />;
 }

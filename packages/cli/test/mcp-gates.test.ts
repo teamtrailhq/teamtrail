@@ -329,6 +329,11 @@ describe('acceptance criteria: who writes them, and what counts as proof', () =>
       destination: 'D',
       tickets: [{ ref: 'x', title: 'Build', type: 'execute', criteria: [{ text: 'Exports rows', kind: 'unit' }] }],
     });
+    // the trail lead agrees to the criteria before the work starts: until then no agent may claim it
+    await expect(a('claim_ticket', { ticket: keyOf(m, 'x') })).rejects.toThrow(/confirm them/);
+    const ticket = { id: keyOf(m, 'x').slice(1), key: keyOf(m, 'x') };
+    writeTicketCriteria(root, { id: m.trail.id, title: 'Exports' }, ticket, { confirmed: true });
+    confirmCriteriaHereNow(root, m.trail.id, ticket.id);
     await a('claim_ticket', { ticket: keyOf(m, 'x') });
     fs.writeFileSync(path.join(repo, 'export.ts'), 'x');
     const done = await a<{ closed?: string; status?: string }>('report_completion', {

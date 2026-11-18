@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import { canonicalJson } from '../lib/canonicalJson';
 import type { Proof, ProofReview } from '../model/proof';
+import type { ProofGapItem } from '../model/proofGap';
 import type { DecisionRecord } from '../model/types';
 import type { CheckResult, VerificationAttempt, VerificationVerdict } from '../model/verification';
-import { proofGaps } from './proofGaps';
+import { proofGapItems } from './proofGapItems';
 import { proofRules } from './proofRules';
 
 export interface ProofInput {
@@ -129,7 +130,10 @@ function attemptOf(a?: VerificationAttempt, model?: string): Proof['attempt'] {
  * The proof of one ticket's completion: what Teamtrail recorded, never what an agent says now. Pure and
  * deterministic: the same recorded data always gives the same proof and digest.
  */
-export function buildProof(input: ProofInput): Proof {
+export const buildProof = (input: ProofInput): Proof => buildProofWithGaps(input).proof;
+
+/** The proof with each of its gaps' kinds (proofGapItems.ts), which the proof itself keeps only as lines. */
+export function buildProofWithGaps(input: ProofInput): { proof: Proof; gaps: ProofGapItem[] } {
   const latest = input.attempts.at(-1);
   const reviews = latest
     ? input.verdicts
@@ -137,7 +141,8 @@ export function buildProof(input: ProofInput): Proof {
         .sort((x, y) => x.at - y.at)
         .map((v) => review(v, latest))
     : [];
-  const gaps = proofGaps({ attempt: latest, reviews });
+  const items = proofGapItems({ attempt: latest, reviews });
+  const gaps = items.map((g) => g.text);
   const guard = guardOf(latest, reviews);
   const body: Omit<Proof, 'digest'> = {
     v: 1,
@@ -177,5 +182,6 @@ export function buildProof(input: ProofInput): Proof {
     ...(latest?.guides ? { guides: latest.guides } : {}),
     ...(latest?.rules?.length ? { rules: proofRules(latest) } : {}),
   };
-  return { ...body, digest: `sha256:${createHash('sha256').update(canonicalJson(body)).digest('hex')}` };
+  const proof = { ...body, digest: `sha256:${createHash('sha256').update(canonicalJson(body)).digest('hex')}` };
+  return { proof, gaps: items };
 }

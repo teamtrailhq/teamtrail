@@ -12,6 +12,7 @@ interface Given {
   declaredPaths?: string[];
   touches?: string[];
   guides?: AttemptGuide[];
+  supersedes?: string;
 }
 
 /** What an attempt records of a submission besides its required fields; `runner` names a remote one's check runner. */
@@ -27,5 +28,6 @@ export function submittedFields(sub: Given, runner?: string): Partial<Verificati
     ...(sub.declaredPaths ? { declaredPaths: sub.declaredPaths } : {}),
     ...(sub.touches?.length ? { touches: sub.touches } : {}),
     ...(sub.guides?.length ? { guides: sub.guides } : {}),
+    ...(sub.supersedes ? { supersedes: sub.supersedes } : {}),
   };
 }

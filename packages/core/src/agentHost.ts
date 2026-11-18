@@ -11,6 +11,7 @@ export { LEASE_REAPER, reclaimExpired, returnToQueue, type ReturnOutcome } from 
 export { journalFile, journalPath, JOURNAL_DIR } from './history/journalFile';
 export { approveBriefHere, briefPath, readBrief, readBriefFile, writeBrief } from './discovery/briefStore';
 export { claimableNow, discoveryRefusal, discoverySkipped, requiresDiscovery } from './discovery/discoveryGate';
+export { criteriaHeld, type CriteriaWaiting } from './criteria/criteriaHeld';
 export { approveTrust } from './trust/approveTrust';
 export { recordWorktree, trustedWorkspace } from './workspaces/trustedWorkspace';
 export { pendingTrust } from './trust/pendingTrust';

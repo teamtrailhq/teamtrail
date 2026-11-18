@@ -10,6 +10,7 @@ import { resolve } from '../planning/operations/resolve';
 import { DEFAULT_CONFIG } from './config';
 import { readAttempts, writeVerdict } from './evidenceStore';
 import { holdForOtherModel } from './holdForOtherModel';
+import { waitsForHuman } from './outcome';
 import { submissionOf } from './resubmit';
 import { reviewConflict, type Reviewer } from './reviewIndependence';
 import { reviewModelGate, type ReviewModels } from './reviewModelGate';
@@ -162,11 +163,16 @@ async function moveReviewed(
     void run.done.catch(() => {});
     return { phase: 'verifying', attemptId: run.attemptId };
   }
-  if (info.level === 'checks+review+human' || last.criteria?.manual.length) {
+  if (info.level === 'checks+review+human' || waitsForHuman(last).length) {
     await transition(env.adapter, mapId, t.id, { ...engine, event: 'review.pass', to: 'verifying' });
     return { phase: 'verifying' };
   }
-  const answer = { answer: last.resolution, summary: last.summary, author: last.agent };
+  const answer = {
+    answer: last.resolution,
+    summary: last.summary,
+    author: last.agent,
+    ...(last.supersedes ? { supersedes: last.supersedes } : {}),
+  };
   await resolve(env.adapter, mapId, t.id, { ...engine, event: 'review.pass', ...answer });
   return { phase: 'done' };
 }

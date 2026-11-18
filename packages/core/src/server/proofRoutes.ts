@@ -7,6 +7,7 @@ import { proofForTicket } from '../proof/proofForTicket';
 import { proofPostSetting } from '../proof/proofPostSetting';
 import { readProofPost } from '../proof/proofPostStore';
 import { signedProofMarkdown } from '../proof/signedProofMarkdown';
+import { ticketGapPlan } from '../proof/ticketGapPlan';
 import { TRAIL_LEAD } from './guideJournal';
 import { BadRequest, readJson, sendJson } from './http';
 import type { RouteContext } from './routeContext';
@@ -17,7 +18,8 @@ type ProofContext = RouteContext & { configDir?: string; kick?: () => void };
  * `/proof`: Verified by Teamtrail in the Lookout.
  *   GET /proof/settings                    `{ enabled }`: whether this machine posts proofs to pull requests
  *   PUT /proof/settings  body `{ enabled }`  the trail lead's switch, this machine only (thisMachineRoutes.ts), journaled
- *   GET /proof/ticket?mapId=&ticketId=     `{ proof, markdown, post?, gapsHash, mergeAnyway? }`: the ticket's proof, what
+ *   GET /proof/ticket?mapId=&ticketId=     `{ proof, plan, markdown, post?, gapsHash, mergeAnyway? }`: the ticket's proof,
+ *     who is on each of its gaps and what closes it (`plan`, proof/gapPlan.ts), what
  *     was last posted, the hash of its gaps and the trail lead's Merge anyway that accepted exactly them (mergeAnyway.ts)
  * False when the path doesn't match.
  */
@@ -73,13 +75,19 @@ async function ticketProof(ctx: ProofContext, res: ServerResponse, url: URL) {
   const snap = await adapter.loadMap(mapId);
   const ticket = snap.tickets.find((t) => t.id === ticketId);
   if (!ticket) return sendJson(res, 404, { error: `no ticket ${ticketId} in this trail` });
-  const proof = proofForTicket({ root: ctx.root, snap, ticket, decisions: await adapter.listDecisions(mapId) });
+  const decisions = await adapter.listDecisions(mapId);
+  const first = ticketGapPlan({ root: ctx.root, snap, ticket, decisions });
   const post = readProofPost(ctx.root, mapId, ticketId);
-  const { markdown, keyFile } = signedProofMarkdown(ctx.root, proof, ctx.configDir);
-  const hash = gapsHash({ head: proof.git?.head ?? null, gaps: proof.gaps });
+  const { markdown, keyFile } = signedProofMarkdown(ctx.root, first.proof, ctx.configDir);
+  const hash = gapsHash({ head: first.proof.git?.head ?? null, gaps: first.proof.gaps });
   const accepted = mergeAcceptances.covering(ctx.root, { mapId, ticketId, gapsHash: hash });
+  // who is on each gap: a Merge anyway of exactly these gaps counts as the trail lead accepting them
+  const { proof, plan } = accepted
+    ? ticketGapPlan({ root: ctx.root, snap, ticket, decisions, mergedAnywayBy: accepted.by })
+    : first;
   sendJson(res, 200, {
     proof,
+    plan,
     markdown,
     gapsHash: hash,
     ...(keyFile ? { keyFile } : {}),

@@ -49,7 +49,9 @@ export type LifecycleEvent =
   | 'cancel'
   | 'reopen'
   /** The trail lead accepted the work without its failing checks: the rest run again on the same submission. */
-  | 'waive';
+  | 'waive'
+  /** The trail lead confirmed a done ticket's criteria: its last completion is checked again on the same commit. */
+  | 'verify-again';
 
 /**
  * How much evidence a completion needs before the ticket is done. Trails
