@@ -41,6 +41,10 @@ export async function runMainOnRunner(o: {
   config: VerificationConfig;
   names: string[];
   signal?: AbortSignal;
+  /** A trail's combined run: the commit known here, and the commits the run's commit must contain. */
+  head?: { branch: string; commit: string };
+  contains?: string[];
+  logRel?: string;
 }): Promise<MainRunOutcome> {
   const runner = o.runner.name;
   if (!o.runner.runMain)
@@ -52,7 +56,7 @@ export async function runMainOnRunner(o: {
       runner,
       note: `${runner} doesn't run checks on main`,
     };
-  const head = await defaultHead(o.repoRoot);
+  const head = o.head ?? (await defaultHead(o.repoRoot));
   const known = 'note' in head ? {} : { branch: head.branch, commit: head.commit };
   const asked = o.names.map((name) => ({ name, spec: o.config.checks[name] }));
   const job = {
@@ -61,12 +65,13 @@ export async function runMainOnRunner(o: {
     checks: asked,
     totalTimeoutSec: o.config.totalTimeoutSec,
     failFast: o.config.failFast,
+    ...(o.contains ? { contains: o.contains } : {}),
     signal: o.signal,
   };
   const report = await ask(o.runner, job, o.config.totalTimeoutSec * 1000 + RUNNER_MARGIN_MS);
   const at = { commit: known.commit ?? null, branch: known.branch ?? null, runner };
   if (typeof report === 'string') return { ...at, result: 'unavailable', checks: [], note: report };
-  const rel = mainPaths.logs(o.id);
+  const rel = o.logRel ?? mainPaths.logs(o.id);
   const read = readRunnerReport({
     runner,
     report,
@@ -78,7 +83,9 @@ export async function runMainOnRunner(o: {
   if ('error' in read) return { ...at, result: 'unavailable', checks: [], note: read.error };
   const checks = read.checks.map((c) => mainCheckResult(o.root, c, []));
   const commit = read.git.tree?.head ?? at.commit;
+  const said = Array.isArray(report.contains) ? report.contains : [];
+  const contains = o.contains ? { contains: o.contains.filter((c) => said.includes(c)) } : {};
   if (checks.length < asked.length && checks.every((c) => c.passed))
-    return { ...at, commit, result: 'unavailable', checks, note: `${runner} did not report every check` };
-  return { ...at, commit, result: checks.every((c) => c.passed) ? 'pass' : 'fail', checks };
+    return { ...at, ...contains, commit, result: 'unavailable', checks, note: `${runner} did not report every check` };
+  return { ...at, ...contains, commit, result: checks.every((c) => c.passed) ? 'pass' : 'fail', checks };
 }

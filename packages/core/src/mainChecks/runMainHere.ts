@@ -18,15 +18,19 @@ export async function runMainHere(o: {
   config: VerificationConfig;
   names: string[];
   signal?: AbortSignal;
+  /** A commit of the default branch to run on (a trail's combined run), instead of its head. */
+  head?: { top: string; branch: string; commit: string };
+  /** Where the logs go, relative to the tracker root; defaults to the run on main's folder. */
+  logRel?: string;
 }): Promise<MainRunOutcome> {
-  const head = await defaultHead(o.repoRoot);
+  const head = o.head ?? (await defaultHead(o.repoRoot));
   if ('note' in head) return { result: 'unavailable', commit: null, branch: null, checks: [], note: head.note };
   const at = { commit: head.commit, branch: head.branch };
   await sweepMainWorktrees({ root: o.root, top: head.top });
   const wt = await prepareMainWorktree({ root: o.root, top: head.top, commit: head.commit, id: o.id });
   if ('note' in wt) return { ...at, result: 'unavailable', checks: [], note: `no worktree for main: ${wt.note}` };
   try {
-    const rel = mainPaths.logs(o.id);
+    const rel = o.logRel ?? mainPaths.logs(o.id);
     const out = await runChecks(o.config, o.names, {
       repoRoot: wt.path,
       logDir: path.join(o.root, rel),

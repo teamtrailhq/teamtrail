@@ -29,6 +29,9 @@ export interface TrackerBridge {
    *   POST /remote-agents/tokens/revoke      body `{ id }`; the token's sessions end
    *   GET  /main-checks?mapId=               checks on main for a trail; POST /main-checks/run and /main-checks/choose
    *                                          (mainChecksRoutes.ts); SSE `main-checks` when they change
+   *   GET  /trail-checks?mapId=              the trail verified together; POST /trail-checks/run and
+   *                                          /trail-checks/fix-ticket, GET /trail-checks/proof (trailChecksRoutes.ts);
+   *                                          SSE `trail-checks` when they change
    *   /trackers*, /tracker/<kind>/*          GitHub / Linear settings and API (trackerRoutes.ts)
    * Decision routes use the project's active tracker (local markdown, GitHub or Linear).
    */
@@ -81,6 +84,8 @@ export interface BridgeOptions extends Omit<TrackerRoutesOptions, 'root' | 'mark
   attention?: { pollMs?: number };
   /** How often trails ready for work are checked for a run on main to start (watchMainChecks.ts). */
   mainChecks?: { pollMs?: number };
+  /** How often done trails are checked for a combined run on main to start (watchTrailChecks.ts). */
+  trailChecks?: { pollMs?: number };
   /**
    * The embedding server's check runner (Cloud). Runs of the approved checks on main go to its `runMain`, never to
    * this process; without one they run here, in a worktree Teamtrail prepares (mainChecks/).

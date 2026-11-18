@@ -1,18 +1,44 @@
 import type { TrailDone } from '@teamtrail/core';
+import { cx } from '../../lib';
 import { FlagShape } from './FlagShape';
 
 /**
  * Where the trail ends: a small, bold hand-drawn X while it's ahead, a planted flag once the trail is done (in the
- * colour of passed checks when every ticket is verified, muted when some aren't). No label on the map; hovering or
- * focusing it says what the destination is.
+ * colour of passed checks when the trail is verified, muted when it isn't, red when its checks fail on main together).
+ * No label on the map; hovering or focusing it says what the destination is. Clicking it opens the trail's checks on
+ * main together in the bubble.
  */
-export function DestinationMark({ x, y, text, done }: { x: number; y: number; text?: string; done?: TrailDone }) {
+export function DestinationMark(props: {
+  x: number;
+  y: number;
+  text?: string;
+  done?: TrailDone;
+  selected?: boolean;
+  onSelect?: () => void;
+}) {
+  const { x, y, text, done, onSelect } = props;
   const where = text?.trim() || 'Where this trail ends';
   const reached = done && done.kind !== 'not-done';
   const tip = reached ? `Destination reached · ${done.reason}\n${where}` : `Destination\n${where}`;
-  const classes = reached ? `destination reached ${done.kind}` : 'destination';
+  const failing = done?.kind === 'unverified' && done.together.kind === 'failed';
+  const classes = cx('destination', reached && `reached ${done.kind}`, failing && 'failing', props.selected && 'sel');
   return (
-    <g className={classes} transform={`translate(${x} ${y})`} aria-label={tip} data-tip={tip} tabIndex={0}>
+    <g
+      className={classes}
+      transform={`translate(${x} ${y})`}
+      aria-label={tip}
+      data-tip={tip}
+      tabIndex={0}
+      role={onSelect ? 'button' : undefined}
+      onClick={(e) => {
+        if (!onSelect) return;
+        e.stopPropagation();
+        onSelect();
+      }}
+      onKeyDown={(e) => {
+        if (onSelect && (e.key === 'Enter' || e.key === ' ')) onSelect();
+      }}
+    >
       <rect className="x-hit" x={-24} y={-24} width={48} height={48} />
       {reached ? (
         <FlagShape />

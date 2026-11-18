@@ -22,6 +22,7 @@ const CARD_TEXT: Partial<Record<AttentionKind, string>> = {
 
 /** What a chip says the human does, after the key: "#6 Decide", "#12 Approve". */
 const CHIP_VERB: Partial<Record<AttentionKind, string>> = {
+  'trail-checks': 'Fails on main together',
   'hitl-ready': 'Decide',
   approval: 'Approve',
   blocked: 'Unblock',

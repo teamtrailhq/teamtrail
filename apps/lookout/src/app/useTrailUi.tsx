@@ -12,11 +12,12 @@ export function useTrailUi(input: {
   snap?: MapSnapshot;
   selectMap?: (mapId: string) => void;
   openTicket: (mapId: string, ticketId: string) => void;
+  openTrailChecks: (mapId: string) => void;
 }) {
   const { snap } = input;
   const discovery = useDiscoveryUi(snap);
   const reroute = useRerouteUi(snap, input.selectMap);
-  const done = useTrailDoneUi({ snap, pendingReroutes: reroute.pending, openTicket: input.openTicket });
+  const done = useTrailDoneUi({ snap, pendingReroutes: reroute.pending, ...input });
   return {
     briefText: discovery.briefText,
     inboxCard: discovery.inboxCard,

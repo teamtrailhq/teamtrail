@@ -17,6 +17,7 @@ import type {
 import type { MainChecksEntry } from '../model/mainChecks';
 import type { MergeAnywayEntry } from '../model/mergeAnyway';
 import type { ProofPostEntry } from '../model/proofPost';
+import type { TrailChecksEntry } from '../model/trailChecks';
 
 /*
  * Trail history, one JSON line per transition, reroute step, guide change, remote-agent token change, Slack owner
@@ -30,7 +31,8 @@ import type { ProofPostEntry } from '../model/proofPost';
  * `readSlack` the Slack owner changes, `readSignIn` the Lookout's sign-ins, `readMainChecks` runs on main asked for
  * and the trail lead's choices about them, `readWaivers` the trail lead's waivers of failing checks, `readMergeAnyway`
  * their merges of tickets whose proof isn't verified, `readGates` the verification gates that held work back or
- * would have, `readRuleWaivers` the diff rules the trail lead let a ticket go without.
+ * would have, `readRuleWaivers` the diff rules the trail lead let a ticket go without, `readTrailChecks` the
+ * trail's combined runs on main and the fix tickets added for them.
  */
 const TRAIL_KINDS = new Set<string>(['transition', 'reroute']);
 type AnyEntry =
@@ -45,7 +47,8 @@ type AnyEntry =
   | WaiverEntry
   | MergeAnywayEntry
   | GateEntry
-  | RuleWaiverEntry;
+  | RuleWaiverEntry
+  | TrailChecksEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -68,6 +71,7 @@ export function journalFile(root: string): Journal & {
   readMergeAnyway(mapId: string): MergeAnywayEntry[];
   readGates(mapId: string): GateEntry[];
   readRuleWaivers(mapId: string): RuleWaiverEntry[];
+  readTrailChecks(mapId: string): TrailChecksEntry[];
 } {
   const raw = (mapId: string) => readEntries(root, mapId) as AnyEntry[];
   const readAll = (mapId: string) => raw(mapId).filter((e): e is JournalEntry => TRAIL_KINDS.has(e.kind));
@@ -90,6 +94,7 @@ export function journalFile(root: string): Journal & {
     readMergeAnyway: (mapId) => raw(mapId).filter((e): e is MergeAnywayEntry => e.kind === 'merge-anyway'),
     readGates: (mapId) => raw(mapId).filter((e): e is GateEntry => e.kind === 'gate'),
     readRuleWaivers: (mapId) => raw(mapId).filter((e): e is RuleWaiverEntry => e.kind === 'rule-waiver'),
+    readTrailChecks: (mapId) => raw(mapId).filter((e): e is TrailChecksEntry => e.kind === 'trail-checks'),
   };
 }
 

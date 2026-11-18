@@ -15,6 +15,7 @@ interface GhPull {
   draft?: boolean;
   mergeable?: boolean | null;
   updated_at: string;
+  merge_commit_sha?: string | null;
   head: { sha: string; ref: string; repo: { full_name: string } | null };
 }
 
@@ -40,6 +41,9 @@ function mergeableOf(m: GhPull['mergeable']): PullRequestSnapshot['mergeable'] {
   if (m === false) return 'conflicting';
   return 'unknown';
 }
+
+/** The merge commit of a merged pull request, '' when GitHub gave none that reads as one. */
+const mergeCommitOf = (p: GhPull) => (SHA.test(p.merge_commit_sha ?? '') ? p.merge_commit_sha!.toLowerCase() : '');
 
 /** The pull request's review state from each reviewer's latest review. */
 function reviewOf(states: string[]): PrReview {
@@ -84,6 +88,7 @@ export class GitHubCiProvider implements CiProvider {
       review,
       mergeable: mergeableOf(p.mergeable),
       updatedAt: Date.parse(p.updated_at) || 0,
+      ...(prState(p) === 'merged' ? { mergeCommit: mergeCommitOf(p) } : {}),
     };
   }
 
