@@ -63,3 +63,12 @@
 .pr-flag-dot.warn {
   fill: var(--amber);
 }
+/* Behind a server that merges by itself: why it waits, or that it merged (features/pr-sync/AutoMergeLine.tsx). */
+.pr-block .pr-auto-merge {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.pr-block .pr-auto-merge a {
+  color: inherit;
+  text-decoration: underline;
+}

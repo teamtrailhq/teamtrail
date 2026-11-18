@@ -1,11 +1,13 @@
-import { changeFocus, type AttentionItem } from '@teamtrail/core';
+import { changeFocus, type AttentionItem, type FocusChange } from '@teamtrail/core';
 import {
   AttentionHeader,
+  FocusPanel,
   openItem,
   useAttention,
   useAttentionNotifications,
   type AttentionHandlers,
 } from '../features/attention';
+import type { PhoneFocus } from '../features/header';
 import type { KnowledgeStore } from '../features/knowledge';
 import type { LookoutApi } from '../hooks';
 import type { useAppNavigation } from './useAppNavigation';
@@ -55,12 +57,13 @@ export function useAttentionUi(input: {
   };
   const view = attention.view;
   const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers });
-  const header = view && (
-    <AttentionHeader
-      view={view}
-      onFocus={(change) => void attention.savePrefs(changeFocus(view.prefs, change, Date.now()))}
-      onSettings={input.openFocusSettings}
-    />
-  );
-  return { attention, handlers, header, link, open: (item: AttentionItem) => openItem(item, handlers) };
+  const onFocus = (change: FocusChange) =>
+    view && void attention.savePrefs(changeFocus(view.prefs, change, Date.now()));
+  const header = view && <AttentionHeader view={view} onFocus={onFocus} onSettings={input.openFocusSettings} />;
+  // On a phone, focus is the top of the header's More menu.
+  const phoneFocus: PhoneFocus | undefined = view && {
+    state: view.focus.kind,
+    panel: (close) => <FocusPanel view={view} onChange={onFocus} onSettings={input.openFocusSettings} close={close} />,
+  };
+  return { attention, handlers, header, phoneFocus, link, open: (item: AttentionItem) => openItem(item, handlers) };
 }

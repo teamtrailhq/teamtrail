@@ -1,5 +1,6 @@
 import { managedSignIn } from '../../lib/managedSignIn';
 import { HeaderMenu } from './HeaderMenu';
+import { ManagedItems } from './ManagedItems';
 
 /**
  * In a Lookout behind a server's own sign-in (lib/managedSignIn.ts): the person's menu, with the server's home (all
@@ -8,31 +9,9 @@ import { HeaderMenu } from './HeaderMenu';
 export function ManagedMenu() {
   const managed = managedSignIn();
   if (!managed) return null;
-  const go = (href: string, close: () => void) => {
-    close();
-    location.assign(href);
-  };
   return (
     <HeaderMenu label={managed.name} tip="Your account on the server this Lookout runs on">
-      {(close) => (
-        <>
-          {managed.home && (
-            <button role="menuitem" className="header-menu-item" onClick={() => go(managed.home!.href, close)}>
-              ← {managed.home.label}
-            </button>
-          )}
-          {managed.pages.map((page) => (
-            <button key={page.href} role="menuitem" className="header-menu-item" onClick={() => go(page.href, close)}>
-              {page.label}
-            </button>
-          ))}
-          {managed.signOut && (
-            <button role="menuitem" className="header-menu-item" onClick={() => go(managed.signOut!, close)}>
-              Sign out
-            </button>
-          )}
-        </>
-      )}
+      {(close) => <ManagedItems managed={managed} close={close} />}
     </HeaderMenu>
   );
 }

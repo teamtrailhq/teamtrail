@@ -3,7 +3,7 @@
 .bp-mobile .header {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  /* The buttons get their own row under the trail, wrapping, so nothing runs off the side. */
+  /* The controls get one row under the trail and its destination (phone-header.css). */
   grid-template-areas: 'repo' 'title' 'dest' 'right';
   align-items: center;
   column-gap: var(--sp-10);
@@ -31,9 +31,6 @@
 }
 .bp-mobile .h-right {
   grid-area: right;
-  flex-wrap: wrap;
-  gap: var(--sp-6);
-  padding-top: var(--sp-4);
 }
 .bp-mobile .h-line1 .sep,
 .bp-mobile .mode-chip,
@@ -44,16 +41,6 @@
 }
 .bp-mobile .trail-title {
   font-size: var(--fs-title);
-}
-.bp-mobile .h-dest {
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-.bp-mobile .h-right .btn {
-  height: 28px;
-  padding: 0 var(--sp-8);
 }
 .phone-view {
   grid-area: view;

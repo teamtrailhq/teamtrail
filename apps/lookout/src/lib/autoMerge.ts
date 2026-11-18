@@ -1,4 +1,5 @@
 import { managedSignIn } from './managedSignIn';
+import { sameOriginPath } from './sameOriginPath';
 
 /** What the server merged by itself since a time, as Hands-off's footer says it. */
 export interface AutoMergeSummary {
@@ -6,16 +7,6 @@ export interface AutoMergeSummary {
   merged: number;
   /** The server's auto-merge setting, on this origin only. */
   settings?: string;
-}
-
-/** A path (with a fragment) on this origin, as the server's places are; anything else is dropped. */
-function sameOrigin(value: unknown): string | undefined {
-  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return undefined;
-  try {
-    return new URL(value, location.href).origin === location.origin ? value : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 /**
@@ -30,5 +21,5 @@ export async function loadAutoMerge(trail: string, since: number): Promise<AutoM
   if (!r?.ok) return undefined;
   const b = (await r.json().catch(() => ({}))) as { on?: unknown; merged?: unknown; settings?: unknown };
   const merged = typeof b.merged === 'number' && b.merged >= 0 ? Math.floor(b.merged) : 0;
-  return { on: b.on === true, merged, settings: sameOrigin(b.settings) };
+  return { on: b.on === true, merged, settings: sameOriginPath(b.settings) };
 }

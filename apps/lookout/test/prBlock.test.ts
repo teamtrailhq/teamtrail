@@ -47,7 +47,7 @@ const text = (parts: unknown[]) => parts.map((p) => (typeof p === 'string' ? p :
 describe('prBlock', () => {
   it('says nothing for a ticket without a pull request', () => {
     expect(prBlock(undefined, HEAD)).toBeUndefined();
-    expect(renderToStaticMarkup(createElement(PullRequestBlock, {}))).toBe('');
+    expect(renderToStaticMarkup(createElement(PullRequestBlock, { mapId: 'm', ticketId: '3' }))).toBe('');
   });
 
   it('shows an open PR at the commit its proof covers, with its checks', () => {
@@ -84,13 +84,23 @@ describe('prBlock', () => {
 
   it('renders the state chip, the title as text and a safe Open pull request link', () => {
     const html = renderToStaticMarkup(
-      createElement(PullRequestBlock, { sync: sync({ state: 'merged', title: '<b>x</b>' }), proofHead: HEAD }),
+      createElement(PullRequestBlock, {
+        mapId: 'm',
+        ticketId: '3',
+        sync: sync({ state: 'merged', title: '<b>x</b>' }),
+        proofHead: HEAD,
+      }),
     );
     expect(html).toContain('>Merged<');
     expect(html).toContain('&lt;b&gt;x&lt;/b&gt;');
     expect(html).toContain('href="https://github.com/acme/app/pull/12" target="_blank" rel="noreferrer noopener"');
     const bad = renderToStaticMarkup(
-      createElement(PullRequestBlock, { sync: sync({ url: 'javascript:alert(1)' }), proofHead: HEAD }),
+      createElement(PullRequestBlock, {
+        mapId: 'm',
+        ticketId: '3',
+        sync: sync({ url: 'javascript:alert(1)' }),
+        proofHead: HEAD,
+      }),
     );
     expect(bad).not.toContain('Open pull request');
   });
