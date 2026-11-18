@@ -3,6 +3,7 @@ export { HomeFooter } from './HomeFooter';
 export { ModeSwitch } from './ModeSwitch';
 export { NeedRow } from './NeedRow';
 export { NeedsYou } from './NeedsYou';
+export { needsShown } from './needText';
 export { PlanNeedRow } from './PlanNeedRow';
 export { Progress } from './Progress';
 export { SinceAway } from './SinceAway';

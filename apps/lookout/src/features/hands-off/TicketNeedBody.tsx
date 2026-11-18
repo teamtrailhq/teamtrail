@@ -2,6 +2,7 @@ import type { AttentionItem, MapSnapshot, Ticket } from '@teamtrail/core';
 import { useState } from 'react';
 import { MetaLine } from '../../components/ui';
 import { detailReasons, openItem } from '../attention';
+import { CriteriaList } from '../criteria';
 import { type Form, TicketFooter, useTicketActions, useTicketView } from '../inspector';
 import type { NeedContext } from './types';
 
@@ -30,6 +31,7 @@ export function TicketNeedBody(props: { item: AttentionItem; snap: MapSnapshot; 
   return (
     <>
       <MetaLine parts={[`${t.key} ${t.title}`, ...detailReasons(props.item)]} />
+      {props.item.kind === 'criteria' && <CriteriaList criteria={v.criteria.criteria} />}
       <TicketFooter
         v={v}
         bar={bar}

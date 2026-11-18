@@ -5,7 +5,7 @@ import { managedSignIn } from '../lib/managedSignIn';
 import type { Prefs } from '../lib/prefs';
 
 /**
- * This person's Hands-off or Hands-on (core model/lookoutMode.ts): the server's, behind a server's own sign-in that
+ * This person's Hands-off or Hands-on (core model/attention.ts `LookoutMode`): the server's, behind a server's own sign-in that
  * keeps one; else their preference on the Lookout's machine, read with the attention queue (`prefs.mode`, missing is
  * Hands-off); until that loads, what this browser showed last. A switch shows at once and is saved (lib/lookoutMode.ts);
  * another device's switch arrives with the queue.

@@ -5,6 +5,7 @@ import {
   type NeedContext,
   NeedRow,
   NeedsYou,
+  needsShown,
   PlanNeedRow,
   Progress,
   SinceAway,
@@ -60,7 +61,7 @@ export function AppHome(props: {
   const since = props.brief.sinceAway?.trails.find((t) => t.mapId === snap.map.id);
   return (
     <HandsOffHome
-      needs={view && <NeedsYou items={view.items} limit={props.phone ? 3 : 5} row={row} />}
+      needs={view && <NeedsYou items={needsShown(view.items)} limit={props.phone ? 3 : 5} row={row} />}
       progress={
         <Progress
           segments={live.segments}

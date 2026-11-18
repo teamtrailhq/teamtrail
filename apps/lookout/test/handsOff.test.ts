@@ -1,7 +1,7 @@
 import type { AttentionItem, MapSnapshot, Ticket, TrailBriefing } from '@teamtrail/core';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { footerText } from '../src/features/hands-off/footerText';
-import { needMeta, needText } from '../src/features/hands-off/needText';
+import { needMeta, needsShown, needText } from '../src/features/hands-off/needText';
 import { progressWords } from '../src/features/hands-off/progressWords';
 import { sinceRows } from '../src/features/hands-off/sinceRows';
 import type { PrSyncSnapshot } from '../src/lib';
@@ -38,6 +38,13 @@ describe('Needs you rows', () => {
     expect(needText(item(), q).chip).toBe('High risk');
     expect(needText(item({ kind: 'stalled', title: 'claude-03 went quiet' })).quick).toBe('Release');
     expect(needText(item({ kind: 'guide', title: 'New guide' })).quick).toBe('Review');
+  });
+
+  test("a ticket's criteria are confirmed with the plan on a trail whose brief waits; elsewhere on their own", () => {
+    const criteria = (mapId: string) => item({ id: `criteria:${mapId}`, kind: 'criteria', mapId, title: 'Confirm' });
+    const items = [item({ id: 'brief:m1', kind: 'brief', title: 'Brief' }), criteria('m1'), criteria('m2')];
+    expect(needsShown(items).map((i) => i.id)).toEqual(['brief:m1', 'criteria:m2']);
+    expect(needText(criteria('m2')).quick).toBe('Confirm criteria');
   });
 
   test('the dim context: another trail by name, the ticket unless the title names it, who asks and the wait', () => {

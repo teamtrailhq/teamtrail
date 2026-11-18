@@ -8,6 +8,7 @@ import type { NeedText } from './types';
 const QUICK: Partial<Record<AttentionKind, string>> = {
   question: 'Answer',
   approval: 'Approve',
+  criteria: 'Confirm criteria',
   'hitl-ready': 'Decide',
   stalled: 'Release',
   blocked: 'Unblock',
@@ -36,4 +37,13 @@ export function needMeta(input: { item: AttentionItem; snap?: MapSnapshot; curre
   if (item.kind === 'question' && item.agent) parts.push(item.agent);
   parts.push(ago(input.now - item.since));
   return parts;
+}
+
+/**
+ * The list Needs you shows: the queue in its order, less each ticket's criteria on a trail whose brief waits, since
+ * Approve the plan confirms them with the brief in one step (PlanNeedRow).
+ */
+export function needsShown(items: AttentionItem[]): AttentionItem[] {
+  const planned = new Set(items.filter((i) => i.kind === 'brief').map((i) => i.mapId));
+  return items.filter((i) => i.kind !== 'criteria' || !planned.has(i.mapId));
 }

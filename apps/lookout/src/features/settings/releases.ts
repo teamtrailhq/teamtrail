@@ -22,6 +22,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.0',
+    date: '2026-11-18',
+    items: [
+      'Hands-off, for everyone by default: what needs you in one list, the trail’s progress and what happened since you were away; Hands-on is the map as before',
+      'Answer, approve and confirm from the list itself; the full ticket is one click away',
+      'Approve the plan in one step: the brief and every ticket’s criteria, as shown',
+      'Switch in the header or Settings → You; agents decide and work is verified exactly as before',
+    ],
+  },
+  {
     version: '0.65.0',
     date: '2026-11-18',
     items: [

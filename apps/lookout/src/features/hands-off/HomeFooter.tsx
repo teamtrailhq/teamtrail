@@ -1,7 +1,7 @@
 import type { MapSnapshot } from '@teamtrail/core';
 import { usePrSync } from '../../hooks';
-import { footerText } from './footerText';
 import type { ProofStatuses } from '../map';
+import { footerText } from './footerText';
 import { useAutoMerge } from './useAutoMerge';
 
 /**

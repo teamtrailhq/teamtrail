@@ -1,5 +1,10 @@
-import type { AttentionPrefs, FocusHours, NotifyChannel } from '../model/attention';
-import { LOOKOUT_MODES, type LookoutMode } from '../model/lookoutMode';
+import {
+  type AttentionPrefs,
+  type FocusHours,
+  LOOKOUT_MODES,
+  type LookoutMode,
+  type NotifyChannel,
+} from '../model/attention';
 import { DEFAULT_ATTENTION_PREFS } from './defaults';
 import type { Parsed } from './parsePolicy';
 
