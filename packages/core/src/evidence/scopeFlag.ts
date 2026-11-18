@@ -1,20 +1,12 @@
-import { globMatch } from '../knowledge/knowledge';
 import type { ChangedFile, EvidenceFlag } from '../model/evidence';
 import type { VerificationConfig } from '../model/verification';
+import { pathCovered } from './pathCovered';
 
-const WILD = /[*?[{]/;
 const SHOWN = 5;
 const EFFECT_TAIL = {
   fail: '; revert them, or claim again with touches that cover them and say why',
   human: '; a human decides',
 } as const;
-
-/** Whether `file` is in a declared glob: a pattern by its match, a plain path as itself or anything under it. */
-function covers(glob: string, file: string) {
-  const g = glob.replace(/^\.\//, '').replace(/\/+$/, '');
-  if (WILD.test(g)) return globMatch(g, file);
-  return file === g || file.startsWith(`${g}/`);
-}
 
 const list = (files: string[]) =>
   `${files.slice(0, SHOWN).join(', ')}${files.length > SHOWN ? `, and ${files.length - SHOWN} more` : ''}`;
@@ -33,7 +25,7 @@ export function scopeFlag(i: {
   if (!i.changed.length) return undefined;
   const touches = i.touches ?? [];
   if (!touches.length) return undefined;
-  const outside = i.changed.map((c) => c.path).filter((p) => !touches.some((g) => covers(g, p)));
+  const outside = i.changed.map((c) => c.path).filter((p) => !touches.some((g) => pathCovered(g, p)));
   if (!outside.length)
     return {
       kind: 'in-scope',

@@ -25,6 +25,7 @@ import {
 } from './closeEvidence';
 import { submitVerified } from './completion';
 import { assertCriteria } from './criteria';
+import { assertRulesAnswered } from './diffRules';
 import { checkedAnswers, keepAnswers } from './guideChecklists';
 import { humanAnswerFor, release, spend, type HumanAnswer } from './humanAnswer';
 import { assertOwnClaim } from './ownClaim';
@@ -145,6 +146,8 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
     repoRoot: pathRoots(ctx),
   });
   assertCriteria(ctx.root, snap, t, info.level);
+  if (verified)
+    await assertRulesAnswered(ctx, { snap, ticket: t, declared, answers: input.ruleAnswers, agent: c.agent });
   const checked = checkedAnswers(ctx, { snap, ticket: t, given: input.checklist });
   await keepAnswers(ctx, { snap, ticket: t, checked });
   // Spent before the resolving writes (comment, close, decision): one failing part way can't free it again.
@@ -165,6 +168,7 @@ async function complete(c: Closing, wait: Wait): Promise<Completion> {
       noCodeReason: input.noCodeReason,
       pr: input.pr,
       criteria: input.criteria,
+      ruleAnswers: input.ruleAnswers,
       decision: meta,
       transcript,
       remote: ctx.remote,

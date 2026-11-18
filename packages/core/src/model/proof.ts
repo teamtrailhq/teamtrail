@@ -50,6 +50,21 @@ export interface ProofWaived {
   reason: string;
 }
 
+/**
+ * A diff rule the work's changed files matched: its check as it ran here (`passed`, null when it didn't run), and its
+ * question with the agent's answer (claimed, never verified), the trail lead's waiver, or `unanswered`.
+ */
+export interface ProofRule {
+  id: string;
+  why: string;
+  files: string[];
+  check?: { name: string; passed: boolean | null };
+  ask?: string;
+  answer?: string;
+  waived?: { by: string; reason: string };
+  unanswered?: true;
+}
+
 /** An Ed25519 signature over a proof's digest, by the machine key `keyId` names (proof-keys/<keyId>.pub). */
 export interface ProofSignature {
   keyId: string;
@@ -120,6 +135,8 @@ export interface Proof {
    * by type, so their proofs and digests read as they always did.
    */
   guides?: AttemptGuide[];
+  /** The diff rules the changes matched. Missing when none did, so older proofs and digests read as they did. */
+  rules?: ProofRule[];
   /** `sha256:` of the canonical JSON of every other field. */
   digest: string;
 }

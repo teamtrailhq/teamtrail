@@ -39,6 +39,17 @@ const completion = {
     .optional()
     .describe('Evidence for each acceptance criterion of the ticket. Every criterion needs one.'),
   checklist: checklistAnswers,
+  ruleAnswers: z
+    .array(
+      z.object({
+        rule: z.string().describe('R-<n>'),
+        answer: text().min(1).describe("Your answer to the rule's question, from what you did and checked."),
+      }),
+    )
+    .optional()
+    .describe(
+      "Answers to the project's diff rules that ask a question, for the files your change touched (claim_ticket lists the likely ones). A completion missing one is refused with the list.",
+    ),
   noCodeReason: z
     .string()
     .optional()
