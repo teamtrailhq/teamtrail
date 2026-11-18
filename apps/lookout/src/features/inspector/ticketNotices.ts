@@ -1,4 +1,5 @@
 import type { AttentionKind } from '@teamtrail/core';
+import { needAction } from './needAction';
 import type { LoadedTicket } from './types';
 
 /** Queue items the state line already says in its own words. */
@@ -11,7 +12,11 @@ const IN_STANDING = new Set<AttentionKind>(['question', 'approval', 'blocked', '
  */
 export function ticketNotices(v: LoadedTicket): { text: string; risk: boolean }[] {
   const flags = v.pr?.flags.map((f) => ({ text: f.text, risk: true })) ?? [];
-  const items = v.items.filter((i) => !IN_STANDING.has(i.kind)).map((i) => ({ text: i.title, risk: true }));
+  // the first item, when the state line asks it (needAction), is said there
+  const asked = (i: (typeof v.items)[number]) => i === v.items[0] && !!needAction(i.kind);
+  const items = v.items
+    .filter((i) => !IN_STANDING.has(i.kind) && !asked(i))
+    .map((i) => ({ text: i.title, risk: true }));
   const edited = v.textEdited && !v.change ? [{ text: 'Text edited outside Teamtrail', risk: false }] : [];
   return [...flags, ...items, ...edited];
 }

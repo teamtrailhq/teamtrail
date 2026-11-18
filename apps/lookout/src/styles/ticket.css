@@ -34,7 +34,7 @@
   background: rgba(var(--amber-rgb), 0.2);
 }
 .tag.urgent {
-  background: rgba(var(--urgent-rgb), 0.16);
+  background: rgba(var(--urgent-rgb), 0.12);
   color: var(--urgent);
   font-weight: 500;
 }
@@ -173,6 +173,11 @@
 }
 .action-bar-end {
   display: inline-flex;
+}
+/* At the end of the ticket, the "⋯" menu opens upwards, inside the bubble or the drawer. */
+.ticket-footer .more-list {
+  top: auto;
+  bottom: calc(100% + var(--sp-4));
 }
 .action-bar-end .link {
   padding: 0 var(--sp-4);

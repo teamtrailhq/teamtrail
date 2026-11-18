@@ -1,4 +1,4 @@
-import { type AttentionView, type MapSnapshot, type SessionInfo } from '@teamtrail/core';
+import { type AttentionItem, type AttentionView, type MapSnapshot, type SessionInfo } from '@teamtrail/core';
 import { Empty } from '../../components/ui';
 import { type LookoutApi } from '../../hooks';
 import { TicketPanel } from './TicketPanel';
@@ -17,6 +17,8 @@ export function TicketDetail(props: {
   onOpenDecision?: (id: string) => void;
   onReviewChange?: () => void;
   onReviewBrief?: (mapId: string) => void;
+  onItem?: (item: AttentionItem) => void;
+  onDismiss?: (id: string) => void;
 }) {
   const t = props.snap.tickets.find((x) => x.id === props.id);
   if (!t) return <Empty>Ticket not found.</Empty>;

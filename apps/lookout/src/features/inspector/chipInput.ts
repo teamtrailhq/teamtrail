@@ -1,5 +1,6 @@
 import type { RiskLevel } from '@teamtrail/core';
 import { shortModel, TRAIL_LEAD } from '../../lib';
+import { cardNeedText } from '../attention';
 import { workToProve } from '../proof';
 import type { ChipInput, LoadedTicket } from './types';
 
@@ -7,7 +8,22 @@ const RANK: Record<RiskLevel, number> = { low: 0, medium: 1, high: 2 };
 
 /** What the ticket's chips say, read from what the inspector loaded for it (chipsOfTicket lays them out). */
 export function chipInput(v: LoadedTicket): ChipInput {
-  return { key: v.t.key, type: v.t.type, state: v.state, agent: agentOf(v), proof: proofOf(v), risk: riskOf(v) };
+  return {
+    key: v.t.key,
+    type: v.t.type,
+    state: v.state,
+    need: needOf(v),
+    agent: agentOf(v),
+    proof: proofOf(v),
+    risk: riskOf(v),
+  };
+}
+
+/** What needs the human on it, in the map card's words: an agent's question, else the queue's first item. */
+function needOf(v: LoadedTicket) {
+  if (v.question) return 'waiting on you';
+  const item = v.items.find((i) => i.kind !== 'question');
+  return item && cardNeedText(item);
 }
 
 /** The agent at work (its session, else its claim), or for done work the one whose completion it is. */

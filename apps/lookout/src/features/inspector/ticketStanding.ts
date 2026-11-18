@@ -1,4 +1,5 @@
 import { ago, dur, hhmm } from '../../lib/format';
+import { needAction } from './needAction';
 import type { Standing, StandingInput } from './types';
 
 /**
@@ -20,6 +21,8 @@ function standingOf(s: StandingInput): Standing {
       parts: [s.outsideChange],
       primary: 'review-change',
     };
+  const asking = itemAsked(s);
+  if (asking) return asking;
   if (s.running && s.state !== 'decided' && s.state !== 'out-of-scope')
     return {
       edge: 'neutral',
@@ -163,3 +166,12 @@ function ready(s: StandingInput): Standing {
 }
 
 const since = (now: number, at: number) => `${ago(now - at)} ago`;
+
+/** What the queue holds on it, asked in words when the state line has no words of its own for it (needAction). */
+function itemAsked(s: StandingInput): Standing | undefined {
+  const need = s.item && needAction(s.item.kind);
+  if (!s.item || !need) return undefined;
+  const edge = s.item.edge === 'neutral' ? 'attention' : s.item.edge;
+  const parts = s.item.title ? [s.item.title] : [];
+  return { edge, title: `Waiting on you: ${need.ask}`, parts, primary: need.act ? 'need' : undefined };
+}

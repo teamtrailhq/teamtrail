@@ -32,7 +32,11 @@ export function standingInput(v: LoadedTicket): StandingInput {
     state: v.state,
     now: v.now,
     question: v.question && { agent: v.question.agent, at: v.question.at },
-    item: first && { kind: first.kind, edge: edgeFor(first, v.interrupting.includes(first.id)) },
+    item: first && {
+      kind: first.kind,
+      edge: edgeFor(first, v.interrupting.includes(first.id)),
+      title: first.title.split('\n')[0].replace(/^[^\s:]+: /, ''),
+    },
     outsideChange: v.change && `${HELD_FIELDS(v.change.fields)} · held until you accept or revert it`,
     lease,
     assignee: t.assignee,

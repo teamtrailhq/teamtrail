@@ -24,6 +24,7 @@ export function Inspector(props: {
   onItem?: (item: AttentionItem) => void;
   onReviewChange?: () => void;
   onReviewBrief?: (mapId: string) => void;
+  onDismiss?: (id: string) => void;
 }) {
   const { api } = props;
   const { snap, selection, actions } = api;
@@ -64,6 +65,8 @@ export function Inspector(props: {
         onOpenDecision={props.onOpenDecision}
         onReviewChange={props.onReviewChange}
         onReviewBrief={props.onReviewBrief}
+        onItem={props.onItem}
+        onDismiss={props.onDismiss}
       />
     );
   }

@@ -4,5 +4,6 @@ export { useAttention, type AttentionApi } from './useAttention';
 export { useAttentionNotifications } from './useAttentionNotifications';
 export { openItem, type AttentionHandlers } from './openItem';
 export { edgeFor } from './rowText';
+export { ItemAction } from './ItemAction';
 export { contextParts, detailReasons } from './rowText';
 export { cardNeedText, needLabel } from './needLabel';

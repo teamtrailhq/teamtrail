@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import type { LookoutApi } from '../../hooks';
 import { cx } from '../../lib';
+import { ItemAction } from '../attention';
 import { ActionBar } from './ActionBar';
+import { needAction } from './needAction';
 import { TicketForms } from './TicketForms';
 import type { Form } from './types';
 import type { useTicketActions } from './useTicketActions';
@@ -23,7 +25,10 @@ export function TicketFooter(props: {
   className?: string;
 }) {
   const { v, bar } = props;
-  const idle = !bar.primary && !bar.menu.length && !v.session && !v.proof && !props.form && !props.trailing;
+  // what the queue holds on it, acted on in place (an integration, changed settings)
+  const first = v.items[0];
+  const inline = first && needAction(first.kind)?.act?.kind === 'inline' ? first : undefined;
+  const idle = !bar.primary && !bar.menu.length && !v.session && !v.proof && !props.form && !props.trailing && !inline;
   if (idle && !bar.error && !bar.note) return null;
   return (
     <footer className={cx('ticket-footer', props.className)}>
@@ -35,6 +40,7 @@ export function TicketFooter(props: {
         act={bar.act}
         waive={bar.waive}
       />
+      {inline && <ItemAction item={inline} />}
       <ActionBar v={v} bar={bar} onOpenChat={props.onOpenChat} trailing={props.trailing} />
     </footer>
   );

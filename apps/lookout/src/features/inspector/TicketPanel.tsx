@@ -1,4 +1,4 @@
-import type { AttentionView, MapSnapshot, SessionInfo, Ticket } from '@teamtrail/core';
+import type { AttentionItem, AttentionView, MapSnapshot, SessionInfo, Ticket } from '@teamtrail/core';
 import { useState } from 'react';
 import type { LookoutApi } from '../../hooks';
 import { HeldRules } from '../diff-rules';
@@ -32,6 +32,8 @@ export function TicketPanel(props: {
   onOpenDecision?: (id: string) => void;
   onReviewChange?: () => void;
   onReviewBrief?: (mapId: string) => void;
+  onItem?: (item: AttentionItem) => void;
+  onDismiss?: (id: string) => void;
 }) {
   const { snap, t, api } = props;
   const v = useTicketView({ snap, t, api, sessions: props.sessions, attention: props.attention });
@@ -44,6 +46,8 @@ export function TicketPanel(props: {
     onOpenChat: props.onOpenChat,
     onReviewChange: props.onReviewChange,
     onReviewBrief: props.onReviewBrief,
+    onItem: props.onItem,
+    onDismiss: props.onDismiss,
   });
   return (
     <div className="detail ticket-panel">

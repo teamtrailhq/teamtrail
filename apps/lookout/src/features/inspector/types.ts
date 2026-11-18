@@ -1,6 +1,7 @@
 import type {
   AttemptResult,
   AttentionItem,
+  AttentionKind,
   DecisionRecord,
   DiscoveryBrief,
   LeaseHealth,
@@ -36,7 +37,9 @@ export type PrimaryKind =
   | 'review-brief'
   | 'review-change'
   | 'confirm-criteria'
-  | 'take-criteria';
+  | 'take-criteria'
+  /** What the queue holds on it, acted on as needAction says. */
+  | 'need';
 
 /** Where a ticket stands, in words: a title, its quiet context, the edge, and the human's next action. */
 export interface Standing {
@@ -65,7 +68,7 @@ export interface StandingInput {
   /** An open question an agent asked on the ticket. */
   question?: { agent: string; at: number };
   /** The ranked queue's first item on this ticket, with the edge the inbox gives it. */
-  item?: { kind: string; edge: EdgeTone };
+  item?: { kind: AttentionKind; edge: EdgeTone; title?: string };
   /** Fields changed outside Teamtrail, in words: the ticket is held until the human accepts or reverts. */
   outsideChange?: string;
   lease?: { agent: string; renewedAt: number; expiresAt: number; health: LeaseHealth };
@@ -145,6 +148,8 @@ export interface ChipInput {
   key: string;
   type: TicketType;
   state: NodeState;
+  /** What needs the human on it, as its map card says it ("needs you", "yours to decide"): the state chip, in red. */
+  need?: string;
   /** The agent at work on it, or the one whose completion it is, with its model short (`modelId` on hover). */
   agent?: { name: string; model?: string; modelId?: string; working: boolean };
   /** Its proof, when there is work to prove: verified, or why not (the first gap). */

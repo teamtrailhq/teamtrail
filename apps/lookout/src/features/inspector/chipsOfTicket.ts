@@ -15,16 +15,18 @@ const RISK_TEXT: Record<Exclude<RiskLevel, 'low'>, string> = { medium: 'medium r
  * above low. Each says one thing; the sentences (who waits on whom, since when) are the state line's.
  */
 export function chipsOfTicket(c: ChipInput): TicketChip[] {
-  const chips: TicketChip[] = [
-    { kind: 'key', text: c.key },
-    { kind: 'type', text: TYPE_TEXT[c.type] },
-    { kind: 'state', text: STATE_LABEL[c.state], tone: stateTone(c.state) },
-  ];
+  const chips: TicketChip[] = [{ kind: 'key', text: c.key }, { kind: 'type', text: TYPE_TEXT[c.type] }, stateChip(c)];
   if (c.agent) chips.push(...agentChips(c.agent));
   if (c.proof) chips.push(proofChip(c.proof));
   if (c.risk && c.risk.level !== 'low')
     chips.push({ kind: 'risk', text: RISK_TEXT[c.risk.level], tone: 'warn', tip: c.risk.reason });
   return chips;
+}
+
+/** Its state, or what needs the human on it, red, as on its map card. */
+function stateChip(c: ChipInput): TicketChip {
+  if (c.need) return { kind: 'state', text: c.need, tone: 'urgent' };
+  return { kind: 'state', text: STATE_LABEL[c.state], tone: stateTone(c.state) };
 }
 
 function stateTone(state: NodeState): TicketChip['tone'] {

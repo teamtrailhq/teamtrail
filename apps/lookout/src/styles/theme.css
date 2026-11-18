@@ -50,6 +50,14 @@
   --map-card-line: var(--line2);
   --map-card-quiet: var(--faint);
   --map-card-meta: var(--dim);
+  /* Overlays over the map and the zones (overlays.css): a raised sheet, its edge, and what it casts. */
+  --surface-overlay: #fffef9;
+  --surface-overlay-2: #f2efe2;
+  --surface-overlay-line: rgba(var(--line-rgb), 0.42);
+  --surface-overlay-shadow: 0 10px 30px rgba(58, 52, 34, 0.28);
+  --overlay-dim: var(--dim);
+  --overlay-faint: var(--faint);
+  --overlay-urgent-rgb: var(--urgent-rgb);
 }
 
 /* The same values twice: browsers can't share a block between a media query and an attribute selector. */
@@ -98,6 +106,13 @@
     --map-card-line: rgba(176, 198, 182, 0.6);
     --map-card-quiet: #9aab9f;
     --map-card-meta: #b3c1b6;
+    --surface-overlay: #303836;
+    --surface-overlay-2: #3a4340;
+    --surface-overlay-line: rgba(226, 234, 228, 0.3);
+    --surface-overlay-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.7);
+    --overlay-dim: #a3b2a7;
+    --overlay-faint: #97a59b;
+    --overlay-urgent-rgb: 255, 148, 136;
   }
 }
 :root[data-theme='night'] {
@@ -144,6 +159,13 @@
   --map-card-line: rgba(176, 198, 182, 0.6);
   --map-card-quiet: #9aab9f;
   --map-card-meta: #b3c1b6;
+  --surface-overlay: #303836;
+  --surface-overlay-2: #3a4340;
+  --surface-overlay-line: rgba(226, 234, 228, 0.3);
+  --surface-overlay-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.7);
+  --overlay-dim: #a3b2a7;
+  --overlay-faint: #97a59b;
+  --overlay-urgent-rgb: 255, 148, 136;
 }
 
 /* Derived: the same in both themes. Ticket states read as on the map cards (features/map/nodeTone.ts):

@@ -1,16 +1,17 @@
-import type { WaivableCheck } from '@teamtrail/core';
+import type { AttentionItem, WaivableCheck } from '@teamtrail/core';
 import { useState } from 'react';
 import type { ButtonVariant, MenuItem } from '../../components/ui';
 import type { LookoutApi } from '../../hooks';
 import { TRAIL_LEAD } from '../../lib';
 import { type ActionRequest, verificationApi } from '../../lib/verification';
 import { useKnowledge } from '../knowledge';
+import { needPrimary } from './needPrimary';
 import { ticketActionList } from './ticketActionList';
 import type { Form, PrimaryKind, TicketRunners } from './types';
 import type { TicketView } from './useTicketView';
 
 /** The menu item each primary action is. */
-const PRIMARY_ID: Record<PrimaryKind, string> = {
+const PRIMARY_ID: Record<Exclude<PrimaryKind, 'need'>, string> = {
   answer: 'answer',
   approve: 'approve',
   accept: 'accept',
@@ -39,6 +40,10 @@ export function useTicketActions(input: {
   onOpenChat: (sessionId: string) => void;
   onReviewChange?: () => void;
   onReviewBrief?: (mapId: string) => void;
+  /** Opens a queue item where it is handled (the brief, a reroute, Approvals…). */
+  onItem?: (item: AttentionItem) => void;
+  /** Sets a queue item aside. */
+  onDismiss?: (id: string) => void;
 }) {
   const { v, api } = input;
   const [error, setError] = useState<string>();
@@ -96,7 +101,9 @@ export function useTicketActions(input: {
   const named = v.standing.primary;
   // nothing waits on the human: an agent's proposed criteria, else unconfirmed ones, are the useful next step
   const fallback = all.find((a) => a.id === 'take-criteria') ?? all.find((a) => a.id === 'confirm-criteria');
-  const primary = answer ?? all.find((a) => named && a.id === PRIMARY_ID[named]) ?? fallback;
+  const need = named === 'need' ? needPrimary({ v, all, onItem: input.onItem, onDismiss: input.onDismiss }) : undefined;
+  const byName = named && named !== 'need' ? all.find((a) => a.id === PRIMARY_ID[named]) : undefined;
+  const primary = answer ?? need ?? byName ?? fallback;
   const variant: ButtonVariant = primaryVariant({
     urgent: v.standing.edge === 'urgent',
     named: !!named && primary !== fallback,

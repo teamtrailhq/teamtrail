@@ -1,4 +1,4 @@
-import type { AttentionView, MapSnapshot, SessionInfo, Ticket } from '@teamtrail/core';
+import type { AttentionItem, AttentionView, MapSnapshot, SessionInfo, Ticket } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
 import type { LookoutApi } from '../../hooks';
 import { edgeFor } from '../attention';
@@ -14,6 +14,9 @@ export interface TicketBubbleLinks {
   onOpenChat: (sessionId: string) => void;
   onReviewChange?: () => void;
   onReviewBrief?: (mapId: string) => void;
+  /** Opens a queue item where it is handled; sets one aside. */
+  onItem?: (item: AttentionItem) => void;
+  onDismiss?: (id: string) => void;
 }
 
 /**
@@ -42,6 +45,8 @@ export function TicketBubble(
     onOpenChat: props.onOpenChat,
     onReviewChange: props.onReviewChange,
     onReviewBrief: props.onReviewBrief,
+    onItem: props.onItem,
+    onDismiss: props.onDismiss,
   });
   const need = needOf({
     questionId: v.question?.id,
