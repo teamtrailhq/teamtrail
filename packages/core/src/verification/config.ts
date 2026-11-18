@@ -1,3 +1,4 @@
+import { DEFAULT_GATES, GATE_MODES, GATE_NAMES, type GateName } from '../model/gateMode';
 import { VERIFICATION_LEVELS } from '../model/lifecycle';
 import { TICKET_TYPES, type TicketType } from '../model/types';
 import type { CheckSpec, VerificationConfig } from '../model/verification';
@@ -17,6 +18,7 @@ export const DEFAULT_CONFIG: VerificationConfig = {
   noChanges: { allow: ['research', 'junction', 'prototype'], else: 'flag' },
   scope: 'flag',
   stale: 'reverify',
+  gates: { ...DEFAULT_GATES },
   github: { enabled: 'auto', requiredChecks: [], pollSec: 60 },
 };
 
@@ -104,6 +106,7 @@ export function parseVerificationConfig(text: string): { config?: VerificationCo
   take(raw.scope, oneOf('flag', 'fail', 'human'), (v) => (c.scope = v), '"scope" must be flag, fail or human');
   take(raw.stale, oneOf('reverify', 'flag'), (v) => (c.stale = v), '"stale" must be reverify or flag');
   parseGithub(raw.github, c, errors);
+  parseGates(raw.gates, c, errors);
   return errors.length ? { errors } : { config: c, errors };
 }
 
@@ -137,4 +140,18 @@ function parseGithub(g: unknown, c: VerificationConfig, errors: string[]) {
   );
   const isPoll = (v: unknown): v is number => posInt(v) && (v as number) >= 15;
   take(g.pollSec, isPoll, (v) => (c.github.pollSec = v), '"github.pollSec" must be an integer of at least 15');
+}
+
+function parseGates(g: unknown, c: VerificationConfig, errors: string[]) {
+  if (g === undefined) return;
+  if (!isObj(g)) return void errors.push('"gates" must be an object');
+  const take = taker(errors);
+  for (const [name, mode] of Object.entries(g)) {
+    if (!GATE_NAMES.includes(name as GateName)) {
+      errors.push(`"gates" names unknown gate "${name}"`);
+      continue;
+    }
+    const error = `"gates.${name}" must be ${GATE_MODES.join(', ')}`;
+    take(mode, oneOf(...GATE_MODES), (v) => (c.gates[name as GateName] = v), error);
+  }
 }
