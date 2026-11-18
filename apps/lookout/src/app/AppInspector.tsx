@@ -29,6 +29,7 @@ export function AppInspector(props: {
       onItem={(item) => attn.link.request(item.id)}
       onReviewChange={attn.handlers.openApprovals}
       onReviewBrief={attn.handlers.openBrief}
+      onDismiss={attn.attention.dismiss}
     />
   );
 }

@@ -63,6 +63,8 @@ export function AppBubble(props: {
         onOpenChat={(id) => nav.openChat(id)}
         onReviewChange={attn.handlers.openApprovals}
         onReviewBrief={attn.handlers.openBrief}
+        onItem={attn.open}
+        onDismiss={attn.attention.dismiss}
       />
     </MapBubble>
   );

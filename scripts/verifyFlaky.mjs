@@ -107,7 +107,7 @@ async function acceptInLookout(page, shots) {
   const form = page.locator('form.inline-form');
   await form.getByLabel('Why the pass counts').fill(REASON);
   await form.getByRole('button', { name: 'Accept the pass' }).click();
-  await page.locator('.bubble .bubble-state', { hasText: 'Done' }).waitFor({ timeout: 20_000 });
+  await page.locator('.bubble .ticket-chips .tag-state', { hasText: 'done' }).waitFor({ timeout: 20_000 });
   await openFullTicket(page);
   const proof = page.locator('.ticket-drawer .ticket-proof', { hasText: 'Verified by Teamtrail' });
   await proof.waitFor({ timeout: 15_000 });

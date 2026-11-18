@@ -44,6 +44,7 @@ export function AppTicketDrawer(props: {
         onItem={(item) => attn.open(item)}
         onReviewChange={attn.handlers.openApprovals}
         onReviewBrief={attn.handlers.openBrief}
+        onDismiss={attn.attention.dismiss}
       />
     </Panel>
   );

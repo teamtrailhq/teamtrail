@@ -1,0 +1,184 @@
+/* ---------- A ticket's anatomy, the same in its bubble and the full ticket ----------
+ * Title and chips, the state line, labelled sections in a fixed order (What, Acceptance criteria, How, Progress,
+ * Proof, History; the bubble shows the first two), and every action at the end. */
+
+/* Chips (components/ui/Tag.tsx): the map card's label chips, in HTML. A quiet flat fill, the text in the meta role;
+ * a state's tone as on the card. */
+.ticket-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--sp-6);
+  border-radius: 3px;
+  background: rgba(var(--line-rgb), 0.16);
+  color: var(--map-card-meta);
+  font: var(--type-meta);
+  white-space: nowrap;
+}
+.tag.t-code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  color: var(--map-card-meta);
+}
+.tag.agent,
+.tag.warn {
+  color: var(--text-hi);
+  font-weight: 500;
+}
+.tag.warn {
+  background: rgba(var(--amber-rgb), 0.2);
+}
+.tag.urgent {
+  background: rgba(var(--urgent-rgb), 0.12);
+  color: var(--urgent);
+  font-weight: 500;
+}
+.tag.verified {
+  background: rgba(var(--decided-rgb), 0.14);
+  color: rgb(var(--decided-rgb));
+  font-weight: 500;
+}
+
+/* The head: the title clear of the close button, the chips, one quiet line. */
+.ticket-head {
+  gap: var(--sp-6);
+}
+.ticket-head .ticket-title {
+  padding-right: 32px;
+  overflow-wrap: anywhere;
+}
+.ticket-head .ticket-title.small {
+  font: var(--type-row-title);
+  color: var(--text-hi);
+}
+
+/* Agent-written markdown (components/ui/Markdown.tsx): body text, never HTML. */
+.md {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.md p,
+.md ul,
+.md ol,
+.md pre,
+.md blockquote,
+.md hr {
+  margin: 0;
+}
+.md ul,
+.md ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-left: 1.3em;
+}
+.md li {
+  display: list-item;
+}
+.md li > * + * {
+  margin-top: var(--sp-2);
+}
+.md li::marker {
+  color: var(--dim);
+}
+.md .md-h {
+  font: var(--type-row-title);
+  color: var(--text-hi);
+}
+.md strong {
+  font-weight: 600;
+  color: var(--text-hi);
+}
+.md a {
+  color: var(--accent);
+}
+.md-code {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(var(--line-rgb), 0.16);
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+.md-pre {
+  padding: var(--sp-8);
+  overflow-x: auto;
+  background: rgba(var(--line-rgb), 0.12);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.md blockquote {
+  padding-left: var(--sp-10);
+  border-left: 2px solid var(--line2);
+  color: var(--dim);
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+/* Cut by height (a list or a code block isn't one paragraph), fading out where it is cut. */
+.clamp-md.cut {
+  max-height: calc(var(--fs-body) * var(--lh-body) * 10);
+  overflow: hidden;
+}
+.bubble .clamp-md.cut {
+  max-height: calc(var(--fs-body) * var(--lh-body) * 6);
+}
+.clamp-md.cut.faded {
+  mask-image: linear-gradient(to bottom, #000 65%, transparent);
+}
+
+/* What "done" means: knowledge no criterion covers yet, as a short hint. */
+.crit-uncovered {
+  margin: 0;
+}
+
+/* The bubble: the same sections, each after a rule; the actions last. */
+.bubble-ticket > .d-section,
+.bubble > .ticket-footer {
+  padding-top: var(--sp-10);
+  border-top: 1px solid var(--line);
+}
+.bubble > .ticket-footer {
+  margin-top: var(--sp-2);
+}
+
+/* The actions, at the end of the ticket; in the full ticket held in view while it scrolls. */
+.ticket-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+.detail > .ticket-footer {
+  padding-top: var(--sp-10);
+  border-top: 1px solid var(--line);
+}
+.ticket-footer.sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: auto;
+  padding-bottom: var(--sp-10);
+  background: var(--panel-solid);
+}
+.action-bar-end {
+  display: inline-flex;
+}
+/* At the end of the ticket, the "⋯" menu opens upwards, inside the bubble or the drawer. */
+.ticket-footer .more-list {
+  top: auto;
+  bottom: calc(100% + var(--sp-4));
+}
+.action-bar-end .link {
+  padding: 0 var(--sp-4);
+}

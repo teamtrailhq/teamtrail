@@ -2,7 +2,7 @@ import { Clamp, MetaLine } from '../../components/ui';
 import { hhmm } from '../../lib';
 import type { HistoryEntry } from './historyEntries';
 
-/** One decision or comment: who, what kind and when, then its words; a decision opens in the Logbook. */
+/** One decision or comment: who, what kind and when, then its words (as markdown); a decision opens in the Logbook. */
 export function HistoryItem(props: { entry: HistoryEntry; onOpenDecision?: (id: string) => void }) {
   const e = props.entry;
   const open = e.decision && props.onOpenDecision;
@@ -15,7 +15,7 @@ export function HistoryItem(props: { entry: HistoryEntry; onOpenDecision?: (id: 
           </button>
         )}
       </MetaLine>
-      <Clamp text={e.text} />
+      <Clamp text={e.text} markdown />
     </li>
   );
 }

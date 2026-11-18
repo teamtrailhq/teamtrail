@@ -45,7 +45,8 @@ export function historyEntries(input: {
       at: c.createdAt,
       who: actorLabel(c.author, input.people),
       kind: kindOf(c.body),
-      text: c.body.replace(MARK, '').replace(/\*\*/g, ''),
+      // the rest is the agent's markdown, shown as markdown
+      text: c.body.replace(MARK, ''),
     }));
   return [...decided, ...comments].sort((a, b) => b.at - a.at);
 }

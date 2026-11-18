@@ -136,7 +136,7 @@ export async function verifyWaiver({ browser, cli, log, shots }) {
     await form.getByLabel('Why it can go without test').fill(REASON);
     if (shots) await page.screenshot({ path: path.join(shots, 'waive-form.png') });
     await form.getByRole('button', { name: 'Accept without test' }).click();
-    await page.locator('.bubble .bubble-state', { hasText: 'Done' }).waitFor({ timeout: 20_000 });
+    await page.locator('.bubble .ticket-chips .tag-state', { hasText: 'done' }).waitFor({ timeout: 20_000 });
     await openFullTicket(page);
     const proofPanel = page.locator('.ticket-drawer .ticket-proof', { hasText: 'Not verified' });
     await proofPanel.waitFor({ timeout: 15_000 });

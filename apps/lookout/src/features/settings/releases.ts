@@ -22,6 +22,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.63.0',
+    date: '2026-11-18',
+    items: [
+      'Tickets read as their agents wrote them: lists, bold, code and links, in the bubble and the full ticket',
+      'Every ticket has the same shape: its title and chips (state, agent and model, verified, risk), then What, Acceptance criteria, How, Progress, Proof and History, and its actions at the end',
+      'Merge anyway shows only on done work with something to merge, never on a research ticket',
+      'A ticket that needs you says so in red, says what is asked, and its first button does it; in the dark theme, the ticket and menus sit on a lighter sheet over the map',
+    ],
+  },
+  {
     version: '0.62.0',
     date: '2026-11-18',
     items: [

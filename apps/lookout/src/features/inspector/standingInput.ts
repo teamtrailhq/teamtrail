@@ -9,6 +9,7 @@ import {
 } from '@teamtrail/core';
 import { checkOk, type TicketVerification } from '../../lib/verification';
 import { edgeFor } from '../attention';
+import { workToProve } from '../proof';
 import type { LatestAttempt, LoadedTicket, StandingInput } from './types';
 
 /** The fields changed outside Teamtrail, in words. */
@@ -31,7 +32,11 @@ export function standingInput(v: LoadedTicket): StandingInput {
     state: v.state,
     now: v.now,
     question: v.question && { agent: v.question.agent, at: v.question.at },
-    item: first && { kind: first.kind, edge: edgeFor(first, v.interrupting.includes(first.id)) },
+    item: first && {
+      kind: first.kind,
+      edge: edgeFor(first, v.interrupting.includes(first.id)),
+      title: first.title.split('\n')[0].replace(/^[^\s:]+: /, ''),
+    },
     outsideChange: v.change && `${HELD_FIELDS(v.change.fields)} · held until you accept or revert it`,
     lease,
     assignee: t.assignee,
@@ -43,7 +48,7 @@ export function standingInput(v: LoadedTicket): StandingInput {
     latest: latest && latestOf(latest),
     sentBack: sentBack(v.verification),
     reviewWaits: reviewWaits(v.verification),
-    verified: v.proof && v.proof.proof.status === 'verified',
+    verified: v.proof && workToProve(v.t, v.proof.proof) ? v.proof.proof.status === 'verified' : undefined,
     pr: v.pr?.pr && { number: v.pr.pr.number, state: v.pr.pr.state },
     openBlockers: t.blockedBy.filter((b) => byId.get(b)?.state === 'open').map((b) => byId.get(b)?.key ?? b),
     closedAt: t.closedAt,
