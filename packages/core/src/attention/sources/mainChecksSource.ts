@@ -5,7 +5,8 @@ import type { AttentionSource, Candidate } from '../types';
 /**
  * Checks already fail on main and nobody chose what to do about it: the trail's implementation waits. Blocking, one
  * item per trail; it opens the trail, where the human fixes main first, drops the check for the trail or starts anyway.
- * Once they chose to fix main first, the item goes: the trail step keeps the re-run.
+ * Once they chose to fix main first, the item goes: the trail step keeps the re-run. A failure on a commit main has
+ * moved past asks nothing either: checks run again on the new head.
  */
 export const mainChecksSource: AttentionSource = {
   kind: 'main-checks',
@@ -13,7 +14,7 @@ export const mainChecksSource: AttentionSource = {
     return mainChecks.flatMap((view): Candidate[] => {
       const { state, run } = view;
       // only a trail ready for work is asked: one still in discovery starts no implementation yet
-      if (state.kind !== 'failed' || state.fixing || !run || !view.holds) return [];
+      if (state.kind !== 'failed' || state.fixing || state.moved || !run || !view.holds) return [];
       const snap = snaps.find((s) => s.map.id === view.mapId);
       if (!snap) return [];
       const held = mainChecksHeld(snap, view);

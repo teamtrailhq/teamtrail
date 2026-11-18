@@ -159,6 +159,8 @@ export interface AskRecord {
   ts: string;
   /** Set once the message shows the outcome and lost its buttons. */
   closed?: boolean;
+  /** How it is answered, as the message shows it (absent on older records: buttons). */
+  mode?: 'buttons' | 'lookout';
   /** Answered from Slack: who and what, for the closing line. */
   by?: { user: string; text: string };
   /** What the message shows, to re-render it without the buttons. Stays on this machine. */

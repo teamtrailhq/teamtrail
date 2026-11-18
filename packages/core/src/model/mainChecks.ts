@@ -84,7 +84,8 @@ export type MainChecksState =
   | { kind: 'running'; proceeding: boolean }
   | { kind: 'passed' }
   | { kind: 'unavailable'; reason: string }
-  | { kind: 'failed'; failing: string[]; fixing: boolean }
+  /** `moved`: the default branch here has moved past the failing run's commit, so checks run on it again. */
+  | { kind: 'failed'; failing: string[]; fixing: boolean; moved?: true }
   | { kind: 'accepted'; known: string[]; dropped: string[] };
 
 /** What the Lookout, agents and an embedding server read for one trail. */
