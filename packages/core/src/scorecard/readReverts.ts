@@ -6,8 +6,9 @@ import { isObjectId } from '../workspaces/gitNames';
 /** What `git revert` writes in the message. The default branch is searched back 2000 commits. */
 const REVERTS = /This reverts commit ([0-9a-f]{7,64})/gi;
 
-/** The default branch's head this was last read at, per checkout: git is asked again only when it moves. */
-const cache = new Map<string, { commit: string; reverts: RevertCommit[] }>();
+/** What was read per checkout and commit (the last few): git is asked again only when the commit moves. */
+const cache = new Map<string, RevertCommit[]>();
+const CACHED = 16;
 
 interface Reverting {
   sha: string;
@@ -73,14 +74,19 @@ async function readFrom(top: string, commit: string): Promise<RevertCommit[]> {
 
 /**
  * The commits on the default branch that revert another (`This reverts commit <sha>`, as `git revert` writes), each
- * with the reverted commit's parents and subject. Read locally, nothing fetched; none outside git.
+ * with the reverted commit's parents and subject. Read locally, nothing fetched; none outside git. `at` reads them in
+ * the history of that commit instead of the default branch's head here: the one a trail's checks run on
+ * (trailChecks/trailHead.ts), so what counts as reverted is what that commit holds.
  */
-export async function readReverts(root: string): Promise<RevertCommit[]> {
+export async function readReverts(root: string, o: { at?: string } = {}): Promise<RevertCommit[]> {
   const head = await defaultHead(root);
   if (!('commit' in head)) return [];
-  const hit = cache.get(head.top);
-  if (hit?.commit === head.commit) return hit.reverts;
-  const reverts = await readFrom(head.top, head.commit);
-  cache.set(head.top, { commit: head.commit, reverts });
+  const commit = o.at && isObjectId(o.at) ? o.at : head.commit;
+  const key = `${head.top}\0${commit}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const reverts = await readFrom(head.top, commit);
+  cache.set(key, reverts);
+  if (cache.size > CACHED) cache.delete(cache.keys().next().value!);
   return reverts;
 }

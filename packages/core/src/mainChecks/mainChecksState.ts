@@ -10,6 +10,8 @@ export interface MainChecksStateInput {
   /** The latest run on main that is finished or still running. */
   run?: MainRun;
   choices: TrailMainChoices;
+  /** The default branch's head here now, when known: a failing run on another commit is out of date. */
+  headNow?: string;
 }
 
 export interface MainChecksGate {
@@ -23,7 +25,11 @@ const RUNNING = `Checks on main are running first, so a failure already on main 
 
 const list = (names: string[]) => names.join(', ');
 
-function failedReason(failing: string[], fixing: boolean) {
+const MOVED = 'Main moved since the failing run: checks on main run again on its new head.';
+
+function failedReason(failing: string[], o: { fixing: boolean; moved: boolean }) {
+  const { fixing } = o;
+  if (o.moved) return `${MOVED} Implementation tickets wait for that run. ${GOES_ON}`;
   const what = `Checks already fail on main (${list(failing)})`;
   if (fixing) return `${what} and the trail lead is fixing main first: implementation tickets wait. ${GOES_ON}`;
   return `${what}: implementation tickets wait for the trail lead to fix main, drop the check for this trail or start anyway. ${GOES_ON}`;
@@ -39,7 +45,7 @@ function explained(c: MainCheckResult, o: { run: MainRun; choices: TrailMainChoi
   return same ? 'known' : undefined;
 }
 
-function finished(run: MainRun, choices: TrailMainChoices): MainChecksGate {
+function finished(run: MainRun, choices: TrailMainChoices, headNow?: string): MainChecksGate {
   if (run.result === 'pass') return { state: { kind: 'passed' }, holds: false };
   if (run.result === 'unavailable')
     return { state: { kind: 'unavailable', reason: run.note ?? 'nothing ran' }, holds: false };
@@ -52,7 +58,9 @@ function finished(run: MainRun, choices: TrailMainChoices): MainChecksGate {
     return { state: { kind: 'accepted', known, dropped }, holds: false };
   }
   const fixing = choices.fixMain?.runId === run.id;
-  return { state: { kind: 'failed', failing, fixing }, holds: true, reason: failedReason(failing, fixing) };
+  const moved = !!headNow && !!run.commit && headNow !== run.commit;
+  const state = { kind: 'failed' as const, failing, fixing, ...(moved ? { moved: true as const } : {}) };
+  return { state, holds: true, reason: failedReason(failing, { fixing, moved }) };
 }
 
 /**
@@ -63,13 +71,13 @@ function finished(run: MainRun, choices: TrailMainChoices): MainChecksGate {
 export function mainChecksState(i: MainChecksStateInput): MainChecksGate {
   if (i.plan.kind === 'off') return { state: { kind: 'off', reason: i.plan.reason }, holds: false };
   const run = i.run && i.run.configHash === i.plan.hash ? i.run : undefined;
-  const gate = gateOf(run, i.choices);
+  const gate = gateOf(run, i.choices, i.headNow);
   return i.ready ? gate : { state: gate.state, holds: false };
 }
 
-function gateOf(run: MainRun | undefined, choices: TrailMainChoices): MainChecksGate {
+function gateOf(run: MainRun | undefined, choices: TrailMainChoices, headNow?: string): MainChecksGate {
   if (!run) return { state: { kind: 'not-run' }, holds: true, reason: RUNNING };
-  if (run.result !== 'running') return finished(run, choices);
+  if (run.result !== 'running') return finished(run, choices, headNow);
   const proceeding = choices.proceed?.runId === run.id;
   return { state: { kind: 'running', proceeding }, holds: !proceeding, ...(proceeding ? {} : { reason: RUNNING }) };
 }

@@ -12,7 +12,7 @@ export function mainTone(view: MainChecksView | undefined, asked: boolean): Main
   if (asked) return 'needs';
   switch (view.state.kind) {
     case 'failed':
-      return view.state.fixing ? 'attention' : 'needs';
+      return view.state.fixing || view.state.moved ? 'attention' : 'needs';
     case 'unavailable':
     case 'accepted':
       return 'attention';
