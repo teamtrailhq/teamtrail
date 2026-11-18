@@ -237,6 +237,26 @@ test('with a check runner (Cloud) the run goes to it: only the checks asked coun
   assert.equal(view.holds, false);
 });
 
+test("a runner whose server holds no checkout of the code is never named this folder's git head", async () => {
+  // Cloud's engine: its folder can sit inside an unrelated clone, whose head GitHub doesn't know in the repository.
+  const named: (string | undefined)[] = [];
+  const runner: CheckRunner = {
+    name: 'Hosted runner',
+    holdsCode: false,
+    run: () => Promise.reject(new Error('not for completions')),
+    runMain: (job) => {
+      named.push(job.commit ?? job.branch);
+      return Promise.reject(new Error('the sandbox is busy'));
+    },
+  };
+  const start = requestMainRun({ root, checkRunner: runner }, { mapId });
+  if (start.kind !== 'started') return assert.fail('expected a run');
+  const run = await start.done;
+  assert.deepEqual(named, [undefined], 'no commit and no branch named: the runner takes the default branch head');
+  assert.equal(run.commit, null);
+  assert.equal(run.result, 'unavailable');
+});
+
 test('journal: main-checks entries sit next to transitions and kinds a newer version wrote', () => {
   const dir = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-main-journal-')), '.teamtrail');
   mkdirSync(path.join(dir, '.events'), { recursive: true });

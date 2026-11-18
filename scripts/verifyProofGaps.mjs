@@ -20,6 +20,7 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { prMergedLive } from './verifyLivePr.mjs';
 
 /** A git repo whose one check passes. */
 function scratchRepo() {
@@ -196,6 +197,9 @@ export async function verifyProofGaps({ browser, cli, log, shots }) {
       () => false,
     );
     await proofShots(page, shots, 'proof-verified');
+    // merged where the server merges: the PR block says so at once, no reload
+    const root = path.join(top, '.teamtrail');
+    const live = await prMergedLive({ page, root, mapId: started.trail.id, ticketId, key });
     const same = again && again.attempts[0].git?.tree?.head === again.attempts[1].git?.tree?.head;
     const ok =
       missing.status === 'rework' &&
@@ -205,9 +209,11 @@ export async function verifyProofGaps({ browser, cli, log, shots }) {
       !!same &&
       reviewed.phase === 'done' &&
       shown &&
+      live.open &&
+      live.merged &&
       !errors.length;
     log(
-      `done means verified ${ok ? 'ok' : 'WRONG'}: ${key} with no evidence ${missing.status} by itself, its pass ${waits.status} (needs you ${yours}, review opened ${reviewing}), Confirm criteria checked it again on the same commit (${same ? 'yes' : 'NO'}), the review ${reviewed.phase}, proof ${shown ? 'verified' : 'NOT verified'}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `done means verified ${ok ? 'ok' : 'WRONG'}: ${key} with no evidence ${missing.status} by itself, its pass ${waits.status} (needs you ${yours}, review opened ${reviewing}), Confirm criteria checked it again on the same commit (${same ? 'yes' : 'NO'}), the review ${reviewed.phase}, proof ${shown ? 'verified' : 'NOT verified'}, its PR shown open (${live.open}) then merged (${live.merged}) live${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {
