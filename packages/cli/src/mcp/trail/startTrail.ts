@@ -1,5 +1,4 @@
 import {
-  chooseNext,
   chartMap,
   DISCOVERY_TICKET,
   OperationError,
@@ -13,9 +12,10 @@ import { listGuides, recordCharted, recordLevel, recordTypes, trustedChecks, wri
 import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
 import { saveCriteria } from './criteria';
-import { briefView, claimable } from './discovery';
+import { briefView } from './discovery';
 import { assertGuide } from './guides';
 import { knowledgeFor } from './knowledge';
+import { offerNext } from './offerNext';
 import { requestSetting } from './settings';
 import { ticketInfo } from './ticketInfo';
 import type { TicketPlanInput } from './types';
@@ -107,7 +107,8 @@ async function chartTrail(ctx: AgentContext, input: StartInput) {
   const framing = ctx.sessions.transcript(s.id) ?? [];
   ctx.sessions.end(true, `Trail launched · ${tickets.length} tickets`, { signal: true, kind: 'launched' });
   const snap = await ctx.load(map.id);
-  const next = chooseNext(snap, { types: claimable(ctx.root, map.id) });
+  const offer = await offerNext(ctx, snap);
+  const next = offer.ticket;
   return {
     trail: {
       id: map.id,
@@ -127,6 +128,7 @@ async function chartTrail(ctx: AgentContext, input: StartInput) {
     framingQuestionsAnswered: framing.filter((e) => e.from === 'human').length,
     discovery: briefView(ctx.root, snap),
     next: next ? ticketInfo(ctx.root, snap, next) : null,
+    ...(next ? {} : { nextReason: offer.reason }),
     knowledge: next ? knowledgeFor(ctx.root, snap, next) : undefined,
     lookout: ctx.lookout(),
   };

@@ -1,6 +1,5 @@
 import {
   attention,
-  chooseNext,
   deriveStates,
   OperationError,
   type DecisionRecord,
@@ -29,6 +28,7 @@ import { assertCriteria } from './criteria';
 import { assertRulesAnswered } from './diffRules';
 import { checkedAnswers, keepAnswers } from './guideChecklists';
 import { humanAnswerFor, release, spend, type HumanAnswer } from './humanAnswer';
+import { nextInBrief, offerNext } from './offerNext';
 import { assertOwnClaim } from './ownClaim';
 import { withReview } from './parallel';
 import { pathRoots } from './pathRoots';
@@ -214,7 +214,7 @@ async function finish(c: Closing, done: { before: Set<string>; verified: object;
   const nowOpen = frontier(after);
   const unblocked = after.tickets.filter((x) => nowOpen.has(x.id) && !done.before.has(x.id));
   if (s.info.ticketId === t.id) ctx.sessions.end(true, `${t.key} decided · session closed`);
-  const next = chooseNext(after);
+  const offer = await offerNext(ctx, after);
   const trail = await trailDoneFor({ env: trailEnv(ctx), snap: after, decisions: await ctx.decisions(after.map.id) });
   const d = done.decision;
   return {
@@ -223,7 +223,7 @@ async function finish(c: Closing, done: { before: Set<string>; verified: object;
     ...done.verified,
     decision: d ? { id: d.id, summary: d.summary, decidedBy: d.decidedBy } : null,
     unblocked: unblocked.map((x) => ({ key: x.key, title: x.title, type: x.type })),
-    next: next ? { key: next.key, title: next.title, type: next.type, attention: attention(next) } : null,
+    ...nextInBrief(offer),
     // core's trailDone, as the Lookout judges it: done once nothing in scope is open and the plan is charted
     trailDone: trail.kind !== 'not-done',
     trail: trail.reason,

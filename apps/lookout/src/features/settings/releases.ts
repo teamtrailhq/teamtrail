@@ -22,6 +22,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.5',
+    date: '2026-11-18',
+    items: [
+      'Agents are only pointed to work they can take: closing a ticket or resuming a trail no longer suggests one that waits on you, and says what it waits for',
+      'An agent that closes the discovery ticket before writing the brief is told to submit the brief, so the trail no longer stalls',
+      "Agents asked about your other projects no longer report nothing waiting in a GitHub or Linear project whose tickets they can't read",
+    ],
+  },
+  {
     version: '0.66.2',
     date: '2026-11-18',
     items: [
@@ -185,16 +194,6 @@ export const RELEASES: Release[] = [
     items: [
       "A check that can't pass in your repo no longer strands a ticket: Accept without it, with your reason. The other checks run again, the proof shows who skipped it and why, and Undo puts it back",
       "Setting or approving checks now says which ones can't run as your repo is (a missing script, no go.mod, a missing make target), with Remove check or Keep anyway",
-    ],
-  },
-  {
-    version: '0.58.0',
-    date: '2026-11-17',
-    items: [
-      'Before agents build, the approved checks run once on the default branch, so a check already failing on main is known before any agent is blamed for it',
-      'When one fails, the trail waits for your call: fix main first, drop that check for the trail, or start anyway. Each can be undone',
-      'After Start anyway, a completion that fails only in those checks, the same way, isn’t sent back, and its proof marks them as known failures, not verified',
-      'Run checks on main again any time, from the trail at a glance or Settings → Verification',
     ],
   },
   ...LATER_RELEASES,

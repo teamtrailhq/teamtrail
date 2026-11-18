@@ -28,7 +28,7 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   const answer = s.ask(input.question, suggestions, { urgency: input.urgency, blocks });
   const q = ctx.activity.snapshot.pending.filter((p) => p.sessionId === s.id).at(-1)!;
   const categories = askedCategories(input);
-  const stakes = stakesOf(ctx, { input, agent: s.info.agent, ticketId: s.info.ticketId });
+  const stakes = stakesOf(ctx, { input, mapId: s.info.mapId, ticketId: s.info.ticketId });
   if (stakes) q.stakes = stakes;
   if (precedent.line) q.precedent = precedent.line;
   if (categories.length) q.category = categories[0];
@@ -101,8 +101,8 @@ export interface AskInput {
 }
 
 /** What the answer lets the agent do, for the Lookout and Slack to show with the question. */
-function stakesOf(ctx: AgentContext, c: { input: AskInput; agent: string; ticketId?: string }) {
-  const t = c.ticketId ? ctx.seen(c.ticketId) : undefined;
+function stakesOf(ctx: AgentContext, c: { input: AskInput; mapId: string; ticketId?: string }) {
+  const t = c.ticketId ? ctx.seen(c.mapId, c.ticketId) : undefined;
   if (!t || attention(t) !== 'hitl' || c.input.urgency === 'fyi') return undefined;
   return `Answering this decides ${t.key}`;
 }
@@ -189,7 +189,7 @@ export async function inbox(ctx: AgentContext, input: { kinds?: AttentionKind[] 
         sessionId: q.sessionId,
         agent: q.agent,
         trail: maps.get(q.mapId)?.title ?? (q.mapId ? q.mapId : 'new trail (framing)'),
-        ticket: q.ticketId ? ctx.keyOf(q.ticketId) : undefined,
+        ticket: q.ticketId ? ctx.keyOf(q.ticketId, q.mapId) : undefined,
         question: q.text,
         suggestions: q.suggestions,
         ...(q.category ? { category: q.category } : {}),
