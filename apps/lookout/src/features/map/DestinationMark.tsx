@@ -1,5 +1,6 @@
 import type { TrailDone } from '@teamtrail/core';
 import { cx } from '../../lib';
+import { summaryLine } from '../../lib/markdown';
 import { FlagShape } from './FlagShape';
 
 /**
@@ -17,7 +18,7 @@ export function DestinationMark(props: {
   onSelect?: () => void;
 }) {
   const { x, y, text, done, onSelect } = props;
-  const where = text?.trim() || 'Where this trail ends';
+  const where = (text && summaryLine(text)) || 'Where this trail ends';
   const reached = done && done.kind !== 'not-done';
   const tip = reached ? `Destination reached · ${done.reason}\n${where}` : `Destination\n${where}`;
   const failing = done?.kind === 'unverified' && done.together.kind === 'failed';

@@ -1,5 +1,5 @@
 import type { ActivityState, MapSnapshot } from '@teamtrail/core';
-import { Empty, MetaLine, Row } from '../../components/ui';
+import { Empty, Markdown, MetaLine, Row } from '../../components/ui';
 import type { Selection } from '../../lib';
 import { AssumptionList } from './AssumptionList';
 import { splitPlanItem } from './splitPlanItem';
@@ -80,8 +80,12 @@ export function PlanTabBody({
           })}
         </ul>
       );
+    case 'destination':
+      if (!s.destination.trim()) return <Empty>No destination yet</Empty>;
+      return <Markdown className="plan-doc" text={s.destination} />;
     case 'notes':
-      return <p className="notes t-body">{s.notes || 'No notes yet.'}</p>;
+      if (!s.notes.trim()) return <Empty>No notes yet</Empty>;
+      return <Markdown className="plan-doc" text={s.notes} />;
     default: {
       const unknown: never = tab;
       return unknown;
