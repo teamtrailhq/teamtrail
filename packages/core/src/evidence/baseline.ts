@@ -1,40 +1,12 @@
-import { readdirSync } from 'node:fs';
-import path from 'node:path';
-import { readJsonFile } from '../lib/jsonFile';
 import type { GitBaseline } from '../model/evidence';
 import type { Ticket } from '../model/types';
 import { trustedChecks } from '../verification/checksApproval';
-import { evidencePaths, writeOnce } from '../verification/evidenceStore';
+import { baselineStore } from './baselineStore';
 import { findWorktree, readTreeState } from './treeState';
 
-/*
- * The worktree at claim, next to the ticket's attempts:
- *   <tracker dir>/.evidence/<mapId>/<ticketId>/baseline-<n>.json   GitBaseline, written once
- */
-const RE = /^baseline-(\d+)\.json$/;
-
-function numbers(root: string, mapId: string, ticketId: string) {
-  try {
-    return readdirSync(path.join(root, evidencePaths.ticket(mapId, ticketId)))
-      .map((n) => Number(n.match(RE)?.[1]))
-      .filter((n) => n > 0)
-      .sort((a, b) => a - b);
-  } catch {
-    return [];
-  }
-}
-
-const file = (mapId: string, ticketId: string, id: string) => `${evidencePaths.ticket(mapId, ticketId)}/${id}.json`;
-
-export const readBaseline = (root: string, mapId: string, ticketId: string, id: string) => {
-  const b = readJsonFile<GitBaseline>(path.join(root, file(mapId, ticketId, id)));
-  return b?.v === 1 ? b : undefined;
-};
-
-/** The ticket's most recent baseline: the one its next completion is measured from. */
+/** The ticket's most recent baseline this machine recorded and signed (baselineStore.ts): its next completion's base. */
 export function latestBaseline(root: string, mapId: string, ticketId: string) {
-  const n = numbers(root, mapId, ticketId).at(-1);
-  return n ? readBaseline(root, mapId, ticketId, `baseline-${n}`) : undefined;
+  return baselineStore.latest(root, mapId, ticketId);
 }
 
 export interface ClaimInfo {
@@ -48,7 +20,10 @@ export interface ClaimInfo {
   sessionId?: string;
 }
 
-/** Records HEAD, branch, the dirty files and the verification.json hash as a claim finds them. Never throws. */
+/**
+ * Records HEAD, branch, the dirty files and the verification.json hash as a claim finds them, in this machine's store
+ * (baselineStore.ts), never the repo. Never throws.
+ */
 export async function captureBaseline(c: ClaimInfo): Promise<GitBaseline> {
   const wt = await findWorktree(c.cwd, c.root);
   // the approved config, as completions use it, so "changed during the ticket" compares like with like
@@ -64,16 +39,11 @@ export async function captureBaseline(c: ClaimInfo): Promise<GitBaseline> {
     ...('error' in wt ? { git: null, note: wt.error } : { git: await readTreeState(wt) }),
     ...(config.hash ? { configHash: config.hash } : {}),
   };
-  for (;;) {
-    const id = `baseline-${(numbers(c.root, c.mapId, c.ticket.id).at(-1) ?? 0) + 1}`;
-    try {
-      writeOnce(c.root, file(c.mapId, c.ticket.id, id), { ...rec, id });
-      return { ...rec, id };
-    } catch (e) {
-      const code = (e as NodeJS.ErrnoException).code;
-      if (code === 'EEXIST') continue;
-      return { ...rec, id, note: `baseline not saved: ${(e as Error).message}` };
-    }
+  try {
+    return baselineStore.add(c.root, rec);
+  } catch (e) {
+    // a config folder this process can't write: no baseline, and the completion's guard holds what it can't compare
+    return { ...rec, id: 'baseline-unsaved', note: `baseline not saved: ${(e as Error).message}` };
   }
 }
 

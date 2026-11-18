@@ -135,7 +135,7 @@ export { reviewConflict, type Reviewer } from './verification/reviewIndependence
 export { reviewBody, requestReview } from './verification/reviewRequest';
 export { submitReview, type ReviewResult, type ReviewSubmission } from './verification/submitReview';
 export { LOG_VIEW_BYTES, readEvidenceLog, ticketEvidence } from './verification/ticketEvidence';
-export { baselineForClaim, captureBaseline, latestBaseline, readBaseline, type ClaimInfo } from './evidence/baseline';
+export { baselineForClaim, captureBaseline, latestBaseline, type ClaimInfo } from './evidence/baseline';
 export { collectEvidence, type EvidenceRequest } from './evidence/collectEvidence';
 export { evidenceFlags, flagEffect, type OtherWork } from './evidence/flags';
 export { staleAction, staleness } from './evidence/stale';

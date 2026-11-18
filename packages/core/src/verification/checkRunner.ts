@@ -58,8 +58,13 @@ export interface RunnerReport {
 export interface MainRunJob {
   /** Names the run (`.evidence/_main/runs/<runId>.json`). */
   runId: string;
-  /** The default branch, and its head as this checkout knows it; the runner may use the remote's newer head. */
+  /** The default branch as this checkout knows it: a hint, the runner reads the repository's own. */
   branch?: string;
+  /**
+   * The commit to run on, exactly, when this checkout knows one: the runner checks out that commit (fetching it if it
+   * must), refuses with a reason one that isn't in the default branch's history, and reports it as `git.head`. A
+   * report on another commit counts as couldn't run. Without it, the runner uses the default branch's head.
+   */
   commit?: string;
   /** In order, as for a completion. */
   checks: RunnerCheck[];

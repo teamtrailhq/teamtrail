@@ -29,9 +29,16 @@ async function ask(runner: CheckRunner, job: Parameters<NonNullable<CheckRunner[
   }
 }
 
+/** Why a report doesn't count: the runner ran on another commit than the one named; undefined when it's that one. */
+function otherCommit(o: { runner: string; asked?: string; ran: string | null }) {
+  if (!o.asked || o.ran === o.asked) return undefined;
+  return `${o.runner} ran on ${o.ran?.slice(0, 7) ?? 'no commit it named'}, not ${o.asked.slice(0, 7)} as asked`;
+}
+
 /**
  * The approved checks on main, run by the embedding server's runner (Cloud), as remote completions are: only the
- * checks asked count, in order, with the approved commands, on the commit it names.
+ * checks asked count, in order, with the approved commands, on the commit it names. When this checkout named the
+ * commit, a report on any other counts as couldn't run.
  */
 export async function runMainOnRunner(o: {
   root: string;
@@ -41,8 +48,11 @@ export async function runMainOnRunner(o: {
   config: VerificationConfig;
   names: string[];
   signal?: AbortSignal;
-  /** A trail's combined run: the commit known here, and the commits the run's commit must contain. */
-  head?: { branch: string; commit: string };
+  /**
+   * A trail's combined run: the commit to name (null: name none, the runner takes the default branch's head), and the
+   * commits the run's commit must contain. Left out, this checkout's default branch head is named.
+   */
+  head?: { branch: string; commit: string } | null;
   contains?: string[];
   logRel?: string;
 }): Promise<MainRunOutcome> {
@@ -56,8 +66,8 @@ export async function runMainOnRunner(o: {
       runner,
       note: `${runner} doesn't run checks on main`,
     };
-  const head = o.head ?? (await defaultHead(o.repoRoot));
-  const known = 'note' in head ? {} : { branch: head.branch, commit: head.commit };
+  const head = o.head === undefined ? await defaultHead(o.repoRoot) : o.head;
+  const known = !head || 'note' in head ? {} : { branch: head.branch, commit: head.commit };
   const asked = o.names.map((name) => ({ name, spec: o.config.checks[name] }));
   const job = {
     runId: o.id,
@@ -81,8 +91,11 @@ export async function runMainOnRunner(o: {
     ticketType: 'research',
   });
   if ('error' in read) return { ...at, result: 'unavailable', checks: [], note: read.error };
+  const ran = read.git.tree?.head ?? null;
+  const moved = otherCommit({ runner, asked: known.commit, ran });
+  if (moved) return { ...at, result: 'unavailable', checks: [], note: moved };
   const checks = read.checks.map((c) => mainCheckResult(o.root, c, []));
-  const commit = read.git.tree?.head ?? at.commit;
+  const commit = ran ?? at.commit;
   const said = Array.isArray(report.contains) ? report.contains : [];
   const contains = o.contains ? { contains: o.contains.filter((c) => said.includes(c)) } : {};
   if (checks.length < asked.length && checks.every((c) => c.passed))

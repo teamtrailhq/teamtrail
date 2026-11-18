@@ -28,4 +28,5 @@ export { reviewGateMode } from './verification/reviewGateMode';
 export { reviewedWork } from './verification/reviewedWork';
 export { rulesForTouches } from './verification/rulesForTouches';
 export { rulesGate, type UnansweredRule } from './verification/rulesGate';
+export { undoRuleWaiver, type UndoRuleWaiverRequest } from './verification/undoRuleWaiver';
 export { waiveRule, type WaiveRuleRequest } from './verification/waiveRule';

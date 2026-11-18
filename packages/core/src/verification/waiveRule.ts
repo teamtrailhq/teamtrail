@@ -2,10 +2,9 @@ import type { TrackerAdapter } from '../adapters/adapter';
 import { journalFile } from '../history/journalFile';
 import type { AnswerVia } from '../model/answerVia';
 import type { RuleWaiver } from '../model/diffRule';
-import { highRiskRefusal } from '../model/highRiskRefusal';
 import { oneLine } from '../model/safeText';
 import { OperationError } from '../planning/operations/operationError';
-import { ticketNeedsLookout } from '../policy/ticketNeedsLookout';
+import { assertMayWaiveRule } from './assertMayWaiveRule';
 import { trustedChecks } from './checksApproval';
 import { heldRulesStore } from './heldRulesStore';
 import { ruleWaivers } from './ruleWaivers';
@@ -26,14 +25,6 @@ export interface WaiveRuleRequest {
   local: boolean;
 }
 
-/** In the Lookout only; on a high-risk ticket, the Lookout on this machine and a caller allowed high-risk calls. */
-async function assertMay(root: string, r: WaiveRuleRequest, key: string) {
-  if (r.via === 'slack' || r.via === 'chat') throw new OperationError(`Waiving a rule for ${key} is for the Lookout.`);
-  if (!(await ticketNeedsLookout(root, r.mapId, r.ticketId))) return;
-  if (r.via !== 'lookout') throw new OperationError(highRiskRefusal(key, r.via));
-  if (!r.local) throw new OperationError(`${key} is high risk: waive its rules in the Lookout on its machine.`);
-}
-
 /**
  * The trail lead's "Go without R-1" for one ticket: the rule's question needn't be answered on its completions. The
  * rule must be one of the approved config's that asks; its check, if any, still runs. Kept in the machine store
@@ -47,7 +38,7 @@ export async function waiveRule(env: { adapter: TrackerAdapter; root: string }, 
   if (!t) throw new OperationError(`ticket ${r.ticketId} not found`);
   const rule = trustedChecks(env.root).config.config?.rules.find((x) => x.id === r.rule);
   if (!rule?.ask) throw new OperationError(`${r.rule} is not an approved rule that asks a question.`);
-  await assertMay(env.root, r, t.key);
+  await assertMayWaiveRule(env.root, { ...r, key: t.key, doing: 'Waiving a rule' });
   const w: RuleWaiver = {
     v: 1,
     mapId: r.mapId,
@@ -68,6 +59,7 @@ export async function waiveRule(env: { adapter: TrackerAdapter; root: string }, 
     ticketId: w.ticketId,
     ticketKey: w.ticketKey,
     rule: w.rule,
+    action: 'waived',
     reason,
     actor: w.by,
     actorKind: 'trail lead',

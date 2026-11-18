@@ -6,6 +6,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
+import { baselineForClaim } from '../src/evidence/baseline';
 import { FLAKY_REWORK } from '../src/flaky/flakyRework';
 import { readFlakyChecks } from '../src/flaky/readFlakyChecks';
 import { journalFile } from '../src/history/journalFile';
@@ -61,6 +62,8 @@ async function setup(flaky?: GateMode) {
   const agent = { actor: 'Scout-1', actorKind: 'agent' as const };
   const complete = async () => {
     await transition(adapter, map.id, id, { ...agent, event: 'claim' });
+    const claim = { root, cwd: repo, mapId: map.id, ticket: tickets[0], agent: 'Scout-1', resume: true };
+    await baselineForClaim(claim);
     await transition(adapter, map.id, id, { ...agent, event: 'submit' });
     const snap = await adapter.loadMap(map.id);
     const t = snap.tickets[0];

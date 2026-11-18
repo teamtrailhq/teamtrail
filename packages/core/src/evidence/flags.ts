@@ -96,7 +96,7 @@ export function evidenceFlags(i: FlagInput): EvidenceFlag[] {
     out.push({
       kind: 'no-baseline',
       level: 'warn',
-      message: 'no git baseline from the claim: changes cannot be told apart from earlier work',
+      message: 'no baseline this machine recorded at the claim: changes cannot be told apart from earlier work',
     });
     return out;
   }

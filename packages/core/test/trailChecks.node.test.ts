@@ -198,11 +198,9 @@ test("Run now before everything is merged runs on main as it is and doesn't veri
   assert.equal(view.together.kind, 'pending');
 });
 
-test('with a runner, the run goes to it, and only the merges it says its commit holds count', async () => {
-  const snap = await doneTrail(['d.txt']);
-  merge(snap, snap.tickets[0].id);
-  const jobs: MainRunJob[] = [];
-  const checkRunner: CheckRunner = {
+/** A runner that passes every check, on the commit `ranOn` says (by default the one it was asked for, else `f…`). */
+function cloudRunner(jobs: MainRunJob[], ranOn = (job: MainRunJob) => job.commit ?? 'f'.repeat(40)): CheckRunner {
+  return {
     name: 'cloud',
     run: async () => ({ checks: [] }),
     runMain: async (job) => {
@@ -214,14 +212,44 @@ test('with a runner, the run goes to it, and only the merges it says its commit 
         durationMs: 5,
         output: 'ok',
       }));
-      return { checks, git: { head: 'f'.repeat(40), branch: 'main', base: { head: null, branch: null }, changed: [] } };
+      const head = ranOn(job);
+      return { checks, git: { head, branch: 'main', base: { head: null, branch: null }, changed: [] } };
     },
   };
-  await readTrailChecks({ root, checkRunner }, snap, { trigger: 'Teamtrail' });
+}
+
+test('with a runner, the run goes to it on the exact commit named here, and only the merges it says it holds count', async () => {
+  const snap = await doneTrail(['d.txt']);
+  merge(snap, snap.tickets[0].id);
+  const jobs: MainRunJob[] = [];
+  await readTrailChecks({ root, checkRunner: cloudRunner(jobs) }, snap, { trigger: 'Teamtrail' });
   const run = await settled(snap.map.id);
   assert.equal(jobs.length, 1);
+  assert.equal(jobs[0].commit, git('rev-parse', 'main'), 'main here holds every merge: that commit is named');
   assert.deepEqual(jobs[0].contains, [run.merges[0].commit]);
   assert.equal(run.runner, 'cloud');
   assert.equal(run.result, 'pass');
+  assert.equal(run.commit, jobs[0].commit);
   assert.equal(run.complete, false, 'the runner listed no merge as contained');
+});
+
+test("a runner's report on another commit than the one named counts as couldn't run", async () => {
+  const snap = await doneTrail(['e.txt']);
+  merge(snap, snap.tickets[0].id);
+  const jobs: MainRunJob[] = [];
+  await readTrailChecks({ root, checkRunner: cloudRunner(jobs, () => 'f'.repeat(40)) }, snap, { trigger: 'Teamtrail' });
+  const run = await settled(snap.map.id);
+  assert.equal(run.result, 'unavailable');
+  assert.match(String(run.note), /^cloud ran on fffffff, not [0-9a-f]{7} as asked$/);
+  assert.deepEqual(run.checks, []);
+});
+
+test("merges main here doesn't hold yet name no commit: the runner takes its default branch's head", async () => {
+  const snap = await doneTrail(['g.txt']);
+  const jobs: MainRunJob[] = [];
+  await readTrailChecks({ root, checkRunner: cloudRunner(jobs) }, snap, { trigger: 'Teamtrail' });
+  const run = await settled(snap.map.id);
+  assert.equal(jobs[0].commit, undefined);
+  assert.equal(run.result, 'pass');
+  assert.equal(run.commit, 'f'.repeat(40));
 });
