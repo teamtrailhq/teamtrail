@@ -22,6 +22,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.61.0',
+    date: '2026-11-18',
+    items: [
+      "A pass counts only when the work didn't change what the check runs, skip or delete tests, or pass only on a retry",
+      'A trail is verified only when your checks pass again on main with every ticket merged',
+      'Reviews go first to an agent on another model, and rules you write ask agents about the files they touch',
+      'Settings → This trail → Gates: try each gate in Observe first; the scorecard shows verified work that came back',
+    ],
+  },
+  {
     version: '0.60.0',
     date: '2026-11-17',
     items: [

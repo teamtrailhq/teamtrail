@@ -2,7 +2,7 @@
 
 # teamtrail
 
-**Verified work from AI coding agents.** Agents do the work, you make the calls, and nothing counts as done until it's verified. Teamtrail breaks big work into decision tickets for Claude Code, Codex or any MCP agent, sends you only the calls that are yours, and runs your tests before anything is done.
+**Many agents, one big project. Every piece verified.** Agents do the work, you make the calls, and nothing counts as done until it's verified. Teamtrail breaks big work into decision tickets for Claude Code, Codex or any MCP agent, sends you only the calls that are yours, and runs your tests before anything is done.
 
 **[teamtrail.app](https://teamtrail.app)** · [Docs](https://teamtrail.app/docs/) · [GitHub](https://github.com/teamtrailhq/teamtrail)
 
@@ -53,7 +53,7 @@ More: [Review capacity](https://teamtrail.app/docs/review-capacity/)
 ## What you get
 
 - **Your calls, by rule:** a risk policy in your repo sets what always comes to you. Agents can't record those decisions themselves. [Policy](https://teamtrail.app/docs/policy-json/)
-- **Done means proven:** acceptance criteria agreed up front, your checks run by Teamtrail, a review by a different agent and a signed proof on the pull request. [Verification](https://teamtrail.app/docs/verification/)
+- **Done means proven:** acceptance criteria agreed up front, your checks run by Teamtrail (and never counted when the work changed them), a review by an agent on another model, the whole trail checked again on main, and a signed proof on the pull request. [Verification](https://teamtrail.app/docs/verification/)
 - **One queue for what needs you:** every question and approval, ranked with a reason, with focus hours and Slack. [Waiting on you](https://teamtrail.app/docs/waiting-on-you/)
 - **Every call on the record:** the question, your words, the alternatives and who decided. [Decision memory](https://teamtrail.app/docs/decision-memory/)
 - **Many agents at once:** separate git worktrees, model matching and guides. [Parallel work](https://teamtrail.app/docs/parallel-work/)

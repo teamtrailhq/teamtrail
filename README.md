@@ -2,7 +2,7 @@
 
 # Teamtrail
 
-> Verified work from AI coding agents. Agents do the work; you know it's done.
+> Many agents, one big project. Every piece verified.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/teamtrailhq/teamtrail/ci.yml?branch=main&label=CI)](https://github.com/teamtrailhq/teamtrail/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/teamtrail)](https://www.npmjs.com/package/teamtrail)
@@ -14,10 +14,10 @@
 
 **[teamtrail.app](https://teamtrail.app)** · [Docs](https://teamtrail.app/docs/) · [Try it: `npx teamtrail`](https://www.npmjs.com/package/teamtrail)
 
-Teamtrail gives you verified work from AI coding agents. It breaks big work into decision tickets that Claude Code, Codex or any MCP agent picks up, sends you only the calls that are yours, and counts nothing as done until it's verified: your checks, run by Teamtrail, a review by a different agent and a signed proof for every finished ticket. You steer from the Lookout, a web app on your machine, where Scout briefs you on what changed while you were away.
+Teamtrail gives you verified work from AI coding agents. It breaks big work into decision tickets that Claude Code, Codex or any MCP agent picks up, sends you only the calls that are yours, and counts nothing as done until it's verified: your checks, run by Teamtrail, a review by an agent on another model, the whole trail checked again on main, and a signed proof for every finished ticket. You steer from the Lookout, a web app on your machine, where Scout briefs you on what changed while you were away.
 
 - **Your calls, by rule:** a risk policy in your repo sets what always comes to you (database changes, logins, billing, deleting data). Agents can't record those decisions themselves; it's enforced in code, not in a prompt.
-- **Done means proven:** acceptance criteria agreed up front, your tests run by Teamtrail itself, and a review by a different agent, never the author.
+- **Done means proven:** acceptance criteria agreed up front, your tests run by Teamtrail itself, a review by an agent on another model, and the whole trail verified together on main once it's merged.
 - **Every call on the record:** each decision keeps the question, your words, the alternatives and who made it, long after the agent's session is gone.
 - **One queue for what needs you:** every question and approval from every agent and repo, ranked with a reason, with focus hours and Slack.
 - **Your data stays yours:** trails are plain markdown in `./.teamtrail/` in your repo. Nothing leaves your machine unless you connect Slack.
@@ -75,6 +75,8 @@ Teamtrail paces agents to your review:
 **Evidence you can trust**
 
 - **Checks before done:** completions run your project's checks and collect git evidence; PR and CI status sync back to the ticket.
+- **Checks the work can't game:** a pass doesn't count when the work changed what the check runs, skipped or deleted tests, or passed only on a retry. Rules you write ask agents about the files they touch, each with the reason behind it. Try each gate in Observe before it holds anything.
+- **The trail, verified together:** once every ticket is merged, your checks run again on main; the trail is verified only when that passes.
 - **Paced to your review:** set how many finished tickets may wait for your review, and agents start no new work past it; they fix what came back and keep researching. Files an agent changes beyond the ones it said it would are listed first for the reviewer and on the proof, or sent back, as you choose.
 - **Verified by Teamtrail:** each done ticket gets a signed proof report (the checks Teamtrail ran, criteria verified or only claimed, the review and the decisions it relies on). Teamtrail can post it on the ticket's pull request with a `Teamtrail proof` commit status, and a GitHub Action checks every proof on a PR against your committed keys.
 - **Decision records:** the question, answer, alternatives, rationale and transcript, and who actually decided. An agent's own call is never shown as yours.
@@ -86,7 +88,7 @@ Teamtrail paces agents to your review:
 
 - **All projects:** every repo you supervise in one Lookout, with one list of what needs you across them.
 - **Your tracker:** local markdown files, GitHub Issues or Linear.
-- **Trail stats and live spend:** delivery by vendor, agent and ticket type, a Scorecard of how each model, agent and vendor does on your own tickets (verified first time, rework, cost per verified ticket), and tokens and cost per session and trail.
+- **Trail stats and live spend:** delivery by vendor, agent and ticket type, a Scorecard of how each model, agent and vendor does on your own tickets (verified first time, rework, cost per verified ticket, and verified work that came back), and tokens and cost per session and trail.
 
 ## What's next
 
