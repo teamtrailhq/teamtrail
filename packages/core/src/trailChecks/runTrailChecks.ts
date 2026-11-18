@@ -52,7 +52,8 @@ async function namedHead(repoRoot: string, commits: string[]) {
  */
 async function onRunner(env: MainRunEnv, o: { mapId: string; id: string; plan: Plan; merges: TicketMerge[] }) {
   const repoRoot = env.repoRoot ?? path.dirname(env.root);
-  const known = await namedHead(repoRoot, commitsOf(o.merges));
+  const local = env.checkRunner!.holdsCode !== false;
+  const known = local ? await namedHead(repoRoot, commitsOf(o.merges)) : { note: 'the code is not here' };
   const found = await runMainOnRunner({
     root: env.root,
     repoRoot,
