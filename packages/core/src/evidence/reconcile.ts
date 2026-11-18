@@ -1,16 +1,17 @@
 import type { TrackerAdapter } from '../adapters/adapter';
 import { TrackerError } from '../adapters/remote/http';
 import type { TicketPhase } from '../model/lifecycle';
-import type { CiProvider, PrCandidate, PrLink, PrLinkSource, TicketSync } from '../model/prEvidence';
+import type { CiProvider, PrLink, TicketSync } from '../model/prEvidence';
 import type { Ticket } from '../model/types';
 import { derivePhases } from '../planning/lifecycle/phase';
 import { readAttempts } from '../verification/evidenceStore';
 import { redact } from '../verification/redact';
 import { ticketRefs } from './attemptRefs';
+import { findLink, indexRecent, type LinkScope } from './findLink';
 import { summarizeChecks } from './github/checkState';
-import { ticketRef } from './github/prText';
 import { mismatchFlags } from './mismatchFlags';
-import { appendFlagEntry, readTicketSync, writeTicketSync } from './syncStore';
+import { recent, type ReconcileMemo } from './reconcileMemo';
+import { appendFlagEntry, dropOrphanSyncs, readTicketSync, writeTicketSync } from './syncStore';
 
 export interface ReconcileEnv {
   /** Tracker folder: `.evidence/` and `.events/` live here. */
@@ -20,6 +21,8 @@ export interface ReconcileEnv {
   provider: CiProvider;
   requiredChecks: string[];
   now?: () => number;
+  /** What the loop remembers between ticks (reconcileMemo.ts); without it every tick reads everything. */
+  memo?: ReconcileMemo;
 }
 
 export interface ReconcileResult {
@@ -29,32 +32,22 @@ export interface ReconcileResult {
   failures: string[];
 }
 
-const RANK: Record<PrLinkSource, number> = { explicit: 4, attempt: 3, branch: 2, marker: 1 };
-
-function strongest(links: (PrLink | undefined)[]): PrLink | undefined {
-  let best: PrLink | undefined;
-  for (const l of links) if (l && (!best || RANK[l.source] > RANK[best.source])) best = l;
-  return best;
-}
-
-const comparable = (s: TicketSync) => JSON.stringify([s.link, s.pr, s.checks, s.flags, s.error]);
+const comparable = (s: TicketSync) => JSON.stringify([s.link, s.pr, s.checks, s.flags, s.error, s.replaced ?? []]);
 
 interface TicketContext {
   env: ReconcileEnv;
   mapId: string;
   t: Ticket;
   phase: TicketPhase;
-  byRef: Map<string, PrCandidate>;
+  scope: LinkScope;
   now: number;
 }
-
-type Refs = ReturnType<typeof ticketRefs>;
 
 async function reconcileTicket(c: TicketContext): Promise<TicketSync | undefined> {
   const { env, mapId, t, now } = c;
   const prev = readTicketSync(env.root, mapId, t.id);
   const refs = ticketRefs(readAttempts(env.root, mapId, t.id));
-  const link = await findLink(c, prev, refs);
+  const { link, replaced } = await findLink(c.scope, { mapId, ticketId: t.id, prev, refs });
   if (!link) return undefined;
   const { pr, checks } = await readPr(c, prev, link);
   const checksSummary = summarizeChecks(checks);
@@ -75,45 +68,35 @@ async function reconcileTicket(c: TicketContext): Promise<TicketSync | undefined
     checksSummary,
     flags,
     syncedAt: now,
+    ...(replaced.length ? { replaced } : {}),
   };
+  // written only when something changed: an unchanged rewrite every tick told every open page the evidence changed
+  if (prev && comparable(prev) === comparable(next)) return undefined;
   writeTicketSync(env.root, next);
   logFlagChanges(env.root, prev, next, now);
-  return prev && comparable(prev) === comparable(next) ? undefined : next;
+  return next;
 }
 
-/** The ticket's PR: the strongest of the attempt's PR, the last link, a marker in a PR, and the attempt's branch. */
-async function findLink(c: TicketContext, prev: TicketSync | undefined, refs: Refs): Promise<PrLink | undefined> {
-  const marked = c.byRef.get(ticketRef(c.mapId, c.t.id));
-  let link = strongest([
-    refs.pr ? { number: refs.pr, source: 'attempt', at: c.now } : undefined,
-    prev?.link,
-    marked ? { number: marked.pr.number, source: 'marker', at: c.now } : undefined,
-  ]);
-  const branchIsStronger = !link || RANK[link.source] < RANK.branch;
-  if (refs.branch && branchIsStronger) link = (await branchLink(c, refs.branch)) ?? link;
-  const sameAsBefore = link && prev?.link.number === link.number && prev.link.source === link.source;
-  return sameAsBefore ? prev?.link : link;
-}
-
-async function branchLink(c: TicketContext, branch: string): Promise<PrLink | undefined> {
-  const found = await c.env.provider.forBranch(branch);
-  const pick = found.find((p) => p.state === 'open') ?? found[0];
-  return pick && { number: pick.number, source: 'branch', at: c.now };
-}
-
-/** The PR and its checks; a closed or merged PR that hasn't changed since the last tick isn't read again. */
+/**
+ * The PR and its checks. A closed or merged PR isn't read again while it hasn't changed: the recent PRs show it
+ * unchanged, or, once it fell out of them (nothing updated it since), it was read within the hour.
+ */
 async function readPr(c: TicketContext, prev: TicketSync | undefined, link: PrLink) {
-  const listed = [...c.byRef.values()].find((x) => x.pr.number === link.number)?.pr;
+  const listed = c.scope.recentPrs.get(link.number);
   const last = prev?.pr;
+  const memo = c.env.memo;
+  const unchanged = listed
+    ? listed.state === last?.state && listed.updatedAt === last.updatedAt
+    : recent(memo?.readAt.get(link.number), c.now);
   const settled =
     last?.number === link.number &&
     last.state !== 'open' &&
     // a merged PR read before merge commits were kept is read once more (trailChecks/)
     (last.state !== 'merged' || last.mergeCommit !== undefined) &&
-    listed?.state === last.state &&
-    listed.updatedAt === last.updatedAt;
+    unchanged;
   if (settled && prev) return { pr: last, checks: prev.checks };
   const pr = await c.env.provider.pull(link.number);
+  memo?.readAt.set(link.number, c.now);
   const checks = pr.state === 'closed' ? [] : await c.env.provider.checks(pr.headSha, c.env.requiredChecks);
   return { pr, checks };
 }
@@ -160,18 +143,22 @@ export function logFlagChanges(root: string, prev: TicketSync | undefined, next:
  */
 export async function reconcile(env: ReconcileEnv): Promise<ReconcileResult> {
   const now = (env.now ?? Date.now)();
-  const byRef = new Map<string, PrCandidate>();
-  for (const c of await env.provider.recent()) for (const ref of c.markers) if (!byRef.has(ref)) byRef.set(ref, c);
+  const listed = await env.provider.recent();
+  const scope: LinkScope = { provider: env.provider, ...indexRecent(listed), memo: env.memo, now };
   const changed: TicketSync[] = [];
   const failures: string[] = [];
+  const kept = new Set<string>();
   for (const summary of await env.adapter.listMaps()) {
     const snap = await env.adapter.loadMap(summary.id);
     const phases = derivePhases(snap.tickets, snap.map.mode);
     for (const t of snap.tickets) {
-      const r = await reconcileOrMark({ env, mapId: snap.map.id, t, phase: phases.get(t.id)!, byRef, now });
+      kept.add(`${snap.map.id}/${t.id}`);
+      const c = { env, mapId: snap.map.id, t, phase: phases.get(t.id)!, scope, now };
+      const r = await reconcileOrMark(c);
       if (r.sync) changed.push(r.sync);
       if (r.failure) failures.push(r.failure);
     }
   }
+  dropOrphanSyncs(env.root, kept);
   return { changed, failures };
 }

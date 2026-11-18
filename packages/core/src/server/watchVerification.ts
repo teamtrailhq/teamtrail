@@ -1,5 +1,6 @@
 import { TrackerError } from '../adapters/remote/http';
 import { reconcile } from '../evidence/reconcile';
+import { reconcileMemo } from '../evidence/reconcileMemo';
 import { readSyncStatus, writeSyncStatus } from '../evidence/syncStore';
 import type { CiProvider, PrSyncStatus, TicketSync, VerificationSyncEvent } from '../model/prEvidence';
 import type { ProofPostRecord } from '../model/proofPost';
@@ -39,6 +40,8 @@ export function watchVerification(
   let stopped = false;
   let failures = 0;
   let current = readSyncStatus(root);
+  // what the loop remembers between ticks, so settled PRs and branches without a PR aren't asked about every tick
+  const memo = reconcileMemo();
 
   const schedule = (ms: number) => {
     if (stopped) return;
@@ -59,7 +62,14 @@ export function watchVerification(
     const provider = await access();
     if (typeof provider === 'string') return { ...off(provider), pollMs };
     const where = { provider: provider.name, repo: provider.repo };
-    const r = await reconcile({ root, adapter: await active(), provider, requiredChecks: github.requiredChecks, now });
+    const r = await reconcile({
+      root,
+      adapter: await active(),
+      provider,
+      requiredChecks: github.requiredChecks,
+      now,
+      memo,
+    });
     const posted = await deps.postProofs?.();
     if (posted?.length) send(`event: proof\ndata: ${JSON.stringify({ kind: 'posted', posts: posted })}\n\n`);
     const status: PrSyncStatus = r.failures.length

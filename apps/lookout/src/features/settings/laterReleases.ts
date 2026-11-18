@@ -1,7 +1,22 @@
 import type { Release } from './releases';
 
-/** Releases 0.44–0.59.1, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
+/** Releases 0.44–0.59.3, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
 export const LATER_RELEASES: Release[] = [
+  {
+    version: '0.59.3',
+    date: '2026-11-17',
+    items: [
+      'Checks on main find the dependencies of a package folder with its own install, like apps/web/node_modules',
+      'An agent held by checks failing on main tells you to choose in the Lookout, instead of asking you a question',
+    ],
+  },
+  {
+    version: '0.59.2',
+    date: '2026-11-17',
+    items: [
+      'Settings → Verification reads calmer: one line per check, a warning under its command with the fix one click away, and Save apart',
+    ],
+  },
   {
     version: '0.59.1',
     date: '2026-11-17',

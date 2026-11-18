@@ -3,6 +3,7 @@ import { readAgentDocs } from '../agents/agentDocs';
 import { readLeases } from '../agents/leaseStore';
 import { leaseHealth } from '../agents/ticketLease';
 import { attentionView } from '../attention/attentionView';
+import { liveSyncs } from '../evidence/liveSyncs';
 import { readTicketSyncs } from '../evidence/syncStore';
 import { activeTrails } from '../model/activeTrails';
 import type { AttentionView } from '../model/attention';
@@ -83,7 +84,7 @@ export async function projectSummary(input: SummaryInput): Promise<{ summary: Pr
     needsYou: view?.items.length ?? 0,
     interrupting: view?.interrupting.length ?? 0,
     top: top && { title: top.title.split('\n')[0], kind: top.kind, urgency: top.urgency },
-    flags: readTicketSyncs(root).filter((s) => s.flags.length).length,
+    flags: (adapter ? liveSyncs({ root, snaps, now }) : readTicketSyncs(root)).filter((s) => s.flags.length).length,
     stalled: leases.filter((l) => !l.returned && leaseHealth(l, now) !== 'live').length,
     lastActivity: touched.length ? Math.max(...touched) : undefined,
     note: adapter ? undefined : 'Tracker not cached: open the project to load its tickets',
