@@ -1,8 +1,41 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { postMerge } from '../src/lib/postMerge';
+import { prSync } from '../src/lib/prSync';
 
 const origin = 'https://demo.example.test';
 const at = { path: '/_cloud/merge', mapId: 'm', ticketId: '3' };
+
+/** The ticket's PR snapshot as a server that merges keeps it. */
+function snapshot(o: { mapId?: string; ticketId?: string; state: 'open' | 'merged' | 'closed'; number?: number }) {
+  const number = o.number ?? 2;
+  return {
+    v: 1,
+    mapId: o.mapId ?? 'm',
+    ticketId: o.ticketId ?? '3',
+    ticketKey: `#${o.ticketId ?? '3'}`,
+    provider: 'Teamtrail Cloud',
+    link: { number, source: 'branch', at: 1 },
+    pr: {
+      number,
+      url: `https://github.com/a/b/pull/${number}`,
+      title: '',
+      state: o.state,
+      draft: false,
+      headSha: 'a'.repeat(40),
+      headRef: 'teamtrail/m/3',
+      sameRepo: true,
+      review: 'none',
+      mergeable: 'clean',
+      updatedAt: 1,
+    },
+    checks: [],
+    checksSummary: 'none',
+    flags: [],
+    syncedAt: 1,
+  };
+}
+
+const shown = () => prSync.ticket(prSync.get(), 'm', '3')?.pr;
 
 /** Answers each request in turn, keeping what was asked. */
 function answers(...replies: { status?: number; body: unknown }[]) {
@@ -43,5 +76,31 @@ describe('merging from the Lookout', () => {
       text: '#3 is high risk: ask someone allowed to make high-risk calls.',
     });
     expect(asked).toHaveLength(1);
+  });
+
+  test("the merge's reply carries the ticket's snapshot: the page shows it merged at once", async () => {
+    answers({ body: { merged: true, url: 'https://github.com/a/b/pull/2', sync: snapshot({ state: 'merged' }) } });
+    expect((await postMerge(at)).kind).toBe('merged');
+    expect(shown()).toMatchObject({ number: 2, state: 'merged' });
+  });
+
+  test('a refusal for a pull request merged or closed already carries its snapshot too', async () => {
+    answers({
+      status: 409,
+      body: { error: 'Pull request #4 was closed without merging.', sync: snapshot({ state: 'closed', number: 4 }) },
+    });
+    expect(await postMerge(at)).toEqual({ kind: 'error', text: 'Pull request #4 was closed without merging.' });
+    expect(shown()).toMatchObject({ number: 4, state: 'closed' });
+  });
+
+  test("a snapshot for another ticket, or not one, isn't shown", async () => {
+    answers(
+      { body: { merged: true, sync: snapshot({ ticketId: '9', state: 'open', number: 7 }) } },
+      { body: { merged: true, sync: { v: 1, mapId: 'm', ticketId: '3', pr: { number: 8, state: 'gone' } } } },
+    );
+    await postMerge(at);
+    await postMerge(at);
+    expect(prSync.ticket(prSync.get(), 'm', '9')).toBeUndefined();
+    expect(shown()).toMatchObject({ number: 4, state: 'closed' });
   });
 });
