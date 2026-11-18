@@ -14,6 +14,7 @@ import { baselineForClaim, levelFor, recordTypes, repoRootOf } from '@teamtrail/
 import type { AgentContext } from './agentContext';
 import { checkWarnings } from './checkWarnings';
 import { criteriaView } from './criteria';
+import { rulesAtClaim } from './diffRules';
 import { assertClaimable, briefView, claimable } from './discovery';
 import { givenGuides } from './guideChanges';
 import { assertInGuides, outsideGuides } from './guides';
@@ -91,6 +92,7 @@ export async function claimTicket(
     discovery: briefView(ctx.root, fresh),
     knowledge: delivered,
     criteria: criteriaView(ctx.root, fresh, current, levelFor(ctx.root, fresh, t).info.level),
+    ...rulesAtClaim(ctx, input.touches),
     git: ctx.remote ? REMOTE_GIT_NOTE : baselineView(baseline),
     ...mainChecksField(main),
     lease: {

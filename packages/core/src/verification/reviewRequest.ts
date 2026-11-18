@@ -3,6 +3,7 @@ import type { Ticket } from '../model/types';
 import type { VerificationAttempt } from '../model/verification';
 import { createReviewTicket, withdrawReviews } from '../planning/lifecycle/reviewTicket';
 import { checkLine, criteriaLines } from './outcome';
+import { ruleReviewLines } from './ruleReviewLines';
 import { CHECK_RUNNER, type VerifyEnv } from './verifyCompletion';
 
 const MAX_FILES = 20;
@@ -27,6 +28,7 @@ export function reviewBody(t: Ticket, a: VerificationAttempt) {
     '',
     `**Checks:** ${a.checks.map(checkLine).join(', ') || 'none configured'}`,
     ...criteriaLines(a),
+    ...ruleReviewLines(a),
     ...(a.criteria?.claimed?.length ? ['', 'Check the criteria marked ? yourself: nothing here verified them.'] : []),
     ...(g?.flags.some((f) => f.kind === 'outside-scope')
       ? ['', 'Start with the files changed outside the declared scope: is each one needed for what the ticket asks?']

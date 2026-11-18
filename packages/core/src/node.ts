@@ -19,3 +19,6 @@ export { parseProofKeys } from './proof/parseProofKeys';
 export { GitHubProofPublisher } from './evidence/github/GitHubProofPublisher';
 export { precedentAreas } from './precedent/precedentAreas';
 export { otherProjectPrecedents } from './precedent/otherProjectPrecedents';
+export { rulesForTouches } from './verification/rulesForTouches';
+export { rulesGate, type UnansweredRule } from './verification/rulesGate';
+export { waiveRule, type WaiveRuleRequest } from './verification/waiveRule';
