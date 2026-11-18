@@ -39,7 +39,8 @@ export function cachedText(file: string): FileText {
   const s = statSync(file, { throwIfNoEntry: false });
   if (!s?.isFile()) return undefined;
   if (s.size > MAX_ITEM_BYTES) return { oversized: s.size };
-  const stamp = `${s.ino}:${s.mtimeMs}:${s.size}`;
+  // ctime too: an in-place edit of the same size within the mtime granularity still moves it
+  const stamp = `${s.ino}:${s.mtimeMs}:${s.ctimeMs}:${s.size}`;
   const hit = texts.get(file);
   if (hit?.stamp === stamp) return hit.text;
   const text = readFileSync(file, 'utf8');

@@ -2,6 +2,7 @@ import type { GapStanding, Proof, ProofPostRecord } from '@teamtrail/core';
 import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
+import { trustChanged } from '../../lib/trustChanged';
 
 export interface TicketProofView {
   proof: Proof;
@@ -32,7 +33,7 @@ export function useTicketProof(mapId: string, ticketId: string) {
     failed: () => setView(null),
     view: `${mapId}/${ticketId}`,
     changed: (p) => p.includes(`tickets/${ticketId}.md`),
-    events: { verification: () => true, proof: () => true },
+    events: { verification: () => true, proof: () => true, trust: (data) => trustChanged(data).approvals },
   });
   return view;
 }

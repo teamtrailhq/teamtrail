@@ -22,12 +22,29 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.5',
+    version: '0.66.6',
     date: '2026-11-18',
     items: [
       'Agents are only pointed to work they can take: closing a ticket or resuming a trail no longer suggests one that waits on you, and says what it waits for',
       'An agent that closes the discovery ticket before writing the brief is told to submit the brief, so the trail no longer stalls',
       "Agents asked about your other projects no longer report nothing waiting in a GitHub or Linear project whose tickets they can't read",
+    ],
+  },
+  {
+    version: '0.66.5',
+    date: '2026-11-18',
+    items: [
+      'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
+      'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
+    ],
+  },
+  {
+    version: '0.66.4',
+    date: '2026-11-18',
+    items: [
+      'Slack: each question’s card shows its own answer; one passed on in an agent’s chat says it decided nothing',
+      'Slack: archiving a trail no longer closes cards for what still waits on you, and a card that becomes high risk switches to Open in Lookout',
+      'Checks on main run again when main moves after a failure, and say so meanwhile; trail checks read reverts on the commit they run on',
     ],
   },
   {
@@ -172,21 +189,6 @@ export const RELEASES: Release[] = [
       'A check that fails only as it already does on main no longer sends the first completion back for rework when an acceptance criterion names it',
       "Where Teamtrail merges pull requests, a done ticket that isn't verified offers Merge anyway: why in one line, one question, and it's kept as your decision",
       'A done ticket whose pull request is still open shows in your queue as ready to merge',
-    ],
-  },
-  {
-    version: '0.59.3',
-    date: '2026-11-17',
-    items: [
-      'Checks on main find the dependencies of a package folder with its own install, like apps/web/node_modules',
-      'An agent held by checks failing on main tells you to choose in the Lookout, instead of asking you a question',
-    ],
-  },
-  {
-    version: '0.59.2',
-    date: '2026-11-17',
-    items: [
-      'Settings → Verification reads calmer: one line per check, a warning under its command with the fix one click away, and Save apart',
     ],
   },
   ...LATER_RELEASES,

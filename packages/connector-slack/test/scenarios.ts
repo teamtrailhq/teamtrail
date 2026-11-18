@@ -87,7 +87,8 @@ export async function askFlow(w: World) {
     mapId: map.id,
     ticketId: retention.id,
     agent: 'codex-02',
-    chats: [{ id: 'c2', from: 'human', author: 'trail lead', text: '90 days', at: Date.now() }],
+    chats: [{ id: 'c2', from: 'human', author: 'trail lead', text: '90 days', at: Date.now(), answers: 'q2' }],
+    answered: [{ id: 'q2', via: 'lookout' }],
   });
   await svc.tick();
 

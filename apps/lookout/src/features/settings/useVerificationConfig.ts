@@ -2,6 +2,7 @@ import { type CheckFinding, type VerificationConfig } from '@teamtrail/core';
 import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
+import { trustChanged } from '../../lib/trustChanged';
 
 export interface VerificationConfigView {
   file: string;
@@ -32,7 +33,7 @@ export function useVerificationConfig() {
     show: setView,
     failed: () => setView(null),
     changed: (p) => p.endsWith('verification.json'),
-    events: { attention: () => true },
+    events: { attention: () => true, trust: (data) => trustChanged(data).approvals },
   });
   return { view, reload };
 }

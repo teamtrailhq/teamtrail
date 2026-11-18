@@ -1,5 +1,6 @@
 import type { RemoteTokenView } from '@teamtrail/core';
 import { MetaLine, Row } from '../../components/ui';
+import { useNow } from '../../hooks/useNow';
 import { sinceLabel } from '../../lib/sinceLabel';
 import { RevokeTokenButton } from './RevokeTokenButton';
 
@@ -8,8 +9,8 @@ export function RemoteTokenList(props: {
   tokens: RemoteTokenView[];
   onRevoke: (id: string) => Promise<string | undefined>;
 }) {
+  const now = useNow(30_000);
   if (!props.tokens.length) return null;
-  const now = Date.now();
   return (
     <ul className="ra-list">
       {props.tokens.map((t) => (

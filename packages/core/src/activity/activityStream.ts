@@ -107,7 +107,8 @@ export class ActivityStream {
     this.resolvers.delete(questionId);
     const label = labelOf(how);
     const by = how.by ? { by: how.by } : {};
-    this.chat({ sessionId: q.sessionId, ticketId: q.ticketId, from: 'human', author, text, ...label, ...by });
+    const chat = { sessionId: q.sessionId, ticketId: q.ticketId, from: 'human' as const, author, text };
+    this.chat({ ...chat, answers: questionId, ...label, ...by });
     this.set({
       pending: this.state.pending.filter((p) => p.id !== questionId),
       answered: [

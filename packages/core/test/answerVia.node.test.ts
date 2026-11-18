@@ -69,6 +69,7 @@ test('a chat answer is delivered, labelled chat and with the agent whose chat it
     { via: 'chat', chatOf: 'claude-02' },
   );
   assert.equal(a.activity.snapshot.chats.at(-1)?.via, 'chat');
+  assert.equal(a.activity.snapshot.chats.at(-1)?.answers, a.q.id, 'the answer names the question it answers');
 });
 
 test('a chat answer relabelled as the Lookout’s is delivered without its label: it counts as chat', async () => {
