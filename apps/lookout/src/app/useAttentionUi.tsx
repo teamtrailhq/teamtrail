@@ -48,6 +48,7 @@ export function useAttentionUi(input: {
     openConnector: input.openConnector,
     openApprovals: input.openApprovals,
     openMainChecks: nav.openMainChecks,
+    openTrailChecks: nav.openTrailChecks,
   };
   const view = attention.view;
   const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers });

@@ -9,6 +9,7 @@ import type { InstalledGuide } from '../model/guide';
 import type { MainChecksView } from '../model/mainChecks';
 import type { TicketSync } from '../model/prEvidence';
 import type { RerouteProposal } from '../model/reroute';
+import type { TrailChecksView } from '../model/trailChecks';
 import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
 import type { ConnectedAgent } from '../planning/matching/modelWaits';
 import type { RerouteSuggestion } from '../planning/reroute/rerouteTriggers';
@@ -43,6 +44,8 @@ export interface AttentionInput {
   integrations?: IntegrationOverlap[];
   /** Checks on main per active trail (mainChecks/). Missing: none. */
   mainChecks?: MainChecksView[];
+  /** The combined run on main per active trail (trailChecks/). Missing: none. */
+  trailChecks?: TrailChecksView[];
   /** Installed guides, checked against the lock (guides/guideStore.ts). Missing: none. */
   guides?: InstalledGuide[];
   /** Connectors whose messages are being refused (delivery/deliveryStore.ts). Missing: none. */

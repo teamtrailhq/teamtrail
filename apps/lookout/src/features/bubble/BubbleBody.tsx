@@ -3,12 +3,13 @@ import { Empty } from '../../components/ui';
 import { useNow, type LookoutApi } from '../../hooks';
 import type { Selection } from '../../lib';
 import { MainChecksSection } from '../main-checks';
+import { TrailChecksSection } from '../trail-checks';
 import { QuestionNeed } from './QuestionNeed';
 import { TicketBubble, type TicketBubbleLinks } from './TicketBubble';
 
 /**
  * What the bubble shows for what's selected: a ticket (what it needs, then the ticket), checks on main (the three
- * ways on when they fail), or a question an agent asked about the trail as a whole.
+ * ways on when they fail), the destination's checks on main together, or a question about the trail as a whole.
  */
 export function BubbleBody(
   props: TicketBubbleLinks & {
@@ -31,6 +32,8 @@ export function BubbleBody(
     }
     case 'main':
       return snap ? <MainChecksSection mapId={snap.map.id} now={now} /> : null;
+    case 'together':
+      return snap ? <TrailChecksSection mapId={snap.map.id} now={now} onUrgent={props.onUrgent} /> : null;
     case 'question': {
       const q = api.activity.pending.find((p) => p.id === sel.id);
       if (!q) return <Empty>Answered.</Empty>;

@@ -35,6 +35,7 @@ import { setSecurityHeaders } from './securityHeaders';
 import { ELSEWHERE, thisMachineOnly } from './thisMachineRoutes';
 import { createTrackerRoutes } from './trackerRoutes';
 import { handleTrackerSettings } from './trackerSettingsRoutes';
+import { handleTrailChecks } from './trailChecksRoutes';
 import { handleTrust } from './trustRoutes';
 import { handleVerification } from './verificationRoutes';
 import { handleScreen } from './verificationScreenRoute';
@@ -46,6 +47,7 @@ import { watchLeases } from './watchLeases';
 import { watchMainChecks } from './watchMainChecks';
 import { watchRemoteAgents } from './watchRemoteAgents';
 import { watchTrackerFolder } from './watchTrackerFolder';
+import { watchTrailChecks } from './watchTrailChecks';
 import { watchVerification } from './watchVerification';
 import { handleWorkspaces } from './workspaceRoutes';
 
@@ -65,6 +67,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     integration: integrationTiming,
     attention: attentionTiming,
     mainChecks: mainChecksTiming,
+    trailChecks: trailChecksTiming,
     checkRunner,
     peer,
     allowedHosts,
@@ -98,6 +101,9 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   const mainEnv = { root: abs, ...(checkRunner ? { checkRunner } : {}) };
   const mainCtx = { ...ctx, env: mainEnv, changed: () => send('event: main-checks\ndata: {}\n\n') };
   const unwatchMainChecks = watchMainChecks(mainCtx, send, mainChecksTiming);
+  const trailChanged = () => send('event: trail-checks\ndata: {}\n\n');
+  const trailCtx = { ...ctx, env: mainEnv, configDir: trackers.configDir, changed: trailChanged };
+  const unwatchTrailChecks = watchTrailChecks(trailCtx, send, trailChecksTiming);
 
   type Route = (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<boolean>;
   /** Tried in order; the first that handles the request answers it. */
@@ -136,6 +142,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       handleAttention({ ...ctx, configDir: trackers.configDir, served: attention.served }, req, res, url),
     (req, res, url) => handleWorkspaces(ctx, req, res, url),
     (req, res, url) => handleMainChecks(mainCtx, req, res, url),
+    (req, res, url) => handleTrailChecks(trailCtx, req, res, url),
     (req, res, url) => handleGuides(ctx, req, res, url),
     (req, res, url) => handleModels(ctx, req, res, url),
     (req, res, url) =>
@@ -196,6 +203,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
       unwatchIntegration();
       unwatchRemoteAgents();
       unwatchMainChecks();
+      unwatchTrailChecks();
       reconciler.stop();
       for (const c of clients) c.end();
       clients.clear();

@@ -381,7 +381,7 @@
   stroke-linecap: round;
 }
 .destination {
-  cursor: help;
+  cursor: pointer;
   outline: none;
 }
 .destination .x-hit {
@@ -390,12 +390,22 @@
 .destination:focus-visible .x-stroke {
   stroke-width: 9;
 }
-/* Reached: a planted flag, in the colour of passed checks when every ticket is verified, muted when some aren't. */
+/* Reached: a planted flag, in the colour of passed checks when the trail is verified, muted when it isn't. */
 .destination.reached {
   --flag: rgb(var(--decided-rgb));
 }
 .destination.reached.unverified {
   --flag: var(--dim);
+}
+/* The trail's checks fail on main together: it needs the trail lead now. */
+.destination.reached.failing {
+  --flag: var(--urgent);
+}
+.destination.sel .x-stroke {
+  stroke-width: 9;
+}
+.destination.reached.sel .flag-pole {
+  stroke-width: 6;
 }
 .destination .flag-pole,
 .destination .flag-ground {

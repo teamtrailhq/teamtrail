@@ -17,6 +17,8 @@ export interface AttentionHandlers {
   openApprovals: () => void;
   /** Checks failing on main: their bubble at the start of the trail. */
   openMainChecks: (mapId: string) => void;
+  /** The trail's checks failing on main together: their bubble at the destination. */
+  openTrailChecks: (mapId: string) => void;
 }
 
 function openTicketOrTrail(item: AttentionItem, h: AttentionHandlers) {
@@ -61,6 +63,8 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
       return h.openApprovals();
     case 'main-checks':
       return h.openMainChecks(item.mapId);
+    case 'trail-checks':
+      return h.openTrailChecks(item.mapId);
     default:
       return openTicketOrTrail(item, h);
   }

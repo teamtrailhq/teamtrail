@@ -35,6 +35,7 @@ import { verifySignedState } from './verifySignedState.mjs';
 import { verifySignIn } from './verifySignIn.mjs';
 import { verifySlack } from './verifySlack.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
+import { verifyTrailChecks } from './verifyTrailChecks.mjs';
 import { verifyWaiver } from './verifyWaiver.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -625,6 +626,8 @@ const supervisionOk = await verifySupervision({
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 // Checks on main: a check already failing on main, the human's Start anyway and Drop, on a scratch git repo.
 const mainChecksOk = await verifyMainChecks({ browser, cli, log, shots });
+// Trail verified together: two tasks pass alone but fail together on main; a fix ticket, and the run that verifies.
+const trailChecksOk = await verifyTrailChecks({ browser, cli, log, shots });
 
 // Model-aware claiming: two agents on different models, matching switched on in the Lookout, on a scratch project.
 const modelsOk = await verifyModels({ browser, cli, log, shots });
@@ -726,6 +729,7 @@ if (
   !signInOk ||
   !parallelOk ||
   !mainChecksOk ||
+  !trailChecksOk ||
   !modelsOk ||
   !projectsOk ||
   !guidesOk ||

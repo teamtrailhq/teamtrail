@@ -2,8 +2,8 @@ import type { ActivityState, AttentionItem, AttentionView } from '@teamtrail/cor
 import { useEffect, useRef } from 'react';
 import { ITEM_PARAM } from '../lib/apiBase';
 
-/** Kinds whose place is a bubble on the map: a ticket's, a question's, or checks on main. */
-const BUBBLE_KINDS = new Set<AttentionItem['kind']>(['question', 'main-checks']);
+/** Kinds whose place is a bubble on the map: a ticket's, a question's, checks on main, or checks together. */
+const BUBBLE_KINDS = new Set<AttentionItem['kind']>(['question', 'main-checks', 'trail-checks']);
 const hasBubble = (i: AttentionItem) => !!i.ticketId || BUBBLE_KINDS.has(i.kind);
 
 /**

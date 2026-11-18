@@ -55,6 +55,11 @@ export function useAppNavigation(api: LookoutApi) {
     setSelection({ kind: 'main' });
     toMap();
   };
+  const openTrailChecks = (mapId: string) => {
+    onTrail(mapId);
+    setSelection({ kind: 'together' });
+    toMap();
+  };
   const openChat = (sessionId: string, _ticketId?: string, mapId?: string) => {
     onTrail(mapId);
     actions.openChat(sessionId);
@@ -80,6 +85,7 @@ export function useAppNavigation(api: LookoutApi) {
     openTicket,
     openQuestion,
     openMainChecks,
+    openTrailChecks,
     openChat,
   };
 }

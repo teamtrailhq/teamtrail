@@ -3,15 +3,19 @@ import { useCallback, useState } from 'react';
 import { BubbleBody, MapBubble } from '../features/bubble';
 import type { AnchorOf } from '../features/map';
 import type { LookoutApi } from '../hooks';
+import type { Selection } from '../lib';
 import type { useAppNavigation } from './useAppNavigation';
 import type { useAttentionUi } from './useAttentionUi';
 
-const LABEL = { ticket: 'Ticket', main: 'Checks on main', question: 'Question' };
+const LABEL = { ticket: 'Ticket', main: 'Checks on main', together: 'Destination', question: 'Question' };
 
-/** What the bubble points at: the ticket's card, `main`, or nothing (a question about the whole trail). */
-function anchorOf(sel: { kind: 'ticket'; id: string } | { kind: 'main' } | { kind: 'question'; id: string }) {
+type Bubbled = Exclude<Selection, null | { kind: 'unspecified' }>;
+
+/** What the bubble points at: the ticket's card, `main`, the destination, or nothing (a question about the trail). */
+function anchorOf(sel: Bubbled) {
   if (sel.kind === 'ticket') return sel.id;
   if (sel.kind === 'main') return 'main';
+  if (sel.kind === 'together') return 'destination';
   return undefined;
 }
 
@@ -38,6 +42,7 @@ export function AppBubble(props: {
   if (!api.snap && sel.kind !== 'question') return null;
   const anchorId = anchorOf(sel);
   const red = sel.kind === 'main' ? props.mainNeeds : sel.kind === 'question' || urgent;
+  // the trail's checks on main together say themselves when they need you (onUrgent)
   return (
     <MapBubble
       anchor={anchorId ? props.place?.anchorOf(anchorId) : undefined}

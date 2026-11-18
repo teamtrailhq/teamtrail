@@ -32,6 +32,7 @@ export type AttentionKind =
   | 'precedent'
   | 'review-limit'
   | 'main-checks'
+  | 'trail-checks'
   | 'merge';
 
 /** `blocking`: the agent can do no useful work until answered. `soon`: the default. `fyi`: whenever convenient. */

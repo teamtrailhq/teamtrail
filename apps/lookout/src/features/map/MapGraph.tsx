@@ -85,12 +85,16 @@ export function MapGraph(props: MapGraphProps) {
   });
 
   const anchorOf: AnchorOf = (id) => {
-    const rect = id === 'main' ? main && { x: main.x, y: main.y, w: MAIN_W, h: MAIN_H } : nodeRect(id);
+    const rect =
+      id === 'main' ? main && { x: main.x, y: main.y, w: MAIN_W, h: MAIN_H } : (spotRect(id) ?? nodeRect(id));
     if (!rect) return undefined;
     const left = view.x + (origin.x + rect.x) * view.k;
     const top = view.y + (origin.y + rect.y) * view.k;
     return { left, top, right: left + rect.w * view.k, bottom: top + rect.h * view.k };
   };
+  // the destination mark is drawn around its spot
+  const spotRect = (id: string) =>
+    id === 'destination' ? { x: destination.x - 24, y: destination.y - 24, w: 48, h: 48 } : undefined;
   const nodeRect = (id: string) => {
     const n = L.nodes.find((x) => x.ticket.id === id);
     return n && { x: n.x, y: n.y, w: NODE_W, h: NODE_H };
@@ -115,7 +119,14 @@ export function MapGraph(props: MapGraphProps) {
                 edges={L.edges}
                 preview={preview}
               />
-              <MapDestination laid={L} spot={destination} text={snap.map.sections.destination} done={props.done} />
+              <MapDestination
+                laid={L}
+                spot={destination}
+                text={snap.map.sections.destination}
+                done={props.done}
+                selected={selection?.kind === 'together'}
+                onSelect={() => onSelect({ kind: 'together' })}
+              />
               {main && props.main && (
                 <MainMark
                   {...main}

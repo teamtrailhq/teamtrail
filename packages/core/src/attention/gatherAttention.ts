@@ -14,6 +14,7 @@ import { activeTrails } from '../model/activeTrails';
 import type { AttentionPolicy } from '../model/attention';
 import type { InstalledGuide } from '../model/guide';
 import { trackerPin, trackerTargetKey, trackerTargetLabel } from '../server/trackerPin';
+import { readTrailChecks } from '../trailChecks/readTrailChecks';
 import { pendingTrust } from '../trust/pendingTrust';
 import { approvalItems } from '../verification/approvals';
 import { readIntegrationScan } from '../workspaces/integrationStore';
@@ -60,6 +61,7 @@ export async function gatherAttention(input: {
     precedentConflicts: await readPrecedentConflicts({ root, adapter, snaps }),
     integrations: integrationsOf(root),
     mainChecks: await Promise.all(snaps.map((s) => readMainChecks({ root }, s.map.id))),
+    trailChecks: await Promise.all(snaps.map((s) => readTrailChecks({ root }, s))),
     guides: listGuides(root).flatMap(guideFiles),
     ...(reportsSettings(adapter)
       ? { trackerSettings: adapter.unacceptedSettings(), trackerSettingsSkipped: adapter.settingsSkipped() }
