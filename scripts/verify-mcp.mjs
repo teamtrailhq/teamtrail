@@ -20,6 +20,7 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { verifyEscapes } from './verifyEscapes.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
@@ -625,6 +626,8 @@ const supervisionOk = await verifySupervision({
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 // Checks on main: a check already failing on main, the human's Start anyway and Drop, on a scratch git repo.
 const mainChecksOk = await verifyMainChecks({ browser, cli, log, shots });
+// Escapes: verified work reverted on main asks for a rule and counts on the scorecard, on a scratch git repo.
+const escapesOk = await verifyEscapes({ browser, cli, log, shots });
 
 // Model-aware claiming: two agents on different models, matching switched on in the Lookout, on a scratch project.
 const modelsOk = await verifyModels({ browser, cli, log, shots });
@@ -726,6 +729,7 @@ if (
   !signInOk ||
   !parallelOk ||
   !mainChecksOk ||
+  !escapesOk ||
   !modelsOk ||
   !projectsOk ||
   !guidesOk ||

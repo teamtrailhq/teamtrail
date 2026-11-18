@@ -43,6 +43,7 @@ export function buildAttention(input: AttentionInput, sources: AttentionSource[]
       batchKey: c.batchKey ?? `${c.mapId}:${c.kind}`,
       ref: c.ref,
       ...(c.agent ? { agent: c.agent } : {}),
+      ...(c.rule ? { rule: c.rule } : {}),
     };
   };
   const candidates = sources.flatMap((s) => s.collect(input));
