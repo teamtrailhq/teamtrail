@@ -9,7 +9,15 @@ export interface VerificationEvidenceEvent {
   kind: 'evidence';
   mapId: string;
   ticketId: string;
+  /**
+   * The ticket's PR snapshot (`sync.json`) was among what changed: written or dropped by whoever keeps it (the
+   * reconciler, or an embedding server that merges pull requests), so the Lookout reads the snapshots again.
+   */
+  sync?: true;
 }
+
+/** A ticket's PR snapshot, or the temp file it is written through (syncStore.ts). */
+const SYNC_PATH = /^[^/]+\/[^/]+\/[^/]+\/sync\.json(\.\d+\.tmp)?$/;
 
 function ticketOf(rel: string): VerificationEvidenceEvent | undefined {
   if (rel.startsWith(`${EVIDENCE_DIR}/`)) {
@@ -29,23 +37,29 @@ function ticketOf(rel: string): VerificationEvidenceEvent | undefined {
  * Ids are the file-safe forms used in those paths.
  */
 export function verificationEvents(send: (text: string) => void) {
-  const pending = new Map<string, ReturnType<typeof setTimeout>>();
+  const pending = new Map<string, { ev: VerificationEvidenceEvent; timer: ReturnType<typeof setTimeout> }>();
   const notify = (rel: string) => {
     if (rel !== EVIDENCE_DIR && !rel.startsWith(`${EVIDENCE_DIR}/`) && !rel.startsWith(`${RUNS_DIR}/`)) return false;
-    const ev = ticketOf(rel);
-    if (!ev) return true;
-    const key = `${ev.mapId}/${ev.ticketId}`;
-    if (pending.has(key)) return true;
+    const found = ticketOf(rel);
+    if (!found) return true;
+    const key = `${found.mapId}/${found.ticketId}`;
+    const sync = SYNC_PATH.test(rel);
+    const waiting = pending.get(key);
+    if (waiting) {
+      if (sync) waiting.ev.sync = true;
+      return true;
+    }
+    const ev: VerificationEvidenceEvent = sync ? { ...found, sync: true } : found;
     const timer = setTimeout(() => {
       pending.delete(key);
       send(`event: verification\ndata: ${JSON.stringify(ev)}\n\n`);
     }, QUIET_MS);
     timer.unref?.();
-    pending.set(key, timer);
+    pending.set(key, { ev, timer });
     return true;
   };
   notify.close = () => {
-    for (const t of pending.values()) clearTimeout(t);
+    for (const p of pending.values()) clearTimeout(p.timer);
     pending.clear();
   };
   return notify;

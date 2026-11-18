@@ -1,5 +1,7 @@
 import { webUrl } from '@teamtrail/core';
 import { apiBase } from './apiBase';
+import { prSync } from './prSync';
+import { replySync } from './replySync';
 
 /** What asking to merge came to: merged (with the pull request's link), or why not, as the server said it. */
 export type MergeResult = { kind: 'merged'; url?: string } | { kind: 'error'; text: string };
@@ -32,7 +34,8 @@ async function acceptGaps(o: { mapId: string; ticketId: string; gaps: string[] }
 /**
  * Asks the server that merges pull requests (managedSignIn.ts `merge`) to merge a done ticket's pull request. With
  * `gaps` (an unverified proof's), the trail lead's acceptance of them is recorded first, and the merge names it:
- * `{anyway: true, gaps: <its hash>}`. The server checks everything again either way.
+ * `{anyway: true, gaps: <its hash>}`. The server checks everything again either way. A reply may carry the ticket's
+ * PR snapshot (`sync`), merged or refused: the page shows it at once, without waiting for the event stream.
  */
 export async function postMerge(o: {
   path: string;
@@ -45,6 +48,9 @@ export async function postMerge(o: {
     if (accepted && 'error' in accepted) return { kind: 'error', text: accepted.error ?? NO_ANSWER };
     const anyway = accepted ? { anyway: true, gaps: accepted.hash } : {};
     const r = await postJson(o.path, { trail: o.mapId, ticket: o.ticketId, ...anyway });
+    // The ticket's pull request as the server now keeps it (merged, or found merged or closed already): shown at once.
+    const sync = replySync(r.json.sync, o);
+    if (sync) prSync.push(sync);
     const url = typeof r.json.url === 'string' ? webUrl(r.json.url) : undefined;
     if (r.ok && r.json.merged) return { kind: 'merged', url };
     return { kind: 'error', text: said(r.json, r.status) };
