@@ -15,6 +15,7 @@ import { PromoteButton } from '../knowledge';
 import { OutsideChangeNote } from '../signed-state';
 import { useSlackPeople } from '../slack';
 import { UnverifiedNote } from './UnverifiedNote';
+import { useNow } from '../../hooks/useNow';
 
 export function DecisionDetail(props: {
   d: AuditDecision;
@@ -40,7 +41,7 @@ export function DecisionDetail(props: {
   );
   const status = decisionStatus(d);
   const ticket = d.ticketId ? snap?.tickets.find((t) => t.id === d.ticketId) : undefined;
-  const now = Date.now();
+  const now = useNow(30_000);
   const link = webUrl(d.source.url);
   return (
     <div className="detail dv-d">

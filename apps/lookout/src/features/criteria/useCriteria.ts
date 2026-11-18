@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
 import { responseError } from '../../lib/responseError';
+import { trustChanged } from '../../lib/trustChanged';
 
 const api = `${apiBase()}/criteria`;
 
@@ -24,6 +25,7 @@ export function useCriteria(mapId?: string) {
     show: setTickets,
     failed: () => setTickets([]),
     changed: (path) => path.startsWith('criteria/'),
+    events: { trust: (data) => trustChanged(data).approvals },
   });
   const confirm = (body: { title: string; ticketId: string; ticketKey: string; confirmed: boolean; hash?: string }) =>
     fetch(`${api}/confirm`, {

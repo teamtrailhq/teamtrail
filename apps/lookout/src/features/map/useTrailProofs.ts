@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
+import { verificationOfTrail } from '../../lib/verificationOfTrail';
+import { trustChanged } from '../../lib/trustChanged';
 
 /** Each done ticket's proof: verified or not. */
 export type ProofStatuses = Record<string, 'verified' | 'not-verified'>;
@@ -23,7 +25,13 @@ export function useTrailProofs(mapId: string | undefined, version: unknown): Pro
     },
     show: setLoaded,
     failed: () => setLoaded({ mapId, statuses: {} }),
-    changed: (p) => p.includes('.evidence') || (!!mapId && p.includes(mapId)),
+    changed: (p) => !!mapId && p.includes(mapId),
+    // evidence never arrives as a path: the server turns it into `verification` events (verificationEvents.ts)
+    events: {
+      verification: (data) => !!mapId && verificationOfTrail(data, mapId),
+      proof: () => true,
+      trust: (data) => trustChanged(data).approvals,
+    },
   });
   return mapId && loaded.mapId === mapId ? loaded.statuses : undefined;
 }

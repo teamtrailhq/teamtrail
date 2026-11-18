@@ -30,6 +30,7 @@ import { verifyGuides } from './verifyGuides.mjs';
 import { verifyHandsOff } from './verifyHandsOff.mjs';
 import { verifyHeaders } from './verifyHeaders.mjs';
 import { verifyLinear } from './verifyLinear.mjs';
+import { verifyLiveViews } from './verifyLiveViews.mjs';
 import { verifyMainChecks } from './verifyMainChecks.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyNewTrail } from './verifyNewTrail.mjs';
@@ -695,6 +696,8 @@ const linearOk = await verifyLinear({ browser, cli, log, shots });
 const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const screeningOk = await verifyScreening({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
+// Live views: an approval in a second browser and evidence alone changing reach an open page without a reload.
+const liveViewsOk = await verifyLiveViews({ browser, cli, log, shots });
 // Done means verified: missing evidence back to rework and the review opened by themselves, Confirm criteria → verified.
 const proofGapsOk = await verifyProofGaps({ browser, cli, log, shots });
 // Flaky checks: a pass on retry with no change held for the trail lead, accepted, and shown on the proof.
@@ -829,6 +832,7 @@ if (
   !remoteOk ||
   !screeningOk ||
   !waiverOk ||
+  !liveViewsOk ||
   !proofGapsOk ||
   !flakyOk ||
   !rulesOk ||

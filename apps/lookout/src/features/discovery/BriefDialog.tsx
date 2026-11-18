@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { Button, ChangedNotice, Field, Panel } from '../../components/ui';
 import { ago } from '../../lib';
 import { BriefBody } from './BriefBody';
+import { useNow } from '../../hooks/useNow';
 
 /** Review a discovery brief: every section, then Accept or Request changes (with a note the agent gets). */
 export function BriefDialog(props: {
@@ -22,6 +23,7 @@ export function BriefDialog(props: {
   const { brief: b } = props;
   const [asking, setAsking] = useState(false);
   const [note, setNote] = useState('');
+  const now = useNow(30_000);
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && props.onClose();
     window.addEventListener('keydown', k);
@@ -32,7 +34,7 @@ export function BriefDialog(props: {
       <Panel as="div" className="dialog brief-dialog" onClick={(e) => e.stopPropagation()}>
         <header>
           <h2 className="t-heading caps">Discovery brief</h2>
-          <span className="t-meta">{statusLine(b)}</span>
+          <span className="t-meta">{statusLine(b, now)}</span>
         </header>
         <BriefBody brief={b} />
         {props.plan}
@@ -76,10 +78,10 @@ export function BriefDialog(props: {
 }
 
 /** "submitted · by claude-01 · 5m ago", or "Not submitted yet" for a draft. */
-function statusLine(b: DiscoveryBrief) {
+function statusLine(b: DiscoveryBrief, now: number) {
   if (b.status === 'draft') return 'Not submitted yet';
   const parts = [b.status.replace('-', ' ')];
   if (b.author) parts.push(`by ${b.author}`);
-  if (b.submittedAt) parts.push(`${ago(Date.now() - b.submittedAt)} ago`);
+  if (b.submittedAt) parts.push(`${ago(now - b.submittedAt)} ago`);
   return parts.join(' · ');
 }

@@ -1,6 +1,7 @@
 import { Empty, Label, MetaLine, Row } from '../../components/ui';
 import { ago } from '../../lib/format';
 import { useFlakyChecks } from './useFlakyChecks';
+import { useNow } from '../../hooks/useNow';
 
 const MODE_NOTE = {
   enforce: 'A pass on retry waits for you.',
@@ -15,7 +16,7 @@ const MODE_NOTE = {
 export function FlakyChecksSection() {
   const view = useFlakyChecks();
   if (!view) return null;
-  const now = Date.now();
+  const now = useNow(30_000);
   return (
     <section className="perf-section flaky-checks">
       <Label as="h3">Flaky checks</Label>

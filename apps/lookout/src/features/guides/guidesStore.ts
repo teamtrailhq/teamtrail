@@ -1,6 +1,7 @@
 import { type LiveLoader, liveLoad } from '../../lib/liveLoad';
 import { getGuides } from './guidesApi';
 import type { GuidesView } from './types';
+import { trustChanged } from '../../lib/trustChanged';
 
 /*
  * One shared copy of GET /guides for every component that shows a guide (map nodes, the inspector, Settings), so a map
@@ -31,6 +32,7 @@ export function subscribeGuides(cb: () => void) {
     show,
     failed: () => show(null),
     changed: (p) => p.includes('guides'),
+    events: { trust: (data) => trustChanged(data).approvals },
   });
   return () => {
     subscribers.delete(cb);

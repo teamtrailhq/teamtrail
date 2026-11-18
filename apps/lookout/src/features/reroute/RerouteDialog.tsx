@@ -10,6 +10,7 @@ import { RerouteDrift } from './RerouteDrift';
 import { DECLINE_NOTE, DISMISS_NOTE } from './rerouteText';
 import { ticketNamer } from './ticketNamer';
 import type { RerouteView } from './types';
+import { useNow } from '../../hooks/useNow';
 
 /**
  * Review a reroute proposal: why, the evidence, the assumptions it invalidates, every change and the tickets it
@@ -28,6 +29,7 @@ export function RerouteDialog(props: {
   const { reroute: p, snap } = props;
   const [note, setNote] = useState('');
   const [seen, setSeen] = useState(false);
+  const now = useNow(30_000);
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && props.onClose();
     window.addEventListener('keydown', k);
@@ -50,7 +52,7 @@ export function RerouteDialog(props: {
       <Panel as="div" className="dialog reroute-dialog" onClick={(e) => e.stopPropagation()}>
         <header>
           <h2 className="t-heading caps">{challenge ? 'Destination challenged' : heading}</h2>
-          <MetaLine parts={[{ text: p.id, code: true }, p.status, `by ${p.by}`, `${ago(Date.now() - p.at)} ago`]} />
+          <MetaLine parts={[{ text: p.id, code: true }, p.status, `by ${p.by}`, `${ago(now - p.at)} ago`]} />
         </header>
         <div className="reroute-body">
           {props.replaced && (

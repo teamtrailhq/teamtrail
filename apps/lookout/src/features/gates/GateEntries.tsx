@@ -1,6 +1,7 @@
 import type { GateEntry } from '@teamtrail/core';
 import { Disclosure, MetaLine, Row } from '../../components/ui';
 import { sinceLabel } from '../../lib/sinceLabel';
+import { useNow } from '../../hooks/useNow';
 
 const WHAT: Record<GateEntry['mode'], string> = { enforce: 'Held', observe: 'Would have held' };
 
@@ -10,7 +11,7 @@ const WHAT: Record<GateEntry['mode'], string> = { enforce: 'Held', observe: 'Wou
  */
 export function GateEntries(props: { entries: GateEntry[]; onOpenTicket: (mapId: string, ticketId: string) => void }) {
   if (!props.entries.length) return null;
-  const now = Date.now();
+  const now = useNow(30_000);
   return (
     <Disclosure label={`Tickets (${props.entries.length})`}>
       <ul className="gate-entries">

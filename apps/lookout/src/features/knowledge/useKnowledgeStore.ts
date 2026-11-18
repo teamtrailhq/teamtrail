@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
 import type { KnowledgeDraft, KnowledgeStore } from './knowledgeContext';
+import { trustChanged } from '../../lib/trustChanged';
 
 const api = `${apiBase()}/knowledge`;
 
@@ -46,6 +47,7 @@ export function useKnowledgeStore(briefText: string): KnowledgeStore {
       setHashes(b.hashes ?? {});
     },
     changed: (path) => path.startsWith('knowledge/'),
+    events: { trust: (data) => trustChanged(data).approvals },
   });
   const attention = useMemo(
     () => entries.filter((e) => e.status === 'suggested' || e.flag || (stale[e.id] && e.status !== 'outdated')).length,
