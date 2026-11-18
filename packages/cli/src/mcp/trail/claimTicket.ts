@@ -14,25 +14,24 @@ import { baselineForClaim, levelFor, recordTypes, repoRootOf } from '@teamtrail/
 import type { AgentContext } from './agentContext';
 import { checkWarnings } from './checkWarnings';
 import { criteriaView } from './criteria';
-import { assertCriteriaConfirmed, criteriaGate } from './criteriaGate';
+import { assertCriteriaConfirmed } from './criteriaGate';
 import { rulesAtClaim } from './diffRules';
-import { assertClaimable, briefView, claimable } from './discovery';
+import { assertClaimable, briefView } from './discovery';
 import { givenGuides } from './guideChanges';
-import { assertInGuides, outsideGuides } from './guides';
+import { assertInGuides } from './guides';
 import { knowledgeFor } from './knowledge';
-import { assertMainChecks, mainChecksField, mainGate, type MainGate } from './mainChecks';
-import { pickNext, stampModel, tierFields } from './models';
+import { assertMainChecks, mainChecksField, type MainGate } from './mainChecks';
+import { stampModel, tierFields } from './models';
+import { offerNext, readGates } from './offerNext';
 import { heldElsewhere } from './ownClaim';
 import { claimParallel } from './parallel';
 import { pathRoots } from './pathRoots';
 import { recoverStalled } from './recoverStalled';
 import { sessionView } from './reporting';
-import { frozenOn } from './reroutes';
-import { assertUnderReviewLimit, reviewGate } from './reviewLimit';
-import { assertModelMayReview, reviewModelNote, sameModelReviews } from './reviewModels';
-import { assertMayReview, ownReviews } from './reviews';
+import { assertUnderReviewLimit } from './reviewLimit';
+import { assertModelMayReview, reviewModelNote } from './reviewModels';
+import { assertMayReview } from './reviews';
 import { ticketInfo } from './ticketInfo';
-import { nextTicket } from './ticketOps';
 import { baselineView } from './verificationView';
 
 /** A remote agent's checkout isn't this machine's: the baseline recorded here says nothing about its files. */
@@ -53,8 +52,7 @@ export async function claimTicket(
   const snap = await ctx.resolveTrail(input.trail);
   ctx.trail = snap.map.id;
   const agent = await ctx.agentId();
-  const main = await mainGate(ctx, snap);
-  const target = await pickTarget(ctx, { snap, agent, ref: input.ticket, guides: input.guides, main });
+  const { target, main } = await pickTarget(ctx, { snap, agent, ref: input.ticket, guides: input.guides });
   const alreadyMine =
     target.assignee === agent && deriveStates(snap.tickets, snap.map.mode).get(target.id) === 'claimed';
   const t = alreadyMine
@@ -111,46 +109,29 @@ export async function claimTicket(
   };
 }
 
-/** The named ticket, or the best ready one; checked against review and discovery rules. */
+/** The named ticket, or the one `offerNext` offers; checked against the same gates (offerNext.ts). */
 async function pickTarget(
   ctx: AgentContext,
-  at: { snap: MapSnapshot; agent: string; ref?: string; guides?: string[]; main: MainGate },
-): Promise<Ticket> {
+  at: { snap: MapSnapshot; agent: string; ref?: string; guides?: string[] },
+): Promise<{ target: Ticket; main: MainGate }> {
   const { snap, agent } = at;
-  const frozen = frozenOn(ctx, snap.map.id);
-  const review = await reviewGate(ctx, snap);
-  const models = await sameModelReviews(ctx, snap);
-  const criteria = criteriaGate(ctx.root, snap);
-  const exclude = [
-    ...criteria.map((t) => t.id),
-    ...(await ownReviews(ctx, snap, agent)),
-    ...models.filter((r) => r.waits).map((r) => r.ticket.id),
-    ...frozen.keys(),
-    ...outsideGuides(snap, at.guides),
-    ...review.held.map((h) => h.id),
-    ...at.main.held.map((h) => h.id),
-  ];
-  const target = at.ref
-    ? ctx.findTicket(snap, at.ref)
-    : pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude, later: models.map((r) => r.ticket.id) })
-        .ticket;
-  if (!target) {
-    const r = await nextTicket(ctx, { trail: snap.map.id, guides: at.guides });
-    throw new OperationError(('reason' in r ? r.reason : undefined) ?? 'No ready ticket');
-  }
+  const offer = at.ref ? undefined : await offerNext(ctx, snap, { guides: at.guides });
+  if (offer && !offer.ticket) throw new OperationError(offer.reason ?? 'No ready ticket');
+  const gates = offer?.gates ?? (await readGates(ctx, snap));
+  const target = offer?.ticket ?? ctx.findTicket(snap, at.ref!);
   const elsewhere = target.assignee === agent ? heldElsewhere(ctx, snap.map.id, target) : undefined;
   if (elsewhere) throw new OperationError(`${elsewhere}: it is not yours to take over.`);
-  const proposal = frozen.get(target.id);
+  const proposal = gates.frozen.get(target.id);
   if (proposal && target.assignee !== agent)
     throw new OperationError(`${target.key} is frozen by reroute proposal ${proposal}, waiting on the human`);
   assertMayReview(ctx, snap, target, agent);
-  if (target.assignee !== agent) assertModelMayReview(models, target);
-  assertUnderReviewLimit(review, target, agent);
-  assertMainChecks(at.main, target, agent);
+  if (target.assignee !== agent) assertModelMayReview(gates.models, target);
+  assertUnderReviewLimit(gates.review, target, agent);
+  assertMainChecks(gates.main, target, agent);
   if (target.assignee !== agent) assertInGuides(snap, target, at.guides);
   if (target.assignee !== agent) assertClaimable(ctx.root, snap.map.id, target);
-  if (target.assignee !== agent) assertCriteriaConfirmed(criteria, target);
-  return target;
+  if (target.assignee !== agent) assertCriteriaConfirmed(gates.criteria, target);
+  return { target, main: gates.main };
 }
 
 /** Reuses an idle session of the right mode on this trail, or opens one, and moves it to the claim steps. */

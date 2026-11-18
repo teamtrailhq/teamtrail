@@ -18,17 +18,23 @@ const BRIEF_NEXT: Record<DiscoveryBrief['status'], string> = {
   draft: 'Claim the discovery ticket, investigate, and call submit_brief.',
 };
 
+/** The brief still to write while its discovery ticket is already closed: nobody can claim it to write it. */
+const closedTicketNext = (key: string) =>
+  `The discovery ticket ${key} is closed, but the brief isn't submitted: call submit_brief (no claim needed).`;
+
 /** What agents see about a trail's discovery step in claim, next, resume and start results. */
 export function briefView(root: string, snap: MapSnapshot) {
   const b = readBrief(root, snap.map.id);
   if (!b) return null;
-  const ticket = b.ticketId && snap.tickets.find((t) => t.id === b.ticketId);
+  const ticket = b.ticketId ? snap.tickets.find((t) => t.id === b.ticketId) : undefined;
+  const toWrite = b.status === 'draft' || b.status === 'changes-requested';
+  const closed = toWrite && ticket?.state === 'closed';
   return {
     status: b.status,
     ticket: ticket ? ticket.key : undefined,
     ...(b.note ? { changesRequested: b.note } : {}),
     implementationClaimable: b.status === 'accepted',
-    next: BRIEF_NEXT[b.status],
+    next: closed ? closedTicketNext(ticket.key) : BRIEF_NEXT[b.status],
   };
 }
 

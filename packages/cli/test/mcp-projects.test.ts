@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { writeJsonAtomic } from '@teamtrail/core/agents';
+import { trackerPin, writeJsonAtomic } from '@teamtrail/core/agents';
 import { readProjects, registerProject } from '@teamtrail/core/node';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { HELP } from '../src/args/help';
@@ -78,6 +78,21 @@ describe('projects', () => {
     const r = (await client.callTool({ name: 'projects_status', arguments: {} })) as { content: { text: string }[] };
     const status = JSON.parse(r.content[0].text) as { projects: { project: string; questionsWaiting: number }[] };
     expect(status.projects.map((p) => [p.project, p.questionsWaiting])).toEqual([['billing', 1]]);
+    agent.close();
+    await client.close();
+  });
+
+  it("says unknown, never zero, for a project whose GitHub tickets it can't read", async () => {
+    trackerPin(other, path.join(tmp, 'config')).approve({ active: 'github', github: { repo: 'octo/billing' } });
+    const agent = new TrailAgent({ root, agent: 'claude-01', pollMs: 20 });
+    const server = createMcpServer(agent, '0.0.0-test');
+    const [a, b] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: 'claude-code', version: '1.0.0' });
+    await Promise.all([server.connect(a), client.connect(b)]);
+    const r = (await client.callTool({ name: 'projects_status', arguments: {} })) as { content: { text: string }[] };
+    const [billing] = (JSON.parse(r.content[0].text) as { projects: Record<string, unknown>[] }).projects;
+    expect(billing).toMatchObject({ tracker: 'github', questionsWaiting: 1, needsHuman: null, working: null });
+    expect(billing.note).toMatch(/not cached/);
     agent.close();
     await client.close();
   });

@@ -22,12 +22,21 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.7',
+    version: '0.66.8',
     date: '2026-11-18',
     items: [
       "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
       'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
       'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
+    ],
+  },
+  {
+    version: '0.66.7',
+    date: '2026-11-18',
+    items: [
+      'Agents are only pointed to work they can take: closing a ticket or resuming a trail no longer suggests one that waits on you, and says what it waits for',
+      'An agent that closes the discovery ticket before writing the brief is told to submit the brief, so the trail no longer stalls',
+      "Agents asked about your other projects no longer report nothing waiting in a GitHub or Linear project whose tickets they can't read",
     ],
   },
   {
@@ -163,6 +172,23 @@ export const RELEASES: Release[] = [
       'Went without a diff rule by mistake? Undo it in the ticket, and the rule asks again on the next completion',
       "Where a ticket's work started is kept on your machine, not in the repo, so an agent can't move it to slip a change past the check guard",
       'In Teamtrail Cloud, a trail is checked on exactly the commit Teamtrail names on main',
+    ],
+  },
+  {
+    version: '0.61.1',
+    date: '2026-11-18',
+    items: [
+      'A trail with many tickets side by side lays them out in a grid, in order of number, instead of one tall column',
+    ],
+  },
+  {
+    version: '0.61.0',
+    date: '2026-11-18',
+    items: [
+      "A pass counts only when the work didn't change what the check runs, skip or delete tests, or pass only on a retry",
+      'A trail is verified only when your checks pass again on main with every ticket merged',
+      'Reviews go first to an agent on another model, and rules you write ask agents about the files they touch',
+      'Settings → This trail → Gates: try each gate in Observe first; the scorecard shows verified work that came back',
     ],
   },
   ...LATER_RELEASES,

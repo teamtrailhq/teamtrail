@@ -11,14 +11,12 @@ import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
 import { attentionSummary } from './attention';
 import { deliveryView } from './deliveryView';
-import { briefView, claimable } from './discovery';
+import { briefView } from './discovery';
 import { knowledgeFor } from './knowledge';
-import { mainChecksField, mainGate } from './mainChecks';
-import { matchingView, pickNext, stampModel } from './models';
+import { matchingView, stampModel } from './models';
+import { offerNext } from './offerNext';
 import { parallelView } from './parallel';
-import { adaptiveView, frozenOn } from './reroutes';
-import { reviewGate, reviewLimitField } from './reviewLimit';
-import { sameModelReviews } from './reviewModels';
+import { adaptiveView } from './reroutes';
 import { requestSetting } from './settings';
 import { ticketInfo } from './ticketInfo';
 import { trailView } from './views';
@@ -53,7 +51,7 @@ export async function status(ctx: AgentContext, trailRef?: string) {
   const records = await ctx.decisions(snap.map.id);
   return {
     ...base,
-    trail: trailView(snap, docs, records, (id) => ctx.keyOf(id)),
+    trail: trailView(snap, docs, records, (id) => ctx.keyOf(id, snap.map.id)),
     delivery: deliveryView(ctx.root, snap, docs),
     adaptive: adaptiveView(ctx, snap),
     parallel: parallelView(ctx, snap),
@@ -71,24 +69,15 @@ export async function resumeTrail(ctx: AgentContext, trailRef?: string) {
   const agent = await ctx.agentId();
   const states = deriveStates(snap.tickets, snap.map.mode);
   const mine = snap.tickets.find((t) => states.get(t.id) === 'claimed' && t.assignee === agent);
-  const review = await reviewGate(ctx, snap);
-  const main = await mainGate(ctx, snap);
-  const models = await sameModelReviews(ctx, snap);
-  const exclude = [
-    ...frozenOn(ctx, snap.map.id).keys(),
-    ...review.held.map((h) => h.id),
-    ...main.held.map((h) => h.id),
-    ...models.filter((r) => r.waits).map((r) => r.ticket.id),
-  ];
-  const later = models.map((r) => r.ticket.id);
-  const next = pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude, later }).ticket;
+  const offer = await offerNext(ctx, snap);
+  const next = offer.ticket;
   return {
     ...current,
-    ...reviewLimitField(review),
-    ...mainChecksField(main),
+    ...offer.fields,
     discovery: briefView(ctx.root, snap),
     yourClaim: mine ? ticketInfo(ctx.root, snap, mine, await ctx.decisions(snap.map.id)) : null,
     next: next ? ticketInfo(ctx.root, snap, next, await ctx.decisions(snap.map.id)) : null,
+    ...(next ? {} : { nextReason: offer.reason }),
     knowledge: mine || next ? knowledgeFor(ctx.root, snap, (mine ?? next)!) : undefined,
   };
 }

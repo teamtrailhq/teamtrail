@@ -292,7 +292,7 @@ const d1 = await call('close_ticket', {
 log(`closed ${d1.closed} · ${d1.decision.id} · unblocked ${d1.unblocked.map((t) => t.key).join(', ')}`);
 
 const c2 = await call('claim_ticket');
-log(`claimed ${c2.claimed.key} (${c2.claimed.attention})`);
+log(`claimed ${c2.claimed.key} (${c2.claimed.attention}); close_ticket offered ${d1.next?.key}`);
 await call('report_progress', {
   say: 'The notes are grouped by release already. One question before I decide the layout.',
   inputTokens: 6_200,
@@ -329,6 +329,8 @@ await call('record_decision', {
 });
 
 const c3 = await call('claim_ticket');
+// close_ticket's next is the ticket claim_ticket takes: one chooser behind both (offerNext.ts)
+const offerOk = d1.next?.key === c2.claimed.key && d2.next?.key === c3.claimed.key;
 await call('report_progress', {
   step: 'Investigate',
   message: 'checking the landing deploy',
@@ -336,7 +338,9 @@ await call('report_progress', {
   outputTokens: 800,
   costUsd: 0.04,
 });
-log(`claimed ${c3.claimed.key}; left running so the sessions zone shows a live session`);
+log(
+  `claimed ${c3.claimed.key} (offered by close_ticket: ${offerOk}); left running so the sessions zone shows a live session`,
+);
 
 const status = await call('status');
 log(
@@ -801,6 +805,7 @@ if (
   !chatOk ||
   !handsOffOk ||
   !stakesShown ||
+  !offerOk ||
   !skipApproved ||
   !askShown ||
   status.trail.progress !== '2/4 decided' ||

@@ -59,7 +59,7 @@ export async function proposeRerouteOp(ctx: AgentContext, input: ProposeArgs) {
       status: r.proposal.status,
       kind: r.proposal.kind,
       diff: r.diff,
-      frozen: r.frozen.map((id) => ctx.keyOf(id)),
+      frozen: r.frozen.map((id) => ctx.keyOf(id, snap.map.id)),
       ...(r.proposal.wide
         ? {
             wide: `It touches ${r.proposal.wide.touched} of ${r.proposal.wide.open} open tickets, so it freezes nothing: the human is asked to decide it, and the current plan stands until they do.`,
@@ -183,7 +183,7 @@ export function adaptiveView(ctx: AgentContext, snap: MapSnapshot) {
       kind: p.kind,
       by: p.by,
       reason: p.reason,
-      frozen: [...frozen].filter(([, r]) => r === p.id).map(([t]) => ctx.keyOf(t)),
+      frozen: [...frozen].filter(([, r]) => r === p.id).map(([t]) => ctx.keyOf(t, snap.map.id)),
     })),
   };
 }
