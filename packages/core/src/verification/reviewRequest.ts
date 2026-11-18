@@ -1,5 +1,6 @@
 import { evidenceLines } from '../evidence/evidenceSummary';
 import { flakyReason } from '../flaky/flakyReason';
+import type { GitEvidence } from '../model/evidence';
 import type { Ticket } from '../model/types';
 import type { VerificationAttempt } from '../model/verification';
 import { createReviewTicket, withdrawReviews } from '../planning/lifecycle/reviewTicket';
@@ -18,6 +19,21 @@ const retriedLines = (a: VerificationAttempt) =>
         `**Passed only on retry:** ${flakyReason(a.flaky.checks)}. Look for what makes it flaky in this change: timing, order, shared state.`,
       ]
     : [];
+/** Where the reviewer starts, from the evidence's flags: what changed of what the checks run, then out of scope. */
+function startWith(g?: GitEvidence): string[] {
+  const has = (kind: string) => !!g?.flags.some((f) => f.kind === kind);
+  return [
+    ...(has('check-guard')
+      ? [
+          '',
+          'The work changed what its checks run (check-guard): read those changes first; a pass means less after them.',
+        ]
+      : []),
+    ...(has('outside-scope')
+      ? ['', 'Start with the files changed outside the declared scope: is each one needed for what the ticket asks?']
+      : []),
+  ];
+}
 
 /** What the reviewer gets: the claim, the code it changed, the checks that passed, and how to answer. */
 export function reviewBody(t: Ticket, a: VerificationAttempt) {
@@ -41,9 +57,7 @@ export function reviewBody(t: Ticket, a: VerificationAttempt) {
     ...ruleReviewLines(a),
     ...(a.criteria?.claimed?.length ? ['', 'Check the criteria marked ? yourself: nothing here verified them.'] : []),
     ...retriedLines(a),
-    ...(g?.flags.some((f) => f.kind === 'outside-scope')
-      ? ['', 'Start with the files changed outside the declared scope: is each one needed for what the ticket asks?']
-      : []),
+    ...startWith(g),
     '',
     `Read the change${range ? ` (\`git diff ${range}\`)` : ''} against what ${t.key} asks, run what you need, then call \`submit_review\` with PASS, FAIL (findings the author can act on) or NEEDS_HUMAN. You cannot review a ticket you worked on.`,
   ].join('\n');

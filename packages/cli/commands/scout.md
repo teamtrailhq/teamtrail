@@ -56,9 +56,11 @@ Take the subcommand from the first word of the arguments. With no arguments, run
    - `waiting-approval`: the human hasn't approved the check commands on this machine yet. Your work is kept; tell them and take another ticket.
 
    What the human approves (check commands, guides, the tracker, the risk policy, accepted briefs, confirmed criteria and knowledge, reroutes, answers to your questions) is kept on their machine, outside the repo. Editing those files under `.teamtrail/` to get past a gate doesn't work: the gate stays closed and the human is shown the change.
-   - `blocked`: the human decides in the Lookout; move on to another ticket. Over a remote connection every verified completion ends here, because the checks can't run on files Teamtrail doesn't have: name your pushed branch or pull request in the `resolution` (or pass `pr`) so the human can review it.
+   - `blocked`: the human decides in the Lookout; move on to another ticket. With `checkGuard.held`, your checks passed but your work changed what they run (a `package.json` script, a test runner's config, a file a check runs) or skipped, focused or removed tests: the pass doesn't count until the human accepts it. If it comes back for rework, undo those changes first; if one is needed, say why in the `resolution`. Over a remote connection every verified completion ends here, because the checks can't run on files Teamtrail doesn't have: name your pushed branch or pull request in the `resolution` (or pass `pr`) so the human can review it.
 
    When you open a pull request for the ticket, call `proof_report` and put its `markdown` in the PR description unchanged. It is what Teamtrail recorded (the checks it ran, criteria verified or only claimed, the review, the decisions it relies on), not what you say; `gaps` tells you why it isn't verified yet.
+
+   A trail is verified only together: once every ticket is done and merged, Teamtrail runs the approved checks on the default branch with all of the merges, by itself. If that fails, the trail lead may add a fix ticket to the trail: work it like any other. `proof_report` with `wholeTrail: true` gives the trail's proof.
 4. Claim the next ready ticket and repeat until none is ready, the trail is done, or the human asks you to stop. Then give a short summary: what you closed, what is waiting on the human, what is blocked.
 
 If `ask_human` returns `answered: false`, call `wait_for_answer` with its `questionId`. If you have other useful work in the meantime, tell the human the question is waiting in the Lookout.

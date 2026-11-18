@@ -32,6 +32,7 @@ export type AttentionKind =
   | 'precedent'
   | 'review-limit'
   | 'main-checks'
+  | 'trail-checks'
   | 'merge'
   | 'escape';
 

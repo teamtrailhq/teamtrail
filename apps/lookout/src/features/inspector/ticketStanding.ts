@@ -54,9 +54,18 @@ function standingOf(s: StandingInput): Standing {
 
 function held(s: StandingInput): Standing {
   const edge = s.item?.edge ?? 'attention';
+  const retried = s.latest?.retried;
+  // the checks passed, but the work changed what they run: the way past is accepting the pass, or sending it back
+  // (when it also passed only on retry, that is said too: one accept counts it past both)
+  if (s.latest?.guarded)
+    return {
+      edge,
+      title: 'Held: the work changed what its checks run',
+      parts: [s.latest.guarded, ...(retried ? [`only on retry: ${retried}`] : []), 'waits on you'],
+      primary: 'accept',
+    };
   // a pass only a retry got: the human counts it or sends it back to fix the flaky test
-  if (s.latest?.retried)
-    return { edge, title: 'Held: passed only on retry', parts: [s.latest.retried], primary: 'rework' };
+  if (retried) return { edge, title: 'Held: passed only on retry', parts: [retried], primary: 'rework' };
   return {
     edge,
     title: `Blocked: ${whyBack(s)}`,

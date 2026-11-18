@@ -49,7 +49,12 @@ export function App() {
   const scoped = useScopedActivity(activity, api.mapId);
   useDocumentTitle(activity.pending.length, snap?.map.title);
   const nav = useAppNavigation(api);
-  const trail = useTrailUi({ snap, selectMap: api.actions.selectMap, openTicket: nav.openTicket });
+  const trail = useTrailUi({
+    snap,
+    selectMap: api.actions.selectMap,
+    openTicket: nav.openTicket,
+    openTrailChecks: nav.openTrailChecks,
+  });
   const knowledge = useKnowledgeStore(trail.briefText);
   const attn = useAttentionUi({
     api,

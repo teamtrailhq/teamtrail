@@ -1,4 +1,4 @@
-import { heldAsFlaky } from '@teamtrail/core';
+import { heldAsFlaky, type VerificationAttempt } from '@teamtrail/core';
 import type { MenuItem } from '../../components/ui';
 import type { TicketRunners } from './types';
 import type { TicketView } from './useTicketView';
@@ -46,9 +46,11 @@ function checkActions(v: TicketView, run: TicketRunners): Item[] {
   // the queue's approval item says it was submitted before the ticket's own record has loaded
   const submitted = !!v.verification?.attempts.length || v.items.some((i) => i.kind === 'approval');
   const held = v.state === 'held';
-  // a pass only a retry got: another run proves nothing, so the choice is counting it or fixing the test
-  const retried = held && heldAsFlaky(v.verification?.attempts[0]);
-  if (retried) return flakyActions(run);
+  const latest = v.verification?.attempts[0];
+  const guarded = guardHeld(latest);
+  // a pass only a retry got: another run proves nothing, so the choice is counting it or fixing the test (when the
+  // check guard holds it too, its actions stand: one accept counts the pass past both)
+  if (held && !guarded && heldAsFlaky(latest)) return flakyActions(run);
   return [
     v.state === 'verifying' &&
       submitted && {
@@ -77,12 +79,17 @@ function checkActions(v: TicketView, run: TicketRunners): Item[] {
     },
     held && {
       id: 'accept',
-      label: 'Accept anyway…',
-      tip: 'Close it as done despite the checks',
+      label: guarded ? 'Accept the pass…' : 'Accept anyway…',
+      tip: guarded
+        ? 'Count the checks although the work changed what they run; the proof says you accepted it'
+        : 'Close it as done despite the checks',
       onSelect: () => run.form('accept'),
     },
   ];
 }
+
+/** The latest completion's checks passed and the check guard holds the pass. */
+const guardHeld = (a?: VerificationAttempt) => a?.result === 'pass' && a.guard?.mode === 'enforce';
 
 /** A held pass the checks got only on retry: send it back to fix the flaky test, or count the pass. */
 function flakyActions(run: TicketRunners): Item[] {

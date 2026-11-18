@@ -14,6 +14,7 @@ Usage: ${BRAND.slug} [options]
        ${BRAND.slug} approve [--hash <hash>]… [--dir <path>]
        ${BRAND.slug} pair [--dir <path>] [--no-open]
        ${BRAND.slug} proof <ticket> [--trail <name>] [--json] [--dir <path>]
+       ${BRAND.slug} proof --trail <name> [--json] [--dir <path>]
        ${BRAND.slug} proof verify [file] | --pr <n> [--repo <owner/name>] [--set-status] [--keys-ref <ref>] [--dir <path>]
        ${BRAND.slug} guides list|search|add|new|update|remove|lint … [--dir <path>]
 
@@ -65,6 +66,8 @@ Commands:
                  checks it ran, criteria verified or only claimed, git range, review, decisions), as
                  Markdown for a pull request; --json for the structure. Exits 1 when not verified.
                  Signed with this machine's key; commit the .pub file it writes in proof-keys/
+  proof --trail  The whole trail's proof: each ticket's proof and the approved checks run on the
+                 default branch with all of their merges together. Exits 1 when not verified
   proof verify   Checks a report (a file, stdin, or every proof on --pr) against the proof keys
                  committed at --keys-ref (HEAD): signed, unchanged, verified, at the PR's head
   knowledge import <file.md>  Seed project knowledge from a markdown document: one suggestion per

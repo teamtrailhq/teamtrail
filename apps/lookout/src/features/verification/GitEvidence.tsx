@@ -4,7 +4,10 @@ import { MetaLine } from '../../components/ui';
 const short = (sha?: string | null) => sha?.slice(0, 8) ?? 'none';
 const count = (n: number | null) => (n === null ? '·' : String(n));
 
-/** What git showed of the completion: base → head on a branch, the files changed since the claim, and the flags. */
+/**
+ * What git showed of the completion: base → head on a branch, the files changed since the claim, and the flags (the
+ * check guard's has its own list, GuardFindings).
+ */
 export function GitEvidence({ attempt }: { attempt: VerificationAttempt }) {
   const g = attempt.git;
   if (!g) return null;
@@ -22,7 +25,7 @@ export function GitEvidence({ attempt }: { attempt: VerificationAttempt }) {
         ]}
       />
       {g.flags
-        .filter((f) => f.kind !== 'no-git')
+        .filter((f) => f.kind !== 'no-git' && f.kind !== 'check-guard')
         .map((f) => (
           <p key={f.kind} className={`vf-flag lv-${f.level}`} title={f.files?.join('\n')}>
             <span className="t-code">{f.kind}</span> {f.message}

@@ -4,6 +4,7 @@ import { dur, hhmm } from '../../lib';
 import { RESULT_TEXT } from '../../lib/verification';
 import { CheckRow } from './CheckRow';
 import { GitEvidence } from './GitEvidence';
+import { GuardFindings } from './GuardFindings';
 
 /** One completion claim: result chip, who and when, what was claimed, then each check. */
 export function AttemptRow({ attempt: a, latest }: { attempt: VerificationAttempt; latest: boolean }) {
@@ -18,7 +19,9 @@ export function AttemptRow({ attempt: a, latest }: { attempt: VerificationAttemp
         />
       </summary>
       <p className="vf-claim">{a.summary ?? a.resolution}</p>
-      {a.note && <p className="vf-note">{a.note}</p>}
+      {/* a pass the guard held says why in its findings: once is enough */}
+      {a.note && !(a.result === 'pass' && a.guard) && <p className="vf-note">{a.note}</p>}
+      <GuardFindings attempt={a} />
       {a.criteria && (
         <ul className="vf-criteria">
           {a.criteria.lines.map((l) => (

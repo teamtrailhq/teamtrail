@@ -39,6 +39,8 @@ const WRITES: RegExp[] = [
   /^\/attention\/review-limit$/,
   // Posting proofs to pull requests with this machine's GitHub token (proofRoutes.ts).
   /^\/proof\/settings$/,
+  // Adding a fix ticket to a trail whose checks fail on main together: another device never creates a ticket.
+  /^\/trail-checks\/fix-ticket$/,
   // The projects this Lookout supervises.
   /^\/projects$/,
   /^\/projects\/settings$/,

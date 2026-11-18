@@ -22,6 +22,7 @@ import { rerouteSuggestedSource } from './rerouteSuggestedSource';
 import { reviewLimitSource } from './reviewLimitSource';
 import { stalledSource } from './stalledSource';
 import { trackerSettingsSource } from './trackerSettingsSource';
+import { trailChecksSource } from './trailChecksSource';
 import { trustSource } from './trustSource';
 
 /**
@@ -51,6 +52,7 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   precedentSource,
   reviewLimitSource,
   mainChecksSource,
+  trailChecksSource,
   mergeSource,
   escapeSource,
 ];

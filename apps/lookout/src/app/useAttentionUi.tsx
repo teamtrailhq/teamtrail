@@ -50,6 +50,7 @@ export function useAttentionUi(input: {
     openConnector: input.openConnector,
     openApprovals: input.openApprovals,
     openMainChecks: nav.openMainChecks,
+    openTrailChecks: nav.openTrailChecks,
     openRule: input.openRule,
   };
   const view = attention.view;

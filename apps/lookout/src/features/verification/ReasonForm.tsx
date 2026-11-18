@@ -24,6 +24,14 @@ const RETRIED: Partial<Record<Reasoned, { label: string; submit: string; hint: s
   },
 };
 
+const GUARDED_HINT = 'The pass counts although the work changed what its checks run. The proof says you accepted it.';
+
+/** The hint under the form: accepting a pass the check guard held says what that means. */
+function hintOf(o: { kind: Reasoned; guarded?: boolean; retried?: boolean; hint: string }) {
+  if (o.kind !== 'accept' || !o.guarded) return o.hint;
+  return o.retried ? `${GUARDED_HINT} It also passed only on retry.` : GUARDED_HINT;
+}
+
 /**
  * A trail lead override on a verifying or held ticket. Each needs a reason, which is kept as a verdict. `retried`:
  * the ticket is held because its checks passed only on retry.
@@ -31,6 +39,8 @@ const RETRIED: Partial<Record<Reasoned, { label: string; submit: string; hint: s
 export function ReasonForm(props: {
   kind: Reasoned;
   retried?: boolean;
+  /** Accepting a pass the check guard held: the checks passed, the work changed what they run. */
+  guarded?: boolean;
   onSubmit: (req: Omit<ActionRequest, 'mapId' | 'ticketId'>) => void;
   onCancel: () => void;
 }) {
@@ -61,7 +71,9 @@ export function ReasonForm(props: {
           />
         </Field>
       )}
-      <span className="t-meta">{text.hint}</span>
+      <span className="t-meta">
+        {hintOf({ kind, guarded: props.guarded, retried: props.retried, hint: text.hint })}
+      </span>
       <div className="form-actions">
         <Button variant="ghost" onClick={props.onCancel}>
           Cancel

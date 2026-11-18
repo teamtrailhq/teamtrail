@@ -108,6 +108,8 @@ async function readPr(c: TicketContext, prev: TicketSync | undefined, link: PrLi
   const settled =
     last?.number === link.number &&
     last.state !== 'open' &&
+    // a merged PR read before merge commits were kept is read once more (trailChecks/)
+    (last.state !== 'merged' || last.mergeCommit !== undefined) &&
     listed?.state === last.state &&
     listed.updatedAt === last.updatedAt;
   if (settled && prev) return { pr: last, checks: prev.checks };

@@ -3,6 +3,8 @@ import { failingTestName } from '../src/flaky/failingTestName';
 import { flakyRows } from '../src/flaky/flakyRows';
 import { retriedChecks } from '../src/flaky/retriedChecks';
 import type { CheckResult, VerificationAttempt } from '../src/model/verification';
+import { proofGaps } from '../src/proof/proofGaps';
+import { outcomeOf } from '../src/verification/outcome';
 
 const check = (o: Partial<CheckResult> & { ok?: boolean } = {}): CheckResult => ({
   name: 'test',
@@ -120,5 +122,26 @@ describe('flakyRows', () => {
       { name: 'lint', count: 1, tickets: ['#2'], lastSeen: 40 },
       { name: 'test', test: 'x', count: 1, tickets: ['#1'], lastSeen: 20 },
     ]);
+  });
+});
+
+describe('a pass the check guard and the flaky gate both hold', () => {
+  it('waits for the trail lead once, saying both, and its proof has both gaps until accepted', () => {
+    const a = attempt({ checks: [check()] });
+    const flaky = { name: 'test', argv: ['npm', 'test'], failedIn: 'A-0', failure: 'exited 1', head: 'abc1234567' };
+    const finding = { kind: 'script' as const, file: 'package.json', text: 'package.json scripts.test changed' };
+    const both: VerificationAttempt = {
+      ...a,
+      flaky: { mode: 'enforce', checks: [flaky] },
+      guard: { mode: 'enforce', findings: [finding] },
+    };
+    const o = outcomeOf(both, 0, 3);
+    expect(o.to).toBe('blocked');
+    expect(o.reason).toMatch(/passed, but the work changed what its checks run: .*; and only on retry: test failed/);
+    const gaps = proofGaps({ attempt: both, reviews: [] });
+    expect(gaps.some((g) => g.includes("hasn't accepted the pass"))).toBe(true);
+    expect(gaps.some((g) => g.startsWith('The work changed what its checks run'))).toBe(true);
+    const lead = { by: 'trail lead', byKind: 'trail lead' as const, verdict: 'PASS' as const, summary: 'ok' };
+    expect(proofGaps({ attempt: both, reviews: [{ ...lead, independent: true }] })).toEqual([]);
   });
 });

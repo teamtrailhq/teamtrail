@@ -24,6 +24,7 @@ export type Form = 'resolve' | 'rule' | 'rework' | 'accept' | 'unblock' | 'waive
 export type PrimaryKind =
   | 'answer'
   | 'approve'
+  | 'accept'
   | 'waive'
   | 'unblock'
   | 'rework'
@@ -50,6 +51,8 @@ export interface LatestAttempt {
   failed: string[];
   /** Held by the `flaky` gate: what passed only on retry, in words. */
   retried?: string;
+  /** The checks passed and the check guard holds the pass: what the work changed of what they run, in one line. */
+  guarded?: string;
 }
 
 /** What `ticketStanding` reads, gathered from what the inspector already loads. */

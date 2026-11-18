@@ -13,6 +13,7 @@ import type { TicketView } from './useTicketView';
 const PRIMARY_ID: Record<PrimaryKind, string> = {
   answer: 'answer',
   approve: 'approve',
+  accept: 'accept',
   waive: 'waive',
   unblock: 'unblock',
   rework: 'rework',

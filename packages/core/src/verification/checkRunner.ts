@@ -50,6 +50,8 @@ export interface RunnerReport {
   };
   /** Why nothing could run (no work found, the runner failed): the attempt is then an error for a human. */
   error?: string;
+  /** For a run with `contains`: those of the commits asked for that the commit it ran on contains. */
+  contains?: string[];
 }
 
 /** What a runner is asked for checks on main: the approved checks on the default branch's head, before work starts. */
@@ -63,6 +65,11 @@ export interface MainRunJob {
   checks: RunnerCheck[];
   totalTimeoutSec: number;
   failFast: boolean;
+  /**
+   * A trail verified together (trailChecks/): the merges of its tickets, which the commit run on must contain. Run on
+   * the default branch's head that holds them, and list in the report's `contains` the ones it does.
+   */
+  contains?: string[];
   signal?: AbortSignal;
 }
 
@@ -80,4 +87,10 @@ export interface CheckRunner {
    * ran on; `changed` is ignored. Without it, checks on main are unavailable while this runner is in use.
    */
   runMain?(job: MainRunJob): Promise<RunnerReport>;
+  /**
+   * A file's text at a commit where the work is (the report's base or head): `null` when the commit has no such file,
+   * undefined when it can't tell. The check guard reads scripts, configs and tests through it (checkGuard/); without
+   * it, it reads this checkout's git, and a file it needs and can't read holds the pass for the human.
+   */
+  read?(o: { commit: string; path: string }): Promise<string | null | undefined>;
 }

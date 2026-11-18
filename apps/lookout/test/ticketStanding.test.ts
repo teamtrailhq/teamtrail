@@ -104,6 +104,24 @@ describe('ticketStanding', () => {
     });
   });
 
+  it('a pass both the check guard and the flaky gate hold says both, and offers accepting the pass', () => {
+    const latest = { result: 'pass' as const, agent: 'a', failed: [], guarded: 'scripts.test changed', retried: 'x' };
+    expect(read({ state: 'held', latest })).toMatchObject({
+      title: 'Held: the work changed what its checks run',
+      parts: ['scripts.test changed', 'only on retry: x', 'waits on you'],
+      primary: 'accept',
+    });
+  });
+
+  it('a pass the check guard holds says what changed, and offers accepting the pass', () => {
+    const latest = { result: 'pass' as const, agent: 'a', failed: [], guarded: 'package.json scripts.test changed' };
+    expect(read({ state: 'held', latest })).toMatchObject({
+      title: 'Held: the work changed what its checks run',
+      parts: ['package.json scripts.test changed', 'waits on you'],
+      primary: 'accept',
+    });
+  });
+
   it('a ready ticket that needs a person offers Resolve', () => {
     expect(read({ hitl: true })).toMatchObject({ title: 'Ready: needs a person', primary: 'resolve' });
   });

@@ -17,12 +17,26 @@ const ticket = (id: string, patch: Partial<Ticket> = {}) =>
   ({ id, key: `#${id}`, title: `T${id}`, state: 'open', blockedBy: [], ...patch }) as unknown as Ticket;
 const completed = { state: 'closed', closeReason: 'completed' } as const;
 const node = (t: Ticket, x: number) => ({ ticket: t, x, y: 0, state: 'decided' }) as unknown as LaidOutNode;
-const verified: TrailDone = { kind: 'verified', done: 2, reason: 'All 2 tickets done and verified' };
+const passed = { kind: 'passed', commit: 'abc1234def', branch: 'main', runId: 'T-1' } as const;
+const verified: TrailDone = {
+  kind: 'verified',
+  done: 2,
+  together: passed,
+  reason: 'All 2 tickets verified · verified together on main at abc1234',
+};
 const unverified: TrailDone = {
   kind: 'unverified',
   done: 2,
   unverified: ['2'],
-  reason: '2 tickets done · 1 not verified',
+  together: passed,
+  reason: '2 tickets done · 1 not verified · verified together on main at abc1234',
+};
+const failing: TrailDone = {
+  kind: 'unverified',
+  done: 2,
+  unverified: [],
+  together: { kind: 'failed', reason: 'test fails on main at abc1234 after merging', runId: 'T-2' },
+  reason: '2 tickets done · test fails on main at abc1234 after merging',
 };
 const html = (el: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(el);
 
@@ -74,10 +88,13 @@ describe('the map once tickets are done', () => {
     expect(ahead).not.toContain('flag-cloth');
     const reached = html(createElement(DestinationMark, { x: 0, y: 0, text: 'Ship it', done: verified }));
     expect(reached).toContain('destination reached verified');
-    expect(reached).toContain('Destination reached · All 2 tickets done and verified');
+    expect(reached).toContain('Destination reached · All 2 tickets verified · verified together on main at abc1234');
     const honest = html(createElement(DestinationMark, { x: 0, y: 0, done: unverified }));
     expect(honest).toContain('destination reached unverified');
     expect(honest).toContain('1 not verified');
+    const red = html(createElement(DestinationMark, { x: 0, y: 0, done: failing, onSelect: () => {} }));
+    expect(red).toContain('destination reached unverified failing');
+    expect(red).toContain('role="button"');
   });
 });
 
@@ -86,7 +103,7 @@ describe('the step panel once the trail is done', () => {
   it('shows the outcome in place of the last step', () => {
     const out = html(createElement(StepTracker, { activity, done: verified }));
     expect(out).toContain('Destination reached');
-    expect(out).toContain('All 2 tickets done and verified');
+    expect(out).toContain('verified together on main at abc1234');
   });
   it('shows the usual state while the trail isn’t done', () => {
     const out = html(
@@ -98,7 +115,28 @@ describe('the step panel once the trail is done', () => {
 
 describe('the destination reached dialog', () => {
   const dialog = (pulls: number) =>
-    html(createElement(TrailDoneDialog, { done: verified, pulls, onReview: () => {}, onClose: () => {} }));
+    html(
+      createElement(TrailDoneDialog, {
+        done: verified,
+        pulls,
+        onReview: () => {},
+        onChecks: () => {},
+        onClose: () => {},
+      }),
+    );
+  it('leads to what fails when the checks fail on main together', () => {
+    const out = html(
+      createElement(TrailDoneDialog, {
+        done: failing,
+        pulls: 0,
+        onReview: () => {},
+        onChecks: () => {},
+        onClose: () => {},
+      }),
+    );
+    expect(out).toContain('test fails on main at abc1234 after merging.');
+    expect(out).toContain('See what fails');
+  });
   it('leads to the open pull requests when there are some', () => {
     const out = dialog(2);
     expect(out).toContain('2 pull requests to merge.');
@@ -108,7 +146,7 @@ describe('the destination reached dialog', () => {
   });
   it('only closes when nothing is left', () => {
     const out = dialog(0);
-    expect(out).toContain('All 2 tickets done and verified.');
+    expect(out).toContain('All 2 tickets verified · verified together on main at abc1234.');
     expect(out).toContain('Close');
     expect(out).not.toContain('pull request');
   });

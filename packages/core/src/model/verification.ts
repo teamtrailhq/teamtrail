@@ -1,4 +1,5 @@
 import type { CriteriaResult } from '../criteria/criteria';
+import type { AttemptGuard } from './checkGuard';
 import type { WaivedCheck } from './checkWaiver';
 import type { AttemptRule, DiffRule } from './diffRule';
 import type { GitEvidence } from './evidence';
@@ -17,6 +18,11 @@ export interface CheckSpec {
   timeoutSec: number;
   /** Relative to the repo root; must stay inside it. */
   cwd?: string;
+  /**
+   * Repo-relative globs of files the check depends on beyond what the check guard reads from its command (fixtures,
+   * helpers its scripts import): a completion that changes one doesn't count as passing it (checkGuard/).
+   */
+  guards?: string[];
 }
 
 /** `.teamtrail/verification.json`: the only source of commands Teamtrail runs. */
@@ -132,6 +138,11 @@ export interface VerificationAttempt {
   criteria?: CriteriaResult;
   /** Checks that passed only on retry, on code they had failed on (the `flaky` gate, flaky/flakyGate.ts). */
   flaky?: AttemptFlaky;
+  /**
+   * What the check guard found: the work changed what its checks run, or weakened their tests (checkGuard/). With
+   * `enforce`, a pass waits for the trail lead; missing when it found nothing (or is off).
+   */
+  guard?: AttemptGuard;
   /** The diff rules the changed files matched, with the agent's answers. Missing when none matched. */
   rules?: AttemptRule[];
 }

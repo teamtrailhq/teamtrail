@@ -1,3 +1,4 @@
+import { guardReason } from '../checkGuard/guardReason';
 import { flakyLine } from '../flaky/flakyReason';
 import { heldAsFlaky } from '../flaky/heldAsFlaky';
 import type { ProofReview } from '../model/proof';
@@ -18,6 +19,13 @@ function cannotProve(attempt: VerificationAttempt | undefined): string[] | undef
 function retriedGaps(attempt: VerificationAttempt, reviews: ProofReview[]): string[] {
   if (!heldAsFlaky(attempt) || reviews.some((r) => r.byKind === 'trail lead' && r.verdict === 'PASS')) return [];
   return (attempt.flaky?.checks ?? []).map((f) => `${flakyLine(f)}; the trail lead hasn't accepted the pass.`);
+}
+
+/** A pass the check guard held, until the trail lead accepts it (their PASS on the attempt). */
+function guardGap(a: VerificationAttempt, reviews: ProofReview[]): string[] {
+  if (a.result !== 'pass' || a.guard?.mode !== 'enforce') return [];
+  if (reviews.some((r) => r.byKind === 'trail lead' && r.verdict === 'PASS')) return [];
+  return [`The work changed what its checks run: ${guardReason(a.guard.findings)}.`];
 }
 
 /** Why no review counts as independent: a PASS the `independent-review` gate held names the shared model. */
@@ -51,6 +59,7 @@ export function proofGaps({ attempt, reviews }: { attempt?: VerificationAttempt;
   if (known.length) gaps.push(`Known failures, already failing on main: ${known.join(', ')}.`);
   for (const w of attempt.waived ?? []) gaps.push(`${w.name} didn't run: ${w.by} accepted the work without it.`);
   gaps.push(...retriedGaps(attempt, reviews));
+  gaps.push(...guardGap(attempt, reviews));
   const c = attempt.criteria;
   if (c?.missing.length) gaps.push(`Criteria with no evidence: ${c.missing.join(', ')}.`);
   if (c?.failed.length) gaps.push(`Criteria whose check failed: ${c.failed.join(', ')}.`);

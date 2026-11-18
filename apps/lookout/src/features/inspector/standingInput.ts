@@ -2,6 +2,7 @@ import {
   attention,
   DISCOVERY_TYPES,
   flakyReason,
+  guardReason,
   heldAsFlaky,
   leaseHealth,
   type VerificationVerdict,
@@ -57,7 +58,14 @@ function briefHeld(v: LoadedTicket): StandingInput['briefHeld'] {
 function latestOf(a: TicketVerification['attempts'][number]): LatestAttempt {
   const failed = a.checks.filter((c) => !checkOk(c)).map((c) => c.name);
   const retried = a.flaky && heldAsFlaky(a) ? flakyReason(a.flaky.checks) : undefined;
-  return { result: a.result, agent: a.agent, failed, ...(retried ? { retried } : {}) };
+  const guard = a.result === 'pass' && a.guard?.mode === 'enforce' ? a.guard : undefined;
+  return {
+    result: a.result,
+    agent: a.agent,
+    failed,
+    ...(guard ? { guarded: guardReason(guard.findings) } : {}),
+    ...(retried ? { retried } : {}),
+  };
 }
 
 const SENT_BACK: Partial<Record<VerificationVerdict['verdict'], string>> = {

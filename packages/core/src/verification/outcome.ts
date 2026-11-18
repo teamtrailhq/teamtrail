@@ -1,3 +1,4 @@
+import { guardReason } from '../checkGuard/guardReason';
 import { evidenceLines } from '../evidence/evidenceSummary';
 import { flakyReason } from '../flaky/flakyReason';
 import { heldAsFlaky } from '../flaky/heldAsFlaky';
@@ -24,19 +25,15 @@ function checkStatus(c: CheckResult): string {
 
 /**
  * Where a finished attempt sends the ticket. A pass is done at level `checks`
- * and waits for review above it; a fail goes back for rework until
+ * and waits for review above it, unless the check guard holds it: then it waits for the trail lead, blocked, since
+ * the work changed what its checks run (checkGuard/). A fail goes back for rework until
  * `maxAttempts` failures, then to a human; an error (checks that cannot run
  * as configured) always goes to a human.
  */
 export function outcomeOf(a: VerificationAttempt, failures: number, maxAttempts: number): Outcome {
   const ran = a.checks.map(checkLine).join(', ') || 'no checks configured';
-  // a pass a retry got, on code that had failed: the human decides whether it counts (flaky/flakyGate.ts)
-  if (a.flaky && heldAsFlaky(a))
-    return {
-      event: 'checks.pass',
-      to: 'blocked',
-      reason: `${a.id} passed only on retry: ${flakyReason(a.flaky.checks)}`,
-    };
+  const held = heldPass(a);
+  if (held.length) return { event: 'checks.pass', to: 'blocked', reason: `${a.id} passed, but ${held.join('; and ')}` };
   if (a.result === 'pass') {
     const signOff = a.criteria?.manual ?? [];
     const known = a.knownFailures?.length
@@ -81,10 +78,22 @@ export function criteriaLines(a: Pick<VerificationAttempt, 'criteria' | 'agent'>
   return ['', '**Acceptance criteria**', '', ...c.lines.map((l) => `- ${l}`), ...(notes.length ? ['', ...notes] : [])];
 }
 
+/**
+ * Why a pass waits for the trail lead, one clause per gate that holds it: the check guard (the work changed what its
+ * checks run, checkGuard/) and the flaky gate (it passed only on retry, flaky/flakyGate.ts). Both may hold one pass;
+ * the trail lead's accept counts it past both, rework sends it back.
+ */
+function heldPass(a: VerificationAttempt): string[] {
+  if (a.result !== 'pass') return [];
+  return [
+    ...(a.guard?.mode === 'enforce' ? [`the work changed what its checks run: ${guardReason(a.guard.findings)}`] : []),
+    ...(a.flaky && heldAsFlaky(a) ? [`only on retry: ${flakyReason(a.flaky.checks)}`] : []),
+  ];
+}
+
 function blockedHead(a: VerificationAttempt) {
-  if (a.result === 'fail') return 'failed · needs a human';
-  if (a.result === 'pass') return 'passed only on retry · needs a human';
-  return 'could not run · needs a human';
+  if (a.result === 'pass') return 'passed · held for the trail lead';
+  return a.result === 'fail' ? 'failed · needs a human' : 'could not run · needs a human';
 }
 
 /** The ticket comment for a finished attempt: result, checks, and the output of the first failing one. */

@@ -20,6 +20,7 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { verifyCheckGuard } from './verifyCheckGuard.mjs';
 import { verifyEscapes } from './verifyEscapes.mjs';
 import { verifyFlaky } from './verifyFlaky.mjs';
 import { verifyGates } from './verifyGates.mjs';
@@ -39,6 +40,7 @@ import { verifySignedState } from './verifySignedState.mjs';
 import { verifySignIn } from './verifySignIn.mjs';
 import { verifySlack } from './verifySlack.mjs';
 import { verifySupervision } from './verifySupervision.mjs';
+import { verifyTrailChecks } from './verifyTrailChecks.mjs';
 import { verifyWaiver } from './verifyWaiver.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -640,6 +642,8 @@ const supervisionOk = await verifySupervision({
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 // Checks on main: a check already failing on main, the human's Start anyway and Drop, on a scratch git repo.
 const mainChecksOk = await verifyMainChecks({ browser, cli, log, shots });
+// Trail verified together: two tasks pass alone but fail together on main; a fix ticket, and the run that verifies.
+const trailChecksOk = await verifyTrailChecks({ browser, cli, log, shots });
 // Escapes: verified work reverted on main asks for a rule and counts on the scorecard, on a scratch git repo.
 const escapesOk = await verifyEscapes({ browser, cli, log, shots });
 
@@ -661,6 +665,8 @@ const waiverOk = await verifyWaiver({ browser, cli, log, shots });
 const flakyOk = await verifyFlaky({ browser, cli, log, shots });
 // Diff rules: a rule prefilled from a link and saved in Settings, an agent's completion held for its answer.
 const rulesOk = await verifyRules({ browser, cli, log, shots });
+// The check guard: work that changed what its check runs is held, and the trail lead accepts the pass in the Lookout.
+const checkGuardOk = await verifyCheckGuard({ browser, cli, log, shots });
 // The page's Content-Security-Policy in a real browser, API headers, and a frame from another origin refused.
 const headersOk = await verifyHeaders({ browser, url, log, pair: () => pairLink({ cli, cwd: repo }) });
 // Sign-in: pairing links work once, the API answers no one else, a revoked browser is signed out live.
@@ -748,6 +754,7 @@ if (
   !signInOk ||
   !parallelOk ||
   !mainChecksOk ||
+  !trailChecksOk ||
   !escapesOk ||
   !modelsOk ||
   !projectsOk ||
@@ -759,6 +766,7 @@ if (
   !waiverOk ||
   !flakyOk ||
   !rulesOk ||
+  !checkGuardOk ||
   !slackOk
 )
   process.exit(1);

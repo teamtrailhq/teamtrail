@@ -60,12 +60,14 @@ function gitOf(a?: VerificationAttempt): Proof['git'] {
     files: g.stats.files,
     add: g.stats.add,
     del: g.stats.del,
-    flags: g.flags.filter((f) => f.kind !== 'no-git' && !SCOPE_KINDS.includes(f.kind)).map((f) => f.kind),
+    // the guard's findings have a section of their own (`guard`)
+    flags: g.flags.filter((f) => !OWN_SECTION.includes(f.kind)).map((f) => f.kind),
     ...scopeOf(a),
   };
 }
 
 const SCOPE_KINDS: string[] = ['outside-scope', 'in-scope'];
+const OWN_SECTION: string[] = ['no-git', 'check-guard', ...SCOPE_KINDS];
 
 /** The attempt's scope, when its evidence carries a scope flag. */
 function scopeOf(a?: VerificationAttempt) {
@@ -90,6 +92,18 @@ function retriedOf(a: VerificationAttempt | undefined, reviews: ProofReview[]): 
     })),
   };
 }
+/** The check guard's findings, and the trail lead's acceptance of a pass it held. */
+function guardOf(a: VerificationAttempt | undefined, reviews: ProofReview[]): Proof['guard'] {
+  if (!a?.guard?.findings.length) return undefined;
+  const by =
+    a.guard.mode === 'enforce' ? reviews.find((r) => r.byKind === 'trail lead' && r.verdict === 'PASS') : undefined;
+  return {
+    mode: a.guard.mode,
+    findings: a.guard.findings.map((f) => f.text),
+    ...(by ? { accepted: { by: by.by, reason: by.summary } } : {}),
+  };
+}
+
 /** The author's model: the attempt's own, else what a review of it compared against. */
 const authorModel = (a: VerificationAttempt | undefined, verdicts: VerificationVerdict[]) =>
   a && (a.model ?? verdicts.find((v) => v.attemptId === a.id && v.authorModel)?.authorModel);
@@ -124,6 +138,7 @@ export function buildProof(input: ProofInput): Proof {
         .map((v) => review(v, latest))
     : [];
   const gaps = proofGaps({ attempt: latest, reviews });
+  const guard = guardOf(latest, reviews);
   const body: Omit<Proof, 'digest'> = {
     v: 1,
     ticket: input.ticket,
@@ -145,6 +160,7 @@ export function buildProof(input: ProofInput): Proof {
       ? { waived: latest.waived.map((w) => ({ name: w.name, argv: w.argv, by: w.by, reason: w.reason })) }
       : {}),
     ...retriedOf(latest, reviews),
+    ...(guard ? { guard } : {}),
     criteria: criteriaOf(latest),
     git: gitOf(latest),
     reviews,

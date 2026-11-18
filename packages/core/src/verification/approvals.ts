@@ -1,3 +1,4 @@
+import { guardReason } from '../checkGuard/guardReason';
 import { flakyReason } from '../flaky/flakyReason';
 import { heldAsFlaky } from '../flaky/heldAsFlaky';
 import type { VerificationLevel } from '../model/lifecycle';
@@ -76,8 +77,21 @@ function heldItem({ base, last, verdict }: Waiting, updatedAt: number): Approval
 function heldReason(last?: VerificationAttempt, verdict?: VerificationVerdict): string {
   if (verdict?.verdict === 'NEEDS_HUMAN') return `${verdict.by} asks you to decide: ${verdict.summary}`;
   if (last?.result === 'fail') return `${last.id} failed its checks too many times`;
-  if (last?.flaky && heldAsFlaky(last)) return `Passed only on retry: ${flakyReason(last.flaky.checks)}`;
-  return last?.note ?? 'verification could not run';
+  const held = last ? heldPassReason(last) : '';
+  return held || last?.note || 'verification could not run';
+}
+
+/**
+ * A pass the check guard (what the work changed of what its checks run, checkGuard/) or the flaky gate (it passed
+ * only on retry, flaky/) holds; both when both do. Empty when neither holds it.
+ */
+function heldPassReason(last: VerificationAttempt): string {
+  const guard =
+    last.result === 'pass' && last.guard?.mode === 'enforce'
+      ? `Checks passed, but the work changed what they run: ${guardReason(last.guard.findings)}`
+      : '';
+  const flaky = last.flaky && heldAsFlaky(last) ? `Passed only on retry: ${flakyReason(last.flaky.checks)}` : '';
+  return [guard, flaky].filter(Boolean).join('. ');
 }
 
 /**

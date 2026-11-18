@@ -24,6 +24,7 @@ export const KIND_LABEL: Record<AttentionKind, string> = {
   precedent: 'Precedent',
   'review-limit': 'Review',
   'main-checks': 'Main',
+  'trail-checks': 'Together',
   merge: 'Merge',
   escape: 'Came back',
 };
@@ -52,6 +53,7 @@ export const KIND_PLURAL: Record<AttentionKind, string> = {
   precedent: 'changes to what you decided',
   'review-limit': 'review queues full',
   'main-checks': 'checks failing on main',
+  'trail-checks': 'trails failing on main together',
   merge: 'pull requests ready to merge',
   escape: 'verified work that came back',
 };
