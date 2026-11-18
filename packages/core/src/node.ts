@@ -18,6 +18,7 @@ export { proofKeysAt } from './proof/proofKeysAt';
 export { parseProofKeys } from './proof/parseProofKeys';
 export { GitHubProofPublisher } from './evidence/github/GitHubProofPublisher';
 export { precedentAreas } from './precedent/precedentAreas';
+export { readEscapes } from './scorecard/readEscapes';
 export { otherProjectPrecedents } from './precedent/otherProjectPrecedents';
 export { reviewGateMode } from './verification/reviewGateMode';
 export { reviewedWork } from './verification/reviewedWork';

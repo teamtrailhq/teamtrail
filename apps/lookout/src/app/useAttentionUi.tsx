@@ -28,6 +28,8 @@ export function useAttentionUi(input: {
   openConnector: (channel: string) => void;
   /** Settings → Approvals: what the repo asks this machine to trust. */
   openApprovals: () => void;
+  /** Settings → Verification → Rules, prefilled with the rule an item suggests. */
+  openRule: AttentionHandlers['openRule'];
   /** Settings → Attention, where the quiet hours are set. */
   openFocusSettings: () => void;
 }) {
@@ -48,6 +50,7 @@ export function useAttentionUi(input: {
     openConnector: input.openConnector,
     openApprovals: input.openApprovals,
     openMainChecks: nav.openMainChecks,
+    openRule: input.openRule,
   };
   const view = attention.view;
   const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers });
