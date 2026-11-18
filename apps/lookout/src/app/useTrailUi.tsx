@@ -17,7 +17,7 @@ export function useTrailUi(input: {
   const { snap } = input;
   const discovery = useDiscoveryUi(snap);
   const reroute = useRerouteUi(snap, input.selectMap);
-  const done = useTrailDoneUi({ snap, pendingReroutes: reroute.pending, ...input });
+  const done = useTrailDoneUi({ snap, pendingReroutes: reroute.pending, discovery: discovery.discovery, ...input });
   return {
     briefText: discovery.briefText,
     inboxCard: discovery.inboxCard,

@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { TrackerAdapter } from '../adapters/adapter';
 import { decided, EMPTY_SECTIONS, type DiscoveryBrief } from '../discovery/brief';
 import { approveBriefHere, readBrief, readBriefFile, writeBrief, writeBriefText } from '../discovery/briefStore';
-import { requiresDiscovery } from '../discovery/discoveryGate';
+import { discoverySkipped, requiresDiscovery } from '../discovery/discoveryGate';
 import { seedFromBrief } from '../planning/assumptions/assumptionOps';
 import { contentHash } from '../trust/trustLedger';
 import { BadRequest, readJson, sendJson } from './http';
@@ -16,7 +16,8 @@ const trailId = (v: unknown) => typeof v === 'string' && /^[\w.-]{1,200}$/.test(
 
 /**
  * `/briefs` routes over the discovery briefs under `root`; false when none matches.
- * GET `?mapId=` reads a trail's brief, and whether discovery still gates the trail here (`gated`, discoveryGate.ts); POST `/briefs/accept` (`hash`: the one GET gave for the brief shown; 409 when it
+ * GET `?mapId=` reads a trail's brief, whether discovery still gates the trail here (`gated`, discoveryGate.ts) and
+ * whether the trail lead skipped it here (`skipped`); POST `/briefs/accept` (`hash`: the one GET gave for the brief shown; 409 when it
  * changed since), `/briefs/request-changes` (`note`) are the trail lead's calls on a submitted brief; POST `/briefs/create` (`ticketId`) starts discovery for a trail created in the UI.
  * Accepting a brief adds its assumptions to the trail's Assumptions section (once).
  */
@@ -38,7 +39,9 @@ export async function handleBriefs(
     // the hash of the file as the page shows it: accepting sends it back (shownHash.ts)
     const file = readBriefFile(root, mapId!);
     const hash = file ? { hash: contentHash(file.text) } : {};
-    sendJson(res, 200, { brief: readBrief(root, mapId!) ?? null, gated: requiresDiscovery(root, mapId!), ...hash });
+    const id = mapId!;
+    const discovery = { gated: requiresDiscovery(root, id), skipped: discoverySkipped(root, id) };
+    sendJson(res, 200, { brief: readBrief(root, id) ?? null, ...discovery, ...hash });
     return true;
   }
   if (req.method !== 'POST') return false;

@@ -1,5 +1,6 @@
 import path from 'node:path';
 import type { MarkdownFs } from '../adapters/markdown/markdownFs';
+import { reserveNumber } from '../adapters/markdown/numberRecord';
 import { oversizedFile } from './cachedFields';
 import { effectiveText } from './effectiveText';
 import { removedFiles } from './removedFiles';
@@ -25,7 +26,8 @@ async function readRaw(root: string, inner: MarkdownFs, p: string): Promise<stri
  * - reading a trail's map, a ticket or a decision gives it with the gate fields that count (effectiveText.ts): an
  *   outside change reads as the signed value, a decision nobody signed isn't there, a removed ticket still is;
  * - writing one signs the change as `by`'s (signedWrite.ts), against the text the writer read (`base`);
- * - every other file (briefs, criteria, knowledge, guides) passes through as it is.
+ * - every other file (briefs, criteria, knowledge, guides) passes through as it is;
+ * - a new trail's or ticket's number is handed out once (numberRecord.ts).
  * The Lookout's file route and every Teamtrail process on this machine use it, so every write they make is signed
  * and every read applies the same rules.
  */
@@ -58,6 +60,9 @@ export function signedFs(root: string, inner: MarkdownFs, by: () => string): Mar
       const item = stateItemOf(p);
       if (!item) return inner.create ? inner.create(p, text) : (await inner.write(p, text), true);
       return signedWrite({ root, item, text, by: by() }, { create: true });
+    },
+    async reserveNumber(atLeast) {
+      return reserveNumber(root, atLeast);
     },
     ...(inner.watch ? { watch: inner.watch } : {}),
   };

@@ -47,6 +47,16 @@ export const httpFs: MarkdownFs = {
     if (!r.ok) throw await failure(r, `create ${path}`);
     return true;
   },
+  /** The number for a new trail or ticket, handed out once by the server (core numberRecord.ts). */
+  async reserveNumber(atLeast) {
+    const r = await fetch(`${apiBase()}/file/number`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ atLeast }),
+    });
+    if (!r.ok) throw await failure(r, 'number a new file');
+    return ((await r.json()) as { n: number }).n;
+  },
   watch(cb) {
     return onTrackerChange(cb);
   },

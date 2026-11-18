@@ -3,7 +3,7 @@ import type { MarkdownFs } from '../adapters/markdown/markdownFs';
 import { insideRoot } from '../projects/confinePath';
 import { symlinkFree } from '../projects/symlinkFree';
 import { contentHash } from '../trust/trustLedger';
-import { BadRequest, readText, sendJson } from './http';
+import { BadRequest, readJson, readText, sendJson } from './http';
 import { lanFileRefusal } from './lanFileRefusal';
 import { limitedFileRefusal } from './limitedFileRefusal';
 import { markedLimited } from './limitedRequests';
@@ -70,8 +70,23 @@ async function put(ctx: FileRouteContext, req: IncomingMessage, res: ServerRespo
   res.end('ok');
 }
 
+/** The highest number a page may ask to start from: far above any real tracker, far below losing precision. */
+const MAX_NUMBER = 1_000_000_000;
+
 /**
- * Raw file access to the tracker folder: `GET /list`, and `GET`/`PUT /file?path=` for its markdown, inside the
+ * `POST /file/number` (`{ atLeast }`): the issue number for a trail or ticket the page is about to create, handed out
+ * once (adapters/markdown/numberRecord.ts). This machine only (thisMachineRoutes.ts): another device never creates one.
+ */
+async function number(ctx: FileRouteContext, req: IncomingMessage, res: ServerResponse) {
+  const { atLeast } = await readJson<{ atLeast?: unknown }>(req, '{}');
+  if (!Number.isSafeInteger(atLeast) || (atLeast as number) < 1 || (atLeast as number) > MAX_NUMBER)
+    throw new BadRequest('"atLeast" must be a whole number from 1');
+  if (!ctx.fs.reserveNumber) throw new Error('the tracker folder hands out no numbers');
+  sendJson(res, 200, { n: await ctx.fs.reserveNumber(atLeast as number) });
+}
+
+/**
+ * Raw file access to the tracker folder: `GET /list`, `POST /file/number` (number()), and `GET`/`PUT /file?path=` for its markdown, inside the
  * folder once links are resolved and written only where no link stands on the way. A PUT may carry `If-Match`, the
  * hash of the file as the writer loaded it (the Lookout always sends it): a file that changed since answers 409
  * (`stale`), and the gate fields it changes are judged against that version (signedState/signedWrite.ts). With
@@ -84,6 +99,7 @@ export async function handleFileRoute(ctx: FileRouteContext, req: IncomingMessag
     res.end(JSON.stringify({ root: ctx.root, files: await ctx.fs.list() }));
     return true;
   }
+  if (url.pathname === '/file/number' && req.method === 'POST') return (await number(ctx, req, res), true);
   if (url.pathname !== '/file') return false;
   const p = url.searchParams.get('path') ?? '';
   if (!isTrackerFile(p) || !insideRoot(ctx.root, p)) throw new BadRequest('not a tracker file');

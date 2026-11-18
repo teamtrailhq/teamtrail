@@ -18,6 +18,11 @@ export interface MarkdownFs {
    * the same next number (several agent processes share the folder) can't both keep it.
    */
   create?(path: string, text: string): Promise<boolean>;
+  /**
+   * Optional: hands out the issue number for a new trail or ticket, at least `atLeast`, never the same one twice,
+   * across processes (numberRecord.ts). Without it, the number is the highest one the files name plus one.
+   */
+  reserveNumber?(atLeast: number): Promise<number>;
   /** Optional: notify on external changes so other sessions' edits stream in. */
   watch?(cb: (path: string) => void): () => void;
 }

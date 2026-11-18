@@ -2,17 +2,19 @@ import { createHash } from 'node:crypto';
 import { canonicalJson } from '../lib/canonicalJson';
 import type { Proof } from '../model/proof';
 import type { TrailRun, TrailTogether } from '../model/trailChecks';
+import type { TrailDoneInput } from '../model/trailDone';
 import type { TrailProof, TrailProofRun } from '../model/trailProof';
-import type { Ticket } from '../model/types';
 import { trailDone } from '../planning/trailDone';
 
 export interface TrailProofInput {
   trail: TrailProof['trail'];
-  tickets: Pick<Ticket, 'id' | 'state' | 'closeReason'>[];
+  tickets: TrailDoneInput['tickets'];
   /** The proof of each ticket closed as completed. */
   proofs: Proof[];
   pendingReroutes: number;
   together: TrailTogether;
+  /** The trail lead skipped discovery here (TrailDoneInput). */
+  discoverySkipped?: boolean;
   /** The trail's latest combined run. */
   run?: TrailRun;
 }

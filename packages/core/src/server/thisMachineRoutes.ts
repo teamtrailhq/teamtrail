@@ -41,6 +41,8 @@ const WRITES: RegExp[] = [
   /^\/proof\/settings$/,
   // Adding a fix ticket to a trail whose checks fail on main together: another device never creates a ticket.
   /^\/trail-checks\/fix-ticket$/,
+  // Numbering a new trail or ticket (fileRoute.ts): another device never creates one.
+  /^\/file\/number$/,
   // The projects this Lookout supervises.
   /^\/projects$/,
   /^\/projects\/settings$/,
