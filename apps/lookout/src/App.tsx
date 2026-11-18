@@ -69,7 +69,15 @@ export function App() {
   const main = useMainMark(api.mapId, live.items);
   const { projects, overview, openOverview, closeOverview } = useProjectsUi(bp, nav, attn.link.request);
   const settingsPage = settings.route && (
-    <AppSettings rt={rt} api={api} bp={bp} prefs={prefs} update={updatePrefs} settings={settings} />
+    <AppSettings
+      rt={rt}
+      api={api}
+      bp={bp}
+      prefs={prefs}
+      update={updatePrefs}
+      settings={settings}
+      openTicket={nav.openTicket}
+    />
   );
   const records = (nav.statsOpen || nav.page) && (
     <RecordViews api={api} bp={bp} nav={nav} scoped={scoped} done={trail.done} attn={attn} />
