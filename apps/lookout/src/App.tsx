@@ -27,7 +27,7 @@ import {
 import { SetupGuide } from './features/guide';
 import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/knowledge';
 import { PhoneProjects, ProjectSwitcher } from './features/projects';
-import { FirstRun } from './features/settings';
+import { FirstRun, openRulePrefilled } from './features/settings';
 import { useBriefing, useBreakpoint, useLookout, useThemedPrefs } from './hooks';
 import { createRuntime, trackerKind } from './lib';
 
@@ -60,6 +60,7 @@ export function App() {
     openGuides: () => settings.open('guides'),
     openConnector: (channel) => settings.open(channel),
     openApprovals: () => settings.open('approvals'),
+    openRule: (rule) => openRulePrefilled(settings.open, rule),
     openFocusSettings: () => settings.open('attention'),
   });
   const view = attn.attention.view;

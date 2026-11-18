@@ -28,6 +28,7 @@ export function ScoreRow({ r, minSample }: { r: ScorecardRow; minSample: number 
             r.attemptsPerVerified !== undefined && `${r.attemptsPerVerified} attempts each`,
             usd(r.costPerVerifiedUsd),
             r.medianLeadMs !== undefined && durationLabel(r.medianLeadMs),
+            !!r.escaped && `${r.escaped} came back`,
           ]}
         />
       }

@@ -25,6 +25,7 @@ export const KIND_LABEL: Record<AttentionKind, string> = {
   'review-limit': 'Review',
   'main-checks': 'Main',
   merge: 'Merge',
+  escape: 'Came back',
 };
 
 /** What a batch of one kind is called: "3 questions from Reminders, answer together". */
@@ -52,6 +53,7 @@ export const KIND_PLURAL: Record<AttentionKind, string> = {
   'review-limit': 'review queues full',
   'main-checks': 'checks failing on main',
   merge: 'pull requests ready to merge',
+  escape: 'verified work that came back',
 };
 
 /** Snooze choices, in minutes. */

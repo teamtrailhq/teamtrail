@@ -1,5 +1,7 @@
 import { vendorOf } from '../agents/vendorOf';
+import type { Escape } from '../model/escape';
 import type { Scorecard, ScorecardRow, ScorecardSession, ScorecardTicket } from '../model/scorecard';
+import { escapesByCheck } from './escapesByCheck';
 
 /** Fewer tickets than this in a group and it is shown, never compared or suggested. */
 export const SCORECARD_MIN_SAMPLE = 10;
@@ -42,6 +44,8 @@ function row(key: string, items: Credited[], minSample: number, extra: Partial<S
   const findings = { info: 0, warn: 0, error: 0 };
   for (const { t } of items) for (const k of ['info', 'warn', 'error'] as const) findings[k] += t.findings[k];
   const attempts = verified.reduce((n, i) => n + i.t.attempts.length, 0);
+  const everVerified = items.filter((i) => i.t.verified || i.t.escaped).length;
+  const escaped = items.filter((i) => i.t.escaped).length;
   return {
     key,
     ...extra,
@@ -55,6 +59,8 @@ function row(key: string, items: Credited[], minSample: number, extra: Partial<S
     costPerVerifiedUsd: verified.length && costUsd ? round(costUsd / verified.length, 4) : undefined,
     medianLeadMs: median(verified.flatMap((i) => (i.t.leadMs === undefined ? [] : [i.t.leadMs]))),
     findings,
+    escaped,
+    escapeRate: everVerified ? round(escaped / everVerified, 3) : undefined,
     enough: items.length >= minSample,
   };
 }
@@ -86,12 +92,14 @@ function byGuide(items: Credited[], minSample: number) {
 /**
  * How each agent, model and vendor does on this repo's own tickets: verified first time, rework, attempts and cost per
  * verified ticket, time to done and review findings. A ticket is credited to whoever made its first completion, and
- * the model is that session's. Pure: the same records give the same scorecard, and nothing is ranked here.
+ * the model is that session's. Verified work that came back (`escapes`, scorecard/findEscapes.ts) counts against every
+ * group and each check that passed on it. Pure: the same records give the same scorecard, and nothing is ranked here.
  */
 export function agentScorecard(input: {
   tickets: ScorecardTicket[];
   sessions: ScorecardSession[];
   minSample?: number;
+  escapes?: Escape[];
 }): Scorecard {
   const minSample = input.minSample ?? SCORECARD_MIN_SAMPLE;
   const sessions = new Map(input.sessions.map((s) => [s.id, s]));
@@ -121,5 +129,13 @@ export function agentScorecard(input: {
     byAgent: grouped(items, (i) => i.agent, minSample),
     byVendor: grouped(items, (i) => vendorOf(i.agent), minSample),
     byGuide: byGuide(items, minSample),
+    byType: grouped(
+      items,
+      (i) => i.t.type,
+      minSample,
+      (i) => ({ type: i.t.type }),
+    ),
+    byCheck: escapesByCheck(input.tickets, minSample),
+    escapes: [...(input.escapes ?? [])].sort((a, b) => b.at - a.at),
   };
 }
