@@ -50,6 +50,12 @@
   --map-card-line: var(--line2);
   --map-card-quiet: var(--faint);
   --map-card-meta: var(--dim);
+  /* Chips on a map card: a quiet fill, tinted for held up and needs you. */
+  --map-chip: rgba(var(--line-rgb), 0.16);
+  --map-chip-warn: rgba(var(--amber-rgb), 0.2);
+  --map-chip-urgent: rgba(var(--urgent-rgb), 0.16);
+  --map-card-urgent: var(--urgent);
+  --map-card-decided: rgb(var(--decided-rgb));
   /* Overlays over the map and the zones (overlays.css): a raised sheet, its edge, and what it casts. */
   --surface-overlay: #fffef9;
   --surface-overlay-2: #f2efe2;
@@ -102,10 +108,17 @@
     --map-rock: #27322c;
     --map-rock2: #303c35;
     --mark: #e8833a;
-    --map-card: #33453b;
-    --map-card-line: rgba(176, 198, 182, 0.6);
-    --map-card-quiet: #9aab9f;
-    --map-card-meta: #b3c1b6;
+    /* A raised, neutral card on the dark map (2.2:1 against it), so cards stand out as they do by day; chips are
+     * darker wells with brighter text (every text colour at least 5.5:1 on its chip). */
+    --map-card: #434f4b;
+    --map-card-line: rgba(226, 234, 228, 0.38);
+    --map-card-quiet: #b0beb3;
+    --map-card-meta: #c2cfc5;
+    --map-chip: #303936;
+    --map-chip-warn: #3e3926;
+    --map-chip-urgent: #3e2d29;
+    --map-card-urgent: #ff9488;
+    --map-card-decided: #a3d197;
     --surface-overlay: #303836;
     --surface-overlay-2: #3a4340;
     --surface-overlay-line: rgba(226, 234, 228, 0.3);
@@ -155,10 +168,17 @@
   --map-rock: #27322c;
   --map-rock2: #303c35;
   --mark: #e8833a;
-  --map-card: #33453b;
-  --map-card-line: rgba(176, 198, 182, 0.6);
-  --map-card-quiet: #9aab9f;
-  --map-card-meta: #b3c1b6;
+  /* A raised, neutral card on the dark map (2.2:1 against it), so cards stand out as they do by day; chips are
+   * darker wells with brighter text (every text colour at least 5.5:1 on its chip). */
+  --map-card: #434f4b;
+  --map-card-line: rgba(226, 234, 228, 0.38);
+  --map-card-quiet: #b0beb3;
+  --map-card-meta: #c2cfc5;
+  --map-chip: #303936;
+  --map-chip-warn: #3e3926;
+  --map-chip-urgent: #3e2d29;
+  --map-card-urgent: #ff9488;
+  --map-card-decided: #a3d197;
   --surface-overlay: #303836;
   --surface-overlay-2: #3a4340;
   --surface-overlay-line: rgba(226, 234, 228, 0.3);

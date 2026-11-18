@@ -22,6 +22,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.63.1',
+    date: '2026-11-18',
+    items: ['At night, trail cards stand out from the map: a raised grey card, its chips in darker wells'],
+  },
+  {
     version: '0.63.0',
     date: '2026-11-18',
     items: [

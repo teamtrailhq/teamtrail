@@ -42,7 +42,7 @@
 }
 /* The meta row is label chips: a quiet flat fill, the text in the meta role. */
 .node .card-chip rect {
-  fill: rgba(var(--line-rgb), 0.16);
+  fill: var(--map-chip);
 }
 .node .card-chip.key {
   font-family: var(--mono);
@@ -55,15 +55,15 @@
   font-weight: 500;
 }
 .node .card-chip.state.warn rect {
-  fill: rgba(var(--amber-rgb), 0.2);
+  fill: var(--map-chip-warn);
 }
 .node .card-chip.state.urgent rect,
 .node .card-chip.needs rect {
-  fill: rgba(var(--urgent-rgb), 0.16);
+  fill: var(--map-chip-urgent);
 }
 .node .card-chip.state.urgent text,
 .node .card-chip.needs text {
-  fill: var(--urgent);
+  fill: var(--map-card-urgent);
   font-weight: 500;
 }
 
@@ -99,7 +99,7 @@
   stroke-width: 2;
 }
 .node .card-chip.state.verified text {
-  fill: rgb(var(--decided-rgb));
+  fill: var(--map-card-decided);
 }
 
 /* Hover and selection: a stronger border, never a heavier font. */
