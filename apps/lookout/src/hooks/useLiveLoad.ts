@@ -30,6 +30,7 @@ export function useLiveLoad<T>(spec: UseLiveLoad<T>) {
       failed: () => latest.current.failed?.(),
       ...(now.changed ? { changed: (path: string) => latest.current.changed?.(path) === true } : {}),
       events: Object.fromEntries(names.map((n) => [n, (data: unknown) => latest.current.events?.[n]?.(data) === true])),
+      throttleMs: now.throttleMs,
     });
     loader.current = l;
     return () => {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
+import { trustChanged } from '../../lib/trustChanged';
 
 type Item = { mapId: string; kind: 'map' | 'ticket' | 'decision'; id: string };
 
@@ -27,6 +28,8 @@ export function useSignedState() {
     show: setView,
     failed: () => setView(null),
     changed: (p) => p.endsWith('map.md') || p.includes('/tickets/') || p.includes('/decisions/'),
+    // an outside change accepted anywhere (another tab, `teamtrail approve`) changes only the signed record
+    events: { trust: (data) => trustChanged(data).signed },
   });
   return view;
 }

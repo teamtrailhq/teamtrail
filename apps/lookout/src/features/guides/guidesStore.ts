@@ -1,4 +1,5 @@
 import { type LiveLoader, liveLoad } from '../../lib/liveLoad';
+import { trustChanged } from '../../lib/trustChanged';
 import { getGuides } from './guidesApi';
 import type { GuidesView } from './types';
 
@@ -31,6 +32,7 @@ export function subscribeGuides(cb: () => void) {
     show,
     failed: () => show(null),
     changed: (p) => p.includes('guides'),
+    events: { trust: (data) => trustChanged(data).approvals },
   });
   return () => {
     subscribers.delete(cb);

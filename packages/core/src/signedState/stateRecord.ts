@@ -61,7 +61,7 @@ const cache = new Map<string, { stamp: string; record: StateRecord }>();
 
 function stampOf(file: string): string | undefined {
   const s = statSync(file, { throwIfNoEntry: false });
-  return s ? `${s.ino}:${s.mtimeMs}:${s.size}` : undefined;
+  return s ? `${s.ino}:${s.mtimeMs}:${s.ctimeMs}:${s.size}` : undefined;
 }
 
 function unreadable(mapId: string, why: string): StateRecord {

@@ -22,12 +22,20 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.5',
+    version: '0.66.6',
     date: '2026-11-18',
     items: [
       "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
       'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
       'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
+    ],
+  },
+  {
+    version: '0.66.5',
+    date: '2026-11-18',
+    items: [
+      'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
+      'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
     ],
   },
   {
@@ -172,30 +180,6 @@ export const RELEASES: Release[] = [
       'Under the map, the trail bar: every ticket at a glance, what needs you, and More for agents at work and what is next',
       'Cards move while something happens: waiting for an agent, an agent at work with its model and step, a halo when it needs you',
       'Plan, Activity and the Logbook are pages of their own, from the tabs in the header',
-    ],
-  },
-  {
-    version: '0.59.4',
-    date: '2026-11-17',
-    items: [
-      'A check that fails only as it already does on main no longer sends the first completion back for rework when an acceptance criterion names it',
-      "Where Teamtrail merges pull requests, a done ticket that isn't verified offers Merge anyway: why in one line, one question, and it's kept as your decision",
-      'A done ticket whose pull request is still open shows in your queue as ready to merge',
-    ],
-  },
-  {
-    version: '0.59.3',
-    date: '2026-11-17',
-    items: [
-      'Checks on main find the dependencies of a package folder with its own install, like apps/web/node_modules',
-      'An agent held by checks failing on main tells you to choose in the Lookout, instead of asking you a question',
-    ],
-  },
-  {
-    version: '0.59.2',
-    date: '2026-11-17',
-    items: [
-      'Settings → Verification reads calmer: one line per check, a warning under its command with the fix one click away, and Save apart',
     ],
   },
   ...LATER_RELEASES,

@@ -13,7 +13,8 @@ const isRemote = (a: TrackerAdapter) => a.kind === 'github' || a.kind === 'linea
  * the changed files, and remote trails have none. Subscribing also keeps the adapter polling with free 304s while
  * the Lookout runs, instead of reading every trail again whenever its cache expires. Returns the stop function.
  */
-export function watchRemoteTracker(active: () => Promise<TrackerAdapter>, send: (text: string) => void) {
+export function watchRemoteTracker(o: { active: () => Promise<TrackerAdapter>; send: (text: string) => void }) {
+  const { active, send } = o;
   let current: TrackerAdapter | undefined;
   let off = () => {};
   let timer: ReturnType<typeof setTimeout> | undefined;

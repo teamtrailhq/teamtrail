@@ -2,6 +2,7 @@ import type { GapStanding, Proof, ProofPostRecord } from '@teamtrail/core';
 import { useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
+import { trustChanged } from '../../lib/trustChanged';
 
 export interface TicketProofView {
   proof: Proof;
@@ -33,7 +34,12 @@ export function useTicketProof(mapId: string, ticketId: string) {
     view: `${mapId}/${ticketId}`,
     changed: (p) => p.includes(`tickets/${ticketId}.md`),
     // `tracker`: a GitHub or Linear trail changed (its decisions are part of the proof); markdown has `changed`
-    events: { verification: () => true, proof: () => true, tracker: () => true },
+    events: {
+      verification: () => true,
+      proof: () => true,
+      trust: (data) => trustChanged(data).approvals,
+      tracker: () => true,
+    },
   });
   return view;
 }

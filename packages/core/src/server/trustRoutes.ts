@@ -2,7 +2,6 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { MapSnapshot } from '../model/types';
 import { outsideChanges } from '../signedState/outsideChanges';
 import { revertState } from '../signedState/revertState';
-import { stateKeyFile } from '../signedState/stateItems';
 import { approveTogether } from '../trust/approveTogether';
 import { firstRun, stateFirstRun } from '../trust/firstRun';
 import { pendingTrust } from '../trust/pendingTrust';
@@ -13,8 +12,6 @@ import type { RouteContext } from './routeContext';
 
 type Want = { key: string; hash: string };
 
-/** The routes' context; `changed` tells the open pages a trail file reads differently now (an accepted change). */
-type TrustContext = RouteContext & { changed?: (rel: string) => void };
 const isWant = (v: unknown): v is Want =>
   !!v && typeof (v as Want).key === 'string' && typeof (v as Want).hash === 'string';
 
@@ -40,7 +37,7 @@ async function snapsOf(ctx: RouteContext): Promise<MapSnapshot[]> {
  * GET `/signed-state` lists which tickets, decisions and trails changed outside Teamtrail, by field, and which had
  * only their text edited: what the Lookout marks.
  */
-export async function handleTrust(ctx: TrustContext, req: IncomingMessage, res: ServerResponse, url: URL) {
+export async function handleTrust(ctx: RouteContext, req: IncomingMessage, res: ServerResponse, url: URL) {
   if (url.pathname === '/trust' && req.method === 'GET') {
     const committed = await withCommitted(ctx.root, pendingTrust(ctx.root, await snapsOf(ctx)));
     // check commands carry what reading the repo says about each (advice only: approving is keeping them anyway)
@@ -56,10 +53,6 @@ export async function handleTrust(ctx: TrustContext, req: IncomingMessage, res: 
   if (!Array.isArray(b.items) || !b.items.every(isWant)) throw new BadRequest('"items" must list { key, hash }');
   const snaps = await snapsOf(ctx);
   const result = await approveTogether({ root: ctx.root, items: b.items, by: 'trail lead', snaps });
-  for (const key of result.approved) {
-    const rel = stateKeyFile(key);
-    if (rel) ctx.changed?.(rel);
-  }
   sendJson(res, 200, result);
   return true;
 }

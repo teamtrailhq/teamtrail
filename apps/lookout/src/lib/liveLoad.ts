@@ -1,4 +1,5 @@
 import { newestWins } from './newestWins';
+import { throttled } from './throttled';
 import { onServerEvent, onStreamOpen, onTrackerChange } from './trackerChanges';
 
 /** One view the server keeps changing: how to load it, how to show it, and what says it changed. */
@@ -13,6 +14,8 @@ export interface LiveLoadSpec<T> {
   changed?: (path: string) => boolean;
   /** Named server events that mean the view changed; each filter gets the parsed data and says whether it's this view's. */
   events?: Record<string, (data: unknown) => boolean>;
+  /** At most one load per this many ms for files and events (a busy agent's session doc): later ones wait, merged. */
+  throttleMs?: number;
 }
 
 export interface LiveLoader {
@@ -49,10 +52,11 @@ export function liveLoad<T>(spec: LiveLoadSpec<T>): LiveLoader {
     );
   };
   const { changed, events = {} } = spec;
+  const soon = throttled(reload, spec.throttleMs);
   const offs = [
     onStreamOpen(reload),
-    ...(changed ? [onTrackerChange((path) => changed(path) && reload())] : []),
-    ...Object.entries(events).map(([name, mine]) => onServerEvent(name, (raw) => mine(parsed(raw)) && reload())),
+    ...(changed ? [onTrackerChange((path) => changed(path) && soon())] : []),
+    ...Object.entries(events).map(([name, mine]) => onServerEvent(name, (raw) => mine(parsed(raw)) && soon())),
   ];
   reload();
   return {
@@ -60,6 +64,7 @@ export function liveLoad<T>(spec: LiveLoadSpec<T>): LiveLoader {
     pushed: () => order.pushed(),
     stop: () => {
       stopped = true;
+      soon.cancel();
       for (const off of offs) off();
     },
   };

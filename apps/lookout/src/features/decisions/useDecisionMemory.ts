@@ -18,8 +18,13 @@ export function useDecisionMemory() {
     show: setMemory,
     failed: () => setMemory(null),
     changed: (p) => p.includes('/decisions/') || p.endsWith('map.md'),
-    // GitHub and Linear trails have no files: the server says when one changed
-    events: { tracker: () => true, verification: () => true },
+    // a decision's area is what its ticket's latest passing attempt changed; GitHub and Linear trails have no
+    // files, so the server says when one changed
+    events: {
+      verification: (data) => (data as { kind?: unknown } | undefined)?.kind === 'evidence',
+      tracker: () => true,
+    },
+    throttleMs: 2000,
   });
   return memory;
 }
