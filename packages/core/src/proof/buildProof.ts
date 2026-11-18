@@ -4,6 +4,7 @@ import type { Proof, ProofReview } from '../model/proof';
 import type { DecisionRecord } from '../model/types';
 import type { CheckResult, VerificationAttempt, VerificationVerdict } from '../model/verification';
 import { proofGaps } from './proofGaps';
+import { proofRules } from './proofRules';
 
 export interface ProofInput {
   ticket: Proof['ticket'];
@@ -133,6 +134,7 @@ export function buildProof(input: ProofInput): Proof {
         superseded: Boolean(d.supersededBy),
       })),
     ...(latest?.guides ? { guides: latest.guides } : {}),
+    ...(latest?.rules?.length ? { rules: proofRules(latest) } : {}),
   };
   return { ...body, digest: `sha256:${createHash('sha256').update(canonicalJson(body)).digest('hex')}` };
 }

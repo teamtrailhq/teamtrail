@@ -32,6 +32,7 @@ import { verifyParallel } from './verifyParallel.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifyProof } from './verifyProof.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
+import { verifyRules } from './verifyRules.mjs';
 import { verifyScreening } from './verifyScreening.mjs';
 import { verifySignedState } from './verifySignedState.mjs';
 import { verifySignIn } from './verifySignIn.mjs';
@@ -655,6 +656,8 @@ const linearOk = await verifyLinear({ browser, cli, log, shots });
 const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const screeningOk = await verifyScreening({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
+// Diff rules: a rule prefilled from a link and saved in Settings, an agent's completion held for its answer.
+const rulesOk = await verifyRules({ browser, cli, log, shots });
 // The page's Content-Security-Policy in a real browser, API headers, and a frame from another origin refused.
 const headersOk = await verifyHeaders({ browser, url, log, pair: () => pairLink({ cli, cwd: repo }) });
 // Sign-in: pairing links work once, the API answers no one else, a revoked browser is signed out live.
@@ -751,6 +754,7 @@ if (
   !remoteOk ||
   !screeningOk ||
   !waiverOk ||
+  !rulesOk ||
   !slackOk
 )
   process.exit(1);
