@@ -3,7 +3,6 @@ import { BRAND } from '../../model/brand';
 import type { MapMetaPatch, TicketMetaPatch } from '../../model/lifecycle';
 import { mapSummary } from '../../model/mapSummary';
 import {
-  DEFAULT_MAP_MODE,
   type DecisionInput,
   type DecisionRecord,
   type MapDoc,
@@ -24,8 +23,8 @@ import { createNumbered, newDecisionFile, newTicketFile, type NumberedFile } fro
 import { ExternalChanges } from './externalChanges';
 import { parseMapFile, serializeMapFile } from './mapFile';
 import type { MarkdownFs } from './markdownFs';
-import { nextNumber } from './nextNumber';
-import { isTicketFile, segment, trailSlug } from './paths';
+import { newTrailFile } from './newTrailFile';
+import { isTicketFile, segment } from './paths';
 import { parseTicket, serializeTicket } from './ticketFile';
 import { unreadDecision } from './unreadDecision';
 
@@ -94,20 +93,8 @@ export class MarkdownAdapter implements TrackerAdapter {
   }
 
   async createMap(input: MapInput) {
-    const n = await nextNumber(this.fs);
-    const slug = trailSlug(input.title, n);
-    const map: MapDoc = {
-      id: slug,
-      key: `#${n}`,
-      title: input.title,
-      mode: input.mode ?? DEFAULT_MAP_MODE,
-      ...(input.verification ? { verification: input.verification } : {}),
-      sections: input.sections,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    await this.writeMap(map);
-    this.events.emit({ kind: 'map.created', mapId: slug, at: Date.now() });
+    const map = await newTrailFile(this.fs, input, (path) => this.selfWrites.set(path, Date.now()));
+    this.events.emit({ kind: 'map.created', mapId: map.id, at: Date.now() });
     return map;
   }
 

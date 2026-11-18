@@ -1,13 +1,16 @@
 /** `<trail>/decisions/<D-n>.md`; groups: trail, decision id. */
 export const DECISION_PATH = /^([^/]+)\/decisions\/([^/]+)\.md$/;
 
-/** Folder name of a new trail: its title in kebab case, else `map-<n>`. */
+/**
+ * The name a new trail's folder starts from: its title in kebab case, else `map-<n>`. Titles can slug the same, so
+ * the folder is the first free one from it (newTrailFile.ts).
+ */
 export const trailSlug = (title: string, n: number) =>
   title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 40) || `map-${n}`;
+    .slice(0, 40)
+    .replace(/^-+|-+$/g, '') || `map-${n}`;
 
 /** A trail, ticket or decision id as a file name: one plain path segment, never `..`, a slash or a hidden file. */
 const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)*$/;

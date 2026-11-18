@@ -22,6 +22,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.64.2',
+    date: '2026-11-18',
+    items: ['Two trails with the same title no longer share a folder'],
+  },
+  {
     version: '0.64.1',
     date: '2026-11-18',
     items: [
