@@ -22,12 +22,22 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.6',
+    version: '0.66.7',
     date: '2026-11-18',
     items: [
       'Agents are only pointed to work they can take: closing a ticket or resuming a trail no longer suggests one that waits on you, and says what it waits for',
       'An agent that closes the discovery ticket before writing the brief is told to submit the brief, so the trail no longer stalls',
       "Agents asked about your other projects no longer report nothing waiting in a GitHub or Linear project whose tickets they can't read",
+    ],
+  },
+  {
+    version: '0.66.6',
+    date: '2026-11-18',
+    items: [
+      'A ticket reopened after its proof was posted takes the green Teamtrail proof off its pull request, and a proof that names no commit never passes',
+      'A pull request closed and replaced by a new one on the same branch: the ticket follows the new one, and a trail whose work closed unmerged or was reverted no longer says Destination reached',
+      'A pull request waiting to merge says what stands in its way: a draft, conflicts, changes requested or its checks',
+      "The review limit no longer holds agents back for deleted tickets or a PR sync that isn't running, and PR sync asks GitHub less as your history grows",
     ],
   },
   {

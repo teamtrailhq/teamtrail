@@ -104,4 +104,14 @@ describe('trailDone', () => {
     };
     expect(trailDone(input)).toEqual(trailDone(input));
   });
+
+  it("is not done while a done ticket's work hasn't landed: no flag, no Destination reached", () => {
+    const r = trailDone({
+      tickets: [done('1')],
+      proofs: { '1': 'verified' },
+      pendingReroutes: 0,
+      together: { kind: 'not-landed', reason: 'PR #4 closed without merging' },
+    });
+    expect(r).toEqual({ kind: 'not-done', reason: "The work hasn't landed: PR #4 closed without merging" });
+  });
 });

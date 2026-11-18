@@ -8,7 +8,7 @@ import { EVIDENCE_DIR, evidencePaths } from '../verification/evidenceStore';
 
 /*
  * Reconciler output, local and gitignored like the rest of the evidence:
- *   <tracker dir>/.evidence/<mapId>/<ticketId>/sync.json   TicketSync, rewritten every tick
+ *   <tracker dir>/.evidence/<mapId>/<ticketId>/sync.json   TicketSync, rewritten when a tick changes it
  *   <tracker dir>/.evidence/sync-status.json               PrSyncStatus of the last tick
  *   <tracker dir>/.events/flags/<mapId>.jsonl              FlagEntry per raised or cleared flag, append-only
  */
@@ -33,6 +33,15 @@ export function writeTicketSync(root: string, s: TicketSync) {
 
 export function dropTicketSync(root: string, mapId: string, ticketId: string) {
   rmSync(ticketFile(root, mapId, ticketId), { force: true });
+}
+
+/**
+ * Drops the snapshot of every ticket not in `kept` (`<mapId>/<ticketId>`): a deleted ticket or trail, so its old PR
+ * never counts in the review queue, the flags or a summary again. Only `sync.json` goes; the rest of its evidence stays.
+ */
+export function dropOrphanSyncs(root: string, kept: Set<string>) {
+  for (const s of readTicketSyncs(root))
+    if (!kept.has(`${s.mapId}/${s.ticketId}`)) dropTicketSync(root, s.mapId, s.ticketId);
 }
 
 /** Every ticket's snapshot, optionally of one trail. */

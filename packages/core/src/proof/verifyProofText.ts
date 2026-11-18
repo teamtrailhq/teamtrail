@@ -1,6 +1,7 @@
 import { createHash, createPublicKey, verify } from 'node:crypto';
 import { canonicalJson } from '../lib/canonicalJson';
 import type { Proof } from '../model/proof';
+import { coversHead } from './coversHead';
 import { proofMarkdown } from './proofMarkdown';
 
 const MARKER = /<!-- teamtrail:proof v1 (sha256:[0-9a-f]{64})(?: key:([0-9a-f]{16}) sig:([A-Za-z0-9+/]+={0,2}))? -->/;
@@ -62,7 +63,7 @@ export function verifyProofText(o: { text: string; keys: Map<string, string>; he
   const valid = problems.length === 0;
   if (valid && proof.status !== 'verified') problems.push(`Not verified: ${proof.gaps[0] ?? 'see the report'}`);
   const head = proof.git?.head;
-  if (valid && o.head && head !== o.head)
+  if (valid && o.head && !coversHead(head, o.head))
     problems.push(`Verified at ${head?.slice(0, 7) ?? 'no commit'}, not at ${o.head.slice(0, 7)}.`);
   return { valid, verified: problems.length === 0, problems, proof, keyId };
 }

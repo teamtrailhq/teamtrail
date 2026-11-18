@@ -16,6 +16,8 @@ export interface ProofInput {
   verdicts: VerificationVerdict[];
   /** The decisions the work relies on: the ticket's own and those of the tickets it was blocked by. */
   decisions: DecisionRecord[];
+  /** The ticket was done and is open again: the proof isn't verified, whatever its last completion says. */
+  reopened?: boolean;
 }
 
 const passed = (c: CheckResult) => c.exitCode === 0 && !c.timedOut && !c.error;
@@ -141,7 +143,7 @@ export function buildProofWithGaps(input: ProofInput): { proof: Proof; gaps: Pro
         .sort((x, y) => x.at - y.at)
         .map((v) => review(v, latest))
     : [];
-  const items = proofGapItems({ attempt: latest, reviews });
+  const items = proofGapItems({ attempt: latest, reviews, reopened: input.reopened });
   const gaps = items.map((g) => g.text);
   const guard = guardOf(latest, reviews);
   const body: Omit<Proof, 'digest'> = {

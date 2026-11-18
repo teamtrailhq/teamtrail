@@ -111,6 +111,8 @@ export interface LoadedTicket {
   verification?: TicketVerification;
   proof?: TicketProofView;
   pr?: TicketSync;
+  /** The PR sync's last good tick (PrSyncStatus `lastOkAt`): how fresh `pr` is. */
+  prOkAt?: number;
   /** Fields changed outside Teamtrail, held until accepted or reverted. */
   change?: { fields: string[] };
   textEdited: boolean;
