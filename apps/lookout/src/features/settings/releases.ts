@@ -195,16 +195,6 @@ export const RELEASES: Release[] = [
       "Setting or approving checks now says which ones can't run as your repo is (a missing script, no go.mod, a missing make target), with Remove check or Keep anyway",
     ],
   },
-  {
-    version: '0.58.0',
-    date: '2026-11-17',
-    items: [
-      'Before agents build, the approved checks run once on the default branch, so a check already failing on main is known before any agent is blamed for it',
-      'When one fails, the trail waits for your call: fix main first, drop that check for the trail, or start anyway. Each can be undone',
-      'After Start anyway, a completion that fails only in those checks, the same way, isn’t sent back, and its proof marks them as known failures, not verified',
-      'Run checks on main again any time, from the trail at a glance or Settings → Verification',
-    ],
-  },
   ...LATER_RELEASES,
   ...MID_RELEASES,
   ...OLDER_RELEASES,
