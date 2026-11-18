@@ -3,7 +3,7 @@ import { attentionView } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 
 /** An attention item as agents read it: trail and ticket by their human keys. */
-function itemView(i: AttentionItem, maps: Map<string, MapSummary>, keyOf: (id: string) => string) {
+function itemView(i: AttentionItem, maps: Map<string, MapSummary>, keyOf: (id: string, mapId: string) => string) {
   const trail = maps.get(i.mapId);
   return {
     id: i.id,
@@ -14,7 +14,7 @@ function itemView(i: AttentionItem, maps: Map<string, MapSummary>, keyOf: (id: s
     reasons: i.reasons,
     batch: i.batchKey,
     trail: trail ? `${trail.key} ${trail.title}` : undefined,
-    ticket: i.ticketId ? keyOf(i.ticketId) : undefined,
+    ticket: i.ticketId ? keyOf(i.ticketId, i.mapId) : undefined,
     agent: i.agent,
     waitingSeconds: Math.max(0, Math.round((Date.now() - i.since) / 1000)),
     ...(i.kind === 'question' ? { questionId: i.ref } : {}),
@@ -27,7 +27,7 @@ export async function rankedAttention(ctx: AgentContext, kinds?: AttentionKind[]
   const maps = new Map((await ctx.adapter.listMaps()).map((m) => [m.id, m]));
   const wanted = kinds?.length ? view.items.filter((i) => kinds.includes(i.kind)) : view.items;
   return {
-    items: wanted.map((i) => itemView(i, maps, (id) => ctx.keyOf(id))),
+    items: wanted.map((i) => itemView(i, maps, (id, mapId) => ctx.keyOf(id, mapId))),
     interrupting: view.interrupting.length,
     focused: view.focused,
   };

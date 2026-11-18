@@ -55,7 +55,7 @@ export async function challengeAssumptionOp(
   (await ctx.ensureSession()).log(`challenged ${r.assumption.id} · ${r.assumption.text}`, 'warn', 'problem');
   return {
     assumption: assumptionView(snap, r.assumption),
-    dependents: { tickets: r.tickets.map((id) => ctx.keyOf(id)), decisions: r.decisions },
+    dependents: { tickets: r.tickets.map((id) => ctx.keyOf(id, snap.map.id)), decisions: r.decisions },
     next: `propose_reroute with the changes this calls for (invalidates: ["${r.assumption.id}"]), then keep working on tickets it does not freeze.`,
   };
 }

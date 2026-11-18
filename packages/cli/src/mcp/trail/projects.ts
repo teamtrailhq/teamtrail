@@ -19,17 +19,20 @@ export async function projectsStatus(input: { root: string; configDir?: string; 
       const state = projectState(entry.root);
       const adapter = state.kind === 'missing' ? undefined : fileAdapter(entry.root, dir);
       const { summary } = await projectSummary({ entry, home: false, state, adapter, configDir: dir });
+      // Unknown, never zero, where the tickets weren't read (a GitHub or Linear tracker): zero says nothing waits.
+      const read = <T>(v: T) => (adapter ? v : null);
       return {
         project: summary.name,
         path: summary.path,
         state: summary.state.kind,
+        tracker: summary.tracker.kind,
         agentsRunning: summary.agents,
         questionsWaiting: summary.questions,
-        needsHuman: summary.needsYou,
-        interrupting: summary.interrupting,
+        needsHuman: read(summary.needsYou),
+        interrupting: read(summary.interrupting),
         top: summary.top?.title,
-        working: summary.phases.working,
-        blocked: summary.phases.blocked,
+        working: read(summary.phases.working),
+        blocked: read(summary.phases.blocked),
         prFlags: summary.flags,
         stalledClaims: summary.stalled,
         lastActivity: summary.lastActivity && new Date(summary.lastActivity).toISOString(),

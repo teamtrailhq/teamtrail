@@ -95,7 +95,7 @@ export function registerTrailTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Resume a trail',
       description:
-        'Pick up a trail: opens a session, returns status, any ticket you still hold and the next ready ticket.',
+        'Pick up a trail: opens a session, returns status, any ticket you still hold and the ticket you may claim next (as next_ticket offers it), or `nextReason` when there is none.',
     },
     { trail },
     (a) => agent.resumeTrail(a.trail),

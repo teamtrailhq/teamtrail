@@ -63,6 +63,7 @@ export class AgentContext {
   private trailName?: string;
   /** Set for an agent that shares its process with others (HTTP): what holds its trail name instead of the pid. */
   private nameHolder?: string;
+  /** Tickets as this process last loaded them, by trail and id: markdown ids repeat in every trail. */
   private tickets = new Map<string, Ticket>();
   private offTracker: () => void;
 
@@ -76,7 +77,7 @@ export class AgentContext {
     this.origin = opts.remote ? `token:${opts.remote.tokenId ?? opts.remote.tokenName}` : `local:${randomUUID()}`;
     this.leases = new AgentLeases(opts.root, opts.leaseMs ?? leaseMs(process.env[LEASE_MINUTES_ENV]), this.origin);
     this.offTracker = this.adapter.subscribe((e) => {
-      const line = describeTrackerEvent(e, (id) => this.tickets.get(id) ?? ({ key: this.keyOf(id) } as Ticket));
+      const line = describeTrackerEvent(e, (id) => ({ key: this.keyOf(id, e.mapId) }) as Ticket);
       if (line && this.sessions.current) this.activity.push({ ...line, sessionId: this.sessions.current.id });
     });
   }
@@ -96,14 +97,15 @@ export class AgentContext {
     return this.opts.remote ? `${name} (remote, via MCP over HTTP)` : `${name} via MCP`;
   }
 
-  /** A ticket as this process last loaded it. */
-  seen(ticketId: string) {
-    return this.tickets.get(ticketId);
+  /** A ticket of trail `mapId` as this process last loaded it. */
+  seen(mapId: string, ticketId: string) {
+    return this.tickets.get(`${mapId}/${ticketId}`);
   }
 
-  /** Display key of a ticket seen in this process (`#3`, `ENG-3`). */
-  keyOf(ticketId: string) {
-    return this.tickets.get(ticketId)?.key ?? `#${ticketId}`;
+  /** Display key of a ticket seen in this process (`#3`, `ENG-3`), of the agent's trail unless `mapId` says. */
+  keyOf(ticketId: string, mapId?: string) {
+    const trail = mapId ?? (this.sessions.current?.info.mapId || this.trail);
+    return (trail ? this.seen(trail, ticketId)?.key : undefined) ?? `#${ticketId}`;
   }
 
   /** This agent's trail name, picked on first use so the client name is known. */
@@ -131,7 +133,7 @@ export class AgentContext {
 
   async load(mapId: string) {
     const snap = await this.adapter.loadMap(mapId);
-    for (const t of snap.tickets) this.tickets.set(t.id, t);
+    for (const t of snap.tickets) this.tickets.set(`${snap.map.id}/${t.id}`, t);
     return snap;
   }
 
