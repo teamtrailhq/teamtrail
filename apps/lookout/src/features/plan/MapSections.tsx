@@ -28,6 +28,7 @@ export function MapSections({
     { id: 'assumptions', label: 'Assumptions', n: s?.assumptions?.length },
     { id: 'decisions', label: 'Decisions', n: s?.decisions.length },
     { id: 'oos', label: 'Out of scope', n: s?.outOfScope.length },
+    { id: 'destination', label: 'Destination' },
     { id: 'notes', label: 'Notes' },
     { id: 'report', label: 'Report' },
   ];
@@ -46,7 +47,7 @@ export function MapSections({
           className="zone-title"
           icon="flag"
           title="Trail plan"
-          info="The parts of the plan that aren't tickets yet: open questions still to specify, the assumptions the plan relies on, decisions already made, what's ruled out, and notes. Report shows how the trail is going: lead times, your interventions, rework, reviews and cost per verified ticket."
+          info="The parts of the plan that aren't tickets yet: open questions still to specify, the assumptions the plan relies on, decisions already made, what's ruled out, the destination in full, and notes. Report shows how the trail is going: lead times, your interventions, rework, reviews and cost per verified ticket."
         />
       )}
       <div className="sections-tabs">

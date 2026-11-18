@@ -1,4 +1,11 @@
-import { activeTrails, deriveStates, type MapMode, type MapSnapshot } from '@teamtrail/core';
+import {
+  activeTrails,
+  deriveStates,
+  OperationError,
+  trailTextProblem,
+  type MapMode,
+  type MapSnapshot,
+} from '@teamtrail/core';
 import { readAgentDocs } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { addTrailAssumptions, type AssumptionPlanInput } from './assumptions';
@@ -100,6 +107,8 @@ export async function updateTrail(
     reason?: string;
   },
 ) {
+  const tooLong = trailTextProblem({ destination: input.destination, notes: input.notes });
+  if (tooLong) throw new OperationError(tooLong);
   const snap = await ctx.resolveTrail(input.trail);
   const requests = await settingRequests(ctx, snap, input);
   const trail = await applyUpdate(ctx, { snap, input: { ...input, mode: undefined, destination: undefined } });

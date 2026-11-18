@@ -12,6 +12,7 @@ import { Panel, ScoutMark, Label, Readout, Button } from '../../components/ui';
 import { type BriefingStatus, useNow } from '../../hooks';
 import { hms, tokens, usd } from '../../lib';
 import { managedThemeFixed } from '../../lib/managedTheme';
+import { summaryLine } from '../../lib/markdown';
 import { PrSyncIndicator } from '../pr-sync';
 import { ManagedMenu } from './ManagedMenu';
 import { RecordsMenu } from './RecordsMenu';
@@ -57,6 +58,8 @@ export function Header(props: {
   const waiting = props.activity.pending.length;
   const cur = map && props.snaps[map.id];
   const u = map && trailUsage(props.activity, map.id);
+  // One line however long the destination is: its first sentence, markdown stripped. Plan → Destination has it all.
+  const dest = map ? summaryLine(map.sections.destination) : '';
   return (
     <Panel as="header" className="header">
       <div className="h-title">
@@ -65,9 +68,9 @@ export function Header(props: {
           <span className="sep">/</span>
           <TrailSwitcher {...props} />
         </div>
-        <div className="h-dest" title={map?.sections.destination}>
+        <div className="h-dest" title={dest}>
           <Label size="sm">Destination</Label>
-          {map?.sections.destination ?? '—'}
+          {dest || '—'}
         </div>
       </div>
       <div className="h-right">

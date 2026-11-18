@@ -12,6 +12,7 @@ import { buildDecision, decisionNumber } from '../../../planning/decisions/decis
 import { OperationError } from '../../../planning/operations/operationError';
 import type { MapInput, TrackerAdapter } from '../../adapter';
 import { DECISION_ID } from '../decisionComment';
+import { assertMapBodyFits } from '../mapBodyFits';
 import { roundtrip } from './fingerprint';
 import { ticketOf } from './queuedWrites';
 import { SyncedEdits } from './syncedEdits';
@@ -40,8 +41,11 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
   abstract readonly label: string;
   abstract readonly location: string;
 
+  /** The most characters the tracker takes in an issue body; undefined: no limit Teamtrail knows of. */
+  protected readonly mapBodyLimit: number | undefined = undefined;
   private lastDecision = 0;
   async createMap(input: MapInput): Promise<MapDoc> {
+    assertMapBodyFits(input, { limit: this.mapBodyLimit, tracker: this.label });
     let map: MapDoc;
     try {
       map = await this.remoteCreateMap({
@@ -83,7 +87,11 @@ export abstract class SyncedAdapter extends SyncedEdits implements TrackerAdapte
     await this.change(
       mapId,
       'trail sections',
-      (e) => ({ kind: 'sections', sections: roundtrip({ ...e.snap.map.sections, ...patch }) }),
+      (e) => {
+        const sections = roundtrip({ ...e.snap.map.sections, ...patch });
+        assertMapBodyFits({ ...e.snap.map, sections }, { limit: this.mapBodyLimit, tracker: this.label });
+        return { kind: 'sections', sections };
+      },
       {
         kind: 'map.updated',
         mapId,

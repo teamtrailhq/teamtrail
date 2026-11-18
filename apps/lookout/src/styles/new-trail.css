@@ -1,0 +1,213 @@
+/* ---------- New trail: a large editor for a destination and notes that are whole markdown documents ----------
+ * Wide on a desktop, using most of the viewport's height: the fields scroll, the header and the footer (the /scout
+ * command, Close and Create) stay in view. Two columns from 960px (title, destination and assumptions; the notes),
+ * so a line of text stays a comfortable length; one column below; full screen on a phone. */
+.scrim.new-trail-scrim {
+  padding: var(--sp-18);
+}
+.dialog.new-trail {
+  width: min(1040px, 94vw);
+  height: min(90vh, 1080px);
+  max-height: 100%;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.dialog.new-trail > header {
+  padding: var(--sp-18) 22px var(--sp-12);
+  border-bottom: 1px solid var(--line);
+}
+.new-trail-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-18) 22px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-18);
+}
+.new-trail-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-18);
+  min-width: 0;
+}
+.new-trail-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.new-trail-label {
+  font: var(--type-row-title);
+  color: var(--text-hi);
+}
+/* The title's label sits on the same line as the notes' label and tools beside it. */
+.new-trail-title .new-trail-label {
+  display: flex;
+  align-items: center;
+  min-height: var(--h-md);
+}
+.new-trail-title input {
+  height: 36px;
+  font-size: 15px;
+}
+@media (min-width: 960px) {
+  .new-trail-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 28px;
+  }
+  .doc-notes textarea,
+  .doc-notes .doc-preview {
+    min-height: 420px;
+  }
+}
+
+/* One document field: label and tools (Load from file, Write / Preview), a one-line hint, the editor. */
+.doc-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+.doc-field-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--h-md);
+}
+.doc-field-tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.doc-field-tools .btn.sm {
+  font-size: var(--fs-body);
+  font-weight: 500;
+}
+.tabs.doc-tabs {
+  padding: 0;
+}
+.doc-tabs .tab {
+  height: var(--h-md);
+  font-family: var(--sans);
+  font-size: var(--fs-body);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.doc-field-hint {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--dim);
+}
+.doc-field textarea,
+.doc-preview {
+  min-height: 112px;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding: var(--sp-10) var(--sp-12);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+.doc-assumptions textarea {
+  min-height: 84px;
+}
+.doc-preview {
+  margin: 0;
+  border: 1px solid var(--line);
+  background: var(--panel2);
+}
+.doc-field.dropping textarea {
+  border-color: var(--accent);
+  outline: 2px dashed rgba(var(--accent-rgb), 0.6);
+  outline-offset: 2px;
+}
+.doc-load-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8) var(--sp-12);
+  padding: var(--sp-8) var(--sp-10);
+  border: 1px solid var(--line2);
+  border-left: 2px solid rgb(var(--amber-rgb));
+}
+.doc-load-prompt .t-meta {
+  font-size: var(--fs-body);
+  color: var(--text);
+}
+.doc-load-actions {
+  display: flex;
+  gap: var(--sp-6);
+}
+.doc-field .vf-err,
+.doc-count {
+  margin: 0;
+  font-size: var(--fs-body);
+}
+.doc-count {
+  color: var(--dim);
+}
+.doc-assumption-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.doc-assumption-list .t-code {
+  color: var(--dim);
+  margin-right: var(--sp-4);
+}
+
+/* The footer stays in view: the command on the left, Close and Create on the right. */
+.dialog.new-trail > .new-trail-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--sp-12) var(--sp-18);
+  padding: var(--sp-12) 22px var(--sp-14);
+  border-top: 1px solid var(--line);
+}
+.new-trail-foot .agent-draft {
+  flex: 1 1 380px;
+  min-width: 0;
+  font-size: var(--fs-body);
+}
+.new-trail-foot > .vf-err {
+  flex: 1 1 100%;
+  font-size: var(--fs-body);
+}
+.new-trail-buttons {
+  display: flex;
+  gap: var(--sp-8);
+  margin-left: auto;
+}
+
+/* A phone: the whole screen, the hint above the command left out (the command says it). */
+@media (max-width: 640px) {
+  .scrim.new-trail-scrim {
+    padding: 0;
+  }
+  .dialog.new-trail {
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+  }
+  .dialog.new-trail > header,
+  .new-trail-body,
+  .dialog.new-trail > .new-trail-foot {
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+  }
+  .new-trail-foot .agent-draft > .dim {
+    display: none;
+  }
+  .doc-field-head {
+    flex-wrap: wrap;
+  }
+}
