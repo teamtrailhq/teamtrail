@@ -18,7 +18,7 @@ function blocker(view: { exists: boolean; approval?: { waiting: boolean } }) {
  * files, each with why it exists. Set on the machine Teamtrail runs on (approved as they're saved), read elsewhere.
  */
 export function RulesSection() {
-  const view = useVerificationConfig();
+  const { view } = useVerificationConfig();
   const local = useThisMachine();
   const lastMatched = useRulesLastMatched();
   const [saved, setSaved] = useState(false);
