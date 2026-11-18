@@ -86,6 +86,12 @@ export interface MainRunJob {
 export interface CheckRunner {
   /** Shown on the attempt and the proof: who ran the checks. */
   name: string;
+  /**
+   * False when the server embedding the engine holds no checkout of the work (a hosted engine, whose folder may sit
+   * inside an unrelated git clone): checks on main and a trail's combined run then never name a commit from local
+   * git, and the runner takes the default branch's head. Left out, this checkout's default branch is named.
+   */
+  holdsCode?: boolean;
   run(job: CheckRunJob): Promise<RunnerReport>;
   /**
    * Runs the approved checks on the default branch's head (mainChecks/). The report's `git.head` is the commit they
