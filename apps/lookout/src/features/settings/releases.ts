@@ -22,6 +22,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.3',
+    date: '2026-11-18',
+    items: [
+      "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
+      'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
+      'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
+    ],
+  },
+  {
     version: '0.66.2',
     date: '2026-11-18',
     items: [
@@ -185,16 +194,6 @@ export const RELEASES: Release[] = [
     items: [
       "A check that can't pass in your repo no longer strands a ticket: Accept without it, with your reason. The other checks run again, the proof shows who skipped it and why, and Undo puts it back",
       "Setting or approving checks now says which ones can't run as your repo is (a missing script, no go.mod, a missing make target), with Remove check or Keep anyway",
-    ],
-  },
-  {
-    version: '0.58.0',
-    date: '2026-11-17',
-    items: [
-      'Before agents build, the approved checks run once on the default branch, so a check already failing on main is known before any agent is blamed for it',
-      'When one fails, the trail waits for your call: fix main first, drop that check for the trail, or start anyway. Each can be undone',
-      'After Start anyway, a completion that fails only in those checks, the same way, isn’t sent back, and its proof marks them as known failures, not verified',
-      'Run checks on main again any time, from the trail at a glance or Settings → Verification',
     ],
   },
   ...LATER_RELEASES,
