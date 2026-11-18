@@ -4,9 +4,10 @@
  * "Open in Lookout" in Slack instead of answer buttons, and a click on an old button is refused.
  */
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
+import { DEFAULT_POLICY } from '@teamtrail/core';
 import { ANA, agentDoc, connected, freezeTime, liveWorld, until } from './harness';
 import { approvalTrail, eventStore, posted } from './scenarios';
 
@@ -173,6 +174,36 @@ test('attack: the reply modal can’t answer a high-risk question from Slack', a
     assert.match(JSON.stringify(ack), /High risk: answer this in the Lookout/);
     assert.equal(existsSync(path.join(w.root, '.agents', 'answers', 's1', 'q1.json')), false, 'no answer written');
     assert.ok(map);
+  } finally {
+    w.cleanup();
+  }
+});
+
+test('a waiting question the policy makes high risk later loses its answer buttons for Open in Lookout', async () => {
+  const l = liveWorld();
+  const { w, calls } = l;
+  try {
+    const { a, map, db } = await eventStore();
+    connected(w);
+    const svc = w.service(a);
+    await until(() => svc.status().state === 'online');
+    const pending = [{ id: 'q1', ticketId: db.id, text: 'Retention?', suggestions: ['30'], at: Date.now() }];
+    agentDoc(w.root, {
+      sid: 's1',
+      mapId: map.id,
+      ticketId: db.id,
+      pending: [{ ...pending[0], category: 'product-behaviour' }],
+    });
+    await svc.tick();
+    assert.deepEqual(buttonsOf(calls('chat.postMessage')[0]), ['30', 'Reply…', 'Open in Teamtrail']);
+    // the trail lead raises the category: it applies at once (policyStore.ts)
+    const categories = { ...DEFAULT_POLICY.categories, 'product-behaviour': 'high' as const };
+    writeFileSync(path.join(w.root, 'policy.json'), JSON.stringify({ ...DEFAULT_POLICY, categories }));
+    await svc.tick();
+    const [update] = calls('chat.update');
+    assert.deepEqual(buttonsOf(update), ['Open in Lookout']);
+    await svc.tick();
+    assert.equal(calls('chat.update').length, 1, 'shown again once');
   } finally {
     w.cleanup();
   }

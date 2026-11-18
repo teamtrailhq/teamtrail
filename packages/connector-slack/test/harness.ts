@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { AgentSessionDoc, ChatMessage, PendingQuestion, TrackerAdapter } from '@teamtrail/core';
+import type { AgentSessionDoc, AnswerVia, ChatMessage, PendingQuestion, TrackerAdapter } from '@teamtrail/core';
 import { writeJsonAtomic } from '@teamtrail/core/bridge';
 import { FIXTURES, recorder, replay, type Fixture } from '../../core/test/fixtures';
 import { SlackService, type SlackServiceOptions } from '../src/service';
@@ -175,6 +175,8 @@ export function agentDoc(
     agent?: string;
     pending?: Omit<PendingQuestion, 'sessionId' | 'mapId' | 'agent'>[];
     chats?: Omit<ChatMessage, 'sessionId'>[];
+    /** Questions the human answered, with how (the session doc's `answered`). */
+    answered?: { id: string; via: AnswerVia }[];
     status?: 'running' | 'done';
     /** The question the agent sits waiting on (ask_human with waitSeconds). */
     waitingOn?: string;
@@ -199,7 +201,14 @@ export function agentDoc(
     },
     chats: (o.chats ?? []).map((c) => ({ ...c, sessionId: o.sid })),
     pending: (o.pending ?? []).map((q) => ({ ...q, sessionId: o.sid, mapId: o.mapId, agent })),
-    answered: [],
+    answered: (o.answered ?? []).map((a) => ({
+      ...a,
+      mapId: o.mapId,
+      sessionId: o.sid,
+      agent,
+      askedAt: Date.now(),
+      answeredAt: Date.now(),
+    })),
     feed: [],
     pid: process.pid,
     updatedAt: Date.now(),

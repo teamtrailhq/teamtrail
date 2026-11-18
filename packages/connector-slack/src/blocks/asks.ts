@@ -1,4 +1,4 @@
-import { ACTIONS, VIEWS, answerBlocks, clip, label, md, plain, quote, type AnswerMode } from './kit';
+import { ACTIONS, VIEWS, answerBlocks, clip, label, md, openButton, plain, quote, type AnswerMode } from './kit';
 
 export interface AskView {
   sessionId: string;
@@ -56,7 +56,7 @@ export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'tit
 export function askClosedMessage(
   a: AskView,
   line: string,
-  o: { detail?: 'full' | 'titles-only'; answered?: boolean } = {},
+  o: { detail?: 'full' | 'titles-only'; answered?: boolean; url?: string } = {},
 ) {
   const head = askHeader(a).replace('◆ *AWAITING YOU*', o.answered === false ? '◇ *CLOSED*' : '◇ *ANSWERED*');
   const body = o.detail === 'titles-only' ? head : `${head}\n${quote(clip(a.text, 2800))}`;
@@ -65,6 +65,7 @@ export function askClosedMessage(
     blocks: [
       { type: 'section', text: md(body) },
       { type: 'context', elements: [md(line)] },
+      ...(o.url ? [{ type: 'actions', block_id: `ask:${a.questionId}`, elements: openButton(o.url) }] : []),
     ],
   };
 }

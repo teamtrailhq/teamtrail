@@ -16,9 +16,10 @@ function prOf(ticket: Omit<EscapeTicket, 'pr'>, linked: Map<string, number>) {
 
 /**
  * Every escape on these trails (findEscapes.ts): their tickets' attempts and journals, the PR sync's links and the
- * reverts on the default branch. Git is read only when some ticket has a passing attempt.
+ * reverts on the default branch (at `at`, a commit of it, when given: readReverts.ts). Git is read only when some
+ * ticket has a passing attempt.
  */
-export async function readEscapes(root: string, snaps: MapSnapshot[]): Promise<Escape[]> {
+export async function readEscapes(root: string, snaps: MapSnapshot[], o: { at?: string } = {}): Promise<Escape[]> {
   const journal = journalFile(root);
   const linked = new Map(readTicketSyncs(root).map((s) => [`${s.mapId}/${s.ticketId}`, s.link.number]));
   const tickets = snaps.flatMap((s) =>
@@ -30,5 +31,5 @@ export async function readEscapes(root: string, snaps: MapSnapshot[]): Promise<E
   );
   if (!tickets.length) return [];
   const transitions = snaps.flatMap((s) => journal.read(s.map.id));
-  return findEscapes({ tickets, transitions, reverts: await readReverts(root) });
+  return findEscapes({ tickets, transitions, reverts: await readReverts(root, o) });
 }

@@ -70,6 +70,8 @@ export interface PostedApproval {
   ts: string;
   item: ApprovalItem;
   trail: string;
+  /** How it is decided, as the message shows it (absent on older records). */
+  mode?: 'buttons' | 'lookout';
 }
 
 export interface Batch {

@@ -73,8 +73,9 @@ export async function syncApprovals(ctx: SlackContext, snaps: MapSnapshot[], c: 
     }
   for (const [key, { item, trail }] of now) {
     const posted = stored[key];
-    if (posted && ctx.refreshed.has(key)) continue;
     const mode = needsLookout.approval(ctx.o.root, item) ? 'lookout' : 'buttons';
+    // brought up to date once per process, and again whenever who may decide it changes
+    if (posted && ctx.refreshed.has(key) && (posted.mode ?? mode) === mode) continue;
     const message = approvalMessage(trail, item, ctx.o.url(), mode);
     if (posted) {
       const updated = await ctx.call('chat.update', { channel: posted.channel, ts: posted.ts, ...message }).then(
@@ -83,7 +84,7 @@ export async function syncApprovals(ctx: SlackContext, snaps: MapSnapshot[], c: 
       );
       ctx.refreshed.add(key);
       if (updated) {
-        stored[key] = { ...posted, item, trail };
+        stored[key] = { ...posted, item, trail, mode };
         ctx.approvals.write(stored);
         continue;
       }
@@ -93,7 +94,7 @@ export async function syncApprovals(ctx: SlackContext, snaps: MapSnapshot[], c: 
     if (!channel) return;
     const r = await postApproval(ctx, { key, item, channel, message });
     if (!r) continue;
-    stored[key] = { channel: r.channel ?? channel, ts: r.ts, item, trail };
+    stored[key] = { channel: r.channel ?? channel, ts: r.ts, item, trail, mode };
     ctx.refreshed.add(key);
     ctx.approvals.write(stored);
   }

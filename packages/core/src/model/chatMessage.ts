@@ -14,6 +14,8 @@ export interface ChatMessage {
   /** On the human's answers: how it was given (answerVia.ts), and for `chat` the agent whose chat it was. */
   via?: AnswerVia;
   chatOf?: string;
+  /** On the human's answers: the question it answers (absent on answers recorded before it was kept). */
+  answers?: string;
   /** On the human's answers: who gave it, when the sign-in named them (model/person.ts). */
   by?: Person;
 }
