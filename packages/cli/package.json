@@ -1,6 +1,6 @@
 {
   "name": "teamtrail",
-  "version": "0.63.1",
+  "version": "0.63.2",
   "author": "Teamtrail",
   "description": "Teamtrail: verified work from AI coding agents. Agents do the work, you make the calls, and nothing counts as done until it's verified.",
   "type": "module",

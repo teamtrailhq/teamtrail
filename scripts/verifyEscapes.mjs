@@ -90,6 +90,8 @@ async function verifiedLogin(call, page, url, top) {
     page,
     url,
   });
+  // the trail is ready for work: the checks run on main first, and the task waits until they pass there
+  await page.locator('.node.main-mark.main-passed').waitFor({ timeout: 20_000 });
   const t = { key: started.tickets[0].key, trail: started.trail.id };
   await call('claim_ticket', { ticket: t.key, trail: t.trail });
   fs.writeFileSync(path.join(top, 'src', 'forms', 'login.js'), 'export const login = () => true;\n');
@@ -99,7 +101,10 @@ async function verifiedLogin(call, page, url, top) {
   return { ...t, done };
 }
 
-/** Trail stats → Scorecard → Came back: the reverted ticket, with the check that passed on it. */
+/**
+ * Trail stats → Scorecard → Came back: the reverted ticket, with the check that passed on it. Clicked while the
+ * Lookout is still loading, as a person might: what opens on its own (the escape's rule in Settings) must not cover it.
+ */
 async function cameBackRow(page, key) {
   await page.getByRole('button', { name: /^Records/ }).click();
   await page.locator('.stats-btn').click();
