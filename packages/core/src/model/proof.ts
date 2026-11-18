@@ -20,8 +20,15 @@ export interface ProofReview {
   byKind: 'agent' | 'trail lead';
   verdict: VerdictKind;
   summary: string;
-  /** The reviewer was not the author: another session, and another origin when both are known. */
+  /**
+   * The reviewer was not the author: another session, and another origin when both are known. A review the
+   * `independent-review` gate held, on the author's own model, is not independent.
+   */
   independent: boolean;
+  /** The model the reviewer ran on. Missing when it reported none, so older proofs and digests read as they did. */
+  model?: string;
+  /** The reviewer ran the author's model: `held` didn't count (the gate enforces), `observed` did. */
+  sameModel?: 'observed' | 'held';
 }
 
 export interface ProofDecision {
@@ -75,6 +82,8 @@ export interface Proof {
     remote: boolean;
     /** For a remote completion, the runner that ran its checks where its work is (the embedding server's). */
     runner?: string;
+    /** The model the author ran on, when known. */
+    model?: string;
   };
   /** Earlier attempts on the ticket, oldest first. */
   earlier: { id: string; result: AttemptResult }[];

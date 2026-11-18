@@ -82,6 +82,8 @@ export interface VerificationAttempt {
    * sessions under different names), `local:<id>` for a connection on this machine. A review must come from another.
    */
   origin?: string;
+  /** The model the agent ran on when it submitted, read from its own logs; unset when it reports none. */
+  model?: string;
   level: VerificationLevel;
   configHash: string;
   submittedAt: number;
@@ -138,6 +140,15 @@ export interface VerificationVerdict {
   sessionId?: string;
   /** The reviewer's origin (see `VerificationAttempt.origin`), for an agent's verdict. */
   origin?: string;
+  /** The model the reviewer ran on, from its own logs; unset when it reports none. */
+  model?: string;
+  /** The model the work's author ran on (the attempt's, else its session's), as the review compared it. */
+  authorModel?: string;
+  /**
+   * The reviewer ran the author's model (planning/matching/sameModel.ts) while the `independent-review` gate was on:
+   * `observed` counted, `held` did not count until an agent on another model reviews or the trail lead approves.
+   */
+  sameModel?: 'observed' | 'held';
   verdict: VerdictKind;
   summary: string;
   findings: { path?: string; line?: number; severity: 'info' | 'warn' | 'error'; text: string }[];

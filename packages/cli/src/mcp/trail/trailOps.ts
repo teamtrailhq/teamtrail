@@ -11,6 +11,7 @@ import { matchingView, pickNext, stampModel } from './models';
 import { parallelView } from './parallel';
 import { adaptiveView, frozenOn } from './reroutes';
 import { reviewGate, reviewLimitField } from './reviewLimit';
+import { sameModelReviews } from './reviewModels';
 import { requestSetting } from './settings';
 import { ticketInfo } from './ticketInfo';
 import { trailView } from './views';
@@ -65,12 +66,15 @@ export async function resumeTrail(ctx: AgentContext, trailRef?: string) {
   const mine = snap.tickets.find((t) => states.get(t.id) === 'claimed' && t.assignee === agent);
   const review = await reviewGate(ctx, snap);
   const main = await mainGate(ctx, snap);
+  const models = await sameModelReviews(ctx, snap);
   const exclude = [
     ...frozenOn(ctx, snap.map.id).keys(),
     ...review.held.map((h) => h.id),
     ...main.held.map((h) => h.id),
+    ...models.filter((r) => r.waits).map((r) => r.ticket.id),
   ];
-  const next = pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude }).ticket;
+  const later = models.map((r) => r.ticket.id);
+  const next = pickNext(ctx, snap, { types: claimable(ctx.root, snap.map.id), exclude, later }).ticket;
   return {
     ...current,
     ...reviewLimitField(review),

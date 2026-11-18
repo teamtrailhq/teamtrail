@@ -37,7 +37,7 @@ export function reviewBody(t: Ticket, a: VerificationAttempt) {
 }
 
 /** Opens a review ticket for a pass that needs review, replacing any left over from an earlier attempt. */
-export async function requestReview(env: VerifyEnv, a: VerificationAttempt) {
+export async function requestReview(env: VerifyEnv, a: VerificationAttempt, note?: string) {
   const snap = await env.adapter.loadMap(a.mapId);
   const t = snap.tickets.find((x) => x.id === a.ticketId);
   if (!t) return undefined;
@@ -49,6 +49,6 @@ export async function requestReview(env: VerifyEnv, a: VerificationAttempt) {
   return createReviewTicket(env.adapter, a.mapId, {
     reviewOf: t.id,
     title: clip(`Review ${t.key}: ${t.title}`, 200),
-    body: reviewBody(t, a),
+    body: note ? `${reviewBody(t, a)}\n\n${note}` : reviewBody(t, a),
   });
 }

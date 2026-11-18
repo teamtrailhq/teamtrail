@@ -9,8 +9,11 @@ import { OperationError } from '../planning/operations/operationError';
 import { resolve } from '../planning/operations/resolve';
 import { DEFAULT_CONFIG } from './config';
 import { readAttempts, writeVerdict } from './evidenceStore';
+import { holdForOtherModel } from './holdForOtherModel';
 import { submissionOf } from './resubmit';
 import { reviewConflict, type Reviewer } from './reviewIndependence';
+import { reviewModelGate, type ReviewModels } from './reviewModelGate';
+import { sameModelLine } from './sameModelLine';
 import { CHECK_RUNNER, levelFor, verify, type VerifyEnv } from './verifyCompletion';
 
 export interface ReviewSubmission extends Reviewer {
@@ -18,6 +21,8 @@ export interface ReviewSubmission extends Reviewer {
   /** The review ticket the reviewer claimed. */
   reviewId: string;
   sessionId?: string;
+  /** The model the reviewer runs on, from its own logs: compared with the author's (reviewModelGate.ts). */
+  model?: string;
   verdict: VerdictKind;
   summary: string;
   findings?: VerificationVerdict['findings'];
@@ -31,6 +36,11 @@ export interface ReviewResult {
   phase: TicketPhase;
   /** Set when a PASS on code that changed since its checks ran started a new attempt. */
   attemptId?: string;
+  /**
+   * The reviewer ran the author's model and the `independent-review` gate enforces: the PASS doesn't count, and
+   * `review` is the new review ticket that waits for an agent on another model than `model`.
+   */
+  held?: { model: string; review?: string };
 }
 
 const findingLine = (f: VerificationVerdict['findings'][number]) =>
@@ -52,7 +62,15 @@ export async function submitReview(env: VerifyEnv, r: ReviewSubmission): Promise
   if (last?.result !== 'pass') throw new OperationError(`${t.key} has no passing attempt to review`);
   const summary = r.summary.trim();
   if (!summary) throw new OperationError('a review needs a summary');
-  const verdict = await recordVerdict({ env, r, t, last, summary });
+  const models = reviewModelGate({
+    root: env.root,
+    mapId: r.mapId,
+    ticket: t,
+    attempt: last,
+    reviewer: { agent: r.agent, model: r.model },
+    verdict: r.verdict,
+  });
+  const verdict = await recordVerdict({ env, r, t, last, summary, models });
   await transition(env.adapter, r.mapId, review.id, {
     event: 'complete',
     actor: r.agent,
@@ -61,6 +79,7 @@ export async function submitReview(env: VerifyEnv, r: ReviewSubmission): Promise
     sessionId: r.sessionId,
     journal: env.journal,
   });
+  if (verdict.sameModel === 'held') return { verdict, ...(await holdForOtherModel(env, { t, last, verdict })) };
   return { verdict, ...(await moveReviewed({ env, snap, t, last, verdict })) };
 }
 
@@ -85,7 +104,8 @@ interface Reviewed {
 }
 
 /** Keeps the verdict next to the attempt and posts it on the reviewed ticket. */
-async function recordVerdict({ env, r, t, last, summary }: Reviewed & { r: ReviewSubmission; summary: string }) {
+async function recordVerdict(o: Reviewed & { r: ReviewSubmission; summary: string; models: ReviewModels }) {
+  const { env, r, t, last, summary } = o;
   const verdict = writeVerdict(env.root, {
     v: 1,
     mapId: r.mapId,
@@ -95,6 +115,7 @@ async function recordVerdict({ env, r, t, last, summary }: Reviewed & { r: Revie
     byKind: 'agent',
     ...(r.sessionId ? { sessionId: r.sessionId } : {}),
     ...(r.origin ? { origin: r.origin } : {}),
+    ...o.models,
     verdict: r.verdict,
     summary,
     findings: r.findings ?? [],
@@ -103,7 +124,10 @@ async function recordVerdict({ env, r, t, last, summary }: Reviewed & { r: Revie
   });
   const findings = verdict.findings.map(findingLine);
   const heading = `**Review ${verdict.id} of ${last.id}: ${r.verdict}**`;
-  const body = [heading, '', summary, ...(findings.length ? ['', ...findings] : [])].join('\n');
+  const same = sameModelLine(verdict);
+  const body = [heading, '', summary, ...(findings.length ? ['', ...findings] : []), ...(same ? ['', same] : [])].join(
+    '\n',
+  );
   await env.adapter.comment(r.mapId, t.id, r.agent, body);
   return verdict;
 }

@@ -72,6 +72,8 @@ export interface Submission {
   remote?: boolean;
   /** Who is behind the agent (see `VerificationAttempt.origin`). */
   origin?: string;
+  /** The model the agent ran on, from its own logs. */
+  model?: string;
   /** The repo-relative files the agent said it changed. */
   declaredPaths?: string[];
   /** The path globs the agent declared at its claim (`touches`), read from its lease before it's dropped. */
