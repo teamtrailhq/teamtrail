@@ -1,6 +1,8 @@
 export { Inspector } from './Inspector';
-export { ActionBar } from './ActionBar';
-export { TicketForms } from './TicketForms';
+export { CriteriaSection } from './CriteriaSection';
+export { StandingLine } from './StandingLine';
+export { TicketFooter } from './TicketFooter';
+export { TicketHead } from './TicketHead';
 export { WhatSection } from './WhatSection';
 export { useTicketActions } from './useTicketActions';
 export { useTicketView, type TicketView } from './useTicketView';

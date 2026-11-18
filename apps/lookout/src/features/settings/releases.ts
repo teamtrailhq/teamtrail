@@ -22,6 +22,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.62.0',
+    date: '2026-11-18',
+    items: [
+      'Tickets read as their agents wrote them: lists, bold, code and links, in the bubble and the full ticket',
+      'Every ticket has the same shape: its title and chips (state, agent and model, verified, risk), then What, Acceptance criteria, How, Progress, Proof and History, and its actions at the end',
+      'Merge anyway shows only on done work with something to merge, never on a research ticket',
+    ],
+  },
+  {
     version: '0.61.2',
     date: '2026-11-18',
     items: [
@@ -171,20 +180,6 @@ export const RELEASES: Release[] = [
     version: '0.52.2',
     date: '2026-11-16',
     items: ['Teamtrail Cloud: Scout and Get started show in the corner of the Lookout again'],
-  },
-  {
-    version: '0.52.1',
-    date: '2026-11-16',
-    items: ['Start the trail is a full-size button, like Create trail, and closes New trail once your agents are on'],
-  },
-  {
-    version: '0.52.0',
-    date: '2026-11-16',
-    items: [
-      'Scope check: files an agent changed beyond the ones it said it would are listed first for whoever reviews',
-      'Choose in Settings → Verification whether they are only shown, sent back for rework, or left for you to decide',
-      'Proofs on pull requests say whether every change stayed inside the declared files',
-    ],
   },
   ...LATER_RELEASES,
   ...MID_RELEASES,

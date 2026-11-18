@@ -3,18 +3,18 @@ import { DetailSection, Disclosure, MetaLine, Pill } from '../../components/ui';
 import { proofParts } from './proofParts';
 import { reviewModelParts } from './reviewModelParts';
 import type { TicketProofView } from './useTicketProof';
+import { workToProve } from './workToProve';
 
 /**
  * The inspector's Proof section: the Verified by Teamtrail verdict, what it rests on and what it lacks, with its
  * digest, where it was posted and the key to commit behind Details. Copy for PR and Approve and merge are in the
- * action bar. Shown for done tickets and tickets with a completion.
+ * ticket's actions. Shown for tickets with a completion, and done implementation tickets (where none is the point).
  */
 export function TicketProof(props: { ticket: Ticket; view?: TicketProofView }) {
   const { view } = props;
   if (!view) return null;
   const { proof, post } = view;
-  const done = props.ticket.state === 'closed' && props.ticket.closeReason === 'completed';
-  if (!done && !proof.attempt.id) return null;
+  if (!workToProve(props.ticket, proof)) return null;
   const verified = proof.status === 'verified';
   const comment = post?.commentUrl ? webUrl(post.commentUrl) : undefined;
   const parts = proofParts(proof);

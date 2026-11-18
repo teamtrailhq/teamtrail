@@ -133,7 +133,7 @@ export async function verifyCheckGuard({ browser, cli, log, shots }) {
     const form = page.locator('.inline-form', { hasText: 'Why accept' });
     await form.getByLabel('Why accept').fill(REASON);
     await form.getByRole('button', { name: 'Accept anyway' }).click();
-    await page.locator('.bubble .bubble-state', { hasText: 'Done' }).waitFor({ timeout: 20_000 });
+    await page.locator('.bubble .ticket-chips .tag-state', { hasText: 'done' }).waitFor({ timeout: 20_000 });
     await openFullTicket(page);
     const proofPanel = page.locator('.ticket-drawer .ticket-proof', { hasText: 'Verified by Teamtrail' });
     await proofPanel.waitFor({ timeout: 15_000 });

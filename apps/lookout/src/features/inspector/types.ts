@@ -1,16 +1,19 @@
 import type {
   AttemptResult,
   AttentionItem,
+  DecisionRecord,
   DiscoveryBrief,
   LeaseHealth,
   MapSnapshot,
   ModelWait,
   NodeState,
+  RiskLevel,
   PendingQuestion,
   SessionInfo,
   Ticket,
   TicketLease,
   TicketSync,
+  TicketType,
 } from '@teamtrail/core';
 import type { EdgeTone } from '../../components/ui';
 import type { TicketVerification } from '../../lib/verification';
@@ -114,6 +117,8 @@ export interface LoadedTicket {
   modelWait?: ModelWait;
   /** A finished ticket's worktree, still on disk. */
   workspace?: WorkspaceRow;
+  /** The decisions recorded on it. */
+  decisions: DecisionRecord[];
 }
 
 /** What the action bar's buttons and menu items do; built by useTicketActions. */
@@ -133,4 +138,25 @@ export interface TicketRunners {
   reviewBrief: () => void;
   copyProof: () => void;
   deadEnd: () => void;
+}
+
+/** What a ticket's chips say, gathered from the ticket view (chipInput). */
+export interface ChipInput {
+  key: string;
+  type: TicketType;
+  state: NodeState;
+  /** The agent at work on it, or the one whose completion it is, with its model short (`modelId` on hover). */
+  agent?: { name: string; model?: string; modelId?: string; working: boolean };
+  /** Its proof, when there is work to prove: verified, or why not (the first gap). */
+  proof?: { verified: boolean; gap?: string };
+  /** The highest risk the policy gave a call on it. */
+  risk?: { level: RiskLevel; reason: string };
+}
+
+/** One chip under a ticket's title. */
+export interface TicketChip {
+  kind: 'key' | 'type' | 'state' | 'agent' | 'model' | 'proof' | 'risk';
+  text: string;
+  tone?: 'agent' | 'warn' | 'urgent' | 'verified';
+  tip?: string;
 }

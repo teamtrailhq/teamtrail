@@ -8,6 +8,8 @@ import { useTicketProof } from '../proof';
 import { useSignedState } from '../signed-state';
 import { useVerification } from '../verification';
 import { useWorkspaces } from '../workspaces';
+import { chipInput } from './chipInput';
+import { chipsOfTicket } from './chipsOfTicket';
 import { standingInput } from './standingInput';
 import { ticketNotices } from './ticketNotices';
 import { ticketStanding } from './ticketStanding';
@@ -58,6 +60,7 @@ export function useTicketView(input: {
     brief: brief.gated ? brief.brief : null,
     modelWait: models?.waiting.find((w) => w.mapId === mapId && w.ticketId === t.id),
     workspace: workspaces.view?.workspaces.find((w) => w.mapId === mapId && w.ticketId === t.id && !w.active),
+    decisions: api.decisions.filter((d) => d.mapId === mapId && d.ticketId === t.id),
   };
   const notices = ticketNotices(loaded);
   const standing = ticketStanding({ ...standingInput(loaded), atRisk: notices.some((n) => n.risk) });
@@ -68,6 +71,7 @@ export function useTicketView(input: {
     removeWorkspace: (force: boolean) => workspaces.remove(mapId, t.id, force),
     standing,
     notices,
+    chips: chipsOfTicket(chipInput(loaded)),
   };
 }
 

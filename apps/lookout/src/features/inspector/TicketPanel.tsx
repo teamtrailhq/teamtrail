@@ -3,12 +3,12 @@ import { useState } from 'react';
 import type { LookoutApi } from '../../hooks';
 import { HeldRules } from '../diff-rules';
 import { TicketProof } from '../proof';
-import { ActionBar } from './ActionBar';
+import { CriteriaSection } from './CriteriaSection';
 import { HistorySection } from './HistorySection';
 import { HowSection } from './HowSection';
 import { ProgressSection } from './ProgressSection';
 import { StandingLine } from './StandingLine';
-import { TicketForms } from './TicketForms';
+import { TicketFooter } from './TicketFooter';
 import { TicketHead } from './TicketHead';
 import type { Form } from './types';
 import { useTicketActions } from './useTicketActions';
@@ -16,9 +16,9 @@ import { useTicketView } from './useTicketView';
 import { WhatSection } from './WhatSection';
 
 /**
- * One ticket, state first: the title, where it stands and who it waits on, one bar with every action, then
- * read-only sections in a fixed order (What, How, Progress, Proof, History), each showing only what helps at a
- * glance, the rest behind Details.
+ * One ticket, whole, in the same anatomy as its bubble: the title and its chips, where it stands, then labelled
+ * read-only sections in a fixed order, each left out when it has nothing to say (What, Acceptance criteria, How,
+ * Progress, Proof, History), and at the end every action, held in view while the ticket scrolls.
  */
 export function TicketPanel(props: {
   snap: MapSnapshot;
@@ -45,26 +45,26 @@ export function TicketPanel(props: {
     onReviewChange: props.onReviewChange,
     onReviewBrief: props.onReviewBrief,
   });
-  const decisions = api.decisions.filter((d) => d.mapId === snap.map.id && d.ticketId === t.id);
   return (
     <div className="detail ticket-panel">
-      <TicketHead t={t} tickets={snap.tickets} />
+      <TicketHead v={v} />
       <StandingLine v={v} />
-      <ActionBar v={v} bar={bar} onOpenChat={props.onOpenChat} />
-      <TicketForms
-        form={props.form}
-        setForm={props.setForm}
-        v={v}
-        actions={api.actions}
-        act={bar.act}
-        waive={bar.waive}
-      />
       <WhatSection v={v} />
+      <CriteriaSection v={v} />
       <HowSection v={v} editing={editing} setEditing={setEditing} act={bar.act} />
       <ProgressSection v={v} onUndoWaiver={bar.undoWaiver} />
       <HeldRules mapId={snap.map.id} ticketId={t.id} />
       <TicketProof ticket={t} view={v.proof} />
-      <HistorySection t={t} decisions={decisions} onOpenDecision={props.onOpenDecision} />
+      <HistorySection t={t} decisions={v.decisions} onOpenDecision={props.onOpenDecision} />
+      <TicketFooter
+        v={v}
+        bar={bar}
+        form={props.form}
+        setForm={props.setForm}
+        actions={api.actions}
+        onOpenChat={props.onOpenChat}
+        className="sticky"
+      />
     </div>
   );
 }

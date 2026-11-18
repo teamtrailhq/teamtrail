@@ -88,7 +88,8 @@ function asked(s: StandingInput, q: { agent: string; at: number }): Standing {
 function done(s: StandingInput): Standing {
   const proof = proofWord(s.verified);
   const pr = s.pr && `PR #${s.pr.number} ${s.pr.state}`;
-  return { edge: 'done', title: 'Done', parts: [proof, pr, ...closed(s)].filter((p): p is string => !!p) };
+  const finished = s.closedAt && `finished ${since(s.now, s.closedAt)}`;
+  return { edge: 'done', title: 'Done', parts: [proof, pr, finished].filter((p): p is string => !!p) };
 }
 
 function proofWord(verified?: boolean) {
