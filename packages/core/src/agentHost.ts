@@ -3,6 +3,8 @@ export { AgentDocWriter } from './agents/agentDocWriter';
 export { TRAIL_NAMES_DIR, claimTrailName, releaseTrailName } from './agents/trailNameClaim';
 export { AnswerError, LookoutOnlyAnswer, readAgentDoc, readAgentDocs, writeAgentAnswer } from './agents/agentDocs';
 export { readLookoutLock, writeLookoutLock } from './agents/lookoutLock';
+export { watchWorkChanges } from './agents/watchWorkChanges';
+export { workChangeLabel } from './agents/workChangeLabel';
 export { gitConfigValue } from './evidence/gitConfigValue';
 export { ensureLocalDir, writeLocalJson } from './lib/ensureLocalDir';
 export { writeJsonAtomic } from './lib/jsonFile';

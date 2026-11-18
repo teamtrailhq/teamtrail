@@ -9,7 +9,7 @@ import type { NeedContext, NeedText } from './types';
 
 /**
  * One thing that needs you: its kind (red only when it needs you now), what it asks with the ticket and its wait,
- * and its action. Open, it shows what to decide in place, its choices and the way to the full ticket; its action
+ * and its action, in columns (chip | title over its meta line | action) that keep every line inside the card. Open, it shows what to decide in place, its choices and the way to the full ticket; its action
  * opens it too, so every choice is made where it can be read.
  */
 export function NeedRow(props: {
@@ -35,7 +35,8 @@ export function NeedRow(props: {
       selected={props.open}
       title={
         <>
-          <Pill className={cx('home-chip', urgent && 'urgent')}>{text.chip}</Pill> {text.title}
+          <Pill className={cx('home-chip', urgent && 'urgent')}>{text.chip}</Pill>
+          <span className="home-need-title">{text.title}</span>
         </>
       }
       titleText={item.title}
