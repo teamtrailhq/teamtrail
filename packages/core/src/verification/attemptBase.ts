@@ -6,6 +6,7 @@ type Submitted = Parameters<typeof submittedFields>[0] & {
   agent: string;
   sessionId?: string;
   origin?: string;
+  model?: string;
   resolution: string;
 };
 
@@ -25,6 +26,7 @@ export function attemptBase(o: {
     agent: sub.agent,
     ...(sub.sessionId ? { sessionId: sub.sessionId } : {}),
     ...(sub.origin ? { origin: sub.origin } : {}),
+    ...(sub.model ? { model: sub.model } : {}),
     level: info.level,
     configHash: o.configHash ?? 'none',
     submittedAt: Date.now(),

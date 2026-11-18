@@ -24,6 +24,8 @@ export { GitHubProofPublisher } from './evidence/github/GitHubProofPublisher';
 export { precedentAreas } from './precedent/precedentAreas';
 export { readEscapes } from './scorecard/readEscapes';
 export { otherProjectPrecedents } from './precedent/otherProjectPrecedents';
+export { reviewGateMode } from './verification/reviewGateMode';
+export { reviewedWork } from './verification/reviewedWork';
 export { rulesForTouches } from './verification/rulesForTouches';
 export { rulesGate, type UnansweredRule } from './verification/rulesGate';
 export { waiveRule, type WaiveRuleRequest } from './verification/waiveRule';

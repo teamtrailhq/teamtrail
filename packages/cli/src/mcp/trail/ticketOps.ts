@@ -23,6 +23,7 @@ import { assertOwnClaim } from './ownClaim';
 import { recoverStalled } from './recoverStalled';
 import { frozenOn } from './reroutes';
 import { reviewGate, reviewLimitField, type ReviewGate } from './reviewLimit';
+import { sameModelReviews, waitsReason, type SameModelReview } from './reviewModels';
 import { ownReviews } from './reviews';
 import { ticketInfo } from './ticketInfo';
 
@@ -38,14 +39,17 @@ export async function nextTicket(
   const types = gate ? (input.types ?? gate).filter((x) => gate.includes(x)) : input.types;
   const review = await reviewGate(ctx, snap);
   const main = await mainGate(ctx, snap);
+  const models = await sameModelReviews(ctx, snap);
   const exclude = [
     ...(await ownReviews(ctx, snap, await ctx.agentId())),
+    ...models.filter((r) => r.waits).map((r) => r.ticket.id),
     ...frozenOn(ctx, snap.map.id).keys(),
     ...outsideGuides(snap, input.guides),
     ...review.held.map((h) => h.id),
     ...main.held.map((h) => h.id),
   ];
-  const { ticket: t, held } = pickNext(ctx, snap, { types, exclude });
+  const later = models.map((r) => r.ticket.id);
+  const { ticket: t, held } = pickNext(ctx, snap, { types, exclude, later });
   const extra = { ...(recovered.length ? { recovered } : {}), ...reviewLimitField(review), ...mainChecksField(main) };
   if (t)
     return {
@@ -54,18 +58,21 @@ export async function nextTicket(
       knowledge: knowledgeFor(ctx.root, snap, t),
       ...extra,
     };
-  return { ticket: null, reason: whyNothing(ctx, snap, { held, review, main, gate }), ...extra };
+  return { ticket: null, reason: whyNothing(ctx, snap, { held, review, main, gate, models }), ...extra };
 }
 
 /** Why nothing was offered: the review limit holds the ready work, model matching does, or what's in the way. */
 function whyNothing(
   ctx: AgentContext,
   snap: MapSnapshot,
-  w: { held: Ticket[]; review: ReviewGate; main: MainGate; gate?: TicketType[] },
+  w: { held: Ticket[]; review: ReviewGate; main: MainGate; gate?: TicketType[]; models: SameModelReview[] },
 ): string {
   if (w.review.reason && w.review.held.length) return w.review.reason;
   if (w.main.reason && w.main.held.length) return w.main.reason;
   if (w.held.length) return heldReason(ctx, snap, w.held);
+  const waiting = w.models.find((r) => r.waits);
+  if (waiting)
+    return `${waitsReason(waiting)}, the model you run, so it isn't yours to review. No other ticket is ready.`;
   return noTicketReason(snap, { gate: w.gate, next: w.gate ? briefView(ctx.root, snap)?.next : undefined });
 }
 
