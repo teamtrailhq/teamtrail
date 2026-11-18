@@ -1,7 +1,22 @@
 import type { Release } from './releases';
 
-/** Releases 0.44–0.52, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
+/** Releases 0.44–0.53, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
 export const LATER_RELEASES: Release[] = [
+  {
+    version: '0.53.1',
+    date: '2026-11-16',
+    items: [
+      'A quieter header: tracker and CI show only when they fail, spend once there is any, and Plan only / Plan + execute moves into the trail menu',
+    ],
+  },
+  {
+    version: '0.53.0',
+    date: '2026-11-16',
+    items: [
+      "Your trail's agents are one header menu: what they're doing, with Pause and Runs inside",
+      'Legend sits next to Summary under the map, no longer behind it',
+    ],
+  },
   {
     version: '0.52.2',
     date: '2026-11-16',

@@ -22,6 +22,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.64.2',
+    date: '2026-11-18',
+    items: ['Two trails with the same title no longer share a folder'],
+  },
+  {
     version: '0.64.0',
     date: '2026-11-18',
     items: [
@@ -184,21 +189,6 @@ export const RELEASES: Release[] = [
       'When discovery ends, the Lookout tells you research is done and opens the brief for your review',
       'A brief waiting for your review counts in Waiting on you',
       'Tickets held until you accept the brief show as waiting on it, on the map and in Up next, not as ready',
-    ],
-  },
-  {
-    version: '0.53.1',
-    date: '2026-11-16',
-    items: [
-      'A quieter header: tracker and CI show only when they fail, spend once there is any, and Plan only / Plan + execute moves into the trail menu',
-    ],
-  },
-  {
-    version: '0.53.0',
-    date: '2026-11-16',
-    items: [
-      "Your trail's agents are one header menu: what they're doing, with Pause and Runs inside",
-      'Legend sits next to Summary under the map, no longer behind it',
     ],
   },
   ...LATER_RELEASES,

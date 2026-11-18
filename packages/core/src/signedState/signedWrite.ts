@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { contentHash } from '../trust/trustLedger';
 import { oversizedFile } from './cachedFields';
+import { freeTrailFolder } from './freeTrailFolder';
 import { codecOf, fieldsOfText } from './itemCodec';
 import { judgeItem } from './judgeItem';
 import { keepOutsideMapText } from './outsideMapText';
@@ -102,7 +103,8 @@ function plan(w: SignedWrite, raw: string | undefined, was: StateEntry | undefin
 /**
  * Writes a trail's map, a ticket or a decision as Teamtrail, and signs the change in the trail's record: both
  * under the trail's lock, so writers in other processes never lose each other's records. `create` writes only a
- * file that isn't there (false when one is), for new numbered tickets and decisions. Never through a symbolic
+ * file that isn't there (false when one is), for new numbered tickets and decisions, and a new trail's map only
+ * in a folder nothing is in (freeTrailFolder.ts). Never through a symbolic
  * link (trackerFileWrite.ts).
  */
 export function signedWrite(w: SignedWrite, mode: { create?: boolean } = {}): boolean {
@@ -110,6 +112,8 @@ export function signedWrite(w: SignedWrite, mode: { create?: boolean } = {}): bo
   return withStateLock(root, item.mapId, () => {
     const raw = readIfThere(root, item.rel);
     if (mode.create && raw !== undefined) return false;
+    // a new trail's map: never into another trail's folder (newTrailFile.ts)
+    if (mode.create && item.kind === 'map' && !freeTrailFolder(root, item.mapId)) return false;
     const entries = entriesToChange(root, item.mapId);
     const was = entries[item.key];
     const { written, fields } = plan(w, mode.create ? undefined : raw, mode.create ? undefined : was);
