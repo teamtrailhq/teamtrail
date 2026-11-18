@@ -10,7 +10,11 @@ import { isKnownGate } from './gateText';
 import { summarizeGates } from './summarizeGates';
 import { useGateLog } from './useGateLog';
 
-/** A choice sent and not yet back in verification.json, shown meanwhile; dropped once the file moves on. */
+/**
+ * A choice sent and not yet read back from verification.json, shown meanwhile; dropped once the file as loaded moves
+ * on. Until then the controls wait: a second choice would go over the file as it was before the first (`base`), and
+ * the server refuses that as stale.
+ */
 type Pending = { gate: GateName; mode: GateMode; base: string };
 
 async function putGate(p: Pending): Promise<string | undefined> {
@@ -30,7 +34,7 @@ async function putGate(p: Pending): Promise<string | undefined> {
  * it's saved; read anywhere else, Cloud included.
  */
 export function GatesSection(props: { onOpenTicket: (mapId: string, ticketId: string) => void }) {
-  const view = useVerificationConfig();
+  const { view, reload } = useVerificationConfig();
   const log = useGateLog();
   const local = useThisMachine();
   const [pending, setPending] = useState<Pending>();
@@ -39,18 +43,20 @@ export function GatesSection(props: { onOpenTicket: (mapId: string, ticketId: st
   const base = view.approval?.base ?? 'none';
   const lock = gateLock({ local, exists: view.exists, valid: !!view.config, waiting: view.approval?.waiting });
   const shown = pending?.base === base ? pending : undefined;
+  const locked = lock.kind === 'locked' || !!shown;
   const modeOf = (gate: string): GateMode => {
     if (!isKnownGate(gate)) return 'off';
     if (shown?.gate === gate) return shown.mode;
     return gateModeFor(view.exists ? view.config : undefined, gate);
   };
   const save = async (gate: string, mode: GateMode) => {
-    if (!isKnownGate(gate)) return;
+    // the mode it has already: the file wouldn't change, so nothing would ever say the save was read back
+    if (!isKnownGate(gate) || mode === modeOf(gate)) return;
     const next = { gate, mode, base };
     setError(undefined);
     setPending(next);
     const failed = await putGate(next);
-    if (!failed) return;
+    if (!failed) return reload();
     setPending(undefined);
     setError(failed);
   };
@@ -67,7 +73,7 @@ export function GatesSection(props: { onOpenTicket: (mapId: string, ticketId: st
             summary={s}
             days={log?.days}
             mode={modeOf(s.gate)}
-            locked={lock.kind === 'locked'}
+            locked={locked}
             onMode={(m) => void save(s.gate, m)}
             onOpenTicket={props.onOpenTicket}
           />

@@ -15,7 +15,7 @@ import { VerificationChecks } from './VerificationChecks';
  * elsewhere. An agent never edits what verifies its own work: a change in the repo runs nothing until approved.
  */
 export function VerificationSection(props: { map?: MapDoc }) {
-  const view = useVerificationConfig();
+  const { view } = useVerificationConfig();
   const local = useThisMachine();
   const [error, setError] = useState<string>();
   if (!view) return null;

@@ -23,15 +23,16 @@ async function fetchConfig(): Promise<VerificationConfigView | null> {
 /**
  * `verification.json` as the local server reads it, kept fresh when the file changes and when the attention queue
  * moves (approving the file on this machine moves it). undefined while loading, null without a server (static build).
+ * `reload` reads it again now: after a save, so the next save goes over the file as it is.
  */
 export function useVerificationConfig() {
   const [view, setView] = useState<VerificationConfigView | null>();
-  useLiveLoad({
+  const { reload } = useLiveLoad({
     load: fetchConfig,
     show: setView,
     failed: () => setView(null),
     changed: (p) => p.endsWith('verification.json'),
     events: { attention: () => true },
   });
-  return view;
+  return { view, reload };
 }
