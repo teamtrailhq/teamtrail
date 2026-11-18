@@ -5,8 +5,11 @@ import { apiBase } from '../../lib/apiBase';
 
 const api = `${apiBase()}/briefs`;
 
-/** `gated`: discovery still holds the trail's implementation tickets on this machine (core discoveryGate.ts). */
-type Loaded = { brief: DiscoveryBrief | null; hash?: string; gated?: boolean };
+/**
+ * `gated`: discovery still holds the trail's implementation tickets on this machine (core discoveryGate.ts);
+ * `skipped`: the trail lead skipped discovery for it here.
+ */
+type Loaded = { brief: DiscoveryBrief | null; hash?: string; gated?: boolean; skipped?: boolean };
 
 async function fetchBrief(mapId?: string): Promise<Loaded> {
   if (!mapId) return { brief: null };
@@ -22,6 +25,8 @@ export function useBrief(snap?: MapSnapshot) {
   /** The hash of the brief as shown: accepting names it, so a brief resubmitted meanwhile is not accepted. */
   const [hash, setHash] = useState<string>();
   const [gated, setGated] = useState(false);
+  /** Whether discovery was skipped, for the trail it was loaded for: undefined until then. */
+  const [stage, setStage] = useState<{ mapId?: string; skipped: boolean }>();
   const { reload, pushed } = useLiveLoad({
     view: mapId,
     version: snap?.tickets.reduce((n, t) => Math.max(n, t.updatedAt), snap.map.updatedAt),
@@ -30,8 +35,9 @@ export function useBrief(snap?: MapSnapshot) {
       setBrief(b.brief);
       setHash(b.hash);
       setGated(!!b.gated);
+      setStage({ mapId, skipped: !!b.skipped });
     },
-    failed: () => (setBrief(null), setGated(false)),
+    failed: () => (setBrief(null), setGated(false), setStage({ mapId, skipped: false })),
     changed: (path) => path.startsWith('briefs/'),
   });
   /** `shown`: the hash of the brief as the trail lead opened it (useShown), sent with accept. */
@@ -60,6 +66,8 @@ export function useBrief(snap?: MapSnapshot) {
     error,
     hash,
     gated,
+    /** The trail's discovery stage once loaded for it (core trailDone's `discoverySkipped`); undefined until then. */
+    discovery: mapId && stage?.mapId === mapId ? { skipped: stage.skipped } : undefined,
     accept: (shown?: string) => act('accept', undefined, shown),
     requestChanges: (note: string) => act('request-changes', note),
   };

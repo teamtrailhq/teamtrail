@@ -22,6 +22,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.64.3',
+    date: '2026-11-18',
+    items: [
+      'Fix: a trail whose discovery research is done no longer shows Destination reached before its plan is charted',
+      'Fix: trails and tickets created at the same time never get the same number',
+    ],
+  },
+  {
     version: '0.64.2',
     date: '2026-11-18',
     items: ['Two trails with the same title no longer share a folder'],

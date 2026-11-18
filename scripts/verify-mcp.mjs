@@ -639,6 +639,30 @@ const supervisionOk = await verifySupervision({
   discoveryKey,
 });
 
+// Research done is not the destination: a trail whose only ticket, its discovery research, is done plants no flag
+// and announces nothing; its plan isn't charted yet.
+const onlyBrief = await call('start_trail', { title: 'Only the brief', destination: 'Know what search would take' });
+const researchKey = onlyBrief.tickets[0].key;
+await call('claim_ticket', { ticket: researchKey, trail: onlyBrief.trail.id });
+const researched = await call('close_ticket', {
+  ticket: researchKey,
+  trail: onlyBrief.trail.id,
+  resolution: 'Search needs an index of release notes',
+  waitSeconds: 60,
+});
+await page.locator('.trail-btn').click();
+await page.getByRole('menuitem').filter({ hasText: 'Only the brief' }).first().click();
+// judged, on this trail: its destination carries the verdict once everything it's judged on has loaded
+const judged = page.locator('g.destination[data-done="not-done"][data-tip*="Know what search would take"]');
+await judged.waitFor({ timeout: 15_000 });
+const briefOnlyOk =
+  researched.closed === researchKey &&
+  (await page.locator('g.destination.reached').count()) === 0 &&
+  (await page.locator('.dialog.trail-done').count()) === 0;
+log(
+  `brief only ${briefOnlyOk ? 'ok' : 'WRONG'}: ${researchKey} ${researched.closed ? 'closed' : 'NOT closed'}, the destination not reached and no Destination reached dialog`,
+);
+
 // Safe parallel work: worktrees, overlapping claims and an integration ticket, on a scratch git repo.
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 // Checks on main: a check already failing on main, the human's Start anyway and Drop, on a scratch git repo.
@@ -778,6 +802,7 @@ if (
   !reviewOk ||
   !discoveryOk ||
   !supervisionOk ||
+  !briefOnlyOk ||
   !headersOk ||
   !signInOk ||
   !parallelOk ||

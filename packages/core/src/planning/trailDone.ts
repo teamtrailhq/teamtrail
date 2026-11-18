@@ -1,3 +1,4 @@
+import { DISCOVERY_TYPES } from '../discovery/brief';
 import type { TrailTogether } from '../model/trailChecks';
 import type { TrailDone, TrailDoneInput } from '../model/trailDone';
 
@@ -15,7 +16,9 @@ function togetherText(t: TrailTogether): string {
  * combined run always give the same answer and reason.
  *
  * Done means every ticket that isn't ruled out (closed as not planned) is closed as completed, which leaves nothing
- * open, working or waiting for review, and no reroute is pending. A done trail is `verified` only when every done
+ * open, working or waiting for review, and no reroute is pending. Unless the trail lead skipped discovery, a trail
+ * whose tickets in scope are all discovery tickets (the research behind the brief) isn't done: its plan isn't charted
+ * yet, and the implementation tickets are still to come. A done trail is `verified` only when every done
  * ticket's proof is and the approved checks passed together on the default branch at a commit holding all of their
  * merges; otherwise it's `unverified` and says why. Each ticket passing alone is not enough.
  */
@@ -24,6 +27,8 @@ export function trailDone(input: TrailDoneInput): TrailDone {
   const open = inScope.filter((t) => t.state === 'open').length;
   if (open) return { kind: 'not-done', reason: `${tickets(open)} still open` };
   if (!inScope.length) return { kind: 'not-done', reason: 'No tickets in scope' };
+  if (!input.discoverySkipped && inScope.every((t) => t.type && DISCOVERY_TYPES.includes(t.type)))
+    return { kind: 'not-done', reason: "The plan isn't charted yet" };
   if (input.pendingReroutes) return { kind: 'not-done', reason: 'A reroute waits for your review' };
   const done = inScope.length;
   const { together } = input;

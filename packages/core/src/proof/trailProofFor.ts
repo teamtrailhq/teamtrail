@@ -1,3 +1,4 @@
+import { discoverySkipped } from '../discovery/discoveryGate';
 import type { MainRunEnv } from '../mainChecks/startMainRun';
 import type { TrailProof } from '../model/trailProof';
 import type { DecisionRecord, MapSnapshot } from '../model/types';
@@ -26,6 +27,7 @@ export async function trailProofFor(input: {
     proofs,
     pendingReroutes: listReroutes(env.root, snap.map.id).filter((r) => r.status === 'pending').length,
     together: view.together,
+    discoverySkipped: discoverySkipped(env.root, snap.map.id),
     ...(view.run ? { run: view.run } : {}),
   });
 }
