@@ -3,6 +3,7 @@ import type { TrackerAdapter } from '../adapters/adapter';
 import { withLocalGuard } from '../checkGuard/withLocalGuard';
 import type { CriterionEvidence } from '../criteria/criteria';
 import { completionEvidence, reverifies } from '../evidence/completionEvidence';
+import { writeGated } from '../flaky/flakyGate';
 import { listGuides } from '../guides/guideStore';
 import { checksOfGuides, resolveGuides } from '../guides/resolveGuides';
 import { droppedChecks, trailKnownFailures } from '../mainChecks/withKnownFailures';
@@ -23,7 +24,7 @@ import type { CheckRunner } from './checkRunner';
 import { checksWaitReason, trustedChecks } from './checksApproval';
 import { DEFAULT_CONFIG } from './config';
 import type { ConfigRead } from './configFile';
-import { nextAttemptId, readAttempts, writeAttempt } from './evidenceStore';
+import { nextAttemptId, readAttempts } from './evidenceStore';
 import { gradeAttempt } from './gradeAttempt';
 import { attemptComment, outcomeOf } from './outcome';
 import { verificationFor, type LevelInfo } from './policy';
@@ -153,8 +154,8 @@ export async function verify(env: VerifyEnv, asked: VerifyJob): Promise<{ attemp
     let attempt: VerificationAttempt;
     try {
       const graded = await grade(env, job, { id, config, waiting });
-      attempt = { ...base, id, finishedAt: Date.now(), ...graded };
-      writeAttempt(env.root, attempt);
+      // written once, with the flaky gate's finding on it
+      attempt = writeGated(env.root, { ...base, id, finishedAt: Date.now(), ...graded }, config.config);
     } finally {
       releaseRunLock(env.root, mapId, t.id);
     }

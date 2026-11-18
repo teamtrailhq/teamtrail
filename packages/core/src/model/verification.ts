@@ -3,6 +3,7 @@ import type { AttemptGuard } from './checkGuard';
 import type { WaivedCheck } from './checkWaiver';
 import type { AttemptRule, DiffRule } from './diffRule';
 import type { GitEvidence } from './evidence';
+import type { AttemptFlaky } from './flaky';
 import type { GateModes } from './gateMode';
 import type { AttemptGuide, ChecklistAnswer, GuideAnswers } from './guide';
 import type { VerificationLevel } from './lifecycle';
@@ -135,6 +136,8 @@ export interface VerificationAttempt {
   git?: GitEvidence;
   /** The ticket's acceptance criteria matched to the evidence the agent gave. */
   criteria?: CriteriaResult;
+  /** Checks that passed only on retry, on code they had failed on (the `flaky` gate, flaky/flakyGate.ts). */
+  flaky?: AttemptFlaky;
   /**
    * What the check guard found: the work changed what its checks run, or weakened their tests (checkGuard/). With
    * `enforce`, a pass waits for the trail lead; missing when it found nothing (or is off).

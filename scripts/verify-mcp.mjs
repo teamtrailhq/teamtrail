@@ -22,6 +22,7 @@ import {
 } from './e2eHelpers.mjs';
 import { verifyCheckGuard } from './verifyCheckGuard.mjs';
 import { verifyEscapes } from './verifyEscapes.mjs';
+import { verifyFlaky } from './verifyFlaky.mjs';
 import { verifyGates } from './verifyGates.mjs';
 import { verifyGitHub } from './verifyGitHub.mjs';
 import { verifyGuides } from './verifyGuides.mjs';
@@ -660,6 +661,8 @@ const linearOk = await verifyLinear({ browser, cli, log, shots });
 const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const screeningOk = await verifyScreening({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
+// Flaky checks: a pass on retry with no change held for the trail lead, accepted, and shown on the proof.
+const flakyOk = await verifyFlaky({ browser, cli, log, shots });
 // Diff rules: a rule prefilled from a link and saved in Settings, an agent's completion held for its answer.
 const rulesOk = await verifyRules({ browser, cli, log, shots });
 // The check guard: work that changed what its check runs is held, and the trail lead accepts the pass in the Lookout.
@@ -761,6 +764,7 @@ if (
   !remoteOk ||
   !screeningOk ||
   !waiverOk ||
+  !flakyOk ||
   !rulesOk ||
   !checkGuardOk ||
   !slackOk

@@ -93,6 +93,26 @@ describe('ticketStanding', () => {
     expect(read({ state: 'held', sentBack: 'the reviewer asked for you' }).primary).toBe('unblock');
   });
 
+  it('a pass only a retry got is held with what flipped, and sends it back to fix the test', () => {
+    const retried = 'test failed in A-1, then passed on abc1234 with no change';
+    const latest = { result: 'pass' as const, agent: 'a', failed: [], retried };
+    expect(read({ state: 'held', latest })).toEqual({
+      edge: 'attention',
+      title: 'Held: passed only on retry',
+      parts: [retried],
+      primary: 'rework',
+    });
+  });
+
+  it('a pass both the check guard and the flaky gate hold says both, and offers accepting the pass', () => {
+    const latest = { result: 'pass' as const, agent: 'a', failed: [], guarded: 'scripts.test changed', retried: 'x' };
+    expect(read({ state: 'held', latest })).toMatchObject({
+      title: 'Held: the work changed what its checks run',
+      parts: ['scripts.test changed', 'only on retry: x', 'waits on you'],
+      primary: 'accept',
+    });
+  });
+
   it('a pass the check guard holds says what changed, and offers accepting the pass', () => {
     const latest = { result: 'pass' as const, agent: 'a', failed: [], guarded: 'package.json scripts.test changed' };
     expect(read({ state: 'held', latest })).toMatchObject({

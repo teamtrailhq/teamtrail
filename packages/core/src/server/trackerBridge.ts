@@ -13,6 +13,7 @@ import { handleCriteria } from './criteriaRoutes';
 import { handleDecisionMemory } from './decisionMemoryRoutes';
 import { handleDecisions } from './decisionRoutes';
 import { handleFileRoute } from './fileRoute';
+import { handleFlakyChecks } from './flakyRoutes';
 import { handleGuides } from './guideRoutes';
 import { openEventStream, refuseEarly, requestUrl, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
@@ -129,6 +130,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleRules({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler }, req, res, url),
     (req, res, url) => handleScorecard(ctx, req, res, url),
+    (req, res, url) => handleFlakyChecks(ctx, req, res, url),
     (req, res, url) => handleDecisionMemory(ctx, req, res, url),
     (req, res, url) => handleMergeAnyway(ctx, req, res, url),
     (req, res, url) =>

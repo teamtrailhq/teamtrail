@@ -76,6 +76,22 @@ function scopeOf(a?: VerificationAttempt) {
   return { scope: { declared: a?.touches ?? [], outside: f.kind === 'outside-scope' ? (f.files ?? []) : [] } };
 }
 
+/** Checks that passed only on retry, and whether the trail lead counted the pass; nothing when there are none. */
+function retriedOf(a: VerificationAttempt | undefined, reviews: ProofReview[]): Pick<Proof, 'retried'> {
+  const f = a?.flaky;
+  if (!f?.checks.length) return {};
+  const accepted = reviews.some((r) => r.byKind === 'trail lead' && r.verdict === 'PASS');
+  return {
+    retried: f.checks.map((c) => ({
+      name: c.name,
+      ...(c.test ? { test: c.test } : {}),
+      failedIn: c.failedIn,
+      head: c.head,
+      mode: f.mode,
+      accepted,
+    })),
+  };
+}
 /** The check guard's findings, and the trail lead's acceptance of a pass it held. */
 function guardOf(a: VerificationAttempt | undefined, reviews: ProofReview[]): Proof['guard'] {
   if (!a?.guard?.findings.length) return undefined;
@@ -143,6 +159,7 @@ export function buildProof(input: ProofInput): Proof {
     ...(latest?.waived?.length
       ? { waived: latest.waived.map((w) => ({ name: w.name, argv: w.argv, by: w.by, reason: w.reason })) }
       : {}),
+    ...retriedOf(latest, reviews),
     ...(guard ? { guard } : {}),
     criteria: criteriaOf(latest),
     git: gitOf(latest),

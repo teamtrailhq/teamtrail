@@ -1,5 +1,7 @@
 import { guardReason } from '../checkGuard/guardReason';
 import { evidenceLines } from '../evidence/evidenceSummary';
+import { flakyReason } from '../flaky/flakyReason';
+import { heldAsFlaky } from '../flaky/heldAsFlaky';
 import type { LifecycleEvent, TicketPhase } from '../model/lifecycle';
 import type { CheckResult, VerificationAttempt } from '../model/verification';
 
@@ -30,12 +32,8 @@ function checkStatus(c: CheckResult): string {
  */
 export function outcomeOf(a: VerificationAttempt, failures: number, maxAttempts: number): Outcome {
   const ran = a.checks.map(checkLine).join(', ') || 'no checks configured';
-  if (a.result === 'pass' && a.guard?.mode === 'enforce')
-    return {
-      event: 'checks.pass',
-      to: 'blocked',
-      reason: `${a.id} passed, but the work changed what its checks run: ${guardReason(a.guard.findings)}`,
-    };
+  const held = heldPass(a);
+  if (held.length) return { event: 'checks.pass', to: 'blocked', reason: `${a.id} passed, but ${held.join('; and ')}` };
   if (a.result === 'pass') {
     const signOff = a.criteria?.manual ?? [];
     const known = a.knownFailures?.length
@@ -80,6 +78,19 @@ export function criteriaLines(a: Pick<VerificationAttempt, 'criteria' | 'agent'>
   return ['', '**Acceptance criteria**', '', ...c.lines.map((l) => `- ${l}`), ...(notes.length ? ['', ...notes] : [])];
 }
 
+/**
+ * Why a pass waits for the trail lead, one clause per gate that holds it: the check guard (the work changed what its
+ * checks run, checkGuard/) and the flaky gate (it passed only on retry, flaky/flakyGate.ts). Both may hold one pass;
+ * the trail lead's accept counts it past both, rework sends it back.
+ */
+function heldPass(a: VerificationAttempt): string[] {
+  if (a.result !== 'pass') return [];
+  return [
+    ...(a.guard?.mode === 'enforce' ? [`the work changed what its checks run: ${guardReason(a.guard.findings)}`] : []),
+    ...(a.flaky && heldAsFlaky(a) ? [`only on retry: ${flakyReason(a.flaky.checks)}`] : []),
+  ];
+}
+
 function blockedHead(a: VerificationAttempt) {
   if (a.result === 'pass') return 'passed · held for the trail lead';
   return a.result === 'fail' ? 'failed · needs a human' : 'could not run · needs a human';
@@ -100,6 +111,7 @@ export function attemptComment(a: VerificationAttempt, o: Outcome) {
     '',
     ...a.checks.map((c) => `- ${checkLine(c)} · ${(c.durationMs / 1000).toFixed(1)} s`),
     ...(a.note ? ['', a.note] : []),
+    ...(a.flaky ? ['', `Passed only on retry: ${flakyReason(a.flaky.checks)}.`] : []),
     ...criteriaLines(a),
     ...(a.git ? ['', ...evidenceLines(a.git)] : []),
     ...(failed && tail

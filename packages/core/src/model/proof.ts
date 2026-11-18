@@ -51,6 +51,21 @@ export interface ProofWaived {
 }
 
 /**
+ * A check that passed only on retry: it had failed on the same code in an earlier attempt (the `flaky` gate). Held
+ * work counts only once the trail lead accepted the pass (`accepted`); observed work went through, flagged.
+ */
+export interface ProofRetried {
+  name: string;
+  test?: string;
+  /** The attempt it failed in, and the commit both runs were on. */
+  failedIn: string;
+  head: string | null;
+  mode: 'observe' | 'enforce';
+  /** The trail lead counted the pass. */
+  accepted: boolean;
+}
+
+/**
  * The check guard's findings on the attempt (checkGuard/), one line each. `enforce`: the pass counted only once the
  * trail lead accepted it (`accepted`, from their PASS on the attempt); until then it's a gap. `observe`: shown only.
  */
@@ -115,6 +130,8 @@ export interface Proof {
   checks: ProofCheck[];
   /** Checks the trail lead accepted it without. Missing when none, so older proofs and digests read as they did. */
   waived?: ProofWaived[];
+  /** Checks that passed only on retry. Missing when none, so older proofs and digests read as they did. */
+  retried?: ProofRetried[];
   /** What the check guard found: the work changed what its checks run. Missing when it found nothing. */
   guard?: ProofGuard;
   criteria: {
