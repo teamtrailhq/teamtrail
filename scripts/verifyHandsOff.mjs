@@ -87,6 +87,31 @@ async function home({ page, asked, shots }) {
   return { noMap, answered: answer.answer === 'By email' };
 }
 
+/**
+ * A phone's header: the title, the destination on one line and one row of controls, the mode switch and More (44px
+ * touch targets); More holds focus, the records, Settings and the theme.
+ */
+async function phoneHeader({ page, shots }) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const more = page.locator('.header .phone-more > .btn');
+  await more.waitFor({ timeout: 15_000 });
+  const box = (sel) => page.locator(sel).first().boundingBox();
+  const [modeBox, moreBox, dest] = await Promise.all([box('.header .mode-switch'), more.boundingBox(), box('.h-dest')]);
+  const oneRow = Math.abs(modeBox.y - moreBox.y) < 2 && modeBox.height >= 44 && moreBox.height >= 44;
+  const oneLine = dest.height < 26;
+  const gone = (await page.locator('.h-right .focus-menu, .h-right button[aria-label*="theme"]').count()) === 0;
+  await shootThemes(page, shots, 'hands-off-phone');
+  await more.click();
+  await page.locator('.phone-more .focus-panel').waitFor();
+  const items = await page.locator('.phone-more-items [role=menuitem]').allInnerTexts();
+  await shootThemes(page, shots, 'hands-off-phone-more');
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('.header .focus-menu').waitFor({ timeout: 15_000 });
+  const listed = ['Trail stats', 'Settings'].every((name) => items.some((i) => i.includes(name)));
+  return oneRow && oneLine && gone && listed;
+}
+
 /** Approve the plan: the brief and the ticket's criteria shown in its row, approved in one step. */
 async function approvePlan({ page, call, invite, repo, shots }) {
   const plan = needRow(page, 'Plan');
@@ -133,12 +158,13 @@ export async function verifyHandsOff({ browser, cli, log, shots }) {
     await page.locator('.dialog.onboarding').waitFor({ state: 'detached' });
     const { invite, asked } = await chart(call);
     // the brief's "research is done" dialog is Hands-on's way in; here the plan is a row
+    const phone = await phoneHeader({ page, shots });
     const h = await home({ page, asked, shots });
     const p = await approvePlan({ page, call, invite, repo, shots });
     const switched = await switchModes({ page, config });
-    const ok = h.noMap && h.answered && p.showed && p.claimed && p.journaled && switched;
+    const ok = h.noMap && h.answered && p.showed && p.claimed && p.journaled && switched && phone;
     log(
-      `hands-off ${ok ? 'ok' : 'FAILED'}: home by default (no map: ${h.noMap}), answered from the list (${h.answered}), plan shown and approved in one step (shown ${p.showed}, ${invite} claimable ${p.claimed}, journaled ${p.journaled}), Hands-on and back saved per person (${switched})`,
+      `hands-off ${ok ? 'ok' : 'FAILED'}: home by default (no map: ${h.noMap}), answered from the list (${h.answered}), plan shown and approved in one step (shown ${p.showed}, ${invite} claimable ${p.claimed}, journaled ${p.journaled}), Hands-on and back saved per person (${switched}), the phone header one row with More (${phone})`,
     );
     return ok;
   } finally {

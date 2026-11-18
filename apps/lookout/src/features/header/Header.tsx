@@ -11,15 +11,13 @@ import type { ReactNode } from 'react';
 import { Panel, ScoutMark, Label, Readout, Button } from '../../components/ui';
 import { type BriefingStatus, useNow } from '../../hooks';
 import { hms, tokens, usd } from '../../lib';
-import { managedThemeFixed } from '../../lib/managedTheme';
 import { summaryLine } from '../../lib/markdown';
 import { PrSyncIndicator } from '../pr-sync';
-import { ManagedMenu } from './ManagedMenu';
-import { RecordsMenu } from './RecordsMenu';
+import { HeaderTools } from './HeaderTools';
 import { RunAgentsButton } from './RunAgentsButton';
-import { ThemeToggle } from './ThemeToggle';
 import { TrackerChip } from './TrackerChip';
 import { TrailSwitcher } from './TrailSwitcher';
+import type { PhoneFocus } from './types';
 
 export function Header(props: {
   /** The repo name, or the project switcher when there are several projects. */
@@ -54,6 +52,9 @@ export function Header(props: {
   onBriefing: () => void;
   /** Hands-off or Hands-on (features/hands-off ModeSwitch). */
   modeSwitch?: ReactNode;
+  /** A phone: one row of controls, the rest in More (PhoneMoreMenu.tsx), focus at its top. */
+  phone?: boolean;
+  phoneFocus?: PhoneFocus;
   /** Hands-off: the home lists what needs you and the progress, so the header leaves out its counts and readouts. */
   handsOff?: boolean;
 }) {
@@ -64,6 +65,14 @@ export function Header(props: {
   const u = map && trailUsage(props.activity, map.id);
   // One line however long the destination is: its first sentence, markdown stripped. Plan → Destination has it all.
   const dest = map ? summaryLine(map.sections.destination) : '';
+  const records = {
+    onStats: props.onStats,
+    knowledge: props.knowledge,
+    onKnowledge: props.onKnowledge,
+    briefingOpen: props.briefingOpen,
+    briefingStatus: props.briefingStatus,
+    onBriefing: props.onBriefing,
+  };
   return (
     <Panel as="header" className={props.handsOff ? 'header hands-off' : 'header'}>
       <div className="h-title">
@@ -101,7 +110,7 @@ export function Header(props: {
             )}
           </span>
         )}
-        {props.attention}
+        {props.phone ? null : props.attention}
         {props.needs}
         {!props.attention && !props.needs && waiting > 0 && (
           <span className="waiting-chip" title={`${waiting} waiting on you`}>
@@ -126,24 +135,13 @@ export function Header(props: {
           </Button>
         )}
         {map && <RunAgentsButton mapId={map.id} />}
-        <RecordsMenu
-          onStats={props.onStats}
-          knowledge={props.knowledge}
-          onKnowledge={props.onKnowledge}
-          briefingOpen={props.briefingOpen}
-          briefingStatus={props.briefingStatus}
-          onBriefing={props.onBriefing}
+        <HeaderTools
+          phone={props.phone}
+          phoneFocus={props.phoneFocus}
+          records={records}
+          onSettings={props.onSettings}
+          onToggleTheme={props.onToggleTheme}
         />
-        <Button
-          variant="ghost"
-          onClick={props.onSettings}
-          data-tip="Tracker, verification, appearance and integrations"
-        >
-          Settings
-        </Button>
-        {/* Behind a server's own sign-in, its theme wins; the toggle stays when the server saves a theme picked here (lib/managedTheme.ts). */}
-        {managedThemeFixed() ? null : <ThemeToggle onToggle={props.onToggleTheme} />}
-        <ManagedMenu />
       </div>
     </Panel>
   );

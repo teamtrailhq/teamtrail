@@ -158,6 +158,7 @@ export function App() {
           repo={<ProjectSwitcher repo={repo} projects={projects} onOverview={openOverview} />}
           brief={brief}
           attention={attn.header}
+          phoneFocus={attn.phoneFocus}
           view={settingsPage || overview ? undefined : shown}
           onView={onView}
           phone={phone}

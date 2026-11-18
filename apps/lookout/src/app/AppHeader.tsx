@@ -1,6 +1,6 @@
 import type { AttentionItem } from '@teamtrail/core';
 import type { ReactNode } from 'react';
-import { Header, NeedsButton, ViewBar } from '../features/header';
+import { Header, NeedsButton, type PhoneFocus, ViewBar } from '../features/header';
 import { useKnowledge } from '../features/knowledge';
 import { slackNeeds, useSlackStatus } from '../features/slack';
 import type { LookoutApi, useBriefing } from '../hooks';
@@ -17,8 +17,9 @@ export function AppHeader(props: {
   /** The repo name, or the project switcher. */
   repo: ReactNode;
   brief: ReturnType<typeof useBriefing>;
-  /** Focus mode (features/attention). */
+  /** Focus mode (features/attention): the header's control, and on a phone the top of its More menu. */
   attention?: ReactNode;
+  phoneFocus?: PhoneFocus;
   /** The view on screen (none while Settings covers it), and the bar's choice; no bar on a phone (its tab bar). */
   view?: View;
   onView: (view: View) => void;
@@ -58,6 +59,8 @@ export function AppHeader(props: {
       onSettings={props.onSettings}
       onToggleTheme={props.onToggleTheme}
       attention={props.attention}
+      phone={props.phone}
+      phoneFocus={props.phoneFocus}
       needs={
         <NeedsButton
           count={props.needs.length}

@@ -1,7 +1,25 @@
 import type { Release } from './releases';
 
-/** Releases 0.44–0.55, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
+/** Releases 0.44–0.57, kept apart so `releases.ts` stays short (0.27–0.43 in `midReleases.ts`). Newest first. */
 export const LATER_RELEASES: Release[] = [
+  {
+    version: '0.57.0',
+    date: '2026-11-17',
+    items: [
+      'A ticket says where it stands first: who has it, or what it waits on, with the one thing to do next as a button',
+      'Every ticket action sits in one bar under it; the rest of the ticket reads as What, How, Progress, Proof and History, with details a click away',
+      'With no ticket selected, Trail step shows the trail at a glance: its phase, what waits on you, what each agent is on, and what is ready next',
+    ],
+  },
+  {
+    version: '0.56.0',
+    date: '2026-11-17',
+    items: [
+      'Guides come with the ticket type: the architect on research, junctions and prototypes, QA and security on tasks, the reviewer on reviews. Change them per trail in Settings → Guides by type, your own guides included',
+      'A ticket can take several guides: add or remove one for that ticket alone in the inspector',
+      'A guide you add while an agent works reaches it at its next report, and its checklist counts at completion',
+    ],
+  },
   {
     version: '0.55.2',
     date: '2026-11-16',

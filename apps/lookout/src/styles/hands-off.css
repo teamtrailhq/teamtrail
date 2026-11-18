@@ -275,10 +275,6 @@
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
-.bp-mobile .mode-switch-btn {
-  height: 28px;
-  padding: 0 var(--sp-8);
-}
 
 /* Hands-off's header: the home says what needs you and how far the trail is. */
 .header.hands-off .trail-meta,

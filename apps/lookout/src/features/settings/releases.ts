@@ -22,6 +22,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.1',
+    date: '2026-11-18',
+    items: [
+      'On a phone, the header keeps one row: the mode switch, what needs you and More, with focus, records, Settings and the theme',
+      'Teamtrail Cloud: a pull request says why auto-merge waits, or that it merged by itself',
+    ],
+  },
+  {
     version: '0.66.0',
     date: '2026-11-18',
     items: [
@@ -179,24 +187,6 @@ export const RELEASES: Release[] = [
       'When one fails, the trail waits for your call: fix main first, drop that check for the trail, or start anyway. Each can be undone',
       'After Start anyway, a completion that fails only in those checks, the same way, isn’t sent back, and its proof marks them as known failures, not verified',
       'Run checks on main again any time, from the trail at a glance or Settings → Verification',
-    ],
-  },
-  {
-    version: '0.57.0',
-    date: '2026-11-17',
-    items: [
-      'A ticket says where it stands first: who has it, or what it waits on, with the one thing to do next as a button',
-      'Every ticket action sits in one bar under it; the rest of the ticket reads as What, How, Progress, Proof and History, with details a click away',
-      'With no ticket selected, Trail step shows the trail at a glance: its phase, what waits on you, what each agent is on, and what is ready next',
-    ],
-  },
-  {
-    version: '0.56.0',
-    date: '2026-11-17',
-    items: [
-      'Guides come with the ticket type: the architect on research, junctions and prototypes, QA and security on tasks, the reviewer on reviews. Change them per trail in Settings → Guides by type, your own guides included',
-      'A ticket can take several guides: add or remove one for that ticket alone in the inspector',
-      'A guide you add while an agent works reaches it at its next report, and its checklist counts at completion',
     ],
   },
   ...LATER_RELEASES,
