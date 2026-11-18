@@ -119,7 +119,7 @@ const GATES: Gate[] = [
     name: 'checks failing on main',
     before: failingMain,
     hold: () => {
-      expect(latestMainRun(root)?.state).not.toBe('running');
+      expect(latestMainRun(root)?.result).toBe('fail');
       fs.rmSync(failFlag); // the warm-up's own checks pass; main's run stays the failing one
     },
     offers: null,
