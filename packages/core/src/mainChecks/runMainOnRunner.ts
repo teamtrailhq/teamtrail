@@ -40,6 +40,11 @@ function otherCommit(o: { runner: string; asked?: string; ran: string | null }) 
  * checks asked count, in order, with the approved commands, on the commit it names. When this checkout named the
  * commit, a report on any other counts as couldn't run.
  */
+/** This checkout's default branch head to name, unless the runner says the code isn't here (`holdsCode: false`). */
+function localHead(o: { runner: CheckRunner; repoRoot: string }) {
+  return o.runner.holdsCode === false ? null : defaultHead(o.repoRoot);
+}
+
 export async function runMainOnRunner(o: {
   root: string;
   repoRoot: string;
@@ -66,7 +71,7 @@ export async function runMainOnRunner(o: {
       runner,
       note: `${runner} doesn't run checks on main`,
     };
-  const head = o.head === undefined ? await defaultHead(o.repoRoot) : o.head;
+  const head = o.head === undefined ? await localHead(o) : o.head;
   const known = !head || 'note' in head ? {} : { branch: head.branch, commit: head.commit };
   const asked = o.names.map((name) => ({ name, spec: o.config.checks[name] }));
   const job = {

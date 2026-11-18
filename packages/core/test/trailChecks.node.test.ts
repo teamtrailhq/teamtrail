@@ -253,3 +253,16 @@ test("merges main here doesn't hold yet name no commit: the runner takes its def
   assert.equal(run.result, 'pass');
   assert.equal(run.commit, 'f'.repeat(40));
 });
+
+test('a runner whose server holds no checkout names no commit, even when main here holds every merge', async () => {
+  const snap = await doneTrail(['h.txt']);
+  merge(snap, snap.tickets[0].id);
+  const jobs: MainRunJob[] = [];
+  const runner = { ...cloudRunner(jobs), holdsCode: false };
+  await readTrailChecks({ root, checkRunner: runner }, snap, { trigger: 'Teamtrail' });
+  const run = await settled(snap.map.id);
+  assert.equal(jobs[0].commit, undefined, "this folder's git is not the work's");
+  assert.equal(jobs[0].branch, undefined);
+  assert.deepEqual(jobs[0].contains, [run.merges[0].commit], 'the runner still says which merges it holds');
+  assert.equal(run.commit, 'f'.repeat(40));
+});

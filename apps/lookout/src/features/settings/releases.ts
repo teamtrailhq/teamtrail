@@ -32,6 +32,14 @@ export const RELEASES: Release[] = [
     ],
   },
   {
+    version: '0.66.3',
+    date: '2026-11-18',
+    items: [
+      'A merged pull request shows as merged on its ticket as soon as it merges, and nothing offers to merge it again',
+      'Teamtrail Cloud: checks on main run on your repository’s main, never on a commit from somewhere else',
+    ],
+  },
+  {
     version: '0.66.2',
     date: '2026-11-18',
     items: [
@@ -187,14 +195,6 @@ export const RELEASES: Release[] = [
     date: '2026-11-17',
     items: [
       "A check like `npm web:lint`, a command npm doesn't have, is now flagged, with `npm run web:lint` suggested",
-    ],
-  },
-  {
-    version: '0.59.0',
-    date: '2026-11-17',
-    items: [
-      "A check that can't pass in your repo no longer strands a ticket: Accept without it, with your reason. The other checks run again, the proof shows who skipped it and why, and Undo puts it back",
-      "Setting or approving checks now says which ones can't run as your repo is (a missing script, no go.mod, a missing make target), with Remove check or Keep anyway",
     ],
   },
   ...LATER_RELEASES,
