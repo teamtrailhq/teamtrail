@@ -43,14 +43,14 @@ function scratchMonorepo() {
   return top;
 }
 
-/** Opens Settings → Verification past the first-run dialog. */
+/**
+ * Opens Settings → Verification past the first-run dialog: the dialog is dismissed on that page, so no reload can
+ * bring it back over the editor.
+ */
 async function openVerification(page, url) {
   await page.locator('.dialog.onboarding').waitFor();
-  await page.getByRole('button', { name: 'Get started' }).click();
   await page.goto(`${url}${url.includes('?') ? '&' : '?'}settings=verification`);
-  // the reload can come before onboarding's "done" is saved: dismiss it again rather than race its scrim
-  const again = page.getByRole('button', { name: 'Get started' });
-  if (await again.isVisible()) await again.click();
+  await page.getByRole('button', { name: 'Get started' }).click();
   await page.locator('.dialog.onboarding').waitFor({ state: 'detached', timeout: 15_000 });
 }
 
