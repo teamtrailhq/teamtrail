@@ -23,6 +23,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.21',
+    date: '2026-11-19',
+    items: [
+      'The check guard knows more stacks: Cargo, Gradle, Maven, .NET, Ruby, PHP, Swift, Elixir and Dart configs, and skipped tests in each (#[ignore], @Disabled, Skip =, markTestSkipped, xit, XCTSkip, @tag :skip…)',
+      'It follows turbo and Nx into the scripts and targets they run, and reads through bundle exec, poetry run, uv run and composer scripts',
+    ],
+  },
+  {
     version: '0.66.20',
     date: '2026-11-19',
     items: [
@@ -172,26 +180,6 @@ export const RELEASES: Release[] = [
     items: [
       'On a phone, the header keeps one row: the mode switch, what needs you and More, with focus, records, Settings and the theme',
       'Teamtrail Cloud: a pull request says why auto-merge waits, or that it merged by itself',
-    ],
-  },
-  {
-    version: '0.66.0',
-    date: '2026-11-18',
-    items: [
-      'Hands-off, for everyone by default: what needs you in one list, the trail’s progress and what happened since you were away; Hands-on is the map as before',
-      'Answer, approve and confirm from the list itself; the full ticket is one click away',
-      'Approve the plan in one step: the brief and every ticket’s criteria, as shown',
-      'Switch in the header or Settings → You; agents decide and work is verified exactly as before',
-    ],
-  },
-  {
-    version: '0.65.0',
-    date: '2026-11-18',
-    items: [
-      'Done means verified: work that passed against criteria you never confirmed waits for you, and confirming checks it again by itself',
-      'Criteria charted with a ticket are yours to confirm before any agent starts it',
-      'Every proof gap says who is on it, and what closes it when it is yours: Confirm criteria and verify again, Approve, Send to rework',
-      'The pull request up top in the ticket and on its map card; the full ticket’s actions sit flush at the bottom',
     ],
   },
   ...NEWER_RELEASES,
