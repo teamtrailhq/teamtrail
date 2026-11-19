@@ -1,5 +1,4 @@
 import { AlertsGroup } from './AlertsGroup';
-import { Changelog } from './Changelog';
 import { ProjectGroup } from './ProjectGroup';
 import { ProjectsSection } from './ProjectsSection';
 import { SettingsSlot } from './SettingsSlot';
@@ -23,12 +22,6 @@ export function SettingsGroupBody(props: { group: SettingsGroupId; data: Setting
       return (
         <SettingsSlot id="projects" storage="machine">
           <ProjectsSection />
-        </SettingsSlot>
-      );
-    case 'about':
-      return (
-        <SettingsSlot id="changelog">
-          <Changelog />
         </SettingsSlot>
       );
     default: {

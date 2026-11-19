@@ -158,7 +158,7 @@ A trail's files are plain repo files, so an agent or a teammate's push can edit 
 - Guides are `features/guides/`: Settings → Project → Guides (`GuidesSection.tsx`), Settings → This trail → Guides by type (`TrailGuidesSection.tsx`, one `TypeGuidesRow.tsx` per ticket type, a toggle per approved guide; `?settings=trail-guides`), and the inspector's How section (its guides by name, `TicketGuideNames.tsx`; Edit opens `TicketGuides.tsx`: a chip per guide marked by type, added or removed, with remove or put back, and Add a guide, for that ticket alone). A map card names only a guide added to its ticket.
 - Settings → Remote agents is `features/remote-agents/` (`RemoteAgentsSection.tsx`, data from `useRemoteAgents.ts`): the endpoints, one row per token, and the new token shown once with its connect command.
 - Settings is a full page that covers the map, like the Logbook (`features/settings/SettingsPage.tsx`): a side nav of groups (`features/settings/settingsGroups.ts`) and one group at a time, each rendered by its group component (`TrailGroup.tsx`, `ProjectGroup.tsx`, …) from the unchanged section components. `?settings=<group or section>` opens it there (`?settings=guides`, `?settings=slack`); `app/useSettingsPage.ts` keeps the URL in step so the browser's Back returns to the Lookout. On a phone the nav is a list that drills into one group.
-- The in-app changelog is `features/settings/releases.ts`.
+- Release notes live in `features/settings/releases.ts` (and the older files beside it): the newest release is the product version and feeds the GitHub release; the Lookout no longer shows them.
 
 ## Conventions
 

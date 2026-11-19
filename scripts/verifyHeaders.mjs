@@ -3,7 +3,7 @@
 import { sessionHeaders, signInWith } from './e2eHelpers.mjs';
 
 /** Every Settings group, opened by its link, as a person would. */
-const GROUPS = ['trail', 'project', 'alerts', 'you', 'projects', 'about', 'remote-agents', 'slack', 'guides'];
+const GROUPS = ['trail', 'project', 'alerts', 'you', 'projects', 'remote-agents', 'slack', 'guides'];
 
 export async function verifyHeaders({ browser, url, log, pair }) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
