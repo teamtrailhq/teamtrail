@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -22,13 +21,14 @@ import { readAttempts, readVerdicts } from '../src/verification/evidenceStore';
 import { operatorAction } from '../src/verification/operatorActions';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const CHECK = `process.exit(require('fs').existsSync('ok') ? 0 : 1)`;
 
 /** A repo whose tracker folder has one execute ticket that failed its checks and went to rework or blocked. */
 async function setup(level: VerificationLevel = 'checks', maxAttempts = 3) {
-  const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-op-'));
+  const repo = tempFolder('teamtrail-op-');
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root);
   writeFileSync(

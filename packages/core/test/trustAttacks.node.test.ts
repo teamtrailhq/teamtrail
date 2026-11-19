@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { ActivityStream } from '../src/activity/activityStream';
@@ -21,13 +20,14 @@ import { chartMap } from '../src/planning/operations/chart';
 import { createTrackerRoutes } from '../src/server/trackerRoutes';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { fakeGitHub } from './fakes/github';
+import { tempFolder } from './tempFolder';
 
 /*
  * The attacks of the trust audit, each as the attacker would run it: an agent that can write files in the repo (or
  * a teammate's push) and nothing else. Every test here failed before its fix.
  */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-trust-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-trust-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

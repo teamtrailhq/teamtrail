@@ -1,7 +1,4 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
@@ -13,6 +10,7 @@ import { chartMap } from '../src/planning/operations/chart';
 import { readProofPost } from '../src/proof/proofPostStore';
 import { publishProofs } from '../src/proof/publishProofs';
 import { writeAttempt } from '../src/verification/evidenceStore';
+import { tempFolder } from './tempFolder';
 
 const SHA_A = 'a'.repeat(40);
 const SHA_B = 'b'.repeat(40);
@@ -94,7 +92,7 @@ test('the publisher edits only its own proof comment, and sets the Teamtrail pro
 });
 
 async function trail() {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-proofpost-'));
+  const root = tempFolder('teamtrail-proofpost-');
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(a, {
     title: 'Checkout',

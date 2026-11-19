@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +18,7 @@ import { approveTrust } from '../src/trust/approveTrust';
 import { pendingTrust } from '../src/trust/pendingTrust';
 import { trustLedger } from '../src/trust/trustLedger';
 import { withCommitted } from '../src/trust/withCommitted';
+import { tempFolder } from './tempFolder';
 
 /*
  * Signed state: a trail's gate fields count only when Teamtrail wrote them on this machine (or the human accepted
@@ -36,7 +36,7 @@ if (process.env.SIGNED_STATE_WORKER) {
 }
 
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-signed-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-signed-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };
@@ -184,7 +184,7 @@ test('the human reverts an outside change: the file gets the signed values back'
 });
 
 test('first run (and the upgrade): existing trails are adopted together, but only what is committed', async () => {
-  const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-signed-git-'));
+  const repo = tempFolder('teamtrail-signed-git-');
   const root = path.join(repo, '.teamtrail');
   const git = (...args: string[]) => execFileSync('git', ['-C', repo, ...args], { stdio: 'ignore' });
   git('init', '-q');

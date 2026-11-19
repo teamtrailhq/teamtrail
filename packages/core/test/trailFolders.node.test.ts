@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +8,7 @@ import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { chartMap } from '../src/planning/operations/chart';
 import { outsideChanges } from '../src/signedState/outsideChanges';
+import { tempFolder } from './tempFolder';
 
 /*
  * A new trail's folder is named from its title, and never one that is already there: two trails with the same
@@ -29,7 +29,7 @@ if (process.env.TRAIL_FOLDER_WORKER) {
 }
 
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-folders-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-folders-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

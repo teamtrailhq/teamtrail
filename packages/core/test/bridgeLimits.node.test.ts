@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { createProjectsHub, createTrackerBridge, type ProjectsHub, type TrackerBridge } from '../src/bridge';
 import { registerProject } from '../src/projects/registerProject';
 import { pairedSignIn } from './fakes/signedIn';
+import { tempFolder } from './tempFolder';
 
 /* The second audit's low items on the bridge and the hub, each as the request that used to get through. */
 let server: http.Server;
@@ -22,7 +22,7 @@ const LAN = { 'x-test-peer': '192.168.1.20' };
 const peer = (req: http.IncomingMessage) => (req.headers['x-test-peer'] as string | undefined) ?? '127.0.0.1';
 
 before(async () => {
-  top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-limits-'));
+  top = tempFolder('teamtrail-limits-');
   root = path.join(top, 'repo', '.teamtrail');
   configDir = path.join(top, 'config');
   mkdirSync(path.join(root, 'trail', 'tickets'), { recursive: true });

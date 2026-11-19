@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { linearViewer, listLinearProjects, listLinearTeams, testLinear } from '../src/adapters/remote/linear';
@@ -13,6 +12,7 @@ import type {
 } from '../src/adapters/remote/types';
 import { createTrackerBridge, type TrackerBridge } from '../src/bridge';
 import { fakeLinear, type FakeLinearTeam } from './fakes/linear';
+import { tempFolder } from './tempFolder';
 
 const KEY = 'lin_api_secret_picker_key_4242';
 const PASTED = 'lin_api_pasted_key_never_echoed_77';
@@ -92,7 +92,7 @@ const fake = fakeLinear({ apiKey: KEY, teams: [design] });
 const pastedFake = fakeLinear({ apiKey: PASTED, viewer: { name: 'Pat Paste' }, org: 'Paste Co' });
 
 before(async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-linear-picker-'));
+  const tmp = tempFolder('teamtrail-linear-picker-');
   trackerDir = path.join(tmp, 'repo', '.teamtrail');
   configDir = path.join(tmp, 'config');
   const counted = ((input: string, init: RequestInit) => {
@@ -209,7 +209,7 @@ test('no route response ever carries a key', () => {
 });
 
 test('without a key the picker says so instead of listing', async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-linear-none-'));
+  const tmp = tempFolder('teamtrail-linear-none-');
   const none = createTrackerBridge(path.join(tmp, '.teamtrail'), {
     env: {},
     exec: async () => {

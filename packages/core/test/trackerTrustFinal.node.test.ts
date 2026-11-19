@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { acceptedSettingsFile, acceptedSettingsPath } from '../src/adapters/remote/acceptedSettingsFile';
@@ -18,12 +17,13 @@ import { verificationFor } from '../src/verification/policy';
 import { fakeGitHub } from './fakes/github';
 import { fakeLinear } from './fakes/linear';
 import { noSleep } from './scenarios';
+import { tempFolder } from './tempFolder';
 
 /* Findings of the final review of the tracker trust rule: N2-a (our own writes confirming someone else's
  * settings) and N1-a (an edit history read in the wrong order). */
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const LOWERED = '<!-- teamtrail:meta {"verification":"off","checks":[]} -->';
-const tmpRoot = () => mkdtempSync(path.join(os.tmpdir(), 'teamtrail-trust-final-'));
+const tmpRoot = () => tempFolder('teamtrail-trust-final-');
 const QUEUE = { questions: [], sessions: [], approvals: [], syncs: [], leases: [], knowledge: [], briefs: [], now: 1 };
 
 /** What this machine applies to the ticket, and whether the human is asked about it. */

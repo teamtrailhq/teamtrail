@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MemoryAdapter } from '../src/adapters/memoryAdapter';
@@ -17,6 +16,7 @@ import { readVerificationConfig } from '../src/verification/configFile';
 import { readAttempts } from '../src/verification/evidenceStore';
 import { verify } from '../src/verification/verifyCompletion';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
@@ -26,7 +26,7 @@ function sh(cwd: string, ...args: string[]) {
 
 /** A temp repo with one commit and its tracker folder at `.teamtrail/`. */
 function repo() {
-  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-git-')));
+  const dir = realpathSync(tempFolder('teamtrail-git-'));
   sh(dir, 'init', '-q', '-b', 'main');
   sh(dir, 'config', 'user.email', 't@example.com');
   sh(dir, 'config', 'user.name', 'T');
@@ -84,7 +84,7 @@ async function claimAndCollect(
 const kinds = (ev: GitEvidence) => ev.flags.map((f) => f.kind);
 
 test('outside git: the baseline records why, evidence flags no-git, stale detection is off', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-nogit-'));
+  const root = tempFolder('teamtrail-nogit-');
   const b = await captureBaseline({ root, cwd: root, mapId: 'm', ticket: { id: '1', key: '#1' }, agent: 'x' });
   assert.equal(b.git, null);
   assert.match(b.note ?? '', /not inside a git repository/);

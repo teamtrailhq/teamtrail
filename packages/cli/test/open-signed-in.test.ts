@@ -1,5 +1,5 @@
 import type * as childProcess from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,7 +43,10 @@ beforeEach(() => {
   vi.spyOn(process.stdout, 'write').mockImplementation((s) => (out.push(String(s)), true));
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  rmSync(top, { recursive: true, force: true });
+});
 
 /** A config dir inside a folder nobody may write. */
 function lockedConfig(run: (configDir: string) => void) {

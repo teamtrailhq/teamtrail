@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -15,6 +14,7 @@ import { chartMap } from '../src/planning/operations/chart';
 import { readVerificationConfig } from '../src/verification/configFile';
 import { fakeGuideCatalog, guideText } from './fakes/guideCatalog';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 let server: http.Server;
 let bridge: TrackerBridge;
@@ -24,7 +24,7 @@ let catalog: Awaited<ReturnType<typeof fakeGuideCatalog>>;
 const A11Y = guideText({ id: 'a11y', extra: 'proposedChecks:\n  a11y:\n    run: [node_modules/.bin/pa11y-ci]' });
 
 before(async () => {
-  root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-guide-routes-')), 'repo', '.teamtrail');
+  root = path.join(tempFolder('teamtrail-guide-routes-'), 'repo', '.teamtrail');
   mkdirSync(path.join(root, 'guides'), { recursive: true });
   catalog = await fakeGuideCatalog({ a11y: A11Y }, { repo: 'https://github.com/teamtrailhq/teamtrail-guides' });
   writeFileSync(

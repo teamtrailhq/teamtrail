@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { parseMapFile, serializeMapFile } from '../src/adapters/markdown/mapFile';
@@ -20,6 +19,7 @@ import type { MapDoc, Ticket } from '../src/model/types';
 import { ticketGuidesPatch } from '../src/planning/lifecycle/setTicketGuides';
 import { withMapFields, withTicketFields } from '../src/signedState/applyFields';
 import { changedKeys, mapFields, ticketFields } from '../src/signedState/stateFields';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const map = (over: Partial<MapDoc> = {}): MapDoc => ({
@@ -137,7 +137,7 @@ test('GitHub and Linear keep the mapping and overrides in the meta marker, compa
 });
 
 test('each guide’s checklist is checked on its own; a number needs its guide when several have checklists', () => {
-  const guides = listGuides(path.join(mkdtempSync(path.join(os.tmpdir(), 'tt-gbt-')), '.teamtrail'));
+  const guides = listGuides(path.join(tempFolder('tt-gbt-'), '.teamtrail'));
   const doc = (id: string) => guides.find((r) => r.id === id)!.guide!;
   const [qa, security] = [doc('qa'), doc('security')];
   const all = [
@@ -158,7 +158,7 @@ test('each guide’s checklist is checked on its own; a number needs its guide w
 });
 
 test('a claim carries every active guide, the instructions only while they fit; disabled ones as warnings', () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'tt-gbt-')), '.teamtrail');
+  const root = path.join(tempFolder('tt-gbt-'), '.teamtrail');
   mkdirSync(path.join(root, 'guides'), { recursive: true });
   writeFileSync(path.join(root, 'guides', 'qa.md'), BUILTIN_GUIDES.qa.replace('1.0.0', '9.0.0'));
   const list = resolveGuides(listGuides(root), { map: map(), ticket: ticket({ guidesAdded: ['nope'] }) });
@@ -188,7 +188,7 @@ test('a claim carries every active guide, the instructions only while they fit; 
 });
 
 test('checklist answers from before guides came by type read as one guide’s', () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'tt-gbt-')), '.teamtrail');
+  const root = path.join(tempFolder('tt-gbt-'), '.teamtrail');
   const dir = path.join(root, '.evidence', 'm', '1');
   mkdirSync(dir, { recursive: true });
   const v1 = { v: 1, mapId: 'm', ticketId: '1', guide: { id: 'qa', version: '1.0.0' }, answers: [], by: 'a', at: 1 };

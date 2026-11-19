@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { journalFile, journalPath } from '../src/history/journalFile';
@@ -17,6 +16,7 @@ import { rulesGate } from '../src/verification/rulesGate';
 import { ruleWaivers } from '../src/verification/ruleWaivers';
 import { setChecks, StaleChecks } from '../src/verification/setChecks';
 import { setRules } from '../src/verification/setRules';
+import { tempFolder } from './tempFolder';
 
 const checks = { test: { run: ['npm', 'test'] }, e2e: { run: ['npm', 'run', 'e2e'] } };
 const parse = (rules: unknown) => parseVerificationConfig(JSON.stringify({ v: 1, checks, rules }));
@@ -24,7 +24,7 @@ const R1 = { id: 'R-1', when: ['src/session/**'], ask: 'Do old transcripts still
 const R2 = { id: 'R-2', when: ['src/api'], check: 'e2e', why: 'the API broke the app once' };
 
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-rules-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-rules-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

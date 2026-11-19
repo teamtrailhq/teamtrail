@@ -7,9 +7,8 @@
  * this machine trusts. A caller with `highRisk: true` or unset can do all of it, as before.
  */
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -30,6 +29,7 @@ import type { Ticket } from '../src/model/types';
 import { chartMap } from '../src/planning/operations/chart';
 import { proposeReroute } from '../src/planning/reroute/rerouteFlow';
 import { sendJson } from '../src/server/http';
+import { tempFolder } from './tempFolder';
 
 type Who = 'limited' | 'allowed' | 'unsaid' | 'limited-device';
 
@@ -99,7 +99,7 @@ function asked() {
 }
 
 before(async () => {
-  top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-limited-'));
+  top = tempFolder('teamtrail-limited-');
   root = path.join(top, 'repo', '.teamtrail');
   const configDir = path.join(top, 'config');
   mkdirSync(root, { recursive: true });

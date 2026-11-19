@@ -5,11 +5,11 @@
 // Waits on what the user sees, never on sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 import { needsYouFits } from './verifyNeedsYouFit.mjs';
 
 async function startServer(cli, cwd, env) {
@@ -153,7 +153,7 @@ async function switchModes({ page, config }) {
 }
 
 export async function verifyHandsOff({ browser, cli, log, shots }) {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-hands-'));
+  const top = e2eTemp('teamtrail-e2e-hands-');
   const config = path.join(top, 'config');
   const repo = path.join(top, 'repo');
   fs.mkdirSync(path.join(repo, '.teamtrail'), { recursive: true });

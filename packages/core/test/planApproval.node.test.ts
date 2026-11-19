@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -13,6 +12,7 @@ import { journalFile } from '../src/history/journalFile';
 import { TRUST_JOURNAL } from '../src/model/lifecycle';
 import { chartMap } from '../src/planning/operations/chart';
 import { trustKey, trustLedger } from '../src/trust/trustLedger';
+import { tempFolder } from './tempFolder';
 
 /*
  * Approve the plan: the brief and every ticket's criteria in one step, each bound to the hash of what the page showed,
@@ -32,7 +32,7 @@ const SECTIONS = {
 const criteria = (text: string) => [{ id: 'AC-1', text, kind: 'unit' as const }];
 
 async function project() {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-plan-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-plan-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(adapter, {

@@ -4,9 +4,8 @@
  * through the raw file route (limitedCaller.node.test.ts).
  */
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MemoryAdapter } from '../src/adapters/memoryAdapter';
@@ -27,6 +26,7 @@ import { ticketNeedsLookout } from '../src/policy/ticketNeedsLookout';
 import { sendJson } from '../src/server/http';
 import { limitedCallRefusal } from '../src/server/limitedCallRefusal';
 import { fakeGitHub } from './fakes/github';
+import { tempFolder } from './tempFolder';
 
 const external: ExternalSignIn = {
   admit(req, res) {
@@ -44,7 +44,7 @@ let server: http.Server;
 let port: number;
 
 before(async () => {
-  const top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-limited-calls-'));
+  const top = tempFolder('teamtrail-limited-calls-');
   const root = path.join(top, 'repo', '.teamtrail');
   const configDir = path.join(top, 'config');
   mkdirSync(root, { recursive: true });
@@ -147,7 +147,7 @@ test('a limited caller can’t close, reopen or record a decision on a high-risk
 
 /** A memory tracker with a high-risk ticket (an agent asked about it with "schema"), a plain one and a decision on each. */
 async function memoryTrail() {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-limited-unit-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-limited-unit-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   const adapter = new MemoryAdapter({ latency: [0, 0] });
   const { map, tickets } = await chartMap(adapter, {

@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { githubAccount, listGitHubRepos } from '../src/adapters/remote/github';
 import type { GitHubRepoList, TrackerSettings, TrackerTestResult } from '../src/adapters/remote/types';
 import { createTrackerBridge, type TrackerBridge } from '../src/bridge';
 import { fakeGitHub, type FakeRepo } from './fakes/github';
+import { tempFolder } from './tempFolder';
 
 const TOKEN = 'gho_secret_picker_token_4242';
 const READ = { admin: false, maintain: false, push: false, triage: false, pull: true };
@@ -71,7 +71,7 @@ const fake = fakeGitHub({
 });
 
 before(async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-picker-'));
+  const tmp = tempFolder('teamtrail-picker-');
   trackerDir = path.join(tmp, 'repo', '.teamtrail');
   const exec = async (cmd: string) => {
     if (cmd === 'gh') return TOKEN;
@@ -169,7 +169,7 @@ test('no route response ever carries the token', () => {
 });
 
 test('without a token the picker says so instead of listing', async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-picker-none-'));
+  const tmp = tempFolder('teamtrail-picker-none-');
   const none = createTrackerBridge(path.join(tmp, '.teamtrail'), {
     env: {},
     exec: async () => {

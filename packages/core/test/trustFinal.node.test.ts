@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -17,17 +16,18 @@ import { checkoutFor } from '../src/verification/checkoutFor';
 import { recordWorktree } from '../src/workspaces/trustedWorkspace';
 import { writeWorkspace } from '../src/workspaces/workspaceStore';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 /* The last re-check of PR #60 (N5b, N7, N9). Each test failed before its fix. */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-final-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-final-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };
 
 test('N5b: deleting its own workspace record never gets a ticket graded on the main checkout', () => {
   const root = tmpRoot();
-  const wt = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-wt-'));
+  const wt = tempFolder('teamtrail-wt-');
   const rec = {
     v: 1,
     mapId: 'm1',

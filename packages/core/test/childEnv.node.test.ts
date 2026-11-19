@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, realpathSync, writeFileSync, chmodSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, readFileSync, realpathSync, writeFileSync, chmodSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { git } from '../src/evidence/git';
@@ -10,6 +9,7 @@ import { childEnv } from '../src/lib/childEnv';
 import type { CheckSpec } from '../src/model/verification';
 import { checkEnv } from '../src/verification/checkEnv';
 import { runCheck } from '../src/verification/runCheck';
+import { tempFolder } from './tempFolder';
 
 /*
  * What a check command and git get to see of the environment Teamtrail runs in. The audit found that only
@@ -99,7 +99,7 @@ test('names the person lists in TEAMTRAIL_CHECK_ENV pass; a pattern never passes
 });
 
 test('a check command sees none of the secrets, and a failed check says what was held back', async () => {
-  const repoRoot = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-env-'));
+  const repoRoot = tempFolder('teamtrail-env-');
   const run = {
     repoRoot,
     logDir: path.join(repoRoot, '.teamtrail', 'logs'),
@@ -119,7 +119,7 @@ test('a check command sees none of the secrets, and a failed check says what was
 });
 
 function repoWithTraps() {
-  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-gitsafe-')));
+  const dir = realpathSync(tempFolder('teamtrail-gitsafe-'));
   const sh = (...args: string[]) => execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
   const marker = path.join(dir, '..', `${path.basename(dir)}.ran`);
   const trap = path.join(dir, '..', `${path.basename(dir)}.sh`);

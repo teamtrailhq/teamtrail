@@ -5,12 +5,12 @@
 // and on what the server answers, never on sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { answeringChecklists, approveSkipInLookout, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 /** Starts the built CLI and resolves once its output names the URL it serves. */
 async function start(cli, args, cwd, pattern) {
@@ -96,7 +96,7 @@ async function createToken({ page, section, name, shots }) {
 }
 
 export async function verifyRemote({ browser, cli, log, shots }) {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-remote-e2e-'));
+  const top = e2eTemp('teamtrail-remote-e2e-');
   const root = path.join(top, '.teamtrail');
   fs.mkdirSync(root);
   const lookout = await start(cli, ['--no-open', '--port', '0'], top, /Lookout\s+(http:\S+)/);

@@ -3,12 +3,12 @@
 // this machine's key; `teamtrail proof verify` checks it against the key once committed, and refuses an edited copy.
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { e2eTemp } from './e2eTemp.mjs';
 
 /** A scratch git repo holding only the tracker folder's committed proof keys, and `proof verify` run in it. */
 function verifyElsewhere({ cli, repo, text }) {
-  const other = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-verify-proof-'));
+  const other = e2eTemp('teamtrail-verify-proof-');
   fs.cpSync(path.join(repo, '.teamtrail', 'proof-keys'), path.join(other, '.teamtrail', 'proof-keys'), {
     recursive: true,
   });

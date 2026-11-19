@@ -5,10 +5,10 @@
 // markdown, and the map file keeps its own sections only. Waits on what the user sees, never on sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handsOn, lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const NOTES_FILE = path.join(here, 'fixtures', 'new-trail-notes.md');
@@ -82,7 +82,7 @@ async function shownTrail(page) {
 }
 
 export async function verifyNewTrail({ browser, cli, log, shots }) {
-  const top = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-new-trail-e2e-')));
+  const top = fs.realpathSync(e2eTemp('teamtrail-new-trail-e2e-'));
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const env = { ...process.env, TEAMTRAIL_CONFIG_DIR: path.join(top, 'config') };
   handsOn(env.TEAMTRAIL_CONFIG_DIR);

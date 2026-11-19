@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { approveCheck } from '../src/guides/approveCheck';
@@ -16,9 +15,10 @@ import { approveTrust } from '../src/trust/approveTrust';
 import { pendingTrust } from '../src/trust/pendingTrust';
 import { guideText } from './fakes/guideCatalog';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-guide-review2-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-guide-review2-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

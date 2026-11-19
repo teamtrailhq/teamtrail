@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -19,6 +18,7 @@ import { reviewConflict } from '../src/verification/reviewIndependence';
 import { submitReview, type ReviewSubmission } from '../src/verification/submitReview';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const config = (extra: object = {}) =>
@@ -26,7 +26,7 @@ const config = (extra: object = {}) =>
 
 /** One execute ticket worked by Scout-1 whose checks passed, so it waits for review. */
 async function setup(level: VerificationLevel) {
-  const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-review-'));
+  const repo = tempFolder('teamtrail-review-');
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root);
   writeFileSync(path.join(root, 'verification.json'), config());

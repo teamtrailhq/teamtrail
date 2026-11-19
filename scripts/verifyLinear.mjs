@@ -7,11 +7,11 @@
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import { handsOn, lookoutLinks, responseGate, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const KEY = 'lin_api_e2e_never_shown_5b1c';
@@ -68,7 +68,7 @@ async function startLookout(cli, cwd, env) {
 }
 
 export async function verifyLinear({ browser, cli, log, shots }) {
-  const top = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-linear-e2e-')));
+  const top = fs.realpathSync(e2eTemp('teamtrail-linear-e2e-'));
   const repo = path.join(top, 'launchpad');
   fs.mkdirSync(path.join(repo, '.teamtrail'), { recursive: true });
   execFileSync('git', ['init', '-q'], { cwd: repo });

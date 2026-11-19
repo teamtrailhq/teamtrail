@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -11,13 +10,14 @@ import type { Scorecard } from '../src/model/scorecard';
 import type { VerificationAttempt } from '../src/model/verification';
 import { chartMap } from '../src/planning/operations/chart';
 import { writeAttempt, writeVerdict } from '../src/verification/evidenceStore';
+import { tempFolder } from './tempFolder';
 
 let server: http.Server;
 let bridge: TrackerBridge;
 let base: string;
 
 before(async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-scorecard-'));
+  const tmp = tempFolder('teamtrail-scorecard-');
   const root = path.join(tmp, '.teamtrail');
   mkdirSync(path.join(root, '.agents', 'sessions'), { recursive: true });
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);

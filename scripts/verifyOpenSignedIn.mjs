@@ -5,10 +5,10 @@
 // signs in with one click; the page is gone once used, and every page is gone once the Lookout stops.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { lookoutLinks } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const CODE = /#pair=([A-Za-z0-9_-]{43})/;
 
@@ -17,7 +17,7 @@ const CODE = /#pair=([A-Za-z0-9_-]{43})/;
  * `xdg-open` and `gio` append their argv, tab-separated, to a file.
  */
 function scratch(env) {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-open-signed-in-e2e-'));
+  const top = e2eTemp('teamtrail-open-signed-in-e2e-');
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const bin = path.join(top, 'bin');
   const record = path.join(top, 'opened.txt');

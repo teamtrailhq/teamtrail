@@ -1,7 +1,4 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { test } from 'node:test';
 import type { TrackerAdapter } from '../src/adapters/adapter';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -15,6 +12,7 @@ import { fakeGitHub } from './fakes/github';
 import { fakeLinear } from './fakes/linear';
 import { faulty } from './fixtures';
 import { noSleep } from './scenarios';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'Edits', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
@@ -55,7 +53,7 @@ test('memory adapter: edit, remove a blocker, reopen', async () => {
 });
 
 test('markdown adapter: edit, remove a blocker, reopen, read back from the files', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-edits-md-'));
+  const root = tempFolder('teamtrail-edits-md-');
   const make = () => new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   await editFlow(make(), make);
 });
@@ -77,7 +75,7 @@ test('linear adapter: edit, relation deleted, issue moved back to an unstarted s
 });
 
 test('github offline: edit, unblock and reopen wait in the outbox and land in order once back online', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-edits-gh-'));
+  const root = tempFolder('teamtrail-edits-gh-');
   const fake = fakeGitHub({ repo: 'octo-org/launchpad' });
   const net = faulty(fake.fetch);
   const opts = { repo: 'octo-org/launchpad', token: 't', manual: true, retries: 0, ...noSleep };

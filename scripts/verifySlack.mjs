@@ -6,12 +6,12 @@
 // inbox in a channel is answered to the asker alone and a DM to Scout in the DM; Disconnect forgets it all. Waits on what the user sees and what the servers answer, never sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { approveSkipInLookout, handsOn, lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ANA = 'U0ANA0001';
@@ -58,9 +58,9 @@ const refusal = (p) =>
   );
 
 export async function verifySlack({ browser, cli, log, shots }) {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-slack-e2e-'));
+  const top = e2eTemp('teamtrail-slack-e2e-');
   fs.mkdirSync(path.join(top, '.teamtrail'));
-  const config = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-slack-e2e-config-'));
+  const config = e2eTemp('teamtrail-slack-e2e-config-');
   const fake = await started(
     process.execPath,
     [path.resolve(here, '../packages/connector-slack/test/run.mjs'), 'serve', '0'],

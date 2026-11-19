@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -11,12 +10,13 @@ import { chartMap } from '../src/planning/operations/chart';
 import { otherProjectPrecedents } from '../src/precedent/otherProjectPrecedents';
 import { updateProjects } from '../src/projects/projectsFile';
 import { thisMachineOnly } from '../src/server/thisMachineRoutes';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
 /** A repo whose markdown tracker holds one decision. */
 async function project(name: string, question: string) {
-  const repo = mkdtempSync(path.join(os.tmpdir(), `teamtrail-${name}-`));
+  const repo = tempFolder(`teamtrail-${name}-`);
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root);
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
@@ -38,7 +38,7 @@ async function project(name: string, question: string) {
 }
 
 test("another project's decisions are suggested only when it shares them, never as answers", async () => {
-  const configDir = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-config-'));
+  const configDir = tempFolder('teamtrail-config-');
   const here = await project('storefront', 'Unrelated');
   const billing = await project('billing', 'Should invoice dates be stored in UTC?');
   const quiet = await project('quiet', 'Should invoice dates be stored in UTC?');

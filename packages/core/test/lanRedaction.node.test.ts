@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
@@ -7,6 +7,7 @@ import { after, before, test } from 'node:test';
 import { createTrackerBridge, type TrackerBridge } from '../src/bridge';
 import { lanPlaces } from '../src/server/lanPlaces';
 import { lanRedactor, redactForLan } from '../src/server/redactForLan';
+import { tempFolder } from './tempFolder';
 
 /*
  * What a device on the network may learn about this machine's disk: nothing. Reproduces the review's findings:
@@ -22,7 +23,7 @@ const LAN = { 'x-test-peer': '192.168.1.20' };
 const peer = (req: http.IncomingMessage) => (req.headers['x-test-peer'] as string | undefined) ?? '127.0.0.1';
 
 before(async () => {
-  top = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lan-')));
+  top = realpathSync(tempFolder('teamtrail-lan-'));
   root = path.join(top, 'repo', '.teamtrail');
   mkdirSync(root, { recursive: true });
   bridge = createTrackerBridge(root, { env: {}, configDir: path.join(top, 'config'), cwd: path.dirname(root), peer });

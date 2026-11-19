@@ -5,7 +5,6 @@
 // ticket is done, its proof not verified and saying who skipped the check and why. Undo puts the check back.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -19,12 +18,13 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const REASON = 'This repo has no test runner yet; the change was checked by hand';
 
 /** A git repo whose `npm test` passes on main and fails once feed.xml is there. */
 function scratchRepo() {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-waive-e2e-'));
+  const top = e2eTemp('teamtrail-waive-e2e-');
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   const test = `node -e "process.exit(require('fs').existsSync('feed.xml') ? 1 : 0)"`;
   fs.writeFileSync(path.join(top, 'package.json'), JSON.stringify({ private: true, scripts: { test } }, null, 2));

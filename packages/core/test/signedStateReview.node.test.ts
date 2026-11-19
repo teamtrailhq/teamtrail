@@ -5,7 +5,6 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
-  mkdtempSync,
   readdirSync,
   readFileSync,
   renameSync,
@@ -14,7 +13,6 @@ import {
   writeFileSync,
 } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -37,6 +35,7 @@ import { stateFirstRun } from '../src/trust/firstRun';
 import { pendingTrust } from '../src/trust/pendingTrust';
 import { contentHash } from '../src/trust/trustLedger';
 import { withCommitted } from '../src/trust/withCommitted';
+import { tempFolder } from './tempFolder';
 
 /*
  * Findings of the signed-state review, each as the probe that showed it: an agent (or a teammate's push) working on
@@ -53,7 +52,7 @@ const SECTIONS = {
 };
 
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-signed-review-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-signed-review-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };
@@ -140,7 +139,7 @@ test('2: a ticket file copied in with no blockers is held until accepted, and Te
 });
 
 test('3: bulk adoption ends at the first signed write, and never adopts a change to what this machine signed', async () => {
-  const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-signed-review-git-'));
+  const repo = tempFolder('teamtrail-signed-review-git-');
   const root = path.join(repo, '.teamtrail');
   const git = (...args: string[]) => execFileSync('git', ['-C', repo, ...args], { stdio: 'ignore' });
   git('init', '-q');
@@ -396,7 +395,7 @@ test('9: the caches keep at most their cap, dropping the least recently used fir
   assert.equal(cache.get('b'), undefined, 'b was the least recently used');
   assert.deepEqual([cache.get('a'), cache.get('c'), cache.get('d'), cache.size], [1, 3, 4, 3]);
   // and the file caches stay within theirs however many files a project has
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-signed-cap-'));
+  const dir = tempFolder('teamtrail-signed-cap-');
   for (let i = 0; i <= MAX_ENTRIES + 10; i++) {
     const file = path.join(dir, `${i}.md`);
     writeFileSync(file, `---\nid: "${i}"\ntitle: T\ntype: task\nstate: open\n---\n`);
@@ -463,7 +462,7 @@ test('A: an assumption line added outside Teamtrail reads as holding, is a chang
 test('C: a folder swapped for a link between the check and the write: nothing lands outside the repo', async () => {
   const root = tmpRoot();
   const { adapter, mapId, j } = await trail(root);
-  const outside = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-outside-'));
+  const outside = tempFolder('teamtrail-outside-');
   const tickets = path.join(root, mapId, 'tickets');
   trackerWriteHooks.afterCheck = () => {
     trackerWriteHooks.afterCheck = undefined;

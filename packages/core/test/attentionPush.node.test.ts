@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTrackerBridge } from '../src/bridge';
 import type { AttentionView } from '../src/model/attention';
+import { tempFolder } from './tempFolder';
 
 /*
  * The server sends the `attention` event only when the queue changed since its last one. A page also loads the
@@ -59,7 +59,7 @@ async function until(ok: () => boolean, ms: number) {
 }
 
 test('a queue a page loaded between two ticks is corrected by the next tick, even when it changed back', async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-attention-push-'));
+  const tmp = tempFolder('teamtrail-attention-push-');
   const root = path.join(tmp, '.teamtrail');
   const sessions = path.join(root, '.agents', 'sessions');
   mkdirSync(sessions, { recursive: true });

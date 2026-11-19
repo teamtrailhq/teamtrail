@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { writeLookoutLock } from '../src/agents/lookoutLock';
@@ -21,6 +20,7 @@ import { sessionProof } from '../src/signIn/sessionProof';
 import { SESSION_MS } from '../src/signIn/signInSessions';
 import { SIGN_IN_FILE } from '../src/signIn/signInStore';
 import { pairSession, sessionHeader } from './fakes/signedIn';
+import { tempFolder } from './tempFolder';
 
 let top: string;
 let root: string;
@@ -38,7 +38,7 @@ const peer = (req: http.IncomingMessage) => (req.headers['x-test-peer'] as strin
 const lan = (address = LAN_PEER) => ({ 'x-test-peer': address, Host: `192.168.1.5:${port}` });
 
 before(async () => {
-  top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-sign-in-'));
+  top = tempFolder('teamtrail-sign-in-');
   root = path.join(top, 'repo', '.teamtrail');
   configDir = path.join(top, 'config');
   process.env.TEAMTRAIL_CONFIG_DIR = configDir;

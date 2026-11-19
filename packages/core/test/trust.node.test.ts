@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { cpSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { writeBrief } from '../src/discovery/briefStore';
@@ -14,9 +13,10 @@ import { approveTogether } from '../src/trust/approveTogether';
 import { pendingTrust } from '../src/trust/pendingTrust';
 import { checksApproval } from '../src/verification/checksApproval';
 import { checksDiff } from '../src/verification/checksDiff';
+import { tempFolder } from './tempFolder';
 
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-trust-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-trust-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };
@@ -98,7 +98,7 @@ test('an edit after approval is shown as old → new argv, with the lint as advi
 test('a repo that moved to another folder is asked again', async () => {
   const root = existingProject();
   await approveTogether({ root, items: want(root), by: 'trail lead' });
-  const moved = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-moved-')), '.teamtrail');
+  const moved = path.join(tempFolder('teamtrail-moved-'), '.teamtrail');
   cpSync(root, moved, { recursive: true });
   assert.equal(pendingTrust(moved).length, 4);
 });

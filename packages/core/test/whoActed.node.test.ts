@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { ActivityStream } from '../src/activity/activityStream';
@@ -16,13 +15,14 @@ import { buildProof, proofMarkdown } from '../src/node';
 import { parseDecision, serializeDecision } from '../src/planning/decisions/decisionFile';
 import { sendJson } from '../src/server/http';
 import { decisionFields } from '../src/signedState/stateFields';
+import { tempFolder } from './tempFolder';
 
 /*
  * Who answered and who decided (S2): the person the sign-in in front of the bridge names, signed with the answer,
  * carried to the decision it backs, and shown; never what a request body says.
  */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-who-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-who-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };
@@ -125,7 +125,7 @@ test('a decision keeps who made it through its file, its signed fields and its p
 });
 
 test("through the hub, the embedding server's person is recorded with the answer, never what the body says", async () => {
-  const top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-who-hub-'));
+  const top = tempFolder('teamtrail-who-hub-');
   const root = path.join(top, 'repo', '.teamtrail');
   mkdirSync(root, { recursive: true });
   const configDir = path.join(top, 'config');

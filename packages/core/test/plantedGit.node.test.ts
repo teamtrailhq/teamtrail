@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -13,6 +12,7 @@ import { captureBaseline } from '../src/evidence/baseline';
 import { completionEvidence } from '../src/evidence/completionEvidence';
 import { chartMap } from '../src/planning/operations/chart';
 import { trustedChecks } from '../src/verification/checksApproval';
+import { tempFolder } from './tempFolder';
 
 /*
  * N1: a command planted in the repo's own git config, by an agent that can only write files, must never run when
@@ -33,7 +33,7 @@ const SECTIONS = {
 
 /** A git repo with committed tracker files, then every program its own config can name, planted. */
 function plantedRepo() {
-  const top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-planted-'));
+  const top = tempFolder('teamtrail-planted-');
   const root = path.join(top, '.teamtrail');
   const marks = path.join(top, 'marks');
   mkdirSync(root, { recursive: true });

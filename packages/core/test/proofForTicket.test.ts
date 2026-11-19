@@ -1,11 +1,21 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import type { DecisionRecord, MapSnapshot, Ticket } from '../src/model/types';
 import type { VerificationAttempt } from '../src/model/verification';
 import { proofForTicket } from '../src/node';
 import { writeAttempt, writeVerdict } from '../src/verification/evidenceStore';
+
+const made: string[] = [];
+const temp = () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'teamtrail-proof-'));
+  made.push(dir);
+  return dir;
+};
+afterAll(() => {
+  for (const dir of made) rmSync(dir, { recursive: true, force: true });
+});
 
 const ticket = { id: '6', key: '#6', title: 'Free shipping', type: 'execute', blockedBy: ['3'] } as Ticket;
 const snap = { map: { id: 'm1', title: 'Checkout' }, tickets: [ticket] } as unknown as MapSnapshot;
@@ -34,7 +44,7 @@ const decision = (id: string, ticketId?: string) =>
 
 describe('proofForTicket', () => {
   it("reads the ticket's recorded attempts and verdicts, and the decisions it relies on", () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'proof-'));
+    const root = temp();
     writeAttempt(root, attempt('A-1', 'fail'));
     writeAttempt(root, attempt('A-2', 'pass'));
     writeVerdict(root, {
@@ -64,7 +74,7 @@ describe('proofForTicket', () => {
   });
 
   it('says plainly when nothing was submitted', () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'proof-'));
+    const root = temp();
     const p = proofForTicket({ root, snap, ticket, decisions: [] });
     expect(p.status).toBe('not-verified');
     expect(p.gaps).toEqual(['No completion was submitted for this ticket.']);

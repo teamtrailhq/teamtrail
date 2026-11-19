@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -21,13 +20,14 @@ import { reviewedWork } from '../src/verification/reviewedWork';
 import { submitReview } from '../src/verification/submitReview';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const OPUS = 'claude-opus-5-5';
 
 /** One execute ticket Scout-1 did on claude-opus-5-5, its checks passed, waiting for review at `checks+review`. */
 async function setup(gate: GateMode) {
-  const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-review-model-'));
+  const repo = tempFolder('teamtrail-review-model-');
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root);
   const checks = { ok: { run: [process.execPath, '-e', 'process.exit(0)'] } };
