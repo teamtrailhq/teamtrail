@@ -23,9 +23,30 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.12',
+    version: '0.66.14',
     date: '2026-11-19',
     items: ['Running the tests no longer leaves folders behind in the temp folder'],
+  },
+  {
+    version: '0.66.13',
+    date: '2026-11-19',
+    items: ["Checking a proof finds the repo's proof keys when the repo is reached through a symbolic link"],
+  },
+  {
+    version: '0.66.12',
+    date: '2026-11-19',
+    items: [
+      'GitHub and Linear: a write the tracker refuses for good (lost access, a deleted issue) waits for you in the queue, with Retry and Discard',
+    ],
+  },
+  {
+    version: '0.66.11',
+    date: '2026-11-19',
+    items: [
+      "A ticket's pull request block has Link a different PR and Unlink; a PR you link stays linked",
+      'Closing or reopening a ticket updates its pull request and the review queue within seconds',
+      "Removing a ticket takes its proof's green status off its pull request",
+    ],
   },
   {
     version: '0.66.10',
@@ -170,24 +191,6 @@ export const RELEASES: Release[] = [
       'Every ticket has the same shape: its title and chips (state, agent and model, verified, risk), then What, Acceptance criteria, How, Progress, Proof and History, and its actions at the end',
       'Merge anyway shows only on done work with something to merge, never on a research ticket',
       'A ticket that needs you says so in red, says what is asked, and its first button does it; in the dark theme, the ticket and menus sit on a lighter sheet over the map',
-    ],
-  },
-  {
-    version: '0.62.0',
-    date: '2026-11-18',
-    items: [
-      'Map, Plan, Activity and Logbook sit in a bar of their own under the header',
-      'The map runs a chain of tickets in a straight line, from main to the destination, with a review beside the ticket it reviews',
-      'Legend has a background, like Fit',
-    ],
-  },
-  {
-    version: '0.61.2',
-    date: '2026-11-18',
-    items: [
-      'Went without a diff rule by mistake? Undo it in the ticket, and the rule asks again on the next completion',
-      "Where a ticket's work started is kept on your machine, not in the repo, so an agent can't move it to slip a change past the check guard",
-      'In Teamtrail Cloud, a trail is checked on exactly the commit Teamtrail names on main',
     ],
   },
   ...NEWER_RELEASES,

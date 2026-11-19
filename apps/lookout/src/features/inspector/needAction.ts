@@ -43,6 +43,7 @@ const NEEDS: Partial<Record<AttentionKind, NeedAction>> = {
   overlap: { ask: 'hold one claim', act: { kind: 'menu', id: 'release-lease' } },
   integration: { ask: 'settle the branches that clash', act: { kind: 'inline' } },
   'tracker-settings': { ask: 'settle its changed settings', act: { kind: 'inline' } },
+  'tracker-refused': { ask: 'retry or discard what the tracker refused', act: { kind: 'inline' } },
   precedent: { ask: 'check it against your decision' },
   'review-limit': { ask: 'review finished work first' },
 };

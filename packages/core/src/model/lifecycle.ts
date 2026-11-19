@@ -261,7 +261,15 @@ export interface SlackOwnerEntry {
   reason?: string;
 }
 
-export type TrustAction = 'approved' | 'adopted' | 'reverted' | 'tracker-approved' | 'tracker-kept';
+export type TrustAction =
+  | 'approved'
+  | 'adopted'
+  | 'reverted'
+  | 'tracker-approved'
+  | 'tracker-kept'
+  /** A write GitHub or Linear refused for good, sent again or forgotten by the trail lead (refusedWriteRoutes.ts). */
+  | 'write-retried'
+  | 'write-discarded';
 
 /**
  * The trail lead approving, on this machine, something the repo's files ask it to trust: the check commands, an

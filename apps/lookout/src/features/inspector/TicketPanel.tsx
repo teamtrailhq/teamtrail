@@ -60,6 +60,7 @@ export function TicketPanel(props: {
         sync={v.pr}
         proofHead={v.proof?.proof.git?.head}
         lastOkAt={v.prOkAt}
+        offerLink={v.prOkAt !== undefined}
       />
       <WhatSection v={v} />
       <CriteriaSection v={v} />

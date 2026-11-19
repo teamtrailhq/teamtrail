@@ -7,6 +7,7 @@ import type { ProofPostRecord } from '../model/proofPost';
 import { trustedChecks } from '../verification/checksApproval';
 import { redact } from '../verification/redact';
 import type { RouteContext } from './routeContext';
+import { watchTicketPhases } from './watchTicketPhases';
 
 /** The configured CI provider, or why there is none (no token, no repo). Never includes the token. */
 export type CiAccess = () => Promise<CiProvider | string>;
@@ -25,12 +26,13 @@ const MAX_BACKOFF_MS = 15 * 60_000;
  * The reconciler loop: every `github.pollSec` it compares tickets with their
  * PRs and CI (evidence/reconcile.ts), writes `sync-status.json`, and sends a
  * named `verification` SSE event (VerificationSyncEvent). Failures back off
- * exponentially; a rate limit waits for the reset. It never changes tickets.
+ * exponentially; a rate limit waits for the reset. A ticket closed, reopened or removed runs a tick soon
+ * (watchTicketPhases.ts), so proofs and the review queue follow at once. It never changes tickets.
  */
 export function watchVerification(
   { root, active }: RouteContext,
   deps: { access: CiAccess; send: (text: string) => void; postProofs?: () => Promise<ProofPostRecord[]> },
-  opts: { firstMs?: number; now?: () => number } = {},
+  opts: { firstMs?: number; now?: () => number; phases?: { pollMs?: number; debounceMs?: number } } = {},
 ): VerificationWatch {
   const { access, send } = deps;
   const now = opts.now ?? Date.now;
@@ -121,16 +123,20 @@ export function watchVerification(
     } else schedule(delay);
   }
 
+  const kick = () => {
+    if (running) again = true;
+    else schedule(0);
+  };
+  // a ticket closed, reopened or removed anywhere (the Lookout, an agent over MCP, a teammate) runs a tick soon
+  const unwatchPhases = watchTicketPhases({ root, active }, kick, opts.phases);
   schedule(opts.firstMs ?? 2000);
   return {
     status: () => current,
     stop() {
       stopped = true;
       clearTimeout(timer);
+      unwatchPhases();
     },
-    kick() {
-      if (running) again = true;
-      else schedule(0);
-    },
+    kick,
   };
 }

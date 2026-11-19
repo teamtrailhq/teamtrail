@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { ACCEPTED_DIR } from '../adapters/remote/acceptedSettingsFile';
+import { REFUSED_FILE } from '../adapters/remote/refusedWrites';
 import { machineStore } from '../machine/machineStore';
 import { STATE_DIR } from '../signedState/stateRecord';
 import { SIGN_IN_FILE } from '../signIn/signInStore';
@@ -18,7 +19,10 @@ const stamp = (file: string) => {
   return s?.isFile() ? `${s.ino}|${s.mtimeMs}|${s.ctimeMs}|${s.size}` : undefined;
 };
 
-/** Each record file's stamp, by its path in the store; sign-ins are not approvals (they have their own event). */
+/**
+ * Each record file's stamp, by its path in the store; sign-ins are not approvals (they have their own event), nor are
+ * writes the tracker refused (the attention queue reads them).
+ */
 function records(dir: string): Map<string, string> {
   const out = new Map<string, string>();
   for (const sub of SUBDIRS) {
@@ -28,7 +32,7 @@ function records(dir: string): Map<string, string> {
     } catch {
       continue;
     }
-    for (const name of names.filter((n) => n.endsWith('.json') && n !== SIGN_IN_FILE)) {
+    for (const name of names.filter((n) => n.endsWith('.json') && n !== SIGN_IN_FILE && n !== REFUSED_FILE)) {
       const rel = sub ? `${sub}/${name}` : name;
       const s = stamp(path.join(dir, rel));
       if (s) out.set(rel, s);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, statSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync, symlinkSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { machineProofKey, PROOF_KEY_FILE } from '../src/machine/proofKey';
@@ -114,4 +114,19 @@ test('keys are read from a commit, never from the working tree', async () => {
   const keys = await proofKeysAt(root, 'HEAD');
   assert.ok(keys.has(first.signature!.keyId));
   assert.equal((await proofKeysAt(root, '--output=x')).size, 0);
+});
+
+test('keys are found when the repo is reached through a symbolic link (macOS: /var is /private/var)', async () => {
+  const real = tmp();
+  const link = path.join(tmp(), 'repo');
+  symlinkSync(real, link);
+  mkdirSync(path.join(real, '.teamtrail'));
+  const git = (...args: string[]) =>
+    execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...args], { cwd: real, stdio: 'pipe' });
+  git('init', '-q');
+  const root = path.join(link, '.teamtrail');
+  const first = signedProofMarkdown(root, proof(), tmp());
+  git('add', '.');
+  git('commit', '-q', '-m', 'key');
+  assert.ok((await proofKeysAt(root, 'HEAD')).has(first.signature!.keyId));
 });
