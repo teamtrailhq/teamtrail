@@ -28,6 +28,7 @@ export type AttentionKind =
   | 'guide-checks'
   | 'delivery'
   | 'tracker-settings'
+  | 'tracker-refused'
   | 'trust'
   | 'precedent'
   | 'review-limit'
@@ -69,6 +70,8 @@ export interface AttentionItem {
    * Verification → Rules. Nothing is written until the human saves it there.
    */
   rule?: { when: string[]; why: string };
+  /** The page on the tracker the item is about (the issue a refused write was for), when Teamtrail knows it. */
+  url?: string;
 }
 
 /** `<tracker dir>/attention.json`. Every field is optional; a missing file means the defaults. */

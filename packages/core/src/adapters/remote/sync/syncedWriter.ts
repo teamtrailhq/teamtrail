@@ -41,11 +41,18 @@ export abstract class SyncedWriter extends SyncedSend {
 
   /**
    * The tracker rejected a queued write for good (deleted issue, revoked access, claimed meanwhile): it is dropped
-   * rather than block the queue, kept in the status, and its trail read again so the cache stops showing it.
+   * rather than block the queue, kept in the status and for the human (the `tracker-refused` attention item, until
+   * they retry or discard it), and its trail read again so the cache stops showing it.
    */
   private drop(w: QueuedWrite, err: unknown) {
     this.queue.shift();
-    this.health.dropped(w.label, String((err as Error)?.message ?? err));
+    const error = String((err as Error)?.message ?? err);
+    this.health.dropped(w.label, error);
+    try {
+      this.refused?.add({ write: w, error, at: this.now() });
+    } catch (e) {
+      this.health.note(`Could not keep the refused write (${w.label}): ${(e as Error).message}`);
+    }
     this.pending.add(w.mapId);
     const cached = this.entries.get(w.mapId);
     if (cached) cached.at = 0;
@@ -77,12 +84,14 @@ export abstract class SyncedWriter extends SyncedSend {
     await this.locks.run(mapId, async () => {
       const e = await this.entry(mapId);
       const c = typeof change === 'function' ? change(e) : change;
+      const author = this.author?.();
       const w: QueuedWrite = {
         id: writeId(mapId, c, this.now, ++this.writes),
         mapId,
         label,
         at: this.now(),
         change: c,
+        ...(author ? { by: author.by, ...(author.origin ? { origin: author.origin } : {}) } : {}),
       };
       this.touch(mapId);
       const current = await this.sendOrQueue(e, w);

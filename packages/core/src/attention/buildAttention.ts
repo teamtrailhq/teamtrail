@@ -44,6 +44,7 @@ export function buildAttention(input: AttentionInput, sources: AttentionSource[]
       ref: c.ref,
       ...(c.agent ? { agent: c.agent } : {}),
       ...(c.rule ? { rule: c.rule } : {}),
+      ...(c.url ? { url: c.url } : {}),
     };
   };
   const candidates = sources.flatMap((s) => s.collect(input));

@@ -23,6 +23,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.12',
+    date: '2026-11-19',
+    items: [
+      'GitHub and Linear: a write the tracker refuses for good (lost access, a deleted issue) waits for you in the queue, with Retry and Discard',
+    ],
+  },
+  {
     version: '0.66.11',
     date: '2026-11-19',
     items: [
