@@ -1,0 +1,9 @@
+{
+  "name": "api",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^10.0.0"
+  }
+}

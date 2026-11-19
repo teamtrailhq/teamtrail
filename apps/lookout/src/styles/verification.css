@@ -182,8 +182,9 @@
   line-height: var(--lh-snug);
   word-break: normal;
 }
-/* The checks editor (settings/ChecksEditor.tsx): one line per check with its findings under the command, Add check,
- * how checks run behind a disclosure, then a footer apart: the one question and Save. */
+/* The checks editor (settings/ChecksEditor.tsx): one line per check (name, command, folder) with its findings under
+ * the command, Add check and the suggested checks, how checks run behind a disclosure, then a footer apart: the one
+ * question and Save. */
 .vf-editor {
   display: flex;
   flex-direction: column;
@@ -201,7 +202,7 @@
 }
 .vf-edit-row {
   display: grid;
-  grid-template-columns: minmax(80px, 140px) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(80px, 140px) minmax(0, 1fr) minmax(80px, 160px) auto;
   gap: var(--sp-6) var(--sp-8);
   align-items: center;
 }
@@ -214,13 +215,19 @@
 }
 /* Findings sit under the command, in the field's hint place. */
 .vf-edit-row .cs-findings {
-  grid-column: 2 / 3;
+  grid-column: 2 / 4;
 }
 .vf-edit-add {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-8);
+}
+/* A suggested check: its command, then its folder quieter. */
+.vf-suggestion {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-6);
 }
 .vf-edit-foot {
   display: flex;
@@ -295,9 +302,13 @@
     grid-column: 1 / -1;
     grid-row: 2;
   }
-  .vf-edit-row .cs-findings {
+  .vf-edit-row input[aria-label='Folder'] {
     grid-column: 1 / -1;
     grid-row: 3;
+  }
+  .vf-edit-row .cs-findings {
+    grid-column: 1 / -1;
+    grid-row: 4;
   }
 }
 

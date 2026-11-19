@@ -92,3 +92,38 @@ test('never through a symbolic link', () => {
   );
   assert.equal(readFileSync(elsewhere, 'utf8'), '{"v":1,"checks":{},"run":[]}\n');
 });
+
+test('a folder per check: written repo-relative, cleared to run from the top, kept when not given', () => {
+  const root = tmpRoot();
+  setChecks({
+    root,
+    base: 'none',
+    by: 'Ada',
+    checks: [
+      { name: 'web-test', run: ['npm', 'test'], cwd: './apps//web/' },
+      { name: 'test', run: ['npm', 'test'], cwd: '' },
+    ],
+  });
+  let written = JSON.parse(readFileSync(file(root), 'utf8'));
+  assert.deepEqual(written.checks['web-test'], { run: ['npm', 'test'], cwd: 'apps/web' });
+  assert.deepEqual(written.checks.test, { run: ['npm', 'test'] }, 'the top is no folder at all');
+  // older clients send no folder: the check keeps its own
+  setChecks({ root, base: checksApproval(root).hash, by: 'Ada', checks: [{ name: 'web-test', run: ['npm', 't'] }] });
+  written = JSON.parse(readFileSync(file(root), 'utf8'));
+  assert.deepEqual(written.checks['web-test'], { run: ['npm', 't'], cwd: 'apps/web' });
+  // an empty folder moves it to the top
+  const base = checksApproval(root).hash;
+  setChecks({ root, base, by: 'Ada', checks: [{ name: 'web-test', run: ['npm', 't'], cwd: '.' }] });
+  assert.deepEqual(JSON.parse(readFileSync(file(root), 'utf8')).checks['web-test'], { run: ['npm', 't'] });
+});
+
+test('a folder outside the repository is refused', () => {
+  const root = tmpRoot();
+  for (const cwd of ['../elsewhere', '/etc', 'apps/../../x', 'C:\\Windows', 'a\nb', 'x'.repeat(201)]) {
+    assert.throws(
+      () => setChecks({ root, base: 'none', by: 'Ada', checks: [{ name: 'test', run: ['npm', 'test'], cwd }] }),
+      /a folder inside the repository/,
+      cwd,
+    );
+  }
+});

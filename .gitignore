@@ -19,6 +19,8 @@ capture-frames/
 # Env and OS files
 .env
 .env.*
+# example env files of the repo profile's fixture repos (names only, no values that matter)
+!packages/core/test/fixtures/repo-profile/**/.env.example
 .DS_Store
 *.log
 

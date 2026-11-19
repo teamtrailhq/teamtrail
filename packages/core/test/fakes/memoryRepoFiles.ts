@@ -18,5 +18,16 @@ export function memoryRepoFiles(files: Record<string, string>): RepoFiles & { re
       if (rel in files) return 'file';
       return dirs.has(rel) ? 'dir' : undefined;
     },
+    async list(rel) {
+      if (!dirs.has(rel)) return undefined;
+      const prefix = rel ? `${rel}/` : '';
+      const names = new Set<string>();
+      for (const p of [...Object.keys(files), ...dirs]) {
+        if (p.startsWith(prefix) && p !== rel) names.add(p.slice(prefix.length).split('/')[0]);
+      }
+      return [...names]
+        .sort()
+        .map((name) => ({ name, kind: dirs.has(prefix + name) ? ('dir' as const) : ('file' as const) }));
+    },
   };
 }

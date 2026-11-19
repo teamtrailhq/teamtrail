@@ -1,0 +1,5 @@
+services:
+  cache:
+    image: redis:7
+  db:
+    image: "postgres:16"

@@ -22,6 +22,7 @@ import {
 } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
 import { verifyCheckGuard } from './verifyCheckGuard.mjs';
+import { verifyCheckSuggestions } from './verifyCheckSuggestions.mjs';
 import { verifyEscapes } from './verifyEscapes.mjs';
 import { verifyFlaky } from './verifyFlaky.mjs';
 import { verifyGates } from './verifyGates.mjs';
@@ -701,6 +702,8 @@ const linearOk = await verifyLinear({ browser, cli, log, shots });
 // Remote agents: a token created in Settings, an MCP client over HTTP next to a stdio one, and Revoke cutting it off.
 const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const screeningOk = await verifyScreening({ browser, cli, log, shots });
+// Suggested checks: what a monorepo runs, read from its files, added in one click with its folder and saved approved.
+const suggestionsOk = await verifyCheckSuggestions({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
 // Live views: an approval in a second browser and evidence alone changing reach an open page without a reload.
 const liveViewsOk = await verifyLiveViews({ browser, cli, log, shots });
@@ -842,6 +845,7 @@ if (
   !linearOk ||
   !remoteOk ||
   !screeningOk ||
+  !suggestionsOk ||
   !waiverOk ||
   !liveViewsOk ||
   !proofGapsOk ||

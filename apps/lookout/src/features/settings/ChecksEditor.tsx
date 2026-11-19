@@ -3,23 +3,30 @@ import { Disclosure } from '../../components/ui';
 import { useCheckScreening } from '../../hooks/useCheckScreening';
 import { apiBase } from '../../lib/apiBase';
 import { commandWords } from '../../lib/commandWords';
+import { openSuggestions } from '../../lib/openSuggestions';
 import { rowFindings } from '../../lib/rowFindings';
+import { rowOfSuggestion } from '../../lib/rowOfSuggestion';
 import { CheckEditRow } from './CheckEditRow';
 import { ChecksAdd } from './ChecksAdd';
 import { ChecksSave, type SaveState } from './ChecksSave';
 import type { EditedCheck } from './editedCheck';
+import { useCheckSuggestions } from './useCheckSuggestions';
 import type { VerificationConfigView } from './useVerificationConfig';
 
-/** The checks as the file has them, in the order they run. */
+/** The checks as the file has them, in the order they run, each with its folder ('' for the top). */
 function rowsOf(view: VerificationConfigView): EditedCheck[] {
   const c = view.config;
   if (!c) return [];
-  return c.run.filter((n) => c.checks[n]).map((n) => ({ name: n, command: c.checks[n].run.join(' ') }));
+  const folder = (cwd = '') => (cwd === '.' ? '' : cwd);
+  return c.run
+    .filter((n) => c.checks[n])
+    .map((n) => ({ name: n, command: c.checks[n].run.join(' '), cwd: folder(c.checks[n].cwd) }));
 }
 
 /**
- * Set the checks every completion runs, from here: each a name and a command, kept as words. Saving writes
- * verification.json and approves it in the same step (the server's setChecks.ts checks it all again, only on the
+ * Set the checks every completion runs, from here: each a name, a command kept as words, and the folder it runs in;
+ * the checks reading the repo suggests are one click each to add. Saving writes verification.json and approves it
+ * in the same step (the server's setChecks.ts checks it all again, only on the
  * machine Teamtrail runs on), so it asks once that you know what they run.
  */
 export function ChecksEditor({ view }: { view: VerificationConfigView }) {
@@ -27,13 +34,18 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
   const [added, setAdded] = useState(false);
   const [sure, setSure] = useState(false);
   const [state, setState] = useState<SaveState>({ kind: 'idle' });
+  const suggestions = openSuggestions(useCheckSuggestions(), rows);
+  const add = (check: EditedCheck) => {
+    setAdded(true);
+    setRows([...rows, check]);
+  };
   const set = (i: number, patch: Partial<EditedCheck>) =>
     setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   // read against the repo as they're typed: a command that can't run is said under it, never refused
   const screened = rows.map((r, n) => ({
     name: String(n),
     run: commandWords(r.command),
-    cwd: view.config?.checks[r.name]?.cwd,
+    ...(r.cwd.trim() ? { cwd: r.cwd.trim() } : {}),
   }));
   const screening = useCheckScreening(screened);
   const findings = rowFindings({ findings: screening, rows });
@@ -41,7 +53,7 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
     setState({ kind: 'saving' });
     const checks = rows
       .filter((r) => r.name.trim() && r.command.trim())
-      .map((r) => ({ name: r.name.trim(), run: commandWords(r.command) }));
+      .map((r) => ({ name: r.name.trim(), run: commandWords(r.command), cwd: r.cwd.trim() }));
     const res = await fetch(`${apiBase()}/verification/config`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -67,18 +79,12 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
           ))}
         </ul>
       )}
-      <ChecksAdd
-        empty={rows.length === 0}
-        onAdd={(check) => {
-          setAdded(true);
-          setRows([...rows, check]);
-        }}
-      />
+      <ChecksAdd suggestions={suggestions} onAdd={add} onSuggestion={(s) => add(rowOfSuggestion(s, rows))} />
       <Disclosure label="How checks run">
         <p className="t-meta">
-          Each command runs from the repository&apos;s root as words, never through a shell: no pipes or{' '}
-          <code className="t-code">&amp;&amp;</code>, and what it runs must already be in the repo. For example{' '}
-          <code className="t-code">npm run e2e</code>, <code className="t-code">make test</code>,{' '}
+          Each command runs in its folder (the repository&apos;s top when it&apos;s empty) as words, never through a
+          shell: no pipes or <code className="t-code">&amp;&amp;</code>, and what it runs must already be in the repo.
+          For example <code className="t-code">npm run e2e</code>, <code className="t-code">make test</code>,{' '}
           <code className="t-code">./scripts/check.sh</code> or <code className="t-code">pytest -q</code>.
         </p>
       </Disclosure>

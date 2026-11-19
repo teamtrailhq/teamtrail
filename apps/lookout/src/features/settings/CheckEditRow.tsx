@@ -3,8 +3,8 @@ import { CheckFindingList } from '../check-screening';
 import type { EditedCheck } from './editedCheck';
 
 /**
- * One check being edited: its name and command on one line, a quiet remove at the end, and what reading the repo
- * found about the command right under it, with the command that runs offered when it's known.
+ * One check being edited: its name, command and folder on one line, a quiet remove at the end, and what reading the
+ * repo found about the command right under it, with the command that runs offered when it's known.
  */
 export function CheckEditRow(props: {
   check: EditedCheck;
@@ -31,6 +31,13 @@ export function CheckEditRow(props: {
           value={check.command}
           placeholder="npm test"
           onChange={(e) => onChange({ command: e.target.value })}
+        />
+        <input
+          aria-label="Folder"
+          className="t-code"
+          value={check.cwd}
+          placeholder="top folder"
+          onChange={(e) => onChange({ cwd: e.target.value })}
         />
         <button
           type="button"

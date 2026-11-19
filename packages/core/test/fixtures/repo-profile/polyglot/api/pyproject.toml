@@ -1,0 +1,4 @@
+[project]
+name = "api"
+
+[tool.pytest.ini_options]

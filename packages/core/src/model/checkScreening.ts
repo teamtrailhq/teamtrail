@@ -1,3 +1,5 @@
+import type { CommandRole, Ecosystem } from './repoProfile';
+
 /** How sure a screening finding is that the check can't pass as written. */
 export type FindingSeverity = 'wont-run' | 'unsure';
 
@@ -37,4 +39,29 @@ export interface RepoFiles {
   read(rel: string): Promise<string | undefined>;
   /** What is at the path, or undefined when nothing (or something outside the repo) is. */
   kind(rel: string): Promise<'file' | 'dir' | undefined>;
+  /**
+   * A folder's entries, sorted by name, or undefined when it's missing, not a folder or outside the repo. Optional: a
+   * reader that can't list (older embedding servers) leaves it out, and the repo profile then reads the top folder
+   * only. Symbolic links are left out, so a listing never leads outside the repo or round in a loop.
+   */
+  list?(rel: string): Promise<RepoEntry[] | undefined>;
+}
+
+/** One entry of a folder listing: its name and whether it's a file or a folder. */
+export interface RepoEntry {
+  name: string;
+  kind: 'file' | 'dir';
+}
+
+/** A check reading the repo suggests (repoProfile/suggestChecks.ts), as the checks editor would add it: argv, folder, and why. */
+export interface CheckSuggestion {
+  name: string;
+  run: string[];
+  /** Repo-relative folder, '' for the top. */
+  cwd: string;
+  role: CommandRole;
+  ecosystem: Ecosystem;
+  from: string;
+  /** One of the known check shapes; otherwise saving it needs the person's acknowledgement. */
+  known: boolean;
 }
