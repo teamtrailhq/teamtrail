@@ -30,6 +30,13 @@ export const RELEASES: Release[] = [
     ],
   },
   {
+    version: '0.66.17',
+    date: '2026-11-19',
+    items: [
+      "An answer passed on from an agent's chat no longer takes the place of yours: it guides the agent, and the question stays open in the Lookout and Slack until you answer, and your answer is the one that decides",
+    ],
+  },
+  {
     version: '0.66.16',
     date: '2026-11-19',
     items: [

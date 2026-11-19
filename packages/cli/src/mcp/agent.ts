@@ -1,11 +1,12 @@
 import { OperationError, type DecisionRecord, type MapSnapshot, type Ticket } from '@teamtrail/core';
 import { AgentContext } from './trail/agentContext';
+import { answerQuestion } from './trail/answerQuestion';
 import { claimTicket } from './trail/claimTicket';
 import { closeTicket } from './trail/closeTicket';
 import { verificationStatus } from './trail/completion';
 import { setCriteria } from './trail/criteria';
 import { getBrief, submitBrief } from './trail/discovery';
-import { answerQuestion, ask, defaultWaitSeconds, inbox, waitForAnswer } from './trail/hitl';
+import { ask, defaultWaitSeconds, inbox, waitForAnswer } from './trail/hitl';
 import { flagKnowledge, proposeKnowledge, searchKnowledgeOp } from './trail/knowledge';
 import { RefusedNotices } from './trail/refusedNotices';
 import { recordDecision, report, sessionView } from './trail/reporting';

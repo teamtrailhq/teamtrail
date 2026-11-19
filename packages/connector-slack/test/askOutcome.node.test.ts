@@ -149,3 +149,53 @@ test('Slack answers after the Lookout did: the card shows the Lookout’s answer
     rmSync(path.dirname(root), { recursive: true, force: true });
   }
 });
+
+test('answered in an agent’s chat first, then in Slack: the card stays open for Slack, and Slack’s answer is the one used', async () => {
+  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-slack-guided-')), '.teamtrail');
+  mkdirSync(root, { recursive: true });
+  try {
+    const activity = new ActivityStream();
+    const writer = new AgentDocWriter(root, activity, { pollMs: 10_000 });
+    const s = activity.startSession({ id: 's', agent: 'claude', mode: 'work', mapId: 'm' });
+    let got: string | undefined;
+    void s.ask('Retention days?').then((a) => (got = a));
+    writer.flush();
+    const q = activity.snapshot.pending[0].id;
+    const chat = { sessionId: 's', questionId: q, author: 'trail lead', via: 'chat' as const, chatOf: 'claude-02' };
+    writeAgentAnswer(root, { ...chat, text: '30 days' });
+    writer.pullAnswers();
+    writer.flush();
+    assert.equal(activity.snapshot.pending[0]?.guidance?.text, '30 days', 'still open, with the guidance');
+    const { ctx, updates } = cards();
+    const asks = (ctx.asks.read() as Record<string, unknown>) ?? {};
+    asks[q] = { ...(asks.q2 as object), view: { ...(asks.q2 as { view: object }).view, questionId: q } };
+    Object.assign(ctx, { o: { ...ctx.o, root }, answering: new Set<string>() });
+    assert.equal(await answer(ctx, { s: 's', q }, '90 days', 'U0ANA00001'), 'ok');
+    writer.pullAnswers();
+    writer.close();
+    await new Promise((r) => setImmediate(r));
+    assert.equal(got, '90 days', 'the agent got Slack’s answer');
+    assert.deepEqual(
+      updates.map((u) => u.text),
+      ['✓ Answered by <@U0ANA00001> via Slack: “90 days”. claude resumed.'],
+    );
+  } finally {
+    rmSync(path.dirname(root), { recursive: true, force: true });
+  }
+});
+
+test('a question that ended with only chat guidance: the card says so, and that it decided nothing', async () => {
+  const { ctx, updates } = cards();
+  const guidance = {
+    ...{ id: 'c4', sessionId: 's', from: 'human', author: 'trail lead', text: 'Name it users', at: 2600 },
+    ...{ answers: 'q3', via: 'chat', chatOf: 'claude-02', guidance: true },
+  };
+  const ended = { ...doc, session: { id: 's', status: 'done' }, chats: [...doc.chats, guidance] };
+  await closeAsk(ctx, 'q3', [ended as AgentSessionDoc]);
+  assert.deepEqual(
+    updates.map((u) => u.text),
+    [
+      "No longer waiting: claude session ended. Guidance given earlier in claude-02's chat: “Name it users”, deciding nothing.",
+    ],
+  );
+});

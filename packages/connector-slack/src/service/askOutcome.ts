@@ -34,6 +34,12 @@ function usedLine(a: Said, agent: string): AskOutcome {
   return { line: `✓ Answered in ${BRAND.name} by ${label(a.author)}${quoted(a.text)}.`, answered: true };
 }
 
+/** Answers given in an agent's chat while the question waited for the human: guidance, deciding nothing. */
+const guidanceLines = (given: Said[], agent: string) =>
+  given
+    .map((a) => ` Guidance given earlier in ${label(a.chatOf ?? agent)}'s chat${quoted(a.text)}, deciding nothing.`)
+    .join('');
+
 /** Answers given after the one used: kept, and said to be not used. */
 const notUsedLines = (later: Said[]) =>
   later.map((a) => ` Also answered by ${whoSaid(a)}${quoted(a.text)}, not used.`).join('');
@@ -43,7 +49,8 @@ const notUsedLines = (later: Said[]) =>
  * which was kept but not used (agents/addAnswerFile.ts). From Slack's own record when the answer was given here
  * (`slack`), else from the agent's session doc: the answer to this question (never another chat after it). An
  * answer passed on in the agent's own chat (answer_question, `via: 'chat'`) is guidance only: it backs no
- * decision, so the card never says the human decided.
+ * decision, so the card never says the human decided. One given while the question stayed open for the human
+ * (`guidance`) is told as such, after the answer used.
  */
 export function askOutcome(o: {
   doc?: AgentSessionDoc;
@@ -55,10 +62,14 @@ export function askOutcome(o: {
   if (slack) return fromSlack(slack, o.agent);
   const done = (doc?.answered ?? []).find((a) => a.id === questionId);
   const replies = (doc?.chats ?? []).filter((c) => c.from === 'human' && c.answers === questionId);
-  const reply = replies.find((c) => !c.notUsed);
+  const reply = replies.find((c) => !c.notUsed && !c.guidance);
+  const guided = guidanceLines(
+    replies.filter((c) => c.guidance),
+    o.agent,
+  );
   if (!done && !reply) {
     const why = doc?.session.status === 'running' ? 'withdrew the question' : 'session ended';
-    return { line: `No longer waiting: ${label(o.agent)} ${why}.`, answered: false };
+    return { line: `No longer waiting: ${label(o.agent)} ${why}.${guided}`, answered: false };
   }
   const used = {
     author: reply?.author ?? 'trail lead',
@@ -67,7 +78,7 @@ export function askOutcome(o: {
     chatOf: done?.chatOf ?? reply?.chatOf,
   };
   const outcome = usedLine(used, o.agent);
-  return { ...outcome, line: outcome.line + notUsedLines(replies.filter((c) => c.notUsed)) };
+  return { ...outcome, line: outcome.line + guided + notUsedLines(replies.filter((c) => c.notUsed)) };
 }
 
 /** Answered from Slack: by this user, or, when another answer came first, that one, and this one not used. */

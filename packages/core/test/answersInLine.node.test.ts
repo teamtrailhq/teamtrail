@@ -199,3 +199,80 @@ it('the answer folder of a question is cleared a while after it was answered', a
   a.writer.close();
   assert.equal(existsSync(dir), false);
 });
+
+it('a chat answer before the human’s guides and leaves the question open: the human’s answer is the one used', async () => {
+  const root = tmpRoot();
+  const a = asking(root);
+  const q = a.qs[0];
+  const guided = a.activity.awaitGuidance(q);
+  const chat = { sessionId: 's_1', questionId: q, author: 'trail lead', via: 'chat' as const, chatOf: 'claude-02' };
+  assert.equal(writeAgentAnswer(root, { ...chat, text: 'Drop it' }).firstAnswer, undefined, 'delivered as guidance');
+  const got = await Promise.race([guided, wait(500).then(() => undefined)]);
+  assert.equal(got?.text, 'Drop it', 'the agent gets it as guidance');
+  assert.equal(a.got.size, 0, 'it is not the answer');
+  const open = a.activity.snapshot.pending.find((p) => p.id === q);
+  assert.equal(open?.guidance?.chatOf, 'claude-02', 'the question stays open, showing the guidance');
+  a.writer.flush();
+  const doc = JSON.parse(readFileSync(path.join(root, agentPaths.session('s_1')), 'utf8')) as AgentSessionDoc;
+  assert.equal(doc.pending[0]?.guidance?.text, 'Drop it', 'the Lookout and Slack see it open, with the guidance');
+  const lookout = { sessionId: 's_1', questionId: q, author: 'trail lead', via: 'lookout' as const };
+  assert.equal(writeAgentAnswer(root, { ...lookout, text: 'Keep it' }).firstAnswer, undefined, 'the human’s is used');
+  await wait(60);
+  a.writer.close();
+  assert.equal(a.got.get('Question 0?'), 'Keep it');
+  const chats = a.activity.snapshot.chats.filter((c) => c.answers === q);
+  assert.deepEqual(
+    chats.map((c) => [c.text, c.via, c.guidance ?? false, c.notUsed ?? false]),
+    [
+      ['Drop it', 'chat', true, false],
+      ['Keep it', 'lookout', false, false],
+    ],
+  );
+  assert.equal(chatNote(chats[0]), "in claude-02's chat, guidance only");
+  assert.equal(a.activity.snapshot.answered.find((x) => x.id === q)?.via, 'lookout');
+  assert.deepEqual(a.kept, [], 'the guidance is not an answer kept as not used');
+});
+
+it('chat and human answers in line before the asking process looks: the human’s is used, whatever the order', async () => {
+  const root = tmpRoot();
+  const a = asking(root);
+  const q = a.qs[0];
+  a.writer.close();
+  const base = { sessionId: 's_1', questionId: q, author: 'trail lead' };
+  writeAgentAnswer(root, { ...base, text: 'Chat 1', via: 'chat', chatOf: 'claude-02' });
+  const slack = writeAgentAnswer(root, { ...base, author: 'slack:U1', text: 'Slack', via: 'slack' });
+  assert.equal(slack.firstAnswer, undefined, 'Slack is told its answer is the one used');
+  const late = writeAgentAnswer(root, { ...base, text: 'Lookout', via: 'lookout' });
+  assert.equal(late.firstAnswer?.text, 'Slack', 'two human answers: the first is used, as before');
+  const chat = writeAgentAnswer(root, { ...base, text: 'Chat 2', via: 'chat', chatOf: 'claude-02' });
+  assert.equal(chat.firstAnswer?.text, 'Slack', 'a chat after the human’s answer is told it came second');
+  a.writer.pullAnswers();
+  a.writer.pullAnswers();
+  await wait(10);
+  assert.equal(a.got.get('Question 0?'), 'Slack');
+  const chats = a.activity.snapshot.chats.filter((c) => c.answers === q);
+  assert.deepEqual(
+    chats.map((c) => [c.text, c.guidance ? 'guidance' : c.notUsed ? 'not used' : 'used']),
+    [
+      ['Chat 1', 'guidance'],
+      ['Slack', 'used'],
+      ['Lookout', 'not used'],
+      ['Chat 2', 'not used'],
+    ],
+  );
+});
+
+it('an asking process from before chat guidance keeps the first answer in line, a chat one too, and writers agree', () => {
+  const root = tmpRoot();
+  const a = asking(root);
+  a.writer.close();
+  const q = a.qs[0];
+  const doc = path.join(root, agentPaths.session('s_1'));
+  const { chatGuides, ...older } = JSON.parse(readFileSync(doc, 'utf8')) as AgentSessionDoc;
+  assert.equal(chatGuides, true);
+  writeFileSync(doc, JSON.stringify(older));
+  const base = { sessionId: 's_1', questionId: q, author: 'trail lead' };
+  writeAgentAnswer(root, { ...base, text: 'Drop it', via: 'chat', chatOf: 'claude-02' });
+  const human = writeAgentAnswer(root, { ...base, text: 'Keep it', via: 'lookout' });
+  assert.equal(human.firstAnswer?.text, 'Drop it', 'the human is told what that agent got');
+});

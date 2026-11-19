@@ -4,6 +4,7 @@ import type { ActivityStream } from '../activity/activityStream';
 import type { NotUsedAnswer } from '../activity/notUsedAnswer';
 import { writeLocalJson } from '../lib/ensureLocalDir';
 import { machineAccess } from '../machine/machineAccess';
+import { closesQuestion } from '../model/answerVia';
 import { BRAND } from '../model/brand';
 import { compareVersions } from '../model/compareVersions';
 import { runningVersion } from '../model/runningVersion';
@@ -40,6 +41,8 @@ export class AgentDocWriter {
   private signatures = new Map<string, AnsweredQuestion>();
   /** Questions answered here lately, with the answer files already kept, by number. */
   private late = new Map<string, Late>();
+  /** Questions still open with chat answers delivered as guidance, by the numbers of their files. */
+  private guided = new Map<string, Set<number>>();
   /** Numbered answer files already flagged as not Teamtrail's. */
   private flagged = new Set<string>();
 
@@ -91,6 +94,7 @@ export class AgentDocWriter {
         client: this.opts.client?.(),
         ...teamtrailVersion(),
         answerFormat: ANSWER_FORMAT,
+        chatGuides: true,
         pid: process.pid,
       };
       const key = JSON.stringify(doc);
@@ -103,26 +107,37 @@ export class AgentDocWriter {
   /**
    * Apply answer files for questions this process is waiting on. Only an answer signed with this machine's key
    * counts: a file written by anything else (the asking agent, a teammate's push) is flagged in the activity feed
-   * and passed over, and the question keeps waiting for the human. The first answer in line that verifies
-   * (answerFiles.ts) is delivered; answers after it are kept in the conversation as not used, also those that come
-   * in for a minute after (`pullLate`). When the key can't be read (a sandbox that blocks the config folder),
-   * nothing is delivered, and that is said once.
+   * and passed over, and the question keeps waiting for the human. The first answer in line that verifies and was
+   * not given in a chat (answerFiles.ts, answerVia.ts `closesQuestion`) is delivered; answers after it are kept in
+   * the conversation as not used, also those that come in for a minute after (`pullLate`). A chat answer before it
+   * is delivered as guidance and the question stays open, so it never takes the place of the human's answer
+   * (`ActivityStream.guide`). When the key can't be read (a sandbox that blocks the config folder), nothing is
+   * delivered, and that is said once.
    */
   pullAnswers() {
     // Before new deliveries: an answer delivered now is in the asking agent's hands before its later ones are kept.
     this.pullLate();
+    const open = new Set(this.activity.snapshot.pending.map((q) => q.id));
+    for (const id of this.guided.keys()) if (!open.has(id)) this.guided.delete(id);
     for (const q of this.activity.snapshot.pending) this.pullFor(q);
   }
 
   private pullFor(q: Asked) {
+    const guided = this.guided.get(q.id) ?? new Set<number>();
     for (const f of answerFiles(this.root, q.sessionId, q.id)) {
+      if (guided.has(f.seq)) continue;
       const r = this.judge(f, q);
       if (r.kind === 'wait') return;
       if (r.kind === 'skip') continue;
       if (f.seq === 0) rmSync(f.file, { force: true });
+      if (!closesQuestion(r.how.via)) {
+        if (this.activity.guide(q.id, r.ans.text, r.ans.author || TRAIL_LEAD, r.how) && f.seq > 0)
+          this.guided.set(q.id, guided.add(f.seq));
+        continue;
+      }
       // An unlabelled answer (an older writer, or a label that doesn't verify) counts as chat at gates (answerVia.ts).
       if (this.activity.answer(q.id, r.ans.text, r.ans.author || TRAIL_LEAD, r.how))
-        this.late.set(q.id, { q, until: Date.now() + LATE_MS, kept: new Set([f.seq]) });
+        this.late.set(q.id, { q, until: Date.now() + LATE_MS, kept: new Set([...guided, f.seq]) });
       return;
     }
   }

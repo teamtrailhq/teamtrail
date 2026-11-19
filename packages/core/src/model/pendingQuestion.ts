@@ -31,4 +31,19 @@ export interface PendingQuestion {
    * calls, may answer it. A hint for the page, which routes it to them; the answer route checks again.
    */
   lookoutOnly?: true;
+  /**
+   * The first answer given in an agent's chat (answer_question): delivered to the agent as guidance, while the
+   * question stays open for the human's answer in the Lookout or Slack, the one that decides (answerVia.ts
+   * `closesQuestion`).
+   */
+  guidance?: QuestionGuidance;
+}
+
+/** An answer given in an agent's chat to a question still open for the human. */
+export interface QuestionGuidance {
+  text: string;
+  author: string;
+  /** The agent whose chat it was given in. */
+  chatOf?: string;
+  at: number;
 }
