@@ -35,6 +35,7 @@ import { verifyMainChecks } from './verifyMainChecks.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyNewTrail } from './verifyNewTrail.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
+import { verifyPrLink } from './verifyPrLink.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifyProof } from './verifyProof.mjs';
 import { verifyProofGaps } from './verifyProofGaps.mjs';
@@ -704,6 +705,8 @@ const waiverOk = await verifyWaiver({ browser, cli, log, shots });
 const liveViewsOk = await verifyLiveViews({ browser, cli, log, shots });
 // Done means verified: missing evidence back to rework and the review opened by themselves, Confirm criteria → verified.
 const proofGapsOk = await verifyProofGaps({ browser, cli, log, shots });
+// A pull request linked by hand: Link a different PR in the full ticket, against a fake GitHub, then Unlink.
+const prLinkOk = await verifyPrLink({ browser, cli, log, shots });
 // Flaky checks: a pass on retry with no change held for the trail lead, accepted, and shown on the proof.
 const flakyOk = await verifyFlaky({ browser, cli, log, shots });
 // Diff rules: a rule prefilled from a link and saved in Settings, an agent's completion held for its answer.
@@ -839,6 +842,7 @@ if (
   !waiverOk ||
   !liveViewsOk ||
   !proofGapsOk ||
+  !prLinkOk ||
   !flakyOk ||
   !rulesOk ||
   !checkGuardOk ||
