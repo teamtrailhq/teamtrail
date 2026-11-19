@@ -358,11 +358,22 @@ test('GET /verification/sync and PUT /verification/sync/link through the bridge'
     );
     assert.equal((await put({ mapId: map.id, ticketId: tickets[0].id, pr: 'x' })).status, 400);
     assert.equal((await put({ mapId: map.id, ticketId: 'nope', pr: 5 })).status, 404);
-    assert.equal((await put({ mapId: map.id, ticketId: tickets[0].id, pr: 5 })).status, 200);
-    assert.equal(readTicketSyncs(root)[0].link.source, 'explicit');
+    // a hand link is checked with the code host first: without a token there is none to ask
+    const unchecked = await put({ mapId: map.id, ticketId: tickets[0].id, pr: 5 });
+    assert.equal(unchecked.status, 409);
+    assert.match(((await unchecked.json()) as { error: string }).error, /can't read pull requests/);
+    assert.deepEqual(readTicketSyncs(root), []);
+    writeTicketSync(root, {
+      ...{ v: 1, mapId: map.id, ticketId: tickets[0].id, ticketKey: tickets[0].key, provider: 'github' },
+      ...{ link: { number: 5, source: 'branch', at: 0 }, checks: [], checksSummary: 'none', flags: [] },
+    });
     const listed = (await (await fetch(`${base}/verification/sync?mapId=${map.id}`)).json()) as { tickets: unknown[] };
     assert.equal(listed.tickets.length, 1);
-    assert.equal((await put({ mapId: map.id, ticketId: tickets[0].id, pr: null })).status, 200);
+    assert.equal(
+      (await put({ mapId: map.id, ticketId: tickets[0].id, pr: null })).status,
+      200,
+      'unlinking needs no host',
+    );
     assert.deepEqual(readTicketSyncs(root), []);
   } finally {
     server.close();

@@ -1,7 +1,16 @@
 import type { Release } from './releases';
 
 /** Releases 0.61, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
-export const NEWER_RELEASES: Release[] = [
+export const RELEASES_061: Release[] = [
+  {
+    version: '0.61.2',
+    date: '2026-11-18',
+    items: [
+      'Went without a diff rule by mistake? Undo it in the ticket, and the rule asks again on the next completion',
+      "Where a ticket's work started is kept on your machine, not in the repo, so an agent can't move it to slip a change past the check guard",
+      'In Teamtrail Cloud, a trail is checked on exactly the commit Teamtrail names on main',
+    ],
+  },
   {
     version: '0.61.1',
     date: '2026-11-18',

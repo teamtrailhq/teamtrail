@@ -33,7 +33,12 @@ function set(next: PrSyncSnapshot) {
 /** A load's tickets, keeping those an event brought after the load started. */
 function merged(loaded: TicketSync[], since: number) {
   const tickets = Object.fromEntries(loaded.map((t) => [keyOf(t.mapId, t.ticketId), t]));
-  for (const [key, at] of sentAt) if (at > since && snap.tickets[key]) tickets[key] = snap.tickets[key];
+  for (const [key, at] of sentAt) {
+    if (at <= since) continue;
+    // what an event or an action brought after the load started wins, a removal too
+    if (snap.tickets[key]) tickets[key] = snap.tickets[key];
+    else delete tickets[key];
+  }
   return tickets;
 }
 
@@ -91,6 +96,14 @@ function push(sync: TicketSync) {
   set({ ...snap, tickets: { ...snap.tickets, [key]: sync } });
 }
 
+/** A ticket's snapshot an action removed (the trail lead unlinked its pull request): gone at once, as with push. */
+function drop(mapId: string, ticketId: string) {
+  const key = keyOf(mapId, ticketId);
+  sentAt.set(key, ++events);
+  const { [key]: _gone, ...tickets } = snap.tickets;
+  set({ ...snap, tickets });
+}
+
 /** PR/CI evidence from the reconciler: one fetch plus the SSE `verification` event, shared by every reader. */
 export const prSync = {
   subscribe(l: () => void) {
@@ -100,6 +113,7 @@ export const prSync = {
   },
   get: () => snap,
   push,
+  drop,
   /** Attempts, verdicts, check logs or a run lock changed (`kind: 'evidence'` on the same stream). */
   onEvidence(l: () => void) {
     if (!started) start();

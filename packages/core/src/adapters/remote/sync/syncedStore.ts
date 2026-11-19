@@ -7,7 +7,7 @@ import { patchListed } from './listedTrails';
 import { Poller } from './poller';
 import { applyWrite } from './queuedWrites';
 import { SyncHealth } from './syncHealth';
-import type { CacheEntry, EventInit, SyncOptions, SyncStatus } from './types';
+import type { CacheEntry, EventInit, RefusedSink, SyncOptions, SyncStatus, WriteAuthor } from './types';
 import { WriteQueue } from './writeQueue';
 
 export const isNotFound = (e: unknown) => e instanceof TrackerError && e.code === 'not_found';
@@ -30,6 +30,8 @@ export abstract class SyncedStore {
   protected readonly queue: WriteQueue;
   protected readonly health: SyncHealth;
   protected readonly poller: Poller;
+  protected readonly author?: () => WriteAuthor | undefined;
+  protected readonly refused?: RefusedSink;
   protected readonly locks = new KeyedLock();
   protected maps?: { list: MapSummary[]; at: number };
   protected entries = new Map<string, CacheEntry>();
@@ -47,6 +49,8 @@ export abstract class SyncedStore {
     this.now = opts.now ?? Date.now;
     this.pollMs = opts.pollMs ?? 10_000;
     this.ttlMs = opts.ttlMs ?? 15_000;
+    this.author = opts.author;
+    this.refused = opts.refused;
     this.queue = new WriteQueue(opts.outbox, (error) => this.health.note(error));
     this.health = new SyncHealth({ now: this.now, queued: () => this.queue.length, rate: () => this.rate() });
     this.poller = new Poller({

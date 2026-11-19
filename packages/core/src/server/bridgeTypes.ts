@@ -19,7 +19,9 @@ export interface TrackerBridge {
    *   POST /agents/leases/release            body `{ mapId, ticketId, by? }` → `{ returned }`: back to the queue with a handoff comment
    *   GET  /verification/sync[?mapId=]       `{ status: PrSyncStatus, tickets: TicketSync[] }` PR/CI evidence and flags;
    *                                          SSE `verification` (VerificationSyncEvent) after each reconciler tick
-   *   PUT  /verification/sync/link           body `{ mapId, ticketId, pr: number | null }` link or unlink a PR
+   *   GET  /verification/sync/candidates?mapId=&ticketId=  `{ repo, prs: PrChoice[] }` PRs the ticket can be linked to
+   *   PUT  /verification/sync/link           body `{ mapId, ticketId, pr: number | null }` link a PR by hand (checked
+   *                                          with the host) or unlink it; this machine only, journaled
    *   GET  /decisions[?trail=<id>]         `{ decisions: DecisionRecord[] }`
    *   POST /decisions                        body `{ trail, appendToTrail?, ...DecisionInput }` → DecisionRecord (idempotent per source.kind + source.ref)
    *   POST /decisions/<id>/supersede         body `{ trail, ...DecisionInput }` → the new DecisionRecord
@@ -76,8 +78,11 @@ export interface BridgeOptions extends Omit<TrackerRoutesOptions, 'root' | 'mark
   url?: () => string | undefined;
   /** How often lease files are polled and expired leases returned to the queue. */
   leases?: { pollMs?: number; reapMs?: number };
-  /** PR/CI reconciler (watchVerification.ts): delay before the first tick. Later ticks follow `github.pollSec`. */
-  reconciler?: { firstMs?: number };
+  /**
+   * PR/CI reconciler (watchVerification.ts): delay before the first tick; later ticks follow `github.pollSec`.
+   * `phases`: how often tickets are read for a close, reopen or removal that runs a tick early (watchTicketPhases.ts).
+   */
+  reconciler?: { firstMs?: number; phases?: { pollMs?: number; debounceMs?: number } };
   /** How often active claim branches are compared for overlapping changes (watchIntegration.ts). */
   integration?: { pollMs?: number };
   /** How often the attention queue is recomputed for the `attention` event (watchAttention.ts). */

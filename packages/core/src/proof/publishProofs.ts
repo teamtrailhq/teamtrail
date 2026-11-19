@@ -8,6 +8,7 @@ import { proofForTicket } from './proofForTicket';
 import { readProofPost, writeProofPost } from './proofPostStore';
 import { proofStatus } from './proofStatus';
 import { signedProofMarkdown } from './signedProofMarkdown';
+import { withdrawRemoved } from './withdrawRemoved';
 
 export interface PublishEnv {
   root: string;
@@ -88,12 +89,15 @@ const visited = (root: string, snap: MapSnapshot) =>
  * per proof, PR and head: what changed since the last pass, and anything whose last try failed (offline, a rate
  * limit), so nothing is lost while the machine is offline. A PR merged before any pass saw it open gets its proof
  * once, and a ticket reopened after its proof was posted has it posted again as not verified, so its PR never keeps
- * a green `Teamtrail proof` for work that isn't done. Never changes a ticket.
+ * a green `Teamtrail proof` for work that isn't done. A ticket (or trail) removed after its proof was posted has its
+ * PR's status set failing and its comment edited, once (withdrawRemoved.ts). Never changes a ticket.
  */
 export async function publishProofs(env: PublishEnv): Promise<ProofPostRecord[]> {
   const out: ProofPostRecord[] = [];
+  const kept = new Set<string>();
   for (const summary of await env.adapter.listMaps()) {
     const snap = await env.adapter.loadMap(summary.id);
+    for (const t of snap.tickets) kept.add(`${snap.map.id}/${t.id}`);
     const tickets = visited(env.root, snap);
     if (!tickets.length) continue;
     const decisions = await env.adapter.listDecisions(snap.map.id);
@@ -102,5 +106,7 @@ export async function publishProofs(env: PublishEnv): Promise<ProofPostRecord[]>
       if (rec) out.push(rec);
     }
   }
+  // only once every trail was read: a trail that failed to load threw above, so nothing is taken for removed
+  out.push(...(await withdrawRemoved({ root: env.root, publisher: env.publisher, kept, now: env.now })));
   return out;
 }

@@ -15,7 +15,8 @@ import { limitedCallRefusal } from './limitedCallRefusal';
 import { markedLimited } from './limitedRequests';
 import { linearLookups } from './linearLookups';
 import { handleLinearTeams, LINEAR_PROJECTS, LINEAR_TEAMS } from './linearTeamRoutes';
-import { isKind, remoteAdapters } from './remoteAdapters';
+import { handleRefusedWrites, REFUSED_WRITES } from './refusedWriteRoutes';
+import { isKind, queueKey, remoteAdapters } from './remoteAdapters';
 import { fromThisMachine } from './requestGuard';
 import { CALLS } from './trackerCalls';
 import { trackerContext, type TrackerRoutesOptions } from './trackerContext';
@@ -64,6 +65,7 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
     const forget = p.match(/^\/trackers\/credentials\/([^/]+)$/);
     const own = p === '/trackers' || p === '/trackers/test' || p === TRACKER_APPROVAL || !!call || !!forget;
     if (p === LEGACY_OUTBOX) return legacyRoute(req, res);
+    if (p === REFUSED_WRITES) return refusedRoute(req, res);
     if (!own && !isLookup(p)) return false;
     try {
       if (crossSite(req)) return (void sendJson(res, 403, { error: 'cross-site request refused' }), true);
@@ -86,6 +88,26 @@ export function createTrackerRoutes(o: TrackerRoutesOptions) {
       remotes.resumeQueued();
     };
     return handleLegacyOutbox(req, res, { root: o.root, configDir: ctx.configDir, adopt });
+  }
+
+  /** A write the tracker refused for good, retried or discarded by the trail lead (refusedWriteRoutes.ts). */
+  async function refusedRoute(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+    if (crossSite(req)) return (void sendJson(res, 403, { error: 'cross-site request refused' }), true);
+    const currentKey = () => {
+      const cfg = ctx.pin.read().config;
+      return isKind(cfg.active) ? queueKey(cfg, cfg.active) : undefined;
+    };
+    const requeued = () => {
+      const cfg = ctx.pin.read().config;
+      if (isKind(cfg.active)) remotes.reset(cfg.active);
+      remotes.resumeQueued();
+    };
+    try {
+      return await handleRefusedWrites(req, res, { root: o.root, configDir: ctx.configDir, currentKey, requeued });
+    } catch (err) {
+      if (err instanceof BadRequest) return (void sendJson(res, 400, { error: err.message }), true);
+      return (void sendFailure(res, err), true);
+    }
   }
 
   /** The pickers' lookups and Sign in with GitHub. */

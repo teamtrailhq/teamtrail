@@ -20,6 +20,8 @@ export { readLookoutLock } from './agents/lookoutLock';
 export { ensureLocalDir, writeLocalJson } from './lib/ensureLocalDir';
 export { writeJsonAtomic } from './lib/jsonFile';
 export { outboxFile, outboxKey } from './adapters/remote/outboxFile';
+export { refusedWrites } from './adapters/remote/refusedWrites';
+export type { RefusedWrite } from './adapters/remote/sync/types';
 export {
   createProjectsHub,
   type ProjectsHub,

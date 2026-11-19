@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { OperationError, type TrailAgent, type WaitControl } from './agent';
 import { assertLineSafe, toolShapes } from './lineSafety';
 import { assertNoHumanInputs, humanRoles, markHumanInputs, type HumanRole } from './remoteGate';
+import { withRefusedWrites } from './withRefusedWrites';
 
 export const ticketType = z.enum(TICKET_TYPES as [TicketType, ...TicketType[]]);
 export const trail = z
@@ -130,7 +131,8 @@ export function toolDefiner(server: McpServer, agent: TrailAgent) {
           agent.heartbeat();
           assertLineSafe(name, shape, args);
           if (agent.remote) assertNoHumanInputs(name, meta.human, args);
-          return result(withLostLeases(await fn(args, extra), agent.takeLostLeases()));
+          const told = withLostLeases(await fn(args, extra), agent.takeLostLeases());
+          return result(withRefusedWrites(told, () => agent.takeRefusedWrites()));
         } catch (e) {
           return failure(e);
         } finally {

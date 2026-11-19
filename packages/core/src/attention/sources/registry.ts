@@ -22,6 +22,7 @@ import { rerouteSource } from './rerouteSource';
 import { rerouteSuggestedSource } from './rerouteSuggestedSource';
 import { reviewLimitSource } from './reviewLimitSource';
 import { stalledSource } from './stalledSource';
+import { trackerRefusedSource } from './trackerRefusedSource';
 import { trackerSettingsSource } from './trackerSettingsSource';
 import { trailChecksSource } from './trailChecksSource';
 import { trustSource } from './trustSource';
@@ -49,6 +50,7 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   modelSource,
   deliverySource,
   trackerSettingsSource,
+  trackerRefusedSource,
   trustSource,
   precedentSource,
   reviewLimitSource,

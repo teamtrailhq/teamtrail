@@ -39,6 +39,8 @@ const WRITES: RegExp[] = [
   /^\/attention\/review-limit$/,
   // Posting proofs to pull requests with this machine's GitHub token (proofRoutes.ts).
   /^\/proof\/settings$/,
+  // Linking a pull request to a ticket by hand, or unlinking it: which PR this machine posts the ticket's proof to.
+  /^\/verification\/sync\/link$/,
   // Adding a fix ticket to a trail whose checks fail on main together: another device never creates a ticket.
   /^\/trail-checks\/fix-ticket$/,
   // Numbering a new trail or ticket (fileRoute.ts): another device never creates one.
@@ -61,6 +63,8 @@ const ALWAYS: RegExp[] = [
   // Who is signed in to the Lookout: listing paired browsers, pairing another device, revoking one.
   /^\/sign-in\/(sessions|codes|revoke)$/,
   /^\/trackers\/.+/,
+  // The pull requests a ticket could be linked to, read with this machine's GitHub token.
+  /^\/verification\/sync\/candidates$/,
   /^\/slack\/.+/,
   // Catalog searches and previews fetch the URLs in guides.json (agents can write it) from this machine.
   /^\/guides\/catalog(\/|$)/,
