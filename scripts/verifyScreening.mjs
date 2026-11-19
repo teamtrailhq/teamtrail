@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { stopProcess } from './stopProcess.mjs';
 
 /** Starts the built Lookout in `cwd` and resolves with its address and sign-in link. */
 async function startLookout(cli, cwd) {
@@ -90,7 +91,7 @@ export async function verifyScreening({ browser, cli, log, shots }) {
     return ok;
   } finally {
     await page.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     if (!process.env.KEEP) fs.rmSync(top, { recursive: true, force: true });
   }
 }

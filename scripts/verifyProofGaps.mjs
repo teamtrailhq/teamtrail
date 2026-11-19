@@ -20,6 +20,7 @@ import {
   ticketAction,
 } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { stopProcess } from './stopProcess.mjs';
 import { prMergedLive } from './verifyLivePr.mjs';
 
 /** A git repo whose one check passes. */
@@ -220,7 +221,7 @@ export async function verifyProofGaps({ browser, cli, log, shots }) {
     await one.client.close();
     await two.client.close();
     await page.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     if (!process.env.KEEP) fs.rmSync(top, { recursive: true, force: true });
   }
 }
