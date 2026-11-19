@@ -27,7 +27,8 @@ const open = (label: string): NeedAct => ({ kind: 'item', label });
 const NEEDS: Partial<Record<AttentionKind, NeedAction>> = {
   brief: { ask: 'review the discovery brief', act: open('Review the brief') },
   reroute: { ask: 'review the reroute', act: open('Review the reroute') },
-  'reroute-suggested': { ask: 'decide whether to reroute', act: open('Review the reroute') },
+  // only a suggestion: there is no proposal to review until an agent makes one
+  'reroute-suggested': { ask: 'decide whether to reroute', act: { kind: 'dismiss', label: 'Carry on' } },
   trust: { ask: 'review what changed', act: open('Open Approvals') },
   escape: { ask: 'decide on a rule', act: open('Add a rule') },
   criteria: { ask: 'confirm its criteria', act: { kind: 'menu', id: 'confirm-criteria' } },

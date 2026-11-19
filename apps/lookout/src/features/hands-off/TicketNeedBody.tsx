@@ -1,5 +1,6 @@
 import type { AttentionItem, MapSnapshot, Ticket } from '@teamtrail/core';
 import { useState } from 'react';
+import type { MenuItem } from '../../components/ui';
 import { openItem } from '../attention';
 import { CriteriaList } from '../criteria';
 import { type Form, TicketFooter, useTicketActions, useTicketView } from '../inspector';
@@ -15,20 +16,29 @@ import type { NeedContext } from './types';
 export function TicketNeedBody(props: { item: AttentionItem; snap: MapSnapshot; t: Ticket; ctx: NeedContext }) {
   const { ctx, t } = props;
   const { api, handlers } = ctx;
-  const v = useTicketView({ snap: props.snap, t, api, sessions: ctx.sessions, attention: ctx.view });
+  const v = useTicketView({
+    snap: props.snap,
+    t,
+    api,
+    sessions: ctx.sessions,
+    attention: ctx.view,
+    first: props.item.id,
+  });
   const [form, setForm] = useState<Form>(null);
   const open = () => ctx.openTicket(props.snap.map.id, t.id);
-  const bar = useTicketActions({
-    v,
-    api,
-    setForm,
-    onEditHow: open,
-    onOpenChat: ctx.openChat,
-    onReviewChange: handlers.openApprovals,
-    onReviewBrief: handlers.openBrief,
-    onItem: (i) => openItem(i, handlers),
-    onDismiss: ctx.dismiss,
-  });
+  const bar = handsOnSaid(
+    useTicketActions({
+      v,
+      api,
+      setForm,
+      onEditHow: open,
+      onOpenChat: ctx.openChat,
+      onReviewChange: handlers.openApprovals,
+      onReviewBrief: handlers.openBrief,
+      onItem: (i) => openItem(i, handlers),
+      onDismiss: ctx.dismiss,
+    }),
+  );
   return (
     <>
       <NeedWhy parts={needWhy(props.item, t)} />
@@ -49,4 +59,13 @@ export function TicketNeedBody(props: { item: AttentionItem; snap: MapSnapshot; 
       />
     </>
   );
+}
+
+/** The ticket's actions that open a bubble on the map, which is Hands-on's (AppHome switches to it on the way). */
+const ON_MAP = new Set(['gap-open-main']);
+
+/** The bar with every action that goes to Hands-on saying so. */
+function handsOnSaid(bar: ReturnType<typeof useTicketActions>) {
+  const said = (a: MenuItem): MenuItem => (ON_MAP.has(a.id) ? { ...a, label: `${a.label} in Hands-on` } : a);
+  return { ...bar, primary: bar.primary && said(bar.primary), menu: bar.menu.map(said) };
 }

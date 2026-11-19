@@ -299,8 +299,26 @@
 .bp-mobile .home-since-row > .ds-row-main {
   min-height: 44px;
 }
-.bp-mobile .home-need .btn.sm {
-  min-height: 36px;
+/* Every action in a row, closed or open, a 44px target: buttons, the "⋯" menu, suggested answers, links. */
+.bp-mobile .home-need .btn,
+.bp-mobile .home-need .chip,
+.bp-mobile .home-need .more-item,
+.bp-mobile .home-need select,
+.bp-mobile .home-need textarea {
+  min-height: 44px;
+  min-width: 44px;
+}
+.bp-mobile .home-need button.link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+/* An open row's body stays within the screen under its title, scrolling inside when it is longer (the header and the
+ * row's own top take the rest). */
+.bp-mobile .home-need-body {
+  max-height: calc(100dvh - 15rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 /* The chip on a line of its own, so the title gets the width beside the action. */
 .bp-mobile .home-need > .ds-row-main {

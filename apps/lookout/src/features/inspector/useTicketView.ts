@@ -8,6 +8,7 @@ import { useTicketProof } from '../proof';
 import { useSignedState } from '../signed-state';
 import { useVerification } from '../verification';
 import { useWorkspaces } from '../workspaces';
+import { askedFirst } from './askedFirst';
 import { chipInput } from './chipInput';
 import { chipsOfTicket } from './chipsOfTicket';
 import { standingInput } from './standingInput';
@@ -26,6 +27,8 @@ export function useTicketView(input: {
   api: LookoutApi;
   sessions: SessionInfo[];
   attention?: AttentionView;
+  /** The queue item this view is opened for (a row of Needs you): first among the ticket's, so it is what's asked. */
+  first?: string;
 }) {
   const { snap, t, api } = input;
   const mapId = snap.map.id;
@@ -51,7 +54,10 @@ export function useTicketView(input: {
     lease: t.state === 'open' ? heldLeases(api.leases, mapId).get(t.id) : undefined,
     session: input.sessions.find((s) => s.ticketId === t.id && isRunning(s)),
     question: api.activity.pending.find((q) => q.mapId === mapId && q.ticketId === t.id),
-    items: (input.attention?.items ?? []).filter((i) => i.mapId === mapId && i.ticketId === t.id),
+    items: askedFirst(
+      (input.attention?.items ?? []).filter((i) => i.mapId === mapId && i.ticketId === t.id),
+      input.first,
+    ),
     interrupting: input.attention?.interrupting ?? [],
     verification: verification.data,
     proof: proof ?? undefined,
