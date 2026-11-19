@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
 import { acceptedSettingsFile } from '../adapters/remote/acceptedSettingsFile';
 import { GitHubAdapter } from '../adapters/remote/github';
+import { webBase } from '../adapters/remote/github/webBase';
 import { TrackerError } from '../adapters/remote/http';
 import { LinearAdapter } from '../adapters/remote/linear';
 import { orphanedWrites, outboxDir, outboxFile, outboxKey } from '../adapters/remote/outboxFile';
+import { refusedSink } from '../adapters/remote/refusedSink';
 import type { SyncedAdapter } from '../adapters/remote/sync/syncedAdapter';
 import type { RemoteKind } from '../adapters/remote/types';
 import { Emitter } from '../lib/emitter';
@@ -14,7 +16,7 @@ import { trackerTargetLabel } from './trackerPin';
 export const isKind = (k: string | undefined): k is RemoteKind => k === 'github' || k === 'linear';
 
 /** Queued writes belong to one repo / team, so switching target never replays them into another. */
-const queueKey = (cfg: ProjectTrackerConfig, kind: RemoteKind) =>
+export const queueKey = (cfg: ProjectTrackerConfig, kind: RemoteKind) =>
   kind === 'github'
     ? outboxKey('github', cfg.github?.repo)
     : outboxKey('linear', cfg.linear?.teamId, cfg.linear?.projectId);
@@ -44,6 +46,13 @@ export function remoteAdapters(ctx: TrackerContext) {
   let closed = false;
   /** Outside the repo: only this machine's Teamtrail queues writes there. */
   const queueDir = outboxDir(o.root, ctx.configDir);
+  const refusedAt = { root: o.root, configDir: ctx.configDir };
+
+  /** An issue's page on github.com (or the fake GitHub's); none for GitHub Enterprise, whose site isn't known. */
+  const githubIssueUrl = (repo: string) => {
+    if (apiUrl.github && !apiUrl.githubWeb) return undefined;
+    return (issue: string) => `${webBase(apiUrl.githubWeb)}/${repo}/issues/${issue}`;
+  };
 
   /** Only the tracker approved on this machine is ever built: the token goes nowhere else. */
   async function build(kind: RemoteKind): Promise<SyncedAdapter> {
@@ -61,19 +70,23 @@ export function remoteAdapters(ctx: TrackerContext) {
           'auth',
           'No GitHub token: run `gh auth login`, set GITHUB_TOKEN, or paste one in Settings',
         );
+      const key = queueKey(cfg, 'github');
       return new GitHubAdapter({
         repo: cfg.github.repo,
         token: t.token,
         apiUrl: apiUrl.github,
         fetch: o.fetch,
-        outbox: outboxFile(queueDir, queueKey(cfg, 'github')),
-        accepted: acceptedSettingsFile(o.root, queueKey(cfg, 'github')),
+        outbox: outboxFile(queueDir, key),
+        accepted: acceptedSettingsFile(o.root, key),
+        author: o.author,
+        refused: refusedSink({ ...refusedAt, tracker: 'github', key, issueUrl: githubIssueUrl(cfg.github.repo) }),
       });
     }
     if (!cfg.linear?.teamId) throw new TrackerError('invalid', 'Linear is not connected; connect it in Settings');
     const k = resolveLinearKey(creds.read(), env);
     if (!k) throw new TrackerError('auth', 'No Linear API key: set LINEAR_API_KEY or paste one in Settings');
     const display = [cfg.linear.teamKey, cfg.linear.projectName].filter(Boolean).join(' · ') || undefined;
+    const key = queueKey(cfg, 'linear');
     return new LinearAdapter({
       apiKey: k.token,
       teamId: cfg.linear.teamId,
@@ -81,8 +94,10 @@ export function remoteAdapters(ctx: TrackerContext) {
       display,
       apiUrl: apiUrl.linear,
       fetch: o.fetch,
-      outbox: outboxFile(queueDir, queueKey(cfg, 'linear')),
-      accepted: acceptedSettingsFile(o.root, queueKey(cfg, 'linear')),
+      outbox: outboxFile(queueDir, key),
+      accepted: acceptedSettingsFile(o.root, key),
+      author: o.author,
+      refused: refusedSink({ ...refusedAt, tracker: 'linear', key }),
     });
   }
 

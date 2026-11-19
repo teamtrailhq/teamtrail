@@ -58,7 +58,7 @@ export async function runMcpServer(opts: {
     root: opts.root,
     agent: opts.agent,
     client,
-    tracker: activeTracker({ root: opts.root, markdown }),
+    tracker: activeTracker({ root: opts.root, markdown, author: () => ({ by: agent.signedBy, origin: agent.origin }) }),
     usage: new UsageMeter({ root: opts.root }),
     leaseMs: leaseMs(opts.leaseMinutes ?? process.env[LEASE_MINUTES_ENV]),
   });

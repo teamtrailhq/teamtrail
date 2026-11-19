@@ -1,5 +1,6 @@
 import type { TrackerAdapter } from '../adapters/adapter';
 import { legacyOutbox } from '../adapters/remote/legacyOutbox';
+import { refusedWrites } from '../adapters/remote/refusedWrites';
 import { reportsSettings } from '../adapters/remote/settingsLedger';
 import { readAgentDocs } from '../agents/agentDocs';
 import { connectedAgents } from '../agents/connectedAgents';
@@ -72,6 +73,7 @@ export async function gatherAttention(input: {
       : {}),
     agents: connectedAgents(docs),
     deliveries: readDeliveryProblems(root),
+    trackerRefused: refusedWrites(root).list(),
     trust: pendingTrust(root, allSnaps),
     ...oldQueue(root),
     ...trackerWaiting(root),

@@ -23,6 +23,7 @@ export const DEFAULT_WEIGHTS: Record<AttentionKind, number> = {
   'guide-checks': 30,
   delivery: 10,
   'tracker-settings': 40,
+  'tracker-refused': 45,
   trust: 55,
   precedent: 40,
   'review-limit': 55,

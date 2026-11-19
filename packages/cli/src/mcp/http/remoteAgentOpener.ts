@@ -31,7 +31,7 @@ export function remoteAgentOpener(o: {
     const agent: TrailAgent = new TrailAgent({
       root: o.root,
       client,
-      tracker: activeTracker({ root: o.root, markdown }),
+      tracker: activeTracker({ root: o.root, markdown, author: () => ({ by: agent.signedBy, origin: agent.origin }) }),
       leaseMs: leaseMs(o.leaseMinutes ?? process.env[LEASE_MINUTES_ENV]),
       ...o.agent,
       remote: { tokenName: principal.name, tokenId: principal.id },

@@ -20,6 +20,7 @@ const LABEL: Partial<Record<AttentionKind, string>> = {
   precedent: 'Touches your decision',
   flag: 'PR or CI',
   'tracker-settings': 'Settings changed',
+  'tracker-refused': 'The tracker refused a write',
   'review-limit': 'Review waits',
   escape: 'Verified, then came back',
   criteria: 'Confirm its criteria',
