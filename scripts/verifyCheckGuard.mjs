@@ -17,6 +17,7 @@ import {
   ticketAction,
 } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { stopProcess } from './stopProcess.mjs';
 
 const REASON = 'The old script ran nothing on Windows; this one is the same suite';
 const PASS = `node -e "process.exit(0)"`;
@@ -151,7 +152,7 @@ export async function verifyCheckGuard({ browser, cli, log, shots }) {
   } finally {
     await one.client.close();
     await page.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     if (!process.env.KEEP) fs.rmSync(top, { recursive: true, force: true });
   }
 }

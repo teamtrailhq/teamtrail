@@ -90,6 +90,9 @@ async function rerouteFlow({ call, page, shot, shots, repo, mapId, discoveryKey 
   await page.locator('.reroute-approve').click();
   await page.locator('.node', { hasText: /Build a search/ }).waitFor({ timeout: 20_000 });
   await page.locator('.reroute-banner').waitFor({ state: 'detached', timeout: 15_000 });
+  // The map and the banner change as soon as the first steps land; the dialog closes when the approval returns, after
+  // the whole proposal is applied and journaled.
+  await page.locator('.reroute-dialog').waitFor({ state: 'detached', timeout: 15_000 });
   await shot('13-reroute-applied');
   const journal = fs
     .readFileSync(path.join(repo, '.teamtrail', '.events', `${mapId}.jsonl`), 'utf8')

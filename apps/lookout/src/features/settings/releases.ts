@@ -23,6 +23,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.18',
+    date: '2026-11-19',
+    items: [
+      'Checks read as running until their outcome is in place: once they show finished, the ticket has moved on and its review is open',
+    ],
+  },
+  {
     version: '0.66.16',
     date: '2026-11-19',
     items: [
@@ -182,21 +189,6 @@ export const RELEASES: Release[] = [
       'Fix: what you open while the Lookout is still loading stays open; what needs you no longer opens over it on its own',
       'Fix: changing a gate twice in quick succession no longer refuses the second change as stale',
     ],
-  },
-  {
-    version: '0.64.0',
-    date: '2026-11-18',
-    items: [
-      'New trail is a large editor: the destination and notes can be whole markdown documents, with Write and Preview, full screen on a phone',
-      'Load from file (or drop one on the field) puts a .md or .txt file in the destination or notes, to edit before you create',
-      'Assumptions are one per line, and the dialog says how many it will create',
-      'The header keeps the destination to its first sentence; Plan → Destination and Notes show them in full, as markdown',
-    ],
-  },
-  {
-    version: '0.63.1',
-    date: '2026-11-18',
-    items: ['At night, trail cards stand out from the map: a raised grey card, its chips in darker wells'],
   },
   ...NEWER_RELEASES,
   ...LATER_RELEASES,
