@@ -1,7 +1,12 @@
 import type { Release } from './releases';
 
-/** Releases 0.27.3–0.44, kept apart so `releases.ts` stays short. Newest first. */
+/** Releases 0.27.3–0.45.0, kept apart so `releases.ts` stays short. Newest first. */
 export const MID_RELEASES: Release[] = [
+  {
+    version: '0.45.0',
+    date: '2026-11-16',
+    items: ['In Teamtrail Cloud, Run agents on the trail takes you straight to its agents'],
+  },
   {
     version: '0.44.2',
     date: '2026-11-16',

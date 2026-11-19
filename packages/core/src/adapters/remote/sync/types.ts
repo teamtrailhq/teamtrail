@@ -40,6 +40,35 @@ export interface SyncOptions {
   manual?: boolean;
   /** Keeps queued writes across restarts; without it they live in memory only. */
   outbox?: OutboxStore;
+  /** Who is making the writes, kept on each queued one (an agent's own refused write is told to it). */
+  author?: () => WriteAuthor | undefined;
+  /** Where a queued write the tracker refused for good is kept for the human (refusedWrites.ts). */
+  refused?: RefusedSink;
+}
+
+/** Who made a write: as shown to the human, and the agent connection to tell when it is refused. */
+export interface WriteAuthor {
+  by: string;
+  origin?: string;
+}
+
+/** Takes a queued write the tracker refused for good, with the tracker's reason. */
+export interface RefusedSink {
+  add(input: { write: QueuedWrite; error: string; at: number }): void;
+}
+
+/**
+ * A queued write the tracker refused for good, kept on this machine until the trail lead retries or discards it.
+ * `key` is the outbox key of the tracker target it was for (outboxFile.ts `outboxKey`).
+ */
+export interface RefusedWrite {
+  write: QueuedWrite;
+  tracker: 'github' | 'linear';
+  key: string;
+  error: string;
+  at: number;
+  /** The issue on the tracker's website, when Teamtrail knows it. */
+  url?: string;
 }
 
 /** A write that can wait for the tracker, as plain data so a later run can send it. */
@@ -70,6 +99,10 @@ export interface QueuedWrite {
   change: QueuedChange;
   /** May have reached the tracker already (the connection dropped mid-request, or a run exited mid-send): check before sending. */
   verify?: boolean;
+  /** Who made it (`agent claude-05 via MCP`); missing for writes queued before it was kept. */
+  by?: string;
+  /** The agent connection that made it (AgentContext.origin), told if the tracker refuses it. */
+  origin?: string;
 }
 
 /** Where queued writes survive a restart or crash (outboxFile.ts). */

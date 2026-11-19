@@ -7,6 +7,7 @@ import { setCriteria } from './trail/criteria';
 import { getBrief, submitBrief } from './trail/discovery';
 import { answerQuestion, ask, defaultWaitSeconds, inbox, waitForAnswer } from './trail/hitl';
 import { flagKnowledge, proposeKnowledge, searchKnowledgeOp } from './trail/knowledge';
+import { RefusedNotices } from './trail/refusedNotices';
 import { recordDecision, report, sessionView } from './trail/reporting';
 import { submitReviewTool } from './trail/reviews';
 import { startTrail } from './trail/startTrail';
@@ -31,9 +32,12 @@ export class TrailAgent {
   readonly adapter: AgentContext['adapter'];
   readonly activity: AgentContext['activity'];
   private ctx: AgentContext;
+  /** This connection's tracker writes that GitHub or Linear refused for good, told once. */
+  private refused: RefusedNotices;
 
   constructor(opts: AgentOptions) {
     this.ctx = new AgentContext(opts);
+    this.refused = new RefusedNotices({ root: opts.root, origin: this.ctx.origin });
     this.adapter = this.ctx.adapter;
     this.activity = this.ctx.activity;
   }
@@ -193,6 +197,16 @@ export class TrailAgent {
   /** Renew this agent's claim leases (every tool call is a heartbeat). */
   heartbeat() {
     this.ctx.heartbeat();
+  }
+
+  /** This connection's tracker writes refused for good since the last call (trail/refusedNotices.ts). */
+  takeRefusedWrites() {
+    return this.refused.take();
+  }
+
+  /** Who is behind this agent beyond its trail name: kept on its queued tracker writes, to tell it of a refusal. */
+  get origin() {
+    return this.ctx.origin;
   }
 
   /** Keys of tickets whose lease ran out since the last call. */

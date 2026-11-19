@@ -41,6 +41,7 @@ const TICKET_KINDS = new Set<AttentionItem['kind']>([
   'integration',
   'model',
   'tracker-settings',
+  'tracker-refused',
   // a suggestion has no proposal to review: its ticket, where an agent can be asked for one
   'reroute-suggested',
 ]);

@@ -147,6 +147,25 @@ export function builtItems(now) {
       ],
     }),
     at({
+      kind: 'tracker-refused',
+      ref: '8/claim/1',
+      ticketId: '8',
+      title: 'GitHub refused a write: claim #8 for claude-05',
+      reasons: [
+        'GitHub said: Resource not accessible by personal access token (issues: write)',
+        "it didn't happen in the tracker: fix access or the issue, then retry, or discard it",
+      ],
+    }),
+    at({
+      kind: 'tracker-refused',
+      ref: 'trail/3',
+      title: 'Linear refused 3 writes: close #9, status of #10, settings of this trail',
+      reasons: [
+        'Linear said: Entity not found: Issue',
+        "they didn't happen in the tracker: fix access or the issues, then retry, or discard them",
+      ],
+    }),
+    at({
       kind: 'precedent',
       ref: '15/D-3',
       ticketId: '15',
