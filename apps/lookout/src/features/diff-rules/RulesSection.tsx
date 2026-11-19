@@ -31,6 +31,8 @@ export function RulesSection() {
         When a change touches certain files, run a check or ask the agent a question it must answer before the ticket
         completes. Each rule says why it exists.
       </p>
+      {blocked && <span className="set-hint t-meta">{blocked}</span>}
+      {local === false && <span className="set-hint t-meta">Set on the machine Teamtrail runs on.</span>}
       {local && !blocked && (
         <RulesEditor
           key={view.approval?.base ?? 'none'}
@@ -41,8 +43,6 @@ export function RulesSection() {
         />
       )}
       {(!local || blocked) && rules.length > 0 && <RulesList rules={rules} lastMatched={lastMatched} />}
-      {blocked && <span className="set-hint t-meta">{blocked}</span>}
-      {local === false && <span className="set-hint t-meta">Set on the machine Teamtrail runs on.</span>}
     </SettingsSection>
   );
 }
