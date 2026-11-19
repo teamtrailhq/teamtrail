@@ -5,20 +5,43 @@ import type { TrailAgentsControl } from './useTrailAgents';
 
 /**
  * Start the trail, in place: switches this person's agents on for it (in the one repository, or the one picked) and
- * shows what they're doing, with Pause and a link to their runs; `onStarted` once they're on (New trail closes). Only
+ * shows what they're doing, with Pause and a link to their runs; `onStarted` once they're on (New trail closes).
+ * Starting… holds until the server reports a run, Stopping… until it reports none after Pause (trailAgentsRun.ts). Only
  * behind a server that runs agents and says where (lib/trailAgents.ts); the server checks everything again.
  */
 export function StartTrail({ agents, onStarted }: { agents: TrailAgentsControl; onStarted?: () => void }) {
-  const { state, busy, error, repo } = agents;
+  const { state, busy, error, repo, pending } = agents;
   if (!state || !state.canRun) return null;
   const start = () => void agents.act(true).then((on) => on && onStarted?.());
   const runs = hostedAgents();
   if (state.on)
     return (
       <span className="start-trail">
-        <span className="start-trail-status">{trailAgentsStatus(state)}</span>
-        <Button size="sm" variant="ghost" disabled={busy} onClick={() => void agents.act(false)}>
-          Pause
+        <span className="start-trail-status">{trailAgentsStatus(state, pending)}</span>
+        {pending === 'starting' ? (
+          <Button size="sm" variant="ghost" disabled>
+            Starting…
+          </Button>
+        ) : (
+          <Button size="sm" variant="ghost" disabled={busy} onClick={() => void agents.act(false)}>
+            Pause
+          </Button>
+        )}
+        {runs && (
+          <a className="t-meta" href={`${runs.href}#trail-${encodeURIComponent(agents.mapId)}`}>
+            Runs
+          </a>
+        )}
+        {error && <span className="vf-err">{error}</span>}
+      </span>
+    );
+  // paused, and the server still reports runs: Start waits until they've ended
+  if (pending === 'stopping')
+    return (
+      <span className="start-trail">
+        <span className="start-trail-status">{trailAgentsStatus(state, pending)}</span>
+        <Button variant="primary" disabled>
+          Stopping…
         </Button>
         {runs && (
           <a className="t-meta" href={`${runs.href}#trail-${encodeURIComponent(agents.mapId)}`}>

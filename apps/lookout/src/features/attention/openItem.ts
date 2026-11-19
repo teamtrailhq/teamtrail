@@ -6,7 +6,7 @@ export interface AttentionHandlers {
   openTicket: (mapId: string, ticketId: string) => void;
   openKnowledge: () => void;
   openBrief: (mapId: string) => void;
-  /** Reroute proposals and suggestions: the reroute review, once wired; selecting the trail until then. */
+  /** Reroute proposals: the reroute review. */
   openReroute: (item: AttentionItem) => void;
   selectTrail: (mapId: string) => void;
   /** Guides and the checks they propose: Settings → Guides. */
@@ -42,6 +42,8 @@ const TICKET_KINDS = new Set<AttentionItem['kind']>([
   'model',
   'tracker-settings',
   'tracker-refused',
+  // a suggestion has no proposal to review: its ticket, where an agent can be asked for one
+  'reroute-suggested',
 ]);
 
 /** Opens the place where the human handles the item: the ticket for ticket kinds, else its own view. */
@@ -55,7 +57,6 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
     case 'brief':
       return h.openBrief(item.mapId);
     case 'reroute':
-    case 'reroute-suggested':
       return h.openReroute(item);
     case 'guide':
     case 'guide-checks':
