@@ -5,6 +5,7 @@
  */
 import { LATER_RELEASES } from './laterReleases';
 import { MID_RELEASES } from './midReleases';
+import { RELEASES_061 } from './newerReleases';
 import { OLDER_RELEASES } from './olderReleases';
 
 export interface Release {
@@ -27,6 +28,15 @@ export const RELEASES: Release[] = [
     items: [
       'Hands-off on a phone: every kind of Needs you fits the screen, with actions big enough to tap, and each row acts on what it asks',
       'Teamtrail Cloud: Pause shows Stopping… until the agents have stopped, and Start shows Starting… until one is working',
+    ],
+  },
+  {
+    version: '0.66.11',
+    date: '2026-11-19',
+    items: [
+      "A ticket's pull request block has Link a different PR and Unlink; a PR you link stays linked",
+      'Closing or reopening a ticket updates its pull request and the review queue within seconds',
+      "Removing a ticket takes its proof's green status off its pull request",
     ],
   },
   {
@@ -183,22 +193,7 @@ export const RELEASES: Release[] = [
       'Legend has a background, like Fit',
     ],
   },
-  {
-    version: '0.61.2',
-    date: '2026-11-18',
-    items: [
-      'Went without a diff rule by mistake? Undo it in the ticket, and the rule asks again on the next completion',
-      "Where a ticket's work started is kept on your machine, not in the repo, so an agent can't move it to slip a change past the check guard",
-      'In Teamtrail Cloud, a trail is checked on exactly the commit Teamtrail names on main',
-    ],
-  },
-  {
-    version: '0.61.1',
-    date: '2026-11-18',
-    items: [
-      'A trail with many tickets side by side lays them out in a grid, in order of number, instead of one tall column',
-    ],
-  },
+  ...RELEASES_061,
   ...LATER_RELEASES,
   ...MID_RELEASES,
   ...OLDER_RELEASES,

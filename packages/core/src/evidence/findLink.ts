@@ -64,7 +64,14 @@ export interface FoundLink {
   replaced: number[];
 }
 
-type TicketLinkInput = { mapId: string; ticketId: string; prev?: TicketSync; refs: ReturnType<typeof ticketRefs> };
+type TicketLinkInput = {
+  mapId: string;
+  ticketId: string;
+  prev?: TicketSync;
+  refs: ReturnType<typeof ticketRefs>;
+  /** PRs the trail lead unlinked from the ticket by hand (unlinkedStore.ts): never linked again but by hand. */
+  unlinked?: number[];
+};
 
 /** The last link, when it's one the trail lead didn't set by hand and its PR was closed without merging. */
 function closedLink(prev: TicketSync | undefined): PrLink | undefined {
@@ -88,13 +95,13 @@ function strongestKnown(s: LinkScope, t: TicketLinkInput, skip: Set<number>): Pr
  * The ticket's PR: the strongest of the attempt's PR, the last link, a marker in a PR, and the attempt's branch. A
  * link the trail lead didn't set by hand gives way when its PR was closed without merging and another PR for the
  * ticket is there (a replacement on the same branch, or with the same marker); the closed one is remembered so it
- * never wins back.
+ * never wins back. A PR the trail lead unlinked by hand is never found again here; a hand link is never moved.
  */
 export async function findLink(s: LinkScope, t: TicketLinkInput): Promise<FoundLink> {
   const was = t.prev?.link;
   const closed = closedLink(t.prev);
   const kept = [...(t.prev?.replaced ?? [])];
-  const skip = new Set([...kept, ...(closed ? [closed.number] : [])]);
+  const skip = new Set([...kept, ...(t.unlinked ?? []), ...(closed ? [closed.number] : [])]);
   let link = strongestKnown(s, t, skip);
   if (t.refs.branch && (!link || RANK[link.source] < RANK.branch))
     link = (await branchLink(s, t.refs.branch, skip)) ?? link;
