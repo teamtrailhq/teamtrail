@@ -1,0 +1,6 @@
+{
+  "name": "@acme/server",
+  "scripts": {
+    "test": "vitest run"
+  }
+}

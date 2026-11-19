@@ -1,7 +1,8 @@
 // Check screening step of the end-to-end check (verify-mcp.mjs), on its own scratch repo: in Settings → Verification,
 // a check whose script isn't in package.json is said to be one that won't run, under its command, before anything is
 // saved; `npm web:lint` (no such npm command) offers `npm run web:lint` as its one action, which rewrites the command
-// and quiets the warning. Nothing runs. Waits on what the user sees.
+// and quiets the warning; a script that starts `ng` from a dependency nobody installed says `ng` isn't installed, with
+// the install to run. Nothing runs. Waits on what the user sees.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,15 +26,23 @@ async function startLookout(cli, cwd) {
   return { proc, ...links };
 }
 
-/** A git repo whose package.json has a `test` and a `web:lint` script and no other. */
+/** A git repo whose package.json has `test`, `web:lint` and `ng:test` scripts, `ng` from a dependency not installed. */
 function scratchRepo() {
   const top = e2eTemp('teamtrail-screen-e2e-');
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   git('init', '-q', '-b', 'main');
   fs.writeFileSync(
     path.join(top, 'package.json'),
-    JSON.stringify({ scripts: { test: 'node --test', 'web:lint': 'node --test' } }, null, 2),
+    JSON.stringify(
+      {
+        scripts: { test: 'node --test', 'web:lint': 'node --test', 'ng:test': 'ng test' },
+        devDependencies: { '@angular/cli': '^19.0.0' },
+      },
+      null,
+      2,
+    ),
   );
+  fs.writeFileSync(path.join(top, 'package-lock.json'), '{"lockfileVersion":3,"packages":{}}\n');
   git('add', '-A');
   git('commit', '-qm', 'init');
   return top;
@@ -81,11 +90,17 @@ export async function verifyScreening({ browser, cli, log, shots }) {
     await add('test', 'npm test');
     await screened;
     const quiet = (await rows.last().locator('.cs-finding').count()) === 0;
+    // a dependency that isn't installed is its own reason, with the install that fixes it
+    const ng = await add('ng', 'npm run ng:test');
+    const missing = ng.locator('.cs-finding', { hasText: "ng isn't installed: no node_modules" });
+    await missing.waitFor({ timeout: 15_000 });
+    const notInstalled = /install the dependencies first \(npm ci\)/.test((await missing.textContent()) ?? '');
+    await shootThemes(page, shots, 'check-screening-not-installed');
     await nope.getByRole('button', { name: 'Remove nope' }).click();
     await warning.waitFor({ state: 'detached', timeout: 15_000 });
-    const ok = said.startsWith("Won't run") && quietRow && fixed && quiet;
+    const ok = said.startsWith("Won't run") && quietRow && fixed && quiet && notInstalled;
     log(
-      `check screening ${ok ? 'ok' : 'WRONG'}: "${said}" under npm run nope (${quietRow ? 'no action' : 'AN ACTION'}), Use npm run web:lint ${fixed ? 'rewrote the command' : 'DID NOTHING'}, npm test ${quiet ? 'quiet' : 'warned'}, Remove nope removes it`,
+      `check screening ${ok ? 'ok' : 'WRONG'}: "${said}" under npm run nope (${quietRow ? 'no action' : 'AN ACTION'}), Use npm run web:lint ${fixed ? 'rewrote the command' : 'DID NOTHING'}, npm test ${quiet ? 'quiet' : 'warned'}, npm run ng:test ${notInstalled ? 'not installed, with npm ci' : 'NOT SAID'}, Remove nope removes it`,
     );
     return ok;
   } finally {
