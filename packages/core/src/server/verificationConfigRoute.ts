@@ -13,11 +13,19 @@ import { crossSite } from './trackerErrors';
 
 type Options = { root: string; local?: boolean; repoFiles?: () => RepoFiles | undefined };
 
-/** One check from the body: its name, argv and, when given, its folder. */
+/** One check from the body: its name, argv and, when given, its folder and the paths it is about. */
 function inputOf(v: unknown): CheckInput {
-  const c = (v ?? {}) as { name?: unknown; run?: unknown; cwd?: unknown };
+  const c = (v ?? {}) as { name?: unknown; run?: unknown; cwd?: unknown; paths?: unknown };
   if (c.cwd !== undefined && typeof c.cwd !== 'string') throw new BadRequest('"cwd" must be a path');
-  return { name: String(c.name ?? ''), run: c.run as string[], ...(typeof c.cwd === 'string' ? { cwd: c.cwd } : {}) };
+  const paths = c.paths;
+  if (paths !== undefined && !(Array.isArray(paths) && paths.every((p) => typeof p === 'string')))
+    throw new BadRequest('"paths" must list path globs');
+  return {
+    name: String(c.name ?? ''),
+    run: c.run as string[],
+    ...(typeof c.cwd === 'string' ? { cwd: c.cwd } : {}),
+    ...(paths !== undefined ? { paths: paths as string[] } : {}),
+  };
 }
 
 /** The first check whose folder isn't a real folder inside the repo (verification/checkFolder.ts), as an error. */
@@ -32,7 +40,7 @@ async function folderProblem(checks: CheckInput[], o: Options): Promise<string |
 }
 
 /**
- * `PUT /verification/config` `{checks: [{name, run, cwd?}], base, acknowledged?}`: the trail lead sets the check
+ * `PUT /verification/config` `{checks: [{name, run, cwd?, paths?}], base, acknowledged?}`: the trail lead sets the check
  * commands and their folders and approves them in one step (verification/setChecks.ts); a folder must be a real
  * folder inside the repo, no symbolic link on the way (checkFolder.ts). This machine only (thisMachineRoutes.ts),
  * never cross-site; who did it is the sign-in's person (requestPerson.ts), never the body's. 409 when the file

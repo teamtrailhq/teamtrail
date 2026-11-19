@@ -1,7 +1,31 @@
 import type { Release } from './releases';
 
-/** Releases 0.61–0.66.0, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
+/** Releases 0.61–0.66.3, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
+  {
+    version: '0.66.3',
+    date: '2026-11-18',
+    items: [
+      'A merged pull request shows as merged on its ticket as soon as it merges, and nothing offers to merge it again',
+      'Teamtrail Cloud: checks on main run on your repository’s main, never on a commit from somewhere else',
+    ],
+  },
+  {
+    version: '0.66.2',
+    date: '2026-11-18',
+    items: [
+      'Agents pick up work the moment you confirm criteria, approve the plan or free the review limit, instead of checking back minutes later',
+      'Needs you keeps long titles and reasons inside their card at every width, with Read more for long reasons',
+    ],
+  },
+  {
+    version: '0.66.1',
+    date: '2026-11-18',
+    items: [
+      'On a phone, the header keeps one row: the mode switch, what needs you and More, with focus, records, Settings and the theme',
+      'Teamtrail Cloud: a pull request says why auto-merge waits, or that it merged by itself',
+    ],
+  },
   {
     version: '0.66.0',
     date: '2026-11-18',

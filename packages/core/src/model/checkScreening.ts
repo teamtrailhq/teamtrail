@@ -77,4 +77,6 @@ export interface CheckSuggestion {
   from: string;
   /** One of the known check shapes; otherwise saving it needs the person's acknowledgement. */
   known: boolean;
+  /** In a monorepo, the paths it is about: its package's folder (`apps/web/**`). Missing when it's for every change. */
+  paths?: string[];
 }

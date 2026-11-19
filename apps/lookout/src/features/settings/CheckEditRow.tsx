@@ -3,8 +3,9 @@ import { CheckFindingList } from '../check-screening';
 import type { EditedCheck } from './editedCheck';
 
 /**
- * One check being edited: its name, command and folder on one line, a quiet remove at the end, and what reading the
- * repo found about the command right under it, with the command that runs offered when it's known.
+ * One check being edited: its name, command and folder on one line, a quiet remove at the end, the paths it is about
+ * under the command, and what reading the repo found about the command under those, with the command that runs
+ * offered when it's known.
  */
 export function CheckEditRow(props: {
   check: EditedCheck;
@@ -38,6 +39,14 @@ export function CheckEditRow(props: {
           value={check.cwd}
           placeholder="top folder"
           onChange={(e) => onChange({ cwd: e.target.value })}
+        />
+        <input
+          aria-label="Paths"
+          className="t-code vf-edit-paths"
+          value={check.paths}
+          placeholder="every change, or only paths like apps/web/**"
+          data-tip="Only changes to these paths run it (commas between them); shared files, like lockfiles, run every check"
+          onChange={(e) => onChange({ paths: e.target.value })}
         />
         <button
           type="button"
