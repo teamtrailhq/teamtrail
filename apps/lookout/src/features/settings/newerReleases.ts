@@ -1,7 +1,28 @@
 import type { Release } from './releases';
 
-/** Releases 0.61–0.64.0, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
+/** Releases 0.61–0.64, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
+  {
+    version: '0.64.3',
+    date: '2026-11-18',
+    items: [
+      'Fix: a trail whose discovery research is done no longer shows Destination reached before its plan is charted',
+      'Fix: trails and tickets created at the same time never get the same number',
+    ],
+  },
+  {
+    version: '0.64.2',
+    date: '2026-11-18',
+    items: ['Two trails with the same title no longer share a folder'],
+  },
+  {
+    version: '0.64.1',
+    date: '2026-11-18',
+    items: [
+      'Fix: what you open while the Lookout is still loading stays open; what needs you no longer opens over it on its own',
+      'Fix: changing a gate twice in quick succession no longer refuses the second change as stale',
+    ],
+  },
   {
     version: '0.64.0',
     date: '2026-11-18',

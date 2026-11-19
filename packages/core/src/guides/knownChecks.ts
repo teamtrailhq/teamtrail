@@ -1,3 +1,6 @@
+import { pmRoute, type JsPackageManager } from '../verification/pmRoute';
+import { BUILD_TASKS, fitsTasks, type BuildTasks } from './buildTasks';
+
 /*
  * The checks Teamtrail knows: test runners, linters, type checkers, formatters in check mode and build tools, each by
  * the shape of its argv. A known shape is no error and needs nothing more than the person's approval; what it runs
@@ -9,6 +12,9 @@
  *   modules  `-m <module>` with one of these modules (`python -m pytest`)
  *   exempt   flags that usually mean "run this code" but are data for this tool (`pytest -c pytest.ini`), so the
  *            generic run-this-code check (argRules.ts) skips them for it
+ *   tasks    a build tool's tasks, in any order among its flags (buildTasks.ts)
+ * A package manager's routing flags (`npm -w web test`, `pnpm --filter web lint`) are read away first (pmRoute.ts),
+ * and a wrapper's tool (`uv run --frozen pytest`) is judged as a check of its own (wrappedCheck.ts).
  */
 export interface Shape {
   sub?: string[];
@@ -16,6 +22,7 @@ export interface Shape {
   script?: RegExp;
   modules?: string[];
   exempt?: string[];
+  tasks?: BuildTasks;
 }
 
 /** A relative path to a script inside the repo: no option, no absolute path, no `..`, no home folder. */
@@ -26,17 +33,25 @@ const words = (s: string) => s.split(/\s+/).filter(Boolean);
 
 export const KNOWN_CHECKS: Record<string, Shape> = {
   npm: { sub: words('test t run run-script') },
-  pnpm: { sub: words('test t run') },
+  pnpm: { sub: words('test t run'), exempt: ['-r'] },
   yarn: { sub: words('test run') },
   bun: { sub: words('test run') },
   make: ANY,
-  cargo: { sub: words('test check clippy build fmt') },
+  rake: ANY,
+  cargo: { sub: words('test check clippy build fmt nextest') },
   go: { sub: words('test vet build') },
-  deno: { sub: words('test lint check') },
+  deno: { sub: words('test lint check task') },
   node: { script: inRepo('[cm]?[jt]s'), sub: ['--test'] },
   // python's own -c is caught by inlineCode.ts, which reads flags up to the module; after it, -c is the module's
-  python: { script: inRepo('py'), modules: words('pytest unittest mypy ruff black flake8 pylint'), exempt: ['-c'] },
+  python: {
+    script: inRepo('py'),
+    modules: words('pytest unittest mypy ruff black flake8 pylint pyright isort'),
+    exempt: ['-c'],
+  },
   pytest: { exempt: ['-c'] },
+  tox: { exempt: ['-e', '-c'] },
+  nox: ANY,
+  isort: { needs: words('--check --check-only -c --diff'), exempt: ['-c'] },
   ruff: { sub: words('check format') },
   mypy: ANY,
   pyright: ANY,
@@ -52,16 +67,31 @@ export const KNOWN_CHECKS: Record<string, Shape> = {
   vitest: ANY,
   mocha: ANY,
   playwright: { sub: ['test'] },
+  ng: { sub: words('test lint build e2e') },
+  nx: { sub: words('run run-many affected test lint build e2e typecheck') },
+  turbo: { sub: words('run test lint build typecheck check') },
   rubocop: ANY,
   rspec: { exempt: ['-e'] },
+  rails: { sub: words('test test:system') },
   phpunit: ANY,
   phpstan: ANY,
+  psalm: ANY,
+  phpcs: ANY,
+  pint: { needs: ['--test'] },
+  'php-cs-fixer': { needs: ['--dry-run'] },
+  php: { script: /^(artisan|(?![-/~\\])(?!.*\.\.)[\w./-]+\.php)$/ },
+  composer: { sub: words('test run-script run validate') },
   'golangci-lint': { sub: ['run'] },
   swift: { sub: words('test build') },
+  swiftlint: ANY,
+  mix: { sub: words('test compile credo') },
+  dart: { sub: words('test analyze') },
+  flutter: { sub: words('test analyze') },
   dotnet: { sub: words('test build') },
-  mvn: { sub: words('test verify compile') },
-  gradle: { sub: words('test check build') },
-  gradlew: { sub: words('test check build') },
+  mvn: { tasks: BUILD_TASKS.mvn, exempt: ['-e'] },
+  mvnw: { tasks: BUILD_TASKS.mvnw, exempt: ['-e'] },
+  gradle: { tasks: BUILD_TASKS.gradle },
+  gradlew: { tasks: BUILD_TASKS.gradlew },
   git: { sub: ['diff'] },
 };
 
@@ -70,6 +100,7 @@ const LOCAL_BIN = /^(\.\/)?node_modules\/\.bin\/([\w.-]+)$/;
 
 function fitsShape(shape: Shape, args: string[]): boolean {
   const first = args[0] ?? '';
+  if (shape.tasks) return fitsTasks(shape.tasks, args);
   if (shape.needs && !args.some((a) => shape.needs!.includes(a))) return false;
   if (shape.script?.test(first)) return true;
   if (shape.modules) return first === '-m' && shape.modules.includes(args[1] ?? '');
@@ -77,11 +108,18 @@ function fitsShape(shape: Shape, args: string[]): boolean {
   return true;
 }
 
+const PACKAGE_MANAGERS = new Set<string>(['npm', 'pnpm', 'yarn', 'bun']);
+
+/** A package manager's words without its routing flags (`npm -w web test` → `test`); other programs' as they are. */
+const routed = (program: string, args: string[]) =>
+  PACKAGE_MANAGERS.has(program) ? pmRoute(program as JsPackageManager, args).words : args;
+
 /** The known shape argv fits, if any: by the program, or by the tool a node_modules/.bin path names. */
 export function knownShape(input: { argv0: string; program: string; args: string[] }): Shape | undefined {
   const bin = LOCAL_BIN.exec(input.argv0)?.[2];
-  const shape = KNOWN_CHECKS[bin ?? input.program];
-  return shape && fitsShape(shape, input.args) ? shape : undefined;
+  const program = bin ?? input.program;
+  const shape = KNOWN_CHECKS[program];
+  return shape && fitsShape(shape, routed(program, input.args)) ? shape : undefined;
 }
 
 /** Whether argv is one of the known check shapes. */

@@ -11,6 +11,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { answeringChecklists, approveSkipInLookout, lookoutLinks, pairLink, signInWith } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { stopProcess } from './stopProcess.mjs';
 
 const LIVE_MS = 10_000;
 
@@ -181,7 +182,7 @@ export async function verifyLiveViews({ browser, cli, log, shots }) {
     await one.client.close();
     await first.close();
     await second.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     if (!process.env.KEEP) fs.rmSync(top, { recursive: true, force: true });
   }
 }

@@ -12,6 +12,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { build } from 'esbuild';
 import { approveSkipInLookout, clickNode, lookoutLinks, openFullTicket, signInWith } from './e2eHelpers.mjs';
+import { stopProcess } from './stopProcess.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SHA = 'e'.repeat(40);
@@ -183,7 +184,7 @@ export async function verifyPrLink({ browser, cli, log, shots }) {
   } finally {
     await one.client.close();
     await page.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     fake.server.close();
     if (!process.env.KEEP) fs.rmSync(top, { recursive: true, force: true });
   }
