@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, appendFileSync, existsSync } from 'node:fs';
+import { readFileSync, appendFileSync, existsSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import type { TrackerAdapter } from '../src/adapters/adapter';
@@ -31,6 +30,7 @@ import { resolve } from '../src/planning/operations/resolve';
 import { fakeGitHub } from './fakes/github';
 import { faulty } from './fixtures';
 import { noSleep } from './scenarios';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
@@ -112,7 +112,7 @@ test('release and expiry go back to rework when the ticket was in rework, else t
 });
 
 test('operations record who, why and when; the journal is append-only JSONL and skips torn lines', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-journal-'));
+  const root = tempFolder('teamtrail-journal-');
   const journal = journalFile(root);
   const a = memory();
   const { mapId, first } = await trail(a);
@@ -133,7 +133,7 @@ test('operations record who, why and when; the journal is append-only JSONL and 
 });
 
 test('markdown: status is frontmatter written only when set, so existing ticket files stay byte-identical', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-md-'));
+  const root = tempFolder('teamtrail-md-');
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { mapId, first } = await trail(a);
   const file = path.join(root, mapId, 'tickets', `${first.id}.md`);
@@ -165,7 +165,7 @@ test('github: claim and status share the meta marker, and neither write drops th
 });
 
 test('github offline: a status change waits in the outbox, shows at once, and lands once back online', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-meta-gh-'));
+  const root = tempFolder('teamtrail-meta-gh-');
   const fake = fakeGitHub({ repo: 'octo-org/launchpad' });
   const net = faulty(fake.fetch);
   const opts = { repo: 'octo-org/launchpad', token: 't', manual: true, retries: 0, ...noSleep };
@@ -184,7 +184,7 @@ test('github offline: a status change waits in the outbox, shows at once, and la
 });
 
 test('the lease reaper returns a ticket through the lifecycle and journals it as the engine', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-reap-'));
+  const root = tempFolder('teamtrail-reap-');
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { mapId, first } = await trail(a);
   await a.assign(mapId, first.id, 'claude-07');
@@ -214,7 +214,7 @@ test('the lease reaper returns a ticket through the lifecycle and journals it as
 });
 
 test('bridge: the browser appends to the journal and reads a trail history; malformed entries are refused', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-journal-br-'));
+  const root = tempFolder('teamtrail-journal-br-');
   const bridge = createTrackerBridge(root, { env: {}, configDir: path.join(root, 'cfg'), leases: { reapMs: 60_000 } });
   const server = http.createServer((req, res) => void bridge.handle(req, res));
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));

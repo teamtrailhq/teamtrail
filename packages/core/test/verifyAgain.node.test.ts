@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -25,6 +24,7 @@ import { checkAgainOnConfirm } from '../src/verification/checkAgainOnConfirm';
 import { readAttempts } from '../src/verification/evidenceStore';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
@@ -33,7 +33,7 @@ const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], 
  * claimed it, changed a file and submitted, with a passing check as evidence for its one criterion.
  */
 async function setup() {
-  const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-again-'));
+  const repo = tempFolder('teamtrail-again-');
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root);
   const git = (...a: string[]) =>

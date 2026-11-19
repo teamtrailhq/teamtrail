@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { parseMapFile, serializeMapFile } from '../src/adapters/markdown/mapFile';
@@ -22,6 +21,7 @@ import { claim, orderNext } from '../src/planning/operations/claims';
 import { promoteToTicket } from '../src/planning/operations/scope';
 import { outsideChanges } from '../src/signedState/outsideChanges';
 import { changedKeys, mapFields } from '../src/signedState/stateFields';
+import { tempFolder } from './tempFolder';
 
 /* Archiving a trail: the trail lead puts it away as history; no agent takes work from it until it is restored. */
 
@@ -115,7 +115,7 @@ test('archived: a signed record from before archiving existed still matches an a
 });
 
 test('archived: restoring a trail by editing map.md does not count; the signed value holds and it is flagged', async () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-archive-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-archive-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root, { by: 'lookout' }), watch: undefined }, root);
   const { map } = await chartMap(adapter, PLAN);
@@ -132,7 +132,7 @@ test('archived: no work comes from it, but what waits on the trail lead stays in
   const { map, tickets } = await chartMap(adapter, PLAN);
   await adapter.setMeta(map.id, tickets[0].id, { status: 'blocked' });
   await setTrailArchived(adapter, map.id, true, 'trail lead');
-  const root = mkdtempSync(path.join(os.tmpdir(), 'tt-archived-'));
+  const root = tempFolder('tt-archived-');
   const input = await gatherAttention({ root, adapter, policy: DEFAULT_ATTENTION_POLICY, now: Date.now() });
   assert.deepEqual(input.snaps, []);
   assert.deepEqual(

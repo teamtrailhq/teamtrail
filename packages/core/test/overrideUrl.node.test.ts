@@ -1,18 +1,16 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { test } from 'node:test';
 import { MemoryAdapter } from '../src/adapters/memoryAdapter';
 import { trackerContext } from '../src/server/trackerContext';
+import { tempFolder } from './tempFolder';
 
 /** Credentials go wherever these point, so only https (or http to this machine, for the fakes) is taken. */
 const apiUrlsFor = (env: Record<string, string>) =>
   trackerContext({
-    root: mkdtempSync(path.join(os.tmpdir(), 'teamtrail-override-')),
+    root: tempFolder('teamtrail-override-'),
     markdown: new MemoryAdapter(),
     env,
-    configDir: mkdtempSync(path.join(os.tmpdir(), 'teamtrail-override-config-')),
+    configDir: tempFolder('teamtrail-override-config-'),
   }).apiUrl;
 
 test('tracker API overrides: plain http to another host, odd schemes and URLs with credentials are ignored', () => {

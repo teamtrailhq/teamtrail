@@ -35,6 +35,8 @@ beforeEach(() => {
 afterEach(async () => {
   await hub.closeAll();
   fs.rmSync(repo, { recursive: true, force: true });
+  // Claimed tickets' worktrees go next to the repo (`<repo>.teamtrail/`).
+  fs.rmSync(`${repo}.teamtrail`, { recursive: true, force: true });
 });
 
 const adapter = () => new MarkdownAdapter(nodeMarkdownFs(root), root);

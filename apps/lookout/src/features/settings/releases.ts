@@ -5,7 +5,7 @@
  */
 import { LATER_RELEASES } from './laterReleases';
 import { MID_RELEASES } from './midReleases';
-import { RELEASES_061 } from './newerReleases';
+import { NEWER_RELEASES } from './newerReleases';
 import { OLDER_RELEASES } from './olderReleases';
 
 export interface Release {
@@ -29,6 +29,11 @@ export const RELEASES: Release[] = [
       'Hands-off on a phone: every kind of Needs you fits the screen, with actions big enough to tap, and each row acts on what it asks',
       'Teamtrail Cloud: Pause shows Stopping… until the agents have stopped, and Start shows Starting… until one is working',
     ],
+  },
+  {
+    version: '0.66.14',
+    date: '2026-11-19',
+    items: ['Running the tests no longer leaves folders behind in the temp folder'],
   },
   {
     version: '0.66.13',
@@ -196,7 +201,7 @@ export const RELEASES: Release[] = [
       'A ticket that needs you says so in red, says what is asked, and its first button does it; in the dark theme, the ticket and menus sit on a lighter sheet over the map',
     ],
   },
-  ...RELEASES_061,
+  ...NEWER_RELEASES,
   ...LATER_RELEASES,
   ...MID_RELEASES,
   ...OLDER_RELEASES,

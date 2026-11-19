@@ -5,7 +5,6 @@
 // the same commit, another agent reviews it, and the proof is verified.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -20,11 +19,12 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 import { prMergedLive } from './verifyLivePr.mjs';
 
 /** A git repo whose one check passes. */
 function scratchRepo() {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-gaps-e2e-'));
+  const top = e2eTemp('teamtrail-gaps-e2e-');
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const config = {

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, realpathSync, utimesSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { chmodSync, existsSync, readFileSync, realpathSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { git } from '../src/evidence/git';
+import { tempFolder } from './tempFolder';
 
 /*
  * The review's two ways past the filter overrides of safeGit.ts, both reproduced on git 2.54 through git():
@@ -14,7 +14,7 @@ import { git } from '../src/evidence/git';
 const posix = process.platform !== 'win32';
 
 function scratch() {
-  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-gittrap-')));
+  const dir = realpathSync(tempFolder('teamtrail-gittrap-'));
   const marker = path.join(dir, 'ran');
   const trap = path.join(dir, 'trap.sh');
   writeFileSync(trap, `#!/bin/sh\necho "$0 $*" >> "${marker}"\ncat\n`);

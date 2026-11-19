@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -16,6 +15,7 @@ import { latestTrailRun } from '../src/trailChecks/trailRunStore';
 import { trustKey, trustLedger } from '../src/trust/trustLedger';
 import { writeAttempt } from '../src/verification/evidenceStore';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
@@ -30,7 +30,7 @@ function attempt(o: { mapId: string; ticketId: string; repo: string; head: strin
 }
 
 test("a revert on the remote default branch counts when the run would use it: never 'verified together'", async () => {
-  const repo = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-trail-revert-')), 'app');
+  const repo = path.join(tempFolder('teamtrail-trail-revert-'), 'app');
   const root = path.join(repo, '.teamtrail');
   const git = (...a: string[]) =>
     execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd: repo, stdio: 'pipe' })

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { fork } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { chmodSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +8,7 @@ import { writeAttentionPrefs } from '../src/attention/attentionStore';
 import { writeJsonAtomic } from '../src/lib/jsonFile';
 import { registerProject } from '../src/projects/registerProject';
 import { credentialStore } from '../src/server/trackerConfig';
+import { tempFolder } from './tempFolder';
 
 /*
  * The user config dir holds tokens (credentials.json) and what this person does (projects, Slack, attention).
@@ -29,8 +29,8 @@ if (process.env.CRED_WORKER) {
 
 test('the config dir is 0700 and every file in it 0600, whoever writes first', { skip: !posix }, () => {
   for (const first of ['projects', 'attention', 'slack-like']) {
-    const dir = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-cfg-')), 'config');
-    const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-cfg-repo-'));
+    const dir = path.join(tempFolder('teamtrail-cfg-'), 'config');
+    const repo = tempFolder('teamtrail-cfg-repo-');
     if (first === 'projects') registerProject({ configDir: dir, root: path.join(repo, '.teamtrail') });
     if (first === 'attention') writeAttentionPrefs({}, dir);
     // the Slack connector writes slack.json through writeJsonAtomic into the config dir it is given
@@ -46,7 +46,7 @@ test('the config dir is 0700 and every file in it 0600, whoever writes first', {
 });
 
 test('looser modes left by an older version are tightened on the next write', { skip: !posix }, () => {
-  const dir = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-cfg-')), 'config');
+  const dir = path.join(tempFolder('teamtrail-cfg-'), 'config');
   mkdirSync(dir, { mode: 0o755 });
   chmodSync(dir, 0o755);
   for (const f of ['slack.json', 'projects.json', 'credentials.json']) {
@@ -60,7 +60,7 @@ test('looser modes left by an older version are tightened on the next write', { 
 });
 
 test('credentials.json: read-modify-write from several processes at once loses nothing', async () => {
-  const dir = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-cfg-')), 'config');
+  const dir = path.join(tempFolder('teamtrail-cfg-'), 'config');
   credentialStore(dir).update(() => ({ github: { token: 'kept' } }));
   const self = fileURLToPath(import.meta.url);
   const workers = ['a', 'b', 'c', 'd'].map(

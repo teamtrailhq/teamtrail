@@ -3,7 +3,6 @@
 // Usage: npm run build -w teamtrail && node scripts/verify-mcp.mjs [screenshotDir]
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -21,6 +20,7 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 import { verifyCheckGuard } from './verifyCheckGuard.mjs';
 import { verifyEscapes } from './verifyEscapes.mjs';
 import { verifyFlaky } from './verifyFlaky.mjs';
@@ -56,10 +56,10 @@ const shots = process.argv[2];
 if (!fs.existsSync(cli)) throw new Error('build the CLI first: npm run build -w teamtrail');
 if (shots) fs.mkdirSync(shots, { recursive: true });
 
-const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-'));
+const repo = e2eTemp('teamtrail-e2e-');
 // Never the user's config dir, and no projects registry for the single-repo steps: they must look exactly as with
 // one repo. verifyProjects.mjs uses its own config dir with auto-registration on.
-process.env.TEAMTRAIL_CONFIG_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-e2e-config-'));
+process.env.TEAMTRAIL_CONFIG_DIR = e2eTemp('teamtrail-e2e-config-');
 // The steps below were written for the map: this person works Hands-on. Hands-off, everyone's default, has its own
 // steps on their own config dir (verifyHandsOff.mjs).
 handsOn(process.env.TEAMTRAIL_CONFIG_DIR);

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -15,6 +14,7 @@ import { writeKnowledge } from '../src/knowledge/knowledgeStore';
 import { chartMap } from '../src/planning/operations/chart';
 import { proposeReroute } from '../src/planning/reroute/rerouteFlow';
 import { readReroute, writeReroute } from '../src/planning/reroute/rerouteStore';
+import { tempFolder } from './tempFolder';
 
 /*
  * One definition of "the hash of what the page showed" for every single-item approval route (N4): what each GET
@@ -49,7 +49,7 @@ const entry = (body: string) => ({
 const criteria = (text: string) => [{ id: 'AC-1', text, kind: 'unit' as const }];
 
 async function project() {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-shown-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-shown-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(adapter, {

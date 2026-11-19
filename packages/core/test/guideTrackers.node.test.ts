@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import type { TrackerAdapter } from '../src/adapters/adapter';
@@ -25,10 +24,11 @@ import { fakeGuideCatalog, guideText } from './fakes/guideCatalog';
 import { fakeLinear } from './fakes/linear';
 import { approveAllHere } from './fakes/trailLead';
 import { noSleep } from './scenarios';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-guide-trackers-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-guide-trackers-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

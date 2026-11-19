@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { ExternalChanges } from '../src/adapters/markdown/externalChanges';
@@ -8,13 +7,14 @@ import { SelfWrites } from '../src/adapters/markdown/selfWrites';
 import { machineStore } from '../src/machine/machineStore';
 import type { TrackerEvent } from '../src/model/types';
 import { watchMachineStore } from '../src/server/watchMachineStore';
+import { tempFolder } from './tempFolder';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Watches a fresh project's machine store, collecting what it sends. */
 function watched() {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'tt-store-root-'));
-  const configDir = mkdtempSync(path.join(os.tmpdir(), 'tt-store-config-'));
+  const root = tempFolder('tt-store-root-');
+  const configDir = tempFolder('tt-store-config-');
   const dir = machineStore(root, configDir).dir;
   mkdirSync(path.join(dir, 'signed-state'), { recursive: true });
   const sent: string[] = [];

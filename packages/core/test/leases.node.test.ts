@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readdirSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import type { TrackerAdapter } from '../src/adapters/adapter';
@@ -17,6 +16,7 @@ import { chartMap } from '../src/planning/operations/chart';
 import { fakeGitHub } from './fakes/github';
 import { faulty } from './fixtures';
 import { noSleep } from './scenarios';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
@@ -57,7 +57,7 @@ test('health: live, stalled in the last third, then expired', () => {
 });
 
 test('an expired lease returns the ticket to the queue with a handoff comment, exactly once', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lease-'));
+  const root = tempFolder('teamtrail-lease-');
   const a = markdown(root);
   const { mapId, t } = await charted(a);
   writeLease(root, lease(mapId, t.id));
@@ -76,7 +76,7 @@ test('an expired lease returns the ticket to the queue with a handoff comment, e
 });
 
 test('a live lease stays; a lease on a ticket closed or reassigned meanwhile is only dropped', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lease-'));
+  const root = tempFolder('teamtrail-lease-');
   const a = markdown(root);
   const { mapId, t } = await charted(a);
   writeLease(root, lease(mapId, t.id, { expiresAt: Date.now() + 60_000 }));
@@ -91,7 +91,7 @@ test('a live lease stays; a lease on a ticket closed or reassigned meanwhile is 
 });
 
 test('github offline: the return is queued in the outbox and syncs once back online', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lease-gh-'));
+  const root = tempFolder('teamtrail-lease-gh-');
   const fake = fakeGitHub({ repo: 'octo-org/launchpad' });
   const net = faulty(fake.fetch);
   const opts = { repo: 'octo-org/launchpad', token: 't', manual: true, retries: 0, ...noSleep };
@@ -115,7 +115,7 @@ test('github offline: the return is queued in the outbox and syncs once back onl
 });
 
 test('bridge: lists leases and releases one for the trail lead', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lease-br-'));
+  const root = tempFolder('teamtrail-lease-br-');
   const bridge = createTrackerBridge(root, { env: {}, configDir: path.join(root, 'cfg'), leases: { reapMs: 60_000 } });
   const server = http.createServer((req, res) => void bridge.handle(req, res));
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
@@ -154,7 +154,7 @@ test('bridge: lists leases and releases one for the trail lead', async () => {
 });
 
 test('operator release of a lease another process is returning reports busy', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lease-'));
+  const root = tempFolder('teamtrail-lease-');
   const a = markdown(root);
   const { mapId, t } = await charted(a);
   const l = lease(mapId, t.id);

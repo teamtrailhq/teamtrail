@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { readAttentionPolicy } from '../src/attention/attentionStore';
 import { writeReviewLimit } from '../src/attention/writeReviewLimit';
 import { thisMachineOnly } from '../src/server/thisMachineRoutes';
+import { tempFolder } from './tempFolder';
 
 /* The team's review limit, as Settings → Attention writes it into attention.json. */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-review-limit-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-review-limit-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

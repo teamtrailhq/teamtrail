@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
 import os from 'node:os';
@@ -25,9 +25,9 @@ import { REMOTE_TOKENS_FILE } from '../src/remoteAgents/remoteTokenStore';
 import { thisMachineOnly } from '../src/server/thisMachineRoutes';
 import { NO_GH_CLI_ENV, resolveGitHubToken } from '../src/server/trackerConfig';
 import { pairedSignIn, pairSession, sessionHeader } from './fakes/signedIn';
+import { tempFolder } from './tempFolder';
 
-const tmp = (name: string) =>
-  path.join(mkdtempSync(path.join(os.tmpdir(), `teamtrail-${name}-`)), 'repo', '.teamtrail');
+const tmp = (name: string) => path.join(tempFolder(`teamtrail-${name}-`), 'repo', '.teamtrail');
 
 let server: http.Server;
 let bridge: TrackerBridge;

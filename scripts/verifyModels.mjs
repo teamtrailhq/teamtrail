@@ -6,11 +6,11 @@
 // sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { approveSkipInLookout, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 import { verifyReviewModels } from './verifyReviewModels.mjs';
 
 async function startServer(cli, cwd) {
@@ -140,7 +140,7 @@ async function waiting({ fast, strong, page, shot }) {
 }
 
 export async function verifyModels({ browser, cli, log, shots }) {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-models-e2e-'));
+  const top = e2eTemp('teamtrail-models-e2e-');
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const config = path.join(top, '.claude-config');
   const { server, url, pair } = await startServer(cli, top);

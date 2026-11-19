@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { parseMapFile, serializeMapFile } from '../src/adapters/markdown/mapFile';
@@ -31,8 +30,9 @@ import {
 import { outcomeOf } from '../src/verification/outcome';
 import { verificationFor } from '../src/verification/policy';
 import { acquireRunLock, readRunLock, recoverInterrupted, releaseRunLock, RUNS_DIR } from '../src/verification/runLock';
+import { tempFolder } from './tempFolder';
 
-const tmp = () => mkdtempSync(path.join(os.tmpdir(), 'teamtrail-verif-'));
+const tmp = () => tempFolder('teamtrail-verif-');
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
 const ticket = (over: Partial<Ticket> = {}): Ticket => ({

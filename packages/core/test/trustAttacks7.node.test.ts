@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MemoryAdapter } from '../src/adapters/memoryAdapter';
@@ -16,6 +15,7 @@ import { readReroute, writeReroute } from '../src/planning/reroute/rerouteStore'
 import { readPolicy } from '../src/policy/policyStore';
 import { rerun } from '../src/verification/rerunInterrupted';
 import { recoverInterrupted, RUNS_DIR } from '../src/verification/runLock';
+import { tempFolder } from './tempFolder';
 
 /*
  * Finding 7 of the trust audit: approvals the trail lead gives that live in committed files an agent can edit.
@@ -23,7 +23,7 @@ import { recoverInterrupted, RUNS_DIR } from '../src/verification/runLock';
  * stays closed. Every test here failed before its fix.
  */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-trust7-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-trust7-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

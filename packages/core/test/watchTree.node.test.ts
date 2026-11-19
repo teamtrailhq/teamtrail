@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { rawMarkdownFs } from '../src/adapters/markdown/rawMarkdownFs';
 import { watchTree } from '../src/lib/watchTree';
 import { writeTrackerFile } from '../src/signedState/trackerFileWrite';
+import { tempFolder } from './tempFolder';
 
 /*
  * Teamtrail writes a tracker file to a temp file and renames it over the name (trackerFileWrite.ts). On Linux,
@@ -16,7 +16,7 @@ import { writeTrackerFile } from '../src/signedState/trackerFileWrite';
 const TICKET = 'trail/tickets/6.md';
 
 function folder() {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-watch-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-watch-'), '.teamtrail');
   mkdirSync(path.join(root, 'trail', 'tickets'), { recursive: true });
   return root;
 }

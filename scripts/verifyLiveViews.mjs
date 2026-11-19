@@ -6,17 +6,17 @@
 //      `verification` event, never as a path.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { answeringChecklists, approveSkipInLookout, lookoutLinks, pairLink, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const LIVE_MS = 10_000;
 
 /** A git repo whose checks pass, with a committed risk policy that lowers Dependencies (medium by default) to low. */
 function scratchRepo() {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-live-e2e-'));
+  const top = e2eTemp('teamtrail-live-e2e-');
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   const test = `node -e "process.exit(0)"`;
   fs.writeFileSync(path.join(top, 'package.json'), JSON.stringify({ private: true, scripts: { test } }, null, 2));
@@ -149,7 +149,7 @@ async function evidenceMovesCheckMark({ page, url, one, top }) {
   const ticketId = claimed.claimed.id ?? claimed.claimed.key.replace('#', '');
   const safe = (s) => s.replace(/[^\w.-]/g, '_');
   const dir = path.join(top, '.teamtrail', '.evidence', safe(started.trail.id), safe(ticketId));
-  const aside = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-live-evidence-'));
+  const aside = e2eTemp('teamtrail-live-evidence-');
   const attempts = fs.readdirSync(dir).filter((n) => /^A-\d+\.json$/.test(n));
   for (const n of attempts) fs.renameSync(path.join(dir, n), path.join(aside, n));
   const gone = await within(mark, 'detached');

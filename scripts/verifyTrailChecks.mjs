@@ -6,11 +6,11 @@
 // Waits on what the user sees, never on sleeps.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { answeringChecklists, approveSkipInLookout, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const ID = ['-c', 'user.email=e2e@teamtrail', '-c', 'user.name=e2e'];
 const sh = (cwd, ...args) => execFileSync('git', [...ID, ...args], { cwd, encoding: 'utf8' }).trim();
@@ -23,7 +23,7 @@ if (fs.existsSync('a.txt') && fs.existsSync('b.txt')) {
 }`;
 
 function scratchRepo() {
-  const top = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-together-e2e-')), 'app');
+  const top = path.join(e2eTemp('teamtrail-together-e2e-'), 'app');
   fs.mkdirSync(path.join(top, '.teamtrail'), { recursive: true });
   fs.writeFileSync(path.join(top, 'check.js'), CHECK);
   fs.writeFileSync(path.join(top, '.gitignore'), '.teamtrail\n');

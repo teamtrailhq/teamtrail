@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { createTrackerBridge, type TrackerBridge } from '../src/bridge';
+import { tempFolder } from './tempFolder';
 
 /*
  * A device on the network (no sign-in yet) used to change what this machine trusts by writing tracker files:
@@ -24,7 +24,7 @@ const MAP = `---\nkey: T\ntitle: Trail\nmode: auto\nverification: checks\nlabels
 const TICKET = `---\nid: 1\ntitle: Build it\ntype: task\nstate: open\nlabels: [teamtrail]\nchecks: [lint]\ncreated: 2026-01-01T00:00:00.000Z\nupdated: 2026-01-01T00:00:00.000Z\n---\n\nThe body\n`;
 
 before(async () => {
-  root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lantrust-')), 'repo', '.teamtrail');
+  root = path.join(tempFolder('teamtrail-lantrust-'), 'repo', '.teamtrail');
   mkdirSync(path.join(root, 'trail', 'tickets'), { recursive: true });
   // a trail Teamtrail wrote on this machine (signed)
   await nodeMarkdownFs(root).create!('trail/map.md', MAP);

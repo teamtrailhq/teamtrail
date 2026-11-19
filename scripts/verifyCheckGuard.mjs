@@ -4,7 +4,6 @@
 // the pass with a reason, and the ticket is done, its proof verified and saying who accepted it and why.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -17,13 +16,14 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const REASON = 'The old script ran nothing on Windows; this one is the same suite';
 const PASS = `node -e "process.exit(0)"`;
 
 /** A git repo whose `npm test` passes, before and after the work. */
 function scratchRepo() {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-guard-e2e-'));
+  const top = e2eTemp('teamtrail-guard-e2e-');
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   fs.writeFileSync(path.join(top, 'package.json'), JSON.stringify({ private: true, scripts: { test: PASS } }, null, 2));
   fs.mkdirSync(path.join(top, '.teamtrail'));

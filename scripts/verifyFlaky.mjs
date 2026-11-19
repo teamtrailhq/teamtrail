@@ -5,7 +5,6 @@
 // proof says the check passed on retry. Trail stats lists the flaky check.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -18,12 +17,13 @@ import {
   signInWith,
   ticketAction,
 } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const REASON = 'CI clock skew, tracked separately';
 
 /** A git repo whose `npm test` passes only while `flag` (outside the repo) exists. */
 function scratchRepo(flag) {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-flaky-e2e-'));
+  const top = e2eTemp('teamtrail-flaky-e2e-');
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   const test = `node -e "const ok = require('fs').existsSync(${JSON.stringify(flag).replace(/"/g, "'")}); if (!ok) console.log('not ok 1 - feed lists releases'); process.exit(ok ? 0 : 1)"`;
   fs.writeFileSync(path.join(top, 'package.json'), JSON.stringify({ private: true, scripts: { test } }, null, 2));
@@ -129,7 +129,7 @@ async function flakyInTrailStats(page, key, shots) {
 }
 
 export async function verifyFlaky({ browser, cli, log, shots }) {
-  const flag = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-flaky-flag-')), 'pass');
+  const flag = path.join(e2eTemp('teamtrail-flaky-flag-'), 'pass');
   fs.writeFileSync(flag, '');
   const top = scratchRepo(flag);
   const lookout = await startLookout(cli, top);

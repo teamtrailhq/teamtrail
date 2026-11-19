@@ -29,9 +29,15 @@ test('JSON config files: no __proto__, constructor or prototype key survives, at
   const v = parseJsonSafe(text) as Record<string, Record<string, unknown>>;
   expect(Object.hasOwn(v, '__proto__')).toBe(false);
   expect(v.a).toEqual({ b: 2 });
-  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-proto-')), 'x.json');
-  fs.writeFileSync(file, text);
-  const read = readJsonFile<Record<string, unknown>>(file)!;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-proto-'));
+  let read: Record<string, unknown>;
+  try {
+    const file = path.join(dir, 'x.json');
+    fs.writeFileSync(file, text);
+    read = readJsonFile<Record<string, unknown>>(file)!;
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
   const copy: Record<string, unknown> = {};
   for (const [k, val] of Object.entries(read)) copy[k] = val;
   expect((copy as { polluted?: boolean }).polluted).toBeUndefined();

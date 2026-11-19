@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -15,6 +14,7 @@ import { requestMainRun } from '../src/mainChecks/requestMainRun';
 import { chartMap } from '../src/planning/operations/chart';
 import { trustKey, trustLedger } from '../src/trust/trustLedger';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const CHECK = "if (!require('fs').existsSync('fixed.txt')) process.exit(1);";
@@ -29,7 +29,7 @@ const head = () => git('rev-parse', 'HEAD').toString().trim();
 const read = (trigger?: string) => readMainChecks({ root }, mapId, { ...(trigger ? { trigger } : {}), waitMs: 20_000 });
 
 before(async () => {
-  repo = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-main-moved-')), 'app');
+  repo = path.join(tempFolder('teamtrail-main-moved-'), 'app');
   root = path.join(repo, '.teamtrail');
   mkdirSync(root, { recursive: true });
   writeFileSync(path.join(repo, '.gitignore'), '.teamtrail\n');
