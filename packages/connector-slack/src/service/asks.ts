@@ -1,8 +1,14 @@
-import { BRAND, type AgentSessionDoc, type PendingQuestion, type TrackerAdapter } from '@teamtrail/core';
+import {
+  BRAND,
+  type AgentSessionDoc,
+  type FirstAnswer,
+  type PendingQuestion,
+  type TrackerAdapter,
+} from '@teamtrail/core';
 import { needsLookout } from '@teamtrail/core/agents';
 import { AnswerError, LookoutOnlyAnswer, attentionView, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/bridge';
-import { askClosedMessage, askMessage, clip, label, mention, type AskRef, type AskView } from '../blocks';
-import type { SlackConfig } from '../store';
+import { askClosedMessage, askMessage, clip, label, type AskRef, type AskView } from '../blocks';
+import type { AskRecord, SlackConfig } from '../store';
 import { takeAskSlot } from './askLimit';
 import { askOutcome } from './askOutcome';
 import { askRoute } from './askRoute';
@@ -58,8 +64,11 @@ export const askMode = (ctx: SlackContext, q: PendingQuestion) =>
 export function writeAnswer(ctx: SlackContext, ref: AskRef, text: string, user: string): 'ok' | 'taken' | 'lookout' {
   if (ctx.answering.has(ref.q)) return 'taken';
   ctx.answering.add(ref.q);
+  let first: NonNullable<AskRecord['by']>['first'];
   try {
-    writeAgentAnswer(ctx.o.root, { sessionId: ref.s, questionId: ref.q, text, author: `slack:${user}`, via: 'slack' });
+    const author = `slack:${user}`;
+    const written = writeAgentAnswer(ctx.o.root, { sessionId: ref.s, questionId: ref.q, text, author, via: 'slack' });
+    first = written.firstAnswer && firstOf(written.firstAnswer);
   } catch (e) {
     ctx.answering.delete(ref.q);
     if (e instanceof LookoutOnlyAnswer) return 'lookout';
@@ -68,7 +77,7 @@ export function writeAnswer(ctx: SlackContext, ref: AskRef, text: string, user: 
   }
   const asks = ctx.asks.read();
   if (asks[ref.q]) {
-    asks[ref.q].by = { user, text };
+    asks[ref.q].by = { user, text, ...(first ? { first } : {}) };
     ctx.asks.write(asks);
   }
   return 'ok';
@@ -80,8 +89,13 @@ export async function answer(ctx: SlackContext, ref: AskRef, text: string, user:
   return r;
 }
 
-const bySlack = (by: { user: string; text: string }, agent: string) =>
-  `✓ Answered by ${mention(by.user)} via Slack: “${label(clip(by.text, 300))}”. ${label(agent)} resumed.`;
+/** The answer that came before this one, as the card shows it: who, what and how, never who signed in. */
+const firstOf = (a: FirstAnswer) => ({
+  author: a.author,
+  text: a.text,
+  ...(a.via ? { via: a.via } : {}),
+  ...(a.chatOf ? { chatOf: a.chatOf } : {}),
+});
 
 /** Replace the ask's buttons with its outcome (askOutcome.ts when it was answered or dropped elsewhere). */
 export async function closeAsk(ctx: SlackContext, questionId: string, docs?: AgentSessionDoc[]) {
@@ -91,9 +105,7 @@ export async function closeAsk(ctx: SlackContext, questionId: string, docs?: Age
   const doc = rec.by
     ? undefined
     : (docs ?? (await readAgentDocs(ctx.o.root))).find((d) => d.session.id === rec.sessionId);
-  const { line, answered, guidance } = rec.by
-    ? { line: bySlack(rec.by, rec.view.agent), answered: true, guidance: undefined }
-    : askOutcome({ doc, questionId, agent: rec.view.agent });
+  const { line, answered, guidance } = askOutcome({ doc, questionId, agent: rec.view.agent, slack: rec.by });
   rec.closed = true;
   ctx.asks.write(asks);
   const detail = ctx.store.read().notify.detail;

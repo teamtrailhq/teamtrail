@@ -23,6 +23,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.15',
+    date: '2026-11-19',
+    items: [
+      'Two answers to the same question at once (the Lookout and Slack, or two people): the first is the one used everywhere, and the other is kept in the conversation as "also answered, not used"',
+    ],
+  },
+  {
     version: '0.66.14',
     date: '2026-11-19',
     items: ['Running the tests no longer leaves folders behind in the temp folder'],

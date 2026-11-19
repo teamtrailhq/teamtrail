@@ -1,17 +1,25 @@
 import { rmSync } from 'node:fs';
 import path from 'node:path';
 import type { ActivityStream } from '../activity/activityStream';
+import type { NotUsedAnswer } from '../activity/notUsedAnswer';
 import { writeLocalJson } from '../lib/ensureLocalDir';
-import { readJsonFile } from '../lib/jsonFile';
 import { machineAccess } from '../machine/machineAccess';
 import { BRAND } from '../model/brand';
 import { compareVersions } from '../model/compareVersions';
 import { runningVersion } from '../model/runningVersion';
 import type { AnsweredQuestion } from '../model/types';
 import { versionSkew } from '../model/versionSkew';
-import { checkAgentAnswer, type AnswerCheck } from './agentAnswerSignature';
-import { agentPaths, type AgentAnswer, type AgentSessionDoc } from './agentLink';
+import { ANSWER_FORMAT, agentPaths, type AgentSessionDoc } from './agentLink';
 import { signAnswered } from './answeredSignature';
+import { answerFiles, type AnswerFile } from './answerFiles';
+import { verified, type Asked, type Signed } from './verifiedAnswer';
+
+/** How long answers that come in after the one delivered are still kept with the question. */
+const LATE_MS = 60_000;
+const TRAIL_LEAD = 'trail lead';
+
+/** A question answered here lately: until when later answers are kept, and the files already kept, by number. */
+type Late = { q: Asked; until: number; kept: Set<number> };
 
 const teamtrailVersion = () => {
   const v = runningVersion();
@@ -30,11 +38,20 @@ export class AgentDocWriter {
   private blocked = false;
   private toldSkew = false;
   private signatures = new Map<string, AnsweredQuestion>();
+  /** Questions answered here lately, with the answer files already kept, by number. */
+  private late = new Map<string, Late>();
+  /** Numbered answer files already flagged as not Teamtrail's. */
+  private flagged = new Set<string>();
 
   constructor(
     private root: string,
     private activity: ActivityStream,
-    private opts: { client?: () => string | undefined; pollMs?: number } = {},
+    private opts: {
+      client?: () => string | undefined;
+      pollMs?: number;
+      /** Answers kept as not used (`ActivityStream.notUsed`), for the asking agent's own records. */
+      onNotUsed?: (q: { sessionId: string; questionId: string }, answers: NotUsedAnswer[]) => void;
+    } = {},
   ) {
     this.off = activity.subscribe(() => this.schedule());
     this.poll = setInterval(() => this.pullAnswers(), opts.pollMs ?? 400);
@@ -73,6 +90,7 @@ export class AgentDocWriter {
         feed: st.feed.filter((f) => f.sessionId === sid).slice(-200),
         client: this.opts.client?.(),
         ...teamtrailVersion(),
+        answerFormat: ANSWER_FORMAT,
         pid: process.pid,
       };
       const key = JSON.stringify(doc);
@@ -84,30 +102,86 @@ export class AgentDocWriter {
 
   /**
    * Apply answer files for questions this process is waiting on. Only an answer signed with this machine's key
-   * counts: a file written by anything else (the asking agent, a teammate's push) is removed, flagged in the
-   * activity feed, and the question keeps waiting for the human. When the key can't be read (a sandbox that blocks
-   * the config folder), nothing is delivered or removed, and that is said once.
+   * counts: a file written by anything else (the asking agent, a teammate's push) is flagged in the activity feed
+   * and passed over, and the question keeps waiting for the human. The first answer in line that verifies
+   * (answerFiles.ts) is delivered; answers after it are kept in the conversation as not used, also those that come
+   * in for a minute after (`pullLate`). When the key can't be read (a sandbox that blocks the config folder),
+   * nothing is delivered, and that is said once.
    */
   pullAnswers() {
-    for (const q of this.activity.snapshot.pending) {
-      const file = path.join(this.root, agentPaths.answer(q.sessionId, q.id));
-      const ans = readJsonFile<AgentAnswer>(file);
-      if (ans) this.take(file, ans, q);
+    // Before new deliveries: an answer delivered now is in the asking agent's hands before its later ones are kept.
+    this.pullLate();
+    for (const q of this.activity.snapshot.pending) this.pullFor(q);
+  }
+
+  private pullFor(q: Asked) {
+    for (const f of answerFiles(this.root, q.sessionId, q.id)) {
+      const r = this.judge(f, q);
+      if (r.kind === 'wait') return;
+      if (r.kind === 'skip') continue;
+      if (f.seq === 0) rmSync(f.file, { force: true });
+      // An unlabelled answer (an older writer, or a label that doesn't verify) counts as chat at gates (answerVia.ts).
+      if (this.activity.answer(q.id, r.ans.text, r.ans.author || TRAIL_LEAD, r.how))
+        this.late.set(q.id, { q, until: Date.now() + LATE_MS, kept: new Set([f.seq]) });
+      return;
     }
   }
 
-  private take(file: string, ans: AgentAnswer, q: { id: string; sessionId: string; agent: string }) {
-    let check: AnswerCheck;
-    try {
-      check = checkAgentAnswer(this.root, ans, { sessionId: q.sessionId, questionId: q.id });
-    } catch {
-      return this.cannotVerify(q.sessionId);
+  /** Answers given to a question after the one delivered: kept, marked not used, never delivered. */
+  private pullLate() {
+    for (const [id, l] of this.late) {
+      if (Date.now() <= l.until) this.keepLater(l);
+      else {
+        this.late.delete(id);
+        rmSync(path.join(this.root, agentPaths.answerDir(l.q.sessionId, id)), { recursive: true, force: true });
+      }
     }
-    // A newer Teamtrail may sign in a way this one doesn't know: keep the answer and say why, never call it forged.
-    if (check.kind === 'forged' && this.newerWriter(ans.writer)) return this.skewed(q.sessionId, ans.writer!);
-    rmSync(file, { force: true });
-    // An unlabelled answer (an older writer, or a label that doesn't verify) counts as chat at gates (answerVia.ts).
-    if (check.kind === 'signed') return this.activity.answer(q.id, ans.text, ans.author || 'trail lead', check.how);
+  }
+
+  private keepLater(l: Late) {
+    const later = answerFiles(this.root, l.q.sessionId, l.q.id)
+      .filter((f) => !l.kept.has(f.seq))
+      .map((f) => ({ f, r: verified(this.root, f, l.q) }))
+      .filter((x): x is { f: AnswerFile; r: Signed } => x.r.kind === 'signed');
+    if (!later.length) return;
+    for (const { f } of later) {
+      if (f.seq === 0) rmSync(f.file, { force: true });
+      else l.kept.add(f.seq);
+    }
+    const answers = later.map(({ r }) => ({ text: r.ans.text, author: r.ans.author || TRAIL_LEAD, how: r.how }));
+    if (this.activity.notUsed(l.q.id, answers))
+      this.opts.onNotUsed?.({ sessionId: l.q.sessionId, questionId: l.q.id }, answers);
+  }
+
+  /** What to do with one answer file of a question still waiting: deliver it, pass over it, or wait. */
+  private judge(f: AnswerFile, q: Asked): Signed | { kind: 'wait' } | { kind: 'skip' } {
+    const r = verified(this.root, f, q);
+    switch (r.kind) {
+      case 'signed':
+        return r;
+      case 'skip':
+        return { kind: 'skip' };
+      case 'unreadable':
+        this.cannotVerify(q.sessionId);
+        return { kind: 'wait' };
+      case 'forged':
+        // A newer Teamtrail may sign in a way this one doesn't know: keep the answer and say why, never call it forged.
+        if (this.newerWriter(f.ans?.writer)) {
+          this.skewed(q.sessionId, f.ans!.writer!);
+          return { kind: 'wait' };
+        }
+        this.forged(f, q);
+        return { kind: 'skip' };
+      default:
+        return r satisfies never;
+    }
+  }
+
+  /** Said once per file: a forged single file (the old layout) is removed, a numbered one only passed over. */
+  private forged(f: AnswerFile, q: Asked) {
+    if (f.seq === 0) rmSync(f.file, { force: true });
+    if (this.flagged.has(f.file)) return;
+    if (f.seq > 0) this.flagged.add(f.file);
     this.activity.push({
       source: 'system',
       level: 'alert',
