@@ -32,6 +32,13 @@ export const RELEASES: Release[] = [
     ],
   },
   {
+    version: '0.66.18',
+    date: '2026-11-19',
+    items: [
+      'Checks read as running until their outcome is in place: once they show finished, the ticket has moved on and its review is open',
+    ],
+  },
+  {
     version: '0.66.17',
     date: '2026-11-19',
     items: [
