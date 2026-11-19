@@ -4,6 +4,7 @@
 //   node scripts/check-temp-leaks.mjs compare <file>    after it: fails, naming them, when there are new entries
 import fs from 'node:fs';
 import os from 'node:os';
+import path from 'node:path';
 
 // What the tools themselves keep there across runs, never a test's: vite's Node compile cache, and systemd's and
 // snap's per-service folders on the CI runner.
@@ -29,5 +30,17 @@ if (!added.length) {
   process.exit(0);
 }
 console.error(`✖ The run left ${added.length} new entries in ${os.tmpdir()}:`);
-for (const name of added.slice(0, 50)) console.error(`  ${name}`);
+for (const name of added.slice(0, 50)) {
+  console.error(`  ${name}`);
+  for (const inner of inside(path.join(os.tmpdir(), name))) console.error(`    ${inner}`);
+}
 process.exit(1);
+
+/** What a leftover folder holds (a few entries), to tell which test or tool made it. */
+function inside(dir) {
+  try {
+    return fs.readdirSync(dir, { recursive: true }).slice(0, 10);
+  } catch {
+    return [];
+  }
+}
