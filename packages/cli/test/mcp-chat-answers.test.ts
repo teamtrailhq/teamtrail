@@ -116,6 +116,38 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
     await everyGateRefuses(asker, questionId, 'claude-02');
   });
 
+  it('answered in the Lookout and in a chat at once: the first is used everywhere, the other kept as not used', async () => {
+    const asker = await hub.connect({ name: 'claude-01' });
+    const other = await hub.connect({ name: 'claude-02' });
+    const questionId = await askOnJunction(asker);
+    const doc = (await readAgentDocs(root)).find((d) => d.pending.length)!;
+    const lookout = { sessionId: doc.session.id, questionId, author: 'trail lead', via: 'lookout' as const };
+    expect(writeAgentAnswer(root, { ...lookout, text: 'Keep it' }).firstAnswer).toBeUndefined();
+    // before the asking process has looked: the chat answer comes second, whatever its timing
+    await expect(other('answer_question', { questionId, answer: 'Drop it' })).resolves.toMatchObject({
+      delivered: false,
+      note: expect.stringMatching(/Already answered by trail lead \(lookout\).*marked not used/),
+    });
+    const got = await asker<Got>('wait_for_answer', { questionId, waitSeconds: 5 });
+    expect(got).toMatchObject({ answered: true, answer: 'Keep it', answeredVia: 'lookout' });
+    await expect.poll(async () => (await readAgentDocs(root))[0]?.chats.some((c) => c.notUsed)).toBe(true);
+    const chats = (await readAgentDocs(root)).flatMap((d) => d.chats).filter((c) => c.answers === questionId);
+    expect(chats.map((c) => [c.text, c.via, !!c.notUsed])).toEqual([
+      ['Keep it', 'lookout', false],
+      ['Drop it', 'chat', true],
+    ]);
+    const closed = await asker<Closed>('close_ticket', {
+      resolution: 'Keep it',
+      category: 'data-deletion',
+      questionId,
+    });
+    const kept = await record(closed.decision.id);
+    expect(kept).toMatchObject({ decidedBy: 'trail lead', answer: 'Keep it' });
+    expect(kept.transcript.find((e) => e.from === 'system')?.text).toBe(
+      "Also answered by trail lead (in claude-02's chat), not used: Drop it",
+    );
+  });
+
   it('the same question answered in the Lookout backs the decision', async () => {
     const call = await hub.connect({ name: 'claude-01' });
     const questionId = await askOnJunction(call);

@@ -91,7 +91,7 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
       },
       title: 'Answer a question',
       description:
-        "Pass on the human's answer to a waiting question, with their own words from this chat. Only use text the human gave you. It is delivered as given in your chat: it guides the agent that asked, but can't approve anything that needs the human (a high-risk call, a HITL ticket, a decision recorded as theirs); for that they answer in the Lookout or Slack.",
+        "Pass on the human's answer to a waiting question, with their own words from this chat. Only use text the human gave you. It is delivered as given in your chat: it guides the agent that asked, but can't approve anything that needs the human (a high-risk call, a HITL ticket, a decision recorded as theirs); for that they answer in the Lookout or Slack. When another answer came first (the Lookout, Slack), that one is used: you get delivered: false, and theirs is kept in the conversation, marked not used.",
     },
     { questionId: z.string(), answer: text().min(1) },
     (a) => agent.answerQuestion(a),

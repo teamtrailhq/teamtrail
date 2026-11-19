@@ -1,5 +1,17 @@
-import type { ActivityStream, FeedKind, SessionHandle, SessionMode, TranscriptEntry } from '@teamtrail/core';
+import {
+  BRAND,
+  chatNote,
+  type ActivityStream,
+  type AnswerHow,
+  type FeedKind,
+  type SessionHandle,
+  type SessionMode,
+  type TranscriptEntry,
+} from '@teamtrail/core';
 import type { AgentOptions } from './types';
+
+/** Where an answer was given, for a transcript line. */
+const WHERE = { lookout: 'in the Lookout', 'lookout-limited': 'in the Lookout', slack: 'in Slack', chat: 'in a chat' };
 
 interface UsageWindow {
   s: SessionHandle;
@@ -64,6 +76,18 @@ export class AgentSessions {
   note(s: SessionHandle, from: TranscriptEntry['from'], author: string, text: string) {
     this.transcripts.get(s.id)?.push({ from, author, text, at: Date.now() });
   }
+
+  /**
+   * Answers given after the one used, in the session's transcript: said by the system, so a decision record shows
+   * them without taking them for the human's words.
+   */
+  readonly notUsed = (q: { sessionId: string }, answers: { text: string; author: string; how: AnswerHow }[]) => {
+    for (const a of answers) {
+      const where = chatNote(a.how) ?? WHERE[a.how.via ?? 'chat'];
+      const text = `Also answered by ${a.author} (${where}), not used: ${a.text}`;
+      this.transcripts.get(q.sessionId)?.push({ from: 'system', author: BRAND.assistant.name, text, at: Date.now() });
+    }
+  };
 
   /** `_meta` of an incoming tool call: tells the usage meter which agent log this process belongs to. */
   noteCall(meta: Record<string, unknown> | undefined) {

@@ -283,9 +283,9 @@ test('an answer signed for another project is not delivered here', async () => {
   mkdirSync(path.dirname(docA), { recursive: true });
   writeFileSync(docA, readFileSync(path.join(b, agentPaths.session('s_1'))));
   writeAgentAnswer(a, { sessionId: 's_1', questionId: q.id, text: 'yes', author: 'trail lead', via: 'lookout' });
-  const target = path.join(b, agentPaths.answer('s_1', q.id));
+  const target = path.join(b, agentPaths.answerDir('s_1', q.id), '1.json');
   mkdirSync(path.dirname(target), { recursive: true });
-  writeFileSync(target, readFileSync(path.join(a, agentPaths.answer('s_1', q.id))));
+  writeFileSync(target, readFileSync(path.join(a, agentPaths.answerDir('s_1', q.id), '1.json')));
   await new Promise((r) => setTimeout(r, 80));
   writer.close();
   assert.equal(answered, undefined);

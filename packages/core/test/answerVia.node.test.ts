@@ -204,7 +204,7 @@ test('writeAgentAnswer signs the label it is given by its caller', () => {
   const a = asking(root);
   const ans = writeAgentAnswer(root, { sessionId: 's_1', questionId: a.q.id, text: 'Yes', author: 'x', via: 'slack' });
   a.writer.close();
-  const file = JSON.parse(readFileSync(path.join(root, agentPaths.answer('s_1', a.q.id)), 'utf8'));
+  const file = JSON.parse(readFileSync(path.join(root, agentPaths.answerDir('s_1', a.q.id), '1.json'), 'utf8'));
   assert.equal(file.via, 'slack');
   assert.equal(ans.via, 'slack');
 });

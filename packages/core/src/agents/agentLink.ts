@@ -8,8 +8,12 @@ import type { AnsweredQuestion, ChatMessage, FeedEntry, PendingQuestion, Session
  * document per session; the Lookout mirrors them and writes answers back:
  *
  *   <tracker>/.agents/sessions/<sessionId>.json             AgentSessionDoc, written only by the owning process
- *   <tracker>/.agents/answers/<sessionId>/<questionId>.json AgentAnswer, written by whoever answers and signed with
- *                                                           this machine's key (agentAnswerSignature.ts)
+ *   <tracker>/.agents/answers/<sessionId>/<questionId>/<n>.json  AgentAnswer, one file per answer, written by whoever
+ *                                                           answers and signed with this machine's key
+ *                                                           (agentAnswerSignature.ts); the first valid one by `n` is
+ *                                                           the answer, later ones are kept as not used (answerFiles.ts)
+ *   <tracker>/.agents/answers/<sessionId>/<questionId>.json the one answer file older versions use: still read,
+ *                                                           and written for an asking process that predates numbered files
  *   <tracker>/.agents/server.json                           LookoutLock, while `teamtrail` is serving
  *   <tracker>/.agents/hosts/<agent>-<hostSessionId>.json    HostSessionLink, written by the agent's session hook
  *
@@ -21,7 +25,10 @@ export const agentPaths = {
   sessions: `${AGENTS_DIR}/sessions`,
   session: (sessionId: string) => `${AGENTS_DIR}/sessions/${sessionId}.json`,
   answers: (sessionId: string) => `${AGENTS_DIR}/answers/${sessionId}`,
+  /** The single answer file of older versions (and for an asking process that predates numbered answers). */
   answer: (sessionId: string, questionId: string) => `${AGENTS_DIR}/answers/${sessionId}/${questionId}.json`,
+  /** One numbered file per answer given to the question (answerFiles.ts). */
+  answerDir: (sessionId: string, questionId: string) => `${AGENTS_DIR}/answers/${sessionId}/${questionId}`,
   lock: `${AGENTS_DIR}/server.json`,
   hosts: `${AGENTS_DIR}/hosts`,
   host: (agent: string, hostSessionId: string) =>
@@ -54,9 +61,17 @@ export interface AgentSessionDoc {
   client?: string;
   /** The Teamtrail version of the process that writes it; absent from versions before it was written. */
   teamtrail?: string;
+  /**
+   * `2` when the process reads numbered answer files (answerFiles.ts); absent from older ones, which are given the
+   * single answer file they read.
+   */
+  answerFormat?: typeof ANSWER_FORMAT;
   pid: number;
   updatedAt: number;
 }
+
+/** The answer layout this version reads: one numbered file per answer, the first valid one used. */
+export const ANSWER_FORMAT = 2;
 
 export interface AgentAnswer {
   sessionId: string;
@@ -83,6 +98,20 @@ export interface AgentAnswer {
   /** This machine's signature of the answer with who gave it: without a valid one, nobody is named. */
   sigBy?: string;
 }
+
+/** The answer that came first, as told to whoever gave a later one: theirs is kept, but not used. */
+export interface FirstAnswer {
+  text: string;
+  author: string;
+  at: number;
+  /** How it was given, as far as that verifies (agentAnswerSignature.ts). */
+  via?: AnswerVia;
+  chatOf?: string;
+  by?: Person;
+}
+
+/** An answer as written, with the one that came before it when it isn't the one used. */
+export type WrittenAnswer = AgentAnswer & { firstAnswer?: FirstAnswer };
 
 export interface LookoutLock {
   url: string;
