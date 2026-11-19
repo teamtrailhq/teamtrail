@@ -1,11 +1,13 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { git, gitText } from '../evidence/git';
+import type { SetupOutcome } from '../model/setup';
 import { isBranchName, isTicketSlug } from './gitNames';
 import { recordWorktree, trustedWorkspace } from './trustedWorkspace';
 import type { Workspace, WorkspaceSettings } from './workspace';
 import { writeWorkspace } from './workspaceStore';
 import { worktreeDir } from './worktreeDir';
+import { worktreeSetup } from './worktreeSetup';
 
 export interface PrepareInput {
   /** Tracker folder: where the workspace record is kept. */
@@ -19,7 +21,8 @@ export interface PrepareInput {
   now?: number;
 }
 
-export type Prepared = { workspace: Workspace } | { note: string };
+/** `setup`: the approved setup steps as they ran in a worktree made now (none when it was reused, or none approved). */
+export type Prepared = { workspace: Workspace; setup?: SetupOutcome } | { note: string };
 
 const slugOf = (s: string) =>
   s
@@ -47,8 +50,9 @@ export function worktreeLocation(top: string, settings: WorkspaceSettings, mapId
 }
 
 /**
- * A git worktree and branch for one claimed ticket, created from HEAD next to the repo. Claiming again reuses it.
- * Never merges, pushes or deletes anything. When there's no repo (or no commit, or git fails), says why instead.
+ * A git worktree and branch for one claimed ticket, created from HEAD next to the repo, with the approved setup steps
+ * run in it when it is new. Claiming again reuses it. Never merges, pushes or deletes anything, and never installs in
+ * the person's own checkout. When there's no repo (or no commit, or git fails), says why instead.
  */
 export async function prepareWorktree(i: PrepareInput): Promise<Prepared> {
   const known = trustedWorkspace(i.root, i.mapId, i.ticket.id);
@@ -71,14 +75,21 @@ export async function prepareWorktree(i: PrepareInput): Promise<Prepared> {
     ...made.workspace,
   });
   recordWorktree(i.root, { mapId: i.mapId, ticketId: i.ticket.id, path: made.workspace.path });
-  return made;
+  if (!made.fresh) return { workspace: made.workspace };
+  const setup = await worktreeSetup({ root: i.root, mapId: i.mapId, ticketId: i.ticket.id });
+  return { workspace: made.workspace, ...(setup ? { setup } : {}) };
 }
 
 /** Adds the worktree, reusing the branch (and a folder already on it) when they exist from an earlier claim. */
-async function addWorktree(top: string, where: { branch: string; path: string }, head: string): Promise<Prepared> {
+async function addWorktree(
+  top: string,
+  where: { branch: string; path: string },
+  head: string,
+): Promise<{ workspace: Workspace; fresh: boolean } | { note: string }> {
   if (existsSync(where.path)) {
     const onBranch = await gitText(where.path, ['rev-parse', '--abbrev-ref', 'HEAD']);
-    if (onBranch === where.branch) return { workspace: { ...where, base: await baseOf(where.path, head) } };
+    if (onBranch === where.branch)
+      return { workspace: { ...where, base: await baseOf(where.path, head) }, fresh: false };
     return { note: `No workspace: ${where.path} already exists and isn't on ${where.branch}. Work in the repo.` };
   }
   const ref = `refs/heads/${where.branch}`;
@@ -91,7 +102,7 @@ async function addWorktree(top: string, where: { branch: string; path: string },
     return { note: `No workspace: ${why}. Work in the repo.` };
   }
   const base = branchExists ? await baseOf(where.path, head) : head;
-  return { workspace: { ...where, base } };
+  return { workspace: { ...where, base }, fresh: true };
 }
 
 /** Where a reused branch forked from the repo's HEAD. */

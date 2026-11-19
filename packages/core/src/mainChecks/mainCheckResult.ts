@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { MainCheckResult } from '../model/mainChecks';
 import type { CheckResult } from '../model/verification';
 import { checkPassed } from '../verification/runCheck';
+import { environmentCause } from './environmentCause';
 import { signatureOf } from './failureSignature';
 
 const MAX_LOG = 1_048_576;
@@ -18,9 +19,19 @@ export function outputOf(root: string, c: { log?: string; tail: string }): strin
   }
 }
 
-/** A check result as a run on main keeps it, with its failure's signature; `folders` are the checkout's paths. */
-export function mainCheckResult(root: string, c: CheckResult, folders: string[]): MainCheckResult {
+/**
+ * A check result as a run on main keeps it, with its failure's signature and, when the machine rather than main's
+ * code made it fail, why (environmentCause.ts); `folders` are the checkout's paths, `installed` whether approved setup
+ * steps installed the dependencies first.
+ */
+export function mainCheckResult(
+  root: string,
+  c: CheckResult,
+  o: { folders: string[]; installed: boolean },
+): MainCheckResult {
   const passed = checkPassed(c);
+  const output = passed ? '' : outputOf(root, c);
+  const environment = passed ? undefined : environmentCause({ ...c, output, installed: o.installed });
   return {
     name: c.name,
     argv: c.argv,
@@ -31,6 +42,7 @@ export function mainCheckResult(root: string, c: CheckResult, folders: string[])
     durationMs: c.durationMs,
     tail: c.tail.split('\n').slice(-20).join('\n'),
     log: c.log,
-    ...(passed ? {} : { signature: signatureOf(outputOf(root, c), folders) }),
+    ...(passed ? {} : { signature: signatureOf(output, o.folders) }),
+    ...(environment ? { environment } : {}),
   };
 }
