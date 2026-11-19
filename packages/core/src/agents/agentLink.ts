@@ -10,8 +10,10 @@ import type { AnsweredQuestion, ChatMessage, FeedEntry, PendingQuestion, Session
  *   <tracker>/.agents/sessions/<sessionId>.json             AgentSessionDoc, written only by the owning process
  *   <tracker>/.agents/answers/<sessionId>/<questionId>/<n>.json  AgentAnswer, one file per answer, written by whoever
  *                                                           answers and signed with this machine's key
- *                                                           (agentAnswerSignature.ts); the first valid one by `n` is
- *                                                           the answer, later ones are kept as not used (answerFiles.ts)
+ *                                                           (agentAnswerSignature.ts); the first valid one by `n`
+ *                                                           not given in a chat is the answer, later ones are kept
+ *                                                           as not used, and chat ones before it are guidance
+ *                                                           (answerFiles.ts, agentDocWriter.ts)
  *   <tracker>/.agents/answers/<sessionId>/<questionId>.json the one answer file older versions use: still read,
  *                                                           and written for an asking process that predates numbered files
  *   <tracker>/.agents/server.json                           LookoutLock, while `teamtrail` is serving
@@ -66,6 +68,12 @@ export interface AgentSessionDoc {
    * single answer file they read.
    */
   answerFormat?: typeof ANSWER_FORMAT;
+  /**
+   * True when the process takes a chat answer (answer_question) as guidance and keeps the question open for the
+   * human's: the answer used is then the first in line given anywhere else (agentDocWriter.ts). Absent from older
+   * ones, for which the first answer in line is the one used, whoever gave it.
+   */
+  chatGuides?: true;
   pid: number;
   updatedAt: number;
 }

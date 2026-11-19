@@ -148,6 +148,71 @@ describe('answers given in an agent’s chat guide agents but never pass a gate'
     );
   });
 
+  it('a chat answer first, then the Lookout: the chat guides, the question stays open, the Lookout answer decides', async () => {
+    const asker = await hub.connect({ name: 'claude-01' });
+    const other = await hub.connect({ name: 'claude-02' });
+    const questionId = await askOnJunction(asker);
+    await expect(other('answer_question', { questionId, answer: 'Drop it' })).resolves.toMatchObject({
+      delivered: true,
+      via: 'chat',
+      stillOpen: true,
+    });
+    const guided = await asker<Got & { stillOpen?: boolean }>('wait_for_answer', { questionId, waitSeconds: 5 });
+    expect(guided).toMatchObject({ answered: true, answer: 'Drop it', answeredVia: 'chat', stillOpen: true });
+    expect(guided.note).toMatch(/stays open for the human in the Lookout or Slack.*wait_for_answer/);
+    // still waiting on the human, with the guidance shown, in the Lookout, Slack and every agent's inbox
+    const open = (await readAgentDocs(root)).flatMap((d) => d.pending).find((q) => q.id === questionId);
+    expect(open?.guidance).toMatchObject({ text: 'Drop it', chatOf: 'claude-02' });
+    const inbox = await other<{ questions: { questionId: string; guidance?: string }[] }>('list_inbox', {});
+    expect(inbox.questions.find((q) => q.questionId === questionId)?.guidance).toBe('Drop it');
+    // the guidance backs nothing meanwhile
+    await everyGateRefuses(asker, questionId, 'claude-02');
+    const doc = (await readAgentDocs(root)).find((d) => d.pending.some((q) => q.id === questionId))!;
+    const lookout = { sessionId: doc.session.id, questionId, author: 'trail lead', via: 'lookout' as const };
+    expect(writeAgentAnswer(root, { ...lookout, text: 'Keep it' }).firstAnswer).toBeUndefined();
+    const got = await asker<Got>('wait_for_answer', { questionId, waitSeconds: 5 });
+    expect(got).toMatchObject({ answered: true, answer: 'Keep it', answeredVia: 'lookout' });
+    expect(got.note).toBeUndefined();
+    const closed = await asker<Closed>('close_ticket', {
+      resolution: 'Keep it',
+      category: 'data-deletion',
+      questionId,
+    });
+    const kept = await record(closed.decision.id);
+    expect(kept).toMatchObject({ decidedBy: 'trail lead', answer: 'Keep it' });
+    // the record shows both: the chat guidance, said by the system, and the human's answer used
+    expect(kept.transcript.map((e) => [e.from, e.text])).toEqual(
+      expect.arrayContaining([
+        ['system', "Guidance from trail lead (in claude-02's chat), decides nothing: Drop it"],
+        ['human', 'Keep it'],
+      ]),
+    );
+    expect(kept.transcript.some((e) => e.from === 'human' && e.text === 'Drop it')).toBe(false);
+  });
+
+  it('a chat answer only: guidance, the question stays open, and no decision rests on it', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    const m = await call<{ tickets: { key: string }[] }>('start_trail', {
+      discovery: false,
+      title: 'Users',
+      destination: 'One users table',
+      tickets: [{ ref: 'j', title: 'Keep the users table?', type: 'junction' }],
+    });
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const pending = call<Got & { stillOpen?: boolean }>('ask_human', { question: 'Timeline?', waitSeconds: 5 });
+    await expect.poll(async () => (await readAgentDocs(root)).flatMap((d) => d.pending).length).toBe(1);
+    const [q] = (await readAgentDocs(root)).flatMap((d) => d.pending);
+    await call('answer_question', { questionId: q.id, answer: 'By version' });
+    // ask_human itself returns the guidance: the agent works on with it
+    expect(await pending).toMatchObject({ answered: true, answer: 'By version', answeredVia: 'chat', stillOpen: true });
+    expect((await readAgentDocs(root)).flatMap((d) => d.pending).map((p) => p.id)).toEqual([q.id]);
+    await expect(call('close_ticket', { resolution: 'By version' })).rejects.toThrow(HITL);
+    await expect(call('close_ticket', { resolution: 'By version', questionId: q.id })).rejects.toThrow(CHAT);
+    await expect(call('record_decision', { question: 'Q', answer: 'A', questionId: q.id })).rejects.toThrow(CHAT);
+    // nothing more comes until the human answers
+    expect(await call<Got>('wait_for_answer', { questionId: q.id, waitSeconds: 0 })).toMatchObject({ answered: false });
+  });
+
   it('the same question answered in the Lookout backs the decision', async () => {
     const call = await hub.connect({ name: 'claude-01' });
     const questionId = await askOnJunction(call);

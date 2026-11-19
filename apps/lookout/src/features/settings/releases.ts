@@ -23,6 +23,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.17',
+    date: '2026-11-19',
+    items: [
+      "An answer passed on from an agent's chat no longer takes the place of yours: it guides the agent, and the question stays open in the Lookout and Slack until you answer, and your answer is the one that decides",
+    ],
+  },
+  {
     version: '0.66.16',
     date: '2026-11-19',
     items: [
@@ -192,11 +199,6 @@ export const RELEASES: Release[] = [
       'Assumptions are one per line, and the dialog says how many it will create',
       'The header keeps the destination to its first sentence; Plan → Destination and Notes show them in full, as markdown',
     ],
-  },
-  {
-    version: '0.63.1',
-    date: '2026-11-18',
-    items: ['At night, trail cards stand out from the map: a raised grey card, its chips in darker wells'],
   },
   ...NEWER_RELEASES,
   ...LATER_RELEASES,

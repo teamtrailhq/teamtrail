@@ -12,6 +12,7 @@ import {
   type Journal,
   type AnswerVia,
   type MapSnapshot,
+  type QuestionGuidance,
   type SessionHandle,
   type SessionMode,
   type Ticket,
@@ -51,6 +52,11 @@ export class AgentContext {
   readonly sessionIds: string[] = [];
   /** Answers being waited for, by question id. */
   readonly waits = new Map<string, Promise<{ text: string; author: string; via?: AnswerVia }>>();
+  /**
+   * A question's first chat answer, until the agent has been handed it: guidance, while the question stays open
+   * for the human's answer (`waits`).
+   */
+  readonly guidance = new Map<string, Promise<QuestionGuidance>>();
   /** The human's answers to this agent's questions, by question id: what a decision of theirs rests on. */
   readonly answers = new Map<string, HumanAnswer>();
   /** Knowledge entries this connection proposed: its own words, which it may read back before they are reviewed. */
@@ -230,12 +236,8 @@ export class AgentContext {
   /** Where this agent's verification runs read the config, keep evidence and run checks. */
   verifyEnv(): VerifyEnv {
     const runner = this.opts.remote ? this.opts.checkRunner : undefined;
-    return {
-      adapter: this.adapter,
-      root: this.root,
-      journal: this.journal,
-      ...(runner ? { checkRunner: runner } : {}),
-    };
+    const checks = runner ? { checkRunner: runner } : {};
+    return { adapter: this.adapter, root: this.root, journal: this.journal, ...checks };
   }
 
   /** End the running session (agent disconnected) and write final state. */

@@ -319,5 +319,5 @@ export type Attention = 'hitl' | 'afk';
 
 export type { ChatMessage } from './chatMessage';
 
-export type { PendingQuestion } from './pendingQuestion';
+export type { PendingQuestion, QuestionGuidance } from './pendingQuestion';
 export type { AnsweredQuestion } from './answeredQuestion';

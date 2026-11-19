@@ -1,7 +1,12 @@
 import type { Release } from './releases';
 
-/** Releases 0.61–0.63.0, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
+/** Releases 0.61–0.63, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
+  {
+    version: '0.63.1',
+    date: '2026-11-18',
+    items: ['At night, trail cards stand out from the map: a raised grey card, its chips in darker wells'],
+  },
   {
     version: '0.63.0',
     date: '2026-11-18',

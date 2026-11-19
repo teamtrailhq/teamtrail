@@ -68,6 +68,11 @@ export interface AskResult {
   answeredVia?: AnswerVia;
   /** Set for a chat answer: what it can't be used for. */
   note?: string;
+  /**
+   * A chat answer, given as guidance: the question stays open for the human's answer in the Lookout or Slack, which
+   * wait_for_answer returns.
+   */
+  stillOpen?: true;
   waitedSeconds: number;
   /** Not asked: earlier decisions that already answer it (decision memory). */
   precedents?: Precedent[];

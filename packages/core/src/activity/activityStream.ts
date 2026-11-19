@@ -7,11 +7,14 @@ import type {
   ChatMessage,
   FeedEntry,
   PendingQuestion,
+  QuestionGuidance,
   SessionInfo,
   SessionMode,
   SessionUsage,
 } from '../model/types';
+import { answeredEntry } from './answeredEntry';
 import type { NotUsedAnswer } from './notUsedAnswer';
+import { withRemoteSlice, type RemoteSlice } from './remoteSlice';
 import { createSessionHandle, type SessionHandle, type SessionHost } from './sessionHandle';
 import { addUsage, subUsage } from './usage';
 import type { UsageLedger } from './usageLedger';
@@ -38,6 +41,8 @@ export class ActivityStream {
   private state: ActivityState = { sessions: [], feed: [], chats: [], pending: [], answered: [], usageByMap: {} };
   private changes = new Emitter<ActivityState>();
   private resolvers = new Map<string, (answer: string) => void>();
+  /** Who waits for a question's first chat answer (`awaitGuidance`). */
+  private guides = new Map<string, (g: QuestionGuidance) => void>();
   /** Sessions mirrored from another process (`syncRemote`), with the last usage total each reported. */
   private remote = new Map<string, SessionUsage | undefined>();
   /** Delivers trail lead answers to questions asked by remote sessions. */
@@ -106,29 +111,14 @@ export class ActivityStream {
     const remote = !!q && this.remote.has(q.sessionId) && !!this.remoteAnswer;
     if (!q || (!resolveFn && !remote)) return false;
     this.resolvers.delete(questionId);
+    this.guides.delete(questionId);
     const label = labelOf(how);
     const by = how.by ? { by: how.by } : {};
     const chat = { sessionId: q.sessionId, ticketId: q.ticketId, from: 'human' as const, author, text };
     this.chat({ ...chat, answers: questionId, ...label, ...by });
     this.set({
       pending: this.state.pending.filter((p) => p.id !== questionId),
-      answered: [
-        ...this.state.answered,
-        {
-          id: q.id,
-          mapId: q.mapId,
-          sessionId: q.sessionId,
-          agent: q.agent,
-          askedAt: q.at,
-          answeredAt: Date.now(),
-          ...(q.ticketId ? { ticketId: q.ticketId } : {}),
-          ...(q.category ? { category: q.category } : {}),
-          ...(q.categories?.length ? { categories: q.categories } : {}),
-          ...(q.urgency ? { urgency: q.urgency } : {}),
-          ...label,
-          ...by,
-        },
-      ].slice(-200),
+      answered: [...this.state.answered, answeredEntry(q, { ...label, ...by })].slice(-200),
     });
     this.patchSession(q.sessionId, { waitingOn: undefined });
     this.push({
@@ -143,6 +133,46 @@ export class ActivityStream {
     if (resolveFn) resolveFn(text);
     else this.remoteAnswer!(q, text, author);
     return true;
+  }
+
+  /**
+   * An answer given in an agent's chat (answer_question, model/answerVia.ts `closesQuestion`): kept in the
+   * conversation as guidance and handed to whoever waits for it (`awaitGuidance`), while the question stays open
+   * for the human, whose answer in the Lookout or Slack is the one used. The first one is what the question shows
+   * (`guidance`); the agent stops waiting on it. False when the question isn't open.
+   */
+  guide(questionId: string, text: string, author: string, how: AnswerHow) {
+    const q = this.state.pending.find((p) => p.id === questionId);
+    if (!q) return false;
+    const label = labelOf(how);
+    const said = { sessionId: q.sessionId, ticketId: q.ticketId, from: 'human' as const, author, text };
+    this.chat({ ...said, answers: questionId, guidance: true, ...label });
+    if (q.guidance) return true;
+    const guidance: QuestionGuidance = {
+      text,
+      author,
+      at: Date.now(),
+      ...(label.chatOf ? { chatOf: label.chatOf } : {}),
+    };
+    this.set({ pending: this.state.pending.map((p) => (p.id === questionId ? { ...p, guidance } : p)) });
+    if (this.state.sessions.find((s) => s.id === q.sessionId)?.waitingOn === questionId)
+      this.patchSession(q.sessionId, { waitingOn: undefined });
+    this.push({
+      source: 'trail lead',
+      agent: author,
+      level: 'info',
+      ticketId: q.ticketId,
+      sessionId: q.sessionId,
+      text: `Guided ${q.agent} from a chat: the question stays open for an answer in the Lookout or Slack`,
+    });
+    this.guides.get(questionId)?.(guidance);
+    this.guides.delete(questionId);
+    return true;
+  }
+
+  /** The first chat answer to a question (`guide`), as guidance, once it is given. */
+  awaitGuidance(questionId: string) {
+    return new Promise<QuestionGuidance>((r) => this.guides.set(questionId, r));
   }
 
   /**
@@ -165,13 +195,7 @@ export class ActivityStream {
    * Mirror a session owned by another process: its info, conversation, feed lines
    * and open questions are replaced by the latest report; answers merge in.
    */
-  syncRemote(doc: {
-    session: SessionInfo;
-    chats: ChatMessage[];
-    pending: PendingQuestion[];
-    answered: AnsweredQuestion[];
-    feed: FeedEntry[];
-  }) {
+  syncRemote(doc: RemoteSlice) {
     const { session } = doc;
     const sid = session.id;
     if (!this.remote.has(sid) && this.state.sessions.some((s) => s.id === sid)) return;
@@ -185,23 +209,7 @@ export class ActivityStream {
         usageByMap = { ...usageByMap, [session.mapId]: addUsage(usageByMap[session.mapId], d) };
       this.ledger?.addTotal(session.mapId, sid, session.usage);
     }
-    const others = <T extends { sessionId: string }>(xs: T[]) => xs.filter((x) => x.sessionId !== sid);
-    const answeredIds = new Set(this.state.answered.map((a) => a.id));
-    const sessions = this.state.sessions.some((s) => s.id === sid)
-      ? this.state.sessions.map((s) => (s.id === sid ? session : s))
-      : [...this.state.sessions, session].slice(-24);
-    this.set({
-      sessions,
-      chats: [...others(this.state.chats), ...doc.chats].sort((a, b) => a.at - b.at).slice(-600),
-      pending: [...others(this.state.pending), ...doc.pending],
-      answered: [...this.state.answered, ...doc.answered.filter((a) => !answeredIds.has(a.id))]
-        .sort((a, b) => a.answeredAt - b.answeredAt)
-        .slice(-200),
-      feed: [...this.state.feed.filter((f) => f.sessionId !== sid), ...doc.feed]
-        .sort((a, b) => a.at - b.at)
-        .slice(-this.maxFeed),
-      usageByMap,
-    });
+    this.set({ ...withRemoteSlice(this.state, doc, this.maxFeed), usageByMap });
   }
 
   /** True for sessions mirrored from another process. */
