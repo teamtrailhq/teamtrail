@@ -66,6 +66,7 @@ export function GatesSection(props: { onOpenTicket: (mapId: string, ticketId: st
         Gates catch work that passed its checks but shouldn&apos;t count yet. Observe a gate first to see what it would
         hold, then enforce it: held work waits for you, with a way past it.
       </p>
+      {lock.kind === 'locked' && lock.reason && <span className="set-hint t-meta">{lock.reason}</span>}
       <ul className="gate-list">
         {summarizeGates(log?.entries ?? []).map((s) => (
           <GateRow
@@ -79,7 +80,6 @@ export function GatesSection(props: { onOpenTicket: (mapId: string, ticketId: st
           />
         ))}
       </ul>
-      {lock.kind === 'locked' && lock.reason && <span className="set-hint t-meta">{lock.reason}</span>}
       {log === null && <span className="set-hint t-meta">What the gates did couldn&apos;t be loaded.</span>}
       {error && <span className="vf-err">{error}</span>}
     </SettingsSection>
