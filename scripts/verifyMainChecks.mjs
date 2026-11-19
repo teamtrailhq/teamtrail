@@ -40,7 +40,7 @@ function scratchRepo() {
   return top;
 }
 
-async function startServer(cli, cwd) {
+export async function startMainChecksServer(cli, cwd) {
   const server = spawn(process.execPath, [cli, '--no-open', '--port', '0'], { cwd, env: { ...process.env } });
   const links = await new Promise((resolve, reject) => {
     let out = '';
@@ -55,7 +55,7 @@ async function startServer(cli, cwd) {
   return { server, ...links };
 }
 
-async function agent(cli, cwd) {
+export async function mainChecksAgent(cli, cwd) {
   // the whole environment: the test's own config dir, never the user's (the SDK passes only a few variables)
   const env = { ...process.env };
   const transport = new StdioClientTransport({
@@ -110,11 +110,11 @@ async function complete(call, top, t, file) {
 
 export async function verifyMainChecks({ browser, cli, log, shots }) {
   const top = scratchRepo();
-  const { server, url, pair } = await startServer(cli, top);
+  const { server, url, pair } = await startMainChecksServer(cli, top);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  const one = await agent(cli, top);
+  const one = await mainChecksAgent(cli, top);
   try {
     await signInWith(page, pair);
     await page.locator('.dialog.onboarding').waitFor();

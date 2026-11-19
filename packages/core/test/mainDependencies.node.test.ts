@@ -4,7 +4,7 @@ import { existsSync, lstatSync, mkdirSync, symlinkSync, writeFileSync } from 'no
 import path from 'node:path';
 import { test } from 'node:test';
 import { dependencyFolders } from '../src/mainChecks/dependencyFolders';
-import { prepareMainWorktree, removeMainWorktree } from '../src/mainChecks/mainWorktree';
+import { prepareMainWorktree, removeMainWorktree, sweepMainWorktrees } from '../src/mainChecks/mainWorktree';
 import { tempFolder } from './tempFolder';
 
 /**
@@ -48,24 +48,27 @@ test('dependency folders: the root and nested package folders, four levels at mo
   ]);
 });
 
-test('checks on main get the nested node_modules linked in where the folder is tracked in git', async () => {
+test("the worktree for main holds nothing of the person's checkout: no dependency folder is linked in", async () => {
   const { repo, commit } = nestedRepo();
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root, { recursive: true });
   const wt = await prepareMainWorktree({ root, top: repo, commit, id: 'run-nested-1' });
   assert.ok('path' in wt, 'note' in wt ? wt.note : '');
-  const rel = (p: string) => path.relative(wt.path, p);
-  assert.deepEqual(wt.links.map(rel).sort(), [
-    'a/b/c/d/node_modules',
-    'apps/api/.venv',
-    'apps/web/node_modules',
-    'node_modules',
-  ]);
-  assert.ok(existsSync(path.join(wt.path, 'apps/web/node_modules/eslint')));
-  // a folder git doesn't track has no place in the worktree; a link out of the repo is never made
-  assert.equal(existsSync(path.join(wt.path, 'untracked')), false);
-  assert.equal(lstatSync(path.join(wt.path, 'apps/linked/node_modules'), { throwIfNoEntry: false }), undefined);
-  await removeMainWorktree({ root, top: repo, id: 'run-nested-1', links: wt.links });
+  for (const rel of dependencyFolders(repo))
+    assert.equal(lstatSync(path.join(wt.path, rel), { throwIfNoEntry: false }), undefined, rel);
+  await removeMainWorktree({ root, top: repo, id: 'run-nested-1' });
+  assert.equal(existsSync(wt.path), false);
+});
+
+test('a worktree an older version left with links is removed without touching what they point to', async () => {
+  const { repo, commit } = nestedRepo();
+  const root = path.join(repo, '.teamtrail');
+  mkdirSync(root, { recursive: true });
+  const wt = await prepareMainWorktree({ root, top: repo, commit, id: 'run-old-1' });
+  assert.ok('path' in wt);
+  // what versions before setup steps made: the repo's own folder, linked in
+  symlinkSync(path.join(repo, 'apps/web/node_modules'), path.join(wt.path, 'apps/web/node_modules'), 'dir');
+  await sweepMainWorktrees({ root, top: repo });
   assert.equal(existsSync(wt.path), false);
   assert.ok(existsSync(path.join(repo, 'apps/web/node_modules/eslint')));
 });

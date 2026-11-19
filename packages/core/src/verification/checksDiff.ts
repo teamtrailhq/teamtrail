@@ -3,6 +3,7 @@ import { GATE_NAMES } from '../model/gateMode';
 import type { CheckSpec, VerificationConfig } from '../model/verification';
 import { parseVerificationConfig } from './config';
 import { rulesDiff } from './rulesDiff';
+import { setupLines, setupWarnings } from './setupDiff';
 
 const argv = (s: CheckSpec) => JSON.stringify(s.run);
 const where = (s: CheckSpec) => (s.cwd && s.cwd !== '.' ? ` in ${s.cwd}` : '');
@@ -46,14 +47,19 @@ function settingLines(before: VerificationConfig | undefined, after: Verificatio
 }
 
 /**
- * What approving verification.json now would change, against the approved content: each command as its exact
- * argv (old → new), then the other settings that differ. With nothing approved yet, every command it would run.
+ * What approving verification.json now would change, against the approved content: each setup step and command as
+ * its exact argv (old → new), then the other settings that differ. With nothing approved yet, every command it would run.
  * `warnings` are the guide lint's argv rules, as advice: the trail lead may still approve their own commands.
  */
 export function checksDiff(approved: string | undefined, current: string | undefined) {
   const before = config(approved);
   const after = config(current);
-  const lines = [...commandLines(before, after), ...rulesDiff(before, after), ...settingLines(before, after)];
+  const lines = [
+    ...setupLines(before, after),
+    ...commandLines(before, after),
+    ...rulesDiff(before, after),
+    ...settingLines(before, after),
+  ];
   if (current === undefined) lines.unshift('the file was deleted: no check would run');
   else if (!after) lines.push('the file has errors: completions that need checks would wait for you');
   else if (!lines.length && !before) lines.push('no check commands yet: approving lets you add them from guides');
@@ -64,5 +70,5 @@ export function checksDiff(approved: string | undefined, current: string | undef
     const notice = checkNotice(spec);
     return notice ? [`${name}: ${notice}`] : [];
   });
-  return { lines, warnings: [...warnings, ...unknown], unknown: unknown.length > 0 };
+  return { lines, warnings: [...setupWarnings(after), ...warnings, ...unknown], unknown: unknown.length > 0 };
 }

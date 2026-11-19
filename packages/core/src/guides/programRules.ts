@@ -36,8 +36,10 @@ export const PACKAGE_MANAGERS: Record<string, Set<string>> = {
   cargo: new Set(['install', 'binstall']),
   go: new Set(['install', 'get']),
   deno: new Set(['eval', 'install']),
-  bundle: new Set(['install', 'exec']),
-  composer: new Set(['install', 'require', 'global', 'exec']),
+  bundle: new Set(['install', 'exec', 'add', 'update', 'lock']),
+  composer: new Set(['install', 'require', 'global', 'exec', 'update', 'create-project']),
+  poetry: new Set(['install', 'add', 'update', 'lock', 'self', 'sync']),
+  pipenv: new Set(['install', 'sync', 'update', 'lock', 'upgrade']),
 };
 
 /**

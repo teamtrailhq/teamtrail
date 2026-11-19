@@ -99,7 +99,8 @@ export async function runMainOnRunner(o: {
   const ran = read.git.tree?.head ?? null;
   const moved = otherCommit({ runner, asked: known.commit, ran });
   if (moved) return { ...at, result: 'unavailable', checks: [], note: moved };
-  const checks = read.checks.map((c) => mainCheckResult(o.root, c, []));
+  // the runner installs what it needs itself: a missing package there is a failure of main's code
+  const checks = read.checks.map((c) => mainCheckResult(o.root, c, { folders: [], installed: true }));
   const commit = ran ?? at.commit;
   const said = Array.isArray(report.contains) ? report.contains : [];
   const contains = o.contains ? { contains: o.contains.filter((c) => said.includes(c)) } : {};

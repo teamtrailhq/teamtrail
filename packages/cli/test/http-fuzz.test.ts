@@ -201,7 +201,9 @@ describe('malformed requests never end the process', () => {
     const bearer = `Authorization: Bearer ${token}`;
     const json = 'Content-Type: application/json';
     // Node answers these two itself (431, 400); they are here so a change of server options can't lose that.
-    expect(await send(port, line('GET /', [`X-Big: ${'a'.repeat(200_000)}`]))).toBe(431);
+    // Just over Node's 16 KB header limit, so the server has read the whole request when it answers: with more still
+    // unread (200 KB), closing the socket resets it, and the reset can drop the 431 before the client reads it.
+    expect(await send(port, line('GET /', [`X-Big: ${'a'.repeat(17_000)}`]))).toBe(431);
     expect(await send(port, Buffer.from([0x16, 0x03, 0x01, 0x02, 0x00, 0x01, 0x00, 0x01, 0xfc, 0x03, 0x03]))).toBe(400);
     expect(await send(port, 'GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nBroken header line\r\n\r\n')).toBe(400);
     const half = [

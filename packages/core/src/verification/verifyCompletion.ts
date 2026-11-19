@@ -131,16 +131,23 @@ export async function verify(env: VerifyEnv, asked: VerifyJob): Promise<{ attemp
     return verify(env, asked);
   }
   const done = (async (): Promise<Settled> => {
-    let attempt: VerificationAttempt;
+    // The lock is held until the outcome is applied (the ticket moved on, its review opened), so a run that reads
+    // as finished (`running` in the Lookout, `verification_status` waiting) is one whose outcome is in place.
+    let release = true;
     try {
       const graded = await grade(env, job, { id, config, waiting });
       // written once, with the flaky gate's finding on it
-      attempt = writeGated(env.root, { ...base, id, finishedAt: Date.now(), ...graded }, config.config);
+      const attempt = writeGated(env.root, { ...base, id, finishedAt: Date.now(), ...graded }, config.config);
+      if (reverifies(attempt, config.config, !!sub.reverified)) {
+        // the run again takes the lock itself
+        releaseRunLock(env.root, mapId, t.id);
+        release = false;
+        return await reverify(env, asked, attempt);
+      }
+      return await settle(env, attempt, sub, (config.config ?? DEFAULT_CONFIG).maxAttempts);
     } finally {
-      releaseRunLock(env.root, mapId, t.id);
+      if (release) releaseRunLock(env.root, mapId, t.id);
     }
-    if (reverifies(attempt, config.config, !!sub.reverified)) return reverify(env, asked, attempt);
-    return settle(env, attempt, sub, (config.config ?? DEFAULT_CONFIG).maxAttempts);
   })();
   return { attemptId: id, done };
 }

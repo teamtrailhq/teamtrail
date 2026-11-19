@@ -31,6 +31,31 @@ export const RELEASES: Release[] = [
     ],
   },
   {
+    version: '0.66.20',
+    date: '2026-11-19',
+    items: [
+      'Checks on main test the commit on main: your own node_modules and .venv are no longer linked in, since workspace packages and editable installs in them can point to your uncommitted code',
+      'Setup steps in verification.json (npm ci, uv sync --frozen and other installs from a lockfile) run in the worktrees Teamtrail prepares, never in your checkout, after you approve them with the checks',
+      "When checks on main fail because something isn't installed or reachable on this machine, Teamtrail says so and agents aren't held, instead of asking you to fix main",
+    ],
+  },
+  {
+    version: '0.66.19',
+    date: '2026-11-19',
+    items: [
+      "Check screening knows more stacks: Gradle and Maven wrappers, Python's uv, Poetry and Pipenv, Bundler, Composer, bun, turbo and Nx, Swift, Mix and Dart, and the workspace `-w` or `--filter` names",
+      "A check that needs something not installed yet says so (`ng` isn't installed: no node_modules in apps/web), apart from a script that doesn't exist",
+      'Checks may run a known tool through `uv run --frozen`, `poetry run`, `pipenv run`, `bundle exec`, `pnpm exec` or `npx --no`; anything that would download stays refused',
+    ],
+  },
+  {
+    version: '0.66.18',
+    date: '2026-11-19',
+    items: [
+      'Checks read as running until their outcome is in place: once they show finished, the ticket has moved on and its review is open',
+    ],
+  },
+  {
     version: '0.66.17',
     date: '2026-11-19',
     items: [
@@ -155,26 +180,6 @@ export const RELEASES: Release[] = [
     items: [
       'On a phone, the header keeps one row: the mode switch, what needs you and More, with focus, records, Settings and the theme',
       'Teamtrail Cloud: a pull request says why auto-merge waits, or that it merged by itself',
-    ],
-  },
-  {
-    version: '0.66.0',
-    date: '2026-11-18',
-    items: [
-      'Hands-off, for everyone by default: what needs you in one list, the trail’s progress and what happened since you were away; Hands-on is the map as before',
-      'Answer, approve and confirm from the list itself; the full ticket is one click away',
-      'Approve the plan in one step: the brief and every ticket’s criteria, as shown',
-      'Switch in the header or Settings → You; agents decide and work is verified exactly as before',
-    ],
-  },
-  {
-    version: '0.65.0',
-    date: '2026-11-18',
-    items: [
-      'Done means verified: work that passed against criteria you never confirmed waits for you, and confirming checks it again by itself',
-      'Criteria charted with a ticket are yours to confirm before any agent starts it',
-      'Every proof gap says who is on it, and what closes it when it is yours: Confirm criteria and verify again, Approve, Send to rework',
-      'The pull request up top in the ticket and on its map card; the full ticket’s actions sit flush at the bottom',
     ],
   },
   ...NEWER_RELEASES,

@@ -3,6 +3,7 @@ import { VERIFICATION_LEVELS } from '../model/lifecycle';
 import { TICKET_TYPES, type TicketType } from '../model/types';
 import type { CheckSpec, VerificationConfig } from '../model/verification';
 import { parseRules } from './parseRules';
+import { parseSetup } from './parseSetup';
 
 export const DEFAULT_CHECK_TIMEOUT_SEC = 600;
 
@@ -24,7 +25,8 @@ export const DEFAULT_CONFIG: VerificationConfig = {
   github: { enabled: 'auto', requiredChecks: [], pollSec: 60 },
 };
 
-const KEYS = new Set(Object.keys(DEFAULT_CONFIG));
+/** `setup` is optional: a config without it runs no installs (model/setup.ts). */
+const KEYS = new Set([...Object.keys(DEFAULT_CONFIG), 'setup']);
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
 const strings = (v: unknown) => Array.isArray(v) && v.every((x) => typeof x === 'string');
@@ -113,6 +115,8 @@ export function parseVerificationConfig(text: string): { config?: VerificationCo
   take(raw.default, oneOf(...VERIFICATION_LEVELS), (v) => (c.default = v), levels);
   if (raw.appliesTo !== undefined) c.appliesTo = types(raw.appliesTo, '"appliesTo"', errors) ?? c.appliesTo;
   parseChecks(raw.checks, c, errors);
+  const setup = parseSetup(raw.setup, errors);
+  if (setup) c.setup = setup;
   take(raw.run, isStrings, (v) => (c.run = v), '"run" must list check names');
   for (const name of c.run) if (!c.checks[name]) errors.push(`"run" names unknown check "${name}"`);
   take(raw.failFast, isBool, (v) => (c.failFast = v), '"failFast" must be true or false');
