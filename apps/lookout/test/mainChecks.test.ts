@@ -86,4 +86,20 @@ describe('checks on main in the Lookout', () => {
     expect(chosen).toEqual([{ kind: 'proceed' }]);
     expect(mainChecksActions(view({ kind: 'running', proceeding: true }), r).menu[0].label).toBe('Wait for them');
   });
+
+  it("a failure this machine caused isn't main's: amber, says why, holds nothing, offers a re-run", () => {
+    const reason =
+      "Checks couldn't run on main here: test (ng isn't installed here). That's this machine, not main's code.";
+    const v = view({ kind: 'environment', checks: ['test'], reason });
+    const text = mainChecksText(v, 120_000);
+    expect(text.edge).toBe('attention');
+    expect(text.title).toBe("Checks on main couldn't run on this machine");
+    expect(text.context[0]).toBe('Not a failure of main: nothing waits for it');
+    expect(text.detail).toBe(reason);
+    const { r, runs } = runners();
+    const a = mainChecksActions(v, r);
+    expect(a.buttons.map((b) => b.label)).toEqual(['Run again']);
+    a.buttons[0].onSelect();
+    expect(runs()).toBe(1);
+  });
 });

@@ -13,6 +13,12 @@ export interface CheckFinding {
   text: string;
   /** The command that would run instead, when reading the repo knows it. */
   fix?: CheckFix;
+  /**
+   * Why it won't run, when that isn't the repo's files: `not-installed`, a program or package it needs isn't installed
+   * where it runs (no `node_modules/.bin/ng`, no `.venv`), so installing the dependencies fixes it. Absent: what the
+   * repo holds (no such script, file or project file).
+   */
+  cause?: 'not-installed';
 }
 
 /** The command a finding knows would run (`npm run web:lint` for `npm web:lint`), as words. */
@@ -39,6 +45,13 @@ export interface RepoFiles {
   read(rel: string): Promise<string | undefined>;
   /** What is at the path, or undefined when nothing (or something outside the repo) is. */
   kind(rel: string): Promise<'file' | 'dir' | undefined>;
+  /**
+   * True when these are the files of a checkout where the checks' dependencies get installed (this machine's working
+   * copy): what is installed there (`node_modules`, `.venv`, `vendor`) can be read, so a missing one means it isn't
+   * installed. Absent for a repo read from elsewhere (a hosted workspace reading GitHub), where installs never show:
+   * screening then says nothing about them.
+   */
+  seesInstalls?: boolean;
   /**
    * A folder's entries, sorted by name, or undefined when it's missing, not a folder or outside the repo. Optional: a
    * reader that can't list (older embedding servers) leaves it out, and the repo profile then reads the top folder

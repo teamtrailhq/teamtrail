@@ -11,6 +11,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { answeringChecklists, approveSkipInLookout, shootThemes, signInWith } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { stopProcess } from './stopProcess.mjs';
 
 /** Starts the built CLI and resolves once its output names the URL it serves. */
 async function start(cli, args, cwd, pattern) {
@@ -248,7 +249,7 @@ export async function verifyRemote({ browser, cli, log, shots }) {
   } finally {
     for (const close of closers.reverse()) await Promise.resolve(close()).catch(() => undefined);
     await page.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     if (!process.env.KEEP) fs.rmSync(top, { recursive: true, force: true });
   }
 }

@@ -19,6 +19,7 @@ import {
   signInWith,
 } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { stopProcess } from './stopProcess.mjs';
 import { goWithoutThenUndo } from './verifyRuleUndo.mjs';
 
 const WHY = 'D-12: old sessions failed to load after #34';
@@ -174,7 +175,7 @@ export async function verifyRules({ browser, cli, log, shots }) {
   } finally {
     await one.client.close();
     await page.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     if (!process.env.KEEP) fs.rmSync(top, { recursive: true, force: true });
   }
 }

@@ -33,6 +33,7 @@ import { assertModelMayReview, reviewModelNote } from './reviewModels';
 import { assertMayReview } from './reviews';
 import { ticketInfo } from './ticketInfo';
 import { baselineView } from './verificationView';
+import { workspaceSetupView } from './workspaceSetupView';
 
 /** A remote agent's checkout isn't this machine's: the baseline recorded here says nothing about its files. */
 const REMOTE_GIT_NOTE = {
@@ -103,6 +104,7 @@ export async function claimTicket(
     },
     ...(recovered.length ? { recovered } : {}),
     ...(parallel.workspace ? { workspace: parallel.workspace } : {}),
+    ...(parallel.setup ? { workspaceSetup: workspaceSetupView(parallel.setup) } : {}),
     ...(parallel.workspaceNote ? { workspaceNote: parallel.workspaceNote } : {}),
     ...(parallel.warnings.length ? { warnings: parallel.warnings } : {}),
     ...(warned.length ? { checkWarnings: warned } : {}),

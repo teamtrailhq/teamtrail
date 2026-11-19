@@ -14,6 +14,7 @@ export function mainTone(view: MainChecksView | undefined, asked: boolean): Main
     case 'failed':
       return view.state.fixing || view.state.moved ? 'attention' : 'needs';
     case 'unavailable':
+    case 'environment':
     case 'accepted':
       return 'attention';
     case 'passed':

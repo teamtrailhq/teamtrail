@@ -48,8 +48,8 @@ before(async () => {
   mkdirSync(path.join(repo, 'node_modules', 'dep'), { recursive: true });
   writeFileSync(path.join(repo, '.gitignore'), 'node_modules\n.teamtrail\n');
   writeFileSync(path.join(repo, 'check.js'), CHECK);
-  // the linked dependency folder is there for the check, as in the repo
-  writeFileSync(path.join(repo, 'deps.js'), "require('fs').statSync('node_modules/dep');");
+  // nothing of the person's checkout is in the worktree for main: their node_modules isn't there
+  writeFileSync(path.join(repo, 'deps.js'), "if (require('fs').existsSync('node_modules')) process.exit(1);");
   const node = process.execPath;
   const checks = { lint: { run: [node, 'deps.js'] }, test: { run: [node, 'check.js'] } };
   writeFileSync(path.join(root, 'verification.json'), JSON.stringify({ v: 1, checks, run: ['lint', 'test'] }));

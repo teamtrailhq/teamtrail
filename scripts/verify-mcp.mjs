@@ -44,6 +44,7 @@ import { verifyProofGaps } from './verifyProofGaps.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
 import { verifyRules } from './verifyRules.mjs';
 import { verifyScreening } from './verifyScreening.mjs';
+import { verifySetupSteps } from './verifySetupSteps.mjs';
 import { verifySignedState } from './verifySignedState.mjs';
 import { verifySignIn } from './verifySignIn.mjs';
 import { verifySlack } from './verifySlack.mjs';
@@ -681,6 +682,9 @@ log(
 const parallelOk = await verifyParallel({ browser, cli, log, shots });
 // Checks on main: a check already failing on main, the human's Start anyway and Drop, on a scratch git repo.
 const mainChecksOk = await verifyMainChecks({ browser, cli, log, shots });
+// Setup steps: approved in Approvals, refused without a lockfile (checks on main couldn't run here, nothing held),
+// then installed in the worktree for main so the check passes on the commit, never on the person's working tree.
+const setupStepsOk = await verifySetupSteps({ browser, cli, log, shots });
 // Trail verified together: two tasks pass alone but fail together on main; a fix ticket, and the run that verifies.
 const trailChecksOk = await verifyTrailChecks({ browser, cli, log, shots });
 // Escapes: verified work reverted on main asks for a rule and counts on the scorecard, on a scratch git repo.
@@ -835,6 +839,7 @@ if (
   !signInOk ||
   !parallelOk ||
   !mainChecksOk ||
+  !setupStepsOk ||
   !trailChecksOk ||
   !escapesOk ||
   !newTrailOk ||

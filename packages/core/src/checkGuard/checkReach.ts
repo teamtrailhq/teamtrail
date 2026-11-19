@@ -1,64 +1,32 @@
 import type { CheckSpec } from '../model/verification';
 import { repoPath } from '../verification/repoPath';
 import { scriptPlan, type PackageManager } from '../verification/scriptPlan';
+import { changedPackages } from './changedPackages';
 import { commandsOf } from './commandsOf';
+import { composerCommands, composerScript } from './composerScript';
 import { makeReach } from './makeReach';
+import { nxCommands, nxProject, type NxProject } from './nxTargets';
 import { packageJson } from './packageJson';
+import { makeArgs, pkgArgs } from './reachArgs';
+import { nxRun, turboRun, type TaskRun } from './taskRunnerArgs';
 import type { CheckReach, GuardReaders } from './types';
+import { wrapperTool } from './wrapperTool';
 
 /** Commands followed per check at most: scripts that call each other in a loop end here. */
 const BUDGET = 300;
 const MAKEFILES = ['GNUmakefile', 'makefile', 'Makefile'];
-/** Flags that run a script across a workspace's packages, and those that move it to another folder. */
-const ACROSS = /^(-w|--workspace|--workspaces|-ws|-r|--recursive|--filter|-F)(=|$)/;
-const MOVE = /^(--prefix|-C|--dir|--cwd)(=|$)/;
-const VALUED = new Set(['-w', '--workspace', '--filter', '-F', '--prefix', '-C', '--dir', '--cwd']);
 /** A word that names a file the command reads. Test files are left to the test check, so editing one isn't this. */
 const FILE = /\.(m?[jt]sx?|c[jt]s|sh|bash|py|rb|pl|php|mk|ps1|json|jsonc|ya?ml|toml|ini|cfg)$/;
 const TEST_FILE = /(\.|_)(test|spec)\.\w+$|(^|\/)(test_[^/]*|[^/]*_test)\.py$|(^|\/)__tests__\//;
 const CONFIG_FLAG = /^(--config|-c|--project|-p|--rcfile|--config-file)$/;
 
-const nameOf = (argv0: string) => (argv0.split('/').pop() ?? argv0).replace(/\.(cmd|exe)$/i, '');
-
-/** A flag's value: after `=`, else the next word for flags that take one. */
-function flagValue(args: string[], n: number) {
-  const a = args[n];
-  if (a.includes('=')) return { value: a.slice(a.indexOf('=') + 1), next: n };
-  return VALUED.has(a) ? { value: args[n + 1], next: n + 1 } : { value: undefined, next: n };
-}
-
-/** A package manager's words without the flags that move it (`--prefix`) or run it across packages (`-w`). */
-function pkgArgs(args: string[], dir: string) {
-  let at = dir;
-  let across = false;
-  const words: string[] = [];
-  for (let n = 0; n < args.length; n++) {
-    const a = args[n];
-    if (!ACROSS.test(a) && !MOVE.test(a)) {
-      words.push(a);
-      continue;
-    }
-    const { value, next } = flagValue(args, n);
-    n = next;
-    if (MOVE.test(a)) at = repoPath(dir, value) ?? dir;
-    else across = true;
-  }
-  return { at, across, words };
-}
-
-/** The folder (`-C`), makefile (`-f`) and first target of a `make` command. */
-function makeArgs(args: string[], dir: string) {
-  let at = dir;
-  let file: string | undefined;
-  let target = '';
-  for (let n = 0; n < args.length; n++) {
-    const a = args[n];
-    if (a === '-C' || a === '--directory') at = repoPath(at, args[++n]) ?? at;
-    else if (a === '-f' || a === '--file' || a === '--makefile') file = args[++n];
-    else if (!a.startsWith('-') && !a.includes('=') && !target) target = a;
-  }
-  return { at, file, target };
-}
+const nameOf = (argv0: string) => (argv0.split('/').pop() ?? argv0).replace(/\.(cmd|exe|bat)$/i, '');
+/** A program inside a folder installs create: npm's bins, a virtualenv's, Composer's. */
+const DEP_BIN = /(^|\/)(node_modules\/\.bin|\.?venv\/(bin|Scripts)|vendor\/bin)\/([^/]+)$/;
+/** Interpreters that may run an installed tool's script. */
+const INTERPRETERS = /^(php|node|ruby|python[\d.]*)$/;
+/** Build tools' wrapper scripts in the repo: the guard reads the build they run, as the tool's. */
+const BUILD_WRAPPERS = new Set(['gradlew', 'mvnw']);
 
 /** Walks a check's argv through scripts, makefiles and wrappers, recording what each command runs. */
 class Walk {
@@ -77,6 +45,7 @@ class Walk {
       tools: new Map(),
       files: new Set(),
       makefiles: new Map(),
+      targets: new Map(),
       guards,
     };
   }
@@ -94,9 +63,9 @@ class Walk {
   private async visit(cmd: string[], dir: string): Promise<void> {
     const [argv0, ...args] = cmd;
     if (!argv0) return;
-    const bin = argv0.match(/(^|\/)node_modules\/\.bin\/([^/]+)$/);
-    if (bin) return this.visit([bin[2], ...args], dir);
-    if (argv0.includes('/') && !argv0.startsWith('/')) return this.file(dir, argv0);
+    const bin = argv0.match(DEP_BIN);
+    if (bin) return this.visit([bin[4].replace(/\.exe$/i, ''), ...args], dir);
+    if (this.repoScript(argv0, dir)) return;
     const program = nameOf(argv0);
     if (program === 'npm' || program === 'pnpm' || program === 'yarn') return this.pkg(program, args, dir);
     if (program === 'npx' || program === 'pnpx' || program === 'bunx') {
@@ -107,8 +76,38 @@ class Walk {
     if (program === 'make' || program === 'gmake') return this.make(args, dir);
     const module = /^python[\d.]*$/.test(program) ? args.indexOf('-m') : -1;
     if (module >= 0 && args[module + 1]) return this.visit(args.slice(module + 1), dir);
+    this.tool(program, dir);
+    if (!(await this.runs(program, args, dir))) this.args(args, dir);
+  }
+
+  /**
+   * What a program that runs others runs: a composer script, a wrapper's tool, turbo tasks, nx targets, an installed
+   * tool an interpreter runs (`php vendor/bin/phpunit`). False when it runs nothing else.
+   */
+  private async runs(program: string, args: string[], dir: string): Promise<boolean> {
+    const composer = program === 'composer' ? composerScript(args) : undefined;
+    if (composer) await this.script(dir, composer, 'composer.json');
+    else if (program === 'turbo') await this.turbo(turboRun(args), dir);
+    else if (program === 'nx') await this.nx(nxRun(args), dir);
+    const next = composer ? undefined : (wrapperTool(program, args) ?? this.interpreted(program, args));
+    if (next) await this.visit(next, dir);
+    return !!composer || !!next || program === 'turbo' || program === 'nx';
+  }
+
+  /** `php vendor/bin/phpunit`, `node node_modules/.bin/jest`: the installed tool, run by an interpreter. */
+  private interpreted(program: string, args: string[]) {
+    return INTERPRETERS.test(program) && DEP_BIN.test(args[0] ?? '') ? args : undefined;
+  }
+
+  /** A script in the repo the command starts: the file counts; a build wrapper (`./gradlew`) is its tool too. */
+  private repoScript(argv0: string, dir: string) {
+    if (!argv0.includes('/') || argv0.startsWith('/')) return false;
+    this.file(dir, argv0);
+    return !BUILD_WRAPPERS.has(nameOf(argv0));
+  }
+
+  private tool(program: string, dir: string) {
     this.reach.tools.set(program, (this.reach.tools.get(program) ?? new Set<string>()).add(dir));
-    this.args(args, dir);
   }
 
   private file(dir: string, word: string) {
@@ -135,38 +134,81 @@ class Walk {
     }
     if (plan.kind !== 'script') return;
     await this.script(at, plan.name);
-    if (across) for (const folder of await this.packagesUnder(at)) await this.script(folder, plan.name);
+    if (across) for (const folder of await this.packagesUnder(at, 'package.json')) await this.script(folder, plan.name);
   }
 
-  /** A package.json script, its pre and post scripts, and the commands they run, read before and after. */
-  private async script(dir: string, name: string) {
-    const pkgPath = repoPath(dir, 'package.json') ?? 'package.json';
+  /**
+   * A package.json script (or composer.json's), its pre and post scripts (package.json only), and the commands they
+   * run, read before and after.
+   */
+  private async script(dir: string, name: string, file = 'package.json') {
+    const pkgPath = repoPath(dir, file) ?? file;
     const names = this.reach.scripts.get(pkgPath) ?? new Set<string>();
     this.reach.scripts.set(pkgPath, names);
     if (names.has(name)) return;
-    for (const n of [`pre${name}`, name, `post${name}`]) names.add(n);
+    const composer = file === 'composer.json';
+    const run = composer ? [name] : [`pre${name}`, name, `post${name}`];
+    run.forEach((n) => names.add(n));
+    const parse = composer ? composerCommands : commandsOf;
     for (const text of await this.both(pkgPath)) {
       const pkg = packageJson(text);
       if (!pkg || pkg === 'invalid') continue;
-      for (const n of [`pre${name}`, name, `post${name}`])
-        for (const cmd of commandsOf(pkg.scripts[n] ?? '')) this.queue.push({ cmd, dir });
+      for (const n of run) for (const cmd of parse(pkg.scripts[n] ?? '')) this.queue.push({ cmd, dir });
     }
   }
 
-  /** Packages a workspace run reaches that hold a changed file: only those can have changed what it runs. */
-  private async packagesUnder(dir: string) {
-    const folders = new Set<string>();
-    for (const f of this.changed) {
-      if (dir && !f.startsWith(`${dir}/`)) continue;
-      const parts = f.split('/').slice(0, -1);
-      for (let n = parts.length; n > (dir ? dir.split('/').length : 0); n--) folders.add(parts.slice(0, n).join('/'));
+  /** Packages under `dir` that hold a changed file (changedPackages.ts). */
+  private packagesUnder(dir: string, ...markers: string[]) {
+    return changedPackages({ changed: this.changed, dir, markers, ...this.read });
+  }
+
+  /** `turbo run test`: the task's script in every package of the workspace that holds a change (`web#test`: in web). */
+  private async turbo(run: TaskRun, dir: string) {
+    for (const folder of await this.packagesUnder(dir, 'package.json'))
+      for (const target of run.targets) await this.script(folder, target);
+  }
+
+  /**
+   * `nx test web`, `nx run-many -t test`: in each project that holds a change (its project.json or package.json
+   * named as asked, or any when none is), the target's definition in project.json and the commands it runs, else the
+   * package.json script of that name, which Nx runs as the target.
+   */
+  private async nx(run: TaskRun, dir: string) {
+    for (const folder of await this.packagesUnder(dir, 'project.json', 'package.json')) {
+      const file = repoPath(folder, 'project.json') ?? 'project.json';
+      const projects = (await this.both(file)).map(nxProject);
+      const names = await this.projectNames(
+        folder,
+        projects.map((p) => p?.name),
+      );
+      if (run.projects.length && !run.projects.some((p) => names.includes(p))) continue;
+      for (const target of run.targets) await this.nxTarget({ folder, file, projects, target, root: dir });
     }
-    const out: string[] = [];
-    for (const folder of folders) {
-      const [b, a] = await this.both(`${folder}/package.json`);
-      if (b != null || a != null) out.push(folder);
+  }
+
+  /** One target of one project: project.json's definition and its commands, else the package.json script. */
+  private async nxTarget(o: {
+    folder: string;
+    file: string;
+    projects: (NxProject | undefined)[];
+    target: string;
+    root: string;
+  }) {
+    if (!o.projects.some((p) => p && o.target in p.targets)) return this.script(o.folder, o.target);
+    this.reach.targets.set(o.file, (this.reach.targets.get(o.file) ?? new Set<string>()).add(o.target));
+    const commands = o.projects.flatMap((p) => nxCommands(p?.targets[o.target]));
+    for (const c of commands) this.queue.push({ cmd: c.cmd, dir: repoPath(o.root, c.cwd) ?? o.root });
+  }
+
+  /** A project's names: project.json's `name`, else its package.json's, else its folder's. */
+  private async projectNames(folder: string, fromProject: (string | undefined)[]) {
+    const named = fromProject.filter((n): n is string => !!n);
+    if (named.length) return named;
+    for (const text of await this.both(repoPath(folder, 'package.json') ?? 'package.json')) {
+      const name = nxProject(text)?.name;
+      if (name) named.push(name);
     }
-    return out;
+    return named.length ? named : [folder.split('/').pop() ?? folder];
   }
 
   /** `make -C dir -f file target`: the makefile, its target, and the recipes the target reaches. */
@@ -189,8 +231,12 @@ class Walk {
 
 /**
  * What one approved check runs, read from its argv and the repo before and after the work: the package.json scripts
- * it reaches (`npm test` → `scripts.test` → `npm run unit` → …, across workspace packages that hold a change), the
- * tools those run, the files they name and the makefile targets. Deterministic and read-only.
+ * it reaches (`npm test` → `scripts.test` → `npm run unit` → …, across workspace packages that hold a change), and
+ * composer.json's (`composer test`), the tasks `turbo run` runs in each changed package and the Nx targets `nx test
+ * web` runs (project.json's definition and its commands, else the package script), the tool behind a wrapper (`bundle
+ * exec`, `poetry run`, `uv run`, `pipenv run`, `composer exec`) or a dependency folder (`vendor/bin/phpunit`,
+ * `.venv/bin/pytest`), a build wrapper as its build tool (`./gradlew`), the tools those run, the files they name and
+ * the makefile targets. Deterministic and read-only.
  */
 export async function checkReach(o: {
   name: string;

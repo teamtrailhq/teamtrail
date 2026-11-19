@@ -1,4 +1,12 @@
-import { pairsLabel, repoPaths, touchOverlaps, type MapSnapshot, type Ticket, type Workspace } from '@teamtrail/core';
+import {
+  pairsLabel,
+  repoPaths,
+  touchOverlaps,
+  type MapSnapshot,
+  type SetupOutcome,
+  type Ticket,
+  type Workspace,
+} from '@teamtrail/core';
 import {
   prepareWorktree,
   readIntegrationScan,
@@ -15,6 +23,8 @@ import { pathRoots } from './pathRoots';
 
 export interface ClaimParallel {
   workspace?: Workspace;
+  /** The approved setup steps Teamtrail ran in a worktree it made for this claim. */
+  setup?: SetupOutcome;
   workspaceNote?: string;
   warnings: { kind: 'overlap'; ticket: string; agent: string; paths: [string, string][]; message: string }[];
 }
@@ -60,6 +70,7 @@ export async function claimParallel(
     : [];
   return {
     ...(workspace ? { workspace } : {}),
+    ...(prepared && 'setup' in prepared && prepared.setup ? { setup: prepared.setup } : {}),
     ...(prepared && 'note' in prepared ? { workspaceNote: prepared.note } : {}),
     ...(wanted && ctx.remote ? { workspaceNote: REMOTE_WORKSPACE_NOTE } : {}),
     warnings: overlaps.map((o) => ({

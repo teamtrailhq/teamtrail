@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { RepoProfile, RepoUnit } from '../src/model/repoProfile';
 import { detectRepoProfile, suggestChecks } from '../src/repoProfile';
 import { PROFILE_LIMITS } from '../src/repoProfile/limits';
-import { fixtureRepoFiles } from './fakes/fixtureRepoFiles';
 import { memoryRepoFiles } from './fakes/memoryRepoFiles';
+import { profileRepoFiles } from './fakes/profileRepoFiles';
 
-const profileOf = (name: string, extra?: Record<string, string>) => detectRepoProfile(fixtureRepoFiles(name, extra));
+const profileOf = (name: string, extra?: Record<string, string>) => detectRepoProfile(profileRepoFiles(name, extra));
 const unitAt = (p: RepoProfile, dir: string, ecosystem?: string) =>
   p.units.find((u) => u.dir === dir && (!ecosystem || u.ecosystem === ecosystem)) as RepoUnit;
 const runs = (u: RepoUnit) => u.commands.map((c) => `${c.role}: ${c.run.join(' ')}`);
@@ -51,7 +51,7 @@ describe('repo profile: Node', () => {
   });
 
   it('never keeps a value from an env example, and never reads .env itself', async () => {
-    const files = fixtureRepoFiles('node-npm-workspaces', { '.env': 'DATABASE_URL=postgres://real:pw@prod/db\n' });
+    const files = profileRepoFiles('node-npm-workspaces', { '.env': 'DATABASE_URL=postgres://real:pw@prod/db\n' });
     const p = await detectRepoProfile(files);
     expect(JSON.stringify(p)).not.toContain('postgres://localhost/shop');
     expect(JSON.stringify(p)).not.toContain('real:pw');
@@ -148,7 +148,9 @@ describe('repo profile: other stacks', () => {
     expect(runs(unitAt(maven, ''))).toEqual(['test: ./mvnw test -B', 'check: ./mvnw verify -B']);
     expect(unitAt(maven, '').toolchain).toMatchObject({ version: '17' });
     expect(unitAt(maven, 'service').memberOf).toBe('');
-    expect(suggestChecks(maven).every((s) => !s.known)).toBe(true);
+    // the wrappers are known check shapes (guides/knownChecks.ts)
+    expect(suggestChecks(maven).every((s) => s.known)).toBe(true);
+    expect(suggestChecks(gradle).every((s) => s.known)).toBe(true);
   });
 
   it('Ruby, PHP and .NET', async () => {
@@ -222,7 +224,7 @@ describe('repo profile: bounds and determinism', () => {
   });
 
   it('without a listing, reads the top folder only', async () => {
-    const files = fixtureRepoFiles('node-npm-workspaces');
+    const files = profileRepoFiles('node-npm-workspaces');
     const p = await detectRepoProfile({ read: files.read, kind: files.kind });
     expect(p.listed).toBe(false);
     expect(p.units.map((u) => u.dir)).toEqual(['']);
@@ -240,8 +242,16 @@ describe('repo profile: bounds and determinism', () => {
       'ui-typecheck: npm run typecheck in packages/ui',
     ]);
     expect(suggestChecks(p).every((s) => s.known)).toBe(true);
-    // `uv run` and `bundle exec` are refused by the check lint today: never offered
-    expect(suggestChecks(await profileOf('python-uv'))).toEqual([]);
-    expect(suggestChecks(await profileOf('ruby'))).toEqual([]);
+    // a known tool through `uv run --frozen` or `bundle exec` passes the check lint, so it's offered as known
+    expect(suggested(await profileOf('python-uv'))).toEqual([
+      'test: uv run --frozen pytest in .',
+      'lint: uv run --frozen ruff check . in .',
+      'typecheck: uv run --frozen mypy . in .',
+    ]);
+    expect(suggested(await profileOf('ruby'))).toEqual([
+      'test: bundle exec rspec in .',
+      'lint: bundle exec rubocop in .',
+    ]);
+    expect(suggestChecks(await profileOf('ruby')).every((s) => s.known)).toBe(true);
   });
 });

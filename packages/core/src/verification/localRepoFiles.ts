@@ -47,6 +47,7 @@ export function localRepoFiles(repoRoot: string): RepoFiles | undefined {
   }
   if (!existsSync(path.join(real, '.git'))) return undefined;
   return {
+    seesInstalls: true,
     async read(rel) {
       const file = await inside(real, rel);
       const s = file ? await stat(file).catch(() => undefined) : undefined;

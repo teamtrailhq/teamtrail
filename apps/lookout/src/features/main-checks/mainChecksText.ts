@@ -41,6 +41,13 @@ function stateText(state: MainChecksState, holds: boolean): Omit<MainChecksRowTe
       return { edge: 'neutral', title: 'Checks pass on main' };
     case 'unavailable':
       return { edge: 'attention', title: "Checks on main couldn't run", detail: state.reason };
+    case 'environment':
+      return {
+        edge: 'attention',
+        title: "Checks on main couldn't run on this machine",
+        why: 'Not a failure of main: nothing waits for it',
+        detail: state.reason,
+      };
     case 'failed':
       return {
         edge: state.fixing || state.moved ? 'attention' : 'urgent',

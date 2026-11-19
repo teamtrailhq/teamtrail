@@ -1,4 +1,5 @@
 import type { ActorKind } from './lifecycle';
+import type { SetupStepResult } from './setup';
 
 /*
  * Checks on main: the approved checks run once on the default branch's head before agents build on it, so a check
@@ -21,6 +22,11 @@ export interface MainCheckResult {
   log?: string;
   /** The failure's lines, normalized (failureSignature.ts); only for a check that failed. */
   signature?: string[];
+  /**
+   * Why a failed check failed because of the machine it ran on, not main's code: a program or package not installed,
+   * a service not reachable (mainChecks/environmentCause.ts). Such a failure holds nothing.
+   */
+  environment?: string;
 }
 
 /** `unavailable`: nothing could run (no git, no default branch, the runner can't run checks on main). */
@@ -38,6 +44,8 @@ export interface MainRun {
   /** The approved verification.json the checks came from. */
   configHash: string;
   checks: MainCheckResult[];
+  /** The approved setup steps as they ran in the worktree before the checks; none when the config names none. */
+  setup?: SetupStepResult[];
   result: MainRunResult;
   /** Why it is `unavailable`, or what else to know. */
   note?: string;
@@ -84,6 +92,11 @@ export type MainChecksState =
   | { kind: 'running'; proceeding: boolean }
   | { kind: 'passed' }
   | { kind: 'unavailable'; reason: string }
+  /**
+   * Checks on main couldn't run because of the machine, not main's code: setup failed, or a program, package or
+   * service isn't there. `checks` names the checks it hit (none when setup failed). Holds nothing.
+   */
+  | { kind: 'environment'; checks: string[]; reason: string }
   /** `moved`: the default branch here has moved past the failing run's commit, so checks run on it again. */
   | { kind: 'failed'; failing: string[]; fixing: boolean; moved?: true }
   | { kind: 'accepted'; known: string[]; dropped: string[] };

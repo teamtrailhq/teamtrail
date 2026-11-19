@@ -7,9 +7,11 @@ import type { AttemptFlaky } from './flaky';
 import type { GateModes } from './gateMode';
 import type { AttemptGuide, ChecklistAnswer, GuideAnswers } from './guide';
 import type { VerificationLevel } from './lifecycle';
+import type { SetupSpec } from './setup';
 import type { TicketType } from './types';
 
 export type { AttemptRule, DiffRule, HeldRules, RuleAnswer, RuleWaiver, RuleWaiverEntry } from './diffRule';
+export type { SetupOutcome, SetupSpec, SetupStepResult } from './setup';
 
 /** One configured command. `run` is an argv array, never a shell string. */
 export interface CheckSpec {
@@ -33,6 +35,8 @@ export interface VerificationConfig {
   /** Ticket types the trail level applies to; decision tickets stay off unless listed. */
   appliesTo: TicketType[];
   checks: Record<string, CheckSpec>;
+  /** Frozen installs Teamtrail runs in the worktrees it prepares, before checks (model/setup.ts); none when absent. */
+  setup?: Record<string, SetupSpec>;
   /** Checks run on every completion, in order, unless a ticket names its own. */
   run: string[];
   failFast: boolean;

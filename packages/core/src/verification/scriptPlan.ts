@@ -1,4 +1,5 @@
 import { NPM_COMMANDS } from './npmCommands';
+import type { JsPackageManager } from './pmRoute';
 
 /** What a package manager's command runs: a package.json script, a dependency's program, or nothing screening reads. */
 export type ScriptPlan =
@@ -12,7 +13,7 @@ export type ScriptPlan =
   | { kind: 'unknown'; name: string }
   | { kind: 'none' };
 
-export type PackageManager = 'npm' | 'pnpm' | 'yarn';
+export type PackageManager = JsPackageManager;
 
 const NONE: ScriptPlan = { kind: 'none' };
 const NPM_SCRIPT: Record<string, string> = { test: 'test', t: 'test', tst: 'test', start: 'start', stop: 'stop' };
@@ -27,9 +28,11 @@ const YARN_OWN = new Set(
     ' ',
   ),
 );
-/** Flags that send the command to another package or folder: screening would read the wrong package.json. */
-const ELSEWHERE =
-  /^(-w|--workspace|--workspaces|-ws|--prefix|-C|--dir|--filter|-F|--cwd|-r|--recursive|--if-present)(=|$)/;
+const BUN_OWN = new Set(
+  'install i add a remove rm update upgrade link unlink pm x create c init build outdated publish patch audit info why repl exec upgrade completions'.split(
+    ' ',
+  ),
+);
 
 function npmPlan([sub, next]: string[]): ScriptPlan {
   if (sub in NPM_SCRIPT) return { kind: 'script', name: NPM_SCRIPT[sub], strict: true };
@@ -55,9 +58,20 @@ function yarnPlan([sub, next]: string[]): ScriptPlan {
   return { kind: 'script', name: sub, strict: false };
 }
 
-/** What `npm …`, `pnpm …` or `yarn …` would run, read from its words after the program. */
+/** `bun test` is bun's own test runner; `bun run x` and `bun x` fall back to a file or program of that name. */
+function bunPlan([sub, next]: string[]): ScriptPlan {
+  if (sub === 'test') return NONE;
+  if (sub === 'run') return next && !/[./]/.test(next) ? { kind: 'script', name: next, strict: false } : NONE;
+  if (sub === 'x') return { kind: 'tool', spec: next };
+  if (BUN_OWN.has(sub) || /[./]/.test(sub)) return NONE;
+  return { kind: 'script', name: sub, strict: false };
+}
+
+/**
+ * What `npm …`, `pnpm …`, `yarn …` or `bun …` would run, read from its words after the program, without the flags
+ * that route it to another package (pmRoute.ts reads those).
+ */
 export function scriptPlan(pm: PackageManager, args: string[]): ScriptPlan {
-  if (args.some((a) => ELSEWHERE.test(a))) return NONE;
   const words = args.filter((a) => !a.startsWith('-'));
   if (!words.length) return NONE;
   switch (pm) {
@@ -67,6 +81,8 @@ export function scriptPlan(pm: PackageManager, args: string[]): ScriptPlan {
       return pnpmPlan(words);
     case 'yarn':
       return yarnPlan(words);
+    case 'bun':
+      return bunPlan(words);
     default: {
       const never: never = pm;
       return never;

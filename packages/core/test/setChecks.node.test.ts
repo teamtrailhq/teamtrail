@@ -4,7 +4,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { journalFile } from '../src/history/journalFile';
 import { TRUST_JOURNAL } from '../src/model/lifecycle';
-import { checksApproval, trustedChecks } from '../src/verification/checksApproval';
+import { approveChecksHere, checksApproval, trustedChecks } from '../src/verification/checksApproval';
 import { setChecks, StaleChecks } from '../src/verification/setChecks';
 import { tempFolder } from './tempFolder';
 
@@ -126,4 +126,19 @@ test('a folder outside the repository is refused', () => {
       cwd,
     );
   }
+});
+
+test('saving checks never approves setup steps nobody approved here; approved ones are kept', () => {
+  const root = tmpRoot();
+  const setup = { deps: { run: ['npm', 'ci'] } };
+  writeFileSync(file(root), JSON.stringify({ v: 1, checks: {}, run: [], setup }));
+  const base = checksApproval(root).hash;
+  const save = () => setChecks({ root, base, by: 'Ada', checks: [{ name: 'test', run: ['npm', 'test'] }] });
+  assert.throws(save, /setup steps you haven't approved yet/);
+  assert.equal(checksApproval(root).state, 'first', 'nothing was approved');
+  // approved as shown in Approvals, the setup rides along with later saves
+  approveChecksHere(root, 'Ada', readFileSync(file(root), 'utf8'));
+  const approval = setChecks({ root, base, by: 'Ada', checks: [{ name: 'test', run: ['npm', 'test'] }] });
+  assert.equal(approval.state, 'approved');
+  assert.deepEqual(JSON.parse(readFileSync(file(root), 'utf8')).setup, setup);
 });

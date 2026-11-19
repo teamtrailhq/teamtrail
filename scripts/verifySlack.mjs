@@ -12,6 +12,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { approveSkipInLookout, handsOn, lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { stopProcess } from './stopProcess.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ANA = 'U0ANA0001';
@@ -257,7 +258,7 @@ export async function verifySlack({ browser, cli, log, shots }) {
   } finally {
     for (const close of closers.reverse()) await Promise.resolve(close()).catch(() => undefined);
     await page.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     process.kill(-fake.proc.pid, 'SIGTERM');
     if (!process.env.KEEP) {
       fs.rmSync(top, { recursive: true, force: true });

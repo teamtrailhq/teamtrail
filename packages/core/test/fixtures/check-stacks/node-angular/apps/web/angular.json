@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "projects": {
+    "web": {
+      "root": "",
+      "architect": {
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "karmaConfig": "karma.conf.js"
+          }
+        }
+      }
+    }
+  }
+}

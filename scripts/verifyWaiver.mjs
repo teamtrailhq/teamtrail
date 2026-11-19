@@ -19,6 +19,7 @@ import {
   ticketAction,
 } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { stopProcess } from './stopProcess.mjs';
 
 const REASON = 'This repo has no test runner yet; the change was checked by hand';
 
@@ -161,7 +162,7 @@ export async function verifyWaiver({ browser, cli, log, shots }) {
   } finally {
     await one.client.close();
     await page.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     if (!process.env.KEEP) fs.rmSync(top, { recursive: true, force: true });
   }
 }

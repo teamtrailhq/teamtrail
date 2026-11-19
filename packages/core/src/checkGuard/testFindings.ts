@@ -3,11 +3,13 @@ import { TEST_PATTERNS, type TestPatterns } from './testPatterns';
 import type { GuardReaders } from './types';
 
 /**
- * Where tests live: test folders, and files named as tests by the usual conventions; Rust keeps them next to the code.
- * Only these are read, so a change to thousands of source files doesn't read them all.
+ * Where tests live: test folders (`tests/`, Swift's `Tests/`, .NET's `App.Tests/`), and files named as tests by the
+ * usual conventions (`a.test.ts`, `a_test.go`, `test_a.py`, `AppTest.java`, `AppTests.cs`, `AppTest.php`,
+ * `AppTests.swift`, `a_test.exs`, `a_test.dart`, `AppSpec.kt`); Rust keeps them next to the code. Only these are
+ * read, so a change to thousands of source files doesn't read them all.
  */
 const TEST_PATH =
-  /(^|\/)(tests?|__tests__|specs?|e2e)\/|[._-](test|spec)s?\.[^/]+$|(^|\/)test_[^/]*\.py$|Tests?\.(java|kt)$|\.rs$/;
+  /(^|\/)(tests?|Tests?|__tests__|specs?|e2e|[\w.-]+\.(Unit)?Tests?)\/|[._-](test|spec)s?\.[^/]+$|(^|\/)test_[^/]*\.py$|(Tests?|Spec|IT)\.(java|kt|kts|groovy|scala|cs|fs|vb|php|swift)$|\.rs$/;
 
 const count = (text: string | null | undefined, r: RegExp | undefined) =>
   text && r ? (text.match(r) ?? []).length : 0;
