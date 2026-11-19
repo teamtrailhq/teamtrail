@@ -1,0 +1,12 @@
+{
+  "name": "web",
+  "scripts": {
+    "test": "ng test",
+    "lint": "ng lint",
+    "build": "ng build"
+  },
+  "devDependencies": {
+    "karma": "^6.4.0",
+    "@angular/cli": "^17.0.0"
+  }
+}

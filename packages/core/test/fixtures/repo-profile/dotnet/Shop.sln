@@ -1,0 +1,5 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0}") = "Api", "src\Api\Api.csproj", "{1}"
+EndProject
+Project("{FAE04EC0}") = "Api.Tests", "tests\Api.Tests\Api.Tests.csproj", "{2}"
+EndProject

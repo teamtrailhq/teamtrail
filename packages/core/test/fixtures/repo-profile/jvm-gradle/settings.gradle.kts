@@ -1,0 +1,2 @@
+rootProject.name = "shop"
+include("app", ":libs:core")

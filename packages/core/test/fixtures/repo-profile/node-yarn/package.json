@@ -1,0 +1,11 @@
+{
+  "name": "app",
+  "scripts": {
+    "test": "jest",
+    "type-check": "tsc --noEmit",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
+}
