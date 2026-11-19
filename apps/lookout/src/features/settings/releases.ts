@@ -23,11 +23,18 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.15',
+    version: '0.66.16',
     date: '2026-11-19',
     items: [
       'Hands-off on a phone: every kind of Needs you fits the screen, with actions big enough to tap, and each row acts on what it asks',
       'Teamtrail Cloud: Pause shows Stopping… until the agents have stopped, and Start shows Starting… until one is working',
+    ],
+  },
+  {
+    version: '0.66.15',
+    date: '2026-11-19',
+    items: [
+      'Two answers to the same question at once (the Lookout and Slack, or two people): the first is the one used everywhere, and the other is kept in the conversation as "also answered, not used"',
     ],
   },
   {

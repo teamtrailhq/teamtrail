@@ -1,5 +1,6 @@
 import { readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
+import type { AnswerVia } from '@teamtrail/core';
 import { credentialStore, writeJsonAtomic, writeLocalJson } from '@teamtrail/core/bridge';
 import type { AskView } from './blocks';
 import { DEFAULT_COMMAND } from './service/constants';
@@ -161,8 +162,11 @@ export interface AskRecord {
   closed?: boolean;
   /** How it is answered, as the message shows it (absent on older records: buttons). */
   mode?: 'buttons' | 'lookout';
-  /** Answered from Slack: who and what, for the closing line. */
-  by?: { user: string; text: string };
+  /**
+   * Answered from Slack: who and what, for the closing line; with `first` when another answer came first, which is
+   * the one used (this one is kept, not used).
+   */
+  by?: { user: string; text: string; first?: { author: string; text: string; via?: AnswerVia; chatOf?: string } };
   /** What the message shows, to re-render it without the buttons. Stays on this machine. */
   view?: AskView & { mapId: string; ticketId?: string; at: number };
 }

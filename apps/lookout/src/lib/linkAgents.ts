@@ -1,4 +1,5 @@
 import { type ActivityStream, type AgentSessionDoc, type TicketLease } from '@teamtrail/core';
+import { actorLabel } from './actorLabel';
 import { apiBase } from './apiBase';
 import { type LeaseBoard } from './leaseBoard';
 import { newestWins } from './newestWins';
@@ -12,8 +13,16 @@ function sendAnswers(activity: ActivityStream) {
       body: JSON.stringify({ sessionId: q.sessionId, questionId: q.id, text, author }),
     })
       .then(async (r) => {
-        if (!r.ok)
-          throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error ?? `HTTP ${r.status}`);
+        const body = (await r.json().catch(() => ({}))) as { error?: string; firstAnswer?: { author: string } };
+        if (!r.ok) throw new Error(body.error ?? `HTTP ${r.status}`);
+        // Another answer came first (Slack, another browser): that one is used; this one is kept, marked not used.
+        if (body.firstAnswer)
+          activity.push({
+            source: 'system',
+            level: 'warn',
+            sessionId: q.sessionId,
+            text: `Already answered by ${actorLabel(body.firstAnswer.author)}: ${q.agent} got that answer. Yours is kept, not used.`,
+          });
       })
       .catch((e: Error) =>
         activity.push({

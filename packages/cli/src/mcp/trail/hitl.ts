@@ -46,8 +46,9 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   ctx.waits.set(
     q.id,
     answer.then((text) => {
+      // The answer used, never one kept after it as not used.
       const author =
-        [...ctx.activity.snapshot.chats].reverse().find((c) => c.sessionId === sid && c.from === 'human')?.author ??
+        ctx.activity.snapshot.chats.find((c) => c.answers === q.id && c.from === 'human' && !c.notUsed)?.author ??
         TRAIL_LEAD;
       // How it was given, as the path that delivered it recorded (answerVia.ts); none on an older, unlabelled one.
       const { via, chatOf, by } = ctx.activity.snapshot.answered.find((a) => a.id === q.id) ?? {};
@@ -209,14 +210,11 @@ export async function inbox(ctx: AgentContext, input: { kinds?: AttentionKind[] 
 export async function answerQuestion(ctx: AgentContext, input: { questionId: string; answer: string }) {
   const chatOf = await ctx.agentId();
   const given = { via: 'chat' as const, note: CHAT_GUIDES };
-  const own = ctx.activity.snapshot.pending.find((p) => p.id === input.questionId);
-  if (own) {
-    ctx.activity.answer(own.id, input.answer.trim(), TRAIL_LEAD, { via: 'chat', chatOf });
-    return { delivered: true, to: own.agent, ...given };
-  }
+  // A question of this process's own goes in line like any other answer, so the first one given is the one used.
+  if (ctx.activity.snapshot.pending.some((p) => p.id === input.questionId)) ctx.writer.flush();
   const doc = (await readAgentDocs(ctx.root)).find((d) => d.pending.some((q) => q.id === input.questionId));
   if (!doc) throw new OperationError(`No open question ${input.questionId}. Call list_inbox for the current ones.`);
-  writeAgentAnswer(ctx.root, {
+  const written = writeAgentAnswer(ctx.root, {
     sessionId: doc.session.id,
     questionId: input.questionId,
     text: input.answer,
@@ -224,5 +222,12 @@ export async function answerQuestion(ctx: AgentContext, input: { questionId: str
     via: 'chat',
     chatOf,
   });
+  ctx.writer.pullAnswers();
+  if (written.firstAnswer)
+    return { delivered: false, to: doc.session.agent, note: alreadyAnswered(written.firstAnswer) };
   return { delivered: true, to: doc.session.agent, ...given };
 }
+
+/** What answer_question says when another answer came first: that one is used, this one kept as not used. */
+const alreadyAnswered = (first: { author: string; via?: AnswerVia }) =>
+  `Already answered by ${first.author}${first.via ? ` (${first.via})` : ''}: that answer is the one used. Yours is kept in the conversation, marked not used.`;

@@ -71,8 +71,8 @@ export class AgentContext {
     this.adapter =
       opts.tracker ??
       new MarkdownAdapter({ ...nodeMarkdownFs(opts.root, { by: () => this.signedBy }), watch: undefined }, opts.root);
-    this.writer = new AgentDocWriter(opts.root, this.activity, { client: opts.client, pollMs: opts.pollMs });
     this.sessions = new AgentSessions(this.activity, opts.usage, opts.usagePollMs);
+    this.writer = new AgentDocWriter(opts.root, this.activity, { ...opts, onNotUsed: this.sessions.notUsed });
     this.journal = journalFile(opts.root);
     this.origin = opts.remote ? `token:${opts.remote.tokenId ?? opts.remote.tokenName}` : `local:${randomUUID()}`;
     this.leases = new AgentLeases(opts.root, opts.leaseMs ?? leaseMs(process.env[LEASE_MINUTES_ENV]), this.origin);

@@ -11,6 +11,7 @@ import type {
   SessionMode,
   SessionUsage,
 } from '../model/types';
+import type { NotUsedAnswer } from './notUsedAnswer';
 import { createSessionHandle, type SessionHandle, type SessionHost } from './sessionHandle';
 import { addUsage, subUsage } from './usage';
 import type { UsageLedger } from './usageLedger';
@@ -141,6 +142,22 @@ export class ActivityStream {
     });
     if (resolveFn) resolveFn(text);
     else this.remoteAnswer!(q, text, author);
+    return true;
+  }
+
+  /**
+   * Keep answers that came after the one used (agentDocWriter.ts) in the question's conversation, marked not used:
+   * nothing the human said is lost, and nothing reads them as the answer. False when the question wasn't answered.
+   */
+  notUsed(questionId: string, answers: NotUsedAnswer[]) {
+    const done = this.state.answered.find((a) => a.id === questionId);
+    if (!done) return false;
+    const ticket = done.ticketId ? { ticketId: done.ticketId } : {};
+    for (const a of answers) {
+      const by = a.how.by ? { by: a.how.by } : {};
+      const said = { sessionId: done.sessionId, ...ticket, from: 'human' as const, author: a.author, text: a.text };
+      this.chat({ ...said, answers: questionId, notUsed: true, ...labelOf(a.how), ...by });
+    }
     return true;
   }
 

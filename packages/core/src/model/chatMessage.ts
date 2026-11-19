@@ -18,4 +18,9 @@ export interface ChatMessage {
   answers?: string;
   /** On the human's answers: who gave it, when the sign-in named them (model/person.ts). */
   by?: Person;
+  /**
+   * On the human's answers: another answer to the same question came first, and this one was not used. Kept so
+   * nothing the human said is lost, and shown as such (chatNote, answerVia.ts).
+   */
+  notUsed?: true;
 }

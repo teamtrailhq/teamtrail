@@ -7,8 +7,19 @@ import { approvesGates, approvesHighRisk, type AnswerVia } from '../model/answer
 import { personOf } from '../model/person';
 import { runningVersion } from '../model/runningVersion';
 import { needsLookout } from '../policy/needsLookout';
+import { addAnswerFile } from './addAnswerFile';
 import { signAgentAnswer } from './agentAnswerSignature';
-import { SESSION_DOC_PATH, agentPaths, markDisconnected, type AgentAnswer, type AgentSessionDoc } from './agentLink';
+import {
+  ANSWER_FORMAT,
+  SESSION_DOC_PATH,
+  agentPaths,
+  markDisconnected,
+  type AgentAnswer,
+  type AgentSessionDoc,
+  type WrittenAnswer,
+} from './agentLink';
+import { answerFiles } from './answerFiles';
+import { firstAnswerOf, signedFor } from './firstAnswer';
 
 /** One session doc by tracker-relative path, with dead processes shown as disconnected. */
 export function readAgentDoc(root: string, rel: string): AgentSessionDoc | undefined {
@@ -54,8 +65,12 @@ export type AnswerInput = Omit<AgentAnswer, 'at' | 'sig' | 'via'> & { via: Answe
 /**
  * Deliver an answer to a question a session is waiting on, signed with this machine's key so the asking process
  * knows Teamtrail wrote it, and how it was given. Rejects questions that are not open.
+ *
+ * Each answer gets a file of its own (addAnswerFile.ts): when two are given at once (the Lookout and Slack, two
+ * people), the first one in line is the answer and the later one is kept, not used. The result says so
+ * (`firstAnswer`), and the asking process records it in the conversation (agentDocWriter.ts).
  */
-export function writeAgentAnswer(root: string, input: AnswerInput): AgentAnswer {
+export function writeAgentAnswer(root: string, input: AnswerInput): WrittenAnswer {
   const doc = readAgentDoc(root, agentPaths.session(input.sessionId));
   if (!doc) throw new AnswerError(`unknown session "${input.sessionId}"`);
   const q = doc.pending.find((x) => x.id === input.questionId);
@@ -80,6 +95,13 @@ export function writeAgentAnswer(root: string, input: AnswerInput): AgentAnswer 
     ...by,
     ...writer(),
   });
-  writeLocalJson(root, agentPaths.answer(sessionId, questionId), ans);
-  return ans;
+  // An asking process from before numbered answers reads the single file only.
+  if (doc.answerFormat !== ANSWER_FORMAT) {
+    writeLocalJson(root, agentPaths.answer(sessionId, questionId), ans);
+    return ans;
+  }
+  const valid = signedFor(root, { sessionId, questionId });
+  const seq = addAnswerFile(root, ans, valid);
+  const first = answerFiles(root, sessionId, questionId).find(valid);
+  return first?.ans && first.seq !== seq ? { ...ans, firstAnswer: firstAnswerOf(root, first.ans) } : ans;
 }

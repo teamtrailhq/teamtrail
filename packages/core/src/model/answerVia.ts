@@ -29,9 +29,15 @@ export const approvesGates = (via: AnswerVia | undefined): boolean =>
  */
 export const approvesHighRisk = (via: AnswerVia | undefined): boolean => via === 'lookout';
 
-/** Where the answer was given, for transcripts: "in claude-01's chat", or nothing for the Lookout and Slack. */
-export const chatNote = (a: { via?: AnswerVia; chatOf?: string }): string | undefined =>
-  a.via === 'chat' ? `in ${a.chatOf ?? 'an agent'}'s chat` : undefined;
+/**
+ * Where the answer was given, for transcripts: "in claude-01's chat", or nothing for the Lookout and Slack. An answer
+ * that came after the one used says so: "also answered, not used".
+ */
+export function chatNote(a: { via?: AnswerVia; chatOf?: string; notUsed?: boolean }): string | undefined {
+  const where = a.via === 'chat' ? `in ${a.chatOf ?? 'an agent'}'s chat` : undefined;
+  if (a.notUsed) return where ? `also answered ${where}, not used` : 'also answered, not used';
+  return where;
+}
 
 /** How an answer was given, as the code path that delivers it knows; `via` is absent only on unlabelled ones. */
 export interface AnswerHow {

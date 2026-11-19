@@ -132,7 +132,7 @@ describe('skipping discovery is a request the trail lead approves', () => {
     const call = await connect();
     const { started, build } = await skipRequested(call);
     const asked = call<{ questionId: string }>('ask_human', { question: 'Can I skip discovery?', waitSeconds: 30 });
-    await new Promise((r) => setTimeout(r, 100));
+    await expect.poll(async () => (await readAgentDocs(root)).some((d) => d.pending.length)).toBe(true);
     await answerAll('Yes, skip discovery, approved.');
     await asked;
     const chat = await call<{ questionId: string }>('ask_human', { question: 'Skip it?', waitSeconds: 0 });
