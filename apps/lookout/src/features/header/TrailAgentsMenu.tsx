@@ -5,7 +5,7 @@ import { HeaderMenu } from './HeaderMenu';
 /** The trail's agents in the header: Start the trail, then one menu with what they're doing, Pause and their runs. */
 export function TrailAgentsMenu({ mapId }: { mapId: string }) {
   const agents = useTrailAgents(mapId);
-  const { state } = agents;
+  const { state, pending } = agents;
   if (!state?.on) return <StartTrail agents={agents} />;
   const runs = hostedAgents();
   return (
@@ -15,7 +15,7 @@ export function TrailAgentsMenu({ mapId }: { mapId: string }) {
         label={
           <>
             <span className={state.running ? 'agents-dot on' : 'agents-dot'} aria-hidden="true" />
-            {trailAgentsStatus(state)}
+            {trailAgentsStatus(state, pending)}
           </>
         }
       >
@@ -24,13 +24,13 @@ export function TrailAgentsMenu({ mapId }: { mapId: string }) {
             <button
               role="menuitem"
               className="header-menu-item"
-              disabled={agents.busy}
+              disabled={agents.busy || pending === 'starting'}
               onClick={() => {
                 close();
                 void agents.act(false);
               }}
             >
-              Pause agents
+              {pending === 'starting' ? 'Starting…' : 'Pause agents'}
             </button>
             {runs && (
               <a role="menuitem" className="header-menu-item" href={`${runs.href}#trail-${encodeURIComponent(mapId)}`}>

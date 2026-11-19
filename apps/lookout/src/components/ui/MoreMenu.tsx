@@ -17,8 +17,11 @@ export interface MenuItem {
 export function MoreMenu({ items, label = 'More actions' }: { items: MenuItem[]; label?: string }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLSpanElement>(null);
+  const list = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (!open) return;
+    // inside a box that scrolls (an open row on a phone), the list opens where it can be seen
+    list.current?.scrollIntoView?.({ block: 'nearest' });
     const outside = (e: MouseEvent) => {
       if (!root.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -46,7 +49,7 @@ export function MoreMenu({ items, label = 'More actions' }: { items: MenuItem[];
         ⋯
       </button>
       {open && (
-        <span className="more-list" role="menu">
+        <span className="more-list" role="menu" ref={list}>
           {items.map((i) => (
             <button
               key={i.id}

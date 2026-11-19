@@ -41,11 +41,21 @@ export function AppHome(props: {
     nav.openTicket(mapId, ticketId);
     nav.setFullTicket(true);
   };
+  // what opens only as a bubble on the map is Hands-on's: these switch to it, with the bubble open
+  const onMap = (open: (mapId: string) => void) => (mapId: string) => {
+    open(mapId);
+    props.onFullMap();
+  };
   const ctx: NeedContext | undefined = view && {
     api,
     view,
     sessions: props.sessions,
-    handlers: { ...attn.handlers, openTicket },
+    handlers: {
+      ...attn.handlers,
+      openTicket,
+      openMainChecks: onMap(attn.handlers.openMainChecks),
+      openTrailChecks: onMap(attn.handlers.openTrailChecks),
+    },
     now,
     openTicket,
     openChat: (id) => nav.openChat(id),
