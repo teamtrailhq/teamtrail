@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -21,6 +20,7 @@ import { readAttempts } from '../src/verification/evidenceStore';
 import { operatorAction } from '../src/verification/operatorActions';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
@@ -29,8 +29,8 @@ const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], 
  * flag is a flaky test, since the code doesn't change.
  */
 async function setup(flaky?: GateMode) {
-  const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-flaky-'));
-  const flag = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-flag-')), 'pass');
+  const repo = tempFolder('teamtrail-flaky-');
+  const flag = path.join(tempFolder('teamtrail-flag-'), 'pass');
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root);
   const check = `const ok = require('fs').existsSync(${JSON.stringify(flag)}); if (!ok) console.log('not ok 1 - keeps the session'); process.exit(ok ? 0 : 1)`;

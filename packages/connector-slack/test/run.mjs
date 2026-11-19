@@ -3,11 +3,12 @@
 //   node test/run.mjs record          re-record fixtures against the fake (see record.ts)
 //   node test/run.mjs serve [port]    fake Slack (Web API + Socket Mode) over HTTP for browser runs (see serve-fake.ts)
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
+import { reportLeftovers } from '../../../scripts/reportLeftovers.mjs';
+import { testTemp } from '../../../scripts/testTemp.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const out = path.resolve(here, '../../../node_modules/.cache/teamtrail-slack-tests');
@@ -35,13 +36,19 @@ await build({
 
 const files = entries.map((f) => path.join(out, f.replace(/\.ts$/, '.mjs')));
 const args = script ? [files[0], ...rest] : ['--test', '--enable-source-maps', ...files];
+// The run's temp folder (scripts/testTemp.mjs): TMPDIR for every test and what it starts, removed at the end.
+const CONFIG = 'config';
+const temp = testTemp('slack');
 // Tests never use the credentials or the config dir of whoever runs them: answers are signed with the machine key
 // kept there, so a run gets its own.
 const env = {
   ...process.env,
   TEAMTRAIL_NO_GH_CLI: '1',
-  TEAMTRAIL_CONFIG_DIR: mkdtempSync(path.join(os.tmpdir(), 'teamtrail-test-config-')),
+  ...temp.env,
+  TEAMTRAIL_CONFIG_DIR: path.join(temp.dir, CONFIG),
 };
+mkdirSync(env.TEAMTRAIL_CONFIG_DIR);
 for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) delete env[k];
 const r = spawnSync(process.execPath, args, { stdio: 'inherit', env });
-process.exit(r.status ?? 1);
+const left = reportLeftovers('slack tests', temp.finish({ expected: [CONFIG] }));
+process.exit(r.status || (left && !script ? 1 : 0));

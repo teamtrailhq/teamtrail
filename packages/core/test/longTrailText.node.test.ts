@@ -1,7 +1,4 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { test } from 'node:test';
 import { parseMapFile, serializeMapFile } from '../src/adapters/markdown/mapFile';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -15,6 +12,7 @@ import { trailTextProblem } from '../src/model/trailTextProblem';
 import type { MapDoc, MapSections } from '../src/model/types';
 import { chartMap } from '../src/planning/operations/chart';
 import { OperationError } from '../src/planning/operations/operationError';
+import { tempFolder } from './tempFolder';
 
 /*
  * A trail's destination and notes can be whole markdown documents. Every structural line of the map's own format
@@ -126,7 +124,7 @@ test('a tracker issue body reads back the same, with the real meta marker kept a
 });
 
 test('the markdown tracker writes and reads a long trail', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-long-'));
+  const root = tempFolder('teamtrail-long-');
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map: made } = await chartMap(a, {
     title: 'Long',

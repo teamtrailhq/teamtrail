@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { withMapMeta } from '../src/adapters/mapMeta';
@@ -22,6 +21,7 @@ import {
 import { readModelsConfig } from '../src/planning/matching/modelsStore';
 import { chartMap } from '../src/planning/operations/chart';
 import { chooseNext, orderNext } from '../src/planning/operations/claims';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
@@ -124,7 +124,7 @@ test('models.json is validated by hand: unknown keys and tiers are errors', () =
   ]);
   assert.deepEqual(parseModelsConfig('{"v":2}').errors, ['"v" must be 1']);
   assert.match(parseModelsConfig('{').errors[0], /not valid JSON/);
-  const root = mkdtempSync(path.join(os.tmpdir(), 'models-'));
+  const root = tempFolder('models-');
   assert.deepEqual(readModelsConfig(root), { models: {}, errors: [], exists: false });
   writeFileSync(path.join(root, 'models.json'), '{"v":1,"models":{"acme":"nope"}}');
   assert.deepEqual(readModelsConfig(root), {

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -22,6 +21,7 @@ import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { waivableChecks } from '../src/verification/waivableChecks';
 import { waiveChecks } from '../src/verification/waiveChecks';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const FAILS = [process.execPath, '-e', 'process.exit(1)'];
@@ -29,7 +29,7 @@ const PASSES = [process.execPath, '-e', 'process.exit(0)'];
 
 /** A repo whose one execute ticket has a `test` check that can't pass and an `ok` one that does. */
 async function setup(maxAttempts = 1) {
-  const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-waive-'));
+  const repo = tempFolder('teamtrail-waive-');
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root);
   const checks = { test: { run: FAILS }, ok: { run: PASSES } };

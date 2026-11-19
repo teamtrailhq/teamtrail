@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
+import { tempFolder } from '../../core/test/tempFolder';
 import { flushBatches } from '../src/service/notifications';
 import { queueLine } from '../src/service/queueLine';
 import type { SlackContext } from '../src/service/slackContext';
@@ -23,7 +23,7 @@ function fakeContext(root: string, clock: { now: number }) {
 }
 
 test('the Slack digest follows digestMinutes in attention.json, re-read on every flush', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-digest-'));
+  const root = tempFolder('teamtrail-digest-');
   try {
     const clock = { now: 1_000_000 };
     const { ctx, posts } = fakeContext(root, clock);

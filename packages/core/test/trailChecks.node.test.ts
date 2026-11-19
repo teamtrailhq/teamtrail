@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -24,6 +23,7 @@ import { trustKey, trustLedger } from '../src/trust/trustLedger';
 import type { CheckRunner, MainRunJob } from '../src/verification/checkRunner';
 import { writeAttempt } from '../src/verification/evidenceStore';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 /** Fails once a.txt and b.txt are both on main: each branch passes alone, the two together break. */
@@ -41,7 +41,7 @@ const git = (...a: string[]) =>
     .trim();
 
 before(() => {
-  repo = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-trail-checks-')), 'app');
+  repo = path.join(tempFolder('teamtrail-trail-checks-'), 'app');
   root = path.join(repo, '.teamtrail');
   mkdirSync(root, { recursive: true });
   writeFileSync(path.join(repo, '.gitignore'), '.teamtrail\n');

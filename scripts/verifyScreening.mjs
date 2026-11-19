@@ -4,9 +4,9 @@
 // and quiets the warning. Nothing runs. Waits on what the user sees.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 /** Starts the built Lookout in `cwd` and resolves with its address and sign-in link. */
 async function startLookout(cli, cwd) {
@@ -27,7 +27,7 @@ async function startLookout(cli, cwd) {
 
 /** A git repo whose package.json has a `test` and a `web:lint` script and no other. */
 function scratchRepo() {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-screen-e2e-'));
+  const top = e2eTemp('teamtrail-screen-e2e-');
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   git('init', '-q', '-b', 'main');
   fs.writeFileSync(

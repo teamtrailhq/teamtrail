@@ -1,7 +1,4 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
@@ -14,6 +11,7 @@ import { proofStatus } from '../src/proof/proofStatus';
 import { publishProofs } from '../src/proof/publishProofs';
 import { verifyProofText } from '../src/proof/verifyProofText';
 import { writeAttempt } from '../src/verification/evidenceStore';
+import { tempFolder } from './tempFolder';
 
 const SHA_A = 'a'.repeat(40);
 const SHA_C = 'c'.repeat(40);
@@ -38,7 +36,7 @@ function memoryPublisher() {
 
 /** One trail with one done ticket; `git: false` records its completion without git evidence (no commit named). */
 async function doneTicket(o: { git: boolean }) {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-proof-life-'));
+  const root = tempFolder('teamtrail-proof-life-');
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(a, {
     title: 'Checkout',

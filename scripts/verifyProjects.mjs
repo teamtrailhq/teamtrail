@@ -4,11 +4,11 @@
 // never the user's. Waits on what the user sees, never on sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { approveSkipInLookout, handsOn, lookoutLinks, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 function repo(top, name) {
   const dir = path.join(top, name);
@@ -49,7 +49,7 @@ async function agent(cli, cwd, env) {
 }
 
 export async function verifyProjects({ browser, cli, log, shots }) {
-  const top = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-projects-e2e-')));
+  const top = fs.realpathSync(e2eTemp('teamtrail-projects-e2e-'));
   const config = path.join(top, 'config');
   const env = { ...process.env, TEAMTRAIL_CONFIG_DIR: config };
   handsOn(env.TEAMTRAIL_CONFIG_DIR);

@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { journalFile } from '../src/history/journalFile';
@@ -9,10 +8,11 @@ import { thisMachineOnly } from '../src/server/thisMachineRoutes';
 import { checksApproval, trustedChecks } from '../src/verification/checksApproval';
 import { setChecks, StaleChecks } from '../src/verification/setChecks';
 import { setScope } from '../src/verification/setScope';
+import { tempFolder } from './tempFolder';
 
 /* What a change outside the files an agent declared does, as the trail lead sets it in Settings → Verification. */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-setscope-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-setscope-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

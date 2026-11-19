@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { appendFileSync, mkdirSync, mkdtempSync } from 'node:fs';
+import { appendFileSync, mkdirSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -11,6 +10,7 @@ import { journalFile, journalPath } from '../src/history/journalFile';
 import { PROOF_POST_JOURNAL } from '../src/model/proofPost';
 import { chartMap } from '../src/planning/operations/chart';
 import { thisMachineOnly } from '../src/server/thisMachineRoutes';
+import { tempFolder } from './tempFolder';
 
 let server: http.Server;
 let bridge: TrackerBridge;
@@ -20,7 +20,7 @@ let ids: { mapId: string; ticketId: string };
 let adapter: MarkdownAdapter;
 
 before(async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-proofroutes-'));
+  const tmp = tempFolder('teamtrail-proofroutes-');
   root = path.join(tmp, '.teamtrail');
   mkdirSync(root);
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);

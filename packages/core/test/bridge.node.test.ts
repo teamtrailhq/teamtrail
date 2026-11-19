@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import type { TrackerSettings, TrackerTestResult } from '../src/adapters/remote/types';
 import { createTrackerBridge, type TrackerBridge } from '../src/bridge';
 import { parseGitHubRemote, resolveGitHubToken, resolveLinearKey } from '../src/server/trackerConfig';
 import { fakeGitHub } from './fakes/github';
+import { tempFolder } from './tempFolder';
 
 const GH_TOKEN = 'gho_from_gh_cli_0000';
 const PASTED = 'github_pat_pasted_1111';
@@ -19,7 +19,7 @@ let trackerDir: string;
 const fake = fakeGitHub({ repo: 'octo-org/launchpad' });
 
 before(async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-bridge-'));
+  const tmp = tempFolder('teamtrail-bridge-');
   configDir = path.join(tmp, 'config');
   trackerDir = path.join(tmp, 'repo', '.teamtrail');
   const exec = async (cmd: string, args: string[]) => {

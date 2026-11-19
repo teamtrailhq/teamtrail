@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import type { TrackerAdapter } from '../src/adapters/adapter';
@@ -22,12 +21,13 @@ import { watchVerification } from '../src/server/watchVerification';
 import { writeAttempt } from '../src/verification/evidenceStore';
 import { fakeGitHubPulls } from './fakes/githubPulls';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const TOKEN = 'ghp_FAKEtoken0123456789abcdefghijkl';
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const SHA_A = 'a'.repeat(40);
 const SHA_B = 'b'.repeat(40);
-const tmp = () => mkdtempSync(path.join(os.tmpdir(), 'teamtrail-ghev-'));
+const tmp = () => tempFolder('teamtrail-ghev-');
 const gitOf = (branch: string | null, head: string): GitEvidence => ({
   v: 1,
   tree: { toplevel: '/repo', head, branch, fingerprint: 'sha256:0' },

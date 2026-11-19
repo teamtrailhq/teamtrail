@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, symlinkSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -7,11 +7,12 @@ import type { CheckSpec } from '../src/model/verification';
 import { parseVerificationConfig } from '../src/verification/config';
 import { checkPassed, MAX_LOG_BYTES, runCheck, type CheckRun } from '../src/verification/runCheck';
 import { runChecks } from '../src/verification/runChecks';
+import { tempFolder } from './tempFolder';
 
 const node = (code: string, timeoutSec = 30): CheckSpec => ({ run: [process.execPath, '-e', code], timeoutSec });
 
 function setup(): CheckRun & { tracker: string } {
-  const repoRoot = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-checks-'));
+  const repoRoot = tempFolder('teamtrail-checks-');
   const tracker = path.join(repoRoot, '.teamtrail');
   return { repoRoot, tracker, logDir: path.join(tracker, 'logs'), logRel: 'logs' };
 }

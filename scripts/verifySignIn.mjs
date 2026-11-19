@@ -5,9 +5,9 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { handsOn, lookoutLinks, pairLink, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 import { verifyLoopback } from './verifyLoopback.mjs';
 import { verifyOpenSignedIn } from './verifyOpenSignedIn.mjs';
 
@@ -160,7 +160,7 @@ async function devicePairing({ browser, page, shots }) {
 }
 
 export async function verifySignIn({ browser, cli, log, shots }) {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-sign-in-e2e-'));
+  const top = e2eTemp('teamtrail-sign-in-e2e-');
   fs.mkdirSync(path.join(top, '.teamtrail'));
   const env = { ...process.env, TEAMTRAIL_CONFIG_DIR: path.join(top, 'config') };
   handsOn(env.TEAMTRAIL_CONFIG_DIR);

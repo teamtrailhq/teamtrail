@@ -10,11 +10,11 @@
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import { handsOn, lookoutLinks, responseGate, sessionHeaders, shootThemes, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const TOKEN = 'gho_e2e_never_shown_7f3a';
@@ -258,7 +258,7 @@ async function signInSteps({ browser, cli, shots, top, fake }) {
 }
 
 export async function verifyGitHub({ browser, cli, log, shots }) {
-  const top = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-github-e2e-')));
+  const top = fs.realpathSync(e2eTemp('teamtrail-github-e2e-'));
   const fake = await serveFake(top);
   try {
     const picker = await pickerSteps({ browser, cli, shots, top, fake });

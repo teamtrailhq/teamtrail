@@ -5,6 +5,7 @@
  */
 import { LATER_RELEASES } from './laterReleases';
 import { MID_RELEASES } from './midReleases';
+import { NEWER_RELEASES } from './newerReleases';
 import { OLDER_RELEASES } from './olderReleases';
 
 export interface Release {
@@ -21,6 +22,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 ];
 
 export const RELEASES: Release[] = [
+  {
+    version: '0.66.12',
+    date: '2026-11-19',
+    items: ['Running the tests no longer leaves folders behind in the temp folder'],
+  },
   {
     version: '0.66.10',
     date: '2026-11-19',
@@ -184,23 +190,7 @@ export const RELEASES: Release[] = [
       'In Teamtrail Cloud, a trail is checked on exactly the commit Teamtrail names on main',
     ],
   },
-  {
-    version: '0.61.1',
-    date: '2026-11-18',
-    items: [
-      'A trail with many tickets side by side lays them out in a grid, in order of number, instead of one tall column',
-    ],
-  },
-  {
-    version: '0.61.0',
-    date: '2026-11-18',
-    items: [
-      "A pass counts only when the work didn't change what the check runs, skip or delete tests, or pass only on a retry",
-      'A trail is verified only when your checks pass again on main with every ticket merged',
-      'Reviews go first to an agent on another model, and rules you write ask agents about the files they touch',
-      'Settings → This trail → Gates: try each gate in Observe first; the scorecard shows verified work that came back',
-    ],
-  },
+  ...NEWER_RELEASES,
   ...LATER_RELEASES,
   ...MID_RELEASES,
   ...OLDER_RELEASES,

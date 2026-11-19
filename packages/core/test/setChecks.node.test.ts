@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { journalFile } from '../src/history/journalFile';
 import { TRUST_JOURNAL } from '../src/model/lifecycle';
 import { checksApproval, trustedChecks } from '../src/verification/checksApproval';
 import { setChecks, StaleChecks } from '../src/verification/setChecks';
+import { tempFolder } from './tempFolder';
 
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-setchecks-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-setchecks-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };
@@ -82,7 +82,7 @@ test('refused: code in the argv, a download, a shell, bad names; an unknown prog
 
 test('never through a symbolic link', () => {
   const root = tmpRoot();
-  const elsewhere = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-elsewhere-')), 'target.json');
+  const elsewhere = path.join(tempFolder('teamtrail-elsewhere-'), 'target.json');
   writeFileSync(elsewhere, '{"v":1,"checks":{},"run":[]}\n');
   symlinkSync(elsewhere, file(root));
   const base = checksApproval(root).hash;

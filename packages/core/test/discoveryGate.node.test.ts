@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -18,6 +17,7 @@ import { approveTrust } from '../src/trust/approveTrust';
 import { pendingTrust } from '../src/trust/pendingTrust';
 import { trustKey, trustLedger } from '../src/trust/trustLedger';
 import { withCommitted } from '../src/trust/withCommitted';
+import { tempFolder } from './tempFolder';
 
 /*
  * Whether a trail still requires discovery is this machine's fact: every trail does unless the trail lead skipped it
@@ -38,7 +38,7 @@ const EMPTY = {
 const MISSING = /the brief file is missing; only the trail lead can skip discovery/;
 
 async function trail(withBrief: boolean) {
-  const repo = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-gate-'));
+  const repo = tempFolder('teamtrail-gate-');
   const root = path.join(repo, '.teamtrail');
   mkdirSync(root, { recursive: true });
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);

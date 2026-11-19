@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -26,8 +25,9 @@ import { projectSummary } from '../src/projects/projectSummary';
 import { registerProject, unregisterProject } from '../src/projects/registerProject';
 import { trackerPin } from '../src/server/trackerPin';
 import { pairedSignIn } from './fakes/signedIn';
+import { tempFolder } from './tempFolder';
 
-const tmp = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-projects-')));
+const tmp = realpathSync(tempFolder('teamtrail-projects-'));
 const configDir = path.join(tmp, 'config');
 const now = Date.now();
 

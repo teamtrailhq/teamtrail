@@ -4,7 +4,6 @@
 // drops the check instead, and completions there stop running it. Waits on what the user sees, never on sleeps.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -16,6 +15,7 @@ import {
   sessionHeaders,
   signInWith,
 } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
@@ -26,7 +26,7 @@ const CHECK = `if (!require('fs').existsSync('title.txt')) {
 }`;
 
 function scratchRepo() {
-  const top = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-main-e2e-')), 'app');
+  const top = path.join(e2eTemp('teamtrail-main-e2e-'), 'app');
   fs.mkdirSync(path.join(top, '.teamtrail'), { recursive: true });
   fs.writeFileSync(path.join(top, 'check.js'), CHECK);
   fs.writeFileSync(path.join(top, '.gitignore'), '.teamtrail\n');

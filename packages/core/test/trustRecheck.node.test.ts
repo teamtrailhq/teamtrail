@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -16,12 +15,13 @@ import { pendingTrust } from '../src/trust/pendingTrust';
 import { operatorAction } from '../src/verification/operatorActions';
 import { levelFor } from '../src/verification/verifyCompletion';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 /*
  * The re-check of PR #60 (N2, N3, the nit). Each test failed before its fix.
  */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-recheck-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-recheck-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };
