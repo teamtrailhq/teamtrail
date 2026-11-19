@@ -23,6 +23,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.13',
+    date: '2026-11-19',
+    items: ["Checking a proof finds the repo's proof keys when the repo is reached through a symbolic link"],
+  },
+  {
     version: '0.66.12',
     date: '2026-11-19',
     items: [
