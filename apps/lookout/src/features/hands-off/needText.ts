@@ -15,6 +15,7 @@ const QUICK: Partial<Record<AttentionKind, string>> = {
   merge: 'Merge',
   integration: 'Settle',
   'tracker-settings': 'Settle',
+  'tracker-refused': 'Settle',
   delivery: 'Fix',
 };
 

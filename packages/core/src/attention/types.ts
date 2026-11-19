@@ -1,4 +1,5 @@
 import type { UnacceptedSettings } from '../adapters/remote/settingsInForce';
+import type { RefusedWrite } from '../adapters/remote/sync/types';
 import type { PendingTracker } from '../adapters/remote/types';
 import type { TicketLease } from '../agents/ticketLease';
 import type { CriteriaWaiting } from '../criteria/criteriaHeld';
@@ -57,6 +58,8 @@ export interface AttentionInput {
   deliveries?: DeliveryProblem[];
   /** Settings someone else wrote into a tracked issue that this machine hasn't accepted. Missing: none. */
   trackerSettings?: UnacceptedSettings[];
+  /** Writes GitHub or Linear refused for good, kept on this machine (adapters/remote/refusedWrites.ts). Missing: none. */
+  trackerRefused?: RefusedWrite[];
   /** When the record of accepted tracker settings last couldn't be written (it was locked). Missing: never. */
   trackerSettingsSkipped?: number;
   /** What the repo's files ask this machine to trust, not approved here (trust/pendingTrust.ts). Missing: none. */
@@ -79,7 +82,7 @@ export interface AttentionInput {
 /** What a source says about one thing that needs the human; scoring and batching turn it into an item. */
 export interface Candidate extends Pick<
   AttentionItem,
-  'kind' | 'mapId' | 'ticketId' | 'title' | 'since' | 'urgency' | 'ref' | 'agent' | 'rule'
+  'kind' | 'mapId' | 'ticketId' | 'title' | 'since' | 'urgency' | 'ref' | 'agent' | 'rule' | 'url'
 > {
   /** Tickets that can't move until this is handled; their open dependents count too. */
   holds: string[];

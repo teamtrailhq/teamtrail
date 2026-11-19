@@ -1,4 +1,5 @@
 import type { TrackerAdapter } from '../adapters/adapter';
+import type { WriteAuthor } from '../adapters/remote/sync/types';
 import { overrideUrl } from '../lib/overrideUrl';
 import { BRAND } from '../model/brand';
 import type { PeerAddress } from './requestGuard';
@@ -32,6 +33,8 @@ export interface TrackerRoutesOptions {
    * the trail and ask.
    */
   unapproved?: 'refuse' | 'stay';
+  /** Who makes this process's tracker writes (an MCP agent), kept on writes queued for GitHub or Linear. */
+  author?: () => WriteAuthor | undefined;
 }
 
 /** Configuration, credentials and lookups shared by the tracker routes. */

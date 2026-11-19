@@ -1,6 +1,6 @@
 import type { AttentionItem } from '@teamtrail/core';
 import { Button } from '../../components/ui';
-import { detailReasons, openItem } from '../attention';
+import { detailReasons, ItemAction, openItem } from '../attention';
 import { NeedWhy } from './NeedWhy';
 import type { NeedContext } from './types';
 
@@ -28,6 +28,7 @@ export function ItemBody({ item, ctx }: { item: AttentionItem; ctx: NeedContext 
   return (
     <>
       <NeedWhy parts={reasons} />
+      <ItemAction item={item} />
       <div className="home-need-links">
         {label && (
           <Button size="sm" variant="primary" onClick={() => openItem(item, ctx.handlers)}>

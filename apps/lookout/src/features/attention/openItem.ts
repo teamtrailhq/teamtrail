@@ -41,6 +41,7 @@ const TICKET_KINDS = new Set<AttentionItem['kind']>([
   'integration',
   'model',
   'tracker-settings',
+  'tracker-refused',
 ]);
 
 /** Opens the place where the human handles the item: the ticket for ticket kinds, else its own view. */

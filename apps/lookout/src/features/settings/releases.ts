@@ -22,6 +22,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.11',
+    date: '2026-11-19',
+    items: [
+      'GitHub and Linear: a write the tracker refuses for good (lost access, a deleted issue) waits for you in the queue, with Retry and Discard',
+    ],
+  },
+  {
     version: '0.66.10',
     date: '2026-11-19',
     items: ['Settings no longer has an About page'],
@@ -189,16 +196,6 @@ export const RELEASES: Release[] = [
     date: '2026-11-18',
     items: [
       'A trail with many tickets side by side lays them out in a grid, in order of number, instead of one tall column',
-    ],
-  },
-  {
-    version: '0.61.0',
-    date: '2026-11-18',
-    items: [
-      "A pass counts only when the work didn't change what the check runs, skip or delete tests, or pass only on a retry",
-      'A trail is verified only when your checks pass again on main with every ticket merged',
-      'Reviews go first to an agent on another model, and rules you write ask agents about the files they touch',
-      'Settings → This trail → Gates: try each gate in Observe first; the scorecard shows verified work that came back',
     ],
   },
   ...LATER_RELEASES,
