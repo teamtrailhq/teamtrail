@@ -5,8 +5,8 @@
  */
 import { LATER_RELEASES } from './laterReleases';
 import { MID_RELEASES } from './midReleases';
+import { RELEASES_061 } from './newerReleases';
 import { OLDER_RELEASES } from './olderReleases';
-import { RECENT_RELEASES } from './recentReleases';
 
 export interface Release {
   version: string;
@@ -27,6 +27,15 @@ export const RELEASES: Release[] = [
     date: '2026-11-19',
     items: [
       'Two answers to the same question at once (the Lookout and Slack, or two people): the first is the one used everywhere, and the other is kept in the conversation as "also answered, not used"',
+    ],
+  },
+  {
+    version: '0.66.11',
+    date: '2026-11-19',
+    items: [
+      "A ticket's pull request block has Link a different PR and Unlink; a PR you link stays linked",
+      'Closing or reopening a ticket updates its pull request and the review queue within seconds',
+      "Removing a ticket takes its proof's green status off its pull request",
     ],
   },
   {
@@ -183,7 +192,7 @@ export const RELEASES: Release[] = [
       'Legend has a background, like Fit',
     ],
   },
-  ...RECENT_RELEASES,
+  ...RELEASES_061,
   ...LATER_RELEASES,
   ...MID_RELEASES,
   ...OLDER_RELEASES,
