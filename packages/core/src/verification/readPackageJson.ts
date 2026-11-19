@@ -4,6 +4,8 @@ import { repoPath } from './repoPath';
 /** The parts of a package.json screening reads. */
 export interface PackageFacts {
   scripts: Set<string>;
+  /** Each script's command line, by name. */
+  scriptLines: Map<string, string>;
   deps: Set<string>;
 }
 
@@ -22,8 +24,11 @@ export async function readPackageJson(files: RepoFiles, dir: string): Promise<Pa
   }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return 'invalid';
   const pkg = raw as Record<string, unknown>;
+  const scripts = keysOf(pkg.scripts).length ? (pkg.scripts as Record<string, unknown>) : {};
+  const lines = Object.entries(scripts).filter((e): e is [string, string] => typeof e[1] === 'string');
   return {
     scripts: new Set(keysOf(pkg.scripts)),
+    scriptLines: new Map(lines),
     deps: new Set(DEP_FIELDS.flatMap((f) => keysOf(pkg[f]))),
   };
 }

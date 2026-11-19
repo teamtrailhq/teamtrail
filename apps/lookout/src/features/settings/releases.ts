@@ -23,6 +23,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.19',
+    date: '2026-11-19',
+    items: [
+      "Check screening knows more stacks: Gradle and Maven wrappers, Python's uv, Poetry and Pipenv, Bundler, Composer, bun, turbo and Nx, Swift, Mix and Dart, and the workspace `-w` or `--filter` names",
+      "A check that needs something not installed yet says so (`ng` isn't installed: no node_modules in apps/web), apart from a script that doesn't exist",
+      'Checks may run a known tool through `uv run --frozen`, `poetry run`, `pipenv run`, `bundle exec`, `pnpm exec` or `npx --no`; anything that would download stays refused',
+    ],
+  },
+  {
     version: '0.66.18',
     date: '2026-11-19',
     items: [
@@ -174,27 +183,6 @@ export const RELEASES: Release[] = [
       'Criteria charted with a ticket are yours to confirm before any agent starts it',
       'Every proof gap says who is on it, and what closes it when it is yours: Confirm criteria and verify again, Approve, Send to rework',
       'The pull request up top in the ticket and on its map card; the full ticket’s actions sit flush at the bottom',
-    ],
-  },
-  {
-    version: '0.64.3',
-    date: '2026-11-18',
-    items: [
-      'Fix: a trail whose discovery research is done no longer shows Destination reached before its plan is charted',
-      'Fix: trails and tickets created at the same time never get the same number',
-    ],
-  },
-  {
-    version: '0.64.2',
-    date: '2026-11-18',
-    items: ['Two trails with the same title no longer share a folder'],
-  },
-  {
-    version: '0.64.1',
-    date: '2026-11-18',
-    items: [
-      'Fix: what you open while the Lookout is still loading stays open; what needs you no longer opens over it on its own',
-      'Fix: changing a gate twice in quick succession no longer refuses the second change as stale',
     ],
   },
   ...NEWER_RELEASES,
