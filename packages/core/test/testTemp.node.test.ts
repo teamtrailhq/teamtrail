@@ -1,15 +1,22 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
+// @ts-expect-error: a plain .mjs script, shared with the runners
+import { runInTemp } from '../../../scripts/runInTemp.mjs';
 // @ts-expect-error: a plain .mjs script, shared with the runners
 import { testTemp } from '../../../scripts/testTemp.mjs';
 import { tempFolder } from './tempFolder';
 
 // Child mode: this same bundled file, re-run with TEMP_CHILD, makes a folder and a worktree folder next to it, says
 // where, and fails.
-if (process.env.TEMP_CHILD) {
+if (process.env.RUN_CHILD) {
+  // A runner (like `run.mjs serve`) whose command runs until it is stopped; says when it has started.
+  const command = process.execPath;
+  const args = ['-e', "process.stdout.write('up'); setInterval(() => {}, 1000)"];
+  process.exit(await runInTemp({ label: 'unit', command, args, env: () => process.env, strict: false }));
+} else if (process.env.TEMP_CHILD) {
   const dir = tempFolder('teamtrail-temp-child-');
   mkdirSync(`${dir}.teamtrail`);
   writeFileSync(path.join(dir, 'file'), 'x');
@@ -61,5 +68,19 @@ if (process.env.TEMP_CHILD) {
     assert.equal(existsSync(dead), false);
     assert.equal(existsSync(live), true);
     assert.equal(existsSync(other), true);
+  });
+
+  test('a runner stopped by a signal with its process group still removes its run folder', async () => {
+    const base = tempFolder('teamtrail-temp-signal-');
+    const runner = spawn(process.execPath, [process.argv[1]], {
+      env: { ...process.env, RUN_CHILD: '1', TEAMTRAIL_REAL_TMPDIR: base },
+      detached: true,
+    });
+    const exited = new Promise((resolve) => runner.on('exit', resolve));
+    await new Promise<void>((resolve) => runner.stdout!.on('data', () => resolve()));
+    assert.equal(readdirSync(base).length, 1);
+    process.kill(-runner.pid!, 'SIGTERM');
+    await exited;
+    assert.deepEqual(readdirSync(base), []);
   });
 }

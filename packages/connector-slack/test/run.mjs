@@ -2,13 +2,11 @@
 //   node test/run.mjs                 run every *.node.test.ts
 //   node test/run.mjs record          re-record fixtures against the fake (see record.ts)
 //   node test/run.mjs serve [port]    fake Slack (Web API + Socket Mode) over HTTP for browser runs (see serve-fake.ts)
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
-import { reportLeftovers } from '../../../scripts/reportLeftovers.mjs';
-import { testTemp } from '../../../scripts/testTemp.mjs';
+import { runInTemp } from '../../../scripts/runInTemp.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const out = path.resolve(here, '../../../node_modules/.cache/teamtrail-slack-tests');
@@ -36,19 +34,23 @@ await build({
 
 const files = entries.map((f) => path.join(out, f.replace(/\.ts$/, '.mjs')));
 const args = script ? [files[0], ...rest] : ['--test', '--enable-source-maps', ...files];
-// The run's temp folder (scripts/testTemp.mjs): TMPDIR for every test and what it starts, removed at the end.
+// Tests never use the credentials or the config dir of whoever runs them: approvals, answers signed with the
+// machine key, the projects registry go to a folder of this run. That folder and TMPDIR for every test (and whatever
+// it starts) are the run's temp folder (scripts/runInTemp.mjs), removed at the end, also when stopped by a signal.
 const CONFIG = 'config';
-const temp = testTemp('slack');
-// Tests never use the credentials or the config dir of whoever runs them: answers are signed with the machine key
-// kept there, so a run gets its own.
-const env = {
-  ...process.env,
-  TEAMTRAIL_NO_GH_CLI: '1',
-  ...temp.env,
-  TEAMTRAIL_CONFIG_DIR: path.join(temp.dir, CONFIG),
+const env = (dir) => {
+  const e = { ...process.env, TEAMTRAIL_NO_GH_CLI: '1', TEAMTRAIL_CONFIG_DIR: path.join(dir, CONFIG) };
+  for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) delete e[k];
+  mkdirSync(e.TEAMTRAIL_CONFIG_DIR);
+  return e;
 };
-mkdirSync(env.TEAMTRAIL_CONFIG_DIR);
-for (const k of ['GITHUB_TOKEN', 'GH_TOKEN', 'LINEAR_API_KEY']) delete env[k];
-const r = spawnSync(process.execPath, args, { stdio: 'inherit', env });
-const left = reportLeftovers('slack tests', temp.finish({ expected: [CONFIG] }));
-process.exit(r.status || (left && !script ? 1 : 0));
+process.exit(
+  await runInTemp({
+    label: 'slack',
+    command: process.execPath,
+    args,
+    env,
+    expected: [CONFIG],
+    strict: !script,
+  }),
+);
