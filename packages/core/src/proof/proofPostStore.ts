@@ -1,3 +1,4 @@
+import { readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { readJsonFile, writeJsonAtomic } from '../lib/jsonFile';
@@ -21,4 +22,35 @@ export function readProofPost(root: string, mapId: string, ticketId: string) {
 export function writeProofPost(root: string, r: ProofPostRecord) {
   ensureLocalDir(path.join(root, EVIDENCE_DIR));
   writeJsonAtomic(file(root, r.mapId, r.ticketId), r);
+}
+
+export function dropProofPost(root: string, mapId: string, ticketId: string) {
+  rmSync(file(root, mapId, ticketId), { force: true });
+}
+
+/** Every ticket's post record, in every trail's evidence folder, each read from its own ticket's folder only. */
+export function readProofPosts(root: string): ProofPostRecord[] {
+  const dirs = (dir: string) => {
+    try {
+      return readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory());
+    } catch {
+      return [];
+    }
+  };
+  const base = path.join(root, EVIDENCE_DIR);
+  const out: ProofPostRecord[] = [];
+  for (const m of dirs(base))
+    for (const t of dirs(path.join(base, m.name))) {
+      const r = readJsonFile<ProofPostRecord>(path.join(base, m.name, t.name, 'proof-post.json'));
+      const here = `${EVIDENCE_DIR}/${m.name}/${t.name}`;
+      // only a record in its own ticket's folder: one can't speak for another ticket
+      if (
+        r?.v === 1 &&
+        typeof r.mapId === 'string' &&
+        typeof r.ticketId === 'string' &&
+        evidencePaths.ticket(r.mapId, r.ticketId) === here
+      )
+        out.push(r);
+    }
+  return out;
 }

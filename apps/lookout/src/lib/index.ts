@@ -7,6 +7,8 @@ export { STATE_LABEL, STATE_TEXT, TYPE_TEXT } from './labels';
 export { heldLeases } from './leases';
 export { TRAIL_LEAD } from './operator';
 export { prSync, type PrSyncSnapshot, worstFlag } from './prSync';
+export { loadPrChoices, setPrLink } from './prLink';
+export { prNumberOf, type PrInput } from './prNumberOf';
 export { loadPrefs, type Prefs, type TrackerChoice } from './prefs';
 export { applyTheme, type ThemeChoice } from './theme';
 export { createRuntime, type Runtime, trackerKind } from './runtime';
