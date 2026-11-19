@@ -2,7 +2,7 @@ import type { AnsweredQuestion, LookoutMode, MapDoc, MapMode, MapSnapshot, Model
 import type { Prefs, TrackerChoice } from '../../lib';
 
 /** The groups of the Settings page, in side-nav order. */
-export type SettingsGroupId = 'trail' | 'project' | 'alerts' | 'you' | 'projects' | 'about';
+export type SettingsGroupId = 'trail' | 'project' | 'alerts' | 'you' | 'projects';
 
 /** One section inside a group; `?settings=<section>` opens its group scrolled to it. */
 export type SettingsSectionId =
@@ -28,8 +28,7 @@ export type SettingsSectionId =
   | 'transcript'
   | 'agent'
   | 'devices'
-  | 'projects'
-  | 'changelog';
+  | 'projects';
 
 /** Where a section's setting lives: committed with the repo, in this machine's config, or in this browser. */
 export type SettingsStorage = 'repo' | 'machine' | 'browser';

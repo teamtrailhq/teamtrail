@@ -15,7 +15,7 @@ describe('Settings routes', () => {
 
   it('opens a group by its id', () => {
     expect(parseSettingsRoute('alerts')).toEqual({ group: 'alerts' });
-    expect(parseSettingsRoute('about')).toEqual({ group: 'about' });
+    expect(parseSettingsRoute('about')).toEqual({});
   });
 
   it('keeps the existing deep links: slack and guides land in their group, at their section', () => {

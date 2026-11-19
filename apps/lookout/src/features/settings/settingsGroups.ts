@@ -59,10 +59,4 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     intro: 'Every repo this Lookout knows, so you can switch between them from the header.',
     sections: [{ id: 'projects', title: 'Projects' }],
   },
-  {
-    id: 'about',
-    label: 'About',
-    intro: 'What Teamtrail is, and what changed in each release.',
-    sections: [{ id: 'changelog', title: 'Changelog' }],
-  },
 ];
