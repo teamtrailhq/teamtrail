@@ -50,9 +50,10 @@ test('only answers given in the Lookout stand in for the human on a high-risk ca
   assert.equal(approvesHighRisk(undefined), false);
 });
 
-test('a chat answer is delivered, labelled chat and with the agent whose chat it was', async () => {
+test('a chat answer is delivered as guidance, labelled chat and with the agent whose chat it was', async () => {
   const root = tmpRoot();
   const a = asking(root);
+  const guided = a.activity.awaitGuidance(a.q.id);
   writeAgentAnswer(root, {
     sessionId: 's_1',
     questionId: a.q.id,
@@ -61,14 +62,13 @@ test('a chat answer is delivered, labelled chat and with the agent whose chat it
     via: 'chat',
     chatOf: 'claude-02',
   });
-  await wait(80);
+  const got = await Promise.race([guided, wait(500).then(() => undefined)]);
   a.writer.close();
-  assert.equal(a.answered(), 'Yes', 'the asking agent gets it');
-  assert.deepEqual(
-    { via: a.activity.snapshot.answered[0].via, chatOf: a.activity.snapshot.answered[0].chatOf },
-    { via: 'chat', chatOf: 'claude-02' },
-  );
+  assert.deepEqual(got && { text: got.text, chatOf: got.chatOf }, { text: 'Yes', chatOf: 'claude-02' });
+  assert.equal(a.answered(), undefined, 'it is not the answer: the question stays open for the human');
+  assert.equal(a.activity.snapshot.pending[0]?.guidance?.text, 'Yes');
   assert.equal(a.activity.snapshot.chats.at(-1)?.via, 'chat');
+  assert.equal(a.activity.snapshot.chats.at(-1)?.guidance, true);
   assert.equal(a.activity.snapshot.chats.at(-1)?.answers, a.q.id, 'the answer names the question it answers');
 });
 
