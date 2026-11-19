@@ -163,3 +163,42 @@ export interface CiProvider {
   /** Checks on commit `sha`; every name in `required` appears, as `UNKNOWN` when the host has no result for it. */
   checks(sha: string, required: string[]): Promise<CiCheck[]>;
 }
+
+/**
+ * The trail lead linking a pull request to a ticket by hand, or unlinking one, in the trail's history
+ * (`.events/<mapId>.jsonl`). A hand link is never moved by the reconciler; an unlinked PR is never linked again
+ * except by hand.
+ */
+export interface PrLinkEntry {
+  v: 1;
+  kind: 'pr-link';
+  at: number;
+  mapId: string;
+  ticketId: string;
+  ticketKey: string;
+  action: 'linked' | 'unlinked';
+  /** The PR linked, or the one unlinked. */
+  pr: number;
+  /** The PR the ticket was linked to before a hand link, when another. */
+  was?: number;
+  actor: string;
+  actorKind: 'trail lead';
+  reason?: string;
+}
+
+/**
+ * A pull request the trail lead can link a ticket to (`GET /verification/sync/candidates`): the ticket's own first
+ * (its branch, or a marker naming it), then open, merged and closed ones, newest first. Title and branch are
+ * untrusted, as in PullRequestSnapshot.
+ */
+export interface PrChoice {
+  number: number;
+  url: string;
+  title: string;
+  state: PrState;
+  draft: boolean;
+  headRef: string;
+  updatedAt: number;
+  /** Its head is the ticket's branch, or its body or branch name names the ticket. */
+  forTicket: boolean;
+}

@@ -12,6 +12,7 @@ import { summarizeChecks } from './github/checkState';
 import { mismatchFlags } from './mismatchFlags';
 import { recent, type ReconcileMemo } from './reconcileMemo';
 import { appendFlagEntry, dropOrphanSyncs, readTicketSync, writeTicketSync } from './syncStore';
+import { readUnlinked } from './unlinkedStore';
 
 export interface ReconcileEnv {
   /** Tracker folder: `.evidence/` and `.events/` live here. */
@@ -47,7 +48,8 @@ async function reconcileTicket(c: TicketContext): Promise<TicketSync | undefined
   const { env, mapId, t, now } = c;
   const prev = readTicketSync(env.root, mapId, t.id);
   const refs = ticketRefs(readAttempts(env.root, mapId, t.id));
-  const { link, replaced } = await findLink(c.scope, { mapId, ticketId: t.id, prev, refs });
+  const unlinked = readUnlinked(env.root, mapId, t.id);
+  const { link, replaced } = await findLink(c.scope, { mapId, ticketId: t.id, prev, refs, unlinked });
   if (!link) return undefined;
   const { pr, checks } = await readPr(c, prev, link);
   const checksSummary = summarizeChecks(checks);
