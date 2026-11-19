@@ -30,12 +30,28 @@ export const approvesGates = (via: AnswerVia | undefined): boolean =>
 export const approvesHighRisk = (via: AnswerVia | undefined): boolean => via === 'lookout';
 
 /**
- * Where the answer was given, for transcripts: "in claude-01's chat", or nothing for the Lookout and Slack. An answer
- * that came after the one used says so: "also answered, not used".
+ * Whether an answer given this way is the question's answer: it closes the question, and it is the one used
+ * everywhere. A chat answer doesn't: it is delivered to the agent as guidance and the question stays open for the
+ * human's answer in the Lookout or Slack, so a chat answer never takes the place of theirs (agentDocWriter.ts). An
+ * unlabelled answer comes from a writer from before labels, which can't keep a question open: it closes it as it
+ * always did, and still counts as chat at the gates.
  */
-export function chatNote(a: { via?: AnswerVia; chatOf?: string; notUsed?: boolean }): string | undefined {
+export const closesQuestion = (via: AnswerVia | undefined): boolean => via !== 'chat';
+
+/**
+ * Where the answer was given, for transcripts: "in claude-01's chat", or nothing for the Lookout and Slack. An answer
+ * that came after the one used says so: "also answered, not used"; a chat answer given while the question stayed
+ * open for the human: "in claude-01's chat, guidance only".
+ */
+export function chatNote(a: {
+  via?: AnswerVia;
+  chatOf?: string;
+  notUsed?: boolean;
+  guidance?: boolean;
+}): string | undefined {
   const where = a.via === 'chat' ? `in ${a.chatOf ?? 'an agent'}'s chat` : undefined;
   if (a.notUsed) return where ? `also answered ${where}, not used` : 'also answered, not used';
+  if (a.guidance) return `${where ?? 'in a chat'}, guidance only`;
   return where;
 }
 

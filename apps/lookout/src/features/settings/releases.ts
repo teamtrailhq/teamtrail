@@ -23,6 +23,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.16',
+    date: '2026-11-19',
+    items: [
+      "An answer passed on from an agent's chat no longer takes the place of yours: it guides the agent, and the question stays open in the Lookout and Slack until you answer, and your answer is the one that decides",
+    ],
+  },
+  {
     version: '0.66.15',
     date: '2026-11-19',
     items: [
@@ -183,21 +190,6 @@ export const RELEASES: Release[] = [
       'Load from file (or drop one on the field) puts a .md or .txt file in the destination or notes, to edit before you create',
       'Assumptions are one per line, and the dialog says how many it will create',
       'The header keeps the destination to its first sentence; Plan → Destination and Notes show them in full, as markdown',
-    ],
-  },
-  {
-    version: '0.63.1',
-    date: '2026-11-18',
-    items: ['At night, trail cards stand out from the map: a raised grey card, its chips in darker wells'],
-  },
-  {
-    version: '0.63.0',
-    date: '2026-11-18',
-    items: [
-      'Tickets read as their agents wrote them: lists, bold, code and links, in the bubble and the full ticket',
-      'Every ticket has the same shape: its title and chips (state, agent and model, verified, risk), then What, Acceptance criteria, How, Progress, Proof and History, and its actions at the end',
-      'Merge anyway shows only on done work with something to merge, never on a research ticket',
-      'A ticket that needs you says so in red, says what is asked, and its first button does it; in the dark theme, the ticket and menus sit on a lighter sheet over the map',
     ],
   },
   ...NEWER_RELEASES,

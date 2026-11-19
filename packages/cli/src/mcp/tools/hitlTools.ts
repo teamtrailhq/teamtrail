@@ -14,7 +14,7 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Ask the human',
       description:
-        'Ask the human a question. First Teamtrail checks the decisions already made: when one already answers it (the same ticket or files and risk category, or one you name in relatesTo), nothing is asked and you get precedents back to act on; askAnyway asks regardless. Otherwise it lands in the Lookout inbox (Waiting on you), ranked with everything else that needs them, and this call waits for the answer, up to waitSeconds (default 600; 50 for Codex). Returns answered=false with a questionId on timeout: call wait_for_answer to keep waiting. Set framing=true for the framing questions of a trail that does not exist yet. Set urgency honestly and ask related questions together. answeredVia says how the human answered: lookout or slack answers can back their decisions; a chat answer (passed on with answer_question) only guides.',
+        'Ask the human a question. First Teamtrail checks the decisions already made: when one already answers it (the same ticket or files and risk category, or one you name in relatesTo), nothing is asked and you get precedents back to act on; askAnyway asks regardless. Otherwise it lands in the Lookout inbox (Waiting on you), ranked with everything else that needs them, and this call waits for the answer, up to waitSeconds (default 600; 50 for Codex). Returns answered=false with a questionId on timeout: call wait_for_answer to keep waiting. Set framing=true for the framing questions of a trail that does not exist yet. Set urgency honestly and ask related questions together. answeredVia says how the human answered: lookout or slack answers can back their decisions; a chat answer (passed on with answer_question) only guides: it comes back with stillOpen, the question stays open for the human, and wait_for_answer returns their answer when they give it.',
     },
     {
       question: text().min(1),
@@ -57,7 +57,8 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
     {
       human: 'none',
       title: 'Wait for an answer',
-      description: 'Keep waiting for the answer to a question asked with ask_human.',
+      description:
+        "Keep waiting for the answer to a question asked with ask_human. After a chat answer (stillOpen), it waits for the human's answer in the Lookout or Slack, the one used for decisions.",
       readOnly: true,
     },
     { questionId: z.string(), waitSeconds: z.number().int().min(0).max(86_400).optional() },
@@ -91,7 +92,7 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
       },
       title: 'Answer a question',
       description:
-        "Pass on the human's answer to a waiting question, with their own words from this chat. Only use text the human gave you. It is delivered as given in your chat: it guides the agent that asked, but can't approve anything that needs the human (a high-risk call, a HITL ticket, a decision recorded as theirs); for that they answer in the Lookout or Slack. When another answer came first (the Lookout, Slack), that one is used: you get delivered: false, and theirs is kept in the conversation, marked not used.",
+        "Pass on the human's answer to a waiting question, with their own words from this chat. Only use text the human gave you. It is delivered as given in your chat: it guides the agent that asked, but can't approve anything that needs the human (a high-risk call, a HITL ticket, a decision recorded as theirs); for that they answer in the Lookout or Slack. It never takes the place of their answer there: the question stays open for it (stillOpen), and their answer is the one used. When their answer came first, you get delivered: false, and yours is kept in the conversation, marked not used.",
     },
     { questionId: z.string(), answer: text().min(1) },
     (a) => agent.answerQuestion(a),

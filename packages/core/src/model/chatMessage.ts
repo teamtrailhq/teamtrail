@@ -23,4 +23,9 @@ export interface ChatMessage {
    * nothing the human said is lost, and shown as such (chatNote, answerVia.ts).
    */
   notUsed?: true;
+  /**
+   * On the human's answers: given in an agent's chat before any answer of theirs in the Lookout or Slack, and
+   * delivered as guidance only. The question stayed open for their answer there.
+   */
+  guidance?: true;
 }

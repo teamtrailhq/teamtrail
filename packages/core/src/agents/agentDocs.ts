@@ -18,8 +18,7 @@ import {
   type AgentSessionDoc,
   type WrittenAnswer,
 } from './agentLink';
-import { answerFiles } from './answerFiles';
-import { firstAnswerOf, signedFor } from './firstAnswer';
+import { firstAnswerOf, signedFor, usedAnswer } from './firstAnswer';
 
 /** One session doc by tracker-relative path, with dead processes shown as disconnected. */
 export function readAgentDoc(root: string, rel: string): AgentSessionDoc | undefined {
@@ -68,7 +67,9 @@ export type AnswerInput = Omit<AgentAnswer, 'at' | 'sig' | 'via'> & { via: Answe
  *
  * Each answer gets a file of its own (addAnswerFile.ts): when two are given at once (the Lookout and Slack, two
  * people), the first one in line is the answer and the later one is kept, not used. The result says so
- * (`firstAnswer`), and the asking process records it in the conversation (agentDocWriter.ts).
+ * (`firstAnswer`), and the asking process records it in the conversation (agentDocWriter.ts). A chat answer
+ * (answer_question) never comes first for an asking process that keeps the question open after one
+ * (`chatGuides`): it is guidance, and the human's answer after it is still the one used.
  */
 export function writeAgentAnswer(root: string, input: AnswerInput): WrittenAnswer {
   const doc = readAgentDoc(root, agentPaths.session(input.sessionId));
@@ -100,8 +101,7 @@ export function writeAgentAnswer(root: string, input: AnswerInput): WrittenAnswe
     writeLocalJson(root, agentPaths.answer(sessionId, questionId), ans);
     return ans;
   }
-  const valid = signedFor(root, { sessionId, questionId });
-  const seq = addAnswerFile(root, ans, valid);
-  const first = answerFiles(root, sessionId, questionId).find(valid);
-  return first?.ans && first.seq !== seq ? { ...ans, firstAnswer: firstAnswerOf(root, first.ans) } : ans;
+  const seq = addAnswerFile(root, ans, signedFor(root, { sessionId, questionId }));
+  const used = usedAnswer(root, { sessionId, questionId }, doc.chatGuides === true);
+  return used?.ans && used.seq !== seq ? { ...ans, firstAnswer: firstAnswerOf(root, used.ans) } : ans;
 }

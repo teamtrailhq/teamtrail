@@ -51,7 +51,7 @@ export interface HumanAnswer {
 
 /** What a chat answer is for, as the agent is told when it gets one and when it offers one at a gate. */
 export const CHAT_GUIDES =
-  "Answers given in an agent's chat guide agents but can't approve this; answer in the Lookout or Slack. Use it as guidance; for a decision that is the human's (high risk, a HITL ticket, questionId), ask again with ask_human and have them answer in the Lookout or Slack.";
+  "Answers given in an agent's chat guide agents but can't approve this; answer in the Lookout or Slack. Use it as guidance; for a decision that is the human's (high risk, a HITL ticket, questionId), the human answers in the Lookout or Slack: a question answered in a chat stays open for that, and wait_for_answer returns their answer (if it's gone, ask again with ask_human).";
 
 /** What an agent is told of a Slack answer to a question the risk policy makes high risk. */
 export const SLACK_HIGH_RISK =
