@@ -73,6 +73,7 @@ export function mainChecksActions(view: MainChecksView, r: MainChecksRunners): M
     case 'passed':
       return { buttons: [], menu: [runAgain(r)] };
     case 'unavailable':
+    case 'environment':
       return { buttons: [runAgain(r, 'Run again')], menu: [] };
     case 'failed': {
       if (!state.fixing) return failedActions(state.failing, r);

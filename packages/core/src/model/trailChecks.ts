@@ -1,5 +1,6 @@
 import type { ActorKind } from './lifecycle';
 import type { MainCheckResult, MainRunResult } from './mainChecks';
+import type { SetupStepResult } from './setup';
 
 /*
  * Trail verified together (trailChecks/): once every ticket of a trail is done and merged, the approved checks run
@@ -41,6 +42,8 @@ export interface TrailRun {
   /** The approved verification.json the checks came from. */
   configHash: string;
   checks: MainCheckResult[];
+  /** The approved setup steps as they ran before the checks. */
+  setup?: SetupStepResult[];
   result: MainRunResult;
   /** Why it is `unavailable`, or what else to know. */
   note?: string;

@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
 import { callTool } from './fakes/callTool';
+import { approveAllHere } from './fakes/trailLead';
 
 let top: string;
 let root: string;
@@ -96,5 +97,27 @@ describe('parallel work over MCP', () => {
     expect(c.claimed.key).toBeTruthy();
     expect(c.workspace).toBeUndefined();
     expect(c.workspaceNote).toMatch(/not a git repository/);
+  });
+
+  it("runs the approved setup in a new worktree and tells the agent when it failed, never in the person's checkout", async () => {
+    // approved, but this commit has no lockfile: Teamtrail won't run an install that resolves versions
+    const verification = { v: 1, checks: {}, run: [], setup: { deps: { run: ['npm', 'ci'] } } };
+    fs.writeFileSync(path.join(root, 'verification.json'), JSON.stringify(verification));
+    approveAllHere(root);
+    const one = await connect('claude-01');
+    await one('start_trail', {
+      discovery: false,
+      title: 'Deps',
+      destination: 'Deps install',
+      tickets: [{ ref: 'a', title: 'Use the lockfile', type: 'task' }],
+    });
+    const c = await one<Claimed & { workspaceSetup: { ran: { step: string; failed?: boolean }[]; note: string } }>(
+      'claim_ticket',
+      { touches: ['src/**'] },
+    );
+    expect(c.workspace?.path).toBeTruthy();
+    expect(c.workspaceSetup.ran).toEqual([{ step: 'npm ci', failed: true }]);
+    expect(c.workspaceSetup.note).toMatch(/^Setup failed in your worktree: npm ci wasn't run: no package-lock\.json/);
+    expect(c.workspaceSetup.note).toMatch(/never in the person's own checkout/);
   });
 });

@@ -1,7 +1,10 @@
 import { lstatSync, readdirSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
-/** Folders a fresh checkout lacks and checks need: linked from the repo's own, never copied or installed. */
+/**
+ * Dependency folders. Earlier versions linked the repo's own into the worktree for checks on main; they are
+ * looked for only to remove such links from a worktree one of them left behind (mainWorktree.ts).
+ */
 const DEPENDENCIES = new Set(['node_modules', '.venv']);
 const SKIP = new Set(['.git', '.teamtrail', 'node_modules', '.venv', 'dist', 'build']);
 /** How deep a package folder may be (`apps/web` is 2, `packages/a/b/c` is 4). */

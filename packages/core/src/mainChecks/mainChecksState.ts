@@ -45,16 +45,38 @@ function explained(c: MainCheckResult, o: { run: MainRun; choices: TrailMainChoi
   return same ? 'known' : undefined;
 }
 
+/** Why checks couldn't run on main for reasons of this machine (setup failed, or what the failing checks hit), and what to do. */
+function environmentReason(o: { setupFailed?: string; hit: MainCheckResult[] }) {
+  if (o.setupFailed)
+    return `Setup failed in the worktree for main: ${o.setupFailed.replace(/^setup failed: /, '')}. Fix the setup steps in verification.json, then run again.`;
+  const hit = o.hit.map((c) => `${c.name}: ${c.environment}`).join('; ');
+  return `${hit}. Install what's missing on this machine (or add setup steps to verification.json), then run again.`;
+}
+
+const environment = (checks: string[], reason: string): MainChecksGate => ({
+  state: { kind: 'environment', checks, reason },
+  holds: false,
+});
+
 function finished(run: MainRun, choices: TrailMainChoices, headNow?: string): MainChecksGate {
   if (run.result === 'pass') return { state: { kind: 'passed' }, holds: false };
+  const setupFailed = run.setup?.some((s) => !s.passed) ? run.note : undefined;
+  if (setupFailed) return environment([], environmentReason({ setupFailed, hit: [] }));
   if (run.result === 'unavailable')
     return { state: { kind: 'unavailable', reason: run.note ?? 'nothing ran' }, holds: false };
   const failed = run.checks.filter((c) => !c.passed);
-  const why = failed.map((c) => ({ name: c.name, as: explained(c, { run, choices }) }));
-  const failing = why.filter((w) => !w.as).map((w) => w.name);
+  const why = failed.map((c) => ({ check: c, as: explained(c, { run, choices }) }));
+  const open = why.filter((w) => !w.as).map((w) => w.check);
+  // a failure the machine caused says nothing about main: it never holds
+  const failing = open.filter((c) => !c.environment).map((c) => c.name);
+  if (!failing.length && open.length)
+    return environment(
+      open.map((c) => c.name),
+      environmentReason({ hit: open }),
+    );
   if (!failing.length) {
-    const known = why.filter((w) => w.as === 'known').map((w) => w.name);
-    const dropped = why.filter((w) => w.as === 'dropped').map((w) => w.name);
+    const known = why.filter((w) => w.as === 'known').map((w) => w.check.name);
+    const dropped = why.filter((w) => w.as === 'dropped').map((w) => w.check.name);
     return { state: { kind: 'accepted', known, dropped }, holds: false };
   }
   const fixing = choices.fixMain?.runId === run.id;
