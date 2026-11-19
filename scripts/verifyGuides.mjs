@@ -7,11 +7,11 @@ import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { approveSkipInLookout, clickNode, lookoutLinks, openFullTicket, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 import { PERF, verifyOwnGuides } from './verifyOwnGuides.mjs';
 import { verifyTrailGuides } from './verifyTrailGuides.mjs';
 
@@ -133,7 +133,7 @@ async function fakeCatalog(files) {
  * offline), with verification on and a passing a11y script in the repo.
  */
 function scratchProject(catalogs) {
-  const top = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-guides-e2e-')), 'app');
+  const top = path.join(e2eTemp('teamtrail-guides-e2e-'), 'app');
   const root = path.join(top, '.teamtrail');
   fs.mkdirSync(root, { recursive: true });
   fs.mkdirSync(path.join(top, 'checks'));

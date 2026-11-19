@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MemoryAdapter } from '../src/adapters/memoryAdapter';
@@ -14,6 +13,7 @@ import { resolveGitHubToken } from '../src/server/trackerConfig';
 import { trackerContext } from '../src/server/trackerContext';
 import { fakeGitHub } from './fakes/github';
 import { fakeGitHubDevice } from './fakes/githubDevice';
+import { tempFolder } from './tempFolder';
 
 const CLIENT = 'Iv1.fake_client_id';
 const TOKEN = 'gho_signed_in_secret_9b1c';
@@ -49,7 +49,7 @@ test('token order: pasted, env, signed in, then gh', async () => {
 
 test('device flow: waits, respects interval and slow_down, and saves the token 0600', async () => {
   const device = fakeGitHubDevice({ clientId: CLIENT, token: TOKEN, interval: 5, slowDownFirst: 1 });
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-signin-'));
+  const tmp = tempFolder('teamtrail-signin-');
   const configDir = path.join(tmp, 'config');
   const env = { TEAMTRAIL_GITHUB_CLIENT_ID: CLIENT, TEAMTRAIL_GITHUB_WEB: WEB };
   const ctx = trackerContext({
@@ -101,7 +101,7 @@ test('device flow: waits, respects interval and slow_down, and saves the token 0
 
 test('device flow: denied and expired codes end the flow', async () => {
   const device = fakeGitHubDevice({ clientId: CLIENT, token: TOKEN });
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-signin-'));
+  const tmp = tempFolder('teamtrail-signin-');
   const env = { TEAMTRAIL_GITHUB_CLIENT_ID: CLIENT, TEAMTRAIL_GITHUB_WEB: WEB };
   const ctx = trackerContext({ root: tmp, markdown: new MemoryAdapter(), env, exec: noGh, fetch: setup(device) });
   let clock = 0;
@@ -125,7 +125,7 @@ const texts: string[] = [];
 const device = fakeGitHubDevice({ clientId: CLIENT, token: TOKEN });
 
 before(async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-signin-bridge-'));
+  const tmp = tempFolder('teamtrail-signin-bridge-');
   const trackerDir = path.join(tmp, 'repo', '.teamtrail');
   bridge = createTrackerBridge(trackerDir, {
     env: { TEAMTRAIL_GITHUB_CLIENT_ID: CLIENT, TEAMTRAIL_GITHUB_WEB: WEB },

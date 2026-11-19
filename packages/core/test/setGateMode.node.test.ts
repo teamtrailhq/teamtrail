@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { journalFile } from '../src/history/journalFile';
@@ -12,10 +11,11 @@ import { readGateLog } from '../src/verification/readGateLog';
 import { recordGate } from '../src/verification/recordGate';
 import { setChecks, StaleChecks } from '../src/verification/setChecks';
 import { setGateMode } from '../src/verification/setGateMode';
+import { tempFolder } from './tempFolder';
 
 /* How each verification gate acts, as the trail lead sets it in Settings → Verification → Gates. */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-setgate-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-setgate-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

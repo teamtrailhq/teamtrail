@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { createTrackerBridge, type TrackerBridge } from '../src/bridge';
 import type { AttentionView } from '../src/model/attention';
+import { tempFolder } from './tempFolder';
 
 let server: http.Server;
 let bridge: TrackerBridge;
@@ -14,7 +14,7 @@ let root: string;
 let configDir: string;
 
 before(async () => {
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-attention-'));
+  const tmp = tempFolder('teamtrail-attention-');
   root = path.join(tmp, '.teamtrail');
   configDir = path.join(tmp, 'config');
   mkdirSync(path.join(root, '.agents', 'sessions'), { recursive: true });

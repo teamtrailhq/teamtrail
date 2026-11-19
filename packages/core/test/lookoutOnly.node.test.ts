@@ -5,8 +5,7 @@
  * high-risk question, approving a reroute or a setting request, and approving work that touched high-risk files.
  */
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { ActivityStream } from '../src/activity/activityStream';
@@ -25,12 +24,13 @@ import { proposeReroute } from '../src/planning/reroute/rerouteFlow';
 import { lookoutOnlyTickets } from '../src/policy/lookoutOnlyTickets';
 import { needsLookout } from '../src/policy/needsLookout';
 import { ticketNeedsLookout } from '../src/policy/ticketNeedsLookout';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const slack = { kind: 'slack' as const, ref: 'C1/1.000' };
 
 async function trail() {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lookout-only-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-lookout-only-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   const adapter = new MemoryAdapter({ latency: [0, 0] });
   const { map, tickets } = await chartMap(adapter, {
@@ -167,7 +167,7 @@ test('approving a reroute or a setting request from Slack is refused in core; de
 });
 
 test('an approval with no evidence of what changed fails closed while the policy has high-risk path rules', () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-no-evidence-'));
+  const root = tempFolder('teamtrail-no-evidence-');
   assert.equal(needsLookout.approval(root, { mapId: 'm', ticketId: 't' }), true, 'no attempt');
   assert.equal(needsLookout.approval(root, { mapId: 'm', ticketId: 't', attemptId: 'A-9' }), true, 'unreadable');
 });

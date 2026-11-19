@@ -5,7 +5,7 @@
  */
 import { LATER_RELEASES } from './laterReleases';
 import { MID_RELEASES } from './midReleases';
-import { RELEASES_061 } from './newerReleases';
+import { NEWER_RELEASES } from './newerReleases';
 import { OLDER_RELEASES } from './olderReleases';
 
 export interface Release {
@@ -23,11 +23,21 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.14',
+    version: '0.66.15',
     date: '2026-11-19',
     items: [
       'Two answers to the same question at once (the Lookout and Slack, or two people): the first is the one used everywhere, and the other is kept in the conversation as "also answered, not used"',
     ],
+  },
+  {
+    version: '0.66.14',
+    date: '2026-11-19',
+    items: ['Running the tests no longer leaves folders behind in the temp folder'],
+  },
+  {
+    version: '0.66.13',
+    date: '2026-11-19',
+    items: ["Checking a proof finds the repo's proof keys when the repo is reached through a symbolic link"],
   },
   {
     version: '0.66.12',
@@ -190,16 +200,7 @@ export const RELEASES: Release[] = [
       'A ticket that needs you says so in red, says what is asked, and its first button does it; in the dark theme, the ticket and menus sit on a lighter sheet over the map',
     ],
   },
-  {
-    version: '0.62.0',
-    date: '2026-11-18',
-    items: [
-      'Map, Plan, Activity and Logbook sit in a bar of their own under the header',
-      'The map runs a chain of tickets in a straight line, from main to the destination, with a review beside the ticket it reviews',
-      'Legend has a background, like Fit',
-    ],
-  },
-  ...RELEASES_061,
+  ...NEWER_RELEASES,
   ...LATER_RELEASES,
   ...MID_RELEASES,
   ...OLDER_RELEASES,

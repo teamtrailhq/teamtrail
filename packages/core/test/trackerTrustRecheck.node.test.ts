@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { acceptedSettingsFile, acceptedSettingsPath } from '../src/adapters/remote/acceptedSettingsFile';
@@ -11,10 +10,11 @@ import { buildDecision, decisionStats } from '../src/planning/decisions';
 import { fakeGitHub } from './fakes/github';
 import { fakeLinear } from './fakes/linear';
 import { noSleep } from './scenarios';
+import { tempFolder } from './tempFolder';
 
 /* Findings of the second review of the tracker trust rule (N1–N5), each as the attack or failure it describes. */
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
-const tmpRoot = () => mkdtempSync(path.join(os.tmpdir(), 'teamtrail-trust-recheck-'));
+const tmpRoot = () => tempFolder('teamtrail-trust-recheck-');
 
 const record = (o: Record<string, unknown>) =>
   `<!-- teamtrail:decision ${JSON.stringify({

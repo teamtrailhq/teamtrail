@@ -3,7 +3,6 @@ import {
   chmodSync,
   existsSync,
   mkdirSync,
-  mkdtempSync,
   readdirSync,
   readFileSync,
   statSync,
@@ -11,7 +10,6 @@ import {
   writeFileSync,
 } from 'node:fs';
 import type { IncomingMessage } from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { before, test } from 'node:test';
 import { machineStore } from '../src/machine/machineStore';
@@ -21,6 +19,7 @@ import { LINK_CODE_MS, mintPairCode, OPENED_CODE_MS } from '../src/signIn/pairCo
 import { signInRedirectPage } from '../src/signIn/signInRedirectPage';
 import { sweepSignInRedirects } from '../src/signIn/sweepSignInRedirects';
 import { writeSignInRedirect } from '../src/signIn/writeSignInRedirect';
+import { tempFolder } from './tempFolder';
 
 /*
  * The one-time page the browser is opened on instead of the sign-in link, so the code never goes on a command line:
@@ -31,7 +30,7 @@ let configDir: string;
 let n = 0;
 
 before(() => {
-  top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-sign-in-redirect-'));
+  top = tempFolder('teamtrail-sign-in-redirect-');
   configDir = path.join(top, 'config');
 });
 

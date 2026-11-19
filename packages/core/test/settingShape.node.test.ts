@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -13,6 +12,7 @@ import { approveReroute } from '../src/planning/reroute/decideReroute';
 import { rerouteHash } from '../src/planning/reroute/rerouteApproval';
 import { proposeReroute } from '../src/planning/reroute/rerouteFlow';
 import { readReroute, writeReroute } from '../src/planning/reroute/rerouteStore';
+import { tempFolder } from './tempFolder';
 
 /*
  * A setting request shows one change and applies exactly that: anything else in the setting lane is refused, a
@@ -21,7 +21,7 @@ import { readReroute, writeReroute } from '../src/planning/reroute/rerouteStore'
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
 async function setup() {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-shape-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-shape-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   const adapter = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(adapter, {

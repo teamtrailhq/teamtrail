@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +10,7 @@ import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { NUMBERS_FILE } from '../src/adapters/markdown/numberRecord';
 import { createTrackerBridge } from '../src/bridge';
 import { chartMap } from '../src/planning/operations/chart';
+import { tempFolder } from './tempFolder';
 
 /*
  * A trail's `#n` and its tickets' come from one count: handed out once, even when several processes create trails
@@ -36,7 +36,7 @@ if (process.env.TRAIL_KEY_WORKER) {
 }
 
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-keys-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-keys-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

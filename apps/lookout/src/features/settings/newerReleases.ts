@@ -1,7 +1,16 @@
 import type { Release } from './releases';
 
-/** Releases 0.61, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
-export const RELEASES_061: Release[] = [
+/** Releases 0.61–0.62, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
+export const NEWER_RELEASES: Release[] = [
+  {
+    version: '0.62.0',
+    date: '2026-11-18',
+    items: [
+      'Map, Plan, Activity and Logbook sit in a bar of their own under the header',
+      'The map runs a chain of tickets in a straight line, from main to the destination, with a review beside the ticket it reviews',
+      'Legend has a background, like Fit',
+    ],
+  },
   {
     version: '0.61.2',
     date: '2026-11-18',

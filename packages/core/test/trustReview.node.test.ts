@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { ActivityStream } from '../src/activity/activityStream';
@@ -24,13 +23,14 @@ import { operatorAction } from '../src/verification/operatorActions';
 import { levelFor, verify } from '../src/verification/verifyCompletion';
 import { writeWorkspace } from '../src/workspaces/workspaceStore';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 /*
  * The review of PR #60: approval actions (not only the gates), committed-only bulk adoption, levels and worktrees,
  * and a config dir an agent's sandbox can't read. Each test failed before its fix.
  */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-review-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-review-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };
@@ -201,7 +201,7 @@ test('F5: a trail level lowered in its file waits for approval; the approved lev
 test('F5: checks never run in a folder an agent named in a workspace record', async () => {
   const root = tmpRoot();
   const { adapter, mapId, ticketId } = await verifiedTrail(root);
-  const elsewhere = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-elsewhere-'));
+  const elsewhere = tempFolder('teamtrail-elsewhere-');
   writeWorkspace(root, {
     v: 1,
     mapId,
@@ -251,7 +251,7 @@ test(
       file,
       JSON.stringify({ sessionId: 's_1', questionId: q.id, text: 'yes', author: 'x', at: 1, sig: 'a'.repeat(64) }),
     );
-    const blocked = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-blocked-'));
+    const blocked = tempFolder('teamtrail-blocked-');
     chmodSync(blocked, 0o000);
     const was = process.env.TEAMTRAIL_CONFIG_DIR;
     process.env.TEAMTRAIL_CONFIG_DIR = path.join(blocked, 'config');
@@ -304,7 +304,7 @@ test(
   'a differently cased path to the same folder is the same project here',
   { skip: process.platform !== 'darwin' },
   async () => {
-    const top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-case-'));
+    const top = tempFolder('teamtrail-case-');
     mkdirSync(path.join(top, 'Repo', '.teamtrail'), { recursive: true });
     const a = machineStore(path.join(top, 'Repo', '.teamtrail'));
     const b = machineStore(path.join(top, 'repo', '.teamtrail'));

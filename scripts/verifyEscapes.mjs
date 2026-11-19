@@ -4,11 +4,11 @@
 // Came back view lists it with the check that passed. Waits on what the user sees, never on sleeps.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { answeringChecklists, approveSkipInLookout, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 
 const git = (cwd, ...args) =>
   execFileSync('git', ['-c', 'user.email=e2e@teamtrail', '-c', 'user.name=e2e', ...args], {
@@ -17,7 +17,7 @@ const git = (cwd, ...args) =>
   }).trim();
 
 function scratchRepo() {
-  const top = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-escapes-e2e-')), 'app');
+  const top = path.join(e2eTemp('teamtrail-escapes-e2e-'), 'app');
   fs.mkdirSync(path.join(top, '.teamtrail'), { recursive: true });
   fs.mkdirSync(path.join(top, 'src', 'forms'), { recursive: true });
   fs.writeFileSync(path.join(top, 'check.js'), "console.log('ok');\n");

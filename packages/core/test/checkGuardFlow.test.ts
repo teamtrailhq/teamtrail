@@ -1,7 +1,7 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { applyGuard } from '../src/checkGuard/applyGuard';
 import { runnerGuard } from '../src/checkGuard/runnerGuard';
 import { journalFile } from '../src/history/journalFile';
@@ -12,6 +12,16 @@ import { buildProof, proofMarkdown } from '../src/node';
 import type { CheckRunner } from '../src/verification/checkRunner';
 import { parseVerificationConfig } from '../src/verification/config';
 import { outcomeOf } from '../src/verification/outcome';
+
+const made: string[] = [];
+const temp = (prefix: string) => {
+  const dir = mkdtempSync(path.join(tmpdir(), prefix));
+  made.push(dir);
+  return dir;
+};
+afterAll(() => {
+  for (const dir of made) rmSync(dir, { recursive: true, force: true });
+});
 
 const guard = (mode: AttemptGuard['mode']): AttemptGuard => ({
   mode,
@@ -115,7 +125,7 @@ describe('a pass the check guard holds', () => {
   });
 
   it('applyGuard flags it for the reviewer, notes why, and journals the gate only on a pass', () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'teamtrail-guard-'));
+    const root = temp('teamtrail-guard-');
     const git: GitEvidence = { v: 1, changed: [], stats: { files: 0, add: 0, del: 0 }, flags: [] };
     const at = { root, mapId: 'm', ticket: { id: '3', key: '#3' } };
     const held = applyGuard({ result: 'pass' as const, git }, { ...at, guard: guard('enforce') });
@@ -145,7 +155,7 @@ describe('the check guard on a remote completion', () => {
     run: async () => ({ checks: [] }),
     read: async ({ commit, path: p }) => files[`${commit[0]}:${p}`] ?? null,
   });
-  const repoRoot = mkdtempSync(path.join(tmpdir(), 'teamtrail-remote-'));
+  const repoRoot = temp('teamtrail-remote-');
 
   it('reads both sides through the runner', async () => {
     const pkg = (test: string) => JSON.stringify({ scripts: { test } });

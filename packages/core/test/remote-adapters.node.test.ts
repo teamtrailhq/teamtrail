@@ -1,9 +1,7 @@
 // A process that keeps running (an MCP server, an open Lookout tab) follows the tracker Settings name now: another
 // repo or token gets a new adapter, and event streams move to it instead of staying on a disposed one.
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MemoryAdapter } from '../src/adapters/memoryAdapter';
@@ -11,10 +9,11 @@ import { remoteAdapters } from '../src/server/remoteAdapters';
 import { trackerContext } from '../src/server/trackerContext';
 import { streamTrackerEvents } from '../src/server/trackerEvents';
 import { fakeGitHub } from './fakes/github';
+import { tempFolder } from './tempFolder';
 
 function setup() {
   const fake = fakeGitHub();
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-remotes-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-remotes-'), '.teamtrail');
   const ctx = trackerContext({
     root,
     markdown: new MemoryAdapter(),

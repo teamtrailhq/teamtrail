@@ -6,7 +6,6 @@
 // R-1 again (verifyRuleUndo.mjs); answering it completes the ticket, and the proof shows the answer as claimed.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -19,6 +18,7 @@ import {
   shootThemes,
   signInWith,
 } from './e2eHelpers.mjs';
+import { e2eTemp } from './e2eTemp.mjs';
 import { goWithoutThenUndo } from './verifyRuleUndo.mjs';
 
 const WHY = 'D-12: old sessions failed to load after #34';
@@ -26,7 +26,7 @@ const ASK = 'Does a new field load from older transcripts that lack it?';
 
 /** A git repo whose `npm test` passes, with verification.json asking for it. */
 function scratchRepo() {
-  const top = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-rules-e2e-'));
+  const top = e2eTemp('teamtrail-rules-e2e-');
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   const scripts = { test: 'node -e "process.exit(0)"' };
   fs.writeFileSync(path.join(top, 'package.json'), JSON.stringify({ private: true, scripts }, null, 2));

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTrackerBridge } from '../src/bridge';
@@ -9,8 +8,9 @@ import type { CheckFinding } from '../src/model/checkScreening';
 import type { TrustItem } from '../src/trust/trustItem';
 import { localRepoFiles } from '../src/verification/localRepoFiles';
 import { memoryRepoFiles } from './fakes/memoryRepoFiles';
+import { tempFolder } from './tempFolder';
 
-const tmp = () => mkdtempSync(path.join(os.tmpdir(), 'teamtrail-screen-'));
+const tmp = () => tempFolder('teamtrail-screen-');
 
 /** A git checkout (a `.git` folder is all screening asks) with a package.json and a tracker folder. */
 function repo() {

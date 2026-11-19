@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { withFileLock } from '../src/lib/fileLock';
+import { tempFolder } from './tempFolder';
 
 /*
  * The review: a stale lock was taken over by deleting it, so a process could delete a lock another had just
  * created. A lock is now taken over by renaming it away (atomic: one process wins), and a process only ever
  * deletes a lock file it renamed itself and that is the stale one, or its own.
  */
-const dir = () => mkdtempSync(path.join(os.tmpdir(), 'teamtrail-lock-'));
+const dir = () => tempFolder('teamtrail-lock-');
 
 test('a stale lock is taken over; a live one is waited for', () => {
   const file = path.join(dir(), 'credentials.json');

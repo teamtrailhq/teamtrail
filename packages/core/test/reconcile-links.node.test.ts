@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, statSync } from 'node:fs';
-import os from 'node:os';
+import { rmSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -12,6 +11,7 @@ import type { CiProvider, PrCandidate, PullRequestSnapshot } from '../src/model/
 import { chartMap } from '../src/planning/operations/chart';
 import { readReviewLoad } from '../src/reviewLoad/readReviewLoad';
 import { writeAttempt } from '../src/verification/evidenceStore';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 const HEAD = 'a'.repeat(40);
@@ -24,7 +24,7 @@ const snap = (number: number, state: PullRequestSnapshot['state'], updatedAt = 1
 
 /** A trail of done tickets; each ticket's completion names `pr` (when given) and `branch`. */
 async function trail(ticketsDone: { pr?: number; branch?: string }[]) {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-reconcile-'));
+  const root = tempFolder('teamtrail-reconcile-');
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const { map, tickets } = await chartMap(a, {
     title: 'T',

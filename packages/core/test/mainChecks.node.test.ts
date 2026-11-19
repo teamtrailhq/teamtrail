@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -25,6 +24,7 @@ import type { CheckRunner } from '../src/verification/checkRunner';
 import { levelFor } from '../src/verification/verifyCompletion';
 import { preparedWorktree } from '../src/workspaces/trustedWorkspace';
 import { approveAllHere } from './fakes/trailLead';
+import { tempFolder } from './tempFolder';
 
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 /** `test` fails on main until title.txt exists, printing a failure line like a test runner's. */
@@ -42,7 +42,7 @@ const git = (...a: string[]) =>
   execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd: repo, stdio: 'pipe' });
 
 before(async () => {
-  repo = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-main-checks-')), 'app');
+  repo = path.join(tempFolder('teamtrail-main-checks-'), 'app');
   root = path.join(repo, '.teamtrail');
   mkdirSync(root, { recursive: true });
   mkdirSync(path.join(repo, 'node_modules', 'dep'), { recursive: true });
@@ -191,7 +191,7 @@ test('main fixed: Run checks on main passes and nothing waits; the run is journa
 });
 
 test('without approved checks nothing runs on main and nothing waits', async () => {
-  const other = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-main-off-')), '.teamtrail');
+  const other = path.join(tempFolder('teamtrail-main-off-'), '.teamtrail');
   mkdirSync(other);
   const view = await readMainChecks({ root: other }, 'x', { trigger: 'agent a' });
   assert.equal(view.state.kind, 'off');
@@ -258,7 +258,7 @@ test("a runner whose server holds no checkout of the code is never named this fo
 });
 
 test('journal: main-checks entries sit next to transitions and kinds a newer version wrote', () => {
-  const dir = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-main-journal-')), '.teamtrail');
+  const dir = path.join(tempFolder('teamtrail-main-journal-'), '.teamtrail');
   mkdirSync(path.join(dir, '.events'), { recursive: true });
   const lines = [
     { v: 1, at: 1, mapId: 'm', ticketId: '1', ticketKey: '#1', event: 'claim', from: 'ready', to: 'working' },

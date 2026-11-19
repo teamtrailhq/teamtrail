@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { ActivityStream } from '../src/activity/activityStream';
@@ -13,13 +12,14 @@ import { answeredTickets } from '../src/attention/answeredTickets';
 import { approvesGates, approvesHighRisk } from '../src/model/answerVia';
 import { setRunningVersion } from '../src/model/runningVersion';
 import { versionSkew } from '../src/model/versionSkew';
+import { tempFolder } from './tempFolder';
 
 /*
  * How an answer was given (the Lookout, Slack, or an agent's chat through answer_question) is signed with it, so a
  * chat answer can't be relabelled into one that approves gates.
  */
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-via-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-via-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

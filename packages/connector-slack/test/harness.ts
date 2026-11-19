@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { AgentSessionDoc, AnswerVia, ChatMessage, PendingQuestion, TrackerAdapter } from '@teamtrail/core';
 import { writeJsonAtomic } from '@teamtrail/core/bridge';
 import { FIXTURES, recorder, replay, type Fixture } from '../../core/test/fixtures';
+import { tempFolder } from '../../core/test/tempFolder';
 import { SlackService, type SlackServiceOptions } from '../src/service';
 import { LINK, scoutHub } from './fakes/scoutHub';
 import { BOT_SCOPES, fakeSlack, type FakeSlack } from './fakes/slack';
@@ -31,7 +31,7 @@ export interface SlackFixture extends Fixture {
 
 /** One flow's world: a temp tracker + config dir, Slack (fake when recording, fixture when replaying) and a Scout hub. */
 export function world(mode: 'record' | 'replay', name: string) {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-slack-'));
+  const dir = tempFolder('teamtrail-slack-');
   const root = path.join(dir, 'tracker');
   const configDir = path.join(dir, 'config');
   mkdirSync(root, { recursive: true });

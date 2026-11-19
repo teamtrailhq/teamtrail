@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { localGuard } from '../src/checkGuard/localGuard';
@@ -11,13 +10,14 @@ import { machineStore } from '../src/machine/machineStore';
 import type { GitEvidence } from '../src/model/evidence';
 import type { MapSnapshot, Ticket } from '../src/model/types';
 import { DEFAULT_CONFIG, parseVerificationConfig } from '../src/verification/config';
+import { tempFolder } from './tempFolder';
 
 const sh = (cwd: string, ...args: string[]) =>
   execFileSync('git', ['-c', 'user.email=t@example.invalid', '-c', 'user.name=t', ...args], { cwd, encoding: 'utf8' });
 
 /** A repo with one commit whose `npm test` runs `scripts.test`, and its tracker folder. */
 function repo() {
-  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-baseline-')));
+  const dir = realpathSync(tempFolder('teamtrail-baseline-'));
   sh(dir, 'init', '-q', '-b', 'main');
   writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ scripts: { test: 'node test.js' } }));
   writeFileSync(path.join(dir, 'test.js'), 'process.exit(0)\n');

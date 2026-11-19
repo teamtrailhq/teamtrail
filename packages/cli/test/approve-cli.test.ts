@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { pendingTrust } from '@teamtrail/core/agents';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { runApprove } from '../src/approve/runApprove';
 
 let root: string;
@@ -33,6 +33,8 @@ beforeEach(() => {
   );
   fs.writeFileSync(path.join(root, 'policy.json'), JSON.stringify({ v: 1, categories: { schema: 'low' } }));
 });
+
+afterEach(() => fs.rmSync(path.dirname(root), { recursive: true, force: true }));
 
 describe('teamtrail approve', () => {
   it('refuses without a terminal unless --hash names exactly what to approve', async () => {

@@ -1,7 +1,4 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { test } from 'node:test';
 import { acceptedSettingsFile } from '../src/adapters/remote/acceptedSettingsFile';
 import { GitHubAdapter } from '../src/adapters/remote/github';
@@ -12,6 +9,7 @@ import { policyViolations } from '../src/policy/policyViolations';
 import { fakeGitHub } from './fakes/github';
 import { fakeLinear } from './fakes/linear';
 import { noSleep } from './scenarios';
+import { tempFolder } from './tempFolder';
 
 /*
  * What other people write into a tracked issue is never read as this machine's human or agents: the attacks an
@@ -33,7 +31,7 @@ const FORGED = (ticketId: string) =>
     ticketKey: `#${ticketId}`,
   })} -->`;
 
-const tmpRoot = () => mkdtempSync(path.join(os.tmpdir(), 'teamtrail-trust-'));
+const tmpRoot = () => tempFolder('teamtrail-trust-');
 
 async function github(team: string[] = []) {
   const fake = fakeGitHub({ team });

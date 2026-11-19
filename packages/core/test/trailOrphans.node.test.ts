@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { journalFile } from '../src/history/journalFile';
 import { chartMap } from '../src/planning/operations/chart';
+import { tempFolder } from './tempFolder';
 
 /*
  * A trail folder deleted by hand before this machine signed anything leaves its local history behind: journal,
@@ -16,7 +16,7 @@ import { chartMap } from '../src/planning/operations/chart';
 const SECTIONS = { destination: 'D', notes: '', decisions: [], unspecified: [], outOfScope: [] };
 
 const tmpRoot = () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-orphans-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-orphans-'), '.teamtrail');
   mkdirSync(root, { recursive: true });
   return root;
 };

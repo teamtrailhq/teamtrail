@@ -33,6 +33,10 @@ jobs:
           git config --global user.name "Teamtrail CI"
           git config --global user.email "ci@teamtrail.app"
       - run: npm ci
+      # Tests remove the temp folders they make: what is in the temp folder before the check must be all that is
+      # there after it (scripts/check-temp-leaks.mjs).
+      - run: node scripts/check-temp-leaks.mjs snapshot "$RUNNER_TEMP/tmp-before.json"
       - run: npm run check
         env:
           CHROME: ${{ steps.chrome.outputs.chrome-path }}
+      - run: node scripts/check-temp-leaks.mjs compare "$RUNNER_TEMP/tmp-before.json"

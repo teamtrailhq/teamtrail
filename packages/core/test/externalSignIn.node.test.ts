@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import {
@@ -12,6 +11,7 @@ import {
   type TrackerBridge,
 } from '../src/bridge';
 import { sendJson } from '../src/server/http';
+import { tempFolder } from './tempFolder';
 
 // A server that embeds the Lookout with its own sign-in: the `x-test-caller` header stands in for whatever it
 // verifies (a gateway's signed header). `machine` callers count as this machine through the hub's peer.
@@ -35,7 +35,7 @@ let server: http.Server;
 let port: number;
 
 before(async () => {
-  top = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-external-'));
+  top = tempFolder('teamtrail-external-');
   const root = path.join(top, 'repo', '.teamtrail');
   const configDir = path.join(top, 'config');
   mkdirSync(path.join(root, 'trail', 'tickets'), { recursive: true });

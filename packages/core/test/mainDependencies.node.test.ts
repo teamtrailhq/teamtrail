@@ -1,18 +1,18 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, lstatSync, mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { dependencyFolders } from '../src/mainChecks/dependencyFolders';
 import { prepareMainWorktree, removeMainWorktree } from '../src/mainChecks/mainWorktree';
+import { tempFolder } from './tempFolder';
 
 /**
  * A repo laid out like one whose web app has its own package.json and lockfile (no npm workspaces): the root holds only
  * scripts, `apps/web/node_modules` holds eslint.
  */
 function nestedRepo() {
-  const base = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-main-deps-'));
+  const base = tempFolder('teamtrail-main-deps-');
   const repo = path.join(base, 'app');
   const outside = path.join(base, 'elsewhere', 'node_modules');
   mkdirSync(outside, { recursive: true });

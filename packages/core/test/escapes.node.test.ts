@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { before, test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -16,6 +15,7 @@ import { agentScorecard } from '../src/scorecard/agentScorecard';
 import { readReverts } from '../src/scorecard/readReverts';
 import { scorecardInput } from '../src/scorecard/scorecardInput';
 import { writeAttempt } from '../src/verification/evidenceStore';
+import { tempFolder } from './tempFolder';
 
 let repo: string;
 let root: string;
@@ -65,7 +65,7 @@ function attempt(ticketId: string, base: string, head: string, at: number): Veri
 }
 
 before(async () => {
-  repo = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-escapes-')), 'app');
+  repo = path.join(tempFolder('teamtrail-escapes-'), 'app');
   root = path.join(repo, '.teamtrail');
   mkdirSync(path.join(repo, 'src', 'auth'), { recursive: true });
   mkdirSync(root, { recursive: true });

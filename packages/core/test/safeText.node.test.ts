@@ -1,7 +1,4 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { test } from 'node:test';
 import { parseMapFile, serializeMapFile } from '../src/adapters/markdown/mapFile';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
@@ -25,6 +22,7 @@ import { guardLines, guardMarkers, oneLine, plainBreaks, unguardLines, unguardMa
 import type { DecisionRecord, MapDoc, Ticket } from '../src/model/types';
 import { parseDecision, serializeDecision } from '../src/planning/decisions/decisionFile';
 import { madeBy } from '../src/planning/decisions/decisionRecord';
+import { tempFolder } from './tempFolder';
 
 /*
  * Free text never becomes structure. Every string below is something an agent can send as a title, a body, a
@@ -488,7 +486,7 @@ Done.
 });
 
 test('numbered files: writers that pick the same number at once each get their own', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'teamtrail-numbered-'));
+  const root = tempFolder('teamtrail-numbered-');
   // Two adapters over one folder, as two agent processes are.
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const b = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);

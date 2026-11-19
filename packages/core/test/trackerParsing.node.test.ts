@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { MarkdownAdapter } from '../src/adapters/markdown/markdownAdapter';
 import { nodeMarkdownFs } from '../src/adapters/markdown/nodeMarkdownFs';
 import { joinBody, splitBody } from '../src/adapters/remote/format';
 import { parseMapBody, serializeMapBody } from '../src/model/mapBody';
+import { tempFolder } from './tempFolder';
 
 /*
  * Tracker bodies are written by anyone who can edit an issue: only the marker Teamtrail writes, where it writes
@@ -72,7 +72,7 @@ test('assumption lines still read back after the parser change', () => {
 });
 
 test('markdown: ticket and trail ids never reach outside their folder', async () => {
-  const root = path.join(mkdtempSync(path.join(os.tmpdir(), 'teamtrail-ids-')), '.teamtrail');
+  const root = path.join(tempFolder('teamtrail-ids-'), '.teamtrail');
   const a = new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);
   const map = await a.createMap({
     title: 'Trail',
