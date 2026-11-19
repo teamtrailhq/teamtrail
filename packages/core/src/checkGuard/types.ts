@@ -18,6 +18,8 @@ export interface CheckReach {
   files: Set<string>;
   /** Makefile path → the targets `make` runs from it (`''`: the default one). */
   makefiles: Map<string, Set<string>>;
+  /** Nx project.json path → the targets the check runs from it (`nx test web`). */
+  targets: Map<string, Set<string>>;
   /** The trail lead's own globs for files the check depends on (verification.json `checks.<name>.guards`). */
   guards: string[];
 }

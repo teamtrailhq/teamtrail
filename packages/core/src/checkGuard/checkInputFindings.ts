@@ -2,6 +2,7 @@ import { globMatch } from '../knowledge/knowledge';
 import type { GuardFinding } from '../model/checkGuard';
 import { configSection } from './configSection';
 import { makeReach } from './makeReach';
+import { nxProject } from './nxTargets';
 import { packageJson, type PackageView } from './packageJson';
 import { RUNNER_CONFIGS } from './runnerConfigs';
 import type { CheckReach, GuardReaders } from './types';
@@ -30,7 +31,7 @@ function packageFindings(file: string, texts: Texts, reach: CheckReach, tools: s
   const scripts = names
     .filter((n) => before.scripts[n] !== after.scripts[n])
     .map((n): Found => ({ kind: 'script', file, text: `${file} scripts.${n} changed` }));
-  const keys = tools.flatMap((tool) =>
+  const keys = (base(file) === 'package.json' ? tools : []).flatMap((tool) =>
     (RUNNER_CONFIGS[tool]?.pkgKeys ?? [])
       .filter((k) => before.keys[k] !== after.keys[k])
       .map((k): Found => ({ kind: 'runner-config', file, text: `${file} "${k}" changed (${tool}'s config)` })),
@@ -45,7 +46,7 @@ function configFindings(file: string, texts: Texts, tools: string[]): Found[] {
   for (const tool of tools) {
     const c = RUNNER_CONFIGS[tool];
     if (!c) continue;
-    if (c.files.some((r) => r.test(name)))
+    if (c.files.some((r) => r.test(name)) || c.paths?.some((r) => r.test(file)))
       out.push({ kind: 'runner-config', file, text: `${file} changed (${tool}'s config)` });
     for (const s of c.sections ?? []) {
       if (!s.file.test(name)) continue;
@@ -65,16 +66,34 @@ function makeFindings(file: string, texts: Texts, targets: Set<string>): Found[]
     .map((t) => ({ kind: 'makefile', file, text: `${file} changed for \`make${t ? ` ${t}` : ''}\`` }));
 }
 
+/**
+ * The folder a config file configures: its own, or for one kept in a tool's folder (`.cargo/config.toml`,
+ * `gradle/wrapper/…`), the folder that holds that.
+ */
+function homeOf(file: string, tool: string) {
+  const m = RUNNER_CONFIGS[tool]?.paths?.map((r) => r.exec(file)).find(Boolean);
+  return m ? file.slice(0, m.index) : dirOf(file);
+}
+
 /** Tools whose config this file could be: they run in a folder near it. */
 const toolsNear = (file: string, reach: CheckReach) =>
   [...reach.tools]
-    .filter(([, dirs]) => [...dirs].some((d) => near(dirOf(file), d)))
+    .filter(([tool, dirs]) => [...dirs].some((d) => near(homeOf(file, tool), d)))
     .map(([tool]) => tool)
     .sort();
 
+/** The Nx targets the check runs from this project.json that changed. */
+function targetFindings(file: string, texts: Texts, targets: Set<string>): Found[] {
+  const [b, a] = texts.map(nxProject);
+  return [...targets]
+    .sort()
+    .filter((t) => JSON.stringify(b?.targets[t]) !== JSON.stringify(a?.targets[t]))
+    .map((t): Found => ({ kind: 'script', file, text: `${file} targets.${t} changed` }));
+}
+
 /** Whether reading the file is needed to tell: a shared file, a script list, a makefile. */
 function needsText(file: string, reach: CheckReach, tools: string[]) {
-  if (reach.scripts.has(file) || reach.makefiles.has(file)) return true;
+  if (reach.scripts.has(file) || reach.makefiles.has(file) || reach.targets.has(file)) return true;
   if (base(file) === 'package.json') return tools.some((t) => RUNNER_CONFIGS[t]?.pkgKeys?.length);
   return tools.some((t) => RUNNER_CONFIGS[t]?.sections?.some((s) => s.file.test(base(file))));
 }
@@ -90,9 +109,11 @@ async function fileFindings(file: string, reach: CheckReach, read: GuardReaders)
   const texts: Texts = [await read.before(file), await read.after(file)];
   // a side that couldn't be read can't be compared: strict, since the guard can't tell it changed nothing
   if (texts[0] === undefined || texts[1] === undefined) return [...out, unread(file)];
-  if (base(file) === 'package.json') out.push(...packageFindings(file, texts, reach, tools));
+  if (base(file) === 'package.json' || reach.scripts.has(file)) out.push(...packageFindings(file, texts, reach, tools));
   const targets = reach.makefiles.get(file);
   if (targets) out.push(...makeFindings(file, texts, targets));
+  const nx = reach.targets.get(file);
+  if (nx) out.push(...targetFindings(file, texts, nx));
   return [...out, ...configFindings(file, texts, tools)];
 }
 

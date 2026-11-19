@@ -1,13 +1,5 @@
-/**
- * Where a tool reads its config. `files`: config files by name, the whole file counts. `sections`: shared files where
- * only the tool's own section counts (pyproject.toml's `[tool.pytest.ini_options]`), so a dependency added there
- * changes nothing. `pkgKeys`: package.json keys it reads (`jest`).
- */
-export interface RunnerConfig {
-  files: RegExp[];
-  sections?: { file: RegExp; header: RegExp }[];
-  pkgKeys?: string[];
-}
+import type { RunnerConfig } from './runnerConfig';
+import { STACK_RUNNER_CONFIGS } from './stackRunnerConfigs';
 
 const JS = '[cm]?[jt]s';
 const named = (stem: string, ext = JS) => new RegExp(`^${stem}\\.(?:${ext})$`);
@@ -18,11 +10,12 @@ const TOX = /^tox\.ini$/;
 const VITE: RunnerConfig = {
   files: [named('vitest\\.(config|workspace)'), named('vite\\.config'), /^vitest\.workspace\.json$/],
 };
+/** pytest's settings, and coverage's (a lowered `fail_under` weakens `pytest --cov`). */
 const PYTEST: RunnerConfig = {
-  files: [/^pytest\.ini$/, /^conftest\.py$/],
+  files: [/^pytest\.ini$/, /^conftest\.py$/, /^\.coveragerc$/],
   sections: [
-    { file: PYPROJECT, header: /^\[tool\.pytest(\.|\])/ },
-    { file: SETUP_CFG, header: /^\[tool:pytest\]/ },
+    { file: PYPROJECT, header: /^\[tool\.(pytest|coverage)(\.|\])/ },
+    { file: SETUP_CFG, header: /^\[(tool:pytest|coverage:\w+)\]/ },
     { file: TOX, header: /^\[pytest\]/ },
   ],
 };
@@ -32,8 +25,9 @@ const ESLINT: RunnerConfig = {
 };
 
 /**
- * The test runners, linters and type checkers the guard knows, by the program name a check or script runs. A tool
- * it doesn't know adds nothing; the trail lead names its files in the check's `guards`.
+ * The test runners, linters and type checkers the guard knows, by the program name a check or script runs (the other
+ * stacks' in stackRunnerConfigs.ts). A tool it doesn't know adds nothing; the trail lead names its files in the
+ * check's `guards`.
  */
 export const RUNNER_CONFIGS: Record<string, RunnerConfig> = {
   vitest: VITE,
@@ -56,7 +50,8 @@ export const RUNNER_CONFIGS: Record<string, RunnerConfig> = {
   },
   biome: { files: [/^biome\.jsonc?$/] },
   turbo: { files: [/^turbo\.json$/] },
-  nx: { files: [/^nx\.json$/, /^project\.json$/] },
+  // a project.json counts by the targets the check runs (checkReach.ts), not as a whole
+  nx: { files: [/^nx\.json$/] },
   pytest: PYTEST,
   'py.test': PYTEST,
   tox: { files: [TOX, /^conftest\.py$/] },
@@ -70,8 +65,9 @@ export const RUNNER_CONFIGS: Record<string, RunnerConfig> = {
   },
   ruff: { files: [/^\.?ruff\.toml$/], sections: [{ file: PYPROJECT, header: /^\[tool\.ruff(\.|\])/ }] },
   flake8: { files: [/^\.flake8$/], sections: [{ file: SETUP_CFG, header: /^\[flake8\]/ }] },
-  rspec: { files: [/^\.rspec$/, /^spec_helper\.rb$/, /^rails_helper\.rb$/] },
+  rspec: { files: [/^\.rspec(-local)?$/, /^spec_helper\.rb$/, /^rails_helper\.rb$/] },
   phpunit: { files: [/^phpunit\.xml(\.dist)?$/] },
   golangci: { files: [/^\.golangci\.(ya?ml|toml|json)$/] },
   'golangci-lint': { files: [/^\.golangci\.(ya?ml|toml|json)$/] },
+  ...STACK_RUNNER_CONFIGS,
 };

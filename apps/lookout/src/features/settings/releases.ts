@@ -23,6 +23,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.20',
+    date: '2026-11-19',
+    items: [
+      'The check guard knows more stacks: Cargo, Gradle, Maven, .NET, Ruby, PHP, Swift, Elixir and Dart configs, and skipped tests in each (#[ignore], @Disabled, Skip =, markTestSkipped, xit, XCTSkip, @tag :skip…)',
+      'It follows turbo and Nx into the scripts and targets they run, and reads through bundle exec, poetry run, uv run and composer scripts',
+    ],
+  },
+  {
     version: '0.66.17',
     date: '2026-11-19',
     items: [
@@ -167,37 +175,6 @@ export const RELEASES: Release[] = [
       'Criteria charted with a ticket are yours to confirm before any agent starts it',
       'Every proof gap says who is on it, and what closes it when it is yours: Confirm criteria and verify again, Approve, Send to rework',
       'The pull request up top in the ticket and on its map card; the full ticket’s actions sit flush at the bottom',
-    ],
-  },
-  {
-    version: '0.64.3',
-    date: '2026-11-18',
-    items: [
-      'Fix: a trail whose discovery research is done no longer shows Destination reached before its plan is charted',
-      'Fix: trails and tickets created at the same time never get the same number',
-    ],
-  },
-  {
-    version: '0.64.2',
-    date: '2026-11-18',
-    items: ['Two trails with the same title no longer share a folder'],
-  },
-  {
-    version: '0.64.1',
-    date: '2026-11-18',
-    items: [
-      'Fix: what you open while the Lookout is still loading stays open; what needs you no longer opens over it on its own',
-      'Fix: changing a gate twice in quick succession no longer refuses the second change as stale',
-    ],
-  },
-  {
-    version: '0.64.0',
-    date: '2026-11-18',
-    items: [
-      'New trail is a large editor: the destination and notes can be whole markdown documents, with Write and Preview, full screen on a phone',
-      'Load from file (or drop one on the field) puts a .md or .txt file in the destination or notes, to edit before you create',
-      'Assumptions are one per line, and the dialog says how many it will create',
-      'The header keeps the destination to its first sentence; Plan → Destination and Notes show them in full, as markdown',
     ],
   },
   ...NEWER_RELEASES,
