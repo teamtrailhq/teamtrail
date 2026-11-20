@@ -7,8 +7,8 @@ const AHEAD = '#3A3D44';
 
 /**
  * The banners' scene: a dot grid like the Lookout's map canvas, and the trail in square steps, blaze where it has
- * walked and a dashed line ahead, ticking off tickets on its way to the destination, the blaze dot of the logo and
- * wordmark (a ring until the trail reaches it). `progress` is how far the trail has walked.
+ * walked and a dashed line ahead, ticking off tickets on its way to the destination, a blaze dot
+ * (a ring until the trail reaches it). `progress` is how far the trail has walked.
  */
 export function BannerGrid({ w, h, progress = 1 }: { w: number; h: number; progress?: number }) {
   const u = h / 640;

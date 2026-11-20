@@ -29,13 +29,13 @@
   color: var(--wordmark-ink);
   white-space: nowrap;
 }
-.tt-wordmark-dot {
+.tt-wordmark-cursor {
+  /* A terminal block cursor on the baseline, a little under cap height (Inter's is 0.73em), never animated. */
   display: inline-block;
-  width: 0.19em;
-  height: 0.19em;
-  margin-left: 0.05em;
-  border-radius: 50%;
-  background: var(--wordmark-dot);
+  width: 0.32em;
+  height: 0.66em;
+  margin-left: 0.07em;
+  background: var(--wordmark-cursor);
 }
 
 /* ---------- Type voices: people and agents (the sans) vs tracker data (label face) ---------- */

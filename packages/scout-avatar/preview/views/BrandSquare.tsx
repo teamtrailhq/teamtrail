@@ -2,7 +2,7 @@ import { Badge, Logo, type ScoutGround } from '../../src/scout';
 import { WORDMARK } from '../content';
 import { Wordmark } from './Wordmark';
 
-/** The wordmark's width in em (`teamtrail.` in Inter 600), to size it to a share of the square. */
+/** The wordmark's width in em (`teamtrail` and its cursor in Inter 600), to size it to a share of the square. */
 const WORDMARK_EM = 4.6;
 
 /**
