@@ -24,11 +24,18 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.67.16',
+    version: '0.67.17',
     date: '2026-11-20',
     items: [
       "Teamtrail Cloud: a done ticket's bubble offers Approve and merge, or Merge anyway, as its next step",
       'A ticket finished while no checks were set says so, with Set checks, instead of "no completion was submitted"',
+    ],
+  },
+  {
+    version: '0.67.16',
+    date: '2026-11-20',
+    items: [
+      'A long question from an agent leads with a one-line headline, with the question in full under it and its line breaks kept',
     ],
   },
   {
@@ -183,14 +190,6 @@ export const RELEASES: Release[] = [
     date: '2026-11-19',
     items: [
       "An answer passed on from an agent's chat no longer takes the place of yours: it guides the agent, and the question stays open in the Lookout and Slack until you answer, and your answer is the one that decides",
-    ],
-  },
-  {
-    version: '0.66.16',
-    date: '2026-11-19',
-    items: [
-      'Hands-off on a phone: every kind of Needs you fits the screen, with actions big enough to tap, and each row acts on what it asks',
-      'Teamtrail Cloud: Pause shows Stopping… until the agents have stopped, and Start shows Starting… until one is working',
     ],
   },
   ...RECENT_RELEASES,

@@ -1,5 +1,6 @@
 import {
   BRAND,
+  questionHeadline,
   type AgentSessionDoc,
   type FirstAnswer,
   type PendingQuestion,
@@ -7,7 +8,7 @@ import {
 } from '@teamtrail/core';
 import { needsLookout } from '@teamtrail/core/agents';
 import { AnswerError, LookoutOnlyAnswer, attentionView, readAgentDocs, writeAgentAnswer } from '@teamtrail/core/bridge';
-import { askClosedMessage, askMessage, clip, label, type AskRef, type AskView } from '../blocks';
+import { askClosedMessage, askMessage, label, type AskRef, type AskView } from '../blocks';
 import type { AskRecord, SlackConfig } from '../store';
 import { takeAskSlot } from './askLimit';
 import { askOutcome } from './askOutcome';
@@ -35,6 +36,7 @@ export async function askView(
     sessionId: q.sessionId,
     questionId: q.id,
     text: q.text,
+    ...(q.summary ? { summary: q.summary } : {}),
     suggestions: q.suggestions,
     agent: q.agent,
     ...(q.stakes ? { stakes: q.stakes } : {}),
@@ -195,5 +197,5 @@ async function postAsks(ctx: SlackContext, fresh: PendingQuestion[], c: SlackCon
 function digestOnce(ctx: SlackContext, q: PendingQuestion) {
   if (ctx.digested.has(q.id)) return;
   ctx.digested.add(q.id);
-  queueLine(ctx, q.mapId, `${label(q.agent)} asks: ${label(clip(q.text, 200))} (answer in ${BRAND.name})`);
+  queueLine(ctx, q.mapId, `${label(q.agent)} asks: ${label(questionHeadline(q).text)} (answer in ${BRAND.name})`);
 }

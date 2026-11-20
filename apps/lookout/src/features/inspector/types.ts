@@ -47,6 +47,8 @@ export interface Standing {
   title: string;
   parts: string[];
   primary?: PrimaryKind;
+  /** Markdown under the line: an agent's question in full, when its headline (the title) doesn't say it all. */
+  body?: string;
 }
 
 /** The latest completion as the state line reads it. */
@@ -66,7 +68,7 @@ export interface StandingInput {
   state: NodeState;
   now: number;
   /** An open question an agent asked on the ticket. */
-  question?: { agent: string; at: number };
+  question?: { agent: string; at: number; headline?: string; body?: string };
   /** The ranked queue's first item on this ticket, with the edge the inbox gives it. */
   item?: { kind: AttentionKind; edge: EdgeTone; title?: string };
   /** Fields changed outside Teamtrail, in words: the ticket is held until the human accepts or reverts. */
