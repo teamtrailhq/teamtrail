@@ -16,11 +16,14 @@ interface Laid {
   graphH: number;
 }
 
-/** Where the last stretches turn before the X: halfway across the room before it. */
+/** Where the last stretches turn before the finish square: halfway across the room before it. */
 const GAP = { LR: 96, TB: 48 };
 
+/** Half the finish square's side (DestinationGlyph): the last stretches meet its near side. */
+const SQUARE_HALF = 12;
+
 /**
- * Where the X goes, after the last tickets (in line with the last one when there is one), and the map size once it's
+ * Where the finish square goes (its centre), after the last tickets (in line with the last one when there is one), and the map size once it's
  * included.
  */
 export function destinationSpot(l: Laid) {
@@ -40,7 +43,7 @@ function lastTickets(l: Laid) {
 }
 
 /**
- * The last stretches: from every ticket nothing else waits for, on to the X, as elbows like the other connectors. A
+ * The last stretches: from every ticket nothing else waits for, on to the finish square's near side, as elbows like the other connectors. A
  * wrapped layer of last tickets gets one stretch, from a bracket along its far side.
  */
 export function destinationTrail(l: Laid, spot: { x: number; y: number }) {
@@ -48,7 +51,7 @@ export function destinationTrail(l: Laid, spot: { x: number; y: number }) {
   const { whole, single } = bracketedGroups({ groups: l.groups, nodes: l.nodes, ends: lastTickets(l) });
   const cards = cardRects(l.nodes);
   const gap = GAP[direction];
-  const b = direction === 'LR' ? { x: spot.x - 30, y: spot.y } : { x: spot.x, y: spot.y - 30 };
+  const b = direction === 'LR' ? { x: spot.x - SQUARE_HALF, y: spot.y } : { x: spot.x, y: spot.y - SQUARE_HALF };
   const exit = (n: LaidOutNode) =>
     direction === 'LR' ? { x: n.x + NODE_W, y: n.y + NODE_H / 2 } : { x: n.x + NODE_W / 2, y: n.y + NODE_H };
   const fromCards = single.map((n) => {

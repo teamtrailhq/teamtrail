@@ -24,12 +24,31 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.67.18',
+    version: '0.67.19',
     date: '2026-11-20',
     items: [
       "Teamtrail Cloud: Scout's Get started keeps its own corner, so it never covers Send or a button again",
       "In Hands-off, the full ticket has Back, and Esc and your browser's Back return you where you were",
       'Starting a trail before any checks are set says so, with Set checks',
+    ],
+  },
+  {
+    version: '0.67.18',
+    date: '2026-11-20',
+    items: [
+      "The map's destination is a finish square: it fills green when the trail is verified, rose when its checks fail",
+    ],
+  },
+  {
+    version: '0.67.17',
+    date: '2026-11-20',
+    items: ["When Scout in Slack can't reach your Teamtrail, it tells you to start it with `npx teamtrail`"],
+  },
+  {
+    version: '0.67.16',
+    date: '2026-11-20',
+    items: [
+      'A long question from an agent leads with a one-line headline, with the question in full under it and its line breaks kept',
     ],
   },
   {
@@ -136,6 +155,40 @@ export const RELEASES: Release[] = [
       'A new look: a dark-first Lookout with near-black surfaces, hairline borders, square corners and one blaze accent',
       'Inter and JetBrains Mono throughout; the map is a clean dot-grid canvas, and the path agents walked is drawn in blaze',
       'Colours keep one meaning each: blaze is work in progress and your selection, rose needs you, green is verified or done',
+    ],
+  },
+  {
+    version: '0.66.22',
+    date: '2026-11-19',
+    items: [
+      'Settings → Verification suggests the checks your repo actually runs, read from its files (Node, Python, Go, Rust, Java, Ruby, PHP, .NET), each with its folder, one click to add',
+      'Each check has a folder, so a monorepo can test apps/web in apps/web; saving still approves it',
+    ],
+  },
+  {
+    version: '0.66.21',
+    date: '2026-11-19',
+    items: [
+      'The check guard knows more stacks: Cargo, Gradle, Maven, .NET, Ruby, PHP, Swift, Elixir and Dart configs, and skipped tests in each (#[ignore], @Disabled, Skip =, markTestSkipped, xit, XCTSkip, @tag :skip…)',
+      'It follows turbo and Nx into the scripts and targets they run, and reads through bundle exec, poetry run, uv run and composer scripts',
+    ],
+  },
+  {
+    version: '0.66.20',
+    date: '2026-11-19',
+    items: [
+      'Checks on main test the commit on main: your own node_modules and .venv are no longer linked in, since workspace packages and editable installs in them can point to your uncommitted code',
+      'Setup steps in verification.json (npm ci, uv sync --frozen and other installs from a lockfile) run in the worktrees Teamtrail prepares, never in your checkout, after you approve them with the checks',
+      "When checks on main fail because something isn't installed or reachable on this machine, Teamtrail says so and agents aren't held, instead of asking you to fix main",
+    ],
+  },
+  {
+    version: '0.66.19',
+    date: '2026-11-19',
+    items: [
+      "Check screening knows more stacks: Gradle and Maven wrappers, Python's uv, Poetry and Pipenv, Bundler, Composer, bun, turbo and Nx, Swift, Mix and Dart, and the workspace `-w` or `--filter` names",
+      "A check that needs something not installed yet says so (`ng` isn't installed: no node_modules in apps/web), apart from a script that doesn't exist",
+      'Checks may run a known tool through `uv run --frozen`, `poetry run`, `pipenv run`, `bundle exec`, `pnpm exec` or `npx --no`; anything that would download stays refused',
     ],
   },
   ...RECENT_RELEASES,

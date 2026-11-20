@@ -40,6 +40,14 @@ describe('Needs you rows', () => {
     expect(needText(item({ kind: 'guide', title: 'New guide' })).quick).toBe('Review');
   });
 
+  test("a long question's row is titled by its headline, never the whole question", () => {
+    const text = 'The grid needs images. Each card is grey now.\n\nA) Fetch them.\nB) Ship twelve.';
+    expect(needText(item(), { id: 'q1', text } as never).title).toBe('The grid needs images.');
+    expect(needText(item(), { id: 'q1', text, summary: 'Images: fetch or ship?' } as never).title).toBe(
+      'Images: fetch or ship?',
+    );
+  });
+
   test("a ticket's criteria are confirmed with the plan on a trail whose brief waits; elsewhere on their own", () => {
     const criteria = (mapId: string) => item({ id: `criteria:${mapId}`, kind: 'criteria', mapId, title: 'Confirm' });
     const items = [item({ id: 'brief:m1', kind: 'brief', title: 'Brief' }), criteria('m1'), criteria('m2')];

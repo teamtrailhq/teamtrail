@@ -320,4 +320,5 @@ export type Attention = 'hitl' | 'afk';
 export type { ChatMessage } from './chatMessage';
 
 export type { PendingQuestion, QuestionGuidance } from './pendingQuestion';
+export { questionHeadline, QUESTION_SUMMARY_MAX, type QuestionHeadline } from './questionHeadline';
 export type { AnsweredQuestion } from './answeredQuestion';

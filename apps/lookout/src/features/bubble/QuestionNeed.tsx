@@ -1,12 +1,13 @@
-import type { PendingQuestion } from '@teamtrail/core';
+import { questionHeadline, type PendingQuestion } from '@teamtrail/core';
 import { useRef, useState } from 'react';
-import { MetaLine } from '../../components/ui';
+import { Clamp, MetaLine } from '../../components/ui';
 import { ago } from '../../lib';
 import { AnswerArea } from '../inbox';
 
 /**
- * An agent's question, answered in place: what it asks, who asks and what it holds up, then its suggested replies
- * and a free answer. The whole conversation is one click away.
+ * An agent's question, answered in place: its headline (the agent's summary, else its first sentence), who asks and
+ * what it holds up, the question in full at body size (cut after a few lines, so the answer stays in reach), then its
+ * suggested replies and a free answer. The whole conversation is one click away.
  */
 export function QuestionNeed(props: {
   q: PendingQuestion;
@@ -19,6 +20,7 @@ export function QuestionNeed(props: {
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const blocks = (q.blocks ?? []).map(props.keyOf).filter(Boolean);
+  const headline = questionHeadline(q);
   const send = (text: string) => {
     if (!text.trim()) return;
     props.onAnswer(q.id, text.trim());
@@ -27,10 +29,11 @@ export function QuestionNeed(props: {
   return (
     <div className="bubble-need open-q">
       <span className="t-label urgent">Waiting on you</span>
-      <h3 className="bubble-title">{q.text}</h3>
+      <h3 className="bubble-title">{headline.text}</h3>
       <MetaLine
         parts={[`${q.agent} asks`, blocks.length > 0 && `blocks ${blocks.join(' and ')}`, ago(props.now - q.at)]}
       />
+      {!headline.whole && <Clamp key={q.id} text={q.text} markdown className="question-body" />}
       {q.stakes && <MetaLine parts={[{ text: q.stakes, strong: true }]} />}
       {q.precedent && <MetaLine className="open-q-precedent" parts={[q.precedent]} />}
       <div className="bubble-answer">

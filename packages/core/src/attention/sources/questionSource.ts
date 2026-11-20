@@ -1,7 +1,7 @@
+import { questionHeadline } from '../../model/questionHeadline';
 import type { PendingQuestion, SessionInfo } from '../../model/types';
 import type { AttentionSource, Candidate } from '../types';
 import { waitsOnHuman } from '../waitsOnHuman';
-import { clip } from './clip';
 
 /**
  * Old clients don't send urgency and their ask_human call blocks until answered, so the agent is idle.
@@ -28,7 +28,8 @@ export const questionSource: AttentionSource = {
       kind: 'question',
       mapId: q.mapId,
       ticketId: q.ticketId,
-      title: clip(q.text),
+      // The agent's headline, else the first sentence: the full question is the body where it is answered.
+      title: questionHeadline(q).text,
       since: q.at,
       urgency: q.urgency ?? 'soon',
       ref: q.id,

@@ -24,6 +24,22 @@ describe('ticketStanding', () => {
     });
   });
 
+  it('titles a question by its headline, with who asks, and keeps the question in full as the body', () => {
+    const question = {
+      agent: 'claude-01',
+      at: NOW - 35_000,
+      headline: 'Card images: a key or a list?',
+      body: 'Long\n\nA) a',
+    };
+    expect(read({ state: 'claimed', question })).toEqual({
+      edge: 'urgent',
+      title: 'Waiting on you: Card images: a key or a list?',
+      parts: ['claude-01 asks', '35s ago'],
+      primary: 'answer',
+      body: 'Long\n\nA) a',
+    });
+  });
+
   it("an fyi question takes the queue's calmer edge", () => {
     const s = read({ question: { agent: 'a', at: NOW }, item: { kind: 'question', edge: 'neutral' } });
     expect(s.edge).toBe('neutral');

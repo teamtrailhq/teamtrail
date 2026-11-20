@@ -287,15 +287,16 @@ export async function verifyGuides({ browser, cli, log, shots }) {
       noCodeReason: 'Research only',
       checklist: answers(research.claimed.guides),
     });
-    // The trail's tickets are done: the Lookout says Destination reached once, a flag stands at the end of the map,
+    // The trail's tickets are done: the Lookout says Destination reached once, the finish square at the end of the map is reached,
     // and with no pull request left the dialog only closes.
     const reached = page.locator('.dialog.trail-done');
     await reached.waitFor({ timeout: 15_000 });
     const reachedText = (await reached.textContent()) ?? '';
     await shot('22-destination-reached');
+    const dialogSquare = await reached.locator('svg.destination.reached .dest-sign').count();
     await reached.getByRole('button', { name: 'Close' }).click();
     await reached.waitFor({ state: 'detached' });
-    const flagged = await page.locator('.graph .destination.reached').isVisible();
+    const filled = (await page.locator('.graph .destination.reached .dest-sign').isVisible()) && dialogSquare === 1;
     const ok =
       approved &&
       verifiedInSettings &&
@@ -312,12 +313,12 @@ export async function verifyGuides({ browser, cli, log, shots }) {
       ran === 'a11y:true' &&
       researchGuides === 'architect:type' &&
       /Destination reached/.test(reachedText) &&
-      flagged &&
+      filled &&
       !errors.length;
     const own = await verifyOwnGuides({ page, url, cli, root, call: worker.call, shot, second: second.url });
     const byType = await verifyTrailGuides({ page, url, root, call: worker.call, shots, shot });
     log(
-      `guides ${ok ? 'ok' : 'WRONG'}: a11y added from the catalog and pinned (${pinned?.version}), its check approved in the Lookout (${approved}), Verified in Settings, "${signText?.trim()}" on its map card; the task's claim carried ${claimedGuides}; the inspector showed ${inspector.chips} and Docs added mid-work reached the agent at its next report (${added.map((g) => g.id).join() || 'NOT TOLD'}); completion refused without checklists and again without Docs', then ${done.status} with checks ${ran}; the research ticket took ${researchGuides}; then Destination reached (${flagged ? 'flag on the map' : 'NO FLAG'})${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `guides ${ok ? 'ok' : 'WRONG'}: a11y added from the catalog and pinned (${pinned?.version}), its check approved in the Lookout (${approved}), Verified in Settings, "${signText?.trim()}" on its map card; the task's claim carried ${claimedGuides}; the inspector showed ${inspector.chips} and Docs added mid-work reached the agent at its next report (${added.map((g) => g.id).join() || 'NOT TOLD'}); completion refused without checklists and again without Docs', then ${done.status} with checks ${ran}; the research ticket took ${researchGuides}; then Destination reached (${filled ? 'the finish square reached on the map and in the dialog' : 'NO REACHED SQUARE'})${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     log(own.line);
     log(byType.line);

@@ -8,6 +8,12 @@ export interface PendingQuestion {
   ticketId?: string;
   agent: string;
   text: string;
+  /**
+   * The agent's own one-line headline for a long question ("Hero images: API key or a fixed list?"), shown as its
+   * title wherever the question is listed, with `text` as the body (questionHeadline.ts). Missing on short
+   * questions and on ones asked before it existed: the title is then the question's first sentence.
+   */
+  summary?: string;
   /** Suggested replies, shown as one-click answers. */
   suggestions?: string[];
   at: number;

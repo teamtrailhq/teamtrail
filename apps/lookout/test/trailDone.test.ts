@@ -3,9 +3,13 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { StepTracker } from '../src/features/activity/StepTracker';
+import { DestinationGlyph } from '../src/features/map/DestinationGlyph';
 import { DestinationMark } from '../src/features/map/DestinationMark';
+import { destinationState } from '../src/features/map/destinationState';
 import { DestinationTrail } from '../src/features/map/DestinationTrail';
 import { GraphEdge } from '../src/features/map/GraphEdge';
+import { LegendDestination } from '../src/features/map/LegendDestination';
+import type { DestinationState } from '../src/features/map/types';
 import { openPullRequests } from '../src/features/trail-done/openPullRequests';
 import { proofsSettled } from '../src/features/trail-done/proofsSettled';
 import { TrailDoneDialog } from '../src/features/trail-done/TrailDoneDialog';
@@ -75,7 +79,7 @@ describe('the map once tickets are done', () => {
     expect(done).toContain('edge-travelled');
   });
 
-  it('marks the destination with an X until it is reached, then a flag that says verified or not', () => {
+  it('marks the destination with a finish square: a ring with an accent centre ahead, filled once reached', () => {
     const ahead = html(
       createElement(DestinationMark, {
         x: 0,
@@ -84,17 +88,45 @@ describe('the map once tickets are done', () => {
         done: { kind: 'not-done', reason: '1 ticket still open' },
       }),
     );
-    expect(ahead).toContain('x-stroke');
-    expect(ahead).not.toContain('flag-cloth');
+    expect(ahead).toContain('dest-frame');
+    expect(ahead).toContain('dest-core');
+    expect(ahead).not.toContain('dest-fill');
+    expect(ahead).toContain('aria-label="Destination\nShip it"');
     const reached = html(createElement(DestinationMark, { x: 0, y: 0, text: 'Ship it', done: verified }));
     expect(reached).toContain('destination reached verified');
+    expect(reached).toContain('data-done="verified"');
+    expect(reached).toContain('dest-fill');
     expect(reached).toContain('Destination reached · All 2 tickets verified · verified together on main at abc1234');
     const honest = html(createElement(DestinationMark, { x: 0, y: 0, done: unverified }));
     expect(honest).toContain('destination reached unverified');
+    expect(honest).not.toContain('dest-fill');
+    expect(honest).toContain('dest-sign muted');
     expect(honest).toContain('1 not verified');
     const red = html(createElement(DestinationMark, { x: 0, y: 0, done: failing, onSelect: () => {} }));
     expect(red).toContain('destination reached unverified failing');
+    expect(red).toContain('dest-fill');
     expect(red).toContain('role="button"');
+    expect(red).toContain('tabindex="0"');
+    const picked = html(createElement(DestinationMark, { x: 0, y: 0, done: verified, selected: true }));
+    expect(picked).toContain('destination reached verified sel');
+  });
+
+  it('draws a check when verified and a cross when the checks fail on main together', () => {
+    expect(destinationState(verified)).toBe('verified');
+    expect(destinationState(unverified)).toBe('unverified');
+    expect(destinationState(failing)).toBe('failing');
+    expect(destinationState({ kind: 'not-done', reason: 'open' })).toBe('ahead');
+    expect(destinationState(undefined)).toBe('ahead');
+    const glyph = (state: DestinationState) =>
+      html(createElement('svg', null, createElement(DestinationGlyph, { state })));
+    expect(glyph('verified')).toContain('M-4 0l3 3 5.5 -6.5');
+    expect(glyph('failing')).toContain('M-3.5 -3.5l7 7M3.5 -3.5l-7 7');
+  });
+
+  it('explains the finish square in the map legend', () => {
+    const row = html(createElement(LegendDestination, { state: 'verified', text: 'Destination reached and verified' }));
+    expect(row).toContain('destination reached verified');
+    expect(row).toContain('Destination reached and verified');
   });
 });
 
@@ -104,6 +136,8 @@ describe('the step panel once the trail is done', () => {
     const out = html(createElement(StepTracker, { activity, done: verified }));
     expect(out).toContain('Destination reached');
     expect(out).toContain('verified together on main at abc1234');
+    expect(out).toContain('destination reached verified');
+    expect(out).toContain('dest-fill');
   });
   it('shows the usual state while the trail isn’t done', () => {
     const out = html(
@@ -136,6 +170,7 @@ describe('the destination reached dialog', () => {
     );
     expect(out).toContain('test fails on main at abc1234 after merging.');
     expect(out).toContain('See what fails');
+    expect(out).toContain('destination reached unverified failing');
   });
   it('leads to the open pull requests when there are some', () => {
     const out = dialog(2);

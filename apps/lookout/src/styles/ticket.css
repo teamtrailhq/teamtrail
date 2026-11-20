@@ -70,6 +70,10 @@
   color: var(--text);
   overflow-wrap: anywhere;
 }
+/* A line break the writer typed is kept: an agent's options on their own lines don't run together. */
+.md p {
+  white-space: pre-line;
+}
 .md p,
 .md ul,
 .md ol,
@@ -137,6 +141,10 @@
 }
 .bubble .clamp-md.cut {
   max-height: calc(var(--fs-body) * var(--lh-body) * 6);
+}
+/* An agent's question in full, under its headline: a few lines, so its answers stay in reach. */
+.clamp-md.question-body.cut {
+  max-height: calc(var(--fs-body) * var(--lh-body) * 5);
 }
 .clamp-md.cut.faded {
   mask-image: linear-gradient(to bottom, #000 65%, transparent);
