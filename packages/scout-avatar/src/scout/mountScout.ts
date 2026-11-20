@@ -1,7 +1,7 @@
 /**
  * Framework-free Scout renderer for non-React pages. Same frames, timing, markup and CSS classes as <ScoutAvatar>.
  */
-import { badgeMarkup } from './badgeArt';
+import { type BadgeShape, type ScoutGround, badgeMarkup } from './badgeArt';
 import { RECOMMENDED_STYLE, STYLES, TIMING, composeWave } from './frames';
 import { caret, createScoutDom, drawBadge, drawWave } from './scoutDom';
 import {
@@ -19,7 +19,8 @@ import type { ScoutSize, ScoutState, ScoutStyleId } from './types';
 import './ScoutAvatar.css';
 
 export { TIMING } from './frames';
-export { type GuideRole, guideMarkup } from './guideArt';
+export { type GuideRole, type GuideTheme, guideMarkup } from './guideArt';
+export { type ScoutGround } from './badgeArt';
 export type { ScoutSize, ScoutState } from './types';
 
 export interface MountScoutOptions {
@@ -27,6 +28,10 @@ export interface MountScoutOptions {
   size?: ScoutSize | number;
   speaking?: string;
   variant?: ScoutStyleId;
+  /** The ground behind Scout: `ink` (the default), `blaze` or `paper`. */
+  ground?: ScoutGround;
+  /** `circle` (the default) or `square`, for a tile or a square frame. */
+  shape?: Extract<BadgeShape, 'circle' | 'square'>;
   framed?: boolean;
   caption?: boolean;
   label?: string;
@@ -67,7 +72,10 @@ export function mountScout(host: HTMLElement, initial: MountScoutOptions = {}): 
     });
 
     root.style.setProperty('--scout-u', `${base}px`);
-    drawBadge(dom.sprite, badgeMarkup({ eyes, mouth, light }, { lamp: style.lamp, simple: d.mini }), px);
+    const shape = opts.shape ?? 'circle';
+    const badge = badgeMarkup({ eyes, mouth, light }, { lamp: style.lamp, simple: d.mini, ground: opts.ground, shape });
+    drawBadge(dom.sprite, badge, px);
+    spriteWrap.style.borderRadius = shape === 'square' ? '0' : '';
 
     if (!d.framed) {
       root.className = `scout scout-bare scout-${shownState}`;

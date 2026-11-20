@@ -1,10 +1,13 @@
 /** A 9.5px sentence-case character runs near 5px: the estimate where text can't be measured (tests). */
 export const META_CHAR = 5;
 
-const FONT = {
-  sans: "9.5px 'Figtree Variable', system-ui, sans-serif",
-  mono: "8.55px 'JetBrains Mono Variable', ui-monospace, monospace",
-};
+const SIZE = { sans: '9.5px', mono: '8.55px' };
+
+/** The card's font: the theme's --sans or --mono (styles/look.css), read when measuring so a switch applies. */
+function fontOf(face: 'sans' | 'mono') {
+  const family = getComputedStyle(document.documentElement).getPropertyValue(`--${face}`).trim();
+  return `${SIZE[face]} ${family || (face === 'mono' ? 'ui-monospace, monospace' : 'system-ui, sans-serif')}`;
+}
 let ctx: CanvasRenderingContext2D | null | undefined;
 
 function canvas() {
@@ -21,6 +24,6 @@ function canvas() {
 export function metaTextWidth(text: string, face: 'sans' | 'mono' = 'sans') {
   const c = canvas();
   if (!c) return text.length * META_CHAR;
-  c.font = FONT[face];
+  c.font = fontOf(face);
   return c.measureText(text).width * 1.04;
 }

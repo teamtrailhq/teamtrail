@@ -23,11 +23,38 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.24',
-    date: '2026-11-19',
+    version: '0.67.5',
+    date: '2026-11-20',
     items: [
       'Monorepos: give a check the paths it is about (Settings → Verification, prefilled for a workspace package), and a change outside them doesn’t run it',
       'Lockfiles, the top’s manifests and CI config still run every check, and so do checks on main; the proof says which checks were skipped and why',
+    ],
+  },
+  {
+    version: '0.67.3',
+    date: '2026-11-20',
+    items: ['The teamtrail wordmark ends in a blaze block cursor instead of a full stop'],
+  },
+  {
+    version: '0.67.2',
+    date: '2026-11-20',
+    items: ['Guide icons are the symbol alone, on the page itself, with no tile or border around them'],
+  },
+  {
+    version: '0.67.1',
+    date: '2026-11-20',
+    items: [
+      'Scout, the logo and the guide icons are redrawn for the new look: Scout in graphite, white and blaze, square tiles, flat guide icons',
+      'The favicon is the blaze t. tile, the same on light and dark browser tabs',
+    ],
+  },
+  {
+    version: '0.67.0',
+    date: '2026-11-20',
+    items: [
+      'A new look: a dark-first Lookout with near-black surfaces, hairline borders, square corners and one blaze accent',
+      'Inter and JetBrains Mono throughout; the map is a clean dot-grid canvas, and the path agents walked is drawn in blaze',
+      'Colours keep one meaning each: blaze is work in progress and your selection, rose needs you, green is verified or done',
     ],
   },
   {
@@ -163,15 +190,6 @@ export const RELEASES: Release[] = [
     items: [
       'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
       'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
-    ],
-  },
-  {
-    version: '0.66.4',
-    date: '2026-11-18',
-    items: [
-      'Slack: each question’s card shows its own answer; one passed on in an agent’s chat says it decided nothing',
-      'Slack: archiving a trail no longer closes cards for what still waits on you, and a card that becomes high risk switches to Open in Lookout',
-      'Checks on main run again when main moves after a failure, and say so meanwhile; trail checks read reverts on the commit they run on',
     ],
   },
   ...NEWER_RELEASES,

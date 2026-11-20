@@ -1,7 +1,16 @@
 import type { Release } from './releases';
 
-/** Releases 0.61–0.66.3, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
+/** Releases 0.61–0.66.4, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
+  {
+    version: '0.66.4',
+    date: '2026-11-18',
+    items: [
+      'Slack: each question’s card shows its own answer; one passed on in an agent’s chat says it decided nothing',
+      'Slack: archiving a trail no longer closes cards for what still waits on you, and a card that becomes high risk switches to Open in Lookout',
+      'Checks on main run again when main moves after a failure, and say so meanwhile; trail checks read reverts on the commit they run on',
+    ],
+  },
   {
     version: '0.66.3',
     date: '2026-11-18',

@@ -73,7 +73,7 @@
   font-weight: 500;
 }
 .comms .status.urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .back {
   background: none;
@@ -290,7 +290,7 @@
   white-space: nowrap;
 }
 .ticket-list .st-waiting .st-text {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 
 /* Another open question from the same agent (a side question): answer it next. */

@@ -1,5 +1,6 @@
 import { useMemo, type CSSProperties } from 'react';
 import { Badge } from './Badge';
+import type { ScoutGround } from './badgeArt';
 import { RECOMMENDED_STYLE, STYLES, composeWave } from './frames';
 import { useBlink } from './hooks/useBlink';
 import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion';
@@ -18,6 +19,8 @@ export interface ScoutAvatarProps {
   /** Line Scout is saying. Drives mouth, waveform and caption; implies `state="speaking"` unless the state is alert or thinking. */
   speaking?: string;
   variant?: ScoutStyleId;
+  /** The ground behind Scout: `ink` (the default), `blaze` or `paper`. */
+  ground?: ScoutGround;
   /** Draw the panel frame and label. Defaults to true except for `xs`. */
   framed?: boolean;
   /** Show the spoken line under the waveform. Defaults to true for md and lg. */
@@ -36,6 +39,7 @@ export function ScoutAvatar({
   size = 'md',
   speaking,
   variant = RECOMMENDED_STYLE,
+  ground,
   framed,
   caption,
   label = 'Scout',
@@ -77,7 +81,7 @@ export function ScoutAvatar({
 
   const sprite = (
     <span className="scout-sprite">
-      <Badge face={{ eyes, mouth, light }} variant={variant} size={px} simple={m.mini} />
+      <Badge face={{ eyes, mouth, light }} variant={variant} size={px} simple={m.mini} ground={ground} />
     </span>
   );
 

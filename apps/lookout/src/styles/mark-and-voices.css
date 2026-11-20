@@ -19,21 +19,26 @@
   display: flex;
   align-items: center;
 }
-/* The teamtrail. wordmark (components/ui/Wordmark.tsx): ink and dot per theme, in styles/theme.css. */
+/* The teamtrail. wordmark (components/ui/Wordmark.tsx): the display face (Inter 600) with the brand's tighter tracking,
+ * ink and dot per theme in styles/theme.css. After the callers' title styles, so its face and tracking win. */
 .tt-wordmark {
+  font-family: var(--display);
+  font-weight: var(--display-weight);
+  letter-spacing: -0.035em;
+  margin-right: 0;
   color: var(--wordmark-ink);
   white-space: nowrap;
 }
-.tt-wordmark-dot {
+.tt-wordmark-cursor {
+  /* A terminal block cursor on the baseline, a little under cap height (Inter's is 0.73em), never animated. */
   display: inline-block;
-  width: 0.24em;
-  height: 0.24em;
-  margin-left: 0.042em;
-  border-radius: 50%;
-  background: var(--wordmark-dot);
+  width: 0.32em;
+  height: 0.66em;
+  margin-left: 0.07em;
+  background: var(--wordmark-cursor);
 }
 
-/* ---------- Type voices: people and agents (Geist) vs tracker data (label face) ---------- */
+/* ---------- Type voices: people and agents (the sans) vs tracker data (label face) ---------- */
 .msg.voice-agent .msg-text {
   font-family: var(--voice-agent);
   letter-spacing: var(--ls-text);
@@ -47,7 +52,7 @@
   font-size: var(--fs-sm);
   letter-spacing: var(--ls-data);
   text-transform: uppercase;
-  color: var(--urgent);
+  color: var(--urgent-ink);
   line-height: 1;
   font-weight: 500;
 }
@@ -69,7 +74,8 @@
 }
 .ms-name {
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
   font-size: 64px;
   letter-spacing: 0.3em;
   color: var(--text-hi);
@@ -86,7 +92,8 @@
   align-items: center;
   gap: var(--sp-10);
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
   font-size: var(--fs-title);
   color: var(--text);
 }
@@ -130,7 +137,7 @@
   color: var(--st-claimed);
 }
 .ms-alert {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .ms-status.ms-ok {
   color: var(--st-decided);
@@ -139,7 +146,7 @@
   color: var(--amber);
 }
 .ms-status.ms-error {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .ms-status.ms-idle {
   color: var(--faint);
