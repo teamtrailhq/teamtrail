@@ -1,23 +1,25 @@
-import { Badge, Logo } from '../../src/scout';
+import { Badge, Logo, type ScoutGround } from '../../src/scout';
 import { WORDMARK } from '../content';
 import { Wordmark } from './Wordmark';
 
-/** The wordmark's width in em (`teamtrail.` in Londrina Solid 900), to size it to a share of the square. */
-const WORDMARK_EM = 4.15;
+/** The wordmark's width in em (`teamtrail.` in Inter 600), to size it to a share of the square. */
+const WORDMARK_EM = 4.6;
 
 /**
  * Brand exports: the logo tile, the wordmark on a dark square, or Scout's avatar filling the square for places where
- * Scout is the one talking, like Slack (which rounds the corners itself). `theme` picks the logo's version and the
- * background it sits on.
+ * Scout is the one talking, like Slack (which rounds the corners itself). `theme` picks the logo's version (`blaze`
+ * is the app icon); `ground` is Scout's.
  */
 export function BrandSquare({
   n,
   who,
   theme,
+  ground,
 }: {
   n: number;
   who: 'logo' | 'scout' | 'wordmark';
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'blaze';
+  ground: ScoutGround;
 }) {
   if (who === 'wordmark')
     return (
@@ -31,7 +33,7 @@ export function BrandSquare({
     );
   return (
     <div className={`brand-square ${theme}`} data-capture="square" style={{ width: n, height: n }}>
-      {who === 'scout' ? <Badge size={n} shape="square" /> : <Logo size={n} theme={theme} />}
+      {who === 'scout' ? <Badge size={n} shape="square" ground={ground} /> : <Logo size={n} theme={theme} />}
     </div>
   );
 }

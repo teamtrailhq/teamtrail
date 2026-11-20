@@ -10,7 +10,6 @@ export function logoAutoStyle(): CSSProperties {
   const pick = (key: keyof typeof light) => `light-dark(${light[key]}, ${dark[key]})`;
   return {
     ['--tt-logo-tile' as string]: pick('tile'),
-    ['--tt-logo-edge' as string]: pick('edge'),
     ['--tt-logo-mark' as string]: pick('mark'),
     ['--tt-logo-dot' as string]: pick('dot'),
   };

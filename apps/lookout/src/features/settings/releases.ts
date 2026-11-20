@@ -23,6 +23,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.1',
+    date: '2026-11-20',
+    items: [
+      'Scout, the logo and the guide icons are redrawn for the new look: Scout in graphite, white and blaze, square tiles, flat guide icons',
+      'The favicon is the blaze t. tile, the same on light and dark browser tabs',
+    ],
+  },
+  {
     version: '0.67.0',
     date: '2026-11-20',
     items: [

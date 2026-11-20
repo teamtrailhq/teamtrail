@@ -1,10 +1,10 @@
 import { TAGLINE } from '../content';
-import { BannerLand } from './BannerLand';
+import { BannerGrid } from './BannerGrid';
 import { Wordmark } from './Wordmark';
 
 /**
  * card: README banner, social preview and Open Graph, the wordmark large on the left; header: X profile header (the
- * avatar overlaps bottom-left, so the copy sits right). The trail walks across the land to the same orange dot.
+ * avatar overlaps bottom-left, so the copy sits right). The trail walks across the dot grid to the same blaze dot.
  */
 export function Banner({
   w,
@@ -12,15 +12,13 @@ export function Banner({
   layout,
   wordmark,
   progress,
-  wobble,
 }: {
   w: number;
   h: number;
   layout: 'card' | 'header';
   wordmark: string;
-  /** The scene's animation: how far the trail has walked, and the contours' drift. */
+  /** The scene's animation: how far the trail has walked. */
   progress?: number;
-  wobble?: number;
 }) {
   const u = h / 640;
   return (
@@ -29,7 +27,7 @@ export function Banner({
       data-capture="banner"
       style={{ width: w, height: h, ['--u' as string]: `${u}px` }}
     >
-      <BannerLand w={w} h={h} progress={progress} wobble={wobble} />
+      <BannerGrid w={w} h={h} progress={progress} />
       <div className="banner-copy">
         <Wordmark text={wordmark} />
         <div className="social-cat">The trail map for AI coding agents</div>

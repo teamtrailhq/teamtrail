@@ -22,11 +22,11 @@ export function App() {
       <BrandSquare
         n={Number(q.get('n') || 512)}
         who={(['scout', 'wordmark'] as const).find((w) => w === q.get('who')) ?? 'logo'}
-        theme={q.get('theme') === 'light' ? 'light' : 'dark'}
+        theme={(['light', 'blaze'] as const).find((t) => t === q.get('theme')) ?? 'dark'}
+        ground={(['blaze', 'paper'] as const).find((g) => g === q.get('ground')) ?? 'ink'}
       />
     );
-  if (view === 'favicon')
-    return <Favicon px={Number(q.get('px') || 64)} theme={q.get('theme') === 'dark' ? 'dark' : 'light'} />;
+  if (view === 'favicon') return <Favicon px={Number(q.get('px') || 64)} />;
   if (view === 'lockup')
     return (
       <Lockup
