@@ -19,6 +19,8 @@ export function remoteAgentOpener(o: {
   agent?: Pick<AgentOptions, 'pollMs' | 'leaseMs'>;
   /** The server's runner for its remote agents' checks (AgentOptions.checkRunner). */
   checkRunner?: AgentOptions['checkRunner'];
+  /** Where repo readiness is read and probed (AgentOptions.readiness). */
+  readiness?: AgentOptions['readiness'];
 }) {
   return (principal: McpPrincipal): McpHosted => {
     let server: McpServer | undefined;
@@ -36,6 +38,7 @@ export function remoteAgentOpener(o: {
       ...o.agent,
       remote: { tokenName: principal.name, tokenId: principal.id },
       ...(o.checkRunner ? { checkRunner: o.checkRunner } : {}),
+      ...(o.readiness ? { readiness: o.readiness } : {}),
     });
     server = createMcpServer(agent, o.version);
     return { server, close: (reason) => agent.close(reason) };

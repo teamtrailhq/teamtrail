@@ -1,6 +1,7 @@
 import type { AttentionItem, AttentionKind, MapSummary } from '@teamtrail/core';
 import { attentionView } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
+import { readinessHostOf } from './readinessGate';
 
 /** An attention item as agents read it: trail and ticket by their human keys. */
 function itemView(i: AttentionItem, maps: Map<string, MapSummary>, keyOf: (id: string, mapId: string) => string) {
@@ -23,7 +24,7 @@ function itemView(i: AttentionItem, maps: Map<string, MapSummary>, keyOf: (id: s
 
 /** The ranked attention queue, best first, optionally only some kinds. */
 export async function rankedAttention(ctx: AgentContext, kinds?: AttentionKind[]) {
-  const view = await attentionView({ root: ctx.root, adapter: ctx.adapter });
+  const view = await attentionView({ root: ctx.root, adapter: ctx.adapter, readiness: readinessHostOf(ctx) });
   const maps = new Map((await ctx.adapter.listMaps()).map((m) => [m.id, m]));
   const wanted = kinds?.length ? view.items.filter((i) => kinds.includes(i.kind)) : view.items;
   return {

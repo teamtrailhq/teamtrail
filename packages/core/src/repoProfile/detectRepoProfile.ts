@@ -10,6 +10,7 @@ import { gradleUnit } from './gradleUnit';
 import { layoutOf } from './layoutOf';
 import { PROFILE_LIMITS } from './limits';
 import { makeCommands } from './makeCommands';
+import { makeTasks } from './makeTasks';
 import { mavenUnit } from './mavenUnit';
 import { nodeUnit } from './nodeUnit';
 import { otherUnits } from './otherUnits';
@@ -40,13 +41,15 @@ const DETECTORS: UnitDetector[] = [
 
 const EMPTY: FolderView = { dir: '', depth: 0, files: new Set(), dirs: new Set() };
 
-/** A folder's Makefile targets go to its first unit; its example env names to every unit in it below the top. */
+/** A folder's Makefile targets (checks and tasks) go to its first unit; its example env names to every unit in it below the top. */
 async function extras(folder: FolderView, units: RepoUnit[], reader: ProfileReader) {
   if (!units.length) return;
   const make = ['Makefile', 'GNUmakefile'].find((f) => folder.files.has(f));
   if (make) {
     const file = folder.dir ? `${folder.dir}/${make}` : make;
-    units[0].commands.push(...makeCommands({ text: (await reader.read(file)) ?? '', dir: folder.dir, file }));
+    const text = (await reader.read(file)) ?? '';
+    units[0].commands.push(...makeCommands({ text, dir: folder.dir, file }));
+    units[0].tasks = [...(units[0].tasks ?? []), ...makeTasks({ text, dir: folder.dir, file })];
   }
   if (!folder.dir) return;
   const env = await envExampleNeeds(folder, reader);

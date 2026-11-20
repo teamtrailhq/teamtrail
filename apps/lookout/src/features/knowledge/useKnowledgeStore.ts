@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useLiveLoad } from '../../hooks/useLiveLoad';
 import { apiBase } from '../../lib/apiBase';
 import { trustChanged } from '../../lib/trustChanged';
-import type { KnowledgeDraft, KnowledgeStore } from './knowledgeContext';
+import type { CommandNotesResult, KnowledgeDraft, KnowledgeStore } from './knowledgeContext';
 
 const api = `${apiBase()}/knowledge`;
 
@@ -66,6 +66,11 @@ export function useKnowledgeStore(briefText: string): KnowledgeStore {
       post('/call', { id, call, hash: shown ?? hashes[id] }).then(
         () => (setError(undefined), reload(), true),
         (e: Error) => (setError(e.message), reload(), false),
+      ),
+    suggestCommands: () =>
+      post<CommandNotesResult>('/commands', {}).then(
+        (b) => (reload(), b),
+        (e: Error) => e.message,
       ),
     propose: (draft: KnowledgeDraft) =>
       post<{ entry: KnowledgeEntry }>('/propose', draft).then(

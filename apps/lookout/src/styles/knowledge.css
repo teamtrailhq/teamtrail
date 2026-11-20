@@ -24,6 +24,12 @@
   align-items: center;
   gap: var(--sp-6);
 }
+.kn-commands {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  margin-left: auto;
+}
 .kn-filters .chip {
   border: 1px solid var(--line2);
   background: transparent;
@@ -81,7 +87,6 @@
 }
 .kn-body {
   margin: 0;
-  white-space: pre-wrap;
   line-height: var(--lh-body);
 }
 .kn-preview {

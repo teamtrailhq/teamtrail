@@ -16,8 +16,12 @@ const short = (sha: string | null) => (sha ? sha.slice(0, 8) : 'none');
 const waivedLines = (p: Proof) =>
   (p.waived ?? []).map((w) => `- ⏭️ \`${md(w.argv.join(' '), 120)}\` skipped by ${md(w.by, 60)}: ${md(w.reason)}`);
 
+/** Each check the change was outside of: the trail lead scoped it to part of the repo (its `paths`). */
+const outOfScopeLines = (p: Proof) =>
+  (p.outOfScope ?? []).map((c) => `- ⏭️ ${md(c.name, 60)} (\`${md(c.argv.join(' '), 120)}\`) skipped: ${md(c.reason)}`);
+
 function checkLines(p: Proof): string[] {
-  return [...ranLines(p), ...waivedLines(p), ...retriedLines(p)];
+  return [...ranLines(p), ...outOfScopeLines(p), ...waivedLines(p), ...retriedLines(p)];
 }
 
 /** Each check that passed only on retry, on code it had failed on, and what the trail lead made of it. */
@@ -35,7 +39,7 @@ function retriedStatus(r: NonNullable<Proof['retried']>[number]) {
 function ranLines(p: Proof): string[] {
   if (p.attempt.remote && !p.attempt.runner)
     return ['- No check ran here: the work was submitted from another machine.'];
-  if (!p.checks.length) return p.waived?.length ? [] : ['- No checks ran.'];
+  if (!p.checks.length) return p.waived?.length || p.outOfScope?.length ? [] : ['- No checks ran.'];
   const by = p.attempt.runner ? [`Ran by ${md(p.attempt.runner, 60)}, on the pushed commit:`] : [];
   return [
     ...by,

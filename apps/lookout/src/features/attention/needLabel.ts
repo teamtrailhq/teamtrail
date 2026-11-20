@@ -47,6 +47,7 @@ const CHIP_VERB: Partial<Record<AttentionKind, string>> = {
   'review-limit': 'Review waits',
   escape: 'Came back',
   criteria: 'Confirm criteria',
+  readiness: 'Repo not ready',
 };
 
 /** The words on a card that needs you: by the most urgent item on it. */

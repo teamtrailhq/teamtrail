@@ -27,6 +27,8 @@ const WRITES: RegExp[] = [
   /^\/verification\/config$/,
   // What a change outside the files an agent declared does, set and approved in the same step (verification/setScope.ts).
   /^\/verification\/scope$/,
+  // Suggesting notes of the project's commands, read from this machine's checkout (commandNotes/).
+  /^\/knowledge\/commands$/,
   // The diff rules: checks a change's files make run and questions they make agents answer (verification/setRules.ts).
   /^\/verification\/rules$/,
   // How each verification gate acts, off, observe or enforce, set and approved in the same step (setGateMode.ts).
@@ -45,6 +47,8 @@ const WRITES: RegExp[] = [
   /^\/trail-checks\/fix-ticket$/,
   // Numbering a new trail or ticket (fileRoute.ts): another device never creates one.
   /^\/file\/number$/,
+  // Repo readiness: its fixes write verification.json and approve it; Start anyway lets held work start.
+  /^\/repo\/readiness\/(fix|start-anyway)$/,
   // The projects this Lookout supervises.
   /^\/projects$/,
   /^\/projects\/settings$/,
@@ -65,6 +69,8 @@ const ALWAYS: RegExp[] = [
   /^\/trackers\/.+/,
   // The pull requests a ticket could be linked to, read with this machine's GitHub token.
   /^\/verification\/sync\/candidates$/,
+  // The variables checks may read: this machine's list, and which of them its shell has set (names only).
+  /^\/verification\/variables$/,
   /^\/slack\/.+/,
   // Catalog searches and previews fetch the URLs in guides.json (agents can write it) from this machine.
   /^\/guides\/catalog(\/|$)/,
