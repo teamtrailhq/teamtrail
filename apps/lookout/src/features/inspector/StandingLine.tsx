@@ -1,5 +1,5 @@
 import { leaseHealth } from '@teamtrail/core';
-import { ChangedNotice, MetaLine } from '../../components/ui';
+import { ChangedNotice, Clamp, MetaLine } from '../../components/ui';
 import { cx } from '../../lib';
 import type { TicketView } from './useTicketView';
 
@@ -32,6 +32,7 @@ export function StandingLine(props: { v: TicketView; className?: string; asked?:
     >
       {title && <span className="t-row-title standing-title state-title">{title}</span>}
       <MetaLine parts={parts} />
+      {title && s.body && <Clamp key={s.body} text={s.body} markdown className="question-body" />}
       {notices.map((n) => (
         <span key={n.text} className="t-meta standing-notice">
           {n.text}

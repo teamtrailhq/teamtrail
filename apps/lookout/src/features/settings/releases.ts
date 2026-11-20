@@ -7,6 +7,7 @@ import { LATER_RELEASES } from './laterReleases';
 import { MID_RELEASES } from './midReleases';
 import { NEWER_RELEASES } from './newerReleases';
 import { OLDER_RELEASES } from './olderReleases';
+import { RECENT_RELEASES } from './recentReleases';
 
 export interface Release {
   version: string;
@@ -22,6 +23,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 ];
 
 export const RELEASES: Release[] = [
+  {
+    version: '0.67.16',
+    date: '2026-11-20',
+    items: [
+      'A long question from an agent leads with a one-line headline, with the question in full under it and its line breaks kept',
+    ],
+  },
   {
     version: '0.67.15',
     date: '2026-11-20',
@@ -176,31 +184,7 @@ export const RELEASES: Release[] = [
       "An answer passed on from an agent's chat no longer takes the place of yours: it guides the agent, and the question stays open in the Lookout and Slack until you answer, and your answer is the one that decides",
     ],
   },
-  {
-    version: '0.66.16',
-    date: '2026-11-19',
-    items: [
-      'Hands-off on a phone: every kind of Needs you fits the screen, with actions big enough to tap, and each row acts on what it asks',
-      'Teamtrail Cloud: Pause shows Stopping… until the agents have stopped, and Start shows Starting… until one is working',
-    ],
-  },
-  {
-    version: '0.66.15',
-    date: '2026-11-19',
-    items: [
-      'Two answers to the same question at once (the Lookout and Slack, or two people): the first is the one used everywhere, and the other is kept in the conversation as "also answered, not used"',
-    ],
-  },
-  {
-    version: '0.66.14',
-    date: '2026-11-19',
-    items: ['Running the tests no longer leaves folders behind in the temp folder'],
-  },
-  {
-    version: '0.66.13',
-    date: '2026-11-19',
-    items: ["Checking a proof finds the repo's proof keys when the repo is reached through a symbolic link"],
-  },
+  ...RECENT_RELEASES,
   ...NEWER_RELEASES,
   ...LATER_RELEASES,
   ...MID_RELEASES,

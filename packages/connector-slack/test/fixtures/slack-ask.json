@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-12T12:30:42.890Z",
+  "recordedAt": "2026-11-20T19:29:40.760Z",
   "notes": "Recorded against test/fakes/slack.ts through test/fakes/scoutHub.ts; request and response shapes follow api.slack.com (Web API methods, interaction payloads, Block Kit). Agent questions as DMs: refused click, button answer, late click, answer in the Lookout, Reply… modal, agent gone.",
   "exchanges": [
     {
@@ -105,13 +105,13 @@
         "url": "/api/chat.postMessage",
         "body": {
           "channel": "D00ANA0001",
-          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store? Postgres needs a container in CI.",
+          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store?",
           "blocks": [
             {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite for the event store? Postgres needs a container in CI.",
+                "text": "◆ *AWAITING YOU* · Event store · #3 Pick DB · claude-07\n*Postgres or SQLite for the event store?*\n>Postgres or SQLite for the event store? Postgres needs a container in CI.",
                 "verbatim": true
               }
             },
@@ -187,7 +187,7 @@
           "message": {
             "type": "message",
             "bot_id": "B0Scout0001",
-            "text": "Awaiting you · claude-07: Postgres or SQLite for the event store? Postgres needs a container in CI.",
+            "text": "Awaiting you · claude-07: Postgres or SQLite for the event store?",
             "ts": "1793448000.000001"
           }
         }
@@ -230,7 +230,7 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *ANSWERED* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite for the event store? Postgres needs a container in CI.",
+                "text": "◇ *ANSWERED* · Event store · #3 Pick DB · claude-07\n*Postgres or SQLite for the event store?*\n>Postgres or SQLite for the event store? Postgres needs a container in CI.",
                 "verbatim": true
               }
             },
@@ -307,7 +307,7 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · #4 Retention policy · codex-02\n>Keep events for 30 or 90 days?",
+                "text": "◆ *AWAITING YOU* · Event store · #4 Retention policy · codex-02\n*Keep events for 30 or 90 days?*",
                 "verbatim": true
               }
             },
@@ -382,7 +382,7 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *ANSWERED* · Event store · #4 Retention policy · codex-02\n>Keep events for 30 or 90 days?",
+                "text": "◇ *ANSWERED* · Event store · #4 Retention policy · codex-02\n*Keep events for 30 or 90 days?*",
                 "verbatim": true
               }
             },
@@ -435,7 +435,7 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · claude-09\n>Name for the events table?",
+                "text": "◆ *AWAITING YOU* · Event store · claude-09\n*Name for the events table?*",
                 "verbatim": true
               }
             },
@@ -537,7 +537,7 @@
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": ">Name for the events table?",
+                  "text": "*Name for the events table?*",
                   "verbatim": true
                 }
               },
@@ -603,7 +603,7 @@
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": ">Name for the events table?",
+                  "text": "*Name for the events table?*",
                   "verbatim": true
                 }
               },
@@ -639,7 +639,7 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *ANSWERED* · Event store · claude-09\n>Name for the events table?",
+                "text": "◇ *ANSWERED* · Event store · claude-09\n*Name for the events table?*",
                 "verbatim": true
               }
             },
@@ -692,7 +692,7 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · claude-07\n>Ship behind a flag?",
+                "text": "◆ *AWAITING YOU* · Event store · claude-07\n*Ship behind a flag?*",
                 "verbatim": true
               }
             },
@@ -767,7 +767,7 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◇ *CLOSED* · Event store · claude-07\n>Ship behind a flag?",
+                "text": "◇ *CLOSED* · Event store · claude-07\n*Ship behind a flag?*",
                 "verbatim": true
               }
             },
@@ -864,7 +864,7 @@
         "message": {
           "type": "message",
           "ts": "1793448000.000001",
-          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store? Postgres needs a container in CI.",
+          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store?",
           "metadata": {
             "event_type": "scout_link",
             "event_payload": {
@@ -920,7 +920,7 @@
         "message": {
           "type": "message",
           "ts": "1793448000.000001",
-          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store? Postgres needs a container in CI.",
+          "text": "Awaiting you · claude-07: Postgres or SQLite for the event store?",
           "metadata": {
             "event_type": "scout_link",
             "event_payload": {
