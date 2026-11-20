@@ -1,3 +1,4 @@
+import { programIdentity, type ProgramIdentity } from '../guides/programIdentity';
 import type { CheckSpec } from '../model/verification';
 import { repoPath } from '../verification/repoPath';
 import { scriptPlan, type PackageManager } from '../verification/scriptPlan';
@@ -7,10 +8,10 @@ import { composerCommands, composerScript } from './composerScript';
 import { makeReach } from './makeReach';
 import { nxCommands, nxProject, type NxProject } from './nxTargets';
 import { packageJson } from './packageJson';
+import { ranCommand } from './ranCommand';
 import { makeArgs, pkgArgs } from './reachArgs';
 import { nxRun, turboRun, type TaskRun } from './taskRunnerArgs';
 import type { CheckReach, GuardReaders } from './types';
-import { wrapperTool } from './wrapperTool';
 
 /** Commands followed per check at most: scripts that call each other in a loop end here. */
 const BUDGET = 300;
@@ -20,11 +21,7 @@ const FILE = /\.(m?[jt]sx?|c[jt]s|sh|bash|py|rb|pl|php|mk|ps1|json|jsonc|ya?ml|t
 const TEST_FILE = /(\.|_)(test|spec)\.\w+$|(^|\/)(test_[^/]*|[^/]*_test)\.py$|(^|\/)__tests__\//;
 const CONFIG_FLAG = /^(--config|-c|--project|-p|--rcfile|--config-file)$/;
 
-const nameOf = (argv0: string) => (argv0.split('/').pop() ?? argv0).replace(/\.(cmd|exe|bat)$/i, '');
-/** A program inside a folder installs create: npm's bins, a virtualenv's, Composer's. */
-const DEP_BIN = /(^|\/)(node_modules\/\.bin|\.?venv\/(bin|Scripts)|vendor\/bin)\/([^/]+)$/;
-/** Interpreters that may run an installed tool's script. */
-const INTERPRETERS = /^(php|node|ruby|python[\d.]*)$/;
+const nameOf = (argv0: string) => (argv0.split(/[\\/]/).pop() ?? argv0).replace(/\.(cmd|exe|bat)$/i, '');
 /** Build tools' wrapper scripts in the repo: the guard reads the build they run, as the tool's. */
 const BUILD_WRAPPERS = new Set(['gradlew', 'mvnw']);
 
@@ -63,9 +60,10 @@ class Walk {
   private async visit(cmd: string[], dir: string): Promise<void> {
     const [argv0, ...args] = cmd;
     if (!argv0) return;
-    const bin = argv0.match(DEP_BIN);
-    if (bin) return this.visit([bin[4].replace(/\.exe$/i, ''), ...args], dir);
-    if (this.repoScript(argv0, dir)) return;
+    const id = programIdentity(argv0, dir);
+    // a path into the repo's tool folders is the tool it installs (`.venv/bin/pytest` is pytest)
+    if (id.kind === 'tool' && !BUILD_WRAPPERS.has(nameOf(argv0))) return this.visit([nameOf(argv0), ...args], dir);
+    if (this.byPath({ id, argv0, args, dir })) return;
     const program = nameOf(argv0);
     if (program === 'npm' || program === 'pnpm' || program === 'yarn') return this.pkg(program, args, dir);
     if (program === 'npx' || program === 'pnpx' || program === 'bunx') {
@@ -89,21 +87,26 @@ class Walk {
     if (composer) await this.script(dir, composer, 'composer.json');
     else if (program === 'turbo') await this.turbo(turboRun(args), dir);
     else if (program === 'nx') await this.nx(nxRun(args), dir);
-    const next = composer ? undefined : (wrapperTool(program, args) ?? this.interpreted(program, args));
-    if (next) await this.visit(next, dir);
+    const next = composer ? undefined : ranCommand({ program, args, dir });
+    if (next) await this.visit(next.cmd, next.dir);
     return !!composer || !!next || program === 'turbo' || program === 'nx';
   }
 
-  /** `php vendor/bin/phpunit`, `node node_modules/.bin/jest`: the installed tool, run by an interpreter. */
-  private interpreted(program: string, args: string[]) {
-    return INTERPRETERS.test(program) && DEP_BIN.test(args[0] ?? '') ? args : undefined;
-  }
-
-  /** A script in the repo the command starts: the file counts; a build wrapper (`./gradlew`) is its tool too. */
-  private repoScript(argv0: string, dir: string) {
-    if (!argv0.includes('/') || argv0.startsWith('/')) return false;
-    this.file(dir, argv0);
-    return !BUILD_WRAPPERS.has(nameOf(argv0));
+  /**
+   * A program named by a path (programIdentity.ts): a build wrapper (`./gradlew`) is both a file the check runs and
+   * its build tool, any other file in the repo a script whose text counts. A path outside the repo is a program of that
+   * path, never the tool it's named after (`/tmp/x/pytest` isn't pytest), so no runner's settings are read for it.
+   * True when that's all there is to the command.
+   */
+  private byPath(o: { id: ProgramIdentity; argv0: string; args: string[]; dir: string }): boolean {
+    if (o.id.kind === 'bare') return false;
+    if (o.id.kind === 'outside') {
+      this.tool(o.argv0, o.dir);
+      this.args(o.args, o.dir);
+      return true;
+    }
+    this.file(o.dir, o.argv0);
+    return o.id.kind === 'file';
   }
 
   private tool(program: string, dir: string) {

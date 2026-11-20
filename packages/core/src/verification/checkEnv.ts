@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { childEnv, type ChildEnv } from '../lib/childEnv';
 import { BRAND } from '../model/brand';
 
@@ -9,10 +10,28 @@ import { BRAND } from '../model/brand';
  */
 export const CHECK_ENV = `${BRAND.slug.toUpperCase()}_CHECK_ENV`;
 
-/** The environment a check command runs in: the allowlist of childEnv.ts plus the names in `TEAMTRAIL_CHECK_ENV`. */
+/**
+ * PATH with its absolute folders only. An empty entry, `.` or any relative folder would make a bare program name
+ * (`pytest`) find a file in the check's own folder, which an agent can write, so a check Teamtrail knows by its name
+ * would run something else (guides/programIdentity.ts: a bare name is one found on PATH).
+ */
+function absoluteOnly(value: string): string {
+  return value
+    .split(path.delimiter)
+    .filter((dir) => dir && path.isAbsolute(dir))
+    .join(path.delimiter);
+}
+
+/**
+ * The environment a check command runs in: the allowlist of childEnv.ts plus the names in `TEAMTRAIL_CHECK_ENV`, with
+ * PATH's relative folders left out.
+ */
 export function checkEnv(source: NodeJS.ProcessEnv): ChildEnv {
   const extra = (source[CHECK_ENV] ?? '').split(/[\s,]+/).filter(Boolean);
-  return childEnv(source, extra);
+  const out = childEnv(source, extra);
+  for (const name of Object.keys(out.env))
+    if (name.toUpperCase() === 'PATH') out.env[name] = absoluteOnly(out.env[name] ?? '');
+  return out;
 }
 
 const SHOWN = 40;

@@ -28,8 +28,20 @@ const MAX_CHECKS = 10;
 const ARG_OK = (a: unknown): a is string =>
   typeof a === 'string' && a.length > 0 && a.length <= 300 && !/[\0\r\n]/.test(a);
 
-/** Why a list of checks can't be set, or undefined: names, sizes, and argv that carries or downloads code. */
-function problemOf(checks: CheckInput[], acknowledged: boolean): string | undefined {
+type Kept = Record<string, Record<string, unknown>>;
+
+/** The folder a check will run in: the one given, else the one it had under its name. */
+function folderOf(c: CheckInput, kept: Kept): string | undefined {
+  if (c.cwd !== undefined) return checkFolder(c.cwd);
+  const had = kept[c.name]?.cwd;
+  return typeof had === 'string' ? checkFolder(had) : undefined;
+}
+
+/**
+ * Why a list of checks can't be set, or undefined: names, sizes, and argv that carries or downloads code. Whether a
+ * program is known is judged in the folder the check will run in (`../node_modules/.bin/jest` from `apps/web`).
+ */
+function problemOf(checks: CheckInput[], o: { acknowledged: boolean; kept: Kept }): string | undefined {
   if (checks.length > MAX_CHECKS) return `at most ${MAX_CHECKS} checks`;
   const names = new Set<string>();
   for (const c of checks) {
@@ -42,10 +54,11 @@ function problemOf(checks: CheckInput[], acknowledged: boolean): string | undefi
       return `${c.name}: a folder inside the repository`;
     if (c.paths !== undefined && !checkGlobs(c.paths))
       return `${c.name}: up to ${MAX_CHECK_GLOBS} paths inside the repository`;
-    const unsafe = checkArgv({ run: c.run });
+    const spec = { run: c.run, cwd: folderOf(c, o.kept) };
+    const unsafe = checkArgv(spec);
     if (unsafe.length) return `${c.name} ${unsafe.join('; ')}`;
-    const notice = checkNotice({ run: c.run });
-    if (notice && !acknowledged) return `${c.name}: ${notice}; confirm you know what it runs`;
+    const notice = checkNotice(spec);
+    if (notice && !o.acknowledged) return `${c.name}: ${notice}; confirm you know what it runs`;
   }
   return undefined;
 }
@@ -70,11 +83,11 @@ function specOf(c: CheckInput, kept: Record<string, unknown> = {}): Record<strin
 export function setChecks(o: { root: string; checks: CheckInput[]; base: string; acknowledged?: boolean; by: string }) {
   const now = checksApproval(o.root);
   if (o.base !== now.hash) throw new StaleChecks(`${VERIFICATION_FILE} changed since you opened it; look again`);
-  const problem = problemOf(o.checks, o.acknowledged === true);
-  if (problem) throw new OperationError(problem);
   const file = path.join(o.root, VERIFICATION_FILE);
   const raw = readRawConfig(file, { v: 1, default: 'checks' });
-  const kept = (raw.checks ?? {}) as Record<string, Record<string, unknown>>;
+  const kept = (raw.checks ?? {}) as Kept;
+  const problem = problemOf(o.checks, { acknowledged: o.acknowledged === true, kept });
+  if (problem) throw new OperationError(problem);
   // A check that keeps its name keeps its other settings (a timeout, guards; its folder unless one is given).
   const checks = Object.fromEntries(o.checks.map((c) => [c.name, specOf(c, kept[c.name])]));
   const text = `${JSON.stringify({ ...raw, v: 1, checks, run: o.checks.map((c) => c.name) }, null, 2)}\n`;

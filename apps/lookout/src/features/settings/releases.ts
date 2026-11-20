@@ -31,6 +31,13 @@ export const RELEASES: Release[] = [
     ],
   },
   {
+    version: '0.67.4',
+    date: '2026-11-20',
+    items: [
+      'A check counts as a tool Teamtrail knows only when it is found on your PATH or in the repo’s own tool folders (node_modules/.bin, .venv/bin, vendor/bin, gradlew, mvnw); a program elsewhere named pytest or jest asks you first',
+    ],
+  },
+  {
     version: '0.67.3',
     date: '2026-11-20',
     items: ['The teamtrail wordmark ends in a blaze block cursor instead of a full stop'],
@@ -182,14 +189,6 @@ export const RELEASES: Release[] = [
       'A pull request closed and replaced by a new one on the same branch: the ticket follows the new one, and a trail whose work closed unmerged or was reverted no longer says Destination reached',
       'A pull request waiting to merge says what stands in its way: a draft, conflicts, changes requested or its checks',
       "The review limit no longer holds agents back for deleted tickets or a PR sync that isn't running, and PR sync asks GitHub less as your history grows",
-    ],
-  },
-  {
-    version: '0.66.5',
-    date: '2026-11-18',
-    items: [
-      'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
-      'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
     ],
   },
   ...NEWER_RELEASES,
