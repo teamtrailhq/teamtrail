@@ -1,10 +1,8 @@
 import path from 'node:path';
 import type { TrackerAdapter } from '../adapters/adapter';
-import { withLocalGuard } from '../checkGuard/withLocalGuard';
 import type { CriterionEvidence } from '../criteria/criteria';
-import { completionEvidence, reverifies } from '../evidence/completionEvidence';
+import { reverifies } from '../evidence/completionEvidence';
 import { writeGated } from '../flaky/flakyGate';
-import { trailKnownFailures } from '../mainChecks/withKnownFailures';
 import { BRAND } from '../model/brand';
 import type { RuleAnswer } from '../model/diffRule';
 import type { AttemptGuide } from '../model/guide';
@@ -22,7 +20,7 @@ import { checksWaitReason, trustedChecks } from './checksApproval';
 import { DEFAULT_CONFIG } from './config';
 import type { ConfigRead } from './configFile';
 import { nextAttemptId, readAttempts } from './evidenceStore';
-import { gradeAttempt } from './gradeAttempt';
+import { gradeHere } from './gradeHere';
 import { attemptComment, outcomeOf } from './outcome';
 import { type LevelInfo } from './policy';
 import { remoteGraded } from './remoteCompletion';
@@ -170,38 +168,6 @@ async function grade(env: VerifyEnv, job: VerifyJob, run: { id: string; config: 
   const none = run.waiting ?? (checkout.kind === 'none' ? `No check ran: ${checkout.reason}.` : undefined);
   if (none || checkout.kind === 'none') return { checks: [], result: 'error' as const, note: none };
   return gradeHere(env, job, { ...run, checkout: checkout.path });
-}
-
-/** Git evidence, checks and criteria for work that is in this checkout (or the ticket's worktree). */
-async function gradeHere(env: VerifyEnv, job: VerifyJob, run: { id: string; config: ConfigRead; checkout: string }) {
-  const { mapId, ticket: t, sub } = job;
-  const git = await completionEvidence({
-    ...env,
-    repoRoot: run.checkout,
-    mapId,
-    ticket: t,
-    config: run.config,
-    noCodeReason: sub.noCodeReason,
-    touches: sub.touches,
-  });
-  // the diff rules the changed files match: their checks run with the ticket's, their answers go on the attempt
-  const ruled = withRules({ root: env.root, config: run.config.config, job, files: git.changed.map((c) => c.path) });
-  const { outcome, criteria } = await gradeAttempt({
-    root: env.root,
-    repoRoot: run.checkout,
-    mapId,
-    ticketId: t.id,
-    attemptId: run.id,
-    config: run.config,
-    info: ruled.info,
-    git,
-    evidence: sub.criteria,
-    known: trailKnownFailures(env.root, mapId),
-    waived: job.waived,
-    signal: env.signal,
-  });
-  const graded = { ...outcome, git, ...(criteria ? { criteria } : {}), ...ruled.extra };
-  return withLocalGuard(graded, { root: env.root, job, run, checks: ruled.info.checks }); // checkGuard/
 }
 
 /** Records that a pass went stale while its checks ran, and runs the checks again on the code as it is now. */
