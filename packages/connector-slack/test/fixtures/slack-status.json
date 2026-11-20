@@ -1,6 +1,6 @@
 {
   "source": "fake",
-  "recordedAt": "2026-11-12T15:10:47.579Z",
+  "recordedAt": "2026-11-20T19:29:40.782Z",
   "notes": "Recorded against test/fakes/slack.ts through test/fakes/scoutHub.ts; request and response shapes follow api.slack.com (Web API methods, interaction payloads, Block Kit). /scout help, status (all and one trail), inbox, unknown subcommand, refusal.",
   "exchanges": [
     {
@@ -203,7 +203,7 @@
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "◆ *AWAITING YOU* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite?",
+                "text": "◆ *AWAITING YOU* · Event store · #3 Pick DB · claude-07\n*Postgres or SQLite?*",
                 "verbatim": true
               }
             },

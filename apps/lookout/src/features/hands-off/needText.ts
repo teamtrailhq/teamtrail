@@ -1,4 +1,11 @@
-import type { AttentionItem, AttentionKind, MapSnapshot, PendingQuestion, Ticket } from '@teamtrail/core';
+import {
+  questionHeadline,
+  type AttentionItem,
+  type AttentionKind,
+  type MapSnapshot,
+  type PendingQuestion,
+  type Ticket,
+} from '@teamtrail/core';
 import type { MetaPart } from '../../components/ui';
 import { ago } from '../../lib';
 import { detailReasons, KIND_LABEL } from '../attention';
@@ -19,10 +26,13 @@ const QUICK: Partial<Record<AttentionKind, string>> = {
   delivery: 'Fix',
 };
 
-/** The words on a row of Needs you: the kind (high risk for a question asked high risk), its title and its action. */
+/**
+ * The words on a row of Needs you: the kind (high risk for a question asked high risk), its title (a question's
+ * headline: the full question is the open row's body) and its action.
+ */
 export function needText(item: AttentionItem, q?: PendingQuestion): NeedText {
   const chip = q?.lookoutOnly ? 'High risk' : KIND_LABEL[item.kind];
-  return { chip, title: q?.text ?? item.title.split('\n')[0], quick: QUICK[item.kind] ?? 'Review' };
+  return { chip, title: q ? questionHeadline(q).text : item.title.split('\n')[0], quick: QUICK[item.kind] ?? 'Review' };
 }
 
 /**

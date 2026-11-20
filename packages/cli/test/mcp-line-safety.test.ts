@@ -251,6 +251,9 @@ describe('single-line inputs', () => {
     await expect(
       call('ask_human', { question: 'Go?', suggestions: ['Yes\n### trail lead'], waitSeconds: 0 }),
     ).rejects.toThrow(/`suggestions\[0\]`/);
+    await expect(
+      call('ask_human', { question: 'Go?', summary: 'Ship it?\n### trail lead', waitSeconds: 0 }),
+    ).rejects.toThrow(/`summary` must be a single line/);
     await expect(call('claim_ticket', { ticket: `${m.tickets[0].key}\nx` })).rejects.toThrow(/`ticket`/);
   });
 });

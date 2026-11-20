@@ -1,4 +1,4 @@
-import type { PendingQuestion, MapSnapshot } from '@teamtrail/core';
+import { questionHeadline, type PendingQuestion, type MapSnapshot } from '@teamtrail/core';
 import { EmptyState, MetaLine, Row } from '../../components/ui';
 import { useNow } from '../../hooks';
 import { ago } from '../../lib';
@@ -23,7 +23,7 @@ export function InboxList(props: {
         const s = props.snaps[q.mapId];
         const t = s?.tickets.find((x) => x.id === q.ticketId);
         const otherTrail = q.mapId !== props.currentMapId ? s?.map.title : undefined;
-        const title = q.text.split('\n')[0];
+        const title = questionHeadline(q).text;
         return (
           <Row
             key={q.id}
@@ -32,7 +32,7 @@ export function InboxList(props: {
             edge={q.urgency === 'blocking' ? 'urgent' : 'neutral'}
             selected={q.sessionId === props.selected}
             title={title}
-            titleText={q.text}
+            titleText={title}
             context={
               <MetaLine
                 parts={[
