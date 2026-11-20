@@ -31,6 +31,11 @@ export const RELEASES: Release[] = [
     ],
   },
   {
+    version: '0.67.15',
+    date: '2026-11-20',
+    items: ["A new logo: the t's path runs to a blaze cursor, the wordmark's own, in the browser tab too"],
+  },
+  {
     version: '0.67.14',
     date: '2026-11-20',
     items: ["Deleting an answer file can't put a later answer in its place: the question waits for you again"],

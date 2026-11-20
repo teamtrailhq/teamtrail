@@ -2,12 +2,12 @@
 
 Two marks, one drawing style:
 
-- **The Teamtrail logo** (`src/logo/`): a lowercase t whose stem curves into a path that runs to its destination, a blaze dot, on a square tile with no edge. Three versions, with the colours in `logoColors.ts`: `dark` for dark backgrounds (`#F4F4F6` on `#0A0A0B`; the default), `light` for light ones (`#0E0F11` on `#FFFFFF`), the dot `#FF6B2C` on both, and `blaze`, the favicon and app icon (`#0A0A0B` t and white dot on `#FF6B2C`). `<Logo theme="auto">` follows the page's `color-scheme`; `bare` drops the tile for small inline use. `logoFaviconSvg()` is the blaze tile as one SVG. Nav, favicon, npm, GitHub and social images use it.
+- **The Teamtrail logo** (`src/logo/`): a lowercase t whose stem curves into a path that runs to a block cursor, the wordmark's own, on a square tile with no edge. Three versions, with the colours in `logoColors.ts`: `dark` for dark backgrounds (`#F4F4F6` on `#0A0A0B`; the default), `light` for light ones (`#0E0F11` on `#FFFFFF`), the cursor `#FF6B2C` on both, and `blaze`, the favicon and app icon (`#0A0A0B` t and white cursor on `#FF6B2C`). `<Logo theme="auto">` follows the page's `color-scheme`; `bare` drops the tile for small inline use. `round` places the mark smaller (`logoInCircle.ts`) for avatars shown in a circle, so the crop clears the cursor: the X and LinkedIn/Discord avatars use it. `logoFaviconSvg()` is the blaze tile as one SVG. Nav, favicon, npm, GitHub and social images use it.
 - **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. An AI scout companion looking to the side, drawn as a bust in graphite, white and blaze: a screen face, a cap, a headset with a mic, an antenna lamp and a neckerchief (`badgeArt.ts`; `shape`: a circle where avatars are round, a full square for tiles and Slack; `ground`: `ink`, the default, `blaze` for app icons and Slack, `paper` on light backgrounds). Guides are flat symbols alone on a transparent background, no tile or border (`guideArt.ts`): magnifier, check, shield, book, compass, and a plus with no accent for Community; `guideMarkup(role, theme)` draws `dark`, `light`, or `auto`, which reads the page's `--tt-guide-ink`, `-fill` and `-accent`.
 
 **Which mark where**
 
-- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the `t.` logo, as the tile or the bare mark. Slack's app icon is Scout, on blaze.
+- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the `t` logo, as the tile or the bare mark. Slack's app icon is Scout, on blaze.
 - **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail` wordmark, lowercase in Inter 600 followed by a blaze block cursor, still everywhere (it blinks only on teamtrail.app, and never under reduced motion).
 - Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
 
@@ -28,6 +28,7 @@ src/logo/
   logoShapes.ts    the mark's geometry
   logoColors.ts    the light, dark and blaze versions' colours
   logoOnTile.ts    where the mark sits on its square tile
+  logoInCircle.ts  where it sits on a tile cropped to a circle
   logoMark.ts      the logo's SVG markup, with and without the tile, per theme
   logoFaviconSvg.ts  the standalone favicon SVG: the blaze tile
   logoAutoStyle.ts the light-dark() colours behind theme="auto"
