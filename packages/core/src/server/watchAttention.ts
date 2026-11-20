@@ -35,7 +35,12 @@ export function watchAttention(
   let last = '';
   let busy = false;
   const tick = async () => {
-    const view = await attentionView({ root: ctx.root, adapter: await ctx.active(), configDir: opts.configDir });
+    const view = await attentionView({
+      root: ctx.root,
+      adapter: await ctx.active(),
+      configDir: opts.configDir,
+      readiness: ctx.readiness,
+    });
     const sig = signature(view);
     if (sig === last) return;
     last = sig;

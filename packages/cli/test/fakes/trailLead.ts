@@ -1,10 +1,14 @@
+import path from 'node:path';
 import {
   approveTrust,
   confirmCriteriaHere,
   criteriaContent,
+  localRepoFiles,
   pendingTrust,
   readCriteriaFile,
+  readReadiness,
 } from '@teamtrail/core/agents';
+import { startAnyway } from '@teamtrail/core/node';
 
 /**
  * The trail lead pressing "Approve all" in Settings → Approvals on this machine: everything the project's files
@@ -21,4 +25,10 @@ export function approveAllHere(root: string) {
 export function confirmCriteriaHereNow(root: string, mapId: string, ticketId: string) {
   const t = readCriteriaFile(root, mapId).find((x) => x.ticketId === ticketId);
   if (t) confirmCriteriaHere(root, { mapId, ticketId, content: criteriaContent(t) }, 'trail lead');
+}
+
+/** The trail lead's Start anyway in Settings → Project → Repo readiness, past what blocks the trail now. */
+export async function startAnywayHere(root: string, mapId: string) {
+  const readiness = await readReadiness({ root, files: localRepoFiles(path.dirname(root)), probe: true, fresh: true });
+  return startAnyway({ root, mapId, readiness, by: 'trail lead' });
 }

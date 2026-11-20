@@ -47,6 +47,8 @@ const WRITES: RegExp[] = [
   /^\/trail-checks\/fix-ticket$/,
   // Numbering a new trail or ticket (fileRoute.ts): another device never creates one.
   /^\/file\/number$/,
+  // Repo readiness: its fixes write verification.json and approve it; Start anyway lets held work start.
+  /^\/repo\/readiness\/(fix|start-anyway)$/,
   // The projects this Lookout supervises.
   /^\/projects$/,
   /^\/projects\/settings$/,

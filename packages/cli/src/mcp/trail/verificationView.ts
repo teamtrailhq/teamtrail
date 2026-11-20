@@ -58,7 +58,12 @@ export function verificationView(root: string, snap: MapSnapshot, t: Ticket) {
       source: info.source,
       checks: info.checks.map((name) => {
         const spec = config.config?.checks[name];
-        return { name, run: spec?.run, ...(spec?.cwd ? { cwd: spec.cwd } : {}) };
+        return {
+          name,
+          run: spec?.run,
+          ...(spec?.cwd ? { cwd: spec.cwd } : {}),
+          ...(spec?.paths ? { paths: spec.paths } : {}),
+        };
       }),
       ...(config.errors.length ? { configErrors: config.errors } : {}),
       ...waivedView(root, snap.map.id, t.id),
@@ -88,6 +93,15 @@ function waivedView(root: string, mapId: string, ticketId: string) {
   return waived.length ? { waived } : {};
 }
 
+/** Checks the attempt didn't run: waived by the trail lead, or outside the change (their `paths`). */
+function skippedView(a: VerificationAttempt) {
+  const skipped = [
+    ...(a.waived ?? []).map((w) => ({ check: w.name, by: w.by, reason: w.reason })),
+    ...(a.outOfScope ?? []).map((c) => ({ check: c.name, reason: c.reason })),
+  ];
+  return skipped.length ? { skipped } : {};
+}
+
 /** The result of a finished verification run, for the agent. */
 export function settledView(s: Settled) {
   const { attempt: a } = s;
@@ -95,7 +109,7 @@ export function settledView(s: Settled) {
     status: s.phase,
     attempt: a.id,
     checks: checksOf(a),
-    ...(a.waived?.length ? { skipped: a.waived.map((w) => ({ check: w.name, by: w.by, reason: w.reason })) } : {}),
+    ...skippedView(a),
     ...(a.criteria ? { criteria: a.criteria.lines } : {}),
     ...(a.git ? { git: gitView(a.git) } : {}),
     // passed only on retry: shown even when the gate only observes, so the agent knows its test is flaky

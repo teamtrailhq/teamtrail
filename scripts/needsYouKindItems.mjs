@@ -193,6 +193,14 @@ export function builtItems(now) {
       reasons: ['#23 and #24 pass alone', 'test fails on their merge'],
     }),
     at({
+      kind: 'readiness',
+      mapId: '',
+      ref: 'readiness',
+      urgency: 'blocking',
+      title: "Teamtrail can't verify work yet: you haven't approved verification.json's checks on this machine",
+      reasons: ['and 3 more things in Repo readiness', '4 ready tickets held back'],
+    }),
+    at({
       kind: 'reroute-suggested',
       ref: 'S-2',
       ticketId: '9',
