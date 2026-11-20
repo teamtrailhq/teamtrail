@@ -23,6 +23,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.8',
+    date: '2026-11-20',
+    items: [],
+  },
+  {
     version: '0.67.3',
     date: '2026-11-20',
     items: ['The teamtrail wordmark ends in a blaze block cursor instead of a full stop'],
