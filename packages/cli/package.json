@@ -1,6 +1,6 @@
 {
   "name": "teamtrail",
-  "version": "0.66.22",
+  "version": "0.67.3",
   "author": "Teamtrail",
   "description": "Teamtrail: verified work from AI coding agents. Agents do the work, you make the calls, and nothing counts as done until it's verified.",
   "type": "module",
@@ -38,9 +38,9 @@
     "typecheck": "tsc -p ."
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@teamtrail/connector-slack": "*",
     "@teamtrail/core": "*",
-    "@modelcontextprotocol/sdk": "^1.32.2",
     "esbuild": "^0.21.5",
     "zod": "^4.6.7"
   },

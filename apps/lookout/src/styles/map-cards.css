@@ -2,11 +2,6 @@
  * Each ticket is a flat card: a status dot and the title, then one quiet meta line. Borders and connectors stay 1px
  * at any zoom. Red only ever means "needs you now": an agent waiting on you, or a ticket held for your approval. */
 
-/* The landscape stays under the cards, quietly. */
-.graph .terrain {
-  opacity: 0.55;
-}
-
 .node {
   cursor: pointer;
   transition: transform 0.4s ease;
@@ -67,10 +62,10 @@
   font-weight: 500;
 }
 
-/* The status dot: green working, amber waiting on a person or held up, grey ready, a ring in the backlog,
+/* The status dot: the accent working, amber waiting on a person or held up, grey ready, a ring in the backlog,
  * a green check when done and verified, a muted one when done on someone's word, faint when cancelled. */
 .node .dot-working {
-  fill: rgb(var(--decided-rgb));
+  fill: rgb(var(--working-rgb));
 }
 .node .dot-attention {
   fill: var(--amber);
@@ -146,7 +141,7 @@
   text-decoration: line-through;
 }
 
-/* Connectors: thin elbows. Travelled ones (both ends done) solid green, walked ones green and quiet, the critical path
+/* Connectors: thin elbows. Travelled ones (both ends done) solid in the accent, walked ones in the accent and quiet, the critical path
  * a shade stronger than the rest. */
 .graph .edge {
   fill: none;
@@ -155,10 +150,10 @@
   vector-effect: non-scaling-stroke;
 }
 .graph .edge-done {
-  stroke: rgba(var(--decided-rgb), 0.55);
+  stroke: rgba(var(--working-rgb), 0.55);
 }
 .graph .edge-travelled {
-  stroke: rgb(var(--decided-rgb));
+  stroke: rgb(var(--working-rgb));
   stroke-width: 1.75;
 }
 .graph .edge-critical {
@@ -222,7 +217,7 @@
 .lg.st-verifying i,
 .status-panel li.st-claimed i,
 .status-panel li.st-verifying i {
-  background: rgb(var(--decided-rgb));
+  background: rgb(var(--working-rgb));
 }
 .lg.st-rework i,
 .lg.st-held i,
@@ -295,7 +290,7 @@
 /* An agent at work: the dot pulses, and a thin bar along the top fills to its step. */
 .node .dot-pulse {
   fill: none;
-  stroke: rgb(var(--decided-rgb));
+  stroke: rgb(var(--working-rgb));
   stroke-width: 1.5;
   transform-box: fill-box;
   transform-origin: center;
@@ -305,7 +300,7 @@
   fill: rgba(var(--line-rgb), 0.14);
 }
 .node .step-fill {
-  fill: rgb(var(--decided-rgb));
+  fill: rgb(var(--working-rgb));
   animation: node-breathe 1.8s ease-in-out infinite;
 }
 /* Waiting for an agent to pick it up: a dashed border that slowly moves, and a turning arc for its dot. */

@@ -12,7 +12,6 @@ import { MapDestination } from './MapDestination';
 import { openingView } from './openingView';
 import { OutOfScopeStrip } from './OutOfScopeStrip';
 import { prChip } from './prChip';
-import { TerrainLayer } from './TerrainLayer';
 import type { AnchorOf, MapGraphProps } from './types';
 import { useCardHolds } from './useCardHolds';
 import { useFocusSelected } from './useFocusSelected';
@@ -50,7 +49,7 @@ export function MapGraph(props: MapGraphProps) {
         : null,
     [props.main, L],
   );
-  /** The cards where they are drawn, `main`'s room included: for the terrain, the opening view and the focus. */
+  /** The cards where they are drawn, `main`'s room included: for the opening view and the focus. */
   const shifted = useMemo(() => L.nodes.map((n) => ({ ...n, x: n.x + room.x, y: n.y + room.y })), [L.nodes, room]);
   const origin = { x: PAD + room.x, y: PAD + room.y };
 
@@ -111,7 +110,14 @@ export function MapGraph(props: MapGraphProps) {
           <GraphDefs />
           <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
             <g transform={`translate(${PAD} ${PAD})`}>
-              <TerrainLayer seed={snap.map.id} width={W} height={H} nodes={shifted} />
+              <rect
+                className="map-canvas"
+                x={-4000}
+                y={-4000}
+                width={W + 8000}
+                height={H + 8000}
+                fill="url(#map-grid)"
+              />
             </g>
             <g transform={`translate(${origin.x} ${origin.y})`}>
               <OutOfScopeStrip y={L.quarantineY} width={L.width} height={L.quarantineH} nodes={L.nodes} />
