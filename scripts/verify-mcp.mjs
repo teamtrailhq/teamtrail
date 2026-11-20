@@ -36,6 +36,7 @@ import { verifyLinear } from './verifyLinear.mjs';
 import { verifyLiveViews } from './verifyLiveViews.mjs';
 import { verifyLongQuestion } from './verifyLongQuestion.mjs';
 import { verifyMainChecks } from './verifyMainChecks.mjs';
+import { verifyManaged } from './verifyManaged.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyNeedsYouKinds } from './verifyNeedsYouKinds.mjs';
 import { verifyNewTrail } from './verifyNewTrail.mjs';
@@ -740,6 +741,8 @@ const slackOk = await verifySlack({ browser, cli, log, shots });
 // Hands-off, the default: the home, a question answered from its list, the plan approved in one step, the switch.
 const handsOffOk = await verifyHandsOff({ browser, cli, log, shots });
 const needsKindsOk = await verifyNeedsYouKinds({ browser, cli, log, shots });
+// Behind a server's own sign-in: Get started keeps its strip, the full ticket and pages have Back, checks to set.
+const managedOk = await verifyManaged({ browser, cli, log, shots });
 // A long question: titled by the agent's summary (else its first sentence), the question in full under it.
 const longQuestionOk = await verifyLongQuestion({ browser, cli, log, shots });
 
@@ -829,6 +832,7 @@ if (
   !chatOk ||
   !handsOffOk ||
   !needsKindsOk ||
+  !managedOk ||
   !longQuestionOk ||
   !stakesShown ||
   !offerOk ||

@@ -442,6 +442,19 @@
   inset: 0 0 58px;
   width: auto;
 }
+/* In Hands-off the full ticket stands in for a page: Back leads its top row. A phone there has no tab bar under it,
+ * and Back is a 44px target. */
+.ticket-drawer .drawer-back {
+  flex: none;
+  display: flex;
+  padding: var(--sp-8) var(--sp-8) 0;
+}
+.app.hands-off.bp-mobile .ticket-drawer {
+  bottom: var(--guide-room);
+}
+.bp-mobile .drawer-back .btn {
+  min-height: 44px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .seg-working,

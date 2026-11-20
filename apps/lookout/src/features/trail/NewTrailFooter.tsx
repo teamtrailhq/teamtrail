@@ -29,7 +29,14 @@ export function NewTrailFooter(props: {
           <AgentCommand command={`/scout new "${props.idea || 'your idea'}"`} label="Copy command" />
         </div>
       )}
-      {props.created && <CreatedNote created={props.created.key} mapId={props.created.id} onStarted={props.onClose} />}
+      {props.created && (
+        <CreatedNote
+          created={props.created.key}
+          mapId={props.created.id}
+          onStarted={props.onClose}
+          onClose={props.onClose}
+        />
+      )}
       {props.error && (
         <p className="vf-err" role="alert">
           {props.error}
