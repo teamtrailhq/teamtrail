@@ -1,7 +1,15 @@
 import type { Release } from './releases';
 
-/** Releases 0.66.13–0.66.15, kept apart so `releases.ts` stays short (0.61–0.66.12 in `newerReleases.ts`). Newest first. */
+/** Releases 0.66.13–0.66.16, kept apart so `releases.ts` stays short (0.61–0.66.12 in `newerReleases.ts`). Newest first. */
 export const RECENT_RELEASES: Release[] = [
+  {
+    version: '0.66.16',
+    date: '2026-11-19',
+    items: [
+      'Hands-off on a phone: every kind of Needs you fits the screen, with actions big enough to tap, and each row acts on what it asks',
+      'Teamtrail Cloud: Pause shows Stopping… until the agents have stopped, and Start shows Starting… until one is working',
+    ],
+  },
   {
     version: '0.66.15',
     date: '2026-11-19',

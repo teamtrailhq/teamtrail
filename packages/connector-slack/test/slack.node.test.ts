@@ -73,7 +73,7 @@ test('asks: DM to the owner, buttons answer the waiting agent, late and unauthor
   assert.equal(ask.channel, 'D00ANA0001');
   assert.match(
     ask.blocks[0].text.text,
-    /^◆ \*AWAITING YOU\* · Event store · #3 Pick DB · claude-07\n>Postgres or SQLite/,
+    /^◆ \*AWAITING YOU\* · Event store · #3 Pick DB · claude-07\n\*Postgres or SQLite for the event store\?\*\n>Postgres or SQLite/,
   );
   assert.deepEqual(
     ask.blocks[1].elements.map((e: { text: { text: string } }) => e.text.text),

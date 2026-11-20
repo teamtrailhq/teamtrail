@@ -1,4 +1,4 @@
-import { ATTENTION_KINDS, type AttentionKind } from '@teamtrail/core';
+import { ATTENTION_KINDS, QUESTION_SUMMARY_MAX, type AttentionKind } from '@teamtrail/core';
 import { z } from 'zod';
 import type { TrailAgent } from '../agent';
 import { text } from '../lineSafety';
@@ -18,6 +18,13 @@ export function registerHitlTools(tool: DefineTool, agent: TrailAgent) {
     },
     {
       question: text().min(1),
+      summary: z
+        .string()
+        .max(QUESTION_SUMMARY_MAX)
+        .optional()
+        .describe(
+          'A one-line headline for the question, under about 100 characters, in your plain words ("Hero images: an API key or a fixed list?"). Give one whenever the question is longer than a couple of sentences: it is the title wherever the question is listed (the Lookout, Slack), with the question in full under it.',
+        ),
       suggestions: z.array(z.string()).optional().describe('Suggested replies, shown as one-click answers.'),
       waitSeconds: z.number().int().min(0).max(86_400).optional(),
       framing: z.boolean().optional(),

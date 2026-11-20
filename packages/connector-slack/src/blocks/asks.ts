@@ -1,9 +1,12 @@
+import { questionHeadline } from '@teamtrail/core';
 import { ACTIONS, VIEWS, answerBlocks, clip, label, md, openButton, plain, quote, type AnswerMode } from './kit';
 
 export interface AskView {
   sessionId: string;
   questionId: string;
   text: string;
+  /** The agent's one-line headline, when it gave one; else the card leads with the question's first sentence. */
+  summary?: string;
   suggestions?: string[];
   agent: string;
   trail?: string;
@@ -31,15 +34,25 @@ const stakesBlock = (a: AskView) => [
   ...(a.precedent ? [{ type: 'context', elements: [md(label(clip(a.precedent, 280)))] }] : []),
 ];
 
+/**
+ * The question as the card shows it: its headline in bold, then the question in full as a quote (its line breaks
+ * kept), unless the headline says it all. Records stored before headlines existed read the same way.
+ */
+function askBody(a: AskView) {
+  const headline = questionHeadline(a);
+  const title = `*${label(headline.text)}*`;
+  return headline.whole ? title : `${title}\n${quote(clip(a.text, 2600))}`;
+}
+
 export function askMessage(a: AskView, o: { url?: string; detail?: 'full' | 'titles-only'; mode?: AnswerMode } = {}) {
   const ref = (i?: number) =>
     JSON.stringify({ s: a.sessionId, q: a.questionId, ...(i === undefined ? {} : { i }) } satisfies AskRef);
-  const body = o.detail === 'titles-only' ? askHeader(a) : `${askHeader(a)}\n${quote(clip(a.text, 2800))}`;
+  const body = o.detail === 'titles-only' ? askHeader(a) : `${askHeader(a)}\n${askBody(a)}`;
   const options = (a.suggestions ?? [])
     .slice(0, 4)
     .map((s, i) => ({ type: 'button', action_id: `${ACTIONS.option}:${i}`, text: plain(clip(s, 75)), value: ref(i) }));
   return {
-    text: `Awaiting you · ${label(a.agent)}: ${label(clip(a.text, 140))}`,
+    text: `Awaiting you · ${label(a.agent)}: ${label(questionHeadline(a).text)}`,
     blocks: [
       { type: 'section', text: md(body) },
       ...stakesBlock(a),
@@ -59,7 +72,7 @@ export function askClosedMessage(
   o: { detail?: 'full' | 'titles-only'; answered?: boolean; url?: string } = {},
 ) {
   const head = askHeader(a).replace('◆ *AWAITING YOU*', o.answered === false ? '◇ *CLOSED*' : '◇ *ANSWERED*');
-  const body = o.detail === 'titles-only' ? head : `${head}\n${quote(clip(a.text, 2800))}`;
+  const body = o.detail === 'titles-only' ? head : `${head}\n${askBody(a)}`;
   return {
     text: line,
     blocks: [
@@ -80,7 +93,7 @@ export function replyModal(a: AskView, meta: string) {
     close: plain('Cancel'),
     blocks: [
       { type: 'context', elements: [md(`${label(a.agent)}${a.ticket ? ` · ${label(a.ticket)}` : ''}`)] },
-      { type: 'section', text: md(quote(clip(a.text, 2800))) },
+      { type: 'section', text: md(askBody(a)) },
       {
         type: 'input',
         block_id: 'answer',

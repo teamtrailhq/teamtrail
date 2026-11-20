@@ -3,7 +3,9 @@ import {
   approvesHighRisk,
   attention,
   chatNote,
+  oneLine,
   OperationError,
+  QUESTION_SUMMARY_MAX,
   type AnswerVia,
   type AttentionKind,
   type RiskCategory,
@@ -26,7 +28,8 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   ctx.sessions.note(s, 'agent', s.info.agent, input.question);
   const blocks = await blockedIds(ctx, s.info.mapId, input.blocks);
   const suggestions = input.suggestions?.length ? input.suggestions : undefined;
-  const answer = s.ask(input.question, suggestions, { urgency: input.urgency, blocks });
+  const summary = askedSummary(input);
+  const answer = s.ask(input.question, suggestions, { urgency: input.urgency, blocks, summary });
   const q = ctx.activity.snapshot.pending.filter((p) => p.sessionId === s.id).at(-1)!;
   const categories = askedCategories(input);
   const stakes = stakesOf(ctx, { input, mapId: s.info.mapId, ticketId: s.info.ticketId });
@@ -81,12 +84,20 @@ export async function ask(ctx: AgentContext, input: AskInput, ctl: WaitControl =
   return waitForAnswer(ctx, { questionId: q.id, waitSeconds: input.waitSeconds }, ctl);
 }
 
+/** The agent's headline, one line within the headline's length; none when it is empty or just repeats the question. */
+function askedSummary(input: AskInput) {
+  const line = input.summary && oneLine(input.summary).slice(0, QUESTION_SUMMARY_MAX);
+  return line && line !== oneLine(input.question) ? line : undefined;
+}
+
 /** `category` and `categories` as one list, without repeats. */
 const askedCategories = (input: AskInput) =>
   [...new Set([input.category, ...(input.categories ?? [])])].filter((c): c is RiskCategory => !!c);
 
 export interface AskInput {
   question: string;
+  /** A one-line headline for a long question, shown as its title (questionHeadline.ts). */
+  summary?: string;
   /** What the call touches (risk policy). */
   category?: RiskCategory;
   /** More than one category; `category` counts as one of them. */
@@ -206,6 +217,7 @@ export async function inbox(ctx: AgentContext, input: { kinds?: AttentionKind[] 
         trail: maps.get(q.mapId)?.title ?? (q.mapId ? q.mapId : 'new trail (framing)'),
         ticket: q.ticketId ? ctx.keyOf(q.ticketId, q.mapId) : undefined,
         question: q.text,
+        ...(q.summary ? { summary: q.summary } : {}),
         suggestions: q.suggestions,
         ...(q.category ? { category: q.category } : {}),
         ...(q.categories ? { categories: q.categories } : {}),
