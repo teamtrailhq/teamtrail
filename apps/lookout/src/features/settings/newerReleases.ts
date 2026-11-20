@@ -1,7 +1,15 @@
 import type { Release } from './releases';
 
-/** Releases 0.61–0.66.4, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
+/** Releases 0.61–0.66.5, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
+  {
+    version: '0.66.5',
+    date: '2026-11-18',
+    items: [
+      'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
+      'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
+    ],
+  },
   {
     version: '0.66.4',
     date: '2026-11-18',

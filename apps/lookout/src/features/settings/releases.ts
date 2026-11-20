@@ -31,6 +31,14 @@ export const RELEASES: Release[] = [
     ],
   },
   {
+    version: '0.67.5',
+    date: '2026-11-20',
+    items: [
+      'Monorepos: give a check the paths it is about (Settings → Verification, prefilled for a workspace package), and a change outside them doesn’t run it',
+      'Lockfiles, the top’s manifests and CI config still run every check, and so do checks on main; the proof says which checks were skipped and why',
+    ],
+  },
+  {
     version: '0.67.4',
     date: '2026-11-20',
     items: [
@@ -189,14 +197,6 @@ export const RELEASES: Release[] = [
       'A pull request closed and replaced by a new one on the same branch: the ticket follows the new one, and a trail whose work closed unmerged or was reverted no longer says Destination reached',
       'A pull request waiting to merge says what stands in its way: a draft, conflicts, changes requested or its checks',
       "The review limit no longer holds agents back for deleted tickets or a PR sync that isn't running, and PR sync asks GitHub less as your history grows",
-    ],
-  },
-  {
-    version: '0.66.5',
-    date: '2026-11-18',
-    items: [
-      'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
-      'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
     ],
   },
   ...NEWER_RELEASES,
