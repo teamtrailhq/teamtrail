@@ -24,6 +24,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.22',
+    date: '2026-11-20',
+    items: [
+      "Teamtrail Cloud: Get started's strip says Powered by Teamtrail on its left, so it no longer reads as empty",
+    ],
+  },
+  {
     version: '0.67.21',
     date: '2026-11-20',
     items: [

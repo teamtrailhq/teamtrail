@@ -2,6 +2,7 @@ import { ScoutAvatar } from '@teamtrail/scout-avatar';
 import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../../components/ui';
+import { PoweredBy } from './PoweredBy';
 import { useGuideRoom } from './useGuideRoom';
 import { useSetupSteps } from './useSetupSteps';
 
@@ -46,34 +47,37 @@ export function SetupGuide() {
   // On the page itself, not inside the app's zones: a zone that makes its own stacking or containing box would
   // otherwise pin a fixed corner to itself instead of the window.
   return createPortal(
-    <aside ref={box} className={`setup-guide${open ? ' open' : ''}`} aria-label="Get started">
-      {open && (
-        <div className="setup-bubble">
-          <header>
-            <b>Get started</b>
-            <span className="t-meta">{count}</span>
-            <Button size="sm" variant="ghost" onClick={() => toggle(false)} aria-label="Minimize">
-              –
-            </Button>
-          </header>
-          <ol>
-            {view.steps.map((s, i) => (
-              <li key={s.href + s.title} className={[s.done && 'done', s.next && 'next'].filter(Boolean).join(' ')}>
-                <span className="setup-mark" aria-hidden="true">
-                  {s.done ? '✓' : i + 1}
-                </span>
-                <a href={s.href}>{s.title}</a>
-                {s.optional && <span className="t-meta">optional</span>}
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-      <button type="button" className="setup-scout" onClick={() => toggle(!open)} aria-expanded={open}>
-        <ScoutAvatar size={1} framed={false} state="idle" />
-        {!open && <span className="setup-chip">Get started · {count}</span>}
-      </button>
-    </aside>,
+    <>
+      <PoweredBy />
+      <aside ref={box} className={`setup-guide${open ? ' open' : ''}`} aria-label="Get started">
+        {open && (
+          <div className="setup-bubble">
+            <header>
+              <b>Get started</b>
+              <span className="t-meta">{count}</span>
+              <Button size="sm" variant="ghost" onClick={() => toggle(false)} aria-label="Minimize">
+                –
+              </Button>
+            </header>
+            <ol>
+              {view.steps.map((s, i) => (
+                <li key={s.href + s.title} className={[s.done && 'done', s.next && 'next'].filter(Boolean).join(' ')}>
+                  <span className="setup-mark" aria-hidden="true">
+                    {s.done ? '✓' : i + 1}
+                  </span>
+                  <a href={s.href}>{s.title}</a>
+                  {s.optional && <span className="t-meta">optional</span>}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        <button type="button" className="setup-scout" onClick={() => toggle(!open)} aria-expanded={open}>
+          <ScoutAvatar size={1} framed={false} state="idle" />
+          {!open && <span className="setup-chip">Get started · {count}</span>}
+        </button>
+      </aside>
+    </>,
     document.body,
   );
 }

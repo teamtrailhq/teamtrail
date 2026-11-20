@@ -127,3 +127,23 @@
   font-size: var(--fs-sm);
   color: var(--text-hi);
 }
+/* Powered by Teamtrail (features/guide/PoweredBy.tsx): the strip's left end, on Scout's line. Too narrow on a phone. */
+.powered-by {
+  position: fixed;
+  left: var(--sp-18);
+  bottom: 0;
+  z-index: 15;
+  margin: 0;
+  line-height: var(--guide-room);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+  white-space: nowrap;
+}
+.powered-by a {
+  color: var(--text);
+}
+@media (max-width: 1023px) {
+  .powered-by {
+    display: none;
+  }
+}
