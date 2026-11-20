@@ -8,7 +8,7 @@ export const LINES = {
 export const SPEAK_AT = 1500;
 export const ORDER: ScoutStyleId[] = ['crt'];
 export const TAGLINE = 'You pick the destination. Your agents walk the trail.';
-/** The wordmark's text, lowercase, before its dot; override with `?wordmark=` (capture: WORDMARK env). */
+/** The wordmark's text, lowercase, before its cursor; override with `?wordmark=` (capture: WORDMARK env). */
 export const WORDMARK = 'teamtrail';
 
 export const SCRIPT: { state: ScoutState; speaking?: string; ms: number; log?: string; hot?: boolean }[] = [

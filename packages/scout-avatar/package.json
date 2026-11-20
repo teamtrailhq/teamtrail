@@ -7,7 +7,7 @@
   "bugs": {
     "url": "https://github.com/teamtrailhq/teamtrail/issues"
   },
-  "description": "Pixel-art Scout avatar: a React component plus a framework-free renderer (mountScout).",
+  "description": "The Teamtrail logo and Scout's avatar: React components plus a framework-free renderer (mountScout).",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -34,16 +34,15 @@
     "react": "^18.3.1"
   },
   "devDependencies": {
-    "@fontsource/londrina-solid": "^5.3.0",
-    "@fontsource-variable/figtree": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.4",
     "playwright-core": "^1.48.0",
-    "typescript": "^5.5.0",
-    "vite": "^6.4.5",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "typescript": "^5.5.0",
+    "vite": "^6.4.5"
   }
 }

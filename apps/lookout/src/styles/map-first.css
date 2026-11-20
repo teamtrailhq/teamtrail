@@ -1,8 +1,13 @@
 /* ---------- The map first: the bubble, the trail bar, the pages over the map, the full ticket ---------- */
 
-/* Header: "N need you". */
+/* Header: "N need you", a soft red fill with red text. */
 .needs-btn {
   font-weight: 600;
+}
+.btn.urgent.needs-btn {
+  background: var(--urgent-bg);
+  border-color: transparent;
+  color: var(--urgent-ink);
 }
 /* Until the screen is very wide, the header leaves out the elapsed time; below 1600px the spend too (it is on the
  * Activity page and in Trail stats). A header with more than fits (a server's own controls) wraps to a second row
@@ -86,7 +91,7 @@
   padding-right: 36px;
 }
 .t-label.urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .bubble-title {
   margin: 0;
@@ -139,7 +144,7 @@
   margin-right: var(--sp-6);
 }
 .bubble-state.edge-urgent .state-title {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .bubble-state.edge-attention .state-title {
   color: var(--amber);
@@ -185,10 +190,10 @@
   background: var(--line2);
 }
 .step-segments > span.done {
-  background: rgb(var(--decided-rgb));
+  background: rgb(var(--working-rgb));
 }
 .step-segments > span.now {
-  background: rgb(var(--decided-rgb));
+  background: rgb(var(--working-rgb));
   animation: node-breathe 1.8s ease-in-out infinite;
 }
 .step-segments.mini {
@@ -222,7 +227,6 @@
   min-width: 4px;
   padding: 0;
   border: 0;
-  border-radius: 2px;
   cursor: pointer;
   background: var(--line2);
   opacity: 0.55;
@@ -232,7 +236,7 @@
   opacity: 1;
 }
 .seg-working {
-  background: rgb(var(--decided-rgb));
+  background: rgb(var(--working-rgb));
   opacity: 1;
   animation: node-breathe 1.8s ease-in-out infinite;
 }
@@ -265,7 +269,7 @@
   font-weight: 600;
 }
 .trail-counts .urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
   font-weight: 600;
 }
 .need-chips {

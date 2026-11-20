@@ -1,8 +1,7 @@
 /* ---------- Overlays: what opens over the map and the zones ----------
  * The ticket's bubble and its full ticket, dialogs, menus and Scout's setup bubble sit on a raised sheet
- * (--surface-overlay, theme.css): lighter than the map at night, never green on green, with a visible edge and a
- * shadow. Inside one, the panel tones are the sheet's, and dim, faint and red text keep AA contrast on it
- * (night: body 7.4:1, dim 5.4:1, faint 4.7:1, red 5.6:1 on #303836). */
+ * (--surface-overlay, theme.css): a step lighter than the canvas at night, with a hairline edge and a shadow.
+ * Inside one, the panel tones are the sheet's, and dim, faint and red text keep AA contrast on it. */
 .bubble,
 .ticket-drawer,
 .dialog,
@@ -18,6 +17,7 @@
   --faint: var(--overlay-faint);
   --urgent-rgb: var(--overlay-urgent-rgb);
   --urgent: rgb(var(--overlay-urgent-rgb));
+  --urgent-ink: var(--overlay-urgent-ink);
   background: var(--surface-overlay);
   border: 1px solid var(--surface-overlay-line);
   box-shadow: var(--surface-overlay-shadow);

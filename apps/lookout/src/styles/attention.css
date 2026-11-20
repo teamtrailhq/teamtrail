@@ -95,7 +95,7 @@
   align-items: center;
   gap: var(--sp-6);
 }
-/* The focus state: a filled lake dot and bright text while focus holds interruptions back, a hollow ring and quiet
+/* The focus state: a filled accent dot and bright text while focus holds interruptions back, a hollow ring and quiet
  * text while it's off. Never red: focus is a calm state, not something that needs you. */
 .focus-state {
   display: inline-flex;

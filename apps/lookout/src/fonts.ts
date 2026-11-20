@@ -1,6 +1,4 @@
-/** Shipped type: Londrina Solid (wordmark and titles), Figtree (everything read), JetBrains Mono (keys, ids,
- * timers, code). All SIL OFL 1.1 (Fontsource). */
-import '@fontsource/londrina-solid/400.css';
-import '@fontsource/londrina-solid/900.css';
-import '@fontsource-variable/figtree';
+/** Shipped type: Inter (everything read) and JetBrains Mono (keys, ids, timers, code). Both SIL OFL 1.1 (Fontsource),
+ * bundled with the Lookout, so they load under its CSP (font-src 'self'). */
+import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
