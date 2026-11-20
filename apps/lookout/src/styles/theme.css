@@ -3,7 +3,7 @@
  * follows the OS. Near-black or white surfaces, hairline borders and one accent: the accent marks selection, work in
  * progress and primary buttons; green is only verified or done; red (--urgent) only ever means "needs you now".
  * The accent is blaze, the paint mark that shows a trail; red is a rose so it never reads as the accent. By day both
- * are darker shades that keep at least 4.5:1 as text on every panel and on their own 12% tint. */
+ * are darker shades: blaze keeps at least 4.5:1 as text on every panel and on its own tint, rose 4.8:1 on white. */
 :root {
   color-scheme: light;
   --tt-keyline: transparent;
@@ -29,7 +29,7 @@
   --on-primary: #ffffff; /* 5.5:1 on the accent */
   --amber-rgb: 178, 104, 0; /* held up or at risk */
   --decided-rgb: 14, 159, 99; /* verified, done, passed checks */
-  --urgent-rgb: 200, 36, 79; /* rose, day: #C8244F, 5.5:1 on white */
+  --urgent-rgb: 214, 45, 89; /* rose, day: #D62D59, 4.8:1 on white, as on the website */
   --on-urgent: #ffffff;
   --on-amber: #ffffff;
 
