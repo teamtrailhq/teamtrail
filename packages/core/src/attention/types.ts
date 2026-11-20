@@ -18,6 +18,7 @@ import type { ConnectedAgent } from '../planning/matching/modelWaits';
 import type { RerouteSuggestion } from '../planning/reroute/rerouteTriggers';
 import type { PolicyViolation } from '../policy/policyViolations';
 import type { PrecedentConflict } from '../precedent/precedentConflicts';
+import type { RepoReadiness } from '../model/readiness';
 import type { TrustItem } from '../trust/trustItem';
 import type { ApprovalItem } from '../verification/approvals';
 import type { IntegrationOverlap } from '../workspaces/workspace';
@@ -72,6 +73,10 @@ export interface AttentionInput {
   agents?: ConnectedAgent[];
   /** Tickets whose criteria wait for the trail lead before work starts (criteria/criteriaHeld.ts). Missing: none. */
   criteria?: CriteriaWaiting[];
+  /**
+   * Repo readiness (readiness/) and, per active trail, the ready tickets its blocking findings hold. Missing: none.
+   */
+  readiness?: { readiness: RepoReadiness; held: { mapId: string; tickets: string[] }[] };
   /** Missing: the defaults. */
   policy?: AttentionPolicy;
   /** Missing: nothing snoozed or dismissed. */

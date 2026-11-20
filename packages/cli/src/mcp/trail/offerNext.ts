@@ -1,10 +1,12 @@
 import { assertNotArchived, attention, type MapSnapshot, type Ticket, type TicketType } from '@teamtrail/core';
+import type { ReadinessHold } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaGate } from './criteriaGate';
 import { claimable } from './discovery';
 import { outsideGuides } from './guides';
 import { mainChecksField, mainGate, type MainGate } from './mainChecks';
 import { pickNext } from './models';
+import { readinessField, readinessGate } from './readinessGate';
 import { frozenOn } from './reroutes';
 import { reviewGate, reviewLimitField, type ReviewGate } from './reviewLimit';
 import { sameModelReviews, type SameModelReview } from './reviewModels';
@@ -17,6 +19,8 @@ export interface ClaimGates {
   discovery?: TicketType[];
   review: ReviewGate;
   main: MainGate;
+  /** Repo readiness: blocking findings hold new implementation work, as the review limit does. */
+  readiness: ReadinessHold;
   models: SameModelReview[];
   criteria: Ticket[];
   /** Ticket id → the reroute proposal freezing it. */
@@ -28,7 +32,7 @@ export interface Offer {
   ticket?: Ticket;
   /** Why nothing is offered; missing when a ticket is. */
   reason?: string;
-  /** `reviewLimit` and `mainChecks`, for the agent to pass on to the human. */
+  /** `reviewLimit`, `mainChecks` and `readiness`, for the agent to pass on to the human. */
   fields: Record<string, unknown>;
   /** Missing on an archived trail, where nothing is read. */
   gates?: ClaimGates;
@@ -47,7 +51,7 @@ function archivedReason(snap: MapSnapshot) {
 /**
  * The one chooser behind every tool that suggests work (next_ticket and its wait, claim_ticket without a ticket,
  * resume_trail, start_trail, close_ticket's `next`): the best ready ticket that `claim_ticket` takes now, past the
- * discovery gate, the review limit, checks on main, reroute freezes, criteria before work, own and deferred reviews,
+ * discovery gate, the review limit, checks on main, repo readiness, reroute freezes, criteria before work, own and deferred reviews,
  * model matching and the agent's guides. With nothing to offer, the reason next_ticket gives.
  */
 export async function offerNext(
@@ -68,10 +72,11 @@ export async function offerNext(
     ...outsideGuides(snap, input.guides),
     ...gates.review.held.map((h) => h.id),
     ...gates.main.held.map((h) => h.id),
+    ...gates.readiness.held.map((h) => h.id),
   ];
   const later = gates.models.map((r) => r.ticket.id);
   const { ticket, held } = pickNext(ctx, snap, { types, exclude, later });
-  const fields = { ...reviewLimitField(gates.review), ...mainChecksField(gates.main) };
+  const fields = { ...reviewLimitField(gates.review), ...mainChecksField(gates.main), ...readinessField(gates.readiness) };
   if (ticket) return { ticket, fields, gates };
   return { reason: whyNothing(ctx, snap, { ...gates, held }), fields, gates };
 }
@@ -81,6 +86,7 @@ export async function readGates(ctx: AgentContext, snap: MapSnapshot): Promise<C
     discovery: claimable(ctx.root, snap.map.id),
     review: await reviewGate(ctx, snap),
     main: await mainGate(ctx, snap),
+    readiness: await readinessGate(ctx, snap),
     models: await sameModelReviews(ctx, snap),
     criteria: criteriaGate(ctx.root, snap),
     frozen: frozenOn(ctx, snap.map.id),

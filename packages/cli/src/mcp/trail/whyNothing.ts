@@ -1,5 +1,5 @@
 import type { MapSnapshot, Ticket, TicketType } from '@teamtrail/core';
-import { discoverySkipped } from '@teamtrail/core/agents';
+import { discoverySkipped, type ReadinessHold } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { criteriaReason } from './criteriaGate';
 import { briefView } from './discovery';
@@ -9,7 +9,7 @@ import { noTicketReason } from './noTicketReason';
 import type { ReviewGate } from './reviewLimit';
 import { waitsReason, type SameModelReview } from './reviewModels';
 
-/** Why nothing was offered: the review limit holds the ready work, checks on main, model matching, or what's in the way. */
+/** Why nothing was offered: the review limit holds the ready work, checks on main, repo readiness, model matching, or what's in the way. */
 export function whyNothing(
   ctx: AgentContext,
   snap: MapSnapshot,
@@ -17,6 +17,7 @@ export function whyNothing(
     held: Ticket[];
     review: ReviewGate;
     main: MainGate;
+    readiness: ReadinessHold;
     discovery?: TicketType[];
     models: SameModelReview[];
     criteria: Ticket[];
@@ -24,6 +25,7 @@ export function whyNothing(
 ): string {
   if (w.review.reason && w.review.held.length) return w.review.reason;
   if (w.main.reason && w.main.held.length) return w.main.reason;
+  if (w.readiness.reason && w.readiness.held.length) return w.readiness.reason;
   if (w.held.length) return heldReason(ctx, snap, w.held);
   if (w.criteria.length) return criteriaReason(w.criteria);
   const waiting = w.models.find((r) => r.waits);

@@ -10,7 +10,7 @@ import {
   type SessionMode,
   type Ticket,
 } from '@teamtrail/core';
-import { baselineForClaim, levelFor, recordTypes, repoRootOf } from '@teamtrail/core/agents';
+import { baselineForClaim, levelFor, recordTypes, repoRootOf, type ReadinessHold } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { checkWarnings } from './checkWarnings';
 import { criteriaView } from './criteria';
@@ -26,6 +26,7 @@ import { offerNext, readGates } from './offerNext';
 import { heldElsewhere } from './ownClaim';
 import { claimParallel } from './parallel';
 import { pathRoots } from './pathRoots';
+import { assertReady, readinessField } from './readinessGate';
 import { recoverStalled } from './recoverStalled';
 import { sessionView } from './reporting';
 import { assertUnderReviewLimit } from './reviewLimit';
@@ -53,7 +54,7 @@ export async function claimTicket(
   const snap = await ctx.resolveTrail(input.trail);
   ctx.trail = snap.map.id;
   const agent = await ctx.agentId();
-  const { target, main } = await pickTarget(ctx, { snap, agent, ref: input.ticket, guides: input.guides });
+  const { target, main, readiness } = await pickTarget(ctx, { snap, agent, ref: input.ticket, guides: input.guides });
   const alreadyMine =
     target.assignee === agent && deriveStates(snap.tickets, snap.map.mode).get(target.id) === 'claimed';
   const t = alreadyMine
@@ -97,6 +98,7 @@ export async function claimTicket(
     ...rulesAtClaim(ctx, input.touches),
     git: ctx.remote ? REMOTE_GIT_NOTE : baselineView(baseline),
     ...mainChecksField(main),
+    ...readinessField(readiness),
     lease: {
       expiresAt: new Date(lease.expiresAt).toISOString(),
       length: leaseSpan(lease.ttlMs),
@@ -115,7 +117,7 @@ export async function claimTicket(
 async function pickTarget(
   ctx: AgentContext,
   at: { snap: MapSnapshot; agent: string; ref?: string; guides?: string[] },
-): Promise<{ target: Ticket; main: MainGate }> {
+): Promise<{ target: Ticket; main: MainGate; readiness: ReadinessHold }> {
   const { snap, agent } = at;
   const offer = at.ref ? undefined : await offerNext(ctx, snap, { guides: at.guides });
   if (offer && !offer.ticket) throw new OperationError(offer.reason ?? 'No ready ticket');
@@ -130,10 +132,11 @@ async function pickTarget(
   if (target.assignee !== agent) assertModelMayReview(gates.models, target);
   assertUnderReviewLimit(gates.review, target, agent);
   assertMainChecks(gates.main, target, agent);
+  assertReady(gates.readiness, target, agent);
   if (target.assignee !== agent) assertInGuides(snap, target, at.guides);
   if (target.assignee !== agent) assertClaimable(ctx.root, snap.map.id, target);
   if (target.assignee !== agent) assertCriteriaConfirmed(gates.criteria, target);
-  return { target, main: gates.main };
+  return { target, main: gates.main, readiness: gates.readiness };
 }
 
 /** Reuses an idle session of the right mode on this trail, or opens one, and moves it to the claim steps. */

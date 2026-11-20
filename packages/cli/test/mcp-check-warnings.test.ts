@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
 import { callTool } from './fakes/callTool';
-import { approveAllHere } from './fakes/trailLead';
+import { approveAllHere, startAnywayHere } from './fakes/trailLead';
 
 let top: string;
 let root: string;
@@ -71,6 +71,9 @@ describe('check screening over MCP', () => {
     // the checks fail on main too (no eslint, no test script): once they ran there, the trail lead starts anyway
     await call('next_ticket');
     chooseMain({ root, mapId: m.trail.id, choice: { kind: 'proceed' } });
+    // and the test check can't run as written: repo readiness holds the work until they start it anyway too
+    await expect(call('claim_ticket', { ticket: m.tickets[0].key })).rejects.toThrow(/Repo not ready: test can't run/);
+    await startAnywayHere(root, m.trail.id);
     const c = await call<{ checkWarnings?: string[] }>('claim_ticket', { ticket: m.tickets[0].key });
     expect(c.checkWarnings).toEqual([
       "test: No `test` script in package.json. If it can't pass, tell the human; only they can change or waive checks.",

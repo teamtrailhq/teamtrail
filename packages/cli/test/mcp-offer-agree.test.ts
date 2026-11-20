@@ -5,8 +5,8 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { MarkdownAdapter, setModelMatching, setTrailArchived } from '@teamtrail/core';
-import { latestMainRun } from '@teamtrail/core/agents';
-import { nodeMarkdownFs } from '@teamtrail/core/node';
+import { latestMainRun, localRepoFiles, readReadiness } from '@teamtrail/core/agents';
+import { nodeMarkdownFs, startAnyway } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
@@ -74,6 +74,19 @@ function failingMain() {
   checks();
 }
 
+/** A git repo with tests and no check that runs them: repo readiness blocks (no checks), with verification on. */
+function notReady() {
+  fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({ scripts: { test: 'node --test' } }));
+  fs.writeFileSync(path.join(repo, '.gitignore'), '.teamtrail\n');
+  const git = (...a: string[]) =>
+    execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd: repo, stdio: 'pipe' });
+  git('init', '-q', '-b', 'main');
+  git('add', '.');
+  git('commit', '-qm', 'main');
+  fs.writeFileSync(path.join(root, 'verification.json'), JSON.stringify({ v: 1, default: 'checks', checks: {}, run: [] }));
+  approveAllHere(root);
+}
+
 /** A done ticket whose pull request still waits for review, as the PR reconciler records it. */
 function openPr(mapId: string) {
   // Only a ticket that exists counts toward the review queue (liveSyncs), so flag the trail's first ticket file.
@@ -127,6 +140,12 @@ const GATES: Gate[] = [
     },
     offers: null,
     reason: /already fail on main/,
+  },
+  {
+    name: 'repo readiness',
+    before: notReady,
+    offers: null,
+    reason: /Repo not ready: Teamtrail can't verify work yet: no checks/,
   },
   {
     name: 'a reroute freeze',
@@ -215,5 +234,34 @@ describe('every tool that suggests work agrees with claim_ticket', () => {
     expect(close.nextReason).toBe(next.reason);
     expect(resume.nextReason).toBe(next.reason);
     await expect(call('claim_ticket', trail)).rejects.toThrow(next.reason!);
+  });
+});
+
+describe('repo readiness', () => {
+  it("holds implementation work until the trail lead starts the trail anyway, and a waiting agent wakes on it", async () => {
+    notReady();
+    const call = await connect();
+    const m = await chart(call, { name: 'readiness', offers: null });
+    const trail = { trail: m.trail.id };
+    const key = (ref: string) => m.tickets.find((t) => t.ref === ref)!.key;
+    await call('claim_ticket', { ...trail, ticket: key('w') });
+    await call('close_ticket', { ...trail, resolution: 'Found it', noCodeReason: 'research' });
+    const held = await call<Next & { readiness?: { waits: string } }>('next_ticket', trail);
+    expect(held.ticket).toBeNull();
+    expect(held.readiness?.waits).toMatch(/Repo not ready/);
+    await expect(call('claim_ticket', { ...trail, ticket: key('x') })).rejects.toThrow(/Repo not ready/);
+    const waiting = call<Next & { waited: { woke: string; because?: string } }>('next_ticket', {
+      ...trail,
+      wait: true,
+      waitSeconds: 20,
+    });
+    await new Promise((r) => setTimeout(r, 300));
+    const read = await readReadiness({ root, files: localRepoFiles(repo), probe: true });
+    startAnyway({ root, mapId: m.trail.id, readiness: read, by: 'trail lead' });
+    const woke = await waiting;
+    expect(woke.ticket?.key).toBe(key('x'));
+    expect(woke.waited.woke).toBe('work');
+    // woken by the change in this machine's store, not the re-check timer (the folder itself may be heard first)
+    expect(woke.waited.because).toMatch(/started a trail anyway|approved on this machine/);
   });
 });

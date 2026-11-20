@@ -15,6 +15,7 @@ import { readMainChecks } from '../mainChecks/readMainChecks';
 import { activeTrails } from '../model/activeTrails';
 import type { AttentionPolicy } from '../model/attention';
 import type { InstalledGuide } from '../model/guide';
+import { readinessForTrails } from '../readiness/readinessForTrails';
 import { readEscapes } from '../scorecard/readEscapes';
 import { trackerPin, trackerTargetKey, trackerTargetLabel } from '../server/trackerPin';
 import { readTrailChecks } from '../trailChecks/readTrailChecks';
@@ -75,6 +76,7 @@ export async function gatherAttention(input: {
     deliveries: readDeliveryProblems(root),
     trackerRefused: refusedWrites(root).list(),
     trust: pendingTrust(root, allSnaps),
+    readiness: await readinessForTrails(root, snaps),
     ...oldQueue(root),
     ...trackerWaiting(root),
     policy,

@@ -30,6 +30,7 @@ import { postProofs } from './postProofs';
 import { handleProof } from './proofRoutes';
 import { redactResponse } from './redactResponse';
 import { handleRemoteAgents } from './remoteAgentRoutes';
+import { handleReadiness } from './readinessRoutes';
 import { handleRepoReads } from './repoReadRoutes';
 import { fromThisMachine, requestRefusal } from './requestGuard';
 import { handleReroutes } from './rerouteRoutes';
@@ -131,6 +132,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleJournal({ root: abs, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleRepoReads(ctx, req, res, url),
+    (req, res, url) =>
+      handleReadiness({ ...ctx, probe: !checkRunner, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleWaivers({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleRules({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler, access: routes.ciAccess }, req, res, url),
