@@ -113,21 +113,45 @@ export function useTicketActions(input: {
   const gap = firstGap && gapActions.get(firstGap);
   const criteriaFirst = !!firstGap && CRITERIA_GAPS.has(firstGap);
   const all = [...own, ...[...gapActions.values()].filter((g) => !own.includes(g))];
-  const answer = answerItem(v, input.onOpenChat);
-  const named = v.standing.primary;
-  // nothing waits on the human: an agent's proposed criteria, else unconfirmed ones, are the useful next step
-  const fallback = all.find((a) => a.id === 'take-criteria') ?? all.find((a) => a.id === 'confirm-criteria');
-  const need = named === 'need' ? needPrimary({ v, all, onItem: input.onItem, onDismiss: input.onDismiss }) : undefined;
-  const byName = named && named !== 'need' ? all.find((a) => a.id === PRIMARY_ID[named]) : undefined;
-  // a done ticket's pull request to merge, where a server merges them: its next step, unless criteria come first
-  const merge = all.find((a) => a.id === 'merge');
-  const primary = answer ?? need ?? (criteriaFirst ? gap : undefined) ?? byName ?? merge ?? gap ?? fallback;
-  const variant: ButtonVariant = primaryVariant({
-    urgent: v.standing.edge === 'urgent',
-    named: (!!named && primary !== fallback) || (!!gap && primary === gap) || (!!merge && primary === merge),
+  const { primary, variant } = pickPrimary({
+    v,
+    all,
+    gap,
+    criteriaFirst,
+    answer: answerItem(v, input.onOpenChat),
+    need:
+      v.standing.primary === 'need'
+        ? needPrimary({ v, all, onItem: input.onItem, onDismiss: input.onDismiss })
+        : undefined,
   });
   const menu = all.filter((a) => a !== primary);
   return { primary, variant, menu, error, note, act, waive, undoWaiver: runners.undoWaiver, gapActions };
+}
+
+/**
+ * The bar's primary: the answer an agent waits on, the queue's item, criteria to confirm, the standing's own action,
+ * a done ticket's merge (where a server merges), what closes the proof's first gap, else a useful next step.
+ */
+function pickPrimary(p: {
+  v: TicketView;
+  all: MenuItem[];
+  gap?: MenuItem;
+  criteriaFirst: boolean;
+  answer?: MenuItem;
+  need?: MenuItem;
+}): { primary?: MenuItem; variant: ButtonVariant } {
+  const { v, all, gap } = p;
+  const named = v.standing.primary;
+  // nothing waits on the human: an agent's proposed criteria, else unconfirmed ones, are the useful next step
+  const fallback = all.find((a) => a.id === 'take-criteria') ?? all.find((a) => a.id === 'confirm-criteria');
+  const byName = named && named !== 'need' ? all.find((a) => a.id === PRIMARY_ID[named]) : undefined;
+  const merge = all.find((a) => a.id === 'merge');
+  const primary = p.answer ?? p.need ?? (p.criteriaFirst ? gap : undefined) ?? byName ?? merge ?? gap ?? fallback;
+  const variant = primaryVariant({
+    urgent: v.standing.edge === 'urgent',
+    named: (!!named && primary !== fallback) || (!!gap && primary === gap) || (!!merge && primary === merge),
+  });
+  return { primary, variant };
 }
 
 /** Opens the checks on main the queue holds on the ticket's trail, when it does. */

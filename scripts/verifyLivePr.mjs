@@ -4,9 +4,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-function writeSnapshot({ root, mapId, ticketId, key, state }) {
+/** A ticket's PR snapshot (PR #7) as a server that merges keeps it. */
+export function prSnapshot({ mapId, ticketId, key, state }) {
   const at = Date.now();
-  const sync = {
+  return {
     v: 1,
     mapId,
     ticketId,
@@ -31,6 +32,11 @@ function writeSnapshot({ root, mapId, ticketId, key, state }) {
     flags: [],
     syncedAt: at,
   };
+}
+
+/** Writes it where the engine keeps it, as a whole file at once. */
+export function writeSnapshot({ root, mapId, ticketId, key, state }) {
+  const sync = prSnapshot({ mapId, ticketId, key, state });
   const dir = path.join(root, '.evidence', mapId, ticketId);
   fs.mkdirSync(dir, { recursive: true });
   const tmp = path.join(dir, `sync.json.${process.pid}.tmp`);

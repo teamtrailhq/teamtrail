@@ -1,10 +1,13 @@
 import type { GapStanding } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button } from '../../components/ui';
-import type { MergeOffer } from './mergeOffer';
 import { MergedNote } from './MergedNote';
+import type { MergeOffer } from './mergeOffer';
 import { ProofGapsLine } from './ProofGapsLine';
 import { useMergeRequest } from './useMergeRequest';
+
+/** The button that merges, by the kind of merge. */
+const MERGE = { approve: 'Merge', anyway: 'Merge anyway' };
 
 const ASK = {
   approve: 'Merge its pull request, at exactly the commit Teamtrail verified?',
@@ -39,7 +42,7 @@ export function MergeForm(props: {
         disabled={working}
         onClick={() => void m.merge(anyway ? offer.gaps : undefined)}
       >
-        {working ? 'Merging…' : anyway ? 'Merge anyway' : 'Merge'}
+        {working ? 'Merging…' : MERGE[offer.kind]}
       </Button>
       <Button size="sm" variant="ghost" disabled={working} onClick={props.onClose}>
         Cancel

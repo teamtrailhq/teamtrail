@@ -21,6 +21,7 @@ import {
   ticketAction,
 } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { verifyBubbleMerge } from './verifyBubbleMerge.mjs';
 import { verifyCheckGuard } from './verifyCheckGuard.mjs';
 import { verifyCheckSuggestions } from './verifyCheckSuggestions.mjs';
 import { verifyCheckVariables } from './verifyCheckVariables.mjs';
@@ -38,6 +39,7 @@ import { verifyMainChecks } from './verifyMainChecks.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyNeedsYouKinds } from './verifyNeedsYouKinds.mjs';
 import { verifyNewTrail } from './verifyNewTrail.mjs';
+import { verifyNoChecksGap } from './verifyNoChecksGap.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
 import { verifyPrLink } from './verifyPrLink.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
@@ -722,6 +724,10 @@ const waiverOk = await verifyWaiver({ browser, cli, log, shots });
 const liveViewsOk = await verifyLiveViews({ browser, cli, log, shots });
 // Done means verified: missing evidence back to rework and the review opened by themselves, Confirm criteria → verified.
 const proofGapsOk = await verifyProofGaps({ browser, cli, log, shots });
+// Behind a server that merges: a done, unverified ticket's bubble and its Hands-off row lead with Merge anyway….
+const bubbleMergeOk = await verifyBubbleMerge({ browser, cli, log, shots });
+// No checks set: a finished task's proof says nothing was checked, and Set checks opens Settings → Verification.
+const noChecksOk = await verifyNoChecksGap({ browser, cli, log, shots });
 // A pull request linked by hand: Link a different PR in the full ticket, against a fake GitHub, then Unlink.
 const prLinkOk = await verifyPrLink({ browser, cli, log, shots });
 // Flaky checks: a pass on retry with no change held for the trail lead, accepted, and shown on the proof.
@@ -866,6 +872,8 @@ if (
   !waiverOk ||
   !liveViewsOk ||
   !proofGapsOk ||
+  !bubbleMergeOk ||
+  !noChecksOk ||
   !prLinkOk ||
   !flakyOk ||
   !rulesOk ||
