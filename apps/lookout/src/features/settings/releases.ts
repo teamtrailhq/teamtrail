@@ -23,6 +23,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.9',
+    date: '2026-11-20',
+    items: [
+      'The guide catalog page has the new look: the teamtrail wordmark with its blaze cursor, Inter and blaze, by day and by night',
+    ],
+  },
+  {
     version: '0.67.8',
     date: '2026-11-20',
     items: [
@@ -187,15 +194,6 @@ export const RELEASES: Release[] = [
     version: '0.66.9',
     date: '2026-11-19',
     items: ['Settings → Gates and Diff rules say why their controls are off before the controls, not after'],
-  },
-  {
-    version: '0.66.8',
-    date: '2026-11-18',
-    items: [
-      "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
-      'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
-      'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
-    ],
   },
   ...NEWER_RELEASES,
   ...LATER_RELEASES,

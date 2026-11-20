@@ -3,6 +3,15 @@ import type { Release } from './releases';
 /** Releases 0.61–0.66.5, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
   {
+    version: '0.66.8',
+    date: '2026-11-18',
+    items: [
+      "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
+      'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
+      'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
+    ],
+  },
+  {
     version: '0.66.7',
     date: '2026-11-18',
     items: [

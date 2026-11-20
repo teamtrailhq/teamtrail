@@ -75,3 +75,17 @@ it('marks a guide verified only from verified.json, for the exact file that was 
   fs.writeFileSync(path.join(checkout, 'verified.json'), JSON.stringify(free));
   expect(build().verified).toBe(false);
 });
+
+it('builds the catalog page in the new look: the cursor wordmark, both themes, the guide escaped', () => {
+  fs.writeFileSync(path.join(checkout, 'guides', 'perf.md'), guideText({ id: 'perf' }));
+  git('add', '.');
+  git('commit', '-q', '-m', 'Add perf');
+  build();
+  const html = fs.readFileSync(path.join(checkout, 'index.html'), 'utf8');
+  expect(html).toContain('<div class="wm" role="img" aria-label="Teamtrail">teamtrail<i aria-hidden="true"></i></div>');
+  expect(html).not.toContain('teamtrail<b>.</b>');
+  expect(html).toContain('--accent:#bf3900');
+  expect(html).toMatch(/prefers-color-scheme:dark\)\{:root\{[^}]*--accent:#ff6b2c/);
+  expect(html).toContain('<code>npx teamtrail guides add perf</code>');
+  expect(html).not.toMatch(/animation|@keyframes/);
+});
