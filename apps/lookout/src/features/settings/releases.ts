@@ -23,6 +23,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.10',
+    date: '2026-11-20',
+    items: [
+      "A question answered in an agent's chat leaves Needs you, unless a HITL ticket or a high-risk call still needs your answer in the Lookout",
+    ],
+  },
+  {
     version: '0.67.3',
     date: '2026-11-20',
     items: ['The teamtrail wordmark ends in a blaze block cursor instead of a full stop'],
