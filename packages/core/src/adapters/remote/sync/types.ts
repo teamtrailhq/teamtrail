@@ -15,13 +15,18 @@ export interface SyncStatus {
   resetAt?: number;
   /** Last failure, cleared on the next success. */
   error?: string;
-  /** Queued writes the tracker refused for good, newest last (a few at most); kept until this process ends. */
+  /**
+   * Queued writes this process saw the tracker refuse for good, newest last (a few at most). One kept for the human
+   * leaves once they retry or discard it, from any process; one that couldn't be kept stays until this process ends.
+   */
   dropped?: DroppedWrite[];
   rate?: RateInfo;
 }
 
 /** A queued write the tracker refused for good (a deleted issue, revoked access, a ticket claimed meanwhile). */
 export interface DroppedWrite {
+  /** The write's id, when it was kept for the human (refusedWrites.ts). */
+  id?: string;
   label: string;
   error: string;
   at: number;
@@ -55,6 +60,8 @@ export interface WriteAuthor {
 /** Takes a queued write the tracker refused for good, with the tracker's reason. */
 export interface RefusedSink {
   add(input: { write: QueuedWrite; error: string; at: number }): void;
+  /** The ids of the refused writes still waiting for the human's Retry or Discard. */
+  kept?(): ReadonlySet<string>;
 }
 
 /**

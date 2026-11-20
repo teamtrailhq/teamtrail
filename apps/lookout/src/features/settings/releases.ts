@@ -23,6 +23,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.11',
+    date: '2026-11-20',
+    items: ['The tracker line in Settings stops counting a refused write once you retry or discard it'],
+  },
+  {
     version: '0.67.10',
     date: '2026-11-20',
     items: [],
@@ -194,11 +199,6 @@ export const RELEASES: Release[] = [
     version: '0.66.10',
     date: '2026-11-19',
     items: ['Settings no longer has an About page'],
-  },
-  {
-    version: '0.66.9',
-    date: '2026-11-19',
-    items: ['Settings → Gates and Diff rules say why their controls are off before the controls, not after'],
   },
   ...NEWER_RELEASES,
   ...LATER_RELEASES,

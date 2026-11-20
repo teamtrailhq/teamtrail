@@ -3,6 +3,11 @@ import type { Release } from './releases';
 /** Releases 0.61–0.66.5, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
   {
+    version: '0.66.9',
+    date: '2026-11-19',
+    items: ['Settings → Gates and Diff rules say why their controls are off before the controls, not after'],
+  },
+  {
     version: '0.66.8',
     date: '2026-11-18',
     items: [
