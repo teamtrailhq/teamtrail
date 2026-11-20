@@ -27,6 +27,8 @@ const WRITES: RegExp[] = [
   /^\/verification\/config$/,
   // What a change outside the files an agent declared does, set and approved in the same step (verification/setScope.ts).
   /^\/verification\/scope$/,
+  // Suggesting notes of the project's commands, read from this machine's checkout (commandNotes/).
+  /^\/knowledge\/commands$/,
   // The diff rules: checks a change's files make run and questions they make agents answer (verification/setRules.ts).
   /^\/verification\/rules$/,
   // How each verification gate acts, off, observe or enforce, set and approved in the same step (setGateMode.ts).

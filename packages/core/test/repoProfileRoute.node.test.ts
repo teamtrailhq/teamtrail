@@ -83,3 +83,40 @@ test('PUT /verification/config saves a suggested check with its folder, approved
     s.close();
   }
 });
+
+test('POST /knowledge/commands: one suggested note per package, only once; nothing without a checkout', async () => {
+  const s = await serve(memoryRepoFiles(MONOREPO));
+  const json = { 'Content-Type': 'application/json' };
+  const post = () => fetch(`${s.base}/knowledge/commands`, { method: 'POST', headers: json, body: '{}' });
+  try {
+    const res = await post();
+    const first = (await res.json()) as { added: string[]; updated: string[]; unchanged: string[] };
+    assert.equal(res.status, 200, JSON.stringify(first));
+    assert.equal(first.added.length, 2);
+    const listed = (await (await fetch(`${s.base}/knowledge`)).json()) as {
+      entries: { id: string; status: string; title: string; scope: string[] }[];
+    };
+    assert.deepEqual(
+      listed.entries.map((e) => [e.status, e.title, e.scope.join()]),
+      [
+        ['suggested', 'How to build and test this repo (node)', '**'],
+        ['suggested', 'How to build and test apps/web (node)', 'apps/web/**'],
+      ],
+    );
+    const again = (await (await post()).json()) as { added: string[]; unchanged: string[] };
+    assert.deepEqual(again.added, []);
+    assert.equal(again.unchanged.length, 2);
+    const plain = await fetch(`${s.base}/knowledge/commands`, { method: 'POST', body: '{}' });
+    assert.equal(plain.status, 403, 'a form post another site could send is refused');
+  } finally {
+    s.close();
+  }
+  const none = await serve();
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    const res = await fetch(`${none.base}/knowledge/commands`, { method: 'POST', headers, body: '{}' });
+    assert.equal(res.status, 400);
+  } finally {
+    none.close();
+  }
+});

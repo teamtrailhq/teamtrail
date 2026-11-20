@@ -35,3 +35,5 @@ export { rulesGate, type UnansweredRule } from './verification/rulesGate';
 export { undoRuleWaiver, type UndoRuleWaiverRequest } from './verification/undoRuleWaiver';
 export { waiveRule, type WaiveRuleRequest } from './verification/waiveRule';
 export * from './repoProfile';
+export * from './commandNotes';
+export { CHECK_ENV, checkEnv } from './verification/checkEnv';

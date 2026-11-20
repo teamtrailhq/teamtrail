@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Empty, InfoTip, MetaLine, Panel, Row, Select } from '../../components/ui';
 import { useKnowledge } from './knowledgeContext';
 import { KnowledgeDetail } from './KnowledgeDetail';
+import { SuggestCommandNotes } from './SuggestCommandNotes';
 
 type Filter = 'review' | 'confirmed' | 'assumption' | 'outdated' | 'all';
 
@@ -77,6 +78,7 @@ export function KnowledgeView() {
             ]}
           />
           <input className="kn-search" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <SuggestCommandNotes />
         </div>
         <div className="kn-body-grid">
           <ul className="kn-list">
