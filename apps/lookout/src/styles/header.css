@@ -8,7 +8,8 @@
 }
 .wordmark {
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
   font-size: var(--fs-heading);
   line-height: 1;
   color: var(--text-hi);
@@ -228,7 +229,7 @@
 a.header-menu-item {
   text-decoration: none;
 }
-/* The trail's agents (features/header/TrailAgentsMenu.tsx): green while one is working. */
+/* The trail's agents (features/header/TrailAgentsMenu.tsx): the accent while one is working. */
 .agents-dot {
   display: inline-block;
   width: 8px;
@@ -238,8 +239,8 @@ a.header-menu-item {
   border: 1px solid var(--dim);
 }
 .agents-dot.on {
-  border-color: rgb(var(--decided-rgb));
-  background: rgb(var(--decided-rgb));
+  border-color: rgb(var(--working-rgb));
+  background: rgb(var(--working-rgb));
 }
 .header-menu-item:hover:not(:disabled) {
   background: var(--panel2);

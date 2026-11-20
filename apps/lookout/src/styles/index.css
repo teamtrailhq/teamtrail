@@ -44,3 +44,5 @@
 @import './sign-in.css';
 @import './overlays.css';
 @import './phone-header.css';
+/* The re-theme preview's switches (accent, font, corners): last, so its corners win. */
+@import './look.css';

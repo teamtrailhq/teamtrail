@@ -1,6 +1,13 @@
-/** Shipped type: Londrina Solid (wordmark and titles), Figtree (everything read), JetBrains Mono (keys, ids,
- * timers, code). All SIL OFL 1.1 (Fontsource). */
-import '@fontsource/londrina-solid/400.css';
-import '@fontsource/londrina-solid/900.css';
-import '@fontsource-variable/figtree';
+/** Type for the re-theme preview: four sans + mono pairings, picked with `data-font` (styles/look.css). All SIL OFL
+ * 1.1 (Fontsource). Once one is chosen, only its files stay. */
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '@fontsource-variable/space-grotesk';
+import '@fontsource/space-mono/400.css';
+import '@fontsource-variable/instrument-sans';
 import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/manrope';
+import '@fontsource-variable/fira-code';

@@ -112,7 +112,8 @@
 }
 .t-heading.caps {
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
 }
 
 /* ---------- Panel ---------- */

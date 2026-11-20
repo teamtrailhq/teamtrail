@@ -1,15 +1,16 @@
 /* Fonts and base elements. Colours live in theme.css, sizes and shared components in design-system.css. */
 :root {
-  /* Three fonts (src/fonts.ts). Londrina Solid: --display for the wordmark and titles. Figtree: --sans for
-   * everything read, --label for small caps labels, --strong for bold text and buttons, --data for numbers that
-   * change (tabular digits). JetBrains Mono: --mono for keys, ids, timers and code. */
-  --display: 'Londrina Solid', 'Figtree Variable', sans-serif;
-  --sans: 'Figtree Variable', system-ui, sans-serif;
+  /* Two fonts, a sans and its mono (picked in look.css, loaded in src/fonts.ts). --display is the sans at 600 with
+   * tight tracking, for the wordmark and titles; --sans for everything read, --label for small caps labels,
+   * --strong for bold text and buttons, --data for numbers that change (tabular digits); --mono for keys, ids,
+   * timers and code. */
+  --display: var(--sans);
+  --display-weight: 600;
+  --ls-display: -0.02em;
   --label: var(--sans);
   --strong: var(--sans);
   --data: var(--sans);
-  --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
-  /* Type voices: people and agents read in Figtree (bubbles and colors tell them apart); tool data is mono. */
+  /* Type voices: people and agents read in the sans (bubbles and colors tell them apart); tool data is mono. */
   --voice-human: var(--sans);
   --voice-agent: var(--sans);
   --voice-data: var(--mono);

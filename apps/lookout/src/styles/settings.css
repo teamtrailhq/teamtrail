@@ -348,12 +348,11 @@
 }
 .onb-title {
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
   /* The lowercase wordmark reads smaller than the capitals it replaced. */
   font-size: calc(var(--fs-title) * 1.4);
   line-height: 1;
-  letter-spacing: var(--ls-brand);
-  margin-right: calc(-1 * var(--ls-brand));
 }
 .onb-tagline {
   margin: 0;
@@ -380,9 +379,9 @@
 }
 .about-name {
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
   font-size: var(--fs-heading);
-  letter-spacing: var(--ls-brand);
 }
 .about p {
   margin: 0;

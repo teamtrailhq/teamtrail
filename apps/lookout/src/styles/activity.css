@@ -24,11 +24,10 @@
 }
 .st-big {
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
   font-size: clamp(var(--fs-heading), 1.6vw, var(--fs-display));
   line-height: var(--lh-tight);
-  letter-spacing: var(--ls-data);
-  text-transform: uppercase;
   color: var(--text-hi);
   overflow: hidden;
   display: -webkit-box;
@@ -65,9 +64,9 @@
   height: 3px;
   background: var(--line);
 }
-/* Walked steps fade like the map's walked connectors; the current one is the map's working green. */
+/* Walked steps fade like the map's walked connectors; the current one is the map's working accent. */
 .pipeline li.done i {
-  background: rgba(var(--decided-rgb), 0.55);
+  background: rgba(var(--working-rgb), 0.55);
 }
 .pipeline li.cur i {
   background: var(--st-claimed);
@@ -129,7 +128,7 @@
   background: var(--line);
 }
 .sessions-list .segs i.done {
-  background: rgba(var(--decided-rgb), 0.55);
+  background: rgba(var(--working-rgb), 0.55);
 }
 .sessions-list .segs i.cur {
   background: var(--st-claimed);

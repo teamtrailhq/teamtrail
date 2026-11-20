@@ -1,0 +1,72 @@
+/* Preview switches for the re-theme, set as attributes on <html>: `data-accent` (indigo, blue, amber), `data-font`
+ * (plex, space, instrument, manrope) and `data-corners` (square, slight, rounded). Without one, the first applies.
+ * Once a choice is made, its values move into theme.css and base.css and this file goes. */
+:root {
+  --accent-rgb: 139, 124, 246; /* indigo #8B7CF6 */
+  --on-primary: #ffffff;
+  --r1: 0px; /* controls, chips */
+  --r2: 0px; /* cards, panels, sheets */
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+:root[data-accent='blue'] {
+  --accent-rgb: 59, 130, 246; /* #3B82F6 */
+}
+:root[data-accent='amber'] {
+  --accent-rgb: 245, 135, 31; /* #F5871F */
+  --on-primary: #0a0a0b;
+}
+
+:root[data-font='space'] {
+  --sans: 'Space Grotesk Variable', system-ui, sans-serif;
+  --mono: 'Space Mono', ui-monospace, monospace;
+}
+:root[data-font='instrument'] {
+  --sans: 'Instrument Sans Variable', system-ui, sans-serif;
+  --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+:root[data-font='manrope'] {
+  --sans: 'Manrope Variable', system-ui, sans-serif;
+  --mono: 'Fira Code Variable', ui-monospace, monospace;
+}
+
+:root[data-corners='slight'] {
+  --r1: 3px;
+  --r2: 4px;
+}
+:root[data-corners='rounded'] {
+  --r1: 7px;
+  --r2: 12px;
+}
+
+/* Corners: controls and chips take --r1, cards, panels and sheets --r2 (square by default, so nothing changes). */
+.btn,
+.icon-btn,
+.chip,
+.badge,
+.pill,
+.tag,
+.select,
+.mode-switch,
+.mode-switch-btn,
+input,
+textarea {
+  border-radius: var(--r1);
+}
+.panel,
+.card,
+.bubble,
+.ticket-drawer,
+.dialog,
+.more-list,
+.header-menu-list,
+.trail-menu,
+.setup-bubble,
+.snooze-menu,
+.ds-row {
+  border-radius: var(--r2);
+}
+.node .card,
+.node .ring {
+  rx: var(--r2);
+}

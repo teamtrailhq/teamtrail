@@ -121,7 +121,7 @@
   right: var(--sp-10);
   top: var(--sp-8);
 }
-/* The map's corner controls, Fit and Legend, sit on a panel of their own over the terrain. */
+/* The map's corner controls, Fit and Legend, sit on a panel of their own over the canvas. */
 .fit-btn,
 .map-legend > .btn {
   background: var(--panel);
