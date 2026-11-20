@@ -1,6 +1,8 @@
 /**
- * Programs that run a tool from the project's own environment: `uv run`, `poetry run`, `pipenv run`, `bundle exec`,
- * `composer exec`, `pnpm exec`, `npx`. `sub` is the subcommand that runs the tool; `valued`, the wrapper's flags that
+ * Programs that run a tool from the project's own environment: `uv run`, `poetry run`, `pipenv run`, `pdm run`, `rye
+ * run`, `bundle exec`, `composer exec`, `pnpm exec`, `npx`. The one reading of them: the check argv rules
+ * (guides/wrappedCheck.ts, which allows only some), screening (screenWrapped.ts) and the check guard (checkReach.ts)
+ * all go through wrapperArgv. `sub` is the subcommand that runs the tool; `valued`, the wrapper's flags that
  * take the next word (so it isn't read as the tool); `dir`, those that move it to another folder.
  */
 interface WrapperSpec {
@@ -40,6 +42,8 @@ export const WRAPPER_SPECS: Record<string, WrapperSpec> = {
     dir: ['-C', '--directory', '-P', '--project'],
   },
   pipenv: { sub: 'run', valued: [] },
+  pdm: { sub: 'run', valued: ['-p', '--project'], dir: ['-p', '--project'] },
+  rye: { sub: 'run', valued: [] },
   bundle: { sub: 'exec', valued: ['--gemfile'] },
   composer: { sub: 'exec', valued: ['-d', '--working-dir'], dir: ['-d', '--working-dir'] },
   pnpm: { sub: 'exec', valued: ['--filter', '-F', '-C', '--dir'], dir: ['-C', '--dir'] },
