@@ -41,6 +41,7 @@ import { verifyPrLink } from './verifyPrLink.mjs';
 import { verifyProjects } from './verifyProjects.mjs';
 import { verifyProof } from './verifyProof.mjs';
 import { verifyProofGaps } from './verifyProofGaps.mjs';
+import { verifyReadiness } from './verifyReadiness.mjs';
 import { verifyRemote } from './verifyRemote.mjs';
 import { verifyRules } from './verifyRules.mjs';
 import { verifyScreening } from './verifyScreening.mjs';
@@ -708,6 +709,8 @@ const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const screeningOk = await verifyScreening({ browser, cli, log, shots });
 // Suggested checks: what a monorepo runs, read from its files, added in one click with its folder and saved approved.
 const suggestionsOk = await verifyCheckSuggestions({ browser, cli, log, shots });
+// Repo readiness: no checks hold a task; the queue item opens the screen; Start anyway, Undo, and the one-click fix.
+const readinessOk = await verifyReadiness({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
 // Live views: an approval in a second browser and evidence alone changing reach an open page without a reload.
 const liveViewsOk = await verifyLiveViews({ browser, cli, log, shots });
@@ -851,6 +854,7 @@ if (
   !remoteOk ||
   !screeningOk ||
   !suggestionsOk ||
+  !readinessOk ||
   !waiverOk ||
   !liveViewsOk ||
   !proofGapsOk ||
