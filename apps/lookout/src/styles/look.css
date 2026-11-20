@@ -1,5 +1,5 @@
 /* Preview switches for the re-theme, set as attributes on <html>: `data-accent` (indigo, blue, amber), `data-font`
- * (plex, space, instrument, manrope) and `data-corners` (square, slight, rounded). Without one, the first applies.
+ * (plex, space, instrument, manrope, inter) and `data-corners` (square, slight, rounded). Without one, the first applies.
  * Once a choice is made, its values move into theme.css and base.css and this file goes. */
 :root {
   --accent-rgb: 139, 124, 246; /* indigo #8B7CF6 */
@@ -24,6 +24,23 @@
 :root[data-font='instrument'] {
   --sans: 'Instrument Sans Variable', system-ui, sans-serif;
   --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+:root[data-font='inter'] {
+  --sans: 'Inter Variable', system-ui, sans-serif;
+  --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+/* Inter as Linear sets it: the single-storey a (cv11) and round quotes (ss03). Its tabular figures also space out
+ * hyphens and colons, so running text stays proportional and only numbers that change take tabular digits: the
+ * --data places (base.css) and the ones already marked tabular in their own rules. */
+:root[data-font='inter'] body {
+  font-feature-settings:
+    'cv11' 1,
+    'ss03' 1;
+  font-variant-numeric: normal;
+}
+:root[data-font='inter']
+  :is(.t-data, .readout, .usage, .bf-tile b, .report-stats b, .report-tickets .lead, .mi-progress) {
+  font-variant-numeric: tabular-nums;
 }
 :root[data-font='manrope'] {
   --sans: 'Manrope Variable', system-ui, sans-serif;
