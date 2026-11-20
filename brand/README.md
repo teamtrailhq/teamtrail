@@ -2,7 +2,7 @@
 
 The Teamtrail logo, the `teamtrail` wordmark and Scout's avatar, rendered at exact sizes. Source and re-rendering: [`packages/scout-avatar`](../packages/scout-avatar) (`npm run capture`).
 
-The look: near-black (`#0A0A0B`) and white surfaces, square corners, Inter and JetBrains Mono, and one accent, blaze (`#FF6B2C`; `#D43F00` where it sits on a light page).
+The look: near-black (`#0A0A0B`) and white surfaces, square corners, Inter and JetBrains Mono, and one accent, blaze (`#FF6B2C`; `#BF3900` where it sits on a light page, as text or a mark, the Lookout's day `--accent` in `apps/lookout/src/styles/theme.css`).
 
 ## Which mark where
 
