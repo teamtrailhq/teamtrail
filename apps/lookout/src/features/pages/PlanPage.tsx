@@ -1,16 +1,18 @@
 import type { ActivityState, MapSnapshot } from '@teamtrail/core';
-import type { ReactNode } from 'react';
-import { Panel, SectionHeader } from '../../components/ui';
+import { type ReactNode, useState } from 'react';
+import { LabelLine, Panel, SceneCard } from '../../components/ui';
 import type { LookoutApi } from '../../hooks';
 import type { Selection } from '../../lib';
 import { UnspecifiedDetail } from '../inspector';
 import { MapSections } from '../plan';
+import type { Tab } from '../plan/types';
 import { StatusPanel } from '../status';
 
 /**
- * The plan, a page of its own: the parts that aren't tickets yet (open questions, assumptions, decisions, what's ruled
- * out, notes, the report) beside the trail at a glance and its status and type mix, or the open question you picked, to make a ticket
- * of it or rule it out.
+ * The plan, a page of its own, read top to bottom: the trail at a glance (the destination as its headline, the phase,
+ * what waits on you, the assumptions, the agents and what's next), then the parts that aren't tickets yet on one row
+ * of tabs, the open question you picked from them (to make a ticket of it or rule it out), and the status and type
+ * mix last.
  */
 export function PlanPage(props: {
   api: LookoutApi;
@@ -19,14 +21,16 @@ export function PlanPage(props: {
   selection: Selection;
   onSelect: (s: Selection) => void;
   onAudit: () => void;
-  /** The trail at a glance: its phase, checks on main, what waits on you, the agents and what's ready next. */
-  glance: ReactNode;
+  /** The trail at a glance, given a way to open the destination in full. */
+  glance: (o: { onDestination: () => void }) => ReactNode;
 }) {
   const { snap, selection } = props;
+  const [tab, setTab] = useState<Tab>('unspecified');
   const item = selection?.kind === 'unspecified' ? selection.item : undefined;
   return (
     <Panel className="zone page plan-page">
-      <section className="page-col">
+      <div className="plan-flow">
+        {snap && props.glance({ onDestination: () => setTab('destination') })}
         <MapSections
           snap={snap}
           selection={selection}
@@ -34,20 +38,20 @@ export function PlanPage(props: {
           bare
           onAudit={props.onAudit}
           activity={props.activity}
+          tab={tab}
+          onTab={setTab}
         />
-      </section>
-      <section className="page-col">
-        {item && <SectionHeader title="Open question" />}
-        <div className="zone-b">
-          {snap && item && <UnspecifiedDetail snap={snap} item={item} api={props.api} />}
-          {snap && !item && (
-            <>
-              {props.glance}
-              <StatusPanel snap={snap} sessions={props.activity.sessions} />
-            </>
-          )}
-        </div>
-      </section>
+        {snap && item && (
+          <SceneCard className="plan-question" label={<LabelLine parts={['Open question']} />}>
+            <UnspecifiedDetail snap={snap} item={item} api={props.api} />
+          </SceneCard>
+        )}
+        {snap && (
+          <SceneCard className="plan-status">
+            <StatusPanel snap={snap} sessions={props.activity.sessions} />
+          </SceneCard>
+        )}
+      </div>
     </Panel>
   );
 }
