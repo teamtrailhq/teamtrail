@@ -6,6 +6,8 @@ export interface SyncHealthOptions {
   now: () => number;
   queued: () => number;
   rate: () => RateInfo | undefined;
+  /** The refused writes still waiting for the human (RefusedSink.kept); the others leave the status. */
+  kept?: () => ReadonlySet<string>;
 }
 
 /** Refused writes kept in the status. */
@@ -21,11 +23,28 @@ export class SyncHealth {
   }
 
   get status(): SyncStatus {
-    return this.current;
+    return this.shown(this.current);
   }
 
   onStatus(fn: (s: SyncStatus) => void) {
-    return this.events.on(fn);
+    return this.events.on((s) => fn(this.shown(s)));
+  }
+
+  /**
+   * The status without the refused writes the human has retried or discarded since (in this process or any other):
+   * the store is what says a write still waits, so the Settings line follows Retry and Discard.
+   */
+  private shown(s: SyncStatus): SyncStatus {
+    if (!s.dropped?.some((d) => d.id) || !this.o.kept) return s;
+    let kept: ReadonlySet<string>;
+    try {
+      kept = this.o.kept();
+    } catch {
+      return s;
+    }
+    const dropped = s.dropped.filter((d) => !d.id || kept.has(d.id));
+    if (dropped.length === s.dropped.length) return s;
+    return { ...s, dropped };
   }
 
   set(patch: Partial<SyncStatus>) {
@@ -48,9 +67,12 @@ export class SyncHealth {
     else this.set({ error: String((err as Error)?.message ?? err) });
   }
 
-  /** A queued write the tracker refused for good: kept in the status (online() doesn't clear it) and shown. */
-  dropped(label: string, error: string) {
-    const dropped = [...(this.current.dropped ?? []), { label, error, at: this.o.now() }].slice(-MAX_DROPPED);
+  /** A queued write the tracker refused for good: kept in the status (online() doesn't clear it) and shown; `id` when it
+   * was kept for the human, so it leaves once they retry or discard it. */
+  dropped(o: { id?: string; label: string; error: string }) {
+    const { label, error } = o;
+    const entry = { ...(o.id ? { id: o.id } : {}), label, error, at: this.o.now() };
+    const dropped = [...(this.current.dropped ?? []), entry].slice(-MAX_DROPPED);
     this.set({ dropped, error: `Dropped queued write (${label}): ${error}` });
   }
 
