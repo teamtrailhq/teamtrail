@@ -23,6 +23,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.13',
+    date: '2026-11-20',
+    items: ['Checkboxes are their usual size again, in the reroute dialog too'],
+  },
+  {
     version: '0.67.12',
     date: '2026-11-20',
     items: [
