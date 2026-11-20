@@ -7,6 +7,7 @@ import { LATER_RELEASES } from './laterReleases';
 import { MID_RELEASES } from './midReleases';
 import { NEWER_RELEASES } from './newerReleases';
 import { OLDER_RELEASES } from './olderReleases';
+import { RECENT_RELEASES } from './recentReleases';
 
 export interface Release {
   version: string;
@@ -23,9 +24,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.67.15',
+    version: '0.67.16',
     date: '2026-11-20',
     items: ["When Scout in Slack can't reach your Teamtrail, it tells you to start it with `npx teamtrail`"],
+  },
+  {
+    version: '0.67.15',
+    date: '2026-11-20',
+    items: ["A new logo: the t's path runs to a blaze cursor, the wordmark's own, in the browser tab too"],
   },
   {
     version: '0.67.14',
@@ -184,23 +190,7 @@ export const RELEASES: Release[] = [
       'Teamtrail Cloud: Pause shows Stopping… until the agents have stopped, and Start shows Starting… until one is working',
     ],
   },
-  {
-    version: '0.66.15',
-    date: '2026-11-19',
-    items: [
-      'Two answers to the same question at once (the Lookout and Slack, or two people): the first is the one used everywhere, and the other is kept in the conversation as "also answered, not used"',
-    ],
-  },
-  {
-    version: '0.66.14',
-    date: '2026-11-19',
-    items: ['Running the tests no longer leaves folders behind in the temp folder'],
-  },
-  {
-    version: '0.66.13',
-    date: '2026-11-19',
-    items: ["Checking a proof finds the repo's proof keys when the repo is reached through a symbolic link"],
-  },
+  ...RECENT_RELEASES,
   ...NEWER_RELEASES,
   ...LATER_RELEASES,
   ...MID_RELEASES,
