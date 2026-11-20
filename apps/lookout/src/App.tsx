@@ -31,7 +31,7 @@ import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/k
 import { PhoneProjects, ProjectSwitcher } from './features/projects';
 import { FirstRun, openRulePrefilled } from './features/settings';
 import { useBriefing, useBreakpoint, useLookout, useLookoutMode, useThemedPrefs } from './hooks';
-import { createRuntime, trackerKind, waitingQuestions } from './lib';
+import { createRuntime, trackerKind } from './lib';
 
 /**
  * The map first. The header (with "N need you") and the bar of views under it, the map filling the page with a bubble
@@ -50,7 +50,7 @@ export function App() {
   const repo = useRepoName(rt.kind);
   const bp = useBreakpoint();
   const scoped = useScopedActivity(activity, api.mapId);
-  useDocumentTitle(waitingQuestions(activity, snap).length, snap?.map.title);
+  useDocumentTitle(activity.pending.length, snap?.map.title);
   const nav = useAppNavigation(api);
   const trail = useTrailUi({
     snap,
