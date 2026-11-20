@@ -1,8 +1,11 @@
 import { hostedAgents } from '../../lib/hostedAgents';
-import { StartTrail, trailAgentsStatus, useTrailAgents } from '../trail';
+import { ChecksNote, StartTrail, trailAgentsStatus, useTrailAgents } from '../trail';
 import { HeaderMenu } from './HeaderMenu';
 
-/** The trail's agents in the header: Start the trail, then one menu with what they're doing, Pause and their runs. */
+/**
+ * The trail's agents in the header: Start the trail, then one menu with what they're doing, Pause and their runs, and,
+ * while the project has no approved checks, the way to set them (ChecksNote), inside the menu so the header stays one row.
+ */
 export function TrailAgentsMenu({ mapId }: { mapId: string }) {
   const agents = useTrailAgents(mapId);
   const { state, pending } = agents;
@@ -37,6 +40,7 @@ export function TrailAgentsMenu({ mapId }: { mapId: string }) {
                 Runs
               </a>
             )}
+            <ChecksNote onOpen={close} />
           </>
         )}
       </HeaderMenu>

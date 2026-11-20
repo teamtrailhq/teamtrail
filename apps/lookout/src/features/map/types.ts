@@ -33,7 +33,7 @@ export interface MapGraphProps {
   preview?: MapPreview;
   /** Each done ticket's proof (useTrailProofs), for the cards' checks. */
   proofs?: ProofStatuses;
-  /** Whether the trail is done (core's `trailDone`): the last stretches walked and a flag at the destination. */
+  /** Whether the trail is done (core's `trailDone`): the last stretches walked and the destination's finish square filled. */
   done?: TrailDone;
   /** Checks on main, drawn as `main` at the start of the trail; none while they're off. */
   main?: MainTone;
@@ -42,3 +42,6 @@ export interface MapGraphProps {
   /** Drawn over the map, beside what's selected: the bubble. */
   overlay?: (anchorOf: AnchorOf, box: { w: number; h: number }) => ReactNode;
 }
+
+/** What the destination mark shows: ahead, or reached and verified, not verified, or failing on main together. */
+export type DestinationState = 'ahead' | 'verified' | 'unverified' | 'failing';

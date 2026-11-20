@@ -378,54 +378,70 @@
   display: none;
 }
 
-.destination .x-stroke {
-  fill: none;
-  stroke: var(--mark);
-  stroke-width: 7;
-  stroke-linecap: round;
-}
+/* The destination: the finish square (features/map/DestinationGlyph.tsx). Ahead, a ring in the accent with a small
+ * square in its centre; reached, it fills in the colour of passed checks when the trail is verified, rose when its
+ * checks fail on main together (it needs the trail lead now), a muted outline when it isn't verified. */
 .destination {
+  --dest: var(--accent);
   cursor: pointer;
   outline: none;
 }
-.destination .x-hit {
-  fill: transparent;
-}
-.destination:focus-visible .x-stroke {
-  stroke-width: 9;
-}
-/* Reached: a planted flag, in the colour of passed checks when the trail is verified, muted when it isn't. */
 .destination.reached {
-  --flag: rgb(var(--decided-rgb));
+  --dest: rgb(var(--decided-rgb));
 }
 .destination.reached.unverified {
-  --flag: var(--dim);
+  --dest: var(--dim);
 }
-/* The trail's checks fail on main together: it needs the trail lead now. */
 .destination.reached.failing {
-  --flag: var(--urgent);
+  --dest: var(--urgent);
 }
-.destination.sel .x-stroke {
-  stroke-width: 9;
+.destination .dest-hit {
+  fill: transparent;
 }
-.destination.reached.sel .flag-pole {
-  stroke-width: 6;
-}
-.destination .flag-pole,
-.destination .flag-ground {
+.destination .dest-frame {
   fill: none;
-  stroke: var(--flag);
-  stroke-width: 4;
-  stroke-linecap: round;
-}
-.destination .flag-cloth {
-  fill: var(--flag);
-  stroke: var(--flag);
+  stroke: var(--dest);
   stroke-width: 2;
-  stroke-linejoin: round;
 }
-.destination.reached:focus-visible .flag-pole {
-  stroke-width: 6;
+.destination .dest-core,
+.destination .dest-fill {
+  fill: var(--dest);
+}
+/* The check or cross cut out of the filled square, in the background colour; muted on the outline. */
+.destination .dest-sign {
+  fill: none;
+  stroke: var(--bg);
+  stroke-width: 2;
+  stroke-linecap: square;
+}
+.destination .dest-sign.muted {
+  stroke: var(--dest);
+}
+/* Selected or focused: an accent ring 5 outside the square, as `main` and the cards show selection. */
+.destination .dest-ring {
+  fill: none;
+  stroke: none;
+  stroke-width: 1.5;
+}
+.destination.sel .dest-ring {
+  stroke: var(--accent);
+}
+.destination:focus-visible .dest-ring {
+  stroke: rgba(var(--accent-rgb), 0.55);
+}
+/* Reached: the square fills in, calmly, once. */
+.graph .destination.reached .dest-fill {
+  animation: dest-fill-in 0.6s ease-out both;
+}
+@keyframes dest-fill-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .graph .destination.reached .dest-fill {
+    animation: none;
+  }
 }
 .quarantine text {
   font-family: var(--label);

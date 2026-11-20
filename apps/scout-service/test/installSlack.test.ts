@@ -38,7 +38,7 @@ describe('/install-slack', () => {
     const page = await res.text();
     expect(page).toContain('Scout is installed in Team T1');
     expect(page).toContain('answers only while it runs');
-    expect(page).toMatch(/<ol><li>In your project, run npx teamtrail@next\./);
+    expect(page).toMatch(/<ol><li>In your project, run npx teamtrail\./);
     expect(page).toContain('<li>In the Lookout, open Settings → Slack and choose Add Scout to Slack');
     expect(page).toContain('href="https://teamtrail.app/docs/slack/"');
     expect(await w.store.workspace('T1')).toMatchObject({ teamId: 'T1', installedBy: 'U1' });

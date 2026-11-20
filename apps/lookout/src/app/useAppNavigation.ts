@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { LookoutApi } from '../hooks';
 import type { Selection } from '../lib';
 import type { Page } from './tabs';
+import { useFullTicketRoute } from './useFullTicketRoute';
 import { usePageRoute } from './usePageRoute';
 
 /**
@@ -12,7 +13,9 @@ import { usePageRoute } from './usePageRoute';
 export function useAppNavigation(api: LookoutApi) {
   const { activity, selection, setSelection, actions } = api;
   const route = usePageRoute();
-  const [fullTicket, setFullTicket] = useState(false);
+  const full = useFullTicketRoute((id) => setSelection({ kind: 'ticket', id }));
+  /** Hands-off has no map: a ticket opened anywhere opens as the full ticket (set from the mode by AppModeSwitch). */
+  const [handsOff, setHandsOff] = useState(false);
   /** The decision the Logbook opens on. */
   const [logbookFocus, setLogbookFocus] = useState<string>();
   const [statsOpen, setStatsOpen] = useState(false);
@@ -21,6 +24,11 @@ export function useAppNavigation(api: LookoutApi) {
     if (!selection && s?.ticketId && s.mapId === api.mapId) setSelection({ kind: 'ticket', id: s.ticketId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api.chatSession, api.mapId]);
+  // the trail changed under it (its selection cleared): the full ticket closes with its place in history
+  useEffect(() => {
+    if (full.open && selection?.kind !== 'ticket') full.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection, full.open]);
 
   const toMap = () => {
     setStatsOpen(false);
@@ -33,15 +41,30 @@ export function useAppNavigation(api: LookoutApi) {
   /** Selecting on the map, the trail bar or a list opens its bubble; nothing selected closes it and the full ticket. */
   const select = (s: Selection) => {
     setSelection(s);
-    if (!s) setFullTicket(false);
+    if (!s) full.close();
   };
   const onTrail = (mapId?: string) => {
     if (mapId && mapId !== api.mapId) actions.selectMap(mapId);
   };
+  /** The full ticket on a ticket: in place of a page that was open (Back then returns where that page came from). */
+  const openFullTicket = (mapId: string, ticketId: string) => {
+    onTrail(mapId);
+    setSelection({ kind: 'ticket', id: ticketId });
+    setStatsOpen(false);
+    const fromPage = !!route.page;
+    route.dismiss();
+    full.show(ticketId, fromPage);
+  };
   const openTicket = (mapId: string, ticketId: string) => {
+    if (handsOff) return openFullTicket(mapId, ticketId);
     onTrail(mapId);
     setSelection({ kind: 'ticket', id: ticketId });
     toMap();
+  };
+  /** Full ticket on what is selected; closing it goes back to where it was opened from. */
+  const setFullTicket = (on: boolean) => {
+    if (!on) return full.close();
+    if (selection?.kind === 'ticket') full.show(selection.id);
   };
   const openQuestion = (questionId: string) => {
     const q = activity.pending.find((p) => p.id === questionId);
@@ -74,8 +97,12 @@ export function useAppNavigation(api: LookoutApi) {
     page: route.page,
     openPage,
     toMap,
-    fullTicket,
+    fullTicket: full.open,
     setFullTicket,
+    openFullTicket,
+    /** Hands-off: tickets opened anywhere open as the full ticket, which stands in for a page (Back). */
+    handsOff,
+    setHandsOff,
     logbookFocus,
     openDecisions,
     statsOpen,

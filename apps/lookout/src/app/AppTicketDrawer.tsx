@@ -1,15 +1,16 @@
 import type { SessionInfo, TrailDone } from '@teamtrail/core';
-import { useEffect } from 'react';
-import { Panel } from '../components/ui';
+import { useEffect, useRef } from 'react';
+import { Button, Panel } from '../components/ui';
 import { Inspector } from '../features/inspector';
 import type { LookoutApi } from '../hooks';
 import type { useAppNavigation } from './useAppNavigation';
 import type { useAttentionUi } from './useAttentionUi';
 
 /**
- * The full ticket, from the bubble's "Full ticket": the ticket inspector (every action, comments, attempts, proof,
- * guides, checks, editing) in a drawer over the map's right side, a page of its own on a phone. × or Esc closes it
- * back to the bubble.
+ * The full ticket, from the bubble's "Full ticket" or a ticket opened in Hands-off: the ticket inspector (every action,
+ * comments, attempts, proof, guides, checks, editing) in a drawer over the map's right side, a page of its own on a
+ * phone. × (Back in Hands-off, where it stands in for a page), Esc or the browser's Back closes it back to where it was
+ * opened from, and focus returns to what opened it (the bubble, the row of Needs you).
  */
 export function AppTicketDrawer(props: {
   api: LookoutApi;
@@ -21,18 +22,33 @@ export function AppTicketDrawer(props: {
   const { api, nav, attn } = props;
   const open = nav.fullTicket && api.selection?.kind === 'ticket';
   const close = () => nav.setFullTicket(false);
+  const closeRef = useRef(close);
+  closeRef.current = close;
   useEffect(() => {
     if (!open) return;
-    const key = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && nav.setFullTicket(false);
+    // what opened it gets focus back when it closes, so Back lands on the row it came from
+    const from = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && closeRef.current();
     window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  }, [open, nav]);
+    return () => {
+      window.removeEventListener('keydown', key);
+      if (from?.isConnected) from.focus();
+    };
+  }, [open]);
   if (!open) return null;
   return (
-    <Panel className="ticket-drawer" aria-label="Full ticket">
-      <button type="button" className="bubble-close" aria-label="Close the full ticket" onClick={close}>
-        ×
-      </button>
+    <Panel className={nav.handsOff ? 'ticket-drawer as-page' : 'ticket-drawer'} aria-label="Full ticket">
+      {nav.handsOff ? (
+        <div className="drawer-back">
+          <Button size="sm" variant="ghost" onClick={close}>
+            ← Back
+          </Button>
+        </div>
+      ) : (
+        <button type="button" className="bubble-close" aria-label="Close the full ticket" onClick={close}>
+          ×
+        </button>
+      )}
       <Inspector
         api={api}
         sessions={props.sessions}

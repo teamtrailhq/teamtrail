@@ -24,12 +24,33 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.67.17',
+    version: '0.67.20',
     date: '2026-11-20',
     items: [
       "Teamtrail Cloud: a done ticket's bubble offers Approve and merge, or Merge anyway, as its next step",
       'A ticket finished while no checks were set says so, with Set checks, instead of "no completion was submitted"',
     ],
+  },
+  {
+    version: '0.67.19',
+    date: '2026-11-20',
+    items: [
+      "Teamtrail Cloud: Scout's Get started keeps its own corner, so it never covers Send or a button again",
+      "In Hands-off, the full ticket has Back, and Esc and your browser's Back return you where you were",
+      'Starting a trail before any checks are set says so, with Set checks',
+    ],
+  },
+  {
+    version: '0.67.18',
+    date: '2026-11-20',
+    items: [
+      "The map's destination is a finish square: it fills green when the trail is verified, rose when its checks fail",
+    ],
+  },
+  {
+    version: '0.67.17',
+    date: '2026-11-20',
+    items: ["When Scout in Slack can't reach your Teamtrail, it tells you to start it with `npx teamtrail`"],
   },
   {
     version: '0.67.16',
@@ -176,20 +197,6 @@ export const RELEASES: Release[] = [
       "Check screening knows more stacks: Gradle and Maven wrappers, Python's uv, Poetry and Pipenv, Bundler, Composer, bun, turbo and Nx, Swift, Mix and Dart, and the workspace `-w` or `--filter` names",
       "A check that needs something not installed yet says so (`ng` isn't installed: no node_modules in apps/web), apart from a script that doesn't exist",
       'Checks may run a known tool through `uv run --frozen`, `poetry run`, `pipenv run`, `bundle exec`, `pnpm exec` or `npx --no`; anything that would download stays refused',
-    ],
-  },
-  {
-    version: '0.66.18',
-    date: '2026-11-19',
-    items: [
-      'Checks read as running until their outcome is in place: once they show finished, the ticket has moved on and its review is open',
-    ],
-  },
-  {
-    version: '0.66.17',
-    date: '2026-11-19',
-    items: [
-      "An answer passed on from an agent's chat no longer takes the place of yours: it guides the agent, and the question stays open in the Lookout and Slack until you answer, and your answer is the one that decides",
     ],
   },
   ...RECENT_RELEASES,

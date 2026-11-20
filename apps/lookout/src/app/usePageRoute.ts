@@ -55,5 +55,7 @@ export function usePageRoute() {
     else history.pushState(PUSHED, '', href);
     setPage(next);
   };
-  return { page, open, close };
+  /** Leaves the page for what takes its place in the URL (the full ticket), without stepping back. */
+  const dismiss = () => setPage(null);
+  return { page, open, close, dismiss };
 }
