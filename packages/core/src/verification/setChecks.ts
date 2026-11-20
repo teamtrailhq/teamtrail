@@ -2,19 +2,22 @@ import path from 'node:path';
 import { checkArgv, checkNotice } from '../guides/checkArgv';
 import { OperationError } from '../planning/operations/operationError';
 import { checkFolder } from './checkFolder';
+import { checkGlobs, MAX_CHECK_GLOBS } from './checkGlobs';
 import { checksApproval } from './checksApproval';
 import { VERIFICATION_FILE } from './configFile';
 import { readRawConfig } from './rawConfig';
 import { writeApprovedConfig } from './writeApprovedConfig';
 
 /**
- * One check as the person set it: a name, its argv (never a shell line) and the folder it runs in, repo-relative
- * ('' for the top). Without `cwd` a check that keeps its name keeps its folder.
+ * One check as the person set it: a name, its argv (never a shell line), the folder it runs in, repo-relative
+ * ('' for the top), and the files it is about (`paths`, globs; [] for every change). Without `cwd` or `paths` a
+ * check that keeps its name keeps its own.
  */
 export interface CheckInput {
   name: string;
   run: string[];
   cwd?: string;
+  paths?: string[];
 }
 
 /** The file changed since the person loaded it: they'd overwrite what they never saw. */
@@ -49,6 +52,8 @@ function problemOf(checks: CheckInput[], o: { acknowledged: boolean; kept: Kept 
       return `${c.name}: a command of 1–30 words`;
     if (c.cwd !== undefined && (typeof c.cwd !== 'string' || checkFolder(c.cwd) === undefined))
       return `${c.name}: a folder inside the repository`;
+    if (c.paths !== undefined && !checkGlobs(c.paths))
+      return `${c.name}: up to ${MAX_CHECK_GLOBS} paths inside the repository`;
     const spec = { run: c.run, cwd: folderOf(c, o.kept) };
     const unsafe = checkArgv(spec);
     if (unsafe.length) return `${c.name} ${unsafe.join('; ')}`;
@@ -58,18 +63,20 @@ function problemOf(checks: CheckInput[], o: { acknowledged: boolean; kept: Kept 
   return undefined;
 }
 
-/** The check as it's written: what the file had under its name, the new argv, and the folder when one is given. */
+/** The check as it's written: what the file had under its name, the new argv, the folder and paths when given. */
 function specOf(c: CheckInput, kept: Record<string, unknown> = {}): Record<string, unknown> {
-  const { cwd: keptCwd, ...rest } = kept;
+  const { cwd: keptCwd, paths: keptPaths, ...rest } = kept;
   const folder = c.cwd === undefined ? keptCwd : checkFolder(c.cwd);
-  return { ...rest, run: c.run, ...(folder ? { cwd: folder } : {}) };
+  const paths = c.paths === undefined ? keptPaths : [...new Set(c.paths.map((p) => p.trim()).filter(Boolean))];
+  const scoped = Array.isArray(paths) && paths.length > 0;
+  return { ...rest, run: c.run, ...(folder ? { cwd: folder } : {}), ...(scoped ? { paths } : {}) };
 }
 
 /**
  * The trail lead sets the checks every completion must pass, from the Lookout (where there's no repo to edit, as in a
  * hosted workspace): verification.json is written with exactly these checks, all run in order, its other settings
  * kept (a new file turns verification on for new trails: that is what setting checks is for), and approved on this
- * machine in the same step, since the person who typed them is the one approving them, folders included. Only over `base`, the file's
+ * machine in the same step, since the person who typed them is the one approving them, folders and paths included. Only over `base`, the file's
  * hash as they loaded it (`none` without one), so nobody's change is overwritten unseen; refused for argv that
  * carries or downloads code, and an unknown program needs `acknowledged`. Never through a symbolic link. Journaled.
  */

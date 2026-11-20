@@ -21,6 +21,8 @@ export interface AttentionHandlers {
   openTrailChecks: (mapId: string) => void;
   /** A rule an item suggests (escapes): Settings → Verification → Rules, prefilled. */
   openRule: (rule: NonNullable<AttentionItem['rule']>) => void;
+  /** What keeps the repo from being checked here: Settings → Project → Repo readiness. */
+  openReadiness: () => void;
 }
 
 function openTicketOrTrail(item: AttentionItem, h: AttentionHandlers) {
@@ -69,6 +71,8 @@ export function openItem(item: AttentionItem, h: AttentionHandlers) {
       return h.openMainChecks(item.mapId);
     case 'trail-checks':
       return h.openTrailChecks(item.mapId);
+    case 'readiness':
+      return h.openReadiness();
     case 'escape':
       return item.rule ? h.openRule(item.rule) : openTicketOrTrail(item, h);
     default:

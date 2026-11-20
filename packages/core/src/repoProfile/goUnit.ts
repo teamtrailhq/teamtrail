@@ -42,6 +42,7 @@ export async function goUnit(ctx: UnitContext): Promise<RepoUnit[]> {
       ...(toolchain ? { toolchain } : {}),
       install: ['go', 'mod', 'download'],
       commands,
+      tasks: [{ role: 'build', run: ['go', 'build', './...'], cwd: folder.dir, from: 'go.mod' }],
       needs: depNeeds({ deps: requires(text), file }),
     },
   ];

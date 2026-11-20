@@ -3,6 +3,7 @@ import { managedSignIn } from '../../lib/managedSignIn';
 import { ApprovalsSection } from '../approvals';
 import { GuidesSection } from '../guides';
 import { ProofPostSection } from '../proof';
+import { ReadinessSection } from '../readiness';
 import { RemoteAgentsSection } from '../remote-agents';
 import { TrackerConnectors } from '../trackers';
 import { CheckVariablesSection } from './CheckVariablesSection';
@@ -18,6 +19,9 @@ export function ProjectGroup({ data, route }: { data: SettingsData; route: Setti
     <>
       <SettingsSlot id="approvals" storage="machine">
         <ApprovalsSection />
+      </SettingsSlot>
+      <SettingsSlot id="readiness">
+        <ReadinessSection now={Date.now()} />
       </SettingsSlot>
       <SettingsSlot id="tracker">
         <SettingsSection title="Tracker">

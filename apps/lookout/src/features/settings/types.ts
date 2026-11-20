@@ -13,6 +13,7 @@ export type SettingsSectionId =
   | 'models'
   | 'trail-guides'
   | 'approvals'
+  | 'readiness'
   | 'tracker'
   | 'workspaces'
   | 'check-variables'

@@ -28,6 +28,7 @@ import { handlePlan } from './planRoutes';
 import { handlePolicy } from './policyRoutes';
 import { postProofs } from './postProofs';
 import { handleProof } from './proofRoutes';
+import { handleReadiness } from './readinessRoutes';
 import { redactResponse } from './redactResponse';
 import { handleRemoteAgents } from './remoteAgentRoutes';
 import { handleRepoReads } from './repoReadRoutes';
@@ -95,7 +96,10 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   };
   const unwatch = watchTrackerFolder(abs, fs, send);
   const unwatchLeases = watchLeases(abs, () => routes.active(), send, leaseTiming);
-  const ctx = { root: abs, active: () => routes.active(), repoFiles: () => repoFiles(path.dirname(abs)) };
+  const checkout = () => repoFiles(path.dirname(abs));
+  // repo readiness: the checkout read as above, probed here unless the server's runner runs the checks
+  const readiness = trackers.readiness ?? { files: checkout, probe: !checkRunner };
+  const ctx = { root: abs, active: () => routes.active(), repoFiles: checkout, readiness };
   const places = lanPlaces(abs, trackers.configDir);
   const proofs = postProofs(ctx, { access: routes.proofAccess, configDir: trackers.configDir });
   const reconciler = watchVerification(ctx, { access: routes.ciAccess, send, postProofs: proofs }, reconcilerTiming);
@@ -103,14 +107,14 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
   // approvals and accepted changes live in the machine store, outside the watched folder
   const store = { root: abs, configDir: trackers.configDir, send };
   const unwatchOutside = [watchRemoteAgents(abs, send), watchMachineStore(store), watchRemoteTracker({ ...ctx, send })];
-  unwatchOutside.push(watchIntegration(abs, integrationTiming));
+  unwatchOutside.push(watchIntegration(abs, integrationTiming), unwatch, unwatchLeases);
   // checks on main: in Cloud the server's runner runs them, never this process (mainChecks/startMainRun.ts)
   const mainEnv = { root: abs, ...(checkRunner ? { checkRunner } : {}) };
   const mainCtx = { ...ctx, env: mainEnv, changed: () => send('event: main-checks\ndata: {}\n\n') };
-  const unwatchMainChecks = watchMainChecks(mainCtx, send, mainChecksTiming);
+  unwatchOutside.push(watchMainChecks(mainCtx, send, mainChecksTiming));
   const trailChanged = () => send('event: trail-checks\ndata: {}\n\n');
   const trailCtx = { ...ctx, env: mainEnv, configDir: trackers.configDir, changed: trailChanged };
-  const unwatchTrailChecks = watchTrailChecks(trailCtx, send, trailChecksTiming);
+  unwatchOutside.push(watchTrailChecks(trailCtx, send, trailChecksTiming));
 
   type Route = (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<boolean>;
   /** Tried in order; the first that handles the request answers it. */
@@ -131,6 +135,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleJournal({ root: abs, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleRepoReads({ ...ctx, configDir: trackers.configDir }, req, res, url),
+    (req, res, url) => handleReadiness({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleWaivers({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleRules({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler, access: routes.ciAccess }, req, res, url),
@@ -144,7 +149,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleBriefs(ctx, req, res, url),
     (req, res, url) => handlePlan(ctx, req, res, url),
     (req, res, url) => handleReroutes(ctx, req, res, url),
-    (req, res, url) => handleKnowledge(abs, req, res, url),
+    (req, res, url) => handleKnowledge({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleCriteriaProposals(abs, req, res, url),
     (req, res, url) => handleCriteria(ctx, req, res, url),
     (req, res, url) => handlePolicy(ctx, req, res, url),
@@ -206,12 +211,8 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     close() {
       for (const p of plugins) p.close();
       routes.close();
-      unwatch();
-      unwatchLeases();
       attention.stop();
       for (const stop of unwatchOutside) stop();
-      unwatchMainChecks();
-      unwatchTrailChecks();
       reconciler.stop();
       for (const c of clients) c.end();
       clients.clear();

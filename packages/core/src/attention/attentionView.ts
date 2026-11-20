@@ -1,5 +1,6 @@
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { AttentionView } from '../model/attention';
+import type { ReadinessHost } from '../model/readiness';
 import { reviewLoad } from '../reviewLoad/reviewLoad';
 import { readAttentionPolicy, readAttentionPrefs } from './attentionStore';
 import { buildAttention } from './buildAttention';
@@ -13,11 +14,19 @@ export async function attentionView(input: {
   /** Where this person's prefs live; defaults to the user config dir. */
   configDir?: string;
   now?: number;
+  /** Where repo readiness is read; default this machine's checkout, probed here. */
+  readiness?: ReadinessHost;
 }): Promise<AttentionView> {
   const now = input.now ?? Date.now();
   const policy = readAttentionPolicy(input.root);
   const prefs = readAttentionPrefs(input.configDir);
-  const gathered = await gatherAttention({ root: input.root, adapter: input.adapter, policy: policy.value, now });
+  const gathered = await gatherAttention({
+    root: input.root,
+    adapter: input.adapter,
+    policy: policy.value,
+    now,
+    readiness: input.readiness,
+  });
   const { items, hidden } = buildAttention(gathered);
   const focused = isFocused(prefs, now);
   const wouldInterrupt = items.filter((i) => i.score >= policy.value.interrupt).length;

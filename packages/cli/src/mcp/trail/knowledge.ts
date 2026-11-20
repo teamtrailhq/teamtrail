@@ -4,6 +4,7 @@ import {
   OperationError,
   repoPaths,
   pathsIn,
+  PROFILE_SOURCE,
   searchKnowledge,
   selectKnowledge,
   staleAnchors,
@@ -23,9 +24,12 @@ import {
 import type { AgentContext } from './agentContext';
 import { pathRoots } from './pathRoots';
 
-/** The knowledge an agent gets with `t`: picked by paths (ticket and brief), words, trail and kind, with a why. */
+/**
+ * The knowledge an agent gets with `t`: picked by paths (ticket and brief), words, trail and kind, with a why. Notes of
+ * the project's commands come apart, per package the work is in (`commands`, projectCommands.ts), not here.
+ */
 export function knowledgeFor(root: string, snap: MapSnapshot, t: Ticket) {
-  const entries = listKnowledge(root);
+  const entries = listKnowledge(root).filter((e) => !e.sources.includes(PROFILE_SOURCE));
   if (!entries.length) return undefined;
   const brief = readBrief(root, snap.map.id);
   const repo = repoRootFor(root);

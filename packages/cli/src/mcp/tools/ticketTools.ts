@@ -20,7 +20,7 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
       human: 'none',
       title: 'Next ready ticket',
       description:
-        'The oldest open, unblocked, unclaimed ticket, with its body, blockers and the decisions they produced. Does not claim it. With wait=true and nothing claimable, it waits (up to waitSeconds, default 120, max 600) until something on the trail becomes claimable for you (criteria confirmed, a brief or plan accepted, a ticket unblocked or released, a reroute decided, the review limit freed, checks on main settled) and returns it, with `waited` saying what woke it; on timeout it returns what next_ticket says now. It never claims or holds anything while waiting.',
+        'The oldest open, unblocked, unclaimed ticket, with its body, blockers and the decisions they produced. Does not claim it. With wait=true and nothing claimable, it waits (up to waitSeconds, default 120, max 600) until something on the trail becomes claimable for you (criteria confirmed, a brief or plan accepted, a ticket unblocked or released, a reroute decided, the review limit freed, checks on main settled, a trail started anyway past repo readiness) and returns it, with `waited` saying what woke it; on timeout it returns what next_ticket says now. It never claims or holds anything while waiting.',
       readOnly: true,
     },
     {
