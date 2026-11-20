@@ -1,3 +1,4 @@
+import { repoPath } from '../verification/repoPath';
 import { WRAPPER_SPECS, wrapperArgv } from '../verification/wrapperArgv';
 import { isKnownCheck } from './knownChecks';
 import { programOf } from './programRules';
@@ -62,7 +63,7 @@ const ALLOWED: Record<string, { flags: string[]; needs?: string[] }> = {
 export type Wrapped =
   | { kind: 'none' }
   | { kind: 'refused'; problem: string }
-  | { kind: 'tool'; argv0: string; program: string; args: string[] };
+  | { kind: 'tool'; argv0: string; program: string; args: string[]; cwd?: string };
 
 const outsideRepo = (dir: string) => dir.startsWith('/') || /^[a-zA-Z]:/.test(dir) || dir.split(/[\\/]/).includes('..');
 
@@ -81,17 +82,21 @@ function flagProblem(program: string, flags: { name: string; value?: string }[])
 /**
  * A check that runs a known tool through the project's own environment: `uv run --frozen pytest`, `poetry run
  * pytest`, `pipenv run pytest`, `bundle exec rspec`, `composer exec phpunit`, `pnpm exec vitest`, `npx --no eslint`.
- * Allowed only when the tool after the wrapper is itself a known check and the wrapper's flags can't download or
- * reach elsewhere; any other tool through a wrapper is refused, since the wrapper could run anything installed.
+ * Allowed only when the tool after the wrapper is itself a known check (a bare name or a path into the repo's tool
+ * folders, programIdentity.ts) and the wrapper's flags can't download or reach elsewhere; any other tool through a
+ * wrapper is refused, since the wrapper could run anything installed.
  */
-export function wrappedCheck(program: string, args: string[]): Wrapped {
+export function wrappedCheck(input: { program: string; args: string[]; cwd?: string }): Wrapped {
+  const { program, args } = input;
   if (!ALLOWED[program]) return { kind: 'none' };
   const w = wrapperArgv(program, args);
   if (!w) return { kind: 'none' };
   const problem = flagProblem(program, w.flags);
   if (problem) return { kind: 'refused', problem };
   const [argv0 = '', ...rest] = w.tool;
-  const tool = { argv0, program: programOf(argv0), args: rest };
+  // the tool runs where the wrapper moved to (`poetry -C api run pytest`), which flagProblem kept inside the repo
+  const cwd = w.dir === undefined ? input.cwd : repoPath(input.cwd, w.dir);
+  const tool = { argv0, program: programOf(argv0), args: rest, cwd };
   if (!argv0 || WRAPPER_SPECS[tool.program] || !isKnownCheck(tool))
     return {
       kind: 'refused',
