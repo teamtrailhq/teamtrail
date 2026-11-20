@@ -251,10 +251,6 @@
   gap: var(--sp-8);
   font: var(--type-body);
 }
-.vf-edit-sure input {
-  width: auto;
-  height: auto;
-}
 /* What reading the repo says about a check's command (check-screening/): quiet hint lines that wrap, a dot amber
  * when it won't run, never red (it's advice, nothing waits on it). */
 .cs-findings {
@@ -385,8 +381,4 @@
   display: flex;
   align-items: center;
   gap: var(--sp-8);
-}
-.waive-check input {
-  width: auto;
-  height: auto;
 }
