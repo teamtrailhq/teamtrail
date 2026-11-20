@@ -1,9 +1,9 @@
-/** The wordmark: the name in Inter 600, ending at the trail's destination, a blaze dot on the baseline. */
+/** The wordmark: the name in Inter 600, followed by a blaze block cursor on the baseline, still. */
 export function Wordmark({ text }: { text: string }) {
   return (
     <div className="wordmark">
       {text}
-      <span className="wordmark-dot" aria-hidden="true" />
+      <span className="wordmark-cursor" aria-hidden="true" />
     </div>
   );
 }

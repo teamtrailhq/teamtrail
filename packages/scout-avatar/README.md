@@ -8,7 +8,7 @@ Two marks, one drawing style:
 **Which mark where**
 
 - **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the `t.` logo, as the tile or the bare mark. Slack's app icon is Scout, on blaze.
-- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail.` wordmark, lowercase in Inter 600 with the blaze dot.
+- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail` wordmark, lowercase in Inter 600 followed by a blaze block cursor, still everywhere (it blinks only on teamtrail.app, and never under reduced motion).
 - Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
 
 `ScoutAvatar` and `mountScout` draw the same badge from `badgeArt.ts`.
@@ -129,10 +129,10 @@ npm run capture              # needs Chrome (CHROME=...) and ffmpeg
 
 - `github-org-avatar.png` (1000², the blaze logo tile) and `github-org-avatar-wordmark.png` (1000², the wordmark on a dark square)
 - `github-social-preview.png` (1280×640) and `github-social-preview.gif` (640×320, animated, under GitHub's 1 MB limit)
-- `teamtrail-banner.gif` (960×480): the README banner, the `teamtrail.` wordmark while the trail steps across a dot grid to its destination, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
+- `teamtrail-banner.gif` (960×480): the README banner, the `teamtrail` wordmark while the trail steps across a dot grid to its destination, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
 - `og-image-1200x630.png`
 - `x-header-1500x500.png`
-- `wordmark-lockup.png`, `wordmark-lockup-light.png`: the `teamtrail.` wordmark alone, on dark and on light
+- `wordmark-lockup.png`, `wordmark-lockup-light.png`: the `teamtrail` wordmark alone, on dark and on light
 - `x-avatar-400.png`
 - `slack-icon-512.png` (Scout on blaze) and `scout-badge-1000.png` (Scout on ink)
 - `linkedin-discord-avatar-512.png`

@@ -4,7 +4,7 @@ import { Wordmark } from './Wordmark';
 
 /**
  * card: README banner, social preview and Open Graph, the wordmark large on the left; header: X profile header (the
- * avatar overlaps bottom-left, so the copy sits right). The trail walks across the dot grid to the same blaze dot.
+ * avatar overlaps bottom-left, so the copy sits right). The trail walks across the dot grid to its blaze destination.
  */
 export function Banner({
   w,

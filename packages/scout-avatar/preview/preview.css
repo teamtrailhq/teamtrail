@@ -339,12 +339,11 @@ body {
 .lockup .wordmark {
   line-height: 1;
 }
-.wordmark-dot {
+.wordmark-cursor {
   display: inline-block;
-  width: 0.19em;
-  height: 0.19em;
-  margin-left: 0.05em;
-  border-radius: 50%;
+  width: 0.32em;
+  height: 0.66em;
+  margin-left: 0.07em;
   background: #ff6b2c;
 }
 .social-cat {

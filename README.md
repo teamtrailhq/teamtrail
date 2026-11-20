@@ -1,4 +1,4 @@
-<img src="brand/teamtrail-banner.gif" alt="The teamtrail wordmark in white, ending in a blaze-orange dot, above a trail on a dot grid that steps past four tickets to the same orange destination." width="100%" />
+<img src="brand/teamtrail-banner.gif" alt="The teamtrail wordmark in white, followed by a blaze-orange block cursor, above a trail on a dot grid that steps past four tickets to an orange destination." width="100%" />
 
 # Teamtrail
 

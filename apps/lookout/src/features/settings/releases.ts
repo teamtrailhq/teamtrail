@@ -23,6 +23,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.3',
+    date: '2026-11-20',
+    items: ['The teamtrail wordmark ends in a blaze block cursor instead of a full stop'],
+  },
+  {
     version: '0.67.2',
     date: '2026-11-20',
     items: ['Guide icons are the symbol alone, on the page itself, with no tile or border around them'],
@@ -177,15 +182,6 @@ export const RELEASES: Release[] = [
     items: [
       'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
       'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
-    ],
-  },
-  {
-    version: '0.66.4',
-    date: '2026-11-18',
-    items: [
-      'Slack: each question’s card shows its own answer; one passed on in an agent’s chat says it decided nothing',
-      'Slack: archiving a trail no longer closes cards for what still waits on you, and a card that becomes high risk switches to Open in Lookout',
-      'Checks on main run again when main moves after a failure, and say so meanwhile; trail checks read reverts on the commit they run on',
     ],
   },
   ...NEWER_RELEASES,

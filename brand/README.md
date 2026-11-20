@@ -1,6 +1,6 @@
 # Teamtrail brand pack
 
-The Teamtrail logo, the `teamtrail.` wordmark and Scout's avatar, rendered at exact sizes. Source and re-rendering: [`packages/scout-avatar`](../packages/scout-avatar) (`npm run capture`).
+The Teamtrail logo, the `teamtrail` wordmark and Scout's avatar, rendered at exact sizes. Source and re-rendering: [`packages/scout-avatar`](../packages/scout-avatar) (`npm run capture`).
 
 The look: near-black (`#0A0A0B`) and white surfaces, square corners, Inter and JetBrains Mono, and one accent, blaze (`#FF6B2C`; `#D43F00` where it sits on a light page).
 
@@ -8,20 +8,20 @@ The look: near-black (`#0A0A0B`) and white surfaces, square corners, Inter and J
 
 - **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the `t.` logo, as a square tile or the bare mark. The blaze tile (near-black t, white dot on `#FF6B2C`) is the favicon and the avatars; on dark the mark is `#F4F4F6` on `#0A0A0B`, on light `#0E0F11` on `#FFFFFF`, with the blaze dot on both.
 - **Scout's Slack app icon** is Scout's avatar on the blaze ground, not the logo: Scout is who talks in Slack. It fills the square (Slack rounds the corners); its app card's background is `#141416`, ink (`background_color` in `apps/scout-service/slack-manifest.json`), so the blaze icon stands out on it.
-- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail.` wordmark, lowercase in Inter 600 with the blaze dot.
+- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail` wordmark, lowercase in Inter 600 followed by a blaze block cursor, still everywhere (it blinks only on teamtrail.app, and never under reduced motion).
 - Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
 
 | File                              | Size      | Use it for                                                                                                                                       |
 | --------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `github-org-avatar.png`           | 1000×1000 | GitHub organization avatar (and npm's profile picture): the blaze logo tile                                                                      |
-| `github-org-avatar-wordmark.png`  | 1000×1000 | Alternative org avatar: the `teamtrail.` wordmark on a near-black square (the rule above prefers the tile for square spaces)                      |
+| `github-org-avatar-wordmark.png`  | 1000×1000 | Alternative org avatar: the `teamtrail` wordmark on a near-black square (the rule above prefers the tile for square spaces)                      |
 | `github-social-preview.gif`       | 640×320   | Animated GitHub repository social preview, under GitHub's 1 MB limit (Settings → Social preview). Sites that don't play GIFs show its first frame |
 | `github-social-preview.png`       | 1280×640  | Still version of the GitHub social preview                                                                                                       |
-| `teamtrail-banner.gif`            | 960×480   | Animated README banner: the `teamtrail.` wordmark while the trail steps across a dot grid, past its tickets, to its destination, the blaze dot     |
+| `teamtrail-banner.gif`            | 960×480   | Animated README banner: the `teamtrail` wordmark while the trail steps across a dot grid, past its tickets, to its destination     |
 | `og-image-1200x630.png`           | 1200×630  | Open Graph / Twitter card image for teamtrail.app and link previews                                                                              |
 | `x-avatar-400.png`                | 400×400   | X (Twitter) profile picture: the blaze logo tile                                                                                                 |
 | `x-header-1500x500.png`           | 1500×500  | X (Twitter) header banner                                                                                                                        |
-| `wordmark-lockup.png`             | 960×240   | The `teamtrail.` wordmark on near-black, for docs, decks and press                                                                               |
+| `wordmark-lockup.png`             | 960×240   | The `teamtrail` wordmark on near-black, for docs, decks and press                                                                               |
 | `wordmark-lockup-light.png`       | 960×240   | The same wordmark on white                                                                                                                       |
 | `teamtrail-social-loop.mp4`       | 1280×640  | The animated banner as a video, for posts on X, LinkedIn and the like                                                                            |
 | `linkedin-discord-avatar-512.png` | 512×512   | LinkedIn and Discord avatars: the blaze logo tile                                                                                                |
