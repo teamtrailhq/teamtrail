@@ -19,7 +19,7 @@ function failed(res: ServerResponse, code: string) {
 
 /** What someone who added Scout from Slack does next, in order. */
 const NEXT = [
-  'In your project, run npx teamtrail@next. It opens the Lookout in your browser.',
+  'In your project, run npx teamtrail. It opens the Lookout in your browser.',
   'In the Lookout, open Settings → Slack and choose Add Scout to Slack to connect your Slack account.',
   'Keep Teamtrail running while you use Scout.',
 ];

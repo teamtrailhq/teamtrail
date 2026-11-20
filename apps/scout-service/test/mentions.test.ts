@@ -120,7 +120,7 @@ describe('mentions and DMs', () => {
     expect(w.slack.calls.find((c) => c.method === 'conversations.open')!.args).toMatchObject({ users: 'U7' });
     const dm = w.slack.calls.find((c) => c.method === 'chat.postMessage')!;
     expect(dm.args).toMatchObject({ channel: 'D7' });
-    expect(String(dm.args.text)).toContain('npx teamtrail@next');
+    expect(String(dm.args.text)).toContain('npx teamtrail');
     expect(w.logs).toContainEqual({
       event: 'offline.failed',
       fields: { method: 'chat.postEphemeral', error: 'not_in_channel' },

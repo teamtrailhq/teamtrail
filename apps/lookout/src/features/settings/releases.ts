@@ -23,6 +23,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.15',
+    date: '2026-11-20',
+    items: ["When Scout in Slack can't reach your Teamtrail, it tells you to start it with `npx teamtrail`"],
+  },
+  {
     version: '0.67.14',
     date: '2026-11-20',
     items: ["Deleting an answer file can't put a later answer in its place: the question waits for you again"],
