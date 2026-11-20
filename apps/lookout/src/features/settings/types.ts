@@ -15,6 +15,7 @@ export type SettingsSectionId =
   | 'approvals'
   | 'tracker'
   | 'workspaces'
+  | 'check-variables'
   | 'proof'
   | 'remote-agents'
   | 'policy'

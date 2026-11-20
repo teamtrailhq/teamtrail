@@ -57,7 +57,7 @@ test('a check gets a name added on this machine, its value from the environment 
     "console.log('db:' + (process.env.DATABASE_URL ?? 'none') + ' stripe:' + (process.env.STRIPE_SECRET_KEY ?? 'none'))";
   const spec = { run: [process.execPath, '-e', print], timeoutSec: 30 };
   const run = { repoRoot: dir, logDir: path.join(root, 'logs'), logRel: 'logs' };
-  const env = { PATH: process.env.PATH, DATABASE_URL: 'postgres://test', STRIPE_SECRET_KEY: 'sk_test' };
+  const env = { PATH: process.env.PATH, DATABASE_URL: 'postgres://test', STRIPE_SECRET_KEY: 'fake-stripe-test-value' };
   const without = await runCheck('c', spec, { ...run, env });
   assert.equal(without.tail, 'db:none stripe:none');
   const withName = await runCheck('c', spec, { ...run, env, envNames: checkEnvNames(root, cfg).names() });
@@ -84,7 +84,7 @@ test('GET and PUT /verification/variables: names only, this machine only, journa
   assert.equal(thisMachineOnly('PUT', '/verification/variables'), true);
   const { root, cfg } = project();
   const s = await serve(root, cfg);
-  process.env.DATABASE_URL = 'postgres://secret-value';
+  process.env.DATABASE_URL = 'postgres://fake-secret-value';
   try {
     const first = (await (await fetch(`${s.base}/verification/variables`)).json()) as CheckVariables;
     const db = first.needed.find((v) => v.name === 'DATABASE_URL');
@@ -96,22 +96,42 @@ test('GET and PUT /verification/variables: names only, this machine only, journa
     const added = await fetch(`${s.base}/verification/variables`, put({ add: 'DATABASE_URL' }));
     assert.equal(added.status, 200);
     const text = await added.text();
-    assert.doesNotMatch(text, /secret-value/);
+    assert.doesNotMatch(text, /fake-secret-value/);
     const view = JSON.parse(text) as CheckVariables;
     assert.deepEqual(view.added, ['DATABASE_URL']);
     assert.equal(view.needed.find((v) => v.name === 'DATABASE_URL')?.passes, true);
     const bad = await fetch(`${s.base}/verification/variables`, put({ add: 'GITHUB_TOKEN' }));
     assert.equal(bad.status, 400);
+    // a name that reads like a credential waits for the person's acknowledgement: a click never adds one unawares
+    const secret = await fetch(`${s.base}/verification/variables`, put({ add: 'STRIPE_SECRET_KEY' }));
+    assert.equal(secret.status, 409);
+    assert.deepEqual(
+      {
+        acknowledge: ((await secret.json()) as { acknowledge?: boolean }).acknowledge,
+        names: checkEnvNames(root, cfg).names(),
+      },
+      { acknowledge: true, names: ['DATABASE_URL'] },
+    );
+    const acknowledged = await fetch(
+      `${s.base}/verification/variables`,
+      put({ add: 'STRIPE_SECRET_KEY', acknowledged: true }),
+    );
+    assert.equal(acknowledged.status, 200);
+    await fetch(`${s.base}/verification/variables`, put({ remove: 'STRIPE_SECRET_KEY' }));
+    const crossSite = await fetch(`${s.base}/verification/variables`, { method: 'PUT', body: '{"add":"REDIS_URL"}' });
+    assert.equal(crossSite.status, 403, 'a form post another site could send is refused');
     await fetch(`${s.base}/verification/variables`, put({ remove: 'DATABASE_URL' }));
     const entries = journalFile(root).readCheckEnv(CHECK_ENV_JOURNAL);
     assert.deepEqual(
       entries.map((e) => [e.action, e.name, e.actorKind]),
       [
         ['added', 'DATABASE_URL', 'trail lead'],
+        ['added', 'STRIPE_SECRET_KEY', 'trail lead'],
+        ['removed', 'STRIPE_SECRET_KEY', 'trail lead'],
         ['removed', 'DATABASE_URL', 'trail lead'],
       ],
     );
-    assert.doesNotMatch(readFileSync(journalPath(root, CHECK_ENV_JOURNAL), 'utf8'), /secret-value/);
+    assert.doesNotMatch(readFileSync(journalPath(root, CHECK_ENV_JOURNAL), 'utf8'), /fake-secret-value/);
   } finally {
     delete process.env.DATABASE_URL;
     s.close();

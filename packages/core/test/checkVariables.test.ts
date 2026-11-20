@@ -8,8 +8,8 @@ import { profileRepoFiles } from './fakes/profileRepoFiles';
 
 const SOURCE = {
   PATH: '/usr/bin',
-  DATABASE_URL: 'postgres://ada:hunter2@db/shop',
-  STRIPE_SECRET_KEY: 'sk_live_value',
+  DATABASE_URL: 'postgres://fake-user:fake-password@db/shop',
+  STRIPE_SECRET_KEY: 'fake-stripe-test-value',
   TEAMTRAIL_CHECK_ENV: 'REDIS_URL, APP_*',
   LOG_LEVEL: '',
 };
@@ -28,7 +28,7 @@ describe('variables checks can read', () => {
     // an empty value counts as not set: the test would get nothing
     expect(byName.LOG_LEVEL).toMatchObject({ passes: false, set: false });
     const text = JSON.stringify(view);
-    for (const value of ['hunter2', 'sk_live_value', 'postgres://']) expect(text).not.toContain(value);
+    for (const value of ['fake-password', 'fake-stripe-test-value', 'postgres://']) expect(text).not.toContain(value);
   });
 
   it('has nothing to say about the repo without its profile', () => {
@@ -44,10 +44,10 @@ describe('variables checks can read', () => {
 
   it('passes the toolchain locations it now knows, a Go proxy without its user and password', () => {
     const { env } = childEnv({
-      GOPROXY: 'https://ada:pw@proxy.example,direct',
+      GOPROXY: 'https://fake-user:fake-pw@proxy.example,direct',
       GRADLE_USER_HOME: '/g',
       UV_CACHE_DIR: '/u',
-      UV_INDEX_URL: 'https://ada:pw@pypi.example/simple',
+      UV_INDEX_URL: 'https://fake-user:fake-pw@pypi.example/simple',
       GRADLE_OPTS: '-Dpassword=x',
     });
     expect(env).toEqual({ GOPROXY: 'https://proxy.example,direct', GRADLE_USER_HOME: '/g', UV_CACHE_DIR: '/u' });

@@ -5,6 +5,7 @@ import { GuidesSection } from '../guides';
 import { ProofPostSection } from '../proof';
 import { RemoteAgentsSection } from '../remote-agents';
 import { TrackerConnectors } from '../trackers';
+import { CheckVariablesSection } from './CheckVariablesSection';
 import { RiskPolicySection } from './RiskPolicySection';
 import { SettingsSection } from './SettingsSection';
 import { SettingsSlot } from './SettingsSlot';
@@ -29,6 +30,9 @@ export function ProjectGroup({ data, route }: { data: SettingsData; route: Setti
       </SettingsSlot>
       <SettingsSlot id="workspaces" storage="repo">
         <WorkspacesSection />
+      </SettingsSlot>
+      <SettingsSlot id="check-variables" storage="machine">
+        <CheckVariablesSection />
       </SettingsSlot>
       <SettingsSlot id="proof" storage="machine">
         <ProofPostSection />
