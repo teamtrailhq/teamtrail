@@ -86,7 +86,7 @@ describe('delivery', () => {
     expect(JSON.stringify(publish?.args)).toContain("isn't running");
     const blocks = (publish?.args.view as { blocks: { type: string }[] }).blocks;
     expect(blocks[0]).toMatchObject({ type: 'header' });
-    expect(JSON.stringify(blocks)).toContain('npx teamtrail@next');
+    expect(JSON.stringify(blocks)).toContain('npx teamtrail');
     expect(JSON.stringify(blocks)).toContain('https://teamtrail.app/docs/slack/');
   });
 

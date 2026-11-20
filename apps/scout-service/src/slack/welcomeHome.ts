@@ -7,7 +7,7 @@ const mrkdwn = (text: string) => ({ type: 'mrkdwn', text, verbatim: true });
 const section = (text: string) => ({ type: 'section', text: mrkdwn(text) });
 
 const STEPS = [
-  '1. In your project, run `npx teamtrail@next`. It opens the Lookout in your browser.',
+  '1. In your project, run `npx teamtrail`. It opens the Lookout in your browser.',
   '2. In the Lookout, open *Settings → Slack* and choose *Add Scout to Slack*.',
   '3. Keep Teamtrail running: Scout answers only while it runs on your computer.',
 ].join('\n');
