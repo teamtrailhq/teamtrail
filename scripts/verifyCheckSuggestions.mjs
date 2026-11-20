@@ -1,7 +1,8 @@
 // Suggested checks step of the end-to-end check (verify-mcp.mjs), on its own scratch monorepo (npm workspaces, the
 // web app in apps/web): Settings → Verification offers what the repo runs, read from its files, each with its
-// folder; one click adds `npm test` in apps/web as a row whose Folder field is apps/web, screening reads that folder
-// (its test script is there, so nothing is said), and Save writes the check with `cwd: "apps/web"`, approved. No
+// folder; one click adds `npm test` in apps/web as a row whose Folder field is apps/web and whose Paths are
+// apps/web/** (a workspace member: a change outside it doesn't run the check), screening reads that folder (its test
+// script is there, so nothing is said), and Save writes the check with `cwd: "apps/web"` and its paths, approved. No
 // npm-only defaults: a check the repo doesn't have is never offered. Waits on what the user sees.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -72,6 +73,7 @@ export async function verifyCheckSuggestions({ browser, cli, log, shots }) {
     const row = editor.locator('.vf-edit-check').last();
     const name = await row.getByLabel('Name').inputValue();
     const folder = await row.getByLabel('Folder').inputValue();
+    const paths = await row.getByLabel('Paths').inputValue();
     await screened;
     const quiet = (await row.locator('.cs-finding').count()) === 0;
     const gone = (await chip.count()) === 0;
@@ -86,10 +88,13 @@ export async function verifyCheckSuggestions({ browser, cli, log, shots }) {
     await editor.locator('.vf-edit-check input[aria-label="Folder"][value="apps/web"]').waitFor({ timeout: 15_000 });
     const written = JSON.parse(fs.readFileSync(path.join(top, '.teamtrail', 'verification.json'), 'utf8'));
     const saved =
-      JSON.stringify(written.checks?.['web-test']) === JSON.stringify({ run: ['npm', 'test'], cwd: 'apps/web' });
-    const ok = name === 'web-test' && folder === 'apps/web' && quiet && gone && noDefaults && saved && approved;
+      JSON.stringify(written.checks?.['web-test']) ===
+      JSON.stringify({ run: ['npm', 'test'], cwd: 'apps/web', paths: ['apps/web/**'] });
+    const scoped = paths === 'apps/web/**';
+    const ok =
+      name === 'web-test' && folder === 'apps/web' && scoped && quiet && gone && noDefaults && saved && approved;
     log(
-      `check suggestions ${ok ? 'ok' : 'WRONG'}: offered ${offered.join(' | ')}; one click added ${name} in ${folder || 'the top'} (${quiet ? 'screened in its folder, quiet' : 'WARNED'}, ${gone ? 'chip gone' : 'CHIP STILL THERE'}), ${noDefaults ? 'no npm defaults' : 'NPM DEFAULTS OFFERED'}, saved ${saved ? 'with cwd apps/web' : `WRONG: ${JSON.stringify(written.checks)}`}, ${approved ? 'approved' : `NOT APPROVED (${put.status()})`}`,
+      `check suggestions ${ok ? 'ok' : 'WRONG'}: offered ${offered.join(' | ')}; one click added ${name} in ${folder || 'the top'} for ${scoped ? paths : `WRONG PATHS "${paths}"`} (${quiet ? 'screened in its folder, quiet' : 'WARNED'}, ${gone ? 'chip gone' : 'CHIP STILL THERE'}), ${noDefaults ? 'no npm defaults' : 'NPM DEFAULTS OFFERED'}, saved ${saved ? 'with cwd apps/web and its paths' : `WRONG: ${JSON.stringify(written.checks)}`}, ${approved ? 'approved' : `NOT APPROVED (${put.status()})`}`,
     );
     return ok;
   } finally {

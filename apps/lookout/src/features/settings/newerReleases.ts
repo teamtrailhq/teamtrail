@@ -1,7 +1,62 @@
 import type { Release } from './releases';
 
-/** Releases 0.61–0.66.4, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
+/** Releases 0.61–0.66.5, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
+  {
+    version: '0.66.11',
+    date: '2026-11-19',
+    items: [
+      "A ticket's pull request block has Link a different PR and Unlink; a PR you link stays linked",
+      'Closing or reopening a ticket updates its pull request and the review queue within seconds',
+      "Removing a ticket takes its proof's green status off its pull request",
+    ],
+  },
+  {
+    version: '0.66.10',
+    date: '2026-11-19',
+    items: ['Settings no longer has an About page'],
+  },
+  {
+    version: '0.66.9',
+    date: '2026-11-19',
+    items: ['Settings → Gates and Diff rules say why their controls are off before the controls, not after'],
+  },
+  {
+    version: '0.66.8',
+    date: '2026-11-18',
+    items: [
+      "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
+      'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
+      'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
+    ],
+  },
+  {
+    version: '0.66.7',
+    date: '2026-11-18',
+    items: [
+      'Agents are only pointed to work they can take: closing a ticket or resuming a trail no longer suggests one that waits on you, and says what it waits for',
+      'An agent that closes the discovery ticket before writing the brief is told to submit the brief, so the trail no longer stalls',
+      "Agents asked about your other projects no longer report nothing waiting in a GitHub or Linear project whose tickets they can't read",
+    ],
+  },
+  {
+    version: '0.66.6',
+    date: '2026-11-18',
+    items: [
+      'A ticket reopened after its proof was posted takes the green Teamtrail proof off its pull request, and a proof that names no commit never passes',
+      'A pull request closed and replaced by a new one on the same branch: the ticket follows the new one, and a trail whose work closed unmerged or was reverted no longer says Destination reached',
+      'A pull request waiting to merge says what stands in its way: a draft, conflicts, changes requested or its checks',
+      "The review limit no longer holds agents back for deleted tickets or a PR sync that isn't running, and PR sync asks GitHub less as your history grows",
+    ],
+  },
+  {
+    version: '0.66.5',
+    date: '2026-11-18',
+    items: [
+      'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
+      'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
+    ],
+  },
   {
     version: '0.66.4',
     date: '2026-11-18',

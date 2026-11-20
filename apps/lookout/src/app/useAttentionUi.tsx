@@ -32,6 +32,8 @@ export function useAttentionUi(input: {
   openApprovals: () => void;
   /** Settings → Verification → Rules, prefilled with the rule an item suggests. */
   openRule: AttentionHandlers['openRule'];
+  /** Settings → Project → Repo readiness. */
+  openReadiness: () => void;
   /** Settings → Attention, where the quiet hours are set. */
   openFocusSettings: () => void;
 }) {
@@ -54,6 +56,7 @@ export function useAttentionUi(input: {
     openMainChecks: nav.openMainChecks,
     openTrailChecks: nav.openTrailChecks,
     openRule: input.openRule,
+    openReadiness: input.openReadiness,
   };
   const view = attention.view;
   const link = useItemLink({ loaded: api.loaded, view, activity: api.activity, handlers });

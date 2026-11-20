@@ -23,10 +23,60 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.67.10',
+    version: '0.67.12',
     date: '2026-11-20',
     items: [
       "A question answered in an agent's chat leaves Needs you, unless a HITL ticket or a high-risk call still needs your answer in the Lookout",
+    ],
+  },
+  {
+    version: '0.67.11',
+    date: '2026-11-20',
+    items: ['The tracker line in Settings stops counting a refused write once you retry or discard it'],
+  },
+  {
+    version: '0.67.10',
+    date: '2026-11-20',
+    items: [],
+  },
+  {
+    version: '0.67.9',
+    date: '2026-11-20',
+    items: [
+      'The guide catalog page has the new look: the teamtrail wordmark with its blaze cursor, Inter and blaze, by day and by night',
+    ],
+  },
+  {
+    version: '0.67.8',
+    date: '2026-11-20',
+    items: [
+      'Settings → Project → Check variables lists the variables checks can read, the ones your tests seem to need and which they would not get; add a name there instead of TEAMTRAIL_CHECK_ENV (names only: values still come from your shell)',
+      "A name that reads like a credential is added only after you confirm it: any code your checks run, agents' included, can read it",
+      'Checks also get Go, Gradle, Maven, Rust, uv, pip, Poetry, Composer, .NET, mise, asdf and Cypress cache and toolchain folders',
+    ],
+  },
+  {
+    version: '0.67.7',
+    date: '2026-11-20',
+    items: [
+      'Field guide → Suggest build and test notes reads your repo and writes one note per package on how to install, build, test and run it',
+      'Once you confirm a note, every claim in that package carries it, with the setup and checks Teamtrail runs and what its tests need',
+    ],
+  },
+  {
+    version: '0.67.6',
+    date: '2026-11-20',
+    items: [
+      'Settings → Project → Repo readiness says whether Teamtrail can check work in your repo on this machine: checks, programs, installs, a browser, services and variable names, with a fix in one click where it is an approval',
+      'While something blocks, agents start no new implementation work until you fix it or start the trail anyway; research and reviews go on, and Undo is one click',
+    ],
+  },
+  {
+    version: '0.67.5',
+    date: '2026-11-20',
+    items: [
+      'Monorepos: give a check the paths it is about (Settings → Verification, prefilled for a workspace package), and a change outside them doesn’t run it',
+      'Lockfiles, the top’s manifests and CI config still run every check, and so do checks on main; the proof says which checks were skipped and why',
     ],
   },
   {
@@ -141,61 +191,6 @@ export const RELEASES: Release[] = [
     date: '2026-11-19',
     items: [
       'GitHub and Linear: a write the tracker refuses for good (lost access, a deleted issue) waits for you in the queue, with Retry and Discard',
-    ],
-  },
-  {
-    version: '0.66.11',
-    date: '2026-11-19',
-    items: [
-      "A ticket's pull request block has Link a different PR and Unlink; a PR you link stays linked",
-      'Closing or reopening a ticket updates its pull request and the review queue within seconds',
-      "Removing a ticket takes its proof's green status off its pull request",
-    ],
-  },
-  {
-    version: '0.66.10',
-    date: '2026-11-19',
-    items: ['Settings no longer has an About page'],
-  },
-  {
-    version: '0.66.9',
-    date: '2026-11-19',
-    items: ['Settings → Gates and Diff rules say why their controls are off before the controls, not after'],
-  },
-  {
-    version: '0.66.8',
-    date: '2026-11-18',
-    items: [
-      "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
-      'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
-      'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
-    ],
-  },
-  {
-    version: '0.66.7',
-    date: '2026-11-18',
-    items: [
-      'Agents are only pointed to work they can take: closing a ticket or resuming a trail no longer suggests one that waits on you, and says what it waits for',
-      'An agent that closes the discovery ticket before writing the brief is told to submit the brief, so the trail no longer stalls',
-      "Agents asked about your other projects no longer report nothing waiting in a GitHub or Linear project whose tickets they can't read",
-    ],
-  },
-  {
-    version: '0.66.6',
-    date: '2026-11-18',
-    items: [
-      'A ticket reopened after its proof was posted takes the green Teamtrail proof off its pull request, and a proof that names no commit never passes',
-      'A pull request closed and replaced by a new one on the same branch: the ticket follows the new one, and a trail whose work closed unmerged or was reverted no longer says Destination reached',
-      'A pull request waiting to merge says what stands in its way: a draft, conflicts, changes requested or its checks',
-      "The review limit no longer holds agents back for deleted tickets or a PR sync that isn't running, and PR sync asks GitHub less as your history grows",
-    ],
-  },
-  {
-    version: '0.66.5',
-    date: '2026-11-18',
-    items: [
-      'An approval made in another tab, on another device or with teamtrail approve shows on every open page at once',
-      'Check marks, Destination reached and the decisions list follow evidence and decision files that change on their own, git pull included',
     ],
   },
   ...NEWER_RELEASES,

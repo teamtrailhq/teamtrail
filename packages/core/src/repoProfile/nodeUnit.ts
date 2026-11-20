@@ -3,6 +3,7 @@ import { depNeeds } from './depNeeds';
 import { jsonObject } from './jsonObject';
 import { nodeCommands } from './nodeCommands';
 import { nodeManager } from './nodeManager';
+import { nodeTasks } from './nodeTasks';
 import { toolPin } from './toolPin';
 import type { FolderView, UnitContext } from './types';
 
@@ -64,6 +65,7 @@ export async function nodeUnit(ctx: UnitContext): Promise<RepoUnit[]> {
       ...(toolchain ? { toolchain } : {}),
       ...(installRoot ? { install: frozenInstall(manager, folder) } : {}),
       commands: nodeCommands({ scripts, manager, dir: folder.dir }),
+      tasks: nodeTasks({ scripts, manager, dir: folder.dir }),
       needs: depNeeds({ deps, file }),
     },
   ];

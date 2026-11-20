@@ -3,6 +3,7 @@ import type { SetupOutcome } from '../model/setup';
 import { hasSetup, runSetup } from '../setup/runSetup';
 import { trustedChecks } from '../verification/checksApproval';
 import { evidencePaths } from '../verification/evidenceStore';
+import { storedCheckEnvNames } from '../verification/storedCheckEnvNames';
 import { preparedWorktree } from './trustedWorkspace';
 
 /**
@@ -20,5 +21,11 @@ export async function worktreeSetup(o: {
   const dir = preparedWorktree(o.root, o.mapId, o.ticketId);
   if (!dir) return undefined;
   const rel = `${evidencePaths.ticket(o.mapId, o.ticketId)}/setup`;
-  return runSetup({ worktree: dir, setup, logDir: path.join(o.root, rel), logRel: rel });
+  return runSetup({
+    worktree: dir,
+    setup,
+    logDir: path.join(o.root, rel),
+    logRel: rel,
+    envNames: storedCheckEnvNames(o.root),
+  });
 }

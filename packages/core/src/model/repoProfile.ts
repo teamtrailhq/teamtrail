@@ -15,6 +15,15 @@ export interface UnitCommand {
   from: string;
 }
 
+/** A command a unit has beyond its checks, for agents' notes: how to build it, how to run it. */
+export interface UnitTask {
+  role: 'build' | 'run';
+  run: string[];
+  /** Repo-relative folder, '' for the top. */
+  cwd: string;
+  from: string;
+}
+
 /** A toolchain version the repo pins in a file (never probed). */
 export interface Toolchain {
   name: string;
@@ -43,6 +52,8 @@ export interface RepoUnit {
   /** The frozen install from the unit's own lockfile, as argv; only on install roots. Never run by the profile. */
   install?: string[];
   commands: UnitCommand[];
+  /** How to build and run it, when its files say (package.json scripts, Makefile targets); never offered as checks. */
+  tasks?: UnitTask[];
   needs: Need[];
 }
 

@@ -5,8 +5,9 @@ import { RESULT_TEXT } from '../../lib/verification';
 import { CheckRow } from './CheckRow';
 import { GitEvidence } from './GitEvidence';
 import { GuardFindings } from './GuardFindings';
+import { OutOfScopeChecks } from './OutOfScopeChecks';
 
-/** One completion claim: result chip, who and when, what was claimed, then each check. */
+/** One completion claim: result chip, who and when, what was claimed, then each check, and those it didn't run. */
 export function AttemptRow({ attempt: a, latest }: { attempt: VerificationAttempt; latest: boolean }) {
   return (
     <details className={`vf-attempt r-${a.result}`} open={latest}>
@@ -35,6 +36,7 @@ export function AttemptRow({ attempt: a, latest }: { attempt: VerificationAttemp
       {a.checks.map((c) => (
         <CheckRow key={c.name} check={c} />
       ))}
+      <OutOfScopeChecks attempt={a} />
     </details>
   );
 }

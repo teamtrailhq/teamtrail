@@ -1,5 +1,6 @@
 import type { CheckSuggestion } from '@teamtrail/core';
 import { describe, expect, it } from 'vitest';
+import { checkPaths } from '../src/lib/checkPaths';
 import { openSuggestions } from '../src/lib/openSuggestions';
 import { rowOfSuggestion } from '../src/lib/rowOfSuggestion';
 
@@ -30,7 +31,14 @@ describe('suggested checks in the editor', () => {
   });
 
   it('adds a suggestion as a row with its folder, numbering a name already taken', () => {
-    expect(rowOfSuggestion(web, [])).toEqual({ name: 'web-test', command: 'npm test', cwd: 'apps/web' });
+    expect(rowOfSuggestion(web, [])).toEqual({ name: 'web-test', command: 'npm test', cwd: 'apps/web', paths: '' });
     expect(rowOfSuggestion(web, [{ name: 'web-test' }, { name: 'web-test-2' }]).name).toBe('web-test-3');
+  });
+
+  it("prefills a monorepo package's paths, and reads typed paths back as a list", () => {
+    const scoped = { ...web, paths: ['apps/web/**'] };
+    expect(rowOfSuggestion(scoped, []).paths).toBe('apps/web/**');
+    expect(checkPaths(' apps/web/**,  packages/ui/** apps/web/** ')).toEqual(['apps/web/**', 'packages/ui/**']);
+    expect(checkPaths('  ')).toEqual([]);
   });
 });

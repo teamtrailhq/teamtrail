@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Disclosure } from '../../components/ui';
 import { useCheckScreening } from '../../hooks/useCheckScreening';
 import { apiBase } from '../../lib/apiBase';
+import { checkPaths } from '../../lib/checkPaths';
 import { commandWords } from '../../lib/commandWords';
 import { openSuggestions } from '../../lib/openSuggestions';
 import { rowFindings } from '../../lib/rowFindings';
@@ -13,18 +14,24 @@ import type { EditedCheck } from './editedCheck';
 import { useCheckSuggestions } from './useCheckSuggestions';
 import type { VerificationConfigView } from './useVerificationConfig';
 
-/** The checks as the file has them, in the order they run, each with its folder ('' for the top). */
+/** The checks as the file has them, in the order they run, each with its folder ('' for the top) and paths. */
 function rowsOf(view: VerificationConfigView): EditedCheck[] {
   const c = view.config;
   if (!c) return [];
   const folder = (cwd = '') => (cwd === '.' ? '' : cwd);
   return c.run
     .filter((n) => c.checks[n])
-    .map((n) => ({ name: n, command: c.checks[n].run.join(' '), cwd: folder(c.checks[n].cwd) }));
+    .map((n) => ({
+      name: n,
+      command: c.checks[n].run.join(' '),
+      cwd: folder(c.checks[n].cwd),
+      paths: (c.checks[n].paths ?? []).join(', '),
+    }));
 }
 
 /**
- * Set the checks every completion runs, from here: each a name, a command kept as words, and the folder it runs in;
+ * Set the checks every completion runs, from here: each a name, a command kept as words, the folder it runs in and,
+ * in a monorepo, the paths it is about (a change outside them doesn't run it);
  * the checks reading the repo suggests are one click each to add. Saving writes verification.json and approves it
  * in the same step (the server's setChecks.ts checks it all again, only on the
  * machine Teamtrail runs on), so it asks once that you know what they run.
@@ -53,7 +60,12 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
     setState({ kind: 'saving' });
     const checks = rows
       .filter((r) => r.name.trim() && r.command.trim())
-      .map((r) => ({ name: r.name.trim(), run: commandWords(r.command), cwd: r.cwd.trim() }));
+      .map((r) => ({
+        name: r.name.trim(),
+        run: commandWords(r.command),
+        cwd: r.cwd.trim(),
+        paths: checkPaths(r.paths),
+      }));
     const res = await fetch(`${apiBase()}/verification/config`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
