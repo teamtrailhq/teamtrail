@@ -46,7 +46,7 @@
   color: var(--dim);
 }
 .home-section > h2.urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .home-head {
   display: flex;
@@ -141,7 +141,7 @@
   vertical-align: 1px;
 }
 .home-chip.urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
   border-color: rgba(var(--urgent-rgb), 0.6);
   background: var(--urgent-bg);
 }
@@ -264,7 +264,7 @@
   padding: 0;
 }
 .map-strip-chip.tone-needs {
-  color: var(--urgent);
+  color: var(--urgent-ink);
   border-color: rgba(var(--urgent-rgb), 0.6);
 }
 .map-strip-chip.tone-done {

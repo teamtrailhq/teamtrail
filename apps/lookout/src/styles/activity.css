@@ -20,15 +20,14 @@
   color: var(--dim);
 }
 .st-status.urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .st-big {
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
   font-size: clamp(var(--fs-heading), 1.6vw, var(--fs-display));
   line-height: var(--lh-tight);
-  letter-spacing: var(--ls-data);
-  text-transform: uppercase;
   color: var(--text-hi);
   overflow: hidden;
   display: -webkit-box;
@@ -36,7 +35,7 @@
   -webkit-line-clamp: 2;
 }
 .step-tracker.waiting .st-big {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .st-ticket {
   white-space: nowrap;
@@ -65,9 +64,9 @@
   height: 3px;
   background: var(--line);
 }
-/* Walked steps fade like the map's walked connectors; the current one is the map's working green. */
+/* Walked steps fade like the map's walked connectors; the current one is the map's working accent. */
 .pipeline li.done i {
-  background: rgba(var(--decided-rgb), 0.55);
+  background: rgba(var(--working-rgb), 0.55);
 }
 .pipeline li.cur i {
   background: var(--st-claimed);
@@ -129,13 +128,13 @@
   background: var(--line);
 }
 .sessions-list .segs i.done {
-  background: rgba(var(--decided-rgb), 0.55);
+  background: rgba(var(--working-rgb), 0.55);
 }
 .sessions-list .segs i.cur {
   background: var(--st-claimed);
 }
 .urgent-text {
-  color: var(--urgent);
+  color: var(--urgent-ink);
   font-family: var(--label);
   font-size: var(--fs-label);
   letter-spacing: var(--ls-label);

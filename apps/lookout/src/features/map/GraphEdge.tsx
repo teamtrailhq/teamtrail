@@ -5,9 +5,9 @@ import type { Rect } from './routeEdge';
 const completed = (n: LaidOutNode) => n.ticket.state === 'closed' && n.ticket.closeReason === 'completed';
 
 /**
- * A thin elbow connector between two tickets. Travelled stretches (both tickets done) are solid green, walked ones
- * (the blocker is closed) green and quiet, the ones ahead use the line colour, and the critical path is a shade
- * stronger. A pending reroute draws the connectors it would add and remove differently.
+ * A thin elbow connector between two tickets. Travelled stretches (both tickets done) are solid in the accent, walked
+ * ones (the blocker is closed) in the accent and quiet, the ones ahead use the line colour, and the critical path is a
+ * shade stronger. A pending reroute draws the connectors it would add and remove differently.
  */
 export function GraphEdge(props: {
   from: LaidOutNode;

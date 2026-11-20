@@ -47,7 +47,7 @@
 }
 .bf-tile.urgent .mono-label,
 .bf-tile.urgent b {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .bf-body {
   display: flex;
@@ -89,7 +89,7 @@
   gap: 3px;
 }
 .bf-list.urgent > .mono-label {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .bf-list ul {
   list-style: none;

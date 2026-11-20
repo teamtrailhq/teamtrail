@@ -1,7 +1,7 @@
 import type { NodeState } from '@teamtrail/core';
 
 /**
- * The status dot on a map card: green while an agent works on it, amber when it waits on a person or is held up, grey
+ * The status dot on a map card: the accent while an agent works on it, amber when it waits on a person or is held up, grey
  * when it's ready, a grey ring in the backlog, a muted check when done and a faint dot when cancelled.
  */
 export type NodeTone = 'working' | 'attention' | 'ready' | 'backlog' | 'done' | 'cancelled';
