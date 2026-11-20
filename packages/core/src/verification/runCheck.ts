@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { CheckResult, CheckSpec } from '../model/verification';
 import { checkEnv, withheldNote } from './checkEnv';
 import { redact, tailOf } from './redact';
+import { toolPathRefusal } from './toolPathRefusal';
 
 /** Full output kept per check; the rest is dropped behind a marker. */
 export const MAX_LOG_BYTES = 1_048_576;
@@ -57,10 +58,11 @@ export function runCheck(name: string, spec: CheckSpec, run: CheckRun): Promise<
   const log = `${run.logRel}/${safe(name)}.log`;
   const base = { name, argv: spec.run, log, timedOut: false, truncated: false };
   const cwd = confinedCwd(run.repoRoot, spec.cwd);
-  if (!cwd) {
-    const error = `cwd "${spec.cwd}" is not a directory inside the repo`;
-    return Promise.resolve({ ...base, cwd: spec.cwd ?? '.', exitCode: null, durationMs: 0, error, tail: error });
-  }
+  const refused = (error: string): Promise<CheckResult> =>
+    Promise.resolve({ ...base, cwd: spec.cwd ?? '.', exitCode: null, durationMs: 0, error, tail: error });
+  if (!cwd) return refused(`cwd "${spec.cwd}" is not a directory inside the repo`);
+  const leadsOut = toolPathRefusal({ argv0: spec.run[0], root: run.repoRoot, cwd });
+  if (leadsOut) return refused(leadsOut);
   const { env, withheld } = checkEnv(run.env ?? process.env);
   const chunks: Buffer[] = [];
   let kept = 0;
