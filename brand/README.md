@@ -6,7 +6,7 @@ The look: near-black (`#0A0A0B`) and white surfaces, square corners, Inter and J
 
 ## Which mark where
 
-- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the `t.` logo, as a square tile or the bare mark. The blaze tile (near-black t, white dot on `#FF6B2C`) is the favicon and the avatars; on dark the mark is `#F4F4F6` on `#0A0A0B`, on light `#0E0F11` on `#FFFFFF`, with the blaze dot on both.
+- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the `t` logo, as a square tile or the bare mark: a t whose stem curves into a path that runs to a block cursor, the wordmark's own. The blaze tile (near-black t, white cursor on `#FF6B2C`) is the favicon and the avatars; on dark the mark is `#F4F4F6` on `#0A0A0B`, on light `#0E0F11` on `#FFFFFF`, with the blaze cursor on both.
 - **Scout's Slack app icon** is Scout's avatar on the blaze ground, not the logo: Scout is who talks in Slack. It fills the square (Slack rounds the corners); its app card's background is `#141416`, ink (`background_color` in `apps/scout-service/slack-manifest.json`), so the blaze icon stands out on it.
 - **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail` wordmark, lowercase in Inter 600 followed by a blaze block cursor, still everywhere (it blinks only on teamtrail.app, and never under reduced motion).
 - Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
@@ -43,6 +43,6 @@ Each guide is one flat symbol, alone on a transparent background so it sits on t
 
 ## Proof badges
 
-`badges/verified.svg` and `badges/not-verified.svg` are the Verified by Teamtrail badges, in the shields flat style (20px tall; Verdana, like shields): the `t.` mark with its blaze dot and "Teamtrail" on shields' grey, then "verified" on green (`#0e9f63`, the Lookout's done) or "not verified" on amber (`#a87900`), never red and never the blaze accent. A proof report in a pull request shows one at its top (`packages/core/src/proof/proofBadge.ts`), served by the site as `https://www.teamtrail.app/badges/<name>.svg`; the landing keeps the same files in `public/badges/`.
+`badges/verified.svg` and `badges/not-verified.svg` are the Verified by Teamtrail badges, in the shields flat style (20px tall; Verdana, like shields): the `t` mark with its blaze cursor and "Teamtrail" on shields' grey, then "verified" on green (`#0e9f63`, the Lookout's done) or "not verified" on amber (`#a87900`), never red and never the blaze accent. A proof report in a pull request shows one at its top (`packages/core/src/proof/proofBadge.ts`), served by the site as `https://www.teamtrail.app/badges/<name>.svg`; the landing keeps the same files in `public/badges/`.
 
 The landing ([teamtrail-landing](https://github.com/teamtrailhq/teamtrail-landing)) serves its own copies of the favicons, OG image and Slack icon from `public/media/brand/`.
