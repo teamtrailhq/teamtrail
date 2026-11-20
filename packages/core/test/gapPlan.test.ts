@@ -116,3 +116,29 @@ describe('done means verified', () => {
     expect(outcomeOf(attempt({ criteria: criteria({}) }), 0, 3).to).toBe('done');
   });
 });
+
+describe('finished with nothing checked', () => {
+  it('tells a done ticket that closed with no checks set from one nobody completed, and a remote one with no runner', () => {
+    const finished = proofGapItems({ attempt: undefined, reviews: [], finished: true });
+    expect(finished).toEqual([
+      { kind: 'finished-unchecked', text: 'Finished with no checks set: nothing was checked.' },
+    ]);
+    expect(kinds(undefined)).toEqual(['no-completion']);
+    expect(proofGaps({ attempt: undefined, reviews: [] })).toEqual(['No completion was submitted for this ticket.']);
+    // reopened: its finish no longer counts, so it reads as before
+    expect(
+      proofGapItems({ attempt: undefined, reviews: [], finished: true, reopened: true }).map((g) => g.kind),
+    ).toEqual(['reopened', 'no-completion']);
+    // a recorded attempt keeps its own gaps, whatever the ticket's state
+    const remote = proofGapItems({ attempt: attempt({ remote: true }), reviews: [], finished: true });
+    expect(remote.map((g) => g.kind)).toEqual(['remote-unchecked']);
+  });
+
+  it('with no checks set, setting them is yours; with checks set, verification was off for it', () => {
+    expect(one('finished-unchecked', { phase: 'done' })).toEqual(['you', 'set-checks']);
+    expect(one('finished-unchecked', { phase: 'done', checksSet: true })).toEqual(['nobody', undefined]);
+    expect(one('finished-unchecked', { phase: 'done', acceptedBy: 'Ada' })).toEqual(['accepted', undefined]);
+    const [g] = gapPlan([{ kind: 'finished-unchecked', text: 't' }], { phase: 'done', criteriaConfirmed: false });
+    expect(g.status).toMatch(/^Needs you: set the checks/);
+  });
+});

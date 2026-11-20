@@ -22,7 +22,7 @@ import type { TicketProofView } from '../proof';
 import type { WorkspaceRow } from '../workspaces';
 
 /** The form open under the action bar, if any. */
-export type Form = 'resolve' | 'rule' | 'rework' | 'accept' | 'unblock' | 'waive' | 'workspace' | null;
+export type Form = 'resolve' | 'rule' | 'rework' | 'accept' | 'unblock' | 'waive' | 'workspace' | 'merge' | null;
 
 /** The one next thing the human can do on the ticket, shown as the bar's primary button. */
 export type PrimaryKind =

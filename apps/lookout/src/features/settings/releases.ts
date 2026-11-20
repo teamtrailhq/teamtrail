@@ -24,6 +24,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.20',
+    date: '2026-11-20',
+    items: [
+      "Teamtrail Cloud: a done ticket's bubble offers Approve and merge, or Merge anyway, as its next step",
+      'A ticket finished while no checks were set says so, with Set checks, instead of "no completion was submitted"',
+    ],
+  },
+  {
     version: '0.67.19',
     date: '2026-11-20',
     items: [

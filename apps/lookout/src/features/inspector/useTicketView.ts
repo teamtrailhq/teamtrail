@@ -1,10 +1,11 @@
 import { type AttentionView, type MapSnapshot, type SessionInfo, type Ticket, deriveStates } from '@teamtrail/core';
 import { usePrSync, useNow, type LookoutApi } from '../../hooks';
 import { TRAIL_LEAD, heldLeases, isRunning, prSync } from '../../lib';
+import { managedSignIn } from '../../lib/managedSignIn';
 import { useTicketCriteria } from '../criteria';
 import { useBrief } from '../discovery';
 import { useModels } from '../models';
-import { useTicketProof } from '../proof';
+import { mergeOffer, useTicketProof } from '../proof';
 import { useSignedState } from '../signed-state';
 import { useVerification } from '../verification';
 import { useWorkspaces } from '../workspaces';
@@ -79,6 +80,13 @@ export function useTicketView(input: {
     removeWorkspace: (force: boolean) => workspaces.remove(mapId, t.id, force),
     standing,
     notices,
+    // a done ticket's pull request, to merge where the server merges them (mergeAction.ts)
+    merge: mergeOffer({
+      path: managedSignIn()?.merge,
+      done: t.state === 'closed' && t.closeReason === 'completed',
+      proof: proof?.proof,
+      prState: pr?.pr?.state,
+    }),
     chips: chipsOfTicket(chipInput(loaded)),
   };
 }

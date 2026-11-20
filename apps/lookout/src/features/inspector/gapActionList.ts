@@ -7,6 +7,8 @@ export interface GapRunners {
   verifyAgain: () => void;
   /** Opens the checks on main, when the queue holds them; undefined when it doesn't. */
   openMain?: () => void;
+  /** Opens Settings → Verification, where the checks are set. */
+  setChecks?: () => void;
 }
 
 /** A gap action the ticket's own menu already has, by that item's id. */
@@ -41,6 +43,15 @@ function newItem(action: GapAction, run: GapRunners): MenuItem | undefined {
         tip: 'Check its completion again on the same commit against the confirmed criteria, a new attempt',
         onSelect: run.verifyAgain,
       };
+    case 'set-checks':
+      return (
+        run.setChecks && {
+          id: 'gap-set-checks',
+          label: 'Set checks',
+          tip: 'Settings → Verification: the checks every completion runs',
+          onSelect: run.setChecks,
+        }
+      );
     case 'open-main-checks':
       return run.openMain && { id: 'gap-open-main', label: 'Open checks on main', onSelect: run.openMain };
     default:

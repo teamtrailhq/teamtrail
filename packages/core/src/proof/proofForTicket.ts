@@ -1,3 +1,4 @@
+import { IMPLEMENTATION_TYPES } from '../criteria/criteria';
 import type { Proof } from '../model/proof';
 import type { ProofGapItem } from '../model/proofGap';
 import type { DecisionRecord, MapSnapshot, Ticket } from '../model/types';
@@ -30,5 +31,10 @@ export function proofWithGaps(input: TicketProofInput): { proof: Proof; gaps: Pr
     verdicts: readVerdicts(root, snap.map.id, ticket.id),
     decisions: input.decisions.filter((d) => d.ticketId !== undefined && relied.has(d.ticketId)),
     ...(input.reopened ? { reopened: true } : {}),
+    ...(finished(ticket) ? { finished: true } : {}),
   });
 }
+
+/** A done implementation ticket: one an agent (or the trail lead) finished, whatever was checked. */
+const finished = (t: Ticket) =>
+  t.state === 'closed' && t.closeReason === 'completed' && IMPLEMENTATION_TYPES.includes(t.type);

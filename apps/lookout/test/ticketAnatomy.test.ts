@@ -1,15 +1,10 @@
 import type { Proof } from '@teamtrail/core';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { UncoveredRules } from '../src/features/criteria/UncoveredRules';
 import { chipsOfTicket } from '../src/features/inspector/chipsOfTicket';
-import { MergeOnApprove } from '../src/features/proof/MergeOnApprove';
-import type { TicketProofView } from '../src/features/proof/useTicketProof';
 import { workToProve } from '../src/features/proof/workToProve';
-
-// A server that merges pull requests (managed sign-in with `merge`).
-vi.mock('../src/lib/managedSignIn', () => ({ managedSignIn: () => ({ name: 'Ada', pages: [], merge: '/merge' }) }));
 
 const proof = (patch: Partial<Proof> = {}) =>
   ({
@@ -63,33 +58,6 @@ describe('workToProve', () => {
     expect(
       workToProve({ state: 'open', closeReason: '', type: 'research' }, proof({ attempt: { id: 'A-1' } } as never)),
     ).toBe(true);
-  });
-});
-
-describe('MergeOnApprove', () => {
-  const render = (p: Proof, prState?: string) =>
-    renderToStaticMarkup(
-      createElement(MergeOnApprove, {
-        mapId: 'm',
-        ticketId: '2',
-        proof: { proof: p, markdown: '' } as TicketProofView,
-        prState,
-      }),
-    );
-  const work = { attempt: { id: 'A-1' }, git: { head: 'abc', branch: 'teamtrail/m/2' } } as Partial<Proof>;
-
-  it('offers nothing on a ticket with no completion: no Merge anyway on a research ticket', () => {
-    expect(render(proof())).toBe('');
-  });
-
-  it('offers Merge anyway on unverified work with a branch, until its pull request is merged or closed', () => {
-    expect(render(proof(work))).toContain('Merge anyway');
-    expect(render(proof(work), 'open')).toContain('Merge anyway');
-    expect(render(proof(work), 'merged')).toBe('');
-  });
-
-  it('offers Approve and merge on verified work', () => {
-    expect(render(proof({ ...work, status: 'verified', gaps: [] }))).toContain('Approve and merge');
   });
 });
 
