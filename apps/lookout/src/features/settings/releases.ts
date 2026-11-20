@@ -23,6 +23,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.0',
+    date: '2026-11-20',
+    items: [
+      'A new look: a dark-first Lookout with near-black surfaces, hairline borders, square corners and one blaze accent',
+      'Inter and JetBrains Mono throughout; the map is a clean dot-grid canvas, and the path agents walked is drawn in blaze',
+      'Colours keep one meaning each: blaze is work in progress and your selection, rose needs you, green is verified or done',
+    ],
+  },
+  {
     version: '0.66.22',
     date: '2026-11-19',
     items: [
@@ -164,30 +173,6 @@ export const RELEASES: Release[] = [
       'Slack: each question’s card shows its own answer; one passed on in an agent’s chat says it decided nothing',
       'Slack: archiving a trail no longer closes cards for what still waits on you, and a card that becomes high risk switches to Open in Lookout',
       'Checks on main run again when main moves after a failure, and say so meanwhile; trail checks read reverts on the commit they run on',
-    ],
-  },
-  {
-    version: '0.66.3',
-    date: '2026-11-18',
-    items: [
-      'A merged pull request shows as merged on its ticket as soon as it merges, and nothing offers to merge it again',
-      'Teamtrail Cloud: checks on main run on your repository’s main, never on a commit from somewhere else',
-    ],
-  },
-  {
-    version: '0.66.2',
-    date: '2026-11-18',
-    items: [
-      'Agents pick up work the moment you confirm criteria, approve the plan or free the review limit, instead of checking back minutes later',
-      'Needs you keeps long titles and reasons inside their card at every width, with Read more for long reasons',
-    ],
-  },
-  {
-    version: '0.66.1',
-    date: '2026-11-18',
-    items: [
-      'On a phone, the header keeps one row: the mode switch, what needs you and More, with focus, records, Settings and the theme',
-      'Teamtrail Cloud: a pull request says why auto-merge waits, or that it merged by itself',
     ],
   },
   ...NEWER_RELEASES,

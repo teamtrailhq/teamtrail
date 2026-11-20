@@ -327,7 +327,6 @@ button.ds-row-main:focus-visible {
 .ds-skeleton-bar {
   display: block;
   height: 8px;
-  border-radius: 4px;
   background: rgba(var(--line-rgb), 0.55);
   animation: ds-shimmer 1.4s ease-in-out infinite;
 }

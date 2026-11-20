@@ -20,7 +20,6 @@
   gap: var(--sp-4);
   padding: var(--sp-8) var(--sp-10);
   border: 1px solid var(--line);
-  border-radius: 6px;
   background: var(--panel2);
 }
 .pr-block-head {

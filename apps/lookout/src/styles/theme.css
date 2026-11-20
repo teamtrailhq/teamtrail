@@ -1,7 +1,9 @@
-/* Colours, in two themes: day (light) and night (dark, the default setting). Every colour in the app comes from here
- * and from look.css (the accent). `data-theme` on <html> is set from the Appearance setting; "auto" removes it and
+/* Colours, in two themes: day (light) and night (dark, the default setting). Every colour in the app comes from here.
+ * `data-theme` on <html> is set from the Appearance setting; "auto" removes it and
  * follows the OS. Near-black or white surfaces, hairline borders and one accent: the accent marks selection, work in
- * progress and primary buttons; green is only verified or done; red (--urgent) only ever means "needs you now". */
+ * progress and primary buttons; green is only verified or done; red (--urgent) only ever means "needs you now".
+ * The accent is blaze, the paint mark that shows a trail; red is a rose so it never reads as the accent. By day both
+ * are darker shades that keep at least 4.5:1 as text on every panel and on their own 12% tint. */
 :root {
   color-scheme: light;
   --tt-keyline: transparent;
@@ -23,14 +25,11 @@
   --dim: #62666e;
   --faint: #8d9199;
 
-  /* The accent and the semantic colours come per mode from look.css (-l day, -d night); an accent that would be
-   * mistaken for one of them moves that one a step away. */
-  --accent-rgb: var(--accent-l);
-  --primary: rgb(var(--primary-l));
-  --on-primary: var(--on-primary-l);
-  --amber-rgb: var(--amber-l, 178, 104, 0); /* held up or at risk */
-  --decided-rgb: var(--decided-l, 14, 159, 99); /* verified, done, passed checks */
-  --urgent-rgb: var(--urgent-l, 229, 72, 77);
+  --accent-rgb: 191, 57, 0; /* blaze, day: #BF3900, 5.5:1 on white, 4.9:1 on --panel2 */
+  --on-primary: #ffffff; /* 5.5:1 on the accent */
+  --amber-rgb: 178, 104, 0; /* held up or at risk */
+  --decided-rgb: 14, 159, 99; /* verified, done, passed checks */
+  --urgent-rgb: 200, 36, 79; /* rose, day: #C8244F, 5.5:1 on white */
   --on-urgent: #ffffff;
   --on-amber: #ffffff;
 
@@ -79,12 +78,11 @@
     --text-hi: #f4f4f6;
     --dim: #9a9ea6;
     --faint: #6b7079;
-    --accent-rgb: var(--accent-d);
-    --primary: rgb(var(--accent-d));
-    --on-primary: var(--on-primary-d);
-    --amber-rgb: var(--amber-d, 240, 170, 70);
-    --decided-rgb: var(--decided-d, 63, 207, 142);
-    --urgent-rgb: var(--urgent-d, 255, 90, 95);
+    --accent-rgb: 255, 107, 44; /* blaze, night: #FF6B2C, 7.0:1 on --bg */
+    --on-primary: #0a0a0b; /* 7.0:1 on the accent (white would be 2.8:1) */
+    --amber-rgb: 240, 170, 70;
+    --decided-rgb: 63, 207, 142;
+    --urgent-rgb: 255, 77, 122; /* rose, night: #FF4D7A */
     --on-urgent: #0a0a0b;
     --on-amber: #0a0a0b;
     --map-grid: rgba(255, 255, 255, 0.09);
@@ -95,14 +93,14 @@
     --map-chip: rgba(255, 255, 255, 0.06);
     --map-chip-warn: rgba(var(--amber-rgb), 0.16);
     --map-chip-urgent: rgba(var(--urgent-rgb), 0.14);
-    --map-card-urgent: rgb(var(--urgent-hi-d, 255, 122, 126));
+    --map-card-urgent: rgb(255, 122, 155);
     --surface-overlay: #161618;
     --surface-overlay-2: #1c1c1f;
     --surface-overlay-line: rgba(255, 255, 255, 0.14);
     --surface-overlay-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.55);
     --overlay-dim: #a3a7af;
     --overlay-faint: #868a93;
-    --overlay-urgent-rgb: var(--urgent-hi-d, 255, 122, 126);
+    --overlay-urgent-rgb: 255, 122, 155;
   }
 }
 :root[data-theme='night'] {
@@ -124,12 +122,11 @@
   --text-hi: #f4f4f6;
   --dim: #9a9ea6;
   --faint: #6b7079;
-  --accent-rgb: var(--accent-d);
-  --primary: rgb(var(--accent-d));
-  --on-primary: var(--on-primary-d);
-  --amber-rgb: var(--amber-d, 240, 170, 70);
-  --decided-rgb: var(--decided-d, 63, 207, 142);
-  --urgent-rgb: var(--urgent-d, 255, 90, 95);
+  --accent-rgb: 255, 107, 44; /* blaze, night: #FF6B2C, 7.0:1 on --bg */
+  --on-primary: #0a0a0b; /* 7.0:1 on the accent (white would be 2.8:1) */
+  --amber-rgb: 240, 170, 70;
+  --decided-rgb: 63, 207, 142;
+  --urgent-rgb: 255, 77, 122; /* rose, night: #FF4D7A */
   --on-urgent: #0a0a0b;
   --on-amber: #0a0a0b;
   --map-grid: rgba(255, 255, 255, 0.09);
@@ -140,14 +137,14 @@
   --map-chip: rgba(255, 255, 255, 0.06);
   --map-chip-warn: rgba(var(--amber-rgb), 0.16);
   --map-chip-urgent: rgba(var(--urgent-rgb), 0.14);
-  --map-card-urgent: rgb(var(--urgent-hi-d, 255, 122, 126));
+  --map-card-urgent: rgb(255, 122, 155);
   --surface-overlay: #161618;
   --surface-overlay-2: #1c1c1f;
   --surface-overlay-line: rgba(255, 255, 255, 0.14);
   --surface-overlay-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.55);
   --overlay-dim: #a3a7af;
   --overlay-faint: #868a93;
-  --overlay-urgent-rgb: var(--urgent-hi-d, 255, 122, 126);
+  --overlay-urgent-rgb: 255, 122, 155;
 }
 
 /* Derived: the same in both themes. Ticket states read as on the map cards (features/map/nodeTone.ts):
@@ -155,6 +152,7 @@
  * `--st-decided` is the colour of a passed check or a done step; done tickets themselves step back (map.css). */
 :root {
   --accent: rgb(var(--accent-rgb));
+  --primary: var(--accent);
   --accent-bg: rgba(var(--accent-rgb), var(--accent-bg-alpha));
   --working-rgb: var(--accent-rgb);
   --primary-hover: color-mix(in srgb, var(--primary) 86%, var(--text-hi));
