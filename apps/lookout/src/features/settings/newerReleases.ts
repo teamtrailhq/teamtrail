@@ -3,6 +3,16 @@ import type { Release } from './releases';
 /** Releases 0.61–0.66.5, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
   {
+    version: '0.66.6',
+    date: '2026-11-18',
+    items: [
+      'A ticket reopened after its proof was posted takes the green Teamtrail proof off its pull request, and a proof that names no commit never passes',
+      'A pull request closed and replaced by a new one on the same branch: the ticket follows the new one, and a trail whose work closed unmerged or was reverted no longer says Destination reached',
+      'A pull request waiting to merge says what stands in its way: a draft, conflicts, changes requested or its checks',
+      "The review limit no longer holds agents back for deleted tickets or a PR sync that isn't running, and PR sync asks GitHub less as your history grows",
+    ],
+  },
+  {
     version: '0.66.5',
     date: '2026-11-18',
     items: [

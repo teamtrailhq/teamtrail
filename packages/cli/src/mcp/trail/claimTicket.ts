@@ -26,6 +26,7 @@ import { offerNext, readGates } from './offerNext';
 import { heldElsewhere } from './ownClaim';
 import { claimParallel } from './parallel';
 import { pathRoots } from './pathRoots';
+import { projectCommands } from './projectCommands';
 import { assertReady, readinessField } from './readinessGate';
 import { recoverStalled } from './recoverStalled';
 import { sessionView } from './reporting';
@@ -87,6 +88,7 @@ export async function claimTicket(
   const delivered = knowledgeFor(ctx.root, fresh, t);
   if (delivered) s.log(`knowledge delivered: ${delivered.map((k) => k.id).join(', ')}`);
   const warned = await checkWarnings(ctx, fresh, current);
+  const commands = await projectCommands(ctx, current, input.touches);
   return {
     claimed: ticketInfo(ctx.root, fresh, current, await ctx.decisions(snap.map.id)),
     ...tierFields(ctx, fresh, current, !!input.ticket),
@@ -94,6 +96,7 @@ export async function claimTicket(
     session: sessionView(ctx),
     discovery: briefView(ctx.root, fresh),
     knowledge: delivered,
+    ...commands,
     criteria: criteriaView(ctx.root, fresh, current, levelFor(ctx.root, fresh, t).info.level),
     ...rulesAtClaim(ctx, input.touches),
     git: ctx.remote ? REMOTE_GIT_NOTE : baselineView(baseline),
