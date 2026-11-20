@@ -85,7 +85,7 @@ button.ds-row-main:focus-visible {
   white-space: nowrap;
 }
 .ds-row.edge-urgent .ds-row-trail {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .ds-row-context,
 .ds-row-detail {
@@ -150,7 +150,7 @@ button.ds-row-main:focus-visible {
   color: var(--text);
 }
 .meta-line .urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 
 /* Rows with actions keep room for them in the trailing slot, so the title never runs under "Later". */

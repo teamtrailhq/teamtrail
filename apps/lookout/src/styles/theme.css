@@ -29,7 +29,10 @@
   --on-primary: #ffffff; /* 5.5:1 on the accent */
   --amber-rgb: 178, 104, 0; /* held up or at risk */
   --decided-rgb: 14, 159, 99; /* verified, done, passed checks */
-  --urgent-rgb: 214, 45, 89; /* rose, day: #D62D59, 4.8:1 on white, as on the website */
+  --urgent-rgb: 214, 45, 89; /* rose, day: #D62D59, the solid (fills, dots, borders), as on the website */
+  /* Rose as text by day, deeper so it keeps 4.5:1 on every surface: 6.3:1 on white, 5.7:1 on --panel2, 4.8:1 on
+   * its own 12% fill over --panel2. At night text uses the solid rose. */
+  --urgent-ink: #b81e48;
   --on-urgent: #ffffff;
   --on-amber: #ffffff;
 
@@ -45,7 +48,7 @@
   --map-chip: rgba(var(--line-rgb), 0.05);
   --map-chip-warn: rgba(var(--amber-rgb), 0.14);
   --map-chip-urgent: rgba(var(--urgent-rgb), 0.12);
-  --map-card-urgent: var(--urgent);
+  --map-card-urgent: var(--urgent-ink);
   --map-card-decided: rgb(var(--decided-rgb));
   /* Overlays over the map and the zones (overlays.css): a raised sheet, its edge, and what it casts. */
   --surface-overlay: #ffffff;
@@ -55,6 +58,7 @@
   --overlay-dim: var(--dim);
   --overlay-faint: #757981;
   --overlay-urgent-rgb: var(--urgent-rgb);
+  --overlay-urgent-ink: var(--urgent-ink);
 }
 
 /* The same values twice: browsers can't share a block between a media query and an attribute selector. */
@@ -83,6 +87,7 @@
     --amber-rgb: 240, 170, 70;
     --decided-rgb: 63, 207, 142;
     --urgent-rgb: 255, 77, 122; /* rose, night: #FF4D7A */
+    --urgent-ink: rgb(255, 77, 122);
     --on-urgent: #0a0a0b;
     --on-amber: #0a0a0b;
     --map-grid: rgba(255, 255, 255, 0.09);
@@ -101,6 +106,7 @@
     --overlay-dim: #a3a7af;
     --overlay-faint: #868a93;
     --overlay-urgent-rgb: 255, 122, 155;
+    --overlay-urgent-ink: rgb(255, 122, 155);
   }
 }
 :root[data-theme='night'] {
@@ -127,6 +133,7 @@
   --amber-rgb: 240, 170, 70;
   --decided-rgb: 63, 207, 142;
   --urgent-rgb: 255, 77, 122; /* rose, night: #FF4D7A */
+  --urgent-ink: rgb(255, 77, 122);
   --on-urgent: #0a0a0b;
   --on-amber: #0a0a0b;
   --map-grid: rgba(255, 255, 255, 0.09);
@@ -145,6 +152,7 @@
   --overlay-dim: #a3a7af;
   --overlay-faint: #868a93;
   --overlay-urgent-rgb: 255, 122, 155;
+  --overlay-urgent-ink: rgb(255, 122, 155);
 }
 
 /* Derived: the same in both themes. Ticket states read as on the map cards (features/map/nodeTone.ts):
@@ -165,7 +173,7 @@
   --st-oos: var(--faint);
   --st-verifying: rgb(var(--working-rgb));
   --st-rework: var(--amber);
-  --st-held: var(--urgent);
+  --st-held: var(--urgent-ink);
   --urgent: rgb(var(--urgent-rgb));
   --urgent-bg: rgba(var(--urgent-rgb), 0.12);
   --amber: rgb(var(--amber-rgb));

@@ -8,7 +8,7 @@
 }
 .pr-sync.tone-failed .sync-glyph,
 .pr-sync.tone-failed .tl {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .pr-sync.tone-off .tl,
 .pr-sync.tone-unknown .tl {

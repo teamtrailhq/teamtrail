@@ -17,6 +17,7 @@
   --faint: var(--overlay-faint);
   --urgent-rgb: var(--overlay-urgent-rgb);
   --urgent: rgb(var(--overlay-urgent-rgb));
+  --urgent-ink: var(--overlay-urgent-ink);
   background: var(--surface-overlay);
   border: 1px solid var(--surface-overlay-line);
   box-shadow: var(--surface-overlay-shadow);

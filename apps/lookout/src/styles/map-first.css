@@ -7,7 +7,7 @@
 .btn.urgent.needs-btn {
   background: var(--urgent-bg);
   border-color: transparent;
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 /* Until the screen is very wide, the header leaves out the elapsed time; below 1600px the spend too (it is on the
  * Activity page and in Trail stats). A header with more than fits (a server's own controls) wraps to a second row
@@ -91,7 +91,7 @@
   padding-right: 36px;
 }
 .t-label.urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .bubble-title {
   margin: 0;
@@ -144,7 +144,7 @@
   margin-right: var(--sp-6);
 }
 .bubble-state.edge-urgent .state-title {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .bubble-state.edge-attention .state-title {
   color: var(--amber);
@@ -269,7 +269,7 @@
   font-weight: 600;
 }
 .trail-counts .urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
   font-weight: 600;
 }
 .need-chips {

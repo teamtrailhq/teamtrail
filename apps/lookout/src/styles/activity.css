@@ -20,7 +20,7 @@
   color: var(--dim);
 }
 .st-status.urgent {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .st-big {
   font-family: var(--display);
@@ -35,7 +35,7 @@
   -webkit-line-clamp: 2;
 }
 .step-tracker.waiting .st-big {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .st-ticket {
   white-space: nowrap;
@@ -134,7 +134,7 @@
   background: var(--st-claimed);
 }
 .urgent-text {
-  color: var(--urgent);
+  color: var(--urgent-ink);
   font-family: var(--label);
   font-size: var(--fs-label);
   letter-spacing: var(--ls-label);

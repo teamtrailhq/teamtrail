@@ -47,7 +47,7 @@
   font-size: var(--fs-sm);
   letter-spacing: var(--ls-data);
   text-transform: uppercase;
-  color: var(--urgent);
+  color: var(--urgent-ink);
   line-height: 1;
   font-weight: 500;
 }
@@ -132,7 +132,7 @@
   color: var(--st-claimed);
 }
 .ms-alert {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .ms-status.ms-ok {
   color: var(--st-decided);
@@ -141,7 +141,7 @@
   color: var(--amber);
 }
 .ms-status.ms-error {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .ms-status.ms-idle {
   color: var(--faint);

@@ -172,7 +172,7 @@
   background: var(--amber);
 }
 .sync-line.alert {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .sync-line.alert .dot {
   background: var(--urgent);
@@ -292,7 +292,7 @@
   color: var(--accent);
 }
 .test-line.alert {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .test-line.warn {
   color: var(--amber);
@@ -402,7 +402,7 @@
   max-width: calc(100% - 24px);
   background: var(--panel-solid);
   border: 1px solid var(--urgent);
-  color: var(--urgent);
+  color: var(--urgent-ink);
   padding: var(--sp-8) var(--gutter);
   font-family: var(--mono);
   font-size: var(--fs-sm);
@@ -434,7 +434,7 @@
 .vf-errors {
   margin: 0;
   padding-left: var(--sp-18);
-  color: var(--urgent);
+  color: var(--urgent-ink);
   font-size: var(--fs-sm);
 }
 /* A setting: its name in the body role, the control beside it; hints below in the meta role. */

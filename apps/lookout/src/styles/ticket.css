@@ -40,7 +40,7 @@
 }
 .tag.urgent {
   background: rgba(var(--urgent-rgb), 0.12);
-  color: var(--urgent);
+  color: var(--urgent-ink);
   font-weight: 500;
 }
 .tag.verified {

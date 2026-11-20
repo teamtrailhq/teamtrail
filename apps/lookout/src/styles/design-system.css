@@ -172,7 +172,7 @@
   letter-spacing: var(--ls-data);
 }
 .chip-label.hot {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .chip-label.hot::before {
   content: '';
@@ -293,7 +293,7 @@
 }
 .readout.urgent > .mono-label,
 .readout.urgent > b {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 
 /* ---------- Buttons ---------- */
@@ -348,7 +348,7 @@
   color: var(--text);
 }
 .btn.danger {
-  color: var(--urgent);
+  color: var(--urgent-ink);
   border-color: rgba(var(--urgent-rgb), 0.45);
 }
 .btn.urgent {

@@ -104,10 +104,10 @@
   color: var(--amber);
 }
 .sync-error .sync-glyph {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .sync-error .tl {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .bars rect.on {
   fill: var(--accent);
