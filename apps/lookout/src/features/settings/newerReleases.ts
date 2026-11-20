@@ -3,6 +3,13 @@ import type { Release } from './releases';
 /** Releases 0.61–0.66.5, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
   {
+    version: '0.66.12',
+    date: '2026-11-19',
+    items: [
+      'GitHub and Linear: a write the tracker refuses for good (lost access, a deleted issue) waits for you in the queue, with Retry and Discard',
+    ],
+  },
+  {
     version: '0.66.11',
     date: '2026-11-19',
     items: [

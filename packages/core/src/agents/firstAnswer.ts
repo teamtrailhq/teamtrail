@@ -2,6 +2,7 @@ import { closesQuestion } from '../model/answerVia';
 import { checkAgentAnswer } from './agentAnswerSignature';
 import type { AgentAnswer, FirstAnswer } from './agentLink';
 import { answerFiles, type AnswerFile } from './answerFiles';
+import { answerInLine } from './answerLine';
 
 /**
  * Whether an answer file is this machine's answer to exactly this question: only those take a place in line. One
@@ -28,11 +29,13 @@ export function firstAnswerOf(root: string, a: AgentAnswer): FirstAnswer {
 /**
  * The answer the asking process uses for a question, by the rule it says it follows (agentLink.ts `chatGuides`):
  * the first in line that verifies and wasn't given in a chat, or, for a process from before that, the first in line
- * that verifies, whoever gave it. Undefined while none is: a chat answer then only guides.
+ * that verifies, whoever gave it, among those still in line (answerLine.ts). Undefined while none is: a chat
+ * answer then only guides.
  */
 export function usedAnswer(root: string, q: { sessionId: string; questionId: string }, chatGuides: boolean) {
+  const inLine = answerInLine(root, q);
   for (const f of answerFiles(root, q.sessionId, q.questionId)) {
-    if (!f.ans) continue;
+    if (!f.ans || !inLine(f)) continue;
     let check;
     try {
       check = checkAgentAnswer(root, f.ans, q);

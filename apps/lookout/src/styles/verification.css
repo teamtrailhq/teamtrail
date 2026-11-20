@@ -429,37 +429,3 @@
   font-size: var(--fs-sm);
   color: var(--dim);
 }
-
-/* Settings → Project → Check variables: names only. */
-.cv-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  margin-top: var(--sp-10);
-}
-.cv-add {
-  max-width: 420px;
-  margin-top: var(--sp-10);
-}
-.cv-confirm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-8);
-  margin-top: var(--sp-8);
-  padding: var(--sp-10) var(--sp-12);
-  border-left: var(--edge-w) solid var(--edge-attention);
-  background: var(--panel2);
-}
-.cv-confirm p {
-  margin: 0;
-}
-.cv-confirm-actions {
-  display: flex;
-  gap: var(--sp-6);
-}
-.cv-allowlist {
-  margin: var(--sp-4) 0 0;
-  overflow-wrap: anywhere;
-  font-size: var(--fs-sm);
-  color: var(--dim);
-}

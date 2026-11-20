@@ -13,6 +13,8 @@ import { versionSkew } from '../model/versionSkew';
 import { ANSWER_FORMAT, agentPaths, type AgentSessionDoc } from './agentLink';
 import { signAnswered } from './answeredSignature';
 import { answerFiles, type AnswerFile } from './answerFiles';
+import { forgetAnswerLine } from './answerLine';
+import { sayAnswerProblem } from './answerProblem';
 import { verified, type Asked, type Signed } from './verifiedAnswer';
 
 /** How long answers that come in after the one delivered are still kept with the question. */
@@ -149,6 +151,7 @@ export class AgentDocWriter {
       else {
         this.late.delete(id);
         rmSync(path.join(this.root, agentPaths.answerDir(l.q.sessionId, id)), { recursive: true, force: true });
+        forgetAnswerLine(this.root, { sessionId: l.q.sessionId, questionId: id });
       }
     }
   }
@@ -176,6 +179,9 @@ export class AgentDocWriter {
         return r;
       case 'skip':
         return { kind: 'skip' };
+      case 'out-of-line':
+        this.outOfLine(f, q);
+        return { kind: 'skip' };
       case 'unreadable':
         this.cannotVerify(q.sessionId);
         return { kind: 'wait' };
@@ -197,13 +203,22 @@ export class AgentDocWriter {
     if (f.seq === 0) rmSync(f.file, { force: true });
     if (this.flagged.has(f.file)) return;
     if (f.seq > 0) this.flagged.add(f.file);
-    this.activity.push({
-      source: 'system',
-      level: 'alert',
-      kind: 'problem',
-      sessionId: q.sessionId,
-      text: `An answer file for ${q.agent}'s question was not written by ${BRAND.name} on this machine. It was ignored; the question still waits for you.`,
-    });
+    sayAnswerProblem(
+      this.activity,
+      q.sessionId,
+      `An answer file for ${q.agent}'s question was not written by ${BRAND.name} on this machine. It was ignored; the question still waits for you.`,
+    );
+  }
+
+  /** Said once per file: an answer before it was deleted or changed outside Teamtrail, so it no longer counts. */
+  private outOfLine(f: AnswerFile, q: Asked) {
+    if (this.flagged.has(f.file)) return;
+    this.flagged.add(f.file);
+    sayAnswerProblem(
+      this.activity,
+      q.sessionId,
+      `An answer to ${q.agent}'s question was removed or changed outside ${BRAND.name}, so the answers after it don't count. The question still waits for you: answer it again.`,
+    );
   }
 
   private newerWriter(writer: unknown) {
@@ -216,13 +231,7 @@ export class AgentDocWriter {
     if (this.toldSkew) return;
     this.toldSkew = true;
     const text = versionSkew({ agentVersion: runningVersion(), lookoutVersion: writer });
-    this.activity.push({
-      source: 'system',
-      level: 'alert',
-      kind: 'problem',
-      sessionId,
-      text: `An answer waits that this agent can't read. ${text}`,
-    });
+    sayAnswerProblem(this.activity, sessionId, `An answer waits that this agent can't read. ${text}`);
   }
 
   /** Said once per process: answers wait until the config folder can be read. */
@@ -230,13 +239,7 @@ export class AgentDocWriter {
     if (this.blocked) return;
     this.blocked = true;
     const why = machineAccess() ?? `${BRAND.name} can't read this machine's answer key.`;
-    this.activity.push({
-      source: 'system',
-      level: 'alert',
-      kind: 'problem',
-      sessionId,
-      text: `${why} Answers wait until it can.`,
-    });
+    sayAnswerProblem(this.activity, sessionId, `${why} Answers wait until it can.`);
   }
 
   close() {
