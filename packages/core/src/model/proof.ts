@@ -50,6 +50,13 @@ export interface ProofWaived {
   reason: string;
 }
 
+/** A check not run because the change was outside its `paths`: `changes outside apps/web`. */
+export interface ProofOutOfScope {
+  name: string;
+  argv: string[];
+  reason: string;
+}
+
 /**
  * A check that passed only on retry: it had failed on the same code in an earlier attempt (the `flaky` gate). Held
  * work counts only once the trail lead accepted the pass (`accepted`); observed work went through, flagged.
@@ -130,6 +137,11 @@ export interface Proof {
   checks: ProofCheck[];
   /** Checks the trail lead accepted it without. Missing when none, so older proofs and digests read as they did. */
   waived?: ProofWaived[];
+  /**
+   * Checks the change was outside of (their `paths`), not run. Missing when none, so older proofs and digests read as
+   * they did.
+   */
+  outOfScope?: ProofOutOfScope[];
   /** Checks that passed only on retry. Missing when none, so older proofs and digests read as they did. */
   retried?: ProofRetried[];
   /** What the check guard found: the work changed what its checks run. Missing when it found nothing. */

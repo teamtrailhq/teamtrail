@@ -29,7 +29,8 @@ const NOTHING_OPEN = 'Every ticket on this trail is closed: there is nothing to 
 /**
  * `next_ticket`, and with `wait`, until something on the trail becomes claimable for this agent or `waitSeconds`
  * pass. It wakes on the changes that can free work (a ticket unblocked or released, criteria confirmed, a brief
- * accepted, a reroute decided, the review limit freed, checks on main settled: workSignal.ts) and re-checks on a
+ * accepted, a reroute decided, the review limit freed, checks on main settled, a trail started anyway past repo
+ * readiness: workSignal.ts) and re-checks on a
  * timer besides. Waiting claims nothing and holds nothing: the agent claims what it is offered, as after any
  * next_ticket. A waiting call is a call in progress, so an HTTP session isn't closed as idle meanwhile
  * (createMcpHttp.ts), and progress every 15 s keeps clients that reset their timeout on it waiting.

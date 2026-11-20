@@ -1,6 +1,7 @@
 import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ensureLocalDir } from '../lib/ensureLocalDir';
+import type { CheckEnvEntry } from '../model/checkEnvEntry';
 import type { WaiverEntry } from '../model/checkWaiver';
 import type { RuleWaiverEntry } from '../model/diffRule';
 import type { GateEntry } from '../model/gateMode';
@@ -18,6 +19,7 @@ import type { MainChecksEntry } from '../model/mainChecks';
 import type { MergeAnywayEntry } from '../model/mergeAnyway';
 import type { PrLinkEntry } from '../model/prEvidence';
 import type { ProofPostEntry } from '../model/proofPost';
+import type { ReadinessEntry } from '../model/readiness';
 import type { TrailChecksEntry } from '../model/trailChecks';
 
 /*
@@ -34,7 +36,8 @@ import type { TrailChecksEntry } from '../model/trailChecks';
  * their merges of tickets whose proof isn't verified, `readGates` the verification gates that held work back or
  * would have, `readRuleWaivers` the diff rules the trail lead let a ticket go without, `readTrailChecks` the
  * trail's combined runs on main and the fix tickets added for them, `readPrLinks` the pull requests the trail lead
- * linked to a ticket or unlinked by hand.
+ * linked to a ticket or unlinked by hand, `readCheckEnv` the variable names checks may read, added or removed here,
+ * `readReadinessChoices` their Start anyway past repo readiness and its undo.
  */
 const TRAIL_KINDS = new Set<string>(['transition', 'reroute']);
 type AnyEntry =
@@ -51,7 +54,9 @@ type AnyEntry =
   | GateEntry
   | RuleWaiverEntry
   | TrailChecksEntry
-  | PrLinkEntry;
+  | PrLinkEntry
+  | CheckEnvEntry
+  | ReadinessEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;
@@ -76,6 +81,8 @@ export function journalFile(root: string): Journal & {
   readRuleWaivers(mapId: string): RuleWaiverEntry[];
   readTrailChecks(mapId: string): TrailChecksEntry[];
   readPrLinks(mapId: string): PrLinkEntry[];
+  readCheckEnv(mapId: string): CheckEnvEntry[];
+  readReadinessChoices(mapId: string): ReadinessEntry[];
 } {
   const raw = (mapId: string) => readEntries(root, mapId) as AnyEntry[];
   const readAll = (mapId: string) => raw(mapId).filter((e): e is JournalEntry => TRAIL_KINDS.has(e.kind));
@@ -100,6 +107,8 @@ export function journalFile(root: string): Journal & {
     readRuleWaivers: (mapId) => raw(mapId).filter((e): e is RuleWaiverEntry => e.kind === 'rule-waiver'),
     readTrailChecks: (mapId) => raw(mapId).filter((e): e is TrailChecksEntry => e.kind === 'trail-checks'),
     readPrLinks: (mapId) => raw(mapId).filter((e): e is PrLinkEntry => e.kind === 'pr-link'),
+    readCheckEnv: (mapId) => raw(mapId).filter((e): e is CheckEnvEntry => e.kind === 'check-env'),
+    readReadinessChoices: (mapId) => raw(mapId).filter((e): e is ReadinessEntry => e.kind === 'readiness'),
   };
 }
 

@@ -88,10 +88,11 @@ export function VerificationSection(props: { map?: MapDoc }) {
       </span>
       <span className="set-hint t-meta">
         Checks run on this machine as you, with no sandbox. Teamtrail passes them only the environment variables they
-        need (more go in <code>TEAMTRAIL_CHECK_ENV</code>), but a check can still read your files (~/.aws, ~/.npmrc,
-        ~/.ssh, ~/.kube, ~/.docker, the GitHub CLI&apos;s login, Teamtrail&apos;s own credentials) and use your SSH
-        agent. That&apos;s why a changed check command needs your approval: you approve the command line, so read what
-        it runs.
+        need (more under{' '}
+        <a href={settingsHref(location.href, { group: 'project', section: 'check-variables' })}>Check variables</a>),
+        but a check can still read your files (~/.aws, ~/.npmrc, ~/.ssh, ~/.kube, ~/.docker, the GitHub CLI&apos;s
+        login, Teamtrail&apos;s own credentials) and use your SSH agent. That&apos;s why a changed check command needs
+        your approval: you approve the command line, so read what it runs.
       </span>
     </SettingsSection>
   );

@@ -15,6 +15,8 @@ import { readMainChecks } from '../mainChecks/readMainChecks';
 import { activeTrails } from '../model/activeTrails';
 import type { AttentionPolicy } from '../model/attention';
 import type { InstalledGuide } from '../model/guide';
+import type { ReadinessHost } from '../model/readiness';
+import { readinessForTrails } from '../readiness/readinessForTrails';
 import { readEscapes } from '../scorecard/readEscapes';
 import { trackerPin, trackerTargetKey, trackerTargetLabel } from '../server/trackerPin';
 import { readTrailChecks } from '../trailChecks/readTrailChecks';
@@ -39,6 +41,8 @@ export async function gatherAttention(input: {
   adapter: TrackerAdapter;
   policy: AttentionPolicy;
   now: number;
+  /** Where repo readiness is read (readiness/readinessHost.ts); default this machine's checkout, probed here. */
+  readiness?: ReadinessHost;
 }): Promise<AttentionInput> {
   const { root, adapter, policy, now } = input;
   const all = await adapter.listMaps();
@@ -75,6 +79,7 @@ export async function gatherAttention(input: {
     deliveries: readDeliveryProblems(root),
     trackerRefused: refusedWrites(root).list(),
     trust: pendingTrust(root, allSnaps),
+    readiness: await readinessForTrails({ root, snaps, host: input.readiness }),
     ...oldQueue(root),
     ...trackerWaiting(root),
     policy,

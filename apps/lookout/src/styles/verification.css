@@ -192,6 +192,11 @@
   padding: var(--sp-12);
   border: 1px solid var(--line2);
 }
+.vf-out-of-scope {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 .vf-edit-list {
   list-style: none;
   margin: 0;
@@ -213,7 +218,11 @@
   width: var(--h-md);
   height: var(--h-md);
 }
-/* Findings sit under the command, in the field's hint place. */
+/* Paths sit under the command and folder; findings under those, in the field's hint place. */
+.vf-edit-row .vf-edit-paths {
+  grid-column: 2 / 4;
+  grid-row: 2;
+}
 .vf-edit-row .cs-findings {
   grid-column: 2 / 4;
 }
@@ -306,9 +315,13 @@
     grid-column: 1 / -1;
     grid-row: 3;
   }
-  .vf-edit-row .cs-findings {
+  .vf-edit-row .vf-edit-paths {
     grid-column: 1 / -1;
     grid-row: 4;
+  }
+  .vf-edit-row .cs-findings {
+    grid-column: 1 / -1;
+    grid-row: 5;
   }
 }
 
@@ -389,4 +402,38 @@
 .waive-check input {
   width: auto;
   height: auto;
+}
+
+/* Settings → Project → Check variables: names only. */
+.cv-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-10);
+}
+.cv-add {
+  max-width: 420px;
+  margin-top: var(--sp-10);
+}
+.cv-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  margin-top: var(--sp-8);
+  padding: var(--sp-10) var(--sp-12);
+  border-left: var(--edge-w) solid var(--edge-attention);
+  background: var(--panel2);
+}
+.cv-confirm p {
+  margin: 0;
+}
+.cv-confirm-actions {
+  display: flex;
+  gap: var(--sp-6);
+}
+.cv-allowlist {
+  margin: var(--sp-4) 0 0;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-sm);
+  color: var(--dim);
 }

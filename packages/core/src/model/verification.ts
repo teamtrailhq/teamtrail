@@ -1,5 +1,6 @@
 import type { CriteriaResult } from '../criteria/criteria';
 import type { AttemptGuard } from './checkGuard';
+import type { OutOfScopeCheck } from './checkScope';
 import type { WaivedCheck } from './checkWaiver';
 import type { AttemptRule, DiffRule } from './diffRule';
 import type { GitEvidence } from './evidence';
@@ -10,6 +11,7 @@ import type { VerificationLevel } from './lifecycle';
 import type { SetupSpec } from './setup';
 import type { TicketType } from './types';
 
+export type { OutOfScopeCheck } from './checkScope';
 export type { AttemptRule, DiffRule, HeldRules, RuleAnswer, RuleWaiver, RuleWaiverEntry } from './diffRule';
 export type { SetupOutcome, SetupSpec, SetupStepResult } from './setup';
 
@@ -25,6 +27,12 @@ export interface CheckSpec {
    * helpers its scripts import): a completion that changes one doesn't count as passing it (checkGuard/).
    */
   guards?: string[];
+  /**
+   * Repo-relative globs of the files this check is about, for a monorepo: a completion whose changed files are all
+   * outside them, and touch no shared file, doesn't run it (verification/pathScope.ts). Checks on main and a trail's
+   * combined run still run it. Without `paths` a check runs on every completion.
+   */
+  paths?: string[];
 }
 
 /** `.teamtrail/verification.json`: the only source of commands Teamtrail runs. */
@@ -133,6 +141,8 @@ export interface VerificationAttempt {
   checks: CheckResult[];
   /** Checks the trail lead accepted the ticket without: not run for this attempt (verification/waivedChecks.ts). */
   waived?: WaivedCheck[];
+  /** Checks whose `paths` none of the changed files is in: not run for this attempt (verification/pathScope.ts). */
+  outOfScope?: OutOfScopeCheck[];
   result: AttemptResult;
   /**
    * Failed checks that fail the same way on main, known failures the trail lead accepted for the trail: the attempt
