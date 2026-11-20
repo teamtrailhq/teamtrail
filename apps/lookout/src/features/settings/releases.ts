@@ -23,7 +23,7 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.67.7',
+    version: '0.67.13',
     date: '2026-11-20',
     items: [
       'Settings → Project → Check variables lists the variables checks can read, the ones your tests seem to need and which they would not get; add a name there instead of TEAMTRAIL_CHECK_ENV (names only: values still come from your shell)',
