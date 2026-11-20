@@ -10,6 +10,7 @@ const PLACE: Partial<Record<AttentionItem['kind'], string>> = {
   knowledge: 'Open the field guide',
   delivery: 'Open its settings',
   escape: 'Add a rule',
+  readiness: 'Open Repo readiness',
 };
 
 /**

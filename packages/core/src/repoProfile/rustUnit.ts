@@ -59,6 +59,7 @@ export async function rustUnit(ctx: UnitContext): Promise<RepoUnit[]> {
       ...(toolchain ? { toolchain } : {}),
       ...(member ? {} : { install: ['cargo', 'fetch', ...(lockfile ? ['--locked'] : [])] }),
       commands: member ? [] : cargoCommands(folder.dir, !!lockfile),
+      tasks: member ? [] : [{ role: 'build', run: ['cargo', 'build'], cwd: folder.dir, from: 'Cargo.toml' }],
       needs: depNeeds({ deps: cratesOf(tables), file }),
     },
   ];

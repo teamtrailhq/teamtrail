@@ -13,7 +13,9 @@ import {
 } from '../knowledge/knowledgeStore';
 import { staleAnchors, withCurrentHashes } from '../knowledge/staleness';
 import { contentHash } from '../trust/trustLedger';
+import { handleCommandNotes } from './commandNotesRoute';
 import { BadRequest, readJson, sendJson } from './http';
+import type { RouteContext } from './routeContext';
 import { checkShown } from './shownHash';
 
 const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x) : []);
@@ -23,10 +25,18 @@ const CALLS = new Set(['confirm', 'assumption', 'outdated', 'resolve-flag', 'edi
  * `/knowledge` routes over the entries under `root`; false when none matches. GET lists them with the anchored
  * files that changed since each was confirmed; POST `/knowledge/propose` adds a suggestion (promote actions);
  * POST `/knowledge/call` (`id`, `call`, `hash`: the entry as the page showed it) is the trail lead's confirm,
- * assumption, outdated, resolve-flag or edit; a call on an entry that changed since is refused.
+ * assumption, outdated, resolve-flag or edit; a call on an entry that changed since is refused. POST
+ * `/knowledge/commands` suggests agent notes from the checkout (commandNotesRoute.ts, this machine only).
  */
-export async function handleKnowledge(root: string, req: IncomingMessage, res: ServerResponse, url: URL) {
+export async function handleKnowledge(
+  ctx: Pick<RouteContext, 'root' | 'repoFiles'> & { local?: boolean },
+  req: IncomingMessage,
+  res: ServerResponse,
+  url: URL,
+) {
   if (!url.pathname.startsWith('/knowledge')) return false;
+  if (await handleCommandNotes(ctx, req, res, url)) return true;
+  const { root } = ctx;
   const repo = repoRootFor(root);
   const hashOf = (p: string) => blobHash(repo, p);
   if (url.pathname === '/knowledge' && req.method === 'GET') {

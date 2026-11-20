@@ -18,6 +18,7 @@ import { overlapSource } from './overlapSource';
 import { policySource } from './policySource';
 import { precedentSource } from './precedentSource';
 import { questionSource } from './questionSource';
+import { readinessSource } from './readinessSource';
 import { rerouteSource } from './rerouteSource';
 import { rerouteSuggestedSource } from './rerouteSuggestedSource';
 import { reviewLimitSource } from './reviewLimitSource';
@@ -59,4 +60,5 @@ export const ATTENTION_SOURCES: AttentionSource[] = [
   mergeSource,
   escapeSource,
   criteriaSource,
+  readinessSource,
 ];

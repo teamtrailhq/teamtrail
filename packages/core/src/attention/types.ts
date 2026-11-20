@@ -11,6 +11,7 @@ import type { Escape } from '../model/escape';
 import type { InstalledGuide } from '../model/guide';
 import type { MainChecksView } from '../model/mainChecks';
 import type { TicketSync } from '../model/prEvidence';
+import type { RepoReadiness, TrailReadiness } from '../model/readiness';
 import type { RerouteProposal } from '../model/reroute';
 import type { TrailChecksView } from '../model/trailChecks';
 import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
@@ -72,6 +73,10 @@ export interface AttentionInput {
   agents?: ConnectedAgent[];
   /** Tickets whose criteria wait for the trail lead before work starts (criteria/criteriaHeld.ts). Missing: none. */
   criteria?: CriteriaWaiting[];
+  /**
+   * Repo readiness (readiness/) and, per active trail, the ready tickets its blocking findings hold. Missing: none.
+   */
+  readiness?: { readiness: RepoReadiness; held: TrailReadiness[] };
   /** Missing: the defaults. */
   policy?: AttentionPolicy;
   /** Missing: nothing snoozed or dismissed. */

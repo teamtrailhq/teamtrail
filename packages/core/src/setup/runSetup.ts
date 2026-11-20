@@ -34,6 +34,8 @@ export async function runSetup(o: {
   logDir: string;
   logRel: string;
   signal?: AbortSignal;
+  /** Variable names this machine's person let checks read beyond the allowlist: setup gets the same environment. */
+  envNames?: string[];
 }): Promise<SetupOutcome> {
   const steps: SetupStepResult[] = [];
   for (const [name, spec] of Object.entries(o.setup)) {
@@ -47,6 +49,7 @@ export async function runSetup(o: {
       logDir: o.logDir,
       logRel: o.logRel,
       signal: o.signal,
+      envNames: o.envNames,
     });
     const passed = checkPassed(r);
     const { signal: _s, truncated: _t, ...kept } = r;

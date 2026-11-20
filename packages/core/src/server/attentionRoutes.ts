@@ -46,7 +46,13 @@ async function putMode(configDir: string | undefined, req: IncomingMessage, res:
  * `/attention/review-limit { limit }`, written to attention.json). False when none matches.
  */
 export async function handleAttention(
-  { root, active, configDir, served }: RouteContext & { configDir?: string; served?: (view: AttentionView) => void },
+  {
+    root,
+    active,
+    configDir,
+    served,
+    readiness,
+  }: RouteContext & { configDir?: string; served?: (view: AttentionView) => void },
   req: IncomingMessage,
   res: ServerResponse,
   url: URL,
@@ -55,7 +61,7 @@ export async function handleAttention(
   if (!p.startsWith('/attention')) return false;
   const now = Date.now();
   if (p === '/attention' && req.method === 'GET') {
-    const view = await attentionView({ root, adapter: await active(), configDir, now });
+    const view = await attentionView({ root, adapter: await active(), configDir, now, readiness });
     served?.(view);
     sendJson(res, 200, view);
     return true;

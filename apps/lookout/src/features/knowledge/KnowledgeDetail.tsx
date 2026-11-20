@@ -1,6 +1,6 @@
-import type { KnowledgeEntry } from '@teamtrail/core';
+import { PROFILE_SOURCE, type KnowledgeEntry } from '@teamtrail/core';
 import { useEffect, useState } from 'react';
-import { Button, ChangedNotice, Field, MetaLine } from '../../components/ui';
+import { Button, ChangedNotice, Field, Markdown, MetaLine } from '../../components/ui';
 import { useShown } from '../../hooks/useShown';
 import { useKnowledge } from './knowledgeContext';
 
@@ -10,6 +10,12 @@ const STATUS_TEXT: Record<KnowledgeEntry['status'], string> = {
   assumption: 'Kept as an assumption: agents get it, marked as unverified.',
   outdated: 'Outdated: kept for history, never delivered.',
 };
+const FROM_REPO =
+  "Suggested by Teamtrail from this repo's files. Not delivered to agents until you confirm it or keep it as an assumption.";
+
+/** What the entry's status means; a suggestion Teamtrail read from the repo's files says so, not "by an agent". */
+const statusText = (e: KnowledgeEntry) =>
+  e.status === 'suggested' && e.sources.includes(PROFILE_SOURCE) ? FROM_REPO : STATUS_TEXT[e.status];
 
 /** One entry: body, where it came from, and the trail lead's calls (confirm, assumption, outdated, resolve flag, edit). */
 export function KnowledgeDetail({ e }: { e: KnowledgeEntry }) {
@@ -40,10 +46,10 @@ export function KnowledgeDetail({ e }: { e: KnowledgeEntry }) {
       ) : (
         <>
           <h3 className="t-title">{e.title}</h3>
-          <p className="kn-body">{e.body}</p>
+          <Markdown className="kn-body" text={e.body} />
         </>
       )}
-      <p className="dim">{STATUS_TEXT[e.status]}</p>
+      <p className="dim">{statusText(e)}</p>
       {e.flag && (
         <p className="kn-warn">
           Flagged by {e.flag.by}: {e.flag.reason}

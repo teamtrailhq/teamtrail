@@ -11,6 +11,7 @@ import { EVIDENCE_DIR, evidencePaths } from './evidenceStore';
 import { gradeCriteria } from './gradeCriteria';
 import type { LevelInfo } from './policy';
 import { runChecks, type ChecksOutcome } from './runChecks';
+import { storedCheckEnvNames } from './storedCheckEnvNames';
 
 export interface GradeInput {
   root: string;
@@ -72,5 +73,6 @@ async function checksOrError(i: GradeInput): Promise<ChecksOutcome> {
     logDir: path.join(i.root, rel),
     logRel: rel,
     signal: i.signal,
+    envNames: storedCheckEnvNames(i.root),
   });
 }

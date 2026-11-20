@@ -40,8 +40,16 @@ function watchShared(dir: string, label: (rel: string) => string | undefined, fn
   };
 }
 
-/** In this machine's store, what the trail lead approved here (criteria, briefs, reroutes) and signed state. */
-const machineLabel = (rel: string) => (/^sign-in/.test(rel) ? undefined : 'something was approved on this machine');
+/**
+ * In this machine's store, what the trail lead approved here (criteria, briefs, reroutes), signed state, and their
+ * Start anyway past repo readiness.
+ */
+function machineLabel(rel: string) {
+  // sign-ins, and a write's lock and temp file: the file itself says what changed
+  if (/^sign-in|\.lock$|\.tmp[^/]*$/.test(rel)) return undefined;
+  if (/^readiness\.json$/.test(rel)) return 'the trail lead started a trail anyway';
+  return 'something was approved on this machine';
+}
 
 /**
  * Calls `onChange` with a few words on what changed whenever something that can let work be claimed changes for the

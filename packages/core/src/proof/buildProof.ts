@@ -166,6 +166,9 @@ export function buildProofWithGaps(input: ProofInput): { proof: Proof; gaps: Pro
     ...(latest?.waived?.length
       ? { waived: latest.waived.map((w) => ({ name: w.name, argv: w.argv, by: w.by, reason: w.reason })) }
       : {}),
+    ...(latest?.outOfScope?.length
+      ? { outOfScope: latest.outOfScope.map((c) => ({ name: c.name, argv: c.argv, reason: c.reason })) }
+      : {}),
     ...retriedOf(latest, reviews),
     ...(guard ? { guard } : {}),
     criteria: criteriaOf(latest),
