@@ -39,7 +39,7 @@ Scout keeps his drawing (cap, headset, antenna lamp, neckerchief) in graphite, w
 
 ## Guide icons
 
-Each guide is one flat symbol on a square tile with a hairline edge (`guideMarkup` in `packages/scout-avatar/src/scout/guideArt.ts`): ink with one blaze accent, no colour per guide. On dark: ink `#EDEDEF`, fill `#1C1C1F`, accent `#FF6B2C` on `#141416`; on light: ink `#0E0F11`, fill `#FFFFFF`, accent `#D43F00` on `#F4F4F6`. Community's plus has no accent.
+Each guide is one flat symbol, alone on a transparent background so it sits on the page itself: no tile, no border (`guideMarkup` in `packages/scout-avatar/src/scout/guideArt.ts`). Ink with one blaze accent, no colour per guide. On dark: ink `#EDEDEF`, fill `#1C1C1F`, accent `#FF6B2C`; on light: ink `#0E0F11`, fill `#FFFFFF`, accent `#D43F00`. Community's plus has no accent.
 
 ## Proof badges
 

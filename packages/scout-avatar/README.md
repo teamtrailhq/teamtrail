@@ -3,7 +3,7 @@
 Two marks, one drawing style:
 
 - **The Teamtrail logo** (`src/logo/`): a lowercase t whose stem curves into a path that runs to its destination, a blaze dot, on a square tile with no edge. Three versions, with the colours in `logoColors.ts`: `dark` for dark backgrounds (`#F4F4F6` on `#0A0A0B`; the default), `light` for light ones (`#0E0F11` on `#FFFFFF`), the dot `#FF6B2C` on both, and `blaze`, the favicon and app icon (`#0A0A0B` t and white dot on `#FF6B2C`). `<Logo theme="auto">` follows the page's `color-scheme`; `bare` drops the tile for small inline use. `logoFaviconSvg()` is the blaze tile as one SVG. Nav, favicon, npm, GitHub and social images use it.
-- **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. An AI scout companion looking to the side, drawn as a bust in graphite, white and blaze: a screen face, a cap, a headset with a mic, an antenna lamp and a neckerchief (`badgeArt.ts`; `shape`: a circle where avatars are round, a full square for tiles and Slack; `ground`: `ink`, the default, `blaze` for app icons and Slack, `paper` on light backgrounds). Guides are flat symbols on a square tile with a hairline edge (`guideArt.ts`): magnifier, check, shield, book, compass, and a plus with no accent for Community; `guideMarkup(role, theme)` draws `dark`, `light`, or `auto`, which reads the page's `--tt-guide-ink`, `-fill`, `-accent`, `-bg` and `-line`.
+- **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. An AI scout companion looking to the side, drawn as a bust in graphite, white and blaze: a screen face, a cap, a headset with a mic, an antenna lamp and a neckerchief (`badgeArt.ts`; `shape`: a circle where avatars are round, a full square for tiles and Slack; `ground`: `ink`, the default, `blaze` for app icons and Slack, `paper` on light backgrounds). Guides are flat symbols alone on a transparent background, no tile or border (`guideArt.ts`): magnifier, check, shield, book, compass, and a plus with no accent for Community; `guideMarkup(role, theme)` draws `dark`, `light`, or `auto`, which reads the page's `--tt-guide-ink`, `-fill` and `-accent`.
 
 **Which mark where**
 
@@ -38,7 +38,7 @@ src/scout/
   portraitHead.ts  the head in three-quarter view: screen, headset, cap and antenna lamp
   portraitFace.ts  the face on the screen (eyes and mouth)
   portraitBody.ts  the shoulders and neckerchief
-  guideArt.ts      guide icons: flat symbols on a square tile, dark, light or auto
+  guideArt.ts      guide icons: flat symbols alone, no tile, dark, light or auto
   Badge.tsx        React component for a still badge at any size
   frames.ts        styles (day/night), expressions per state, status labels, timing, visemes, composeWave
   types.ts         shared types

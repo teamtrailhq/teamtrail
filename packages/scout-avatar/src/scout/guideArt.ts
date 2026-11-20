@@ -1,6 +1,7 @@
 /**
- * Guide icons in a 200×200 box: one flat symbol for each speciality on a square tile with a hairline edge. No colour
- * per guide: every symbol is drawn in ink with one blaze accent, and Community, the plus, has no accent at all.
+ * Guide icons in a 200×200 box: one flat symbol for each speciality, alone on a transparent background, so it sits on
+ * the page itself. No colour per guide: every symbol is drawn in ink with one blaze accent, and Community, the plus,
+ * has no accent at all.
  */
 export type GuideRole = 'reviewer' | 'qa' | 'security' | 'docs' | 'architect' | 'community';
 
@@ -11,20 +12,18 @@ interface Paint {
   ink: string;
   fill: string;
   accent: string;
-  bg: string;
-  line: string;
 }
 
 export const GUIDE_TONES: Record<'dark' | 'light', Paint> = {
-  dark: { ink: '#EDEDEF', fill: '#1C1C1F', accent: '#FF6B2C', bg: '#141416', line: 'rgba(255,255,255,.14)' },
-  light: { ink: '#0E0F11', fill: '#FFFFFF', accent: '#D43F00', bg: '#F4F4F6', line: 'rgba(0,0,0,.12)' },
+  dark: { ink: '#EDEDEF', fill: '#1C1C1F', accent: '#FF6B2C' },
+  light: { ink: '#0E0F11', fill: '#FFFFFF', accent: '#D43F00' },
 };
 
 function paint(theme: GuideTheme): Paint {
   if (theme !== 'auto') return GUIDE_TONES[theme];
   const d = GUIDE_TONES.dark;
   const v = (key: keyof Paint) => `var(--tt-guide-${key}, ${d[key]})`;
-  return { ink: v('ink'), fill: v('fill'), accent: v('accent'), bg: v('bg'), line: v('line') };
+  return { ink: v('ink'), fill: v('fill'), accent: v('accent') };
 }
 
 const SHIELD = 'M100 38l54 18v44q-2 40-54 62q-52-22-54-62V56z';
@@ -54,12 +53,12 @@ const SYMBOLS: Record<GuideRole, (c: Paint) => string> = {
     `<path d="M100 54V146M54 100H146" stroke="${c.fill}" stroke-width="11" stroke-linecap="round"/>`,
 };
 
-/** One guide's icon; `theme` picks the version for the background (`auto` by default: the page's `--tt-guide-*`). */
+/** The symbols are drawn with room for a tile around them; with none, they grow to fill the box (about 13 to 187). */
+const FILL_BOX = 'translate(-30 -30) scale(1.3)';
+
+/** One guide's icon, the symbol alone; `theme` picks its colours (`auto` by default: the page's `--tt-guide-*`). */
 export function guideMarkup(role: GuideRole, theme: GuideTheme = 'auto') {
   const p = paint(theme);
   const symbol = SYMBOLS[role]({ ...p, accent: role === 'community' ? p.ink : p.accent });
-  return [
-    `<rect x="1" y="1" width="198" height="198" fill="${p.bg}" stroke="${p.line}" stroke-width="2"/>`,
-    `<g transform="translate(20 20) scale(.8)">${symbol}</g>`,
-  ].join('');
+  return `<g transform="${FILL_BOX}">${symbol}</g>`;
 }
