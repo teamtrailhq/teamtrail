@@ -23,6 +23,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.10',
+    date: '2026-11-20',
+    items: [],
+  },
+  {
     version: '0.67.9',
     date: '2026-11-20',
     items: [
