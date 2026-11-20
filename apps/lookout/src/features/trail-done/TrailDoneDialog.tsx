@@ -1,6 +1,7 @@
 import type { TrailDone } from '@teamtrail/core';
 import { useEffect } from 'react';
 import { Panel } from '../../components/ui';
+import { DestinationMarkArt } from './DestinationMarkArt';
 import { DoneActions } from './DoneActions';
 
 type Reached = Exclude<TrailDone, { kind: 'not-done' }>;
@@ -35,6 +36,7 @@ export function TrailDoneDialog(props: {
         onClick={(e) => e.stopPropagation()}
       >
         <header>
+          <DestinationMarkArt done={done} size={22} />
           <h2 className="t-heading caps">Destination reached</h2>
         </header>
         <p className="t-body">
