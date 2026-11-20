@@ -2,8 +2,8 @@
  * Title and chips, the state line, labelled sections in a fixed order (What, Acceptance criteria, How, Progress,
  * Proof, History; the bubble shows the first two), and every action at the end. */
 
-/* Chips (components/ui/Tag.tsx): the map card's label chips, in HTML. A quiet flat fill, the text in the meta role;
- * a state's tone as on the card. */
+/* Chips (components/ui/Tag.tsx): the map card's label chips, in HTML. A hairline outline, the text in the meta role;
+ * a state's tone as a soft fill, as on the card. */
 .ticket-chips {
   display: flex;
   flex-wrap: wrap;
@@ -14,8 +14,8 @@
   align-items: center;
   min-height: 22px;
   padding: 0 var(--sp-6);
-  border-radius: 3px;
-  background: rgba(var(--line-rgb), 0.16);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--map-card-meta);
   font: var(--type-meta);
   white-space: nowrap;
@@ -31,11 +31,16 @@
   font-weight: 500;
 }
 .tag.warn {
-  background: rgba(var(--amber-rgb), 0.2);
+  background: rgba(var(--amber-rgb), 0.16);
+}
+.tag.warn,
+.tag.urgent,
+.tag.verified {
+  box-shadow: none;
 }
 .tag.urgent {
   background: rgba(var(--urgent-rgb), 0.12);
-  color: var(--urgent);
+  color: var(--urgent-ink);
   font-weight: 500;
 }
 .tag.verified {
@@ -102,7 +107,6 @@
 }
 .md-code {
   padding: 0 3px;
-  border-radius: 3px;
   background: rgba(var(--line-rgb), 0.16);
   font-family: var(--mono);
   font-size: 0.9em;

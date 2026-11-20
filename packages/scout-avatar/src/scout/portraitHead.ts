@@ -4,7 +4,7 @@
  */
 import type { BadgeColors } from './badgeArt';
 
-/** The small parts, dropped under about 40px: the glass's reflection, the chin's buttons and the cap's pine tree. */
+/** The small parts, dropped under about 40px: the glass's reflection and the chin's buttons. */
 function details(c: BadgeColors) {
   return {
     shine: `<path d="M92 82h22l-14 20h-8z" fill="#fff" opacity=".08"/>`,
@@ -15,16 +15,16 @@ function details(c: BadgeColors) {
         .map((x) => `<rect x="${x}" y="139" width="5" height="7" rx="1.5" fill="${c.shellLight}"/>`)
         .join(''),
     ].join(''),
-    pine: `<path d="M125 42l8 11h-4l7 10h-22l7-10h-4z" fill="${c.hat}"/>`,
   };
 }
 
+/** The antenna and its lamp, ringed in the brim's colour so it still shows on the blaze ground. */
 function lampMarkup(lamp: string, lit: boolean, simple: boolean, c: BadgeColors) {
   return [
     `<path d="M86 34L80 16" stroke="${c.band}" stroke-width="${simple ? 6 : 4}" stroke-linecap="round"/>`,
     lit ? `<circle cx="79" cy="14" r="11" fill="${lamp}" opacity=".3"/>` : '',
-    `<circle cx="79" cy="14" r="${simple ? 8 : 6}" fill="${lamp}"/>`,
-    lit ? `<circle cx="77" cy="12" r="2" fill="#fff3c4"/>` : '',
+    `<circle cx="79" cy="14" r="${simple ? 8 : 6}" fill="${lamp}" stroke="${c.brim}" stroke-width="2"/>`,
+    lit ? `<circle cx="77" cy="12" r="2" fill="#FFE1D2"/>` : '',
   ].join('');
 }
 
@@ -64,7 +64,6 @@ export function headMarkup({
     `<path d="M48 76Q46 30 104 28Q158 30 162 70Z" fill="${c.hat}"/>`,
     `<path d="M48 76Q46 34 88 29Q66 42 66 74Z" fill="${c.hatDark}"/>`,
     `<path d="M96 70Q96 40 126 36Q152 40 154 68Z" fill="${c.panel}"/>`,
-    simple ? '' : d.pine,
     `<path d="M150 82Q120 76 66 84L58 80Q56 72 64 70Q122 62 180 70Q190 76 182 84Z" fill="${c.brim}"/>`,
     `<path d="M70 84Q120 78 166 84L166 90Q120 84 70 90Z" fill="#000" opacity=".22"/>`,
   ].join('');

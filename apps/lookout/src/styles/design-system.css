@@ -16,9 +16,8 @@
 
   --ls-0: 0;
   --ls-text: 0.01em; /* slight tracking for small running text */
-  --ls-data: 0.06em; /* label-face data: keys, ids, caps headings in Londrina Solid */
+  --ls-data: 0.06em; /* label-face data: keys, ids, caps data labels */
   --ls-label: 0.1em; /* mono caps labels, buttons, tabs */
-  --ls-brand: 0.018em; /* wordmark only, set in Londrina Solid */
 
   /* Spacing scale (px). --gutter is the inner padding of every zone. */
   --sp-2: 2px;
@@ -56,7 +55,7 @@
  * title (.t-title, .t-row-title): what a thing is or what you need to do.
  * body (.t-body): running text. meta (.t-meta): the one quiet context line, sentence case.
  * label (.t-label, alias .mono-label): small caps section and field labels only.
- * .t-code: paths, ids and keys inside any role. Londrina Solid (.t-heading.caps) is for brand and zone heroes. */
+ * .t-code: paths, ids and keys inside any role. The display face (.t-heading.caps) is for brand and zone heroes. */
 .t-body {
   font: var(--type-body);
   color: var(--text);
@@ -112,7 +111,8 @@
 }
 .t-heading.caps {
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
 }
 
 /* ---------- Panel ---------- */
@@ -172,7 +172,7 @@
   letter-spacing: var(--ls-data);
 }
 .chip-label.hot {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .chip-label.hot::before {
   content: '';
@@ -293,7 +293,7 @@
 }
 .readout.urgent > .mono-label,
 .readout.urgent > b {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 
 /* ---------- Buttons ---------- */
@@ -348,7 +348,7 @@
   color: var(--text);
 }
 .btn.danger {
-  color: var(--urgent);
+  color: var(--urgent-ink);
   border-color: rgba(var(--urgent-rgb), 0.45);
 }
 .btn.urgent {
@@ -651,7 +651,7 @@ button.card.urgent:hover,
 /* ---------- Needs you: a ring that expands and fades on anything waiting for the trail lead's action ---------- */
 .btn.urgent,
 .waiting-chip {
-  --ping-rgb: 255, 77, 66;
+  --ping-rgb: var(--urgent-rgb);
 }
 .briefing-btn.has-new {
   --ping-rgb: var(--accent-rgb);

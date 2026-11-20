@@ -1,5 +1,5 @@
 /**
- * Scout: an AI scout companion in three-quarter view, looking to the right, drawn as a bust on a moss ground. A cap,
+ * Scout: an AI scout companion in three-quarter view, looking to the right, drawn as a bust on a square ground. A cap,
  * a headset with a mic, an antenna lamp and a neckerchief. One function returns the SVG markup, so <ScoutAvatar>,
  * mountScout and the brand exports draw exactly the same thing.
  */
@@ -29,26 +29,44 @@ export interface BadgeColors {
   band: string;
 }
 
-export const SCOUT_COLORS: BadgeColors = {
-  ground: '#4f8a48',
-  groundLight: '#5d9a55',
-  shell: '#eee7d3',
-  shellLight: '#faf6ea',
-  shade: '#c9bfa2',
-  side: '#b3a98c',
-  frame: '#a99f83',
-  glass: '#13231e',
-  glow: '#6fd197',
-  glowLight: '#c2f2cf',
-  orange: '#e07a2f',
-  orangeLight: '#f29a55',
-  orangeDark: '#a8481c',
-  hat: '#8a5a38',
-  hatDark: '#6b4630',
-  brim: '#5a3a26',
-  panel: '#ece2c6',
-  band: '#3a4a43',
+/** Scout himself, the same on every ground: a white shell, a graphite cap, blaze eyes, ear cup and neckerchief. */
+const SCOUT_BODY: Omit<BadgeColors, 'ground' | 'groundLight'> = {
+  shell: '#EDEDEF',
+  shellLight: '#FFFFFF',
+  shade: '#B9BBC1',
+  side: '#9A9EA6',
+  frame: '#6B7079',
+  glass: '#0A0A0B',
+  glow: '#FF6B2C',
+  glowLight: '#FFB08A',
+  orange: '#FF6B2C',
+  orangeLight: '#FF8A55',
+  orangeDark: '#C2410C',
+  hat: '#2A2A2E',
+  hatDark: '#1C1C1F',
+  brim: '#111113',
+  panel: '#DCDDE1',
+  band: '#3A3D44',
 };
+
+/** The ground Scout stands on: `ink` (the default, on dark), `blaze` (app icons, Slack) or `paper` (on light). */
+export type ScoutGround = 'ink' | 'blaze' | 'paper';
+
+export const SCOUT_GROUNDS: Record<ScoutGround, BadgeColors> = {
+  ink: { ...SCOUT_BODY, ground: '#141416', groundLight: '#1E1E21' },
+  blaze: { ...SCOUT_BODY, ground: '#FF6B2C', groundLight: '#FF7F47' },
+  /** On paper the cap goes a shade darker, so it holds against the pale ground. */
+  paper: {
+    ...SCOUT_BODY,
+    ground: '#E9E9EC',
+    groundLight: '#F4F4F6',
+    hat: '#1C1C1F',
+    hatDark: '#111113',
+    brim: '#0A0A0B',
+  },
+};
+
+export const SCOUT_COLORS: BadgeColors = SCOUT_GROUNDS.ink;
 
 export interface BadgeLamp {
   on: string;
@@ -56,9 +74,10 @@ export interface BadgeLamp {
   alert: string;
 }
 
-export const LAMP_DAY: BadgeLamp = { on: '#ffb347', dim: '#a8501c', alert: '#ff5a48' };
-/** At night the same Scout's lamp burns brighter. */
-export const LAMP_NIGHT: BadgeLamp = { on: '#ffd166', dim: '#a8501c', alert: '#ff5a48' };
+/** The antenna lamp: blaze when on, ember when dim, rose when Scout needs you. */
+export const LAMP_DAY: BadgeLamp = { on: '#FF6B2C', dim: '#7A2E10', alert: '#FF4D7A' };
+/** At night the same Scout's lamp burns a little brighter. */
+export const LAMP_NIGHT: BadgeLamp = { on: '#FF8A55', dim: '#7A2E10', alert: '#FF4D7A' };
 
 export interface BadgeFace {
   eyes: Eye;
@@ -66,7 +85,7 @@ export interface BadgeFace {
   light?: Light;
 }
 
-/** `circle` for avatars in the app, `rounded` for app-icon tiles, `square` to fill the box (Slack rounds it itself). */
+/** `circle` where avatars are round, `square` for tiles and app icons (Slack rounds them itself); `rounded` is kept for older callers. */
 export type BadgeShape = 'circle' | 'rounded' | 'square';
 
 const CORNER: Record<BadgeShape, number> = { circle: 100, rounded: 46, square: 0 };
@@ -82,10 +101,11 @@ export function badgeMarkup(
     lamp = LAMP_DAY,
     simple = false,
     shape = 'circle',
-    colors = SCOUT_COLORS,
-  }: { lamp?: BadgeLamp; simple?: boolean; shape?: BadgeShape; colors?: BadgeColors } = {},
+    ground = 'ink',
+    colors,
+  }: { lamp?: BadgeLamp; simple?: boolean; shape?: BadgeShape; ground?: ScoutGround; colors?: BadgeColors } = {},
 ) {
-  const c = colors;
+  const c = colors ?? SCOUT_GROUNDS[ground];
   const light = face.light ?? 'on';
   const k = shape === 'circle' ? CIRCLE_SCALE : 1;
   const offset = 100 * (1 - k);
