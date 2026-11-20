@@ -1,6 +1,6 @@
 import { Wordmark } from './Wordmark';
 
-/** The wordmark lockup: `teamtrail.` alone, cream on dark or deep moss on light. */
+/** The wordmark lockup: `teamtrail` and its cursor alone, white on near-black or near-black on white. */
 export function Lockup({ w, h, wordmark, light }: { w: number; h: number; wordmark: string; light?: boolean }) {
   return (
     <div

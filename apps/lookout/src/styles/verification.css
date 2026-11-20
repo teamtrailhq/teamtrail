@@ -71,7 +71,7 @@
 .vf-err {
   margin: 0;
   font-size: var(--fs-sm);
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .vf-row {
   margin-top: var(--sp-6);
@@ -132,7 +132,7 @@
   font-size: var(--fs-sm);
 }
 .vf-findings .sev-error {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .vf-findings .sev-warn {
   color: var(--amber);
@@ -149,7 +149,7 @@
   color: var(--amber);
 }
 .vf-flag.lv-alert .t-code {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .vf-files ul {
   margin: var(--sp-6) 0 0;
@@ -323,7 +323,7 @@
   color: var(--amber);
 }
 .vf-guard.held .vf-guard-head {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .vf-guard ul {
   margin: var(--sp-6) 0;
@@ -344,7 +344,7 @@
   color: var(--st-decided);
 }
 .vf-criteria .bad {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .vf-criteria .wait {
   color: var(--amber);

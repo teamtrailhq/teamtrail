@@ -90,7 +90,7 @@
   --c: var(--amber);
 }
 .st-waiting {
-  --c: var(--urgent);
+  --c: var(--urgent-ink);
 }
 .st-unspecified {
   --c: var(--dim);
@@ -121,7 +121,7 @@
   right: var(--sp-10);
   top: var(--sp-8);
 }
-/* The map's corner controls, Fit and Legend, sit on a panel of their own over the terrain. */
+/* The map's corner controls, Fit and Legend, sit on a panel of their own over the canvas. */
 .fit-btn,
 .map-legend > .btn {
   background: var(--panel);
@@ -291,10 +291,10 @@
   color: var(--faint);
 }
 .status-panel li.st-waiting:not(.zero) {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .status-panel li.st-waiting:not(.zero) b {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .sp-block {
   display: flex;

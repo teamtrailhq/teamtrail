@@ -73,7 +73,7 @@ What `packages/connector-slack` does, and any other client of the service must d
 ## Create the Slack app (once, by a maintainer)
 
 1. At https://api.slack.com/apps choose **Create New App → From a manifest**, pick a workspace you develop in, and paste `slack-manifest.json`. If the service won't be at `scout.teamtrail.app`, replace that host in the four URLs first.
-2. **Basic Information → Display Information**: upload `brand/slack-icon-512.png` as the app icon (Slack wants 512–2000 px, square): Scout's avatar filling the square on its moss ground. The background colour is already `#16302A`, the trail green, from the manifest: the moss icon stands out on it.
+2. **Basic Information → Display Information**: upload `brand/slack-icon-512.png` as the app icon (Slack wants 512–2000 px, square): Scout's avatar filling the square on the blaze ground. The background colour is already `#141416`, ink, from the manifest: the blaze icon stands out on it.
 3. Copy the Client ID, Client Secret and Signing Secret into the service's variables.
 4. **Event Subscriptions** must list `app_home_opened`, `app_uninstalled`, `tokens_revoked`, `app_mention` and `message.im`, and **OAuth & Permissions** the bot scopes in `slack-manifest.json` (`app_mentions:read` since 0.29). A workspace added before a new scope keeps working and gets the scope when someone adds Scout again; its Teamtrail says so.
 5. **Manage Distribution**: activate public distribution once the service is deployed, so other workspaces can install. Listing in the Slack Marketplace is a separate review (it lifts Slack's throttling of `conversations.replies` for unlisted apps, which Save as decision uses).

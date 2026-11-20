@@ -1,7 +1,7 @@
 export { ScoutAvatar, type ScoutAvatarProps } from './ScoutAvatar';
 export { Badge } from './Badge';
-export { type BadgeFace, type BadgeShape, badgeMarkup } from './badgeArt';
-export { type GuideRole, guideMarkup } from './guideArt';
+export { type BadgeFace, type BadgeShape, type ScoutGround, SCOUT_GROUNDS, badgeMarkup } from './badgeArt';
+export { type GuideRole, type GuideTheme, GUIDE_TONES, guideMarkup } from './guideArt';
 export { Logo } from '../logo/Logo';
 export { logoMarkup, logoBareMarkup } from '../logo/logoMark';
 export { logoFaviconSvg } from '../logo/logoFaviconSvg';

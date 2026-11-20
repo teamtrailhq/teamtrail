@@ -1,7 +1,11 @@
 import type { LogoColors } from './types';
 
-/** The logo's two versions: `light` for light backgrounds (pale tile, deep moss), `dark` for dark ones (dark tile, light moss). */
-export const LOGO_COLORS: Record<'light' | 'dark', LogoColors> = {
-  light: { tile: '#e9f1e6', edge: '#d3e2cd', mark: '#4f8a48', dot: '#e07a2f' },
-  dark: { tile: '#17211c', edge: '#2a3a31', mark: '#8fbf84', dot: '#e8833a' },
+/**
+ * The logo's versions: `dark` for dark backgrounds (near-black tile, white t), `light` for light ones (white tile,
+ * near-black t), and `blaze`, the favicon and app icon (blaze tile, near-black t, white dot). The dot is blaze on both.
+ */
+export const LOGO_COLORS: Record<'light' | 'dark' | 'blaze', LogoColors> = {
+  light: { tile: '#FFFFFF', mark: '#0E0F11', dot: '#FF6B2C' },
+  dark: { tile: '#0A0A0B', mark: '#F4F4F6', dot: '#FF6B2C' },
+  blaze: { tile: '#FF6B2C', mark: '#0A0A0B', dot: '#FFFFFF' },
 };

@@ -1,16 +1,16 @@
 /* Scout avatar. Colours live in badgeArt.ts / frames.ts; panel chrome is --scout-* vars. */
 .scout {
-  --scout-ink: var(--text, #38443c);
-  --scout-dim: var(--dim, #5e6a60);
-  --scout-hi: var(--text-hi, #1b2620);
-  --scout-accent: #c8581e;
-  --scout-warn: var(--urgent, #c4301f);
-  --scout-line: var(--line, rgba(76, 78, 58, 0.2));
-  --scout-line2: var(--line2, rgba(76, 78, 58, 0.42));
-  --scout-panel: var(--panel, #fbfaf4);
+  --scout-ink: var(--text, #2a2b2f);
+  --scout-dim: var(--dim, #6b7079);
+  --scout-hi: var(--text-hi, #0e0f11);
+  --scout-accent: var(--accent, #d43f00);
+  --scout-warn: var(--urgent, #e0325f);
+  --scout-line: var(--line, rgba(0, 0, 0, 0.12));
+  --scout-line2: var(--line2, rgba(0, 0, 0, 0.24));
+  --scout-panel: var(--panel, #ffffff);
   --scout-mono: var(--mono, 'JetBrains Mono Variable'), ui-monospace, monospace;
-  --scout-display: var(--display, 'Londrina Solid'), 'Figtree Variable', sans-serif;
-  --scout-sans: var(--sans, 'Figtree Variable'), system-ui, sans-serif;
+  --scout-display: var(--display, 'Inter Variable'), system-ui, sans-serif;
+  --scout-sans: var(--sans, 'Inter Variable'), system-ui, sans-serif;
   color: var(--scout-ink);
 }
 

@@ -20,14 +20,14 @@ export const STYLES: Record<ScoutStyleId, ScoutStyle> = {
     name: 'Day',
     blurb: 'Scout looking to the side: a cap, a headset with a mic, an antenna lamp and a neckerchief.',
     lamp: LAMP_DAY,
-    wave: { bar: '#6f8a78', lead: '#c8581e' },
+    wave: { bar: '#9A9EA6', lead: '#D43F00' },
   },
   night: {
     id: 'night',
     name: 'Night',
-    blurb: 'The same Scout, with the antenna lamp burning brighter, for the night theme.',
+    blurb: 'The same Scout, with the antenna lamp burning a little brighter, for the night theme.',
     lamp: LAMP_NIGHT,
-    wave: { bar: '#66828d', lead: '#e8833a' },
+    wave: { bar: '#6B7079', lead: '#FF6B2C' },
   },
 };
 export const RECOMMENDED_STYLE: ScoutStyleId = 'crt';

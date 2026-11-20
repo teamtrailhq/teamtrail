@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/teamtrailhq/teamtrail/main/brand/teamtrail-banner.gif?v=10" alt="The teamtrail wordmark, ending in an orange dot, above a dashed trail through the mountains that reaches the same orange destination." width="100%" />
+<img src="https://raw.githubusercontent.com/teamtrailhq/teamtrail/main/brand/teamtrail-banner.gif?v=12" alt="The teamtrail wordmark in white, followed by a blaze-orange block cursor, above a trail on a dot grid that steps past four tickets to an orange destination." width="100%" />
 
 # teamtrail
 
