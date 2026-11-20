@@ -380,3 +380,11 @@
   align-self: flex-start;
   width: fit-content;
 }
+/* Back while a page covers the home (features/hands-off/PageBack.tsx): the arrow alone on a phone, a 44px target. */
+.bp-mobile .page-back {
+  min-width: 44px;
+  justify-content: center;
+}
+.bp-mobile .page-back-word {
+  display: none;
+}

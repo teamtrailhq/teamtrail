@@ -5,6 +5,7 @@ import {
   AppBubble,
   AppHeader,
   AppHome,
+  AppModeSwitch,
   AppSettings,
   AppTicketDrawer,
   AppTrailBar,
@@ -26,7 +27,6 @@ import {
   type View,
 } from './app/index';
 import { SetupGuide } from './features/guide';
-import { ModeSwitch } from './features/hands-off';
 import { KnowledgeContext, KnowledgeView, useKnowledgeStore } from './features/knowledge';
 import { PhoneProjects, ProjectSwitcher } from './features/projects';
 import { FirstRun, openRulePrefilled } from './features/settings';
@@ -175,7 +175,7 @@ export function App() {
           onSettings={settings.toggle}
           onSlack={() => settings.open('slack')}
           onToggleTheme={(night) => updatePrefs({ theme: night ? 'night' : 'day' })}
-          modeSwitch={<ModeSwitch mode={mode.mode} onChange={mode.setMode} />}
+          modeSwitch={<AppModeSwitch mode={mode} nav={nav} settingsOpen={!!settingsPage} />}
           handsOff={mode.layout(snap) === 'hands-off'}
         />
         <AppBody

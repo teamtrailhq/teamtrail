@@ -1,7 +1,8 @@
 import { ScoutAvatar } from '@teamtrail/scout-avatar';
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../../components/ui';
+import { useGuideRoom } from './useGuideRoom';
 import { useSetupSteps } from './useSetupSteps';
 
 const KEY = 'teamtrail.guide.open';
@@ -26,21 +27,26 @@ function remember(open: boolean) {
 /**
  * Scout in the corner, with Get started in a speech bubble: the steps that set this workspace up, each ticked from the
  * server's answer, the next one leading. Minimized to Scout and "2 of 5"; gone once every step is done. Only behind a
- * server that says where setup stands (useSetupSteps.ts).
+ * server that says where setup stands (useSetupSteps.ts). The page keeps room for it at the bottom while it shows, and
+ * the open bubble folds away on a press outside it or Esc (useGuideRoom.ts), so it never covers the page's controls.
  */
 export function SetupGuide() {
   const view = useSetupSteps();
   const [open, setOpen] = useState(wasOpen);
-  if (!view || view.complete) return null;
-  const toggle = (next: boolean) => {
+  const box = useRef<HTMLElement>(null);
+  const toggle = useCallback((next: boolean) => {
     setOpen(next);
     remember(next);
-  };
+  }, []);
+  const fold = useCallback(() => toggle(false), [toggle]);
+  const shown = !!view && !view.complete;
+  useGuideRoom({ shown, open, box, fold });
+  if (!view || !shown) return null;
   const count = `${view.done} of ${view.total}`;
   // On the page itself, not inside the app's zones: a zone that makes its own stacking or containing box would
   // otherwise pin a fixed corner to itself instead of the window.
   return createPortal(
-    <aside className={`setup-guide${open ? ' open' : ''}`} aria-label="Get started">
+    <aside ref={box} className={`setup-guide${open ? ' open' : ''}`} aria-label="Get started">
       {open && (
         <div className="setup-bubble">
           <header>

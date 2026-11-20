@@ -37,10 +37,7 @@ export function AppHome(props: {
   const { api, snap, nav, attn, live, trail } = props;
   const now = useNow(5000);
   const view = attn.attention.view;
-  const openTicket = (mapId: string, ticketId: string) => {
-    nav.openTicket(mapId, ticketId);
-    nav.setFullTicket(true);
-  };
+  const openTicket = (mapId: string, ticketId: string) => nav.openFullTicket(mapId, ticketId);
   // what opens only as a bubble on the map is Hands-on's: these switch to it, with the bubble open
   const onMap = (open: (mapId: string) => void) => (mapId: string) => {
     open(mapId);
