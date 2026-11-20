@@ -30,7 +30,13 @@ function unseenSetup(root: string, text: string, shown: string[] = []) {
  * temp file and renamed), nor with setup steps nobody approved here but the `shownSetup` ones the person was shown. The caller has already checked the `base` the
  * person saw.
  */
-export function writeApprovedConfig(o: { root: string; text: string; by: string; subject: string; shownSetup?: string[] }) {
+export function writeApprovedConfig(o: {
+  root: string;
+  text: string;
+  by: string;
+  subject: string;
+  shownSetup?: string[];
+}) {
   const { errors } = parseVerificationConfig(o.text);
   if (errors.length) throw new OperationError(`${VERIFICATION_FILE} would be invalid: ${errors.join('; ')}`);
   const unseen = unseenSetup(o.root, o.text, o.shownSetup);

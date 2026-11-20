@@ -1,5 +1,5 @@
-import type { LocalProbes, ReadinessFinding } from '../model/readiness';
 import { BRAND } from '../model/brand';
+import type { LocalProbes, ReadinessFinding } from '../model/readiness';
 import { approvedChecks } from './approvedChecks';
 import { folderLabel } from './folderLabel';
 import { toolchainProgram } from './toolchainProgram';

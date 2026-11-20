@@ -24,7 +24,11 @@ function connects(port: number): Promise<boolean> {
 function dockerThere(env: NodeJS.ProcessEnv) {
   if (env.DOCKER_HOST) return true;
   const home = os.homedir();
-  const sockets = ['/var/run/docker.sock', path.join(home, '.docker', 'run', 'docker.sock'), path.join(home, '.colima', 'default', 'docker.sock')];
+  const sockets = [
+    '/var/run/docker.sock',
+    path.join(home, '.docker', 'run', 'docker.sock'),
+    path.join(home, '.colima', 'default', 'docker.sock'),
+  ];
   return sockets.some((s) => {
     try {
       return statSync(s).isSocket();

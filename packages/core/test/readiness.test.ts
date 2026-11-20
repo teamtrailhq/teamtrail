@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_MAP_MODE, holdingFindings, type MapSnapshot, type Ticket } from '../src';
+import { DEFAULT_MAP_MODE, type MapSnapshot, type Ticket } from '../src';
 import type { CheckFinding } from '../src/model/checkScreening';
 import type { LocalProbes, ReadinessFinding } from '../src/model/readiness';
 import type { CheckSpec, VerificationConfig } from '../src/model/verification';
+import { holdingFindings } from '../src/readiness/holdingFindings';
 import { readinessHeld } from '../src/readiness/readinessHeld';
 import { repoReadiness } from '../src/readiness/repoReadiness';
 import type { ReadinessInput } from '../src/readiness/types';
@@ -118,11 +119,23 @@ describe('repo readiness: this machine', () => {
   });
 
   it('a pinned toolchain: missing or outside the pin warns, a version manager shim says nothing', async () => {
-    const old = await readiness({ config: config(WEB), probes: allHere({ toolchains: { node: { path: '/x/node', version: '18.19.0' } } }) });
-    expect(byId(old, 'version:')).toMatchObject({ level: 'warns', text: 'Node 18.19.0 here; the top asks for 20.11.1' });
-    const fits = await readiness({ config: config(WEB), probes: allHere({ toolchains: { node: { path: '/x/node', version: '20.11.1' } } }) });
+    const old = await readiness({
+      config: config(WEB),
+      probes: allHere({ toolchains: { node: { path: '/x/node', version: '18.19.0' } } }),
+    });
+    expect(byId(old, 'version:')).toMatchObject({
+      level: 'warns',
+      text: 'Node 18.19.0 here; the top asks for 20.11.1',
+    });
+    const fits = await readiness({
+      config: config(WEB),
+      probes: allHere({ toolchains: { node: { path: '/x/node', version: '20.11.1' } } }),
+    });
     expect(byId(fits, 'version:')).toBeUndefined();
-    const shim = await readiness({ config: config(WEB), probes: allHere({ toolchains: { node: { path: '/x', managed: 'mise' } } }) });
+    const shim = await readiness({
+      config: config(WEB),
+      probes: allHere({ toolchains: { node: { path: '/x', managed: 'mise' } } }),
+    });
     expect(byId(shim, 'version:')).toBeUndefined();
     const none = await readiness({ config: config(WEB), probes: allHere({ toolchains: { node: {} } }) });
     expect(byId(none, 'version:')?.text).toMatch(/^Node isn't installed on this machine/);
@@ -193,10 +206,29 @@ describe('versionMatches', () => {
 });
 
 function ticket(id: string, type: Ticket['type'], blockedBy: string[] = []): Ticket {
-  return { id, key: `#${id}`, title: id, type, body: '', state: 'open', blockedBy, comments: [], createdAt: now, updatedAt: now };
+  return {
+    id,
+    key: `#${id}`,
+    title: id,
+    type,
+    body: '',
+    state: 'open',
+    blockedBy,
+    comments: [],
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 const snap = (tickets: Ticket[]): MapSnapshot => ({
-  map: { id: 'm1', key: '#1', title: 'T', mode: DEFAULT_MAP_MODE, sections: {} as MapSnapshot['map']['sections'], createdAt: now, updatedAt: now },
+  map: {
+    id: 'm1',
+    key: '#1',
+    title: 'T',
+    mode: DEFAULT_MAP_MODE,
+    sections: {} as MapSnapshot['map']['sections'],
+    createdAt: now,
+    updatedAt: now,
+  },
   tickets,
 });
 
@@ -222,7 +254,11 @@ describe('the readiness hold', () => {
 
   it('a finding about some checks holds only the work that runs them', () => {
     const findings = [blocks('program:go', ['api-test'])];
-    const held = readinessHeld({ snap: snap(tickets), findings, checksOf: (t) => (t.id === 'a' ? ['web-test'] : ['api-test']) });
+    const held = readinessHeld({
+      snap: snap(tickets),
+      findings,
+      checksOf: (t) => (t.id === 'a' ? ['web-test'] : ['api-test']),
+    });
     expect(held.map((t) => t.id)).toEqual(['b']);
   });
 

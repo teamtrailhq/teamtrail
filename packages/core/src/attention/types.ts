@@ -11,6 +11,7 @@ import type { Escape } from '../model/escape';
 import type { InstalledGuide } from '../model/guide';
 import type { MainChecksView } from '../model/mainChecks';
 import type { TicketSync } from '../model/prEvidence';
+import type { RepoReadiness, TrailReadiness } from '../model/readiness';
 import type { RerouteProposal } from '../model/reroute';
 import type { TrailChecksView } from '../model/trailChecks';
 import type { MapSnapshot, PendingQuestion, SessionInfo } from '../model/types';
@@ -18,7 +19,6 @@ import type { ConnectedAgent } from '../planning/matching/modelWaits';
 import type { RerouteSuggestion } from '../planning/reroute/rerouteTriggers';
 import type { PolicyViolation } from '../policy/policyViolations';
 import type { PrecedentConflict } from '../precedent/precedentConflicts';
-import type { RepoReadiness } from '../model/readiness';
 import type { TrustItem } from '../trust/trustItem';
 import type { ApprovalItem } from '../verification/approvals';
 import type { IntegrationOverlap } from '../workspaces/workspace';
@@ -76,7 +76,7 @@ export interface AttentionInput {
   /**
    * Repo readiness (readiness/) and, per active trail, the ready tickets its blocking findings hold. Missing: none.
    */
-  readiness?: { readiness: RepoReadiness; held: { mapId: string; tickets: string[] }[] };
+  readiness?: { readiness: RepoReadiness; held: TrailReadiness[] };
   /** Missing: the defaults. */
   policy?: AttentionPolicy;
   /** Missing: nothing snoozed or dismissed. */

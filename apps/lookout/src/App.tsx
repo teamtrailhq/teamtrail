@@ -68,6 +68,7 @@ export function App() {
     openGuides: () => settings.open('guides'),
     openConnector: (channel) => settings.open(channel),
     openApprovals: () => settings.open('approvals'),
+    openReadiness: () => settings.open('readiness'),
     openRule: (rule) => openRulePrefilled(settings.open, rule),
     openFocusSettings: () => settings.open('attention'),
   });

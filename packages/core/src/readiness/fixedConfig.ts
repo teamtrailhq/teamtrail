@@ -26,7 +26,8 @@ export interface FixedConfig {
 const spec = (run: string[], cwd: string) => ({ run, ...(cwd ? { cwd } : {}) });
 
 function addCheck(c: FixedConfig, check: ReadinessCheck) {
-  if (!NAME.test(check.name)) throw new OperationError(`"${check.name}": a name of lowercase letters, digits and dashes`);
+  if (!NAME.test(check.name))
+    throw new OperationError(`"${check.name}": a name of lowercase letters, digits and dashes`);
   if (Object.hasOwn(c.checks, check.name)) throw new OperationError(`a check named ${check.name} already exists`);
   if (checkFolder(check.cwd) === undefined) throw new OperationError(`${check.name}: a folder inside the repository`);
   const unsafe = checkArgv({ run: check.run });

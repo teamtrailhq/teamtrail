@@ -1,5 +1,7 @@
+import type { RepoFiles } from './checkScreening';
 import type { ActorKind } from './lifecycle';
-import type { Ecosystem, RepoLayout, Toolchain } from './repoProfile';
+import type { Ecosystem, RepoLayout, RepoProfile, Toolchain } from './repoProfile';
+import type { VerificationConfig } from './verification';
 
 /*
  * Repo readiness (readiness/): whether Teamtrail can check work in this repo on this machine. Read from the repo
@@ -13,16 +15,7 @@ export type ReadinessLevel = 'blocks' | 'warns' | 'info';
 
 /** What a finding is about. */
 export type ReadinessKind =
-  | 'checks'
-  | 'check'
-  | 'folder'
-  | 'unit'
-  | 'program'
-  | 'version'
-  | 'install'
-  | 'browser'
-  | 'service'
-  | 'variable';
+  'checks' | 'check' | 'folder' | 'unit' | 'program' | 'version' | 'install' | 'browser' | 'service' | 'variable';
 
 /** A check a fix would add: exactly as it would be written, argv and folder. */
 export interface ReadinessCheck {
@@ -145,4 +138,55 @@ export interface LocalProbes {
   services: Record<string, boolean>;
   /** Variable names the checks would get, and names set here that they wouldn't. Never values. */
   variables: { passed: string[]; withheld: string[] };
+}
+
+/**
+ * How an embedding server probes where its checks run (Cloud: from its sandbox image and the toolchains mise
+ * installs), in place of probeLocal.ts: the same data, so readiness reads the same. Undefined: nothing about the
+ * machine is said.
+ */
+export type ReadinessProbe = (o: {
+  profile: RepoProfile;
+  config?: VerificationConfig;
+  files: RepoFiles;
+}) => Promise<LocalProbes | undefined>;
+
+/**
+ * Where readiness is read from: the repo's files (undefined: no checkout, so nothing is said and nothing held) and
+ * how the machine that runs the checks is probed (`true`: this machine, probeLocal.ts; `false`: not at all).
+ */
+export interface ReadinessHost {
+  files: () => RepoFiles | undefined;
+  probe: boolean | ReadinessProbe;
+}
+
+/** One active trail as the queue sees readiness on it. */
+export interface TrailReadiness {
+  mapId: string;
+  /** The ready tickets held back now. */
+  tickets: string[];
+  /**
+   * Whether blocking findings (none the trail lead started it past) hold any of its open implementation work verified
+   * with checks, ready now or later.
+   */
+  waits: boolean;
+  /** Whether the trail lead started it anyway. */
+  started: boolean;
+}
+
+/** One active trail on the readiness screen (`GET /repo/readiness`). */
+export interface ReadinessTrail {
+  mapId: string;
+  title: string;
+  /** Ready tickets held back now. */
+  held: number;
+  /** Whether blocking findings hold any of its open implementation work verified with checks. */
+  waits: boolean;
+  startedAnyway?: ReadinessChoice;
+}
+
+/** What `GET /repo/readiness` and its writes answer. */
+export interface ReadinessView {
+  readiness: RepoReadiness;
+  trails: ReadinessTrail[];
 }

@@ -1,15 +1,22 @@
-import { OperationError, type MapSnapshot, type Ticket } from '@teamtrail/core';
-import { localRepoFiles, readinessHold, readReadiness, repoRootOf, type ReadinessHold } from '@teamtrail/core/agents';
+import { OperationError, type MapSnapshot, type ReadinessHost, type Ticket } from '@teamtrail/core';
+import { readinessHold, readinessHost, readReadiness, type ReadinessHold } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 
 /**
+ * Where readiness is read for this agent: the embedding server's host when it set one, else this machine's checkout
+ * of the repo, probed here unless the server's runner runs the checks (readiness/readinessHost.ts in core).
+ */
+export function readinessHostOf(ctx: AgentContext): ReadinessHost {
+  return readinessHost({ root: ctx.root, host: ctx.opts.readiness, checkRunner: ctx.opts.checkRunner });
+}
+
+/**
  * Repo readiness on one trail as a claim sees it (readiness/ in core): the blocking findings, the ready implementation
- * tickets they hold back, and why. Read from this machine's checkout and probed here, unless the server runs checks
- * elsewhere (its own runner): then nothing about this machine is probed. Kept for a few seconds between claims.
+ * tickets they hold back, and why. Kept for a few seconds between claims (readReadiness.ts).
  */
 export async function readinessGate(ctx: AgentContext, snap: MapSnapshot): Promise<ReadinessHold> {
-  const files = localRepoFiles(repoRootOf(ctx.verifyEnv()));
-  const readiness = await readReadiness({ root: ctx.root, files, probe: !ctx.opts.checkRunner });
+  const host = readinessHostOf(ctx);
+  const readiness = await readReadiness({ root: ctx.root, files: host.files(), probe: host.probe });
   return readinessHold({ root: ctx.root, snap, readiness });
 }
 

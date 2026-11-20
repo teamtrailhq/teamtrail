@@ -51,7 +51,9 @@ export async function applyReadinessFixes(o: {
 }) {
   const now = checksApproval(o.root);
   if (now.waiting)
-    throw new OperationError(`${VERIFICATION_FILE} has changes waiting for your approval: settle them in Approvals first`);
+    throw new OperationError(
+      `${VERIFICATION_FILE} has changes waiting for your approval: settle them in Approvals first`,
+    );
   if (o.base !== now.hash) throw new StaleChecks(`${VERIFICATION_FILE} changed since you opened it; look again`);
   const fixes = shownFixes(o.readiness, o.fixes);
   const badFolder = await foldersProblem(fixes, o.files);
@@ -69,7 +71,9 @@ export async function applyReadinessFixes(o: {
   };
   for (const fix of fixes) applyFix(c, fix);
   if (c.unknown.length && !o.acknowledged)
-    throw new OperationError(`${c.unknown.join(', ')}: Teamtrail doesn't know this program; confirm you know what it runs`);
+    throw new OperationError(
+      `${c.unknown.join(', ')}: Teamtrail doesn't know this program; confirm you know what it runs`,
+    );
   const setup = Object.keys(c.setup).length ? { setup: c.setup } : {};
   const text = `${JSON.stringify({ ...raw, v: 1, checks: c.checks, run: c.run, ...setup }, null, 2)}\n`;
   const subject = `repo readiness, in the Lookout: ${c.done.join('; ')}`;

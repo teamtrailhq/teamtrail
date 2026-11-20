@@ -23,6 +23,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.6',
+    date: '2026-11-20',
+    items: [
+      'Settings → Project → Repo readiness says whether Teamtrail can check work in your repo on this machine: checks, programs, installs, a browser, services and variable names, with a fix in one click where it is an approval',
+      'While something blocks, agents start no new implementation work until you fix it or start the trail anyway; research and reviews go on, and Undo is one click',
+    ],
+  },
+  {
     version: '0.67.3',
     date: '2026-11-20',
     items: ['The teamtrail wordmark ends in a blaze block cursor instead of a full stop'],

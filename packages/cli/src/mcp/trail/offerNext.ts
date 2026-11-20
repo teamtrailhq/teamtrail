@@ -76,7 +76,11 @@ export async function offerNext(
   ];
   const later = gates.models.map((r) => r.ticket.id);
   const { ticket, held } = pickNext(ctx, snap, { types, exclude, later });
-  const fields = { ...reviewLimitField(gates.review), ...mainChecksField(gates.main), ...readinessField(gates.readiness) };
+  const fields = {
+    ...reviewLimitField(gates.review),
+    ...mainChecksField(gates.main),
+    ...readinessField(gates.readiness),
+  };
   if (ticket) return { ticket, fields, gates };
   return { reason: whyNothing(ctx, snap, { ...gates, held }), fields, gates };
 }

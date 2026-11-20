@@ -28,6 +28,7 @@
 @import './diff-rules.css';
 @import './gates.css';
 @import './main-checks.css';
+@import './readiness.css';
 @import './guide.css';
 @import './mark-and-voices.css';
 @import './decisions.css';

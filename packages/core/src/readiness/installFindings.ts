@@ -9,7 +9,8 @@ import { setupStepName } from './setupStepName';
 import type { ReadinessInput } from './types';
 
 const shellWord = (w: string) => (/^[\w./@:=+-]+$/.test(w) ? w : `'${w.replace(/'/g, `'\\''`)}'`);
-const commandIn = (dir: string, run: string[]) => `${dir ? `cd ${shellWord(dir)} && ` : ''}${run.map(shellWord).join(' ')}`;
+const commandIn = (dir: string, run: string[]) =>
+  `${dir ? `cd ${shellWord(dir)} && ` : ''}${run.map(shellWord).join(' ')}`;
 
 /** The approved setup step that installs this unit, if one does (same folder, same program). */
 function setupFor(input: ReadinessInput, unit: RepoUnit) {

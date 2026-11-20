@@ -128,6 +128,7 @@ export { operatorAction, type OperatorAction, type OperatorRequest } from './ver
 export { approvalItems, type ApprovalItem } from './verification/approvals';
 export { readReviewLoad } from './reviewLoad/readReviewLoad';
 export { readReadiness } from './readiness/readReadiness';
+export { readinessHost } from './readiness/readinessHost';
 export { readinessHold, type ReadinessHold } from './readiness/readinessHold';
 export * from './checksOnMainHost';
 export { rerunChecks } from './verification/operatorRerun';

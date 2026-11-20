@@ -6,8 +6,8 @@ import { checkEnv } from '../verification/checkEnv';
 import { dependencyFolder } from './dependencyFolder';
 import { findBrowser } from './findBrowser';
 import { findProgram } from './findProgram';
-import { programVersion, shimOf } from './programVersion';
 import { profileNeeds } from './profileNeeds';
+import { programVersion, shimOf } from './programVersion';
 import { serviceReachable } from './serviceReachable';
 import { toolchainProgram } from './toolchainProgram';
 

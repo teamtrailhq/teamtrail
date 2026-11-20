@@ -1,6 +1,6 @@
+import { BRAND } from '../model/brand';
 import type { LocalProbes, ReadinessFinding } from '../model/readiness';
 import type { RepoProfile } from '../model/repoProfile';
-import { BRAND } from '../model/brand';
 import { CHECK_ENV } from '../verification/checkEnv';
 import { folderLabel } from './folderLabel';
 import { profileNeeds } from './profileNeeds';
@@ -58,7 +58,9 @@ function variable(o: { name: string; why: string; secret: boolean; withheld: boo
     level: 'warns',
     text: `${o.name} ${state}`,
     why: `${o.why}${secret}`,
-    howTo: [`${CHECK_ENV}="${o.name}" ${BRAND.slug}   (start ${BRAND.slug} with it set and named; names only, never in the repo)`],
+    howTo: [
+      `${CHECK_ENV}="${o.name}" ${BRAND.slug}   (start ${BRAND.slug} with it set and named; names only, never in the repo)`,
+    ],
   };
 }
 

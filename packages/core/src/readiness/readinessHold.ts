@@ -10,6 +10,8 @@ import { readinessReason } from './readinessReason';
 export interface ReadinessHold {
   findings: ReadinessFinding[];
   held: Ticket[];
+  /** Whether the findings hold any open implementation work on the trail, ready now or later. */
+  waits: boolean;
   reason?: string;
   /** The trail lead's Start anyway, when they made one. */
   startedAnyway?: ReadinessChoice;
@@ -27,7 +29,10 @@ function checksOf(root: string, snap: MapSnapshot) {
 export function readinessHold(o: { root: string; snap: MapSnapshot; readiness: RepoReadiness }): ReadinessHold {
   const choice = readinessChoice(o.root, o.snap.map.id);
   const findings = holdingFindings(o.readiness, choice);
-  const held = readinessHeld({ snap: o.snap, findings, checksOf: checksOf(o.root, o.snap) });
+  const checks = checksOf(o.root, o.snap);
+  const held = readinessHeld({ snap: o.snap, findings, checksOf: checks });
+  const waits =
+    held.length > 0 || readinessHeld({ snap: o.snap, findings, checksOf: checks, among: 'open' }).length > 0;
   const reason = held.length ? readinessReason(findings) : undefined;
-  return { findings, held, ...(reason ? { reason } : {}), ...(choice ? { startedAnyway: choice } : {}) };
+  return { findings, held, waits, ...(reason ? { reason } : {}), ...(choice ? { startedAnyway: choice } : {}) };
 }

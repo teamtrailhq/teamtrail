@@ -83,7 +83,10 @@ function notReady() {
   git('init', '-q', '-b', 'main');
   git('add', '.');
   git('commit', '-qm', 'main');
-  fs.writeFileSync(path.join(root, 'verification.json'), JSON.stringify({ v: 1, default: 'checks', checks: {}, run: [] }));
+  fs.writeFileSync(
+    path.join(root, 'verification.json'),
+    JSON.stringify({ v: 1, default: 'checks', checks: {}, run: [] }),
+  );
   approveAllHere(root);
 }
 
@@ -238,7 +241,7 @@ describe('every tool that suggests work agrees with claim_ticket', () => {
 });
 
 describe('repo readiness', () => {
-  it("holds implementation work until the trail lead starts the trail anyway, and a waiting agent wakes on it", async () => {
+  it('holds implementation work until the trail lead starts the trail anyway, and a waiting agent wakes on it', async () => {
     notReady();
     const call = await connect();
     const m = await chart(call, { name: 'readiness', offers: null });

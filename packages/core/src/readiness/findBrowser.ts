@@ -4,7 +4,13 @@ import path from 'node:path';
 import { findProgram } from './findProgram';
 
 /** Variables browser test runners read for the browser to start. */
-const VARS = ['CHROME', 'CHROME_BIN', 'CHROME_PATH', 'PUPPETEER_EXECUTABLE_PATH', 'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'];
+const VARS = [
+  'CHROME',
+  'CHROME_BIN',
+  'CHROME_PATH',
+  'PUPPETEER_EXECUTABLE_PATH',
+  'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH',
+];
 
 const MAC = [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',

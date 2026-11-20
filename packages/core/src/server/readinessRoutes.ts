@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { activeTrails } from '../model/activeTrails';
+import type { ReadinessHost, ReadinessView } from '../model/readiness';
 import { OperationError } from '../planning/operations/operationError';
 import { applyReadinessFixes } from '../readiness/applyReadinessFixes';
 import { readinessHold } from '../readiness/readinessHold';
@@ -13,16 +14,16 @@ import { ELSEWHERE } from './thisMachineRoutes';
 import { crossSite } from './trackerErrors';
 
 export interface ReadinessRouteContext extends RouteContext {
-  /** False where checks run elsewhere (a server with its own runner): nothing about this machine is probed. */
-  probe: boolean;
+  /** Where readiness is read and probed (the bridge's: this machine unless a runner runs the checks). */
+  readiness: ReadinessHost;
   local: boolean;
 }
 
 const read = (ctx: ReadinessRouteContext, fresh = false) =>
-  readReadiness({ root: ctx.root, files: ctx.repoFiles?.(), probe: ctx.probe, fresh });
+  readReadiness({ root: ctx.root, files: ctx.readiness.files(), probe: ctx.readiness.probe, fresh });
 
 /** Readiness and, per active trail, how many ready tickets it holds and the trail lead's Start anyway. */
-async function view(ctx: ReadinessRouteContext, fresh: boolean) {
+async function view(ctx: ReadinessRouteContext, fresh: boolean): Promise<ReadinessView> {
   const readiness = await read(ctx, fresh);
   const adapter = await ctx.active();
   const maps = activeTrails(await adapter.listMaps());
@@ -30,7 +31,7 @@ async function view(ctx: ReadinessRouteContext, fresh: boolean) {
     maps.map(async (m) => {
       const hold = readinessHold({ root: ctx.root, snap: await adapter.loadMap(m.id), readiness });
       const started = hold.startedAnyway ? { startedAnyway: hold.startedAnyway } : {};
-      return { mapId: m.id, title: m.title, held: hold.held.length, ...started };
+      return { mapId: m.id, title: m.title, held: hold.held.length, waits: hold.waits, ...started };
     }),
   );
   return { readiness, trails };
@@ -55,7 +56,7 @@ async function fix(ctx: ReadinessRouteContext, req: IncomingMessage, res: Server
       fixes: fixesOf(b.fixes),
       base: b.base,
       acknowledged: b.acknowledged === true,
-      files: ctx.repoFiles?.(),
+      files: ctx.readiness.files(),
       by: personOfRequest(req)?.name ?? 'trail lead',
     });
   } catch (e) {
