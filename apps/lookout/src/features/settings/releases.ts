@@ -23,6 +23,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.2',
+    date: '2026-11-20',
+    items: ['Guide icons are the symbol alone, on the page itself, with no tile or border around them'],
+  },
+  {
     version: '0.67.1',
     date: '2026-11-20',
     items: [
