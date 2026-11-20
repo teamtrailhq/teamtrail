@@ -24,10 +24,22 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.67.17',
+    version: '0.67.18',
     date: '2026-11-20',
     items: [
       "The map's destination is a finish square: it fills green when the trail is verified, rose when its checks fail",
+    ],
+  },
+  {
+    version: '0.67.17',
+    date: '2026-11-20',
+    items: ["When Scout in Slack can't reach your Teamtrail, it tells you to start it with `npx teamtrail`"],
+  },
+  {
+    version: '0.67.16',
+    date: '2026-11-20',
+    items: [
+      'A long question from an agent leads with a one-line headline, with the question in full under it and its line breaks kept',
     ],
   },
   {
@@ -182,14 +194,6 @@ export const RELEASES: Release[] = [
     date: '2026-11-19',
     items: [
       "An answer passed on from an agent's chat no longer takes the place of yours: it guides the agent, and the question stays open in the Lookout and Slack until you answer, and your answer is the one that decides",
-    ],
-  },
-  {
-    version: '0.66.16',
-    date: '2026-11-19',
-    items: [
-      'Hands-off on a phone: every kind of Needs you fits the screen, with actions big enough to tap, and each row acts on what it asks',
-      'Teamtrail Cloud: Pause shows Stopping… until the agents have stopped, and Start shows Starting… until one is working',
     ],
   },
   ...RECENT_RELEASES,

@@ -1,5 +1,6 @@
 import {
   attention,
+  questionHeadline,
   DISCOVERY_TYPES,
   flakyReason,
   guardReason,
@@ -31,7 +32,7 @@ export function standingInput(v: LoadedTicket): StandingInput {
   return {
     state: v.state,
     now: v.now,
-    question: v.question && { agent: v.question.agent, at: v.question.at },
+    question: v.question && questionOf(v.question),
     item: first && {
       kind: first.kind,
       edge: edgeFor(first, v.interrupting.includes(first.id)),
@@ -52,6 +53,12 @@ export function standingInput(v: LoadedTicket): StandingInput {
     openBlockers: t.blockedBy.filter((b) => byId.get(b)?.state === 'open').map((b) => byId.get(b)?.key ?? b),
     closedAt: t.closedAt,
   };
+}
+
+/** The open question as the state line says it: its headline, and the question in full when that says more. */
+function questionOf(q: NonNullable<LoadedTicket['question']>): StandingInput['question'] {
+  const headline = questionHeadline(q);
+  return { agent: q.agent, at: q.at, headline: headline.text, ...(headline.whole ? {} : { body: q.text }) };
 }
 
 function briefHeld(v: LoadedTicket): StandingInput['briefHeld'] {

@@ -1,5 +1,6 @@
 import {
   decisionsByRisk,
+  questionHeadline,
   type PendingQuestion,
   type SessionInfo,
   type Briefing,
@@ -42,7 +43,7 @@ export function BriefingDialog(
   const multi = (b?.trails.length ?? 0) > 1;
   const phone = bp === 'mobile';
   const ticketTitle = (q: PendingQuestion) =>
-    (q.ticketId && props.snaps[q.mapId]?.tickets.find((x) => x.id === q.ticketId)?.title) || q.text;
+    (q.ticketId && props.snaps[q.mapId]?.tickets.find((x) => x.id === q.ticketId)?.title) || questionHeadline(q).text;
   const ticketKey = (q: PendingQuestion) =>
     (q.ticketId && props.snaps[q.mapId]?.tickets.find((x) => x.id === q.ticketId)?.key) || q.agent;
 
@@ -80,7 +81,7 @@ export function BriefingDialog(
             k={ticketKey(q)}
             text={ticketTitle(q)}
             meta={b!.now - q.at < 60_000 ? 'now' : dur(b!.now - q.at)}
-            title={q.text}
+            title={questionHeadline(q).text}
             onClick={() => props.onAnswer(q)}
           />
         ))}

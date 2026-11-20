@@ -78,13 +78,22 @@ function held(s: StandingInput): Standing {
   };
 }
 
-function asked(s: StandingInput, q: { agent: string; at: number }): Standing {
+/** An open question: its headline as the title, who asks, and the question in full under it when it says more. */
+function asked(s: StandingInput, q: NonNullable<StandingInput['question']>): Standing {
   const edge = s.item?.kind === 'question' ? s.item.edge : 'urgent';
+  if (!q.headline)
+    return {
+      edge,
+      title: `Waiting on you: answer ${q.agent}'s question`,
+      parts: [since(s.now, q.at)],
+      primary: 'answer',
+    };
   return {
     edge,
-    title: `Waiting on you: answer ${q.agent}'s question`,
-    parts: [since(s.now, q.at)],
+    title: `Waiting on you: ${q.headline}`,
+    parts: [`${q.agent} asks`, since(s.now, q.at)],
     primary: 'answer',
+    ...(q.body ? { body: q.body } : {}),
   };
 }
 
