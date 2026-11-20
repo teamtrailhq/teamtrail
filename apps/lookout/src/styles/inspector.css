@@ -172,7 +172,7 @@
   color: var(--text-hi);
 }
 .more-item.danger {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 
 /* Sections: a label with an optional Edit link, then content that only reads. */

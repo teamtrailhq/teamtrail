@@ -1,15 +1,17 @@
 /* Fonts and base elements. Colours live in theme.css, sizes and shared components in design-system.css. */
 :root {
-  /* Three fonts (src/fonts.ts). Londrina Solid: --display for the wordmark and titles. Figtree: --sans for
-   * everything read, --label for small caps labels, --strong for bold text and buttons, --data for numbers that
-   * change (tabular digits). JetBrains Mono: --mono for keys, ids, timers and code. */
-  --display: 'Londrina Solid', 'Figtree Variable', sans-serif;
-  --sans: 'Figtree Variable', system-ui, sans-serif;
+  /* Two fonts (src/fonts.ts): Inter for everything read and JetBrains Mono for keys, ids, timers and code. --display
+   * is Inter at 600 with tight tracking, for the wordmark and titles; --label is for small caps labels, --strong for
+   * bold text and buttons, --data for numbers that change (tabular digits). */
+  --sans: 'Inter Variable', system-ui, sans-serif;
+  --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --display: var(--sans);
+  --display-weight: 600;
+  --ls-display: -0.02em;
   --label: var(--sans);
   --strong: var(--sans);
   --data: var(--sans);
-  --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
-  /* Type voices: people and agents read in Figtree (bubbles and colors tell them apart); tool data is mono. */
+  /* Type voices: people and agents read in the sans (bubbles and colors tell them apart); tool data is mono. */
   --voice-human: var(--sans);
   --voice-agent: var(--sans);
   --voice-data: var(--mono);
@@ -39,7 +41,6 @@ body {
   font-family: var(--sans);
   font-size: var(--fs-body);
   line-height: var(--lh-body);
-  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
 }
@@ -81,4 +82,15 @@ code {
   color: var(--text-hi);
   background: var(--panel2);
   padding: 1px 5px;
+}
+/* Inter's tabular figures also space out hyphens and colons, so running text keeps proportional figures and only
+ * numbers that change take tabular digits: the --data places here, and the rules that ask for them themselves. */
+.t-data,
+.readout,
+.usage,
+.bf-tile b,
+.report-stats b,
+.report-tickets .lead,
+.mi-progress {
+  font-variant-numeric: tabular-nums;
 }

@@ -23,11 +23,20 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.66.23',
+    version: '0.67.1',
     date: '2026-11-20',
     items: [
-      'A new look for Teamtrail, Scout and the guides: square tiles, near-black and white, and one blaze accent',
+      'Scout, the logo and the guide icons are redrawn for the new look: Scout in graphite, white and blaze, square tiles, flat guide icons',
       'The favicon is the blaze t. tile, the same on light and dark browser tabs',
+    ],
+  },
+  {
+    version: '0.67.0',
+    date: '2026-11-20',
+    items: [
+      'A new look: a dark-first Lookout with near-black surfaces, hairline borders, square corners and one blaze accent',
+      'Inter and JetBrains Mono throughout; the map is a clean dot-grid canvas, and the path agents walked is drawn in blaze',
+      'Colours keep one meaning each: blaze is work in progress and your selection, rose needs you, green is verified or done',
     ],
   },
   {
@@ -172,14 +181,6 @@ export const RELEASES: Release[] = [
       'Slack: each question’s card shows its own answer; one passed on in an agent’s chat says it decided nothing',
       'Slack: archiving a trail no longer closes cards for what still waits on you, and a card that becomes high risk switches to Open in Lookout',
       'Checks on main run again when main moves after a failure, and say so meanwhile; trail checks read reverts on the commit they run on',
-    ],
-  },
-  {
-    version: '0.66.3',
-    date: '2026-11-18',
-    items: [
-      'A merged pull request shows as merged on its ticket as soon as it merges, and nothing offers to merge it again',
-      'Teamtrail Cloud: checks on main run on your repository’s main, never on a commit from somewhere else',
     ],
   },
   ...NEWER_RELEASES,

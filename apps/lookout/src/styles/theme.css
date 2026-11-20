@@ -1,208 +1,181 @@
-/* Colours, in two themes: day and night (the default setting). Every colour in the app comes from here.
- * `data-theme` on <html> is set from the Appearance setting; "auto" removes it and follows the OS.
- * Red (--urgent) only ever means "needs you now". Terrain and map colours stay faint so tickets and the trail lead. */
+/* Colours, in two themes: day (light) and night (dark, the default setting). Every colour in the app comes from here.
+ * `data-theme` on <html> is set from the Appearance setting; "auto" removes it and
+ * follows the OS. Near-black or white surfaces, hairline borders and one accent: the accent marks selection, work in
+ * progress and primary buttons; green is only verified or done; red (--urgent) only ever means "needs you now".
+ * The accent is blaze, the paint mark that shows a trail; red is a rose so it never reads as the accent. By day both
+ * are darker shades: blaze keeps at least 4.5:1 as text on every panel and on its own tint, rose 4.8:1 on white. */
 :root {
   color-scheme: light;
   --tt-keyline: transparent;
-  --wordmark-ink: #16302a;
-  --wordmark-dot: #e07a2f;
-  --bg: #f3f1e7;
-  --panel: #fbfaf4;
-  --panel2: #f2efe2;
-  --panel-solid: #fbfaf4;
-  --sunken: #f2efe2;
-  --scrim: rgba(40, 44, 34, 0.45);
-  --shadow-color: rgba(58, 52, 34, 0.28);
-  --line-rgb: 76, 78, 58;
-  --line: rgba(var(--line-rgb), 0.2);
-  --line2: rgba(var(--line-rgb), 0.42);
-  --text: #38443c;
-  --text-hi: #1b2620;
-  --dim: #5e6a60;
-  --faint: #8c9284;
+  --wordmark-ink: #0e0f11;
+  --wordmark-dot: var(--accent);
+  --bg: #ffffff;
+  --panel: #fafafa;
+  --panel2: #f2f2f3;
+  --panel-solid: #fafafa;
+  --sunken: #f4f4f5;
+  --scrim: rgba(10, 10, 11, 0.4);
+  --shadow-color: rgba(0, 0, 0, 0.12);
+  --line-rgb: 0, 0, 0;
+  --accent-bg-alpha: 0.07;
+  --line: rgba(var(--line-rgb), 0.08);
+  --line2: rgba(var(--line-rgb), 0.14);
+  --text: #3a3d44;
+  --text-hi: #0e0f11;
+  --dim: #62666e;
+  --faint: #8d9199;
 
-  --accent-rgb: 34, 98, 122; /* lake: ready work, links */
-  --accent: rgb(var(--accent-rgb));
-  --accent-bg: rgba(var(--accent-rgb), 0.08);
-  --amber-rgb: 154, 95, 12; /* held up or at risk */
-  --decided-rgb: 63, 107, 69; /* moss: an agent is working on it (map cards), passed checks */
-  --urgent-rgb: 196, 48, 31;
-  --primary: #3f6b45;
-  --primary-hover: #345a3a;
-  --on-primary: #ffffff;
-  --on-accent: #1b120b;
+  --accent-rgb: 191, 57, 0; /* blaze, day: #BF3900, 5.5:1 on white, 4.9:1 on --panel2 */
+  --on-primary: #ffffff; /* 5.5:1 on the accent */
+  --amber-rgb: 178, 104, 0; /* held up or at risk */
+  --decided-rgb: 14, 159, 99; /* verified, done, passed checks */
+  --urgent-rgb: 214, 45, 89; /* rose, day: #D62D59, the solid (fills, dots, borders), as on the website */
+  /* Rose as text by day, deeper so it keeps 4.5:1 on every surface: 6.3:1 on white, 5.7:1 on --panel2, 4.8:1 on
+   * its own 12% fill over --panel2. At night text uses the solid rose. */
+  --urgent-ink: #b81e48;
   --on-urgent: #ffffff;
   --on-amber: #ffffff;
 
-  --map-bg: #ede7d2;
-  --map-grid: rgba(27, 38, 32, 0.07);
-  --map-grass: #e4e4c8;
-  --map-water: #cfe0dd;
-  --map-pine: #b4c89e;
-  --map-pine2: #a3bb8d;
-  --map-oak: #c3d2a6;
-  --map-oak2: #abc08f;
-  --map-trunk: #bfae8e;
-  --map-rock: #d2cbb5;
-  --map-rock2: #bfb8a1;
-  --mark: #c8581e;
-  --map-card: #fbfaf4;
+  /* The map is a plain canvas with a dot grid. */
+  --map-bg: var(--bg);
+  --map-grid: rgba(0, 0, 0, 0.12);
+  --mark: var(--accent);
+  --map-card: #ffffff;
   --map-card-line: var(--line2);
   --map-card-quiet: var(--faint);
   --map-card-meta: var(--dim);
-  /* Chips on a map card: a quiet fill, tinted for held up and needs you. */
-  --map-chip: rgba(var(--line-rgb), 0.16);
-  --map-chip-warn: rgba(var(--amber-rgb), 0.2);
-  --map-chip-urgent: rgba(var(--urgent-rgb), 0.16);
-  --map-card-urgent: var(--urgent);
+  /* Chips on a map card: a quiet flat fill, tinted for held up and needs you. */
+  --map-chip: rgba(var(--line-rgb), 0.05);
+  --map-chip-warn: rgba(var(--amber-rgb), 0.14);
+  --map-chip-urgent: rgba(var(--urgent-rgb), 0.12);
+  --map-card-urgent: var(--urgent-ink);
   --map-card-decided: rgb(var(--decided-rgb));
   /* Overlays over the map and the zones (overlays.css): a raised sheet, its edge, and what it casts. */
-  --surface-overlay: #fffef9;
-  --surface-overlay-2: #f2efe2;
-  --surface-overlay-line: rgba(var(--line-rgb), 0.42);
-  --surface-overlay-shadow: 0 10px 30px rgba(58, 52, 34, 0.28);
+  --surface-overlay: #ffffff;
+  --surface-overlay-2: #f6f6f7;
+  --surface-overlay-line: rgba(0, 0, 0, 0.14);
+  --surface-overlay-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03), 0 12px 32px rgba(0, 0, 0, 0.12);
   --overlay-dim: var(--dim);
-  --overlay-faint: var(--faint);
+  --overlay-faint: #757981;
   --overlay-urgent-rgb: var(--urgent-rgb);
+  --overlay-urgent-ink: var(--urgent-ink);
 }
 
 /* The same values twice: browsers can't share a block between a media query and an attribute selector. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='day']) {
-    --tt-keyline: #f1e8d3;
-    --wordmark-ink: #eef0e4;
-    --wordmark-dot: #e8833a;
     color-scheme: dark;
-    --bg: #101815;
-    --panel: #17211c;
-    --panel2: #1f2c25;
-    --panel-solid: #17211c;
-    --sunken: #131c18;
-    --scrim: rgba(4, 8, 6, 0.65);
-    --shadow-color: rgba(0, 0, 0, 0.55);
-    --line-rgb: 150, 170, 155;
-    --line: rgba(var(--line-rgb), 0.16);
-    --line2: rgba(var(--line-rgb), 0.32);
-    --text: #c3cdc1;
-    --text-hi: #eaeee3;
-    --dim: #93a497;
-    --faint: #5f6e63;
-    --accent-rgb: 127, 195, 216;
-    --amber-rgb: 224, 169, 74;
-    --decided-rgb: 143, 191, 132;
-    --urgent-rgb: 255, 107, 92;
-    --primary: #8fbf84;
-    --primary-hover: #a4cf99;
-    --on-primary: #101815;
-    --on-urgent: #1b0f0d;
-    --on-amber: #1b120b;
-    --map-bg: #0f1613;
-    --map-grid: rgba(234, 238, 227, 0.05);
-    --map-grass: #16211a;
-    --map-water: #14272c;
-    --map-pine: #26392c;
-    --map-pine2: #2f4534;
-    --map-oak: #2a3f2e;
-    --map-oak2: #223326;
-    --map-trunk: #2c2a22;
-    --map-rock: #27322c;
-    --map-rock2: #303c35;
-    --mark: #e8833a;
-    /* A raised, neutral card on the dark map (2.2:1 against it), so cards stand out as they do by day; chips are
-     * darker wells with brighter text (every text colour at least 5.5:1 on its chip). */
-    --map-card: #434f4b;
-    --map-card-line: rgba(226, 234, 228, 0.38);
-    --map-card-quiet: #b0beb3;
-    --map-card-meta: #c2cfc5;
-    --map-chip: #303936;
-    --map-chip-warn: #3e3926;
-    --map-chip-urgent: #3e2d29;
-    --map-card-urgent: #ff9488;
-    --map-card-decided: #a3d197;
-    --surface-overlay: #303836;
-    --surface-overlay-2: #3a4340;
-    --surface-overlay-line: rgba(226, 234, 228, 0.3);
-    --surface-overlay-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.7);
-    --overlay-dim: #a3b2a7;
-    --overlay-faint: #97a59b;
-    --overlay-urgent-rgb: 255, 148, 136;
+    --tt-keyline: rgba(255, 255, 255, 0.14);
+    --wordmark-ink: #f4f4f6;
+    --bg: #0a0a0b;
+    --panel: #0f0f11;
+    --panel2: #161618;
+    --panel-solid: #0f0f11;
+    --sunken: #08080a;
+    --scrim: rgba(0, 0, 0, 0.6);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --line-rgb: 255, 255, 255;
+    --accent-bg-alpha: 0.12;
+    --line: rgba(var(--line-rgb), 0.08);
+    --line2: rgba(var(--line-rgb), 0.14);
+    --text: #d7d8dc;
+    --text-hi: #f4f4f6;
+    --dim: #9a9ea6;
+    --faint: #6b7079;
+    --accent-rgb: 255, 107, 44; /* blaze, night: #FF6B2C, 7.0:1 on --bg */
+    --on-primary: #0a0a0b; /* 7.0:1 on the accent (white would be 2.8:1) */
+    --amber-rgb: 240, 170, 70;
+    --decided-rgb: 63, 207, 142;
+    --urgent-rgb: 255, 77, 122; /* rose, night: #FF4D7A */
+    --urgent-ink: rgb(255, 77, 122);
+    --on-urgent: #0a0a0b;
+    --on-amber: #0a0a0b;
+    --map-grid: rgba(255, 255, 255, 0.09);
+    --map-card: #141416;
+    --map-card-line: rgba(255, 255, 255, 0.14);
+    --map-card-quiet: #8a8e96;
+    --map-card-meta: var(--dim);
+    --map-chip: rgba(255, 255, 255, 0.06);
+    --map-chip-warn: rgba(var(--amber-rgb), 0.16);
+    --map-chip-urgent: rgba(var(--urgent-rgb), 0.14);
+    --map-card-urgent: rgb(255, 122, 155);
+    --surface-overlay: #161618;
+    --surface-overlay-2: #1c1c1f;
+    --surface-overlay-line: rgba(255, 255, 255, 0.14);
+    --surface-overlay-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.55);
+    --overlay-dim: #a3a7af;
+    --overlay-faint: #868a93;
+    --overlay-urgent-rgb: 255, 122, 155;
+    --overlay-urgent-ink: rgb(255, 122, 155);
   }
 }
 :root[data-theme='night'] {
-  --tt-keyline: #f1e8d3;
-  --wordmark-ink: #eef0e4;
-  --wordmark-dot: #e8833a;
   color-scheme: dark;
-  --bg: #101815;
-  --panel: #17211c;
-  --panel2: #1f2c25;
-  --panel-solid: #17211c;
-  --sunken: #131c18;
-  --scrim: rgba(4, 8, 6, 0.65);
-  --shadow-color: rgba(0, 0, 0, 0.55);
-  --line-rgb: 150, 170, 155;
-  --line: rgba(var(--line-rgb), 0.16);
-  --line2: rgba(var(--line-rgb), 0.32);
-  --text: #c3cdc1;
-  --text-hi: #eaeee3;
-  --dim: #93a497;
-  --faint: #5f6e63;
-  --accent-rgb: 127, 195, 216;
-  --amber-rgb: 224, 169, 74;
-  --decided-rgb: 143, 191, 132;
-  --urgent-rgb: 255, 107, 92;
-  --primary: #8fbf84;
-  --primary-hover: #a4cf99;
-  --on-primary: #101815;
-  --on-urgent: #1b0f0d;
-  --on-amber: #1b120b;
-  --map-bg: #0f1613;
-  --map-grid: rgba(234, 238, 227, 0.05);
-  --map-grass: #16211a;
-  --map-water: #14272c;
-  --map-pine: #26392c;
-  --map-pine2: #2f4534;
-  --map-oak: #2a3f2e;
-  --map-oak2: #223326;
-  --map-trunk: #2c2a22;
-  --map-rock: #27322c;
-  --map-rock2: #303c35;
-  --mark: #e8833a;
-  /* A raised, neutral card on the dark map (2.2:1 against it), so cards stand out as they do by day; chips are
-   * darker wells with brighter text (every text colour at least 5.5:1 on its chip). */
-  --map-card: #434f4b;
-  --map-card-line: rgba(226, 234, 228, 0.38);
-  --map-card-quiet: #b0beb3;
-  --map-card-meta: #c2cfc5;
-  --map-chip: #303936;
-  --map-chip-warn: #3e3926;
-  --map-chip-urgent: #3e2d29;
-  --map-card-urgent: #ff9488;
-  --map-card-decided: #a3d197;
-  --surface-overlay: #303836;
-  --surface-overlay-2: #3a4340;
-  --surface-overlay-line: rgba(226, 234, 228, 0.3);
-  --surface-overlay-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.7);
-  --overlay-dim: #a3b2a7;
-  --overlay-faint: #97a59b;
-  --overlay-urgent-rgb: 255, 148, 136;
+  --tt-keyline: rgba(255, 255, 255, 0.14);
+  --wordmark-ink: #f4f4f6;
+  --bg: #0a0a0b;
+  --panel: #0f0f11;
+  --panel2: #161618;
+  --panel-solid: #0f0f11;
+  --sunken: #08080a;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --line-rgb: 255, 255, 255;
+  --accent-bg-alpha: 0.12;
+  --line: rgba(var(--line-rgb), 0.08);
+  --line2: rgba(var(--line-rgb), 0.14);
+  --text: #d7d8dc;
+  --text-hi: #f4f4f6;
+  --dim: #9a9ea6;
+  --faint: #6b7079;
+  --accent-rgb: 255, 107, 44; /* blaze, night: #FF6B2C, 7.0:1 on --bg */
+  --on-primary: #0a0a0b; /* 7.0:1 on the accent (white would be 2.8:1) */
+  --amber-rgb: 240, 170, 70;
+  --decided-rgb: 63, 207, 142;
+  --urgent-rgb: 255, 77, 122; /* rose, night: #FF4D7A */
+  --urgent-ink: rgb(255, 77, 122);
+  --on-urgent: #0a0a0b;
+  --on-amber: #0a0a0b;
+  --map-grid: rgba(255, 255, 255, 0.09);
+  --map-card: #141416;
+  --map-card-line: rgba(255, 255, 255, 0.14);
+  --map-card-quiet: #8a8e96;
+  --map-card-meta: var(--dim);
+  --map-chip: rgba(255, 255, 255, 0.06);
+  --map-chip-warn: rgba(var(--amber-rgb), 0.16);
+  --map-chip-urgent: rgba(var(--urgent-rgb), 0.14);
+  --map-card-urgent: rgb(255, 122, 155);
+  --surface-overlay: #161618;
+  --surface-overlay-2: #1c1c1f;
+  --surface-overlay-line: rgba(255, 255, 255, 0.14);
+  --surface-overlay-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.55);
+  --overlay-dim: #a3a7af;
+  --overlay-faint: #868a93;
+  --overlay-urgent-rgb: 255, 122, 155;
+  --overlay-urgent-ink: rgb(255, 122, 155);
 }
 
 /* Derived: the same in both themes. Ticket states read as on the map cards (features/map/nodeTone.ts):
- * green working, grey ready, amber held up, red only when it needs you now. `--st-decided` stays the colour
- * of a passed check or a done step; done tickets themselves step back (`.st-decided` in map.css). */
+ * the accent for work in progress, grey ready, amber held up, red only when it needs you now, green done.
+ * `--st-decided` is the colour of a passed check or a done step; done tickets themselves step back (map.css). */
 :root {
+  --accent: rgb(var(--accent-rgb));
+  --primary: var(--accent);
+  --accent-bg: rgba(var(--accent-rgb), var(--accent-bg-alpha));
+  --working-rgb: var(--accent-rgb);
+  --primary-hover: color-mix(in srgb, var(--primary) 86%, var(--text-hi));
+  --on-accent: var(--on-primary);
   --st-frontier: var(--dim);
-  --st-claimed: rgb(var(--decided-rgb));
+  --st-claimed: rgb(var(--working-rgb));
   --st-decided: rgb(var(--decided-rgb));
   --st-blocked: var(--faint);
   --st-parked: var(--faint);
   --st-oos: var(--faint);
-  --st-verifying: rgb(var(--decided-rgb));
+  --st-verifying: rgb(var(--working-rgb));
   --st-rework: var(--amber);
-  --st-held: var(--urgent);
+  --st-held: var(--urgent-ink);
   --urgent: rgb(var(--urgent-rgb));
-  --urgent-bg: rgba(var(--urgent-rgb), 0.1);
+  --urgent-bg: rgba(var(--urgent-rgb), 0.12);
   --amber: rgb(var(--amber-rgb));
   --brand-ops: var(--mark);
 }

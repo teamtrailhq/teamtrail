@@ -75,17 +75,19 @@ The Changelog tab reads `apps/lookout/src/features/settings/releases.ts` (`RELEA
 
 ## Type, colour and the Scout mark
 
-Three faces, defined as CSS variables at the top of `src/styles/base.css` and loaded in `src/fonts.ts` (all SIL OFL 1.1 via Fontsource):
+Two faces, defined as CSS variables at the top of `src/styles/base.css` and loaded in `src/fonts.ts` (both SIL OFL 1.1 via Fontsource):
 
 | Variable | Face | Used for |
 | --- | --- | --- |
-| `--display` | Londrina Solid | the wordmark, titles and zone heroes; Scout's own lines (`--voice-scout`) |
-| `--sans` | Figtree | everything read; `--label`, `--strong` and `--data` (tabular digits) build on it |
+| `--sans` | Inter | everything read; `--label`, `--strong` and `--data` (tabular digits) build on it |
+| `--display` | Inter at 600 (`--display-weight`), tight tracking (`--ls-display`) | the wordmark, titles and zone heroes; Scout's own lines (`--voice-scout`) |
 | `--mono` | JetBrains Mono | keys, ids, timers and code |
 
-Voices: people and agents both read in Figtree (`--voice-human`, `--voice-agent`; bubbles and colours tell them apart), tool and tracker data is mono (`--voice-data`), and Scout's briefing and onboarding lines use the title face (`--voice-scout`).
+The `teamtrail.` wordmark (`src/components/ui/Wordmark.tsx`) is always Inter 600 with the blaze dot (`--wordmark-ink`, `--wordmark-dot`).
 
-Colour: the base palette is a desaturated blue / orange set (`--accent-rgb`, `--claimed-rgb`, `--amber-rgb`, `--decided-rgb`, `--line-rgb`). Saturated colour (`--urgent`) is reserved for warnings, waiting on you and danger.
+Voices: people and agents both read in Inter (`--voice-human`, `--voice-agent`; bubbles and colours tell them apart), tool and tracker data is mono (`--voice-data`), and Scout's briefing and onboarding lines use the title face (`--voice-scout`).
+
+Colour (`src/styles/theme.css`): near-black and white surfaces with one accent, blaze (`--accent-rgb`), for work in progress and your selection; rose (`--urgent`, `--urgent-ink`) only for what needs you; green (`--decided-rgb`) for verified or done; amber (`--amber-rgb`) for work held up or at risk.
 
 The Scout mark (`src/components/ui/ScoutMark.tsx`) is an open ring with an arrow tip. Its variants double as glyphs: `status` (tracker chip), `action` (primary buttons), `voice` (Scout log lines and chips) and `alert` (waiting on you). `npm run dev`, then open `/?mark-sheet` for the sheet of variants.
 

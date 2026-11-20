@@ -19,11 +19,11 @@
   display: flex;
   align-items: center;
 }
-/* The teamtrail. wordmark (components/ui/Wordmark.tsx): Inter 600 whatever the reading face, ink and dot per theme
- * in styles/theme.css. After the callers' title styles, so its face and tracking win. */
+/* The teamtrail. wordmark (components/ui/Wordmark.tsx): the display face (Inter 600) with the brand's tighter tracking,
+ * ink and dot per theme in styles/theme.css. After the callers' title styles, so its face and tracking win. */
 .tt-wordmark {
-  font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
-  font-weight: 600;
+  font-family: var(--display);
+  font-weight: var(--display-weight);
   letter-spacing: -0.035em;
   margin-right: 0;
   color: var(--wordmark-ink);
@@ -38,7 +38,7 @@
   background: var(--wordmark-dot);
 }
 
-/* ---------- Type voices: people and agents (Geist) vs tracker data (label face) ---------- */
+/* ---------- Type voices: people and agents (the sans) vs tracker data (label face) ---------- */
 .msg.voice-agent .msg-text {
   font-family: var(--voice-agent);
   letter-spacing: var(--ls-text);
@@ -52,7 +52,7 @@
   font-size: var(--fs-sm);
   letter-spacing: var(--ls-data);
   text-transform: uppercase;
-  color: var(--urgent);
+  color: var(--urgent-ink);
   line-height: 1;
   font-weight: 500;
 }
@@ -74,7 +74,8 @@
 }
 .ms-name {
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
   font-size: 64px;
   letter-spacing: 0.3em;
   color: var(--text-hi);
@@ -91,7 +92,8 @@
   align-items: center;
   gap: var(--sp-10);
   font-family: var(--display);
-  font-weight: 900;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display);
   font-size: var(--fs-title);
   color: var(--text);
 }
@@ -135,7 +137,7 @@
   color: var(--st-claimed);
 }
 .ms-alert {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .ms-status.ms-ok {
   color: var(--st-decided);
@@ -144,7 +146,7 @@
   color: var(--amber);
 }
 .ms-status.ms-error {
-  color: var(--urgent);
+  color: var(--urgent-ink);
 }
 .ms-status.ms-idle {
   color: var(--faint);

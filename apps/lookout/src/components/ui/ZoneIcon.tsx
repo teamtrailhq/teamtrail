@@ -1,4 +1,4 @@
-const ACCENT = '#c8581e';
+const ACCENT = 'var(--accent)';
 
 const ICONS = {
   map: (
