@@ -26,7 +26,8 @@ export const RELEASES: Release[] = [
     version: '0.67.7',
     date: '2026-11-20',
     items: [
-      'Settings → Verification shows the variables checks can read, the ones your tests seem to need and which they would not get; add a name there instead of TEAMTRAIL_CHECK_ENV (names only: values still come from your shell)',
+      'Settings → Project → Check variables lists the variables checks can read, the ones your tests seem to need and which they would not get; add a name there instead of TEAMTRAIL_CHECK_ENV (names only: values still come from your shell)',
+      "A name that reads like a credential is added only after you confirm it: any code your checks run, agents' included, can read it",
       'Checks also get Go, Gradle, Maven, Rust, uv, pip, Poetry, Composer, .NET, mise, asdf and Cypress cache and toolchain folders',
     ],
   },
