@@ -1,17 +1,16 @@
 import type { TrailDone } from '@teamtrail/core';
-import { useState } from 'react';
-import { MetaLine } from '../../components/ui';
+import { Button, LabelLine } from '../../components/ui';
 import type { LiveTicket } from '../../lib/liveTickets';
 import type { ProofStatuses } from '../map';
 import { type TrailCounts, type TrailSegment, TrailSegments } from '../trail-bar';
 import { MapStrip } from './MapStrip';
-import { progressWords } from './progressWords';
+import { progressLabel } from './progressWords';
 import { WorkingRows } from './WorkingRows';
 
 /**
- * Progress on the trail on screen: a segment per ticket in scope coloured as on the trail bar (the ones at work
- * breathe), the counts in one line, the map in short on request (the full map is Hands-on's), and one row per agent
- * at work.
+ * Progress on the trail on screen, as one card: how far it is in its label line, a segment per ticket in scope
+ * coloured as on the trail bar, the map in short (the last ticket done, then what comes next, to the finish), one row
+ * per agent at work, and the way to the full map, which is Hands-on's.
  */
 export function Progress(props: {
   segments: TrailSegment[];
@@ -23,28 +22,29 @@ export function Progress(props: {
   onTicket: (ticketId: string) => void;
   onFullMap: () => void;
 }) {
-  const [map, setMap] = useState(false);
   const reached = props.done?.kind === 'verified';
   return (
-    <section className="home-section home-progress" aria-labelledby="home-progress">
-      <div className="home-head">
-        <h2 id="home-progress" className="t-label">
-          Progress
+    <section className="home-section home-panel home-progress" aria-labelledby="home-progress">
+      <div className="home-bar">
+        <h2 id="home-progress">
+          <LabelLine parts={['Progress']} />
         </h2>
-        <button type="button" className="link" aria-expanded={map} onClick={() => setMap(!map)}>
-          {map ? 'Hide the map' : 'Show the map'}
-        </button>
+        <LabelLine
+          className="home-counts"
+          parts={progressLabel({ counts: props.counts, segments: props.segments, proofs: props.proofs, reached })}
+        />
       </div>
-      <TrailSegments segments={props.segments} onSelect={props.onTicket} />
-      <MetaLine
-        className="home-counts"
-        parts={[
-          reached && { text: 'Destination reached', strong: true },
-          ...progressWords(props.counts, props.segments, props.proofs),
-        ]}
-      />
-      {map && <MapStrip segments={props.segments} onTicket={props.onTicket} onFullMap={props.onFullMap} />}
+      <div className="home-progress-body">
+        <TrailSegments segments={props.segments} onSelect={props.onTicket} />
+        <MapStrip segments={props.segments} reached={reached} onTicket={props.onTicket} />
+      </div>
       <WorkingRows working={props.working} now={props.now} onTicket={props.onTicket} />
+      <div className="home-panel-foot">
+        <LabelLine parts={["The full map is Hands-on's"]} />
+        <Button variant="ghost" onClick={props.onFullMap}>
+          Open the map
+        </Button>
+      </div>
     </section>
   );
 }

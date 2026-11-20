@@ -64,7 +64,64 @@
   color: var(--text-hi);
 }
 
-/* Needs you: one row each, the open one with its choices under it. */
+/* Each section is one panel (the scenes' card): a bar with its label line, rows separated by hairlines, a foot. */
+.home-panel {
+  gap: 0;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.home-bar {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6) var(--sp-12);
+  min-height: 44px;
+  padding: var(--sp-8) var(--sp-14);
+  border-bottom: 1px solid var(--line);
+  font: inherit;
+}
+.home-bar > h2 {
+  margin: 0;
+  font: inherit;
+}
+.home-count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-2) var(--sp-8);
+  font: 400 var(--fs-scene-label) / var(--lh-snug) var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.home-count.urgent {
+  color: var(--urgent-ink);
+  border: 1px solid rgba(var(--urgent-rgb), 0.6);
+  background: var(--urgent-bg);
+}
+.home-count-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--urgent);
+}
+.home-panel-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8) var(--sp-12);
+  padding: var(--sp-8) var(--sp-14);
+  border-top: 1px solid var(--line);
+}
+.home-panel-empty,
+.home-panel > .home-clear {
+  margin: 0;
+  padding: var(--sp-14);
+  border: 0;
+}
+
+/* Rows: the scenes' shape (a label line, one title, one line more, one action on the right), hairlines between. */
 .home-need-list,
 .home-rows {
   list-style: none;
@@ -72,78 +129,51 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-4);
 }
-/* A row is a grid, so nothing in it can push past the card: the main part takes what the action leaves, and what
- * opens under it spans both columns. */
-.home-need,
-.home-since-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-}
-.home-need > .ds-row-main,
-.home-since-row > .ds-row-main {
-  width: auto;
-  min-width: 0;
-}
-/* The row's one action stays in view: it is what the row asks. */
-.home-need > .ds-row-actions,
-.home-since-row > .ds-row-actions {
-  position: static;
-  opacity: 1;
-  pointer-events: auto;
+.home-panel .home-need-list > .ds-row,
+.home-panel .home-rows > .ds-row {
+  border-width: 1px 0 0;
+  border-left-width: var(--edge-w);
+  border-top-color: var(--line);
   background: none;
-  margin: 0;
-  padding: 0 var(--sp-10) 0 0;
-  align-self: center;
+}
+.home-panel .home-need-list > .ds-row:first-child,
+.home-panel .home-rows > .ds-row:first-child {
+  border-top-width: 0;
+}
+.home-panel .home-need-list > .ds-row.edge-urgent {
+  background: rgba(var(--urgent-rgb), 0.05);
+}
+.home-panel .ds-row.edge-neutral {
+  border-left-color: transparent;
+}
+.home-panel .ds-row > .ds-row-main {
+  gap: var(--sp-4);
+  padding: var(--sp-12) var(--sp-14);
+}
+.home-panel .ds-row-title {
+  font: 500 15px / 1.38 var(--sans);
+  color: var(--text-hi);
+}
+.home-panel .ds-row-detail {
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+.home-panel .ds-row-action {
+  padding-right: var(--sp-14);
 }
 .home-need > .ds-row-below,
 .home-since-row > .ds-row-below {
-  grid-column: 1 / -1;
   min-width: 0;
-}
-/* Its main part: the chip in a column of its own, the title (two lines at most) and its meta line beside it, so a
- * second line of the title starts under the first, never under the chip. */
-.home-need > .ds-row-main {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  column-gap: var(--sp-8);
-  row-gap: var(--sp-2);
-  align-items: baseline;
-}
-.home-need > .ds-row-main > .ds-row-top,
-.home-need > .ds-row-main > .ds-row-top > .ds-row-title {
-  display: contents;
-}
-/* (rows.css keeps room for a trailing slot this row doesn't have) */
-.home-need.ds-row:has(.ds-row-actions) > .ds-row-main > .ds-row-top::after {
-  content: none;
+  padding: 0 var(--sp-14) var(--sp-12);
 }
 .home-need-title {
-  grid-column: 2;
   min-width: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   overflow-wrap: anywhere;
 }
-.home-need > .ds-row-main > .ds-row-context {
-  grid-column: 2;
-}
-.home-need.open {
-  background: var(--accent-bg);
-}
-.home-chip {
-  grid-column: 1;
-  justify-self: start;
-  vertical-align: 1px;
-}
-.home-chip.urgent {
-  color: var(--urgent-ink);
-  border-color: rgba(var(--urgent-rgb), 0.6);
-  background: var(--urgent-bg);
+.home-panel .home-need.open,
+.home-panel .home-need-list > .ds-row.edge-urgent.open {
+  background: var(--panel2);
 }
 /* Why it ranks here: wrapped inside the card, three lines at most until Read more. */
 .home-why {
@@ -227,63 +257,87 @@
   gap: var(--sp-8);
 }
 
-/* Progress: the strip as wide as the column. */
+/* Progress: the strip, then the map in short, to the finish square. */
+.home-progress-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-14);
+  padding: var(--sp-14);
+}
+.home-progress-body + .home-rows {
+  border-top: 1px solid var(--line);
+}
 .home-progress .trail-segments {
   flex: none;
   min-width: 0;
   width: 100%;
-}
-.home-counts .strong {
-  color: var(--text-hi);
+  height: 6px;
 }
 .home-map-strip {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-10);
-  padding: var(--sp-10) var(--sp-12);
-  border: 1px solid var(--line);
-  background: var(--panel);
-}
-.home-map-strip ol {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-6);
+  justify-content: space-between;
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.home-map-strip li + li::before {
-  content: '→';
-  color: var(--faint);
-  margin-right: var(--sp-6);
+/* The line the stops sit on, through the middle of the squares. */
+.home-map-strip::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: var(--line2);
 }
-.home-map-strip li .link {
+.map-strip-stop {
+  position: relative;
+  min-width: 0;
+}
+.map-strip-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
   padding: 0;
+  border: 0;
+  background: none;
+  color: var(--faint);
+  font: 400 var(--fs-scene-label) / 1 var(--mono);
+  cursor: pointer;
 }
-.map-strip-chip.tone-needs {
-  color: var(--urgent-ink);
-  border-color: rgba(var(--urgent-rgb), 0.6);
+.map-strip-stop .ds-mark:not(.mark-verified) {
+  background: var(--panel-solid);
 }
-.map-strip-chip.tone-done {
-  color: rgb(var(--decided-rgb));
-  border-color: rgba(var(--decided-rgb), 0.6);
+.map-strip-stop.tone-working .map-strip-btn,
+.map-strip-stop.tone-needs .map-strip-btn {
+  color: var(--text-hi);
+}
+.map-strip-finish {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  box-shadow:
+    inset 0 0 0 4px var(--panel),
+    inset 0 0 0 8px var(--accent);
+}
+.map-strip-stop.finish .map-strip-btn {
+  cursor: default;
+}
+.map-strip-stop.finish.reached .map-strip-finish {
+  border-color: rgb(var(--decided-rgb));
+  box-shadow:
+    inset 0 0 0 4px var(--panel),
+    inset 0 0 0 8px rgb(var(--decided-rgb));
+}
+.bp-mobile .map-strip-btn {
+  min-width: 32px;
+  min-height: 44px;
+  justify-content: center;
 }
 
-/* Since you were away. */
-.since-icon {
-  display: inline-block;
-  width: 1.2em;
-  color: var(--dim);
-}
-.since-icon.decided {
-  color: var(--accent);
-}
-.since-icon.done {
-  color: rgb(var(--decided-rgb));
-}
 .home-footer {
   display: flex;
   flex-wrap: wrap;
@@ -291,13 +345,28 @@
   justify-content: space-between;
   gap: var(--sp-10);
   padding-top: var(--sp-14);
-  border-top: 1px solid var(--line);
+  border-top: 1px dashed var(--line2);
 }
 
 /* Phone: rows a thumb can hit. */
 .bp-mobile .home-need > .ds-row-main,
 .bp-mobile .home-since-row > .ds-row-main {
   min-height: 44px;
+}
+.bp-mobile .home-panel .ds-row > .ds-row-main {
+  padding: var(--sp-12);
+}
+.bp-mobile .home-panel .ds-row-action {
+  padding-right: var(--sp-12);
+}
+/* Two actions (Keep, Overrule…) go under the row on a phone, so the title keeps the width. */
+.bp-mobile .home-since-row.has-action {
+  grid-template-columns: minmax(0, 1fr);
+}
+.bp-mobile .home-since-row > .ds-row-action {
+  grid-column: 1;
+  grid-row: 2;
+  padding: 0 var(--sp-12) var(--sp-12);
 }
 /* Every action in a row, closed or open, a 44px target: buttons, the "⋯" menu, suggested answers, links. */
 .bp-mobile .home-need .btn,
@@ -320,16 +389,6 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-/* The chip on a line of its own, so the title gets the width beside the action. */
-.bp-mobile .home-need > .ds-row-main {
-  grid-template-columns: minmax(0, 1fr);
-}
-.bp-mobile .home-chip,
-.bp-mobile .home-need-title,
-.bp-mobile .home-need > .ds-row-main > .ds-row-context {
-  grid-column: 1;
-}
-
 /* The mode switch: two halves, the one in force filled. */
 .mode-switch {
   display: inline-flex;
@@ -352,9 +411,10 @@
   color: var(--text-hi);
   background: var(--panel2);
 }
-.mode-switch-btn.on {
-  color: var(--text-hi);
-  background: var(--accent-bg);
+.mode-switch-btn.on,
+.mode-switch-btn.on:hover {
+  color: var(--bg);
+  background: var(--text-hi);
 }
 .mode-switch-btn:focus-visible {
   outline: 2px solid var(--accent);
@@ -372,9 +432,6 @@
   max-height: none;
   overflow: visible;
   padding: 0;
-}
-.meta-line.home-counts {
-  white-space: normal;
 }
 .sp-slot .mode-switch {
   align-self: flex-start;
