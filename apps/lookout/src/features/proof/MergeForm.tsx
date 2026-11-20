@@ -1,6 +1,7 @@
 import type { GapStanding } from '@teamtrail/core';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui';
+import { MergeAtHeadAsk } from './MergeAtHeadAsk';
 import { MergedNote } from './MergedNote';
 import type { MergeOffer } from './mergeOffer';
 import { ProofGapsLine } from './ProofGapsLine';
@@ -17,8 +18,10 @@ const ASK = {
 /**
  * The one question before a merge, opened by the ticket's merge action (mergeAction.ts) in its bubble, the full
  * ticket and a row of Needs you alike. Merge anyway records the trail lead's acceptance of exactly the gaps shown
- * first (the engine's `POST /proof/merge-anyway`), then asks the server to merge; the server checks it all again. The
- * offer is kept as it was opened, so what happened still reads once the merged pull request takes the action away.
+ * first (the engine's `POST /proof/merge-anyway`), with the pull request's head when the proof names no commit, then
+ * asks the server to merge; the server checks it all again. The offer is kept as it was opened, so what happened
+ * still reads once the merged pull request takes the action away; after a refusal it takes the head shown now, so a
+ * pull request that moved on is accepted again at its new head, never at one nobody saw.
  */
 export function MergeForm(props: {
   offer?: MergeOffer;
@@ -27,20 +30,25 @@ export function MergeForm(props: {
   plan?: GapStanding[];
   onClose: () => void;
 }) {
-  const [offer] = useState(props.offer);
+  const [offer, setOffer] = useState(props.offer);
   const m = useMergeRequest({ path: offer?.path ?? '', mapId: props.mapId, ticketId: props.ticketId });
+  const now = props.offer;
+  const refused = m.state.kind === 'error';
+  useEffect(() => {
+    if (refused && now && now.head !== offer?.head) setOffer(now);
+  }, [refused, now, offer?.head]);
   if (!offer) return null;
   const anyway = offer.kind === 'anyway';
-  if (m.state.kind === 'merged') return <MergedNote url={m.state.url} anyway={anyway} />;
+  if (m.state.kind === 'merged') return <MergedNote url={m.state.url} anyway={anyway} head={offer.head} />;
   const working = m.state.kind === 'working';
   return (
     <div className="merge-confirm merge-form">
-      <span className="t-meta">{ASK[offer.kind]}</span>
+      {offer.head ? <MergeAtHeadAsk head={offer.head} /> : <span className="t-meta">{ASK[offer.kind]}</span>}
       <Button
         size="sm"
         variant="primary"
         disabled={working}
-        onClick={() => void m.merge(anyway ? offer.gaps : undefined)}
+        onClick={() => void m.merge(anyway ? { gaps: offer.gaps, head: offer.head } : undefined)}
       >
         {working ? 'Merging…' : MERGE[offer.kind]}
       </Button>

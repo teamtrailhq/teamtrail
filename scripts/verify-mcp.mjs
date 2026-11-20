@@ -21,7 +21,7 @@ import {
   ticketAction,
 } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
-import { verifyBubbleMerge } from './verifyBubbleMerge.mjs';
+import { verifyBubbleMerge, verifyBubbleMergeAtHead } from './verifyBubbleMerge.mjs';
 import { verifyCheckGuard } from './verifyCheckGuard.mjs';
 import { verifyCheckSuggestions } from './verifyCheckSuggestions.mjs';
 import { verifyCheckVariables } from './verifyCheckVariables.mjs';
@@ -728,6 +728,8 @@ const liveViewsOk = await verifyLiveViews({ browser, cli, log, shots });
 const proofGapsOk = await verifyProofGaps({ browser, cli, log, shots });
 // Behind a server that merges: a done, unverified ticket's bubble and its Hands-off row lead with Merge anyway….
 const bubbleMergeOk = await verifyBubbleMerge({ browser, cli, log, shots });
+// Merge anyway with no commit in the proof: at the pull request's head as shown, refused once it moved, then merged.
+const mergeAtHeadOk = await verifyBubbleMergeAtHead({ browser, cli, log, shots });
 // No checks set: a finished task's proof says nothing was checked, and Set checks opens Settings → Verification.
 const noChecksOk = await verifyNoChecksGap({ browser, cli, log, shots });
 // A pull request linked by hand: Link a different PR in the full ticket, against a fake GitHub, then Unlink.
@@ -881,6 +883,7 @@ if (
   !liveViewsOk ||
   !proofGapsOk ||
   !bubbleMergeOk ||
+  !mergeAtHeadOk ||
   !noChecksOk ||
   !prLinkOk ||
   !flakyOk ||

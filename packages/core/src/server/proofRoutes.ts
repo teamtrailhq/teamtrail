@@ -1,8 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { readTicketSync } from '../evidence/syncStore';
 import { journalFile } from '../history/journalFile';
 import { PROOF_POST_JOURNAL } from '../model/proofPost';
 import { gapsHash } from '../proof/gapsHash';
 import { mergeAcceptances } from '../proof/mergeAcceptances';
+import { mergeHead } from '../proof/mergeHead';
 import { proofForTicket } from '../proof/proofForTicket';
 import { proofPostSetting } from '../proof/proofPostSetting';
 import { readProofPost } from '../proof/proofPostStore';
@@ -20,7 +22,8 @@ type ProofContext = RouteContext & { configDir?: string; kick?: () => void };
  *   PUT /proof/settings  body `{ enabled }`  the trail lead's switch, this machine only (thisMachineRoutes.ts), journaled
  *   GET /proof/ticket?mapId=&ticketId=     `{ proof, plan, markdown, post?, gapsHash, mergeAnyway? }`: the ticket's proof,
  *     who is on each of its gaps and what closes it (`plan`, proof/gapPlan.ts), what
- *     was last posted, the hash of its gaps and the trail lead's Merge anyway that accepted exactly them (mergeAnyway.ts)
+ *     was last posted, the hash of its gaps (at its commit, or its open pull request's head when it names none,
+ *     mergeHead.ts) and the trail lead's Merge anyway that accepted exactly them (mergeAnyway.ts)
  * False when the path doesn't match.
  */
 export async function handleProof(ctx: ProofContext, req: IncomingMessage, res: ServerResponse, url: URL) {
@@ -79,8 +82,10 @@ async function ticketProof(ctx: ProofContext, res: ServerResponse, url: URL) {
   const first = ticketGapPlan({ root: ctx.root, snap, ticket, decisions });
   const post = readProofPost(ctx.root, mapId, ticketId);
   const { markdown, keyFile } = signedProofMarkdown(ctx.root, first.proof, ctx.configDir);
-  const hash = gapsHash({ head: first.proof.git?.head ?? null, gaps: first.proof.gaps });
-  const accepted = mergeAcceptances.covering(ctx.root, { mapId, ticketId, gapsHash: hash });
+  // the head a Merge anyway is about: the proof's commit, else its open pull request's head as PR sync keeps it
+  const at = mergeHead({ proof: first.proof, pr: readTicketSync(ctx.root, mapId, ticketId)?.pr });
+  const hash = gapsHash({ head: at?.head ?? null, gaps: first.proof.gaps });
+  const accepted = mergeAcceptances.covering(ctx.root, { mapId, ticketId, gapsHash: hash, proof: first.proof });
   // who is on each gap: a Merge anyway of exactly these gaps counts as the trail lead accepting them
   const { proof, plan } = accepted
     ? ticketGapPlan({ root: ctx.root, snap, ticket, decisions, mergedAnywayBy: accepted.by })

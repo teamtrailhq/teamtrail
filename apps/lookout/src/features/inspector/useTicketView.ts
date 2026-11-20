@@ -86,6 +86,7 @@ export function useTicketView(input: {
       done: t.state === 'closed' && t.closeReason === 'completed',
       proof: proof?.proof,
       prState: pr?.pr?.state,
+      prHead: pr?.pr?.headSha,
     }),
     chips: chipsOfTicket(chipInput(loaded)),
   };

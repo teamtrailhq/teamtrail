@@ -31,6 +31,20 @@ describe('mergeOffer: when a done ticket’s pull request can be merged here', (
     expect(offer(proof({ ...work, status: 'verified', gaps: [] }))?.kind).toBe('approve');
   });
 
+  it('with no commit in the proof, Merge anyway at the open pull request’s head, and only then', () => {
+    const unchecked = proof({ gaps: ['Finished with no checks set: nothing was checked.'] });
+    const at = (prState?: string, prHead?: string) =>
+      mergeOffer({ path: '/merge', done: true, proof: unchecked, prState, prHead });
+    expect(at('open', 'f00d')).toEqual({ kind: 'anyway', path: '/merge', gaps: unchecked.gaps, head: 'f00d' });
+    expect(at(undefined, undefined)).toBeUndefined();
+    expect(at('open', undefined)).toBeUndefined();
+    expect(at('merged', 'f00d')).toBeUndefined();
+    // a proof that names its commit merges at it, whatever the pull request's head
+    expect(mergeOffer({ path: '/merge', done: true, proof: unverified, prState: 'open', prHead: 'f00d' })?.head).toBe(
+      undefined,
+    );
+  });
+
   it('never for a pull request PR sync says is merged or closed', () => {
     expect(offer(unverified, 'open')?.kind).toBe('anyway');
     expect(offer(unverified, 'merged')).toBeUndefined();
@@ -81,6 +95,13 @@ describe('the merge question', () => {
     expect(html).toContain('>Merge anyway<');
     expect(html).toContain('Not verified: test didn’t run');
     expect(html).toContain('Cancel');
+  });
+
+  it('names the pull request’s head it accepts when the proof names no commit', () => {
+    const html = render({ kind: 'anyway', path: '/merge', gaps: unverified.gaps, head: 'e'.repeat(40) });
+    expect(html).toContain('Its proof names no commit, so you accept the pull request as it is now, at head');
+    expect(html).toContain(`<code title="${'e'.repeat(40)}">${'e'.repeat(12)}</code>`);
+    expect(html).toContain('>Merge anyway<');
   });
 
   it('asks for the verified commit for Approve and merge, and is nothing with no offer', () => {

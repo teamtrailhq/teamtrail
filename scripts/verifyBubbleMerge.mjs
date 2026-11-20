@@ -22,6 +22,7 @@ import { stopProcess } from './stopProcess.mjs';
 import { prSnapshot, writeSnapshot } from './verifyLivePr.mjs';
 
 const MERGE_PATH = '/fake-server/merge';
+const HEAD_MOVED = 'The pull request has new commits since you looked. Review again.';
 
 /** A git repo whose `npm test` passes on main and fails once feed.xml is there. */
 function scratchRepo() {
@@ -121,7 +122,7 @@ async function waive({ page, url, mapId, ticketId }) {
  * session the browser paired with, added on the way as the server in front signs requests itself, and the merge
  * path is the fake.
  */
-async function behindMergingServer({ page, ticket, root }) {
+async function behindMergingServer({ page, ticket, root, respond = mergedNow }) {
   const { 'X-Teamtrail-Session': secret } = await sessionHeaders(page);
   // no session of its own: a page behind such a server has none, and reads who it is from `GET /session`
   await page.evaluate(() => localStorage.removeItem('teamtrail.session'));
@@ -135,13 +136,18 @@ async function behindMergingServer({ page, ticket, root }) {
   });
   const asked = [];
   await page.route(`**${MERGE_PATH}`, async (route) => {
-    asked.push(route.request().postDataJSON());
-    // merged, and kept so by the server, as Cloud's engine keeps it (pull-outcome)
-    writeSnapshot({ root, ...ticket, state: 'merged' });
-    const sync = prSnapshot({ ...ticket, state: 'merged' });
-    return route.fulfill({ json: { merged: true, url: sync.pr.url, sync } });
+    const body = route.request().postDataJSON();
+    asked.push(body);
+    return route.fulfill({ json: respond({ root, ticket, body, n: asked.length }) });
   });
   return asked;
+}
+
+/** Merged, and kept so by the server, as Cloud's engine keeps it (pull-outcome). */
+function mergedNow({ root, ticket }) {
+  writeSnapshot({ root, ...ticket, state: 'merged' });
+  const sync = prSnapshot({ ...ticket, state: 'merged' });
+  return { merged: true, url: sync.pr.url, sync };
 }
 
 /**
@@ -257,6 +263,124 @@ export async function verifyBubbleMerge({ browser, cli, log, shots }) {
       !errors.length;
     log(
       `merge from the bubble ${ok ? 'ok' : 'WRONG'}: ${key} done, not verified, its PR open: the bubble leads with ${bubblePrimary}, Hands-off's row with ${rowPrimary}; one question with its gaps (${gapShown}), the server asked with the accepted gaps' hash (${named ? 'yes' : JSON.stringify(sent)}), no merge offered once merged (${gone})${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+    );
+    return ok;
+  } finally {
+    await one.client.close();
+    await page.close();
+    await stopProcess(lookout.proc);
+    if (!process.env.KEEP) fs.rmSync(top, { recursive: true, force: true });
+  }
+}
+
+const SHOWN = 'e'.repeat(40);
+const MOVED = 'f'.repeat(40);
+
+/** A git repo with no checks set: a finished task closes with nothing checked, so its proof names no commit. */
+function bareRepo() {
+  const top = e2eTemp('teamtrail-merge-at-head-e2e-');
+  const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
+  fs.writeFileSync(path.join(top, 'README.md'), '# app\n');
+  git('init', '-q', '-b', 'main');
+  git('add', '-A');
+  git('commit', '-qm', 'init');
+  return top;
+}
+
+/** The ticket's pull request as the server that merges keeps it, at a given head. */
+function headSnapshot({ root, ticket, state, headSha }) {
+  const sync = prSnapshot({ ...ticket, state });
+  sync.pr.headSha = headSha;
+  const dir = path.join(root, '.evidence', ticket.mapId, ticket.ticketId);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'sync.json.tmp'), JSON.stringify(sync));
+  fs.renameSync(path.join(dir, 'sync.json.tmp'), path.join(dir, 'sync.json'));
+  return sync;
+}
+
+/**
+ * As Cloud answers: the first merge finds the pull request moved on since the page loaded (a new commit, kept by the
+ * server and carried in the reply); the next, at the new head, merges.
+ */
+function movedOnce({ root, ticket, body, n }) {
+  if (n === 1) return { error: HEAD_MOVED, sync: headSnapshot({ root, ticket, state: 'open', headSha: MOVED }) };
+  if (body.head !== MOVED) return { error: `asked at ${body.head}` };
+  return { merged: true, url: headSnapshot({ root, ticket, state: 'merged', headSha: MOVED }).pr.url };
+}
+
+/** A shot of the bubble at 1440, day and night. */
+async function shootBubble(page, shots, name) {
+  await page.locator('.bubble .merge-form').scrollIntoViewIfNeeded();
+  await shootThemes(page, shots, `${name}-1440`);
+}
+
+/**
+ * Merge anyway on a ticket finished with no checks set (its proof names no commit), behind the same fake server that
+ * merges: the bubble offers Merge anyway… at the pull request's head as PR sync shows it, the trail lead's acceptance
+ * and the merge name that head, a head that moved on is refused with the server's words and the new head is shown,
+ * and accepting again merges at it.
+ */
+export async function verifyBubbleMergeAtHead({ browser, cli, log, shots }) {
+  const top = bareRepo();
+  const root = path.join(top, '.teamtrail');
+  const lookout = await startLookout(cli, top);
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const one = await agent(cli, top);
+  try {
+    await signInWith(page, lookout.pair);
+    await page.getByRole('button', { name: 'Get started' }).click();
+    await page.locator('.dialog.onboarding').waitFor({ state: 'detached', timeout: 15_000 });
+    const started = await one.call('start_trail', {
+      discovery: false,
+      title: 'Landing',
+      destination: 'Visitors see what the app does',
+      tickets: [
+        { ref: 'hero', title: 'Write the hero copy', type: 'task' },
+        { ref: 'faq', title: 'Write the FAQ', type: 'task' },
+      ],
+    });
+    await approveSkipInLookout({ started, page, url: lookout.url });
+    const claimed = await one.call('claim_ticket', {});
+    const key = claimed.claimed.key;
+    const ticket = { mapId: started.trail.id, ticketId: claimed.claimed.id ?? key.replace('#', ''), key };
+    fs.writeFileSync(path.join(top, 'hero.md'), '# Ship work you can trust\n');
+    await one.call('close_ticket', { ticket: key, resolution: 'Wrote the hero copy' });
+    headSnapshot({ root, ticket, state: 'open', headSha: SHOWN });
+    const asked = await behindMergingServer({ page, ticket, root, respond: movedOnce });
+    await page.goto(lookout.url);
+    const item = (await openNeedsList(page)).locator('li.att-item.k-merge', { hasText: 'ready to merge' });
+    await item.waitFor({ timeout: 20_000 });
+    await item.locator('.ds-row-main').click();
+    const bubble = page.locator('.bubble');
+    const bar = bubble.locator('.action-bar');
+    await bar.getByRole('button', { name: 'Merge anyway…' }).waitFor({ timeout: 15_000 });
+    const primary = await primaryOf(bar);
+    await bar.getByRole('button', { name: 'Merge anyway…' }).click();
+    const form = bubble.locator('.merge-form');
+    const code = form.locator('code');
+    await form.getByText('Its proof names no commit').waitFor({ timeout: 15_000 });
+    const shownHead = await code.innerText();
+    await shootBubble(page, shots, 'bubble-merge-at-head-confirm');
+    await form.getByRole('button', { name: 'Merge anyway', exact: true }).click();
+    await form.getByText(HEAD_MOVED).waitFor({ timeout: 15_000 });
+    // the new head, shown in place of the one the pull request moved past
+    await code.filter({ hasText: MOVED.slice(0, 12) }).waitFor({ timeout: 15_000 });
+    await shootBubble(page, shots, 'bubble-merge-at-head-moved');
+    await form.getByRole('button', { name: 'Merge anyway', exact: true }).click();
+    await bubble.getByText(`Merged at head ${MOVED.slice(0, 12)}, as you accepted it.`).waitFor({ timeout: 15_000 });
+    const [first, second] = asked;
+    const named = (b, head) =>
+      b?.trail === ticket.mapId &&
+      b.ticket === ticket.ticketId &&
+      b.anyway === true &&
+      /^sha256:/.test(b.gaps) &&
+      b.head === head;
+    const sent = named(first, SHOWN) && named(second, MOVED) && first.gaps !== second.gaps;
+    const ok = primary === 'Merge anyway…' && shownHead === SHOWN.slice(0, 12) && sent && !errors.length;
+    log(
+      `merge anyway at the PR head ${ok ? 'ok' : 'WRONG'}: ${key} finished with no checks set, its PR open: the bubble leads with ${primary}, the question names head ${shownHead}; the server asked at the head shown (${sent ? 'yes' : JSON.stringify(asked)}), refused once it moved, the new head shown and merged${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {

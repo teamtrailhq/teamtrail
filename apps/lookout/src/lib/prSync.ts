@@ -114,6 +114,8 @@ export const prSync = {
   get: () => snap,
   push,
   drop,
+  /** Asks again now, once anything reads it: a merge refused as the pull request moved on shows its new head. */
+  reload: () => void (started && load()),
   /** Attempts, verdicts, check logs or a run lock changed (`kind: 'evidence'` on the same stream). */
   onEvidence(l: () => void) {
     if (!started) start();
