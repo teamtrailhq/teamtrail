@@ -11,6 +11,6 @@ export function logoAutoStyle(): CSSProperties {
   return {
     ['--tt-logo-tile' as string]: pick('tile'),
     ['--tt-logo-mark' as string]: pick('mark'),
-    ['--tt-logo-dot' as string]: pick('dot'),
+    ['--tt-logo-cursor' as string]: pick('cursor'),
   };
 }
