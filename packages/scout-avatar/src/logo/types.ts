@@ -4,9 +4,9 @@
  */
 export type LogoTheme = 'light' | 'dark' | 'blaze' | 'auto';
 
-/** One version's colours: the square tile, the t and its path, and the destination dot. */
+/** One version's colours: the square tile, the t and its path, and the block cursor. */
 export interface LogoColors {
   tile: string;
   mark: string;
-  dot: string;
+  cursor: string;
 }
