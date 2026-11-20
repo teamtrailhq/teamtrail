@@ -262,8 +262,15 @@ describe('verified completion over MCP', () => {
       }),
     );
     await call('next_ticket');
-    const done = await call<Done>('verification_status', { ticket: t.key, wait: true, waitSeconds: 10 });
-    expect(done).toMatchObject({ status: 'done', attempt: 'A-2' });
+    // next_ticket started the re-run; it may settle before this call, which then reads the ticket's status instead
+    // of waiting on the run, so the outcome is checked in either form
+    const done = await call<Done & { phase?: string; latest?: { id: string } }>('verification_status', {
+      ticket: t.key,
+      wait: true,
+      waitSeconds: 10,
+    });
+    expect(done.status ?? done.phase).toBe('done');
+    expect(done.attempt ?? done.latest?.id).toBe('A-2');
     expect(readAttempts(root, m.trail.id, id).map((a) => a.result)).toEqual(['interrupted', 'pass']);
   });
 
