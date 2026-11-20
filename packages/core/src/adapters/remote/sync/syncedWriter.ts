@@ -47,12 +47,15 @@ export abstract class SyncedWriter extends SyncedSend {
   private drop(w: QueuedWrite, err: unknown) {
     this.queue.shift();
     const error = String((err as Error)?.message ?? err);
-    this.health.dropped(w.label, error);
+    let failed: Error | undefined;
     try {
       this.refused?.add({ write: w, error, at: this.now() });
     } catch (e) {
-      this.health.note(`Could not keep the refused write (${w.label}): ${(e as Error).message}`);
+      failed = e as Error;
     }
+    const kept = this.refused && !failed;
+    this.health.dropped({ id: kept ? w.id : undefined, label: w.label, error });
+    if (failed) this.health.note(`Could not keep the refused write (${w.label}): ${failed.message}`);
     this.pending.add(w.mapId);
     const cached = this.entries.get(w.mapId);
     if (cached) cached.at = 0;

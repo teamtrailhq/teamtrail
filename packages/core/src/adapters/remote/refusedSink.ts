@@ -28,5 +28,12 @@ export function refusedSink(o: {
         ...(url ? { url } : {}),
       });
     },
+    kept() {
+      return new Set(
+        refusedWrites(o.root, o.configDir)
+          .list()
+          .map((r) => r.write.id),
+      );
+    },
   };
 }

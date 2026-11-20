@@ -58,3 +58,19 @@ export function guidanceResult(g: QuestionGuidance): Omit<AskResult, 'questionId
     note: `${GUIDANCE_OPEN} ${CHAT_GUIDES}`,
   };
 }
+
+/**
+ * After chat guidance the question stays open but leaves the human's queue (core waitsOnHuman.ts) unless something
+ * waits on their own answer: an agent calling wait_for_answer again does, so it says so while it waits.
+ * Returns the undo, called when the wait ends.
+ */
+export function waitingAgain(ctx: AgentContext, questionId: string) {
+  const q = ctx.activity.snapshot.pending.find((p) => p.id === questionId);
+  if (!q?.guidance) return undefined;
+  ctx.activity.waiting(q.sessionId, q.id);
+  ctx.writer.flush();
+  return () => {
+    const s = ctx.activity.snapshot.sessions.find((x) => x.id === q.sessionId);
+    if (s?.waitingOn === q.id) ctx.activity.waiting(q.sessionId, undefined);
+  };
+}

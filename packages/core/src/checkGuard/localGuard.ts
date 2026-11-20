@@ -1,25 +1,10 @@
-import { realpathSync } from 'node:fs';
-import path from 'node:path';
 import type { AttemptGuard } from '../model/checkGuard';
 import type { GitEvidence } from '../model/evidence';
 import type { VerificationConfig } from '../model/verification';
 import { gateModeFor } from '../verification/gateModeFor';
+import { checkoutPrefix } from './checkoutPrefix';
 import { commitReader, worktreeReader } from './gitReaders';
 import { guardAttempt } from './guardAttempt';
-
-const real = (p: string) => {
-  try {
-    return realpathSync(p);
-  } catch {
-    return p;
-  }
-};
-
-/** Where the checkout the checks ran in sits inside the git worktree: '' when they're the same folder. */
-function prefixOf(toplevel: string, checkout: string) {
-  const rel = path.relative(real(toplevel), real(checkout)).split(path.sep).join('/');
-  return rel.startsWith('..') || path.isAbsolute(rel) ? '' : rel;
-}
 
 /**
  * Work in git with no baseline this machine recorded and signed at the claim (evidence/baselineStore.ts): what it
@@ -51,6 +36,6 @@ export async function localGuard(o: {
     checks: o.checks,
     changed: o.git.changed.map((c) => c.path),
     read: { before: await commitReader(tree.toplevel, base.head), after: worktreeReader(tree.toplevel) },
-    prefix: prefixOf(tree.toplevel, o.checkout),
+    prefix: checkoutPrefix(tree.toplevel, o.checkout),
   });
 }

@@ -457,3 +457,56 @@ describe('a ticket that needs the human closes only on their answer in the Looko
     expect(closed.decision.decidedBy).toBe('claude-01');
   });
 });
+
+type Queue = { attention: { items: { kind: string; questionId?: string }[] } };
+const inQueue = async (call: Call, questionId: string) =>
+  (await call<Queue>('list_inbox', {})).attention.items.some(
+    (i) => i.kind === 'question' && i.questionId === questionId,
+  );
+
+describe('a question answered only in a chat leaves the queue once nothing waits on the human’s own answer', () => {
+  it('an ordinary question: guided, off the queue, still open; the agent waiting again puts it back', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    const m = await call<{ tickets: { key: string }[] }>('start_trail', {
+      discovery: false,
+      title: 'Export',
+      destination: 'CSV export',
+      tickets: [{ ref: 't', title: 'Add the export', type: 'task' }],
+    });
+    await call('claim_ticket', { ticket: m.tickets[0].key });
+    const { questionId } = await call<Asked>('ask_human', { question: 'Comma or semicolon?', waitSeconds: 0 });
+    expect(await inQueue(call, questionId)).toBe(true);
+    await call('answer_question', { questionId, answer: 'Comma' });
+    const guided = await call<Got & { stillOpen?: boolean }>('wait_for_answer', { questionId, waitSeconds: 5 });
+    expect(guided).toMatchObject({ answeredVia: 'chat', stillOpen: true });
+    // the human's words reached the agent and no gate needs their own answer: no longer waiting on them
+    expect(await inQueue(call, questionId)).toBe(false);
+    // nothing was answered: the question stays open, and no decision is theirs on the chat answer
+    expect((await readAgentDocs(root)).flatMap((d) => d.pending).map((q) => q.id)).toEqual([questionId]);
+    await expect(call('record_decision', { question: 'Q', answer: 'Comma', questionId })).rejects.toThrow(CHAT);
+    // the agent waits for the human's own answer: it is theirs again while it waits, and leaves when it stops
+    const waiting = call<Got>('wait_for_answer', { questionId, waitSeconds: 1 });
+    await expect.poll(() => inQueue(call, questionId)).toBe(true);
+    expect(await waiting).toMatchObject({ answered: false });
+    expect(await inQueue(call, questionId)).toBe(false);
+    // their answer, given later in the Lookout, is still the one used
+    const doc = (await readAgentDocs(root)).find((d) => d.pending.length)!;
+    writeAgentAnswer(root, {
+      sessionId: doc.session.id,
+      questionId,
+      text: 'Semicolon',
+      author: 'trail lead',
+      via: 'lookout',
+    });
+    const got = await call<Got>('wait_for_answer', { questionId, waitSeconds: 5 });
+    expect(got).toMatchObject({ answered: true, answer: 'Semicolon', answeredVia: 'lookout' });
+  });
+
+  it('a question a gate needs the human for stays in the queue after chat guidance', async () => {
+    const call = await hub.connect({ name: 'claude-01' });
+    const questionId = await askOnJunction(call);
+    await call('answer_question', { questionId, answer: 'Drop it' });
+    await call<Got>('wait_for_answer', { questionId, waitSeconds: 5 });
+    expect(await inQueue(call, questionId)).toBe(true);
+  });
+});

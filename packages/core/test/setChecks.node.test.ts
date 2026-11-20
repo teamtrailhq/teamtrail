@@ -142,3 +142,30 @@ test('saving checks never approves setup steps nobody approved here; approved on
   assert.equal(approval.state, 'approved');
   assert.deepEqual(JSON.parse(readFileSync(file(root), 'utf8')).setup, setup);
 });
+
+test('paths: set with a check, kept when a later edit leaves them out, cleared with an empty list, refused out of the repo', () => {
+  const root = tmpRoot();
+  setChecks({
+    root,
+    base: 'none',
+    by: 'Ada',
+    checks: [{ name: 'web', run: ['npm', 'test'], paths: ['apps/web/**', ' '] }],
+  });
+  const read = () => JSON.parse(readFileSync(file(root), 'utf8')).checks.web;
+  assert.deepEqual(read().paths, ['apps/web/**']);
+  assert.deepEqual(trustedChecks(root).config.config!.checks.web.paths, ['apps/web/**'], 'approved with the file');
+  setChecks({ root, base: checksApproval(root).hash, by: 'Ada', checks: [{ name: 'web', run: ['npm', 'test'] }] });
+  assert.deepEqual(read().paths, ['apps/web/**']);
+  setChecks({
+    root,
+    base: checksApproval(root).hash,
+    by: 'Ada',
+    checks: [{ name: 'web', run: ['npm', 'test'], paths: [] }],
+  });
+  assert.equal(read().paths, undefined);
+  const base = checksApproval(root).hash;
+  assert.throws(
+    () => setChecks({ root, base, by: 'Ada', checks: [{ name: 'web', run: ['npm', 'test'], paths: ['../x/**'] }] }),
+    /paths inside the repository/,
+  );
+});

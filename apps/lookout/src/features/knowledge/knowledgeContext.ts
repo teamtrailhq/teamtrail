@@ -11,6 +11,13 @@ export interface KnowledgeDraft {
   anchors?: string[];
 }
 
+/** What suggesting notes of the project's commands did, by knowledge id. */
+export interface CommandNotesResult {
+  added: string[];
+  updated: string[];
+  unchanged: string[];
+}
+
 export interface KnowledgeStore {
   entries: KnowledgeEntry[];
   /** Per entry id: anchored files changed since it was confirmed. */
@@ -26,6 +33,8 @@ export interface KnowledgeStore {
   /** `shown`: the hash of the entry as the trail lead opened it, sent with confirm and keep-as-assumption. */
   call: (id: string, call: KnowledgeCall, shown?: string) => Promise<boolean>;
   propose: (draft: KnowledgeDraft) => Promise<KnowledgeEntry | undefined>;
+  /** Suggests a note of the commands for each package of the repo (`POST /knowledge/commands`); the error as text. */
+  suggestCommands: () => Promise<CommandNotesResult | string>;
   error?: string;
 }
 
