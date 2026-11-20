@@ -23,6 +23,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.23',
+    date: '2026-11-20',
+    items: [
+      'A new look for Teamtrail, Scout and the guides: square tiles, near-black and white, and one blaze accent',
+      'The favicon is the blaze t. tile, the same on light and dark browser tabs',
+    ],
+  },
+  {
     version: '0.66.22',
     date: '2026-11-19',
     items: [
@@ -172,22 +180,6 @@ export const RELEASES: Release[] = [
     items: [
       'A merged pull request shows as merged on its ticket as soon as it merges, and nothing offers to merge it again',
       'Teamtrail Cloud: checks on main run on your repository’s main, never on a commit from somewhere else',
-    ],
-  },
-  {
-    version: '0.66.2',
-    date: '2026-11-18',
-    items: [
-      'Agents pick up work the moment you confirm criteria, approve the plan or free the review limit, instead of checking back minutes later',
-      'Needs you keeps long titles and reasons inside their card at every width, with Read more for long reasons',
-    ],
-  },
-  {
-    version: '0.66.1',
-    date: '2026-11-18',
-    items: [
-      'On a phone, the header keeps one row: the mode switch, what needs you and More, with focus, records, Settings and the theme',
-      'Teamtrail Cloud: a pull request says why auto-merge waits, or that it merged by itself',
     ],
   },
   ...NEWER_RELEASES,

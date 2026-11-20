@@ -36,26 +36,24 @@ async function still(view, file, extra = '') {
 await still('options', 'scout-avatar-options.png');
 await still('states', 'scout-avatar-states.png');
 
-// Brand / social kit: exact pixel sizes at deviceScaleFactor 1 so the sprite stays nearest-neighbor crisp.
+// Brand / social kit: exact pixel sizes at deviceScaleFactor 1.
 const BRAND = join(OUT, 'brand');
 mkdirSync(BRAND, { recursive: true });
 const KIT = [
-  ['github-org-avatar.png', 'GitHub org avatar', 1000, 1000, 'square', '&n=1000'],
+  ['github-org-avatar.png', 'GitHub org avatar', 1000, 1000, 'square', '&n=1000&theme=blaze'],
   ['github-org-avatar-wordmark.png', 'GitHub org avatar, wordmark', 1000, 1000, 'square', '&n=1000&who=wordmark'],
   ['github-social-preview.png', 'GitHub repo social preview', 1280, 640, 'banner', '&w=1280&h=640'],
   ['og-image-1200x630.png', 'Open Graph · teamtrail.app', 1200, 630, 'banner', '&w=1200&h=630'],
   ['x-header-1500x500.png', 'X header', 1500, 500, 'banner', '&w=1500&h=500&layout=header'],
   ['wordmark-lockup.png', 'Logo lockup', 960, 240, 'lockup', '&w=960&h=240'],
   ['wordmark-lockup-light.png', 'Logo lockup, light', 960, 240, 'lockup', '&w=960&h=240&light=1'],
-  ['x-avatar-400.png', 'X avatar', 400, 400, 'square', '&n=400'],
-  ['slack-icon-512.png', 'Slack app icon (Scout)', 512, 512, 'square', '&n=512&who=scout'],
+  ['x-avatar-400.png', 'X avatar', 400, 400, 'square', '&n=400&theme=blaze'],
+  ['slack-icon-512.png', 'Slack app icon (Scout)', 512, 512, 'square', '&n=512&who=scout&ground=blaze'],
   ['scout-badge-1000.png', 'Scout badge', 1000, 1000, 'square', '&n=1000&who=scout'],
-  ['linkedin-discord-avatar-512.png', 'LinkedIn / Discord avatar', 512, 512, 'square', '&n=512'],
+  ['linkedin-discord-avatar-512.png', 'LinkedIn / Discord avatar', 512, 512, 'square', '&n=512&theme=blaze'],
   ['logo-light-512.png', 'Logo, light version', 512, 512, 'square', '&n=512&theme=light'],
-  ['favicon-64.png', 'Favicon 64 (light tabs)', 64, 64, 'favicon', '&px=64'],
-  ['favicon-32.png', 'Favicon 32 (light tabs)', 32, 32, 'favicon', '&px=32'],
-  ['favicon-64-dark.png', 'Favicon 64 (dark tabs)', 64, 64, 'favicon', '&px=64&theme=dark'],
-  ['favicon-32-dark.png', 'Favicon 32 (dark tabs)', 32, 32, 'favicon', '&px=32&theme=dark'],
+  ['favicon-64.png', 'Favicon 64', 64, 64, 'favicon', '&px=64'],
+  ['favicon-32.png', 'Favicon 32', 32, 32, 'favicon', '&px=32'],
 ];
 for (const [file, , w, h, view, extra] of KIT) {
   const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
@@ -84,6 +82,7 @@ for (const [file, , w, h, view, extra] of KIT) {
     ['x-avatar-400.png', 48, 'X 48px'],
     ['favicon-32.png', 32, 'Favicon 32px'],
     ['favicon-64.png', 16, 'Tab 16px'],
+    ['slack-icon-512.png', 24, 'Scout 24px'],
   ]
     .map(
       ([f, px, label]) =>
@@ -92,16 +91,15 @@ for (const [file, , w, h, view, extra] of KIT) {
     .join('');
   const page = await browser.newPage({ viewport: { width: 1840, height: 1200 }, deviceScaleFactor: 1 });
   await page.setContent(`<style>
-    @font-face{font-family:B;src:url(${'data:font/woff2;base64,' + readFileSync(font('figtree/files/figtree-latin-wght-normal.woff2')).toString('base64')})}
+    @font-face{font-family:B;src:url(${'data:font/woff2;base64,' + readFileSync(font('inter/files/inter-latin-wght-normal.woff2')).toString('base64')})}
     @font-face{font-family:M;src:url(${'data:font/woff2;base64,' + readFileSync(font('jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2')).toString('base64')})}
-    @font-face{font-family:C;font-weight:700;src:url(${'data:font/woff2;base64,' + readFileSync(createRequire(import.meta.url).resolve('@fontsource/londrina-solid/files/londrina-solid-latin-900-normal.woff2')).toString('base64')})}
-    body{margin:0;background:#101815;color:#c3cdc1;font:13px B}
+    body{margin:0;background:#0a0a0b;color:#c9cbd0;font:13px B}
     #s{display:inline-block;padding:28px 32px}
-    h1{margin:0 0 18px;font:700 20px C;color:#eef0e4} h1 span{font:13px M;letter-spacing:.1em;color:#93a497}
+    h1{margin:0 0 18px;font:600 20px B;letter-spacing:-.02em;color:#f4f4f6} h1 span{font:13px M;letter-spacing:.1em;color:#ff6b2c}
     .g{display:flex;flex-wrap:wrap;gap:22px;width:1776px;align-items:flex-end}
-    figure{margin:0;display:flex;flex-direction:column;gap:6px} img{display:block;border:1px solid rgba(150,170,155,.2)}
-    figcaption{font:12px M;color:#93a497} figcaption b{color:#eef0e4;font-weight:400}
-    h2{font:13px M;letter-spacing:.1em;color:#eef0e4;margin:26px 0 12px;text-transform:uppercase}
+    figure{margin:0;display:flex;flex-direction:column;gap:6px} img{display:block;border:1px solid rgba(255,255,255,.14)}
+    figcaption{font:12px M;color:#9a9ea6} figcaption b{color:#f4f4f6;font-weight:400}
+    h2{font:13px M;letter-spacing:.1em;color:#ff6b2c;margin:26px 0 12px;text-transform:uppercase}
     canvas{display:block} .row{display:flex;gap:30px;align-items:flex-end}
   </style><div id="s"><h1>${WORDMARK} <span>Social kit</span></h1><div class="g">${tiles}</div><h2>Small-size checks</h2><div class="row">${checks}</div></div>`);
   await page.evaluate(async () => {
@@ -254,3 +252,25 @@ console.log('wrote', mp4, `(${(end - start).toFixed(1)}s)`);
 
 await browser.close();
 await new Promise((r) => server.httpServer.close(r));
+
+// The social kit: every brand file, prefixed `teamtrail-`, plus the contact sheet, in one download.
+{
+  const kitTmp = join(OUT, '.kit-tmp');
+  rmSync(kitTmp, { recursive: true, force: true });
+  mkdirSync(kitTmp, { recursive: true });
+  const files = readdirSync(BRAND).filter((f) => /\.(png|gif|mp4)$/.test(f));
+  for (const f of files) writeFileSync(join(kitTmp, `teamtrail-${f}`), readFileSync(join(BRAND, f)));
+  const zip = join(BRAND, 'teamtrail-social-kit.zip');
+  rmSync(zip, { force: true });
+  execFileSync('zip', [
+    '-q',
+    '-X',
+    '-j',
+    zip,
+    ...readdirSync(kitTmp)
+      .sort()
+      .map((f) => join(kitTmp, f)),
+  ]);
+  rmSync(kitTmp, { recursive: true, force: true });
+  console.log('wrote', zip, `(${files.length} files)`);
+}

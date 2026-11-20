@@ -5,7 +5,7 @@ import type { LogoTheme } from './types';
 
 /**
  * The Teamtrail logo mark; `bare` drops the tile, for favicons and inline use. `theme` picks the version for the
- * background: `dark` (the default), `light`, or `auto`, which follows the page's `color-scheme`.
+ * background: `dark` (the default), `light`, `blaze` (the app icon), or `auto`, which follows the page's `color-scheme`.
  */
 export function Logo({
   size = 40,

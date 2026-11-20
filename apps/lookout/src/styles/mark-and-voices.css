@@ -19,16 +19,21 @@
   display: flex;
   align-items: center;
 }
-/* The teamtrail. wordmark (components/ui/Wordmark.tsx): ink and dot per theme, in styles/theme.css. */
+/* The teamtrail. wordmark (components/ui/Wordmark.tsx): Inter 600 whatever the reading face, ink and dot per theme
+ * in styles/theme.css. After the callers' title styles, so its face and tracking win. */
 .tt-wordmark {
+  font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  margin-right: 0;
   color: var(--wordmark-ink);
   white-space: nowrap;
 }
 .tt-wordmark-dot {
   display: inline-block;
-  width: 0.24em;
-  height: 0.24em;
-  margin-left: 0.042em;
+  width: 0.19em;
+  height: 0.19em;
+  margin-left: 0.05em;
   border-radius: 50%;
   background: var(--wordmark-dot);
 }

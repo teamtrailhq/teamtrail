@@ -1,4 +1,4 @@
-<img src="brand/teamtrail-banner.gif" alt="The teamtrail wordmark, ending in an orange dot, above a dashed trail through the mountains that reaches the same orange destination." width="100%" />
+<img src="brand/teamtrail-banner.gif" alt="The teamtrail wordmark in white, ending in a blaze-orange dot, above a trail on a dot grid that steps past four tickets to the same orange destination." width="100%" />
 
 # Teamtrail
 
@@ -148,14 +148,6 @@ npm run check         # lint, typecheck, build, test and verify:mcp; run before 
 ```
 
 See [`apps/lookout/README.md`](apps/lookout/README.md) for the architecture, metrics and tracker API, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for code standards.
-
-## Support
-
-<a href="https://www.teamtrail.app/scout/"><img src="brand/scout-plush.jpg" alt="Scout as a plush toy" width="160" align="right"></a>
-
-Teamtrail is free. If it helps you, [sponsor it on GitHub](https://github.com/sponsors/teamtrailhq). At the Scout tier, a handmade Scout plush comes home with you: [adopt a Scout](https://www.teamtrail.app/scout/).
-
-<br clear="right">
 
 ## License
 
