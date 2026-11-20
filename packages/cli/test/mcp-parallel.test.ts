@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
 import { callTool } from './fakes/callTool';
-import { approveAllHere } from './fakes/trailLead';
+import { approveAllHere, startAnywayHere } from './fakes/trailLead';
 
 let top: string;
 let root: string;
@@ -105,12 +105,14 @@ describe('parallel work over MCP', () => {
     fs.writeFileSync(path.join(root, 'verification.json'), JSON.stringify(verification));
     approveAllHere(root);
     const one = await connect('claude-01');
-    await one('start_trail', {
+    const m = await one<{ trail: { id: string } }>('start_trail', {
       discovery: false,
       title: 'Deps',
       destination: 'Deps install',
       tickets: [{ ref: 'a', title: 'Use the lockfile', type: 'task' }],
     });
+    // no checks: repo readiness holds implementation work until the trail lead starts the trail anyway
+    await startAnywayHere(root, m.trail.id);
     const c = await one<Claimed & { workspaceSetup: { ran: { step: string; failed?: boolean }[]; note: string } }>(
       'claim_ticket',
       { touches: ['src/**'] },

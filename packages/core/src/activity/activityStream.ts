@@ -170,6 +170,11 @@ export class ActivityStream {
     return true;
   }
 
+  /** Whether a session waits on a question for the human's answer (wait_for_answer after guidance), shown as idle. */
+  waiting(sessionId: string, questionId: string | undefined) {
+    this.patchSession(sessionId, { waitingOn: questionId });
+  }
+
   /** The first chat answer to a question (`guide`), as guidance, once it is given. */
   awaitGuidance(questionId: string) {
     return new Promise<QuestionGuidance>((r) => this.guides.set(questionId, r));

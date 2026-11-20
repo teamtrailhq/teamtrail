@@ -22,6 +22,8 @@ export interface CheckRun {
   timeoutMs?: number;
   signal?: AbortSignal;
   env?: NodeJS.ProcessEnv;
+  /** Variable names this machine's person let checks read beyond the allowlist (storedCheckEnvNames.ts). */
+  envNames?: string[];
   killGraceMs?: number;
 }
 
@@ -63,7 +65,7 @@ export function runCheck(name: string, spec: CheckSpec, run: CheckRun): Promise<
   if (!cwd) return refused(`cwd "${spec.cwd}" is not a directory inside the repo`);
   const leadsOut = toolPathRefusal({ argv0: spec.run[0], root: run.repoRoot, cwd });
   if (leadsOut) return refused(leadsOut);
-  const { env, withheld } = checkEnv(run.env ?? process.env);
+  const { env, withheld } = checkEnv(run.env ?? process.env, run.envNames);
   const chunks: Buffer[] = [];
   let kept = 0;
   let truncated = false;

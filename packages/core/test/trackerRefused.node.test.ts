@@ -253,8 +253,10 @@ test('Retry sends a refused write again once access is back; Discard forgets one
       net.state.fault = prev;
       await b.tick();
       const [again] = queueOf({ trackerRefused: store.list() });
+      assert.equal(b.status.dropped?.length, 1, 'Settings says 1 not sent');
       assert.equal((await server.post({ action: 'discard', mapId: map.id, ref: again.ref })).status, 200);
       assert.equal(store.list().length, 0);
+      assert.deepEqual(b.status.dropped, [], 'the sync line no longer counts the discarded write');
 
       const journal = path.join(dirs.root, '.events', '_trust.jsonl');
       assert.ok(existsSync(journal));
@@ -266,4 +268,62 @@ test('Retry sends a refused write again once access is back; Discard forgets one
     } finally {
       server.close();
     }
+  }));
+
+test('the sync line counts a refused write until anyone retries or discards it, and one that could not be kept stays', () =>
+  inFolders(async (dirs) => {
+    const fake = fakeGitHub({ repo: REPO });
+    const { net, lock } = lockable(fake.fetch);
+    const sink = refusedSink({ ...dirs, tracker: 'github', key: outboxKey('github', REPO) });
+    const make = (refused: typeof sink) =>
+      new GitHubAdapter({ repo: REPO, token: 't', fetch: net.fetch, manual: true, sleep: async () => {}, refused });
+    const a = make(sink);
+    const { map, tickets } = await chart(a);
+    a.subscribe(() => {});
+    await a.tick();
+    const seen: number[] = [];
+    a.onStatus((s) => seen.push(s.dropped?.length ?? 0));
+    const refuse = async (text: string) => {
+      await a.loadMap(map.id);
+      const prev = net.state.fault;
+      net.state.fault = 'offline';
+      await a.comment(map.id, tickets[0].id, 'claude-07', text);
+      net.state.fault = prev;
+      lock.locked = true;
+      await a.tick();
+      lock.locked = false;
+    };
+    await refuse('One.');
+    await refuse('Two.');
+    assert.equal(a.status.dropped?.length, 2);
+    assert.equal(seen.at(-1), 2);
+    // another process (the Lookout's route, `teamtrail approve`) settles one in the store
+    const store = refusedWrites(dirs.root, dirs.configDir);
+    store.take([store.list()[0].write.id]);
+    assert.deepEqual(
+      a.status.dropped?.map((d) => d.label),
+      [`comment on ${tickets[0].key}`],
+    );
+    store.take(store.list().map((r) => r.write.id));
+    assert.deepEqual(a.status.dropped, []);
+    a.dispose();
+
+    // a sink that couldn't keep it: the status is the only place it shows, so it stays
+    const b = make({
+      add: () => {
+        throw new Error('disk full');
+      },
+      kept: () => new Set(),
+    });
+    b.subscribe(() => {});
+    await b.tick();
+    await b.loadMap(map.id);
+    const prev = net.state.fault;
+    net.state.fault = 'offline';
+    await b.comment(map.id, tickets[1].id, 'claude-07', 'Three.');
+    net.state.fault = prev;
+    lock.locked = true;
+    await b.tick();
+    assert.equal(b.status.dropped?.length, 1);
+    b.dispose();
   }));

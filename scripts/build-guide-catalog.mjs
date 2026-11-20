@@ -146,14 +146,25 @@ function page(index) {
   });
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Teamtrail guides</title><style>
-body{font:16px/1.5 system-ui,sans-serif;max-width:52rem;margin:2rem auto;padding:0 1rem;color:#1d2321;background:#fbfaf6}
-ul{list-style:none;padding:0}li{border-top:1px solid #ddd;padding:1rem 0}h2{font-size:1.1rem;margin:0}
-.m{color:#666;font-size:.9rem;margin:.2rem 0}.v,.u,.r{font-size:.75rem;padding:.1rem .4rem;border-radius:.3rem;margin-left:.3rem}
-.v{background:#dcefe2}.u{background:#eee}.r{background:#f6dcd6}code{font-size:.9em}
-@media (prefers-color-scheme:dark){body{background:#151816;color:#e7e9e5}li{border-color:#333}.m{color:#9a9f99}.v{background:#244231}.u{background:#333}.r{background:#4a2a24}}
-</style></head><body><h1>Teamtrail guides</h1>
+:root{--bg:#fff;--text:#3a3d44;--hi:#0e0f11;--dim:#62666e;--line:rgba(0,0,0,.1);--chip:#f4f4f5;--accent:#bf3900;--ok:#0e7a4c;--warn:#b81e48;--dot:rgba(0,0,0,.09)}
+@media (prefers-color-scheme:dark){:root{--bg:#0a0a0b;--text:#c9cbd0;--hi:#f4f4f6;--dim:#8d9199;--line:rgba(255,255,255,.1);--chip:#161618;--accent:#ff6b2c;--ok:#3ccf8e;--warn:#ff4d7a;--dot:rgba(255,255,255,.08)}}
+body{margin:0;font:15px/1.55 Inter,ui-sans-serif,system-ui,sans-serif;color:var(--text);background:var(--bg) radial-gradient(var(--dot) 1px,transparent 1.4px) 0 0/24px 24px}
+main{max-width:52rem;margin:0 auto;padding:3rem 1rem}
+.wm{font-weight:600;font-size:1.25rem;letter-spacing:-.035em;color:var(--hi);white-space:nowrap}
+.wm i{display:inline-block;width:.32em;height:.66em;margin-left:.07em;background:var(--accent)}
+h1{margin:1.5rem 0 .5rem;font-size:2.25rem;line-height:1.1;letter-spacing:-.03em;font-weight:600;color:var(--hi)}
+main>p{color:var(--dim);max-width:44rem}
+ul{list-style:none;padding:0;margin:2rem 0 0;border-top:1px solid var(--line)}li{border-bottom:1px solid var(--line);padding:1.1rem 0;background:var(--bg)}
+h2{font-size:1.05rem;margin:0;font-weight:600;color:var(--hi);display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+h2 code{color:var(--dim);font-weight:400}li p{margin:.3rem 0}
+.m{color:var(--dim);font-size:.85rem}a{color:var(--accent)}
+code{font:.85em "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+.m code{color:var(--hi);background:var(--chip);border:1px solid var(--line);padding:.1rem .4rem}
+.v,.u,.r{font:500 .7rem/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;padding:.3rem .45rem;border:1px solid var(--line)}
+.v{color:var(--ok)}.u{color:var(--dim)}.r{color:var(--warn)}
+</style></head><body><main><div class="wm" role="img" aria-label="Teamtrail">teamtrail<i aria-hidden="true"></i></div><h1>Bring a guide for the hard stretches.</h1>
 <p>Guides your coding agents can take on. Each is a plain markdown file. The lint looks for common problems; it isn't a review. A guide is Verified when a maintainer reviewed this exact file (its hash is in verified.json). Read a guide before you approve it: installing one pins its hash, and any check command it proposes runs only after you approve that too.</p>
-<ul>${rows.join('\n')}</ul></body></html>\n`;
+<ul>${rows.join('\n')}</ul></main></body></html>\n`;
 }
 
 const reported = idSet('reported.json');

@@ -448,6 +448,15 @@ input,
 .select {
   height: var(--h-md);
 }
+/* Checkboxes and radios keep the browser's own size (the rules above size text fields), in the accent when on. */
+input[type='checkbox'],
+input[type='radio'] {
+  width: auto;
+  height: auto;
+  padding: 0;
+  flex: none;
+  accent-color: var(--accent);
+}
 input:focus,
 textarea:focus,
 .select:focus-visible,

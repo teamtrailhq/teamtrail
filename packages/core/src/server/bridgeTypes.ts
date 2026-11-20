@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { TrackerAdapter } from '../adapters/adapter';
 import type { RepoFiles } from '../model/checkScreening';
+import type { ReadinessHost } from '../model/readiness';
 import type { DecisionRecord } from '../model/types';
 import type { CheckRunner } from '../verification/checkRunner';
 import type { PeerAddress } from './requestGuard';
@@ -102,4 +103,10 @@ export interface BridgeOptions extends Omit<TrackerRoutesOptions, 'root' | 'mark
    * aren't on disk (a hosted workspace) passes its own reader, e.g. one backed by GitHub.
    */
   repoFiles?: (repoRoot: string) => RepoFiles | undefined;
+  /**
+   * Where repo readiness (readiness/) is read and how the machine that runs the checks is probed. Default: the
+   * files above, probed on this machine unless `checkRunner` runs the checks (then nothing about a machine is said).
+   * Cloud passes its own probe, read from its sandbox image and the toolchains it installs.
+   */
+  readiness?: ReadinessHost;
 }

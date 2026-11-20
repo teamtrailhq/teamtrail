@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Empty, InfoTip, MetaLine, Panel, Row, Select } from '../../components/ui';
 import { useKnowledge } from './knowledgeContext';
 import { KnowledgeDetail } from './KnowledgeDetail';
+import { SuggestCommandNotes } from './SuggestCommandNotes';
 
 type Filter = 'review' | 'confirmed' | 'assumption' | 'outdated' | 'all';
 
@@ -59,6 +60,7 @@ export function KnowledgeView() {
         <header>
           <h2 className="t-heading caps">Field guide</h2>
           <InfoTip text="What agents need to know about this codebase and product. Agents propose entries; only confirmed ones and assumptions reach them, picked for each ticket with the reason. Entries about files are flagged here when those files change. Seed it from a document with: teamtrail knowledge import <file.md>" />
+          <SuggestCommandNotes />
         </header>
         <div className="kn-filters">
           {tabs.map(([f, label]) => (

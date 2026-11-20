@@ -52,7 +52,12 @@ export abstract class SyncedStore {
     this.author = opts.author;
     this.refused = opts.refused;
     this.queue = new WriteQueue(opts.outbox, (error) => this.health.note(error));
-    this.health = new SyncHealth({ now: this.now, queued: () => this.queue.length, rate: () => this.rate() });
+    this.health = new SyncHealth({
+      now: this.now,
+      queued: () => this.queue.length,
+      rate: () => this.rate(),
+      kept: this.refused?.kept && (() => this.refused!.kept!()),
+    });
     this.poller = new Poller({
       pollMs: this.pollMs,
       maxBackoffMs: opts.maxBackoffMs ?? 120_000,

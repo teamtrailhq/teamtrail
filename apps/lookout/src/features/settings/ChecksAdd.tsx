@@ -14,7 +14,7 @@ export function ChecksAdd(props: {
 }) {
   return (
     <div className="vf-edit-add">
-      <Button onClick={() => props.onAdd({ name: '', command: '', cwd: '' })}>Add check</Button>
+      <Button onClick={() => props.onAdd({ name: '', command: '', cwd: '', paths: '' })}>Add check</Button>
       {props.suggestions.length > 0 && <span className="t-meta">or add what this repo runs</span>}
       {props.suggestions.map((s) => (
         <SuggestionChip key={`${s.cwd}|${s.run.join(' ')}`} suggestion={s} onAdd={() => props.onSuggestion(s)} />

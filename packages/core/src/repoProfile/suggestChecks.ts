@@ -33,9 +33,12 @@ function commandsIn(unit: RepoUnit) {
   return sorted.filter((c, i) => sorted.findIndex((d) => d.run.join(' ') === c.run.join(' ')) === i);
 }
 
+/** A unit that is one part of a monorepo (a workspace member, or one of several units), below the top. */
+const partOf = (profile: RepoProfile, unit: RepoUnit) => !!unit.dir && (!!unit.memberOf || profile.layout !== 'single');
+
 /**
  * The checks the profile suggests: each unit's commands (shallowest unit first, test before lint), in the unit's
- * folder. Only argv the check lint accepts (guides/checkArgv.ts): a refused shape is never offered. `known` says
+ * folder, scoped to that folder (`paths`) when the unit is one part of a monorepo. Only argv the check lint accepts (guides/checkArgv.ts): a refused shape is never offered. `known` says
  * whether it's a known check shape; saving any of them is still the person's approval. At most 20.
  */
 export function suggestChecks(profile: RepoProfile): CheckSuggestion[] {
@@ -48,7 +51,17 @@ export function suggestChecks(profile: RepoProfile): CheckSuggestion[] {
       if (checkArgv(spec).length) continue;
       const name = nameOf({ dir: c.cwd, role: c.role, run: c.run, taken });
       const known = !checkNotice(spec);
-      out.push({ name, run: c.run, cwd: c.cwd, role: c.role, ecosystem: unit.ecosystem, from: c.from, known });
+      const paths = partOf(profile, unit) ? { paths: [`${unit.dir}/**`] } : {};
+      out.push({
+        name,
+        run: c.run,
+        cwd: c.cwd,
+        role: c.role,
+        ecosystem: unit.ecosystem,
+        from: c.from,
+        known,
+        ...paths,
+      });
     }
   }
   return out;

@@ -133,7 +133,7 @@ describe('accepting a brief binds to what was shown', () => {
 });
 
 describe('confirming knowledge binds to what was shown', () => {
-  const h: Handler = (req, res, url) => handleKnowledge(root, req, res, url);
+  const h: Handler = (req, res, url) => handleKnowledge({ root }, req, res, url);
   it('refuses an entry edited while the human read it', async () => {
     const entry = (body: string) => ({
       id: 'K-1',

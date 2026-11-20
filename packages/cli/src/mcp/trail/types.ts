@@ -5,6 +5,7 @@ import {
   type ChecklistAnswer,
   type CriterionEvidence,
   type CriterionKind,
+  type ReadinessHost,
   type RiskCategory,
   type RuleAnswer,
   type TicketType,
@@ -46,6 +47,11 @@ export interface AgentOptions {
    * is. Set only by the server's own code. Without one, a remote completion runs nothing and goes to the human.
    */
   checkRunner?: CheckRunner;
+  /**
+   * Where repo readiness is read and probed, set only by an embedding server (Cloud: its own reader of the repo and a
+   * probe of its sandbox image). Default: this machine's checkout, probed here unless `checkRunner` runs the checks.
+   */
+  readiness?: ReadinessHost;
 }
 
 export interface TicketPlanInput {
