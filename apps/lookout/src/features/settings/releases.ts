@@ -24,7 +24,7 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.67.15',
+    version: '0.67.17',
     date: '2026-11-20',
     items: [
       "The map's destination is a finish square: it fills green when the trail is verified, rose when its checks fail",
