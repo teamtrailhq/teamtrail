@@ -189,3 +189,20 @@ describe('screening per stack: project files and wrappers', () => {
     expect((await screen(fixtureRepoFiles('ruby'), 'bundle exec make nope'))[0].text).toBe('No Makefile');
   });
 });
+
+describe('screening: a program outside the repo', () => {
+  it('is never read as the tool it is named after', async () => {
+    const outside = (argv0: string) => ({
+      severity: 'unsure',
+      text: `\`${argv0}\` is outside the repo: Teamtrail can't tell what it runs`,
+    });
+    // pytest would find pyproject.toml here; /tmp/x/pytest is not pytest
+    expect(await screen(fixtureRepoFiles('python-uv'), '/tmp/x/pytest -q')).toEqual([outside('/tmp/x/pytest')]);
+    expect(await screen(fixtureRepoFiles('python-uv'), '../x/pytest -q')).toEqual([outside('../x/pytest')]);
+    expect(await screen(fixtureRepoFiles('python-uv'), 'uv run --frozen ../x/pytest')).toEqual([
+      outside('../x/pytest'),
+    ]);
+    // a path into the repo's tool folders is still screened as what it is
+    expect((await screen(local('python-uv'), '.venv/bin/pytest'))[0].cause).toBe('not-installed');
+  });
+});
