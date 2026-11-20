@@ -1,5 +1,6 @@
 import { pmRoute, type JsPackageManager } from '../verification/pmRoute';
 import { BUILD_TASKS, fitsTasks, type BuildTasks } from './buildTasks';
+import { knownProgram } from './programIdentity';
 
 /*
  * The checks Teamtrail knows: test runners, linters, type checkers, formatters in check mode and build tools, each by
@@ -95,9 +96,6 @@ export const KNOWN_CHECKS: Record<string, Shape> = {
   git: { sub: ['diff'] },
 };
 
-/** A tool installed in the repo's node_modules: known only when the tool itself is on the list above. */
-const LOCAL_BIN = /^(\.\/)?node_modules\/\.bin\/([\w.-]+)$/;
-
 function fitsShape(shape: Shape, args: string[]): boolean {
   const first = args[0] ?? '';
   if (shape.tasks) return fitsTasks(shape.tasks, args);
@@ -114,13 +112,22 @@ const PACKAGE_MANAGERS = new Set<string>(['npm', 'pnpm', 'yarn', 'bun']);
 const routed = (program: string, args: string[]) =>
   PACKAGE_MANAGERS.has(program) ? pmRoute(program as JsPackageManager, args).words : args;
 
-/** The known shape argv fits, if any: by the program, or by the tool a node_modules/.bin path names. */
-export function knownShape(input: { argv0: string; program: string; args: string[] }): Shape | undefined {
-  const bin = LOCAL_BIN.exec(input.argv0)?.[2];
-  const program = bin ?? input.program;
-  const shape = KNOWN_CHECKS[program];
-  return shape && fitsShape(shape, routed(program, input.args)) ? shape : undefined;
+/** A program as a check names it: argv0 and the folder it runs in (repo-relative), then its words. */
+export interface CheckProgram {
+  argv0: string;
+  args: string[];
+  cwd?: string;
+}
+
+/**
+ * The known shape argv fits, if any. The program counts by its name only when it's a bare name found on PATH or a
+ * path into the repo's own tool folders (programIdentity.ts): `/tmp/x/pytest` or `../x/jest` is no known check.
+ */
+export function knownShape(input: CheckProgram): Shape | undefined {
+  const program = knownProgram(input.argv0, input.cwd);
+  const shape = program ? KNOWN_CHECKS[program] : undefined;
+  return program && shape && fitsShape(shape, routed(program, input.args)) ? shape : undefined;
 }
 
 /** Whether argv is one of the known check shapes. */
-export const isKnownCheck = (input: { argv0: string; program: string; args: string[] }) => !!knownShape(input);
+export const isKnownCheck = (input: CheckProgram) => !!knownShape(input);

@@ -4,6 +4,7 @@ import { argsProblem, genericCodeProblem } from './argRules';
 import { gitProblem } from './gitArgv';
 import { inlineCodeProblem } from './inlineCode';
 import { isKnownCheck, knownShape } from './knownChecks';
+import { knownProgram } from './programIdentity';
 import { NETWORK_TOOLS, PACKAGE_MANAGERS, programOf, RUNNERS, SHELLS, WRAPPERS } from './programRules';
 import { wrappedCheck } from './wrappedCheck';
 
@@ -48,16 +49,17 @@ function programProblem(program: string, all: string[]): string | undefined {
   return undefined;
 }
 
-type Parts = { argv0: string; program: string; args: string[] };
+/** `program` is the base name, which the refusals go by; whether it's a known check goes by its identity. */
+type Parts = { argv0: string; program: string; args: string[]; cwd?: string };
 
 function parts(spec: ProposedCheck): Parts {
   const argv0 = spec.run[0] ?? '';
-  return { argv0, program: programOf(argv0), args: spec.run.slice(1) };
+  return { argv0, program: programOf(argv0), args: spec.run.slice(1), cwd: spec.cwd };
 }
 
 /** Why one command's argv is refused, read as the program reads it. */
-function argvProblems({ argv0, program, args }: Parts): string[] {
-  const known = knownShape({ argv0, program, args });
+function argvProblems({ argv0, program, args, cwd }: Parts): string[] {
+  const known = knownShape({ argv0, args, cwd });
   return [
     programProblem(program, args),
     inlineCodeProblem(program, args),
@@ -69,7 +71,7 @@ function argvProblems({ argv0, program, args }: Parts): string[] {
 
 /** A wrapper's own words, then the tool it runs judged as a check of its own (wrappedCheck.ts). */
 function commandProblems(p: Parts): string[] {
-  const wrapped = wrappedCheck(p.program, p.args);
+  const wrapped = wrappedCheck(p);
   switch (wrapped.kind) {
     case 'none':
       return argvProblems(p);
@@ -106,12 +108,14 @@ export const UNKNOWN_PROGRAM = "unknown program: Teamtrail can't tell what this 
 
 /**
  * Why a check that isn't refused still needs the person's explicit acknowledgement: its argv isn't one of the known
- * check shapes (knownChecks.ts). Approved on its own, never in bulk.
+ * check shapes (knownChecks.ts), or its program is named by a path anywhere but the repo's own tool folders
+ * (`/tmp/x/pytest`, `../x/jest`: programIdentity.ts), a wrapper's included. Approved on its own, never in bulk.
  */
 export function checkNotice(spec: ProposedCheck): string | undefined {
   if (checkArgv(spec).length) return undefined;
   const p = parts(spec);
+  if (!knownProgram(p.argv0, p.cwd)) return UNKNOWN_PROGRAM;
   // a wrapper's run form that isn't refused runs a known check (wrappedCheck.ts)
-  if (wrappedCheck(p.program, p.args).kind === 'tool') return undefined;
+  if (wrappedCheck(p).kind === 'tool') return undefined;
   return isKnownCheck(p) ? undefined : UNKNOWN_PROGRAM;
 }

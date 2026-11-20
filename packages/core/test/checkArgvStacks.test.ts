@@ -49,7 +49,6 @@ describe('check argv per stack', () => {
     'flutter analyze',
     'php artisan test',
     'vendor/bin/phpunit',
-    'bin/rails test',
     'rake test',
     'cargo nextest run',
     'deno task check',
@@ -106,6 +105,8 @@ describe('check argv per stack', () => {
     'gradle publish',
     'poetry check',
     'nx exec -- echo',
+    // a repo's own bin/ is no tool folder: a program there is known by nothing but its name (programIdentity.ts)
+    'bin/rails test',
   ];
   it.each(unknown)('`%s` needs the acknowledgement an unknown program does', (line) => {
     expect(checkArgv(spec(line))).toEqual([]);
