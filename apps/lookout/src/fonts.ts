@@ -1,5 +1,6 @@
-/** Type for the re-theme preview: five sans + mono pairings, picked with `data-font` (styles/look.css). All SIL OFL
- * 1.1 (Fontsource). Once one is chosen, only its files stay. */
+/** Type for the re-theme preview: Inter and JetBrains Mono (the choice), and four other pairings still switchable with
+ * `data-font` (styles/look.css). All SIL OFL 1.1 (Fontsource). Before this ships, only Inter and JetBrains Mono stay. */
+import '@fontsource-variable/inter';
 import '@fontsource/ibm-plex-sans/400.css';
 import '@fontsource/ibm-plex-sans/500.css';
 import '@fontsource/ibm-plex-sans/600.css';
@@ -11,4 +12,3 @@ import '@fontsource-variable/instrument-sans';
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource-variable/manrope';
 import '@fontsource-variable/fira-code';
-import '@fontsource-variable/inter';

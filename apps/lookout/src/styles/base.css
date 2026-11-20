@@ -1,6 +1,6 @@
 /* Fonts and base elements. Colours live in theme.css, sizes and shared components in design-system.css. */
 :root {
-  /* Two fonts, a sans and its mono (picked in look.css, loaded in src/fonts.ts). --display is the sans at 600 with
+  /* Two fonts, a sans and its mono (Inter and JetBrains Mono by default, picked in look.css, loaded in src/fonts.ts). --display is the sans at 600 with
    * tight tracking, for the wordmark and titles; --sans for everything read, --label for small caps labels,
    * --strong for bold text and buttons, --data for numbers that change (tabular digits); --mono for keys, ids,
    * timers and code. */

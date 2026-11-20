@@ -1,22 +1,75 @@
-/* Preview switches for the re-theme, set as attributes on <html>: `data-accent` (indigo, blue, amber), `data-font`
- * (plex, space, instrument, manrope, inter) and `data-corners` (square, slight, rounded). Without one, the first applies.
- * Once a choice is made, its values move into theme.css and base.css and this file goes. */
+/* Preview switches for the re-theme, set as attributes on <html>: `data-accent` (indigo, blue, amber, blaze, cyan,
+ * magenta, hivis), `data-font` (inter, plex, space, instrument, manrope) and `data-corners` (square, slight, rounded).
+ * Without one, the first applies. Once a choice is made, its values move into theme.css and base.css and this file goes.
+ *
+ * Each accent gives night (-d) and day (-l) values, as RGB triplets: the accent itself (text, links, lines, selection,
+ * work in progress) and the primary button's fill and text. By day the accent is a darker shade that reads at least
+ * 4.5:1 on white; a light fill (amber, cyan, hivis) keeps its bright colour with near-black text. An accent that
+ * would be mistaken for a semantic colour moves that colour a step away (--urgent-*, --amber-*, theme.css). */
 :root {
-  --accent-rgb: 139, 124, 246; /* indigo #8B7CF6 */
-  --on-primary: #ffffff;
+  --accent-d: 139, 124, 246; /* indigo #8B7CF6 */
+  --on-primary-d: #ffffff;
+  --accent-l: 112, 93, 244; /* #705DF4, 4.60:1 on white */
+  --primary-l: var(--accent-l);
+  --on-primary-l: #ffffff;
   --r1: 0px; /* controls, chips */
   --r2: 0px; /* cards, panels, sheets */
+  --sans: 'Inter Variable', system-ui, sans-serif;
+  --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+:root[data-accent='blue'] {
+  --accent-d: 59, 130, 246; /* #3B82F6 */
+  --accent-l: 25, 108, 244; /* #196CF4, 4.67:1 */
+  --primary-l: var(--accent-l);
+}
+:root[data-accent='amber'] {
+  --accent-d: 245, 135, 31; /* #F5871F */
+  --on-primary-d: #0a0a0b;
+  --accent-l: 181, 92, 8; /* #B55C08, 4.67:1 */
+  --primary-l: 245, 135, 31;
+  --on-primary-l: #0a0a0b;
+}
+/* Blaze: the paint mark of a trail. Red moves to rose so "needs you" never reads as the accent. */
+:root[data-accent='blaze'] {
+  --accent-d: 255, 107, 44; /* #FF6B2C, 6.97:1 on #0A0A0B, near-black text 6.97:1 */
+  --on-primary-d: #0a0a0b;
+  --accent-l: 212, 63, 0; /* #D43F00, 4.66:1 on white, white text 4.66:1 */
+  --primary-l: var(--accent-l);
+  --on-primary-l: #ffffff;
+  --urgent-d: 255, 77, 122; /* #FF4D7A (was #FF5A5F) */
+  --urgent-hi-d: 255, 122, 155;
+  --urgent-l: 224, 50, 95; /* #E0325F (was #E5484D) */
+}
+/* Cyan: the lookout's signal. */
+:root[data-accent='cyan'] {
+  --accent-d: 34, 211, 238; /* #22D3EE, 10.95:1, near-black text 10.95:1 */
+  --on-primary-d: #0a0a0b;
+  --accent-l: 11, 128, 146; /* #0B8092, 4.65:1 */
+  --primary-l: 34, 211, 238;
+  --on-primary-l: #0a0a0b;
+}
+:root[data-accent='magenta'] {
+  --accent-d: 230, 79, 217; /* #E64FD9, 6.11:1, near-black text 6.11:1 */
+  --on-primary-d: #0a0a0b;
+  --accent-l: 206, 29, 191; /* #CE1DBF, 4.61:1, white text 4.61:1 */
+  --primary-l: var(--accent-l);
+  --on-primary-l: #ffffff;
+}
+/* High-visibility yellow. Held up moves from amber to orange so it never reads as the accent. */
+:root[data-accent='hivis'] {
+  --accent-d: 255, 216, 77; /* #FFD84D, 14.31:1, near-black text 14.31:1 */
+  --on-primary-d: #0a0a0b;
+  --accent-l: 143, 112, 0; /* #8F7000, 4.68:1 */
+  --primary-l: 255, 216, 77;
+  --on-primary-l: #0a0a0b;
+  --amber-d: 255, 150, 64; /* #FF9640 (was #F0AA46) */
+  --amber-l: 194, 94, 0; /* #C25E00 (was #B26800) */
+}
+
+:root[data-font='plex'] {
   --sans: 'IBM Plex Sans', system-ui, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
-:root[data-accent='blue'] {
-  --accent-rgb: 59, 130, 246; /* #3B82F6 */
-}
-:root[data-accent='amber'] {
-  --accent-rgb: 245, 135, 31; /* #F5871F */
-  --on-primary: #0a0a0b;
-}
-
 :root[data-font='space'] {
   --sans: 'Space Grotesk Variable', system-ui, sans-serif;
   --mono: 'Space Mono', ui-monospace, monospace;
@@ -25,20 +78,16 @@
   --sans: 'Instrument Sans Variable', system-ui, sans-serif;
   --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
 }
-:root[data-font='inter'] {
-  --sans: 'Inter Variable', system-ui, sans-serif;
-  --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
-}
 /* Inter as Linear sets it: the single-storey a (cv11) and round quotes (ss03). Its tabular figures also space out
  * hyphens and colons, so running text stays proportional and only numbers that change take tabular digits: the
  * --data places (base.css) and the ones already marked tabular in their own rules. */
-:root[data-font='inter'] body {
+:root:is([data-font='inter'], :not([data-font])) body {
   font-feature-settings:
     'cv11' 1,
     'ss03' 1;
   font-variant-numeric: normal;
 }
-:root[data-font='inter']
+:root:is([data-font='inter'], :not([data-font]))
   :is(.t-data, .readout, .usage, .bf-tile b, .report-stats b, .report-tickets .lead, .mi-progress) {
   font-variant-numeric: tabular-nums;
 }
