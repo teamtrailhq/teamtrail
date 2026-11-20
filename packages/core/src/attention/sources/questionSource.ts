@@ -1,5 +1,6 @@
 import type { PendingQuestion, SessionInfo } from '../../model/types';
 import type { AttentionSource, Candidate } from '../types';
+import { waitsOnHuman } from '../waitsOnHuman';
 import { clip } from './clip';
 
 /**
@@ -11,12 +12,19 @@ function idleOn(q: PendingQuestion, session?: SessionInfo): boolean {
   return q.urgency === undefined || q.urgency === 'blocking';
 }
 
-/** Open agent questions. Questions in one trail are a batch: the human answers them in one sitting. */
+/**
+ * Open agent questions that still wait on the human (waitsOnHuman.ts: one answered in an agent's chat leaves the
+ * queue unless a gate or the agent waits for their own answer). Questions in one trail are a batch: the human
+ * answers them in one sitting.
+ */
 export const questionSource: AttentionSource = {
   kind: 'question',
-  collect({ questions, sessions }) {
+  collect({ questions, sessions, snaps }) {
     const byId = new Map(sessions.map((s) => [s.id, s]));
-    return questions.map((q): Candidate => ({
+    const ticketOf = (q: PendingQuestion) =>
+      snaps.find((s) => s.map.id === q.mapId)?.tickets.find((t) => t.id === q.ticketId);
+    const waiting = questions.filter((q) => waitsOnHuman(q, { ticket: ticketOf(q), session: byId.get(q.sessionId) }));
+    return waiting.map((q): Candidate => ({
       kind: 'question',
       mapId: q.mapId,
       ticketId: q.ticketId,

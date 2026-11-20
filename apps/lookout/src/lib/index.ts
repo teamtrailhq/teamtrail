@@ -20,3 +20,4 @@ export { shortModel } from './shortModel';
 export { actorLabel } from './actorLabel';
 export { deciderLabel } from './deciderLabel';
 export type { SlackPeople } from './actorLabel';
+export { waitingQuestions } from './waitingQuestions';

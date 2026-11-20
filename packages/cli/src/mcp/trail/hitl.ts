@@ -11,7 +11,7 @@ import {
 import { lookoutOnlyTickets, needsLookout, readAgentDocs } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { rankedAttention } from './attention';
-import { awaitGuidance, guidanceResult } from './chatGuidance';
+import { awaitGuidance, guidanceResult, waitingAgain } from './chatGuidance';
 import { CHAT_GUIDES, LIMITED_HIGH_RISK, SLACK_HIGH_RISK } from './humanAnswer';
 import { precedentCheck } from './precedents';
 import { trailNameFamily } from './trailName';
@@ -136,6 +136,7 @@ export async function waitForAnswer(
   let tick: ReturnType<typeof setInterval> | undefined;
   let onAbort = () => {};
   const guided = ctx.guidance.get(input.questionId);
+  const waiting = waitingAgain(ctx, input.questionId);
   const res = await Promise.race([
     // The human's answer first: when both are in, theirs is the one returned.
     p.then((a) => ({ answered: true as const, a })),
@@ -150,6 +151,7 @@ export async function waitForAnswer(
       }, 15_000);
     }),
   ]).finally(() => {
+    waiting?.();
     clearTimeout(timer);
     clearInterval(tick);
     ctl.signal?.removeEventListener('abort', onAbort);

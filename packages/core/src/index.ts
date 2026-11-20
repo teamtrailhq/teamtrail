@@ -102,6 +102,7 @@ export { parseAttentionPrefs } from './attention/parsePrefs';
 export { focusState, isFocused, isInterrupting } from './attention/focus';
 export { changeFocus } from './attention/changeFocus';
 export { waitLabel } from './attention/score';
+export { waitsOnHuman } from './attention/waitsOnHuman';
 export { heldTickets } from './attention/heldTickets';
 export { isDismissable } from './attention/isDismissable';
 export * from './model/reviewLoad';
