@@ -142,6 +142,13 @@ describe('check guard per stack: runner configs', () => {
     expect(await guard({ stack: 'python-uv', run: '.venv/bin/pytest', edits: { 'conftest.py': 'x = 1\n' } })).toEqual([
       "conftest.py changed (pytest's config)",
     ]);
+    // the same name outside the repo is no pytest: its settings aren't what that program reads
+    for (const run of ['/tmp/x/pytest', '../x/.venv/bin/pytest', 'uv run --frozen --directory ../x pytest'])
+      expect(await guard({ stack: 'python-uv', run, edits: { 'conftest.py': 'x = 1\n' } })).toEqual([]);
+    // a wrapper's folder is where its tool runs (one reading of wrappers: verification/wrapperArgv.ts)
+    expect(
+      await guard({ stack: 'python-uv', run: 'pdm run --project . pytest', edits: { 'conftest.py': 'x = 1\n' } }),
+    ).toEqual(["conftest.py changed (pytest's config)"]);
   });
 
   it('PHP: composer scripts, vendor/bin tools, a baseline that ignores errors', async () => {
