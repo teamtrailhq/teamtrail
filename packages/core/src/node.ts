@@ -21,6 +21,8 @@ export { trailProofMarkdown } from './proof/trailProofMarkdown';
 export { signedTrailProofMarkdown } from './proof/signedTrailProofMarkdown';
 export { gapsHash } from './proof/gapsHash';
 export { mergeAcceptances } from './proof/mergeAcceptances';
+export { type MergeHead, mergeHead } from './proof/mergeHead';
+export { PR_HEAD_MOVED } from './model/mergeAnyway';
 export { verifyProofText, type ProofCheck } from './proof/verifyProofText';
 export { proofKeysAt } from './proof/proofKeysAt';
 export { parseProofKeys } from './proof/parseProofKeys';

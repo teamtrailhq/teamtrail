@@ -2,7 +2,9 @@ import { mkdirSync } from 'node:fs';
 import { machineStore } from '../machine/machineStore';
 import { withFileLock } from '../machine/withFileLock';
 import type { MergeAcceptance } from '../model/mergeAnyway';
+import type { Proof } from '../model/proof';
 import { OperationError } from '../planning/operations/operationError';
+import { gapsHash } from './gapsHash';
 
 /** `<config dir>/projects/<project id>/merge-anyway.json`: the trail lead's Merge anyway, by trail and ticket. */
 const FILE = 'merge-anyway.json';
@@ -43,9 +45,26 @@ export const mergeAcceptances = {
     }
   },
 
-  /** The ticket's latest, when it accepted exactly these gaps on this commit: what a server that merges asks. */
-  covering(root: string, o: { mapId: string; ticketId: string; gapsHash: string }): MergeAcceptance | undefined {
+  /**
+   * The ticket's latest, when it accepted exactly these gaps at this head (`gapsHash`): what a server that merges asks,
+   * with the hash the page sent it. Given the ticket's `proof` as it is now, the record must also still be about it:
+   * the same gaps, and the proof's commit, or, when the proof names none, a head accepted as the pull request's
+   * (`atPrHead`). Its `head` is then the only one a merge may take.
+   */
+  covering(
+    root: string,
+    o: { mapId: string; ticketId: string; gapsHash: string; proof?: Pick<Proof, 'gaps' | 'git'> },
+  ): MergeAcceptance | undefined {
     const a = mergeAcceptances.latest(root, o.mapId, o.ticketId);
-    return a?.gapsHash === o.gapsHash ? a : undefined;
+    if (a?.gapsHash !== o.gapsHash) return undefined;
+    return !o.proof || stillCovers(a, o.proof) ? a : undefined;
   },
 };
+
+/** The record is about the proof as it is now: its gaps, its commit or the pull request's head, its own hash. */
+function stillCovers(a: MergeAcceptance, proof: Pick<Proof, 'gaps' | 'git'>): boolean {
+  const own = proof.git?.head;
+  const head = own ? a.head === own && !a.atPrHead : a.atPrHead === true;
+  const gaps = JSON.stringify(a.gaps) === JSON.stringify(proof.gaps);
+  return head && gaps && gapsHash({ head: a.head, gaps: a.gaps }) === a.gapsHash;
+}

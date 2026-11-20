@@ -66,6 +66,25 @@ describe('merging from the Lookout', () => {
     expect(asked[1].body).toEqual({ trail: 'm', ticket: '3', anyway: true, gaps: 'sha256:abc' });
   });
 
+  test('Merge anyway at the pull request’s head: the head shown goes with the acceptance and the merge', async () => {
+    const asked = answers({ body: { gapsHash: 'sha256:def' } }, { body: { merged: true } });
+    const gaps = ['Finished with no checks set: nothing was checked.'];
+    const head = 'a'.repeat(40);
+    expect(await postMerge({ ...at, gaps, head })).toEqual({ kind: 'merged', url: undefined });
+    expect(asked[0].body).toEqual({ mapId: 'm', ticketId: '3', gaps, head });
+    expect(asked[1].body).toEqual({ trail: 'm', ticket: '3', anyway: true, gaps: 'sha256:def', head });
+  });
+
+  test('a head the pull request moved past is refused with the server’s words, and shown with its new head', async () => {
+    const moved = { ...snapshot({ state: 'open' }) };
+    moved.pr = { ...moved.pr, headSha: 'b'.repeat(40) };
+    const error = 'The pull request has new commits since you looked. Review again.';
+    answers({ body: { gapsHash: 'sha256:def' } }, { status: 409, body: { error, sync: moved } });
+    const r = await postMerge({ ...at, gaps: ['x'], head: 'a'.repeat(40) });
+    expect(r).toEqual({ kind: 'error', text: error });
+    expect(shown()).toMatchObject({ state: 'open', headSha: 'b'.repeat(40) });
+  });
+
   test('an acceptance refused stops there: nothing is merged, and the reason is shown', async () => {
     const asked = answers({
       status: 409,

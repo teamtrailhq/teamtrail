@@ -1,6 +1,6 @@
-/** What a merge came to: merged at the commit the proof covers, with the pull request's link. */
-export function MergedNote(props: { url?: string; anyway?: boolean }) {
-  const what = props.anyway ? 'Merged at the commit its proof covers.' : 'Approved and merged at the verified commit.';
+/** What a merge came to: where it merged (the verified commit, the proof's, or the head accepted), and the link. */
+export function MergedNote(props: { url?: string; anyway?: boolean; head?: string }) {
+  const what = mergedWhere(props);
   return (
     <span className="t-meta merge-note">
       {what}{' '}
@@ -11,4 +11,9 @@ export function MergedNote(props: { url?: string; anyway?: boolean }) {
       )}
     </span>
   );
+}
+
+function mergedWhere(p: { anyway?: boolean; head?: string }) {
+  if (p.head) return `Merged at head ${p.head.slice(0, 12)}, as you accepted it.`;
+  return p.anyway ? 'Merged at the commit its proof covers.' : 'Approved and merged at the verified commit.';
 }
