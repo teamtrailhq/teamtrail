@@ -19,12 +19,12 @@ The look: near-black (`#0A0A0B`) and white surfaces, square corners, Inter and J
 | `github-social-preview.png`       | 1280×640  | Still version of the GitHub social preview                                                                                                       |
 | `teamtrail-banner.gif`            | 960×480   | Animated README banner: the `teamtrail` wordmark while the trail steps across a dot grid, past its tickets, to its destination     |
 | `og-image-1200x630.png`           | 1200×630  | Open Graph / Twitter card image for teamtrail.app and link previews                                                                              |
-| `x-avatar-400.png`                | 400×400   | X (Twitter) profile picture: the blaze logo tile                                                                                                 |
+| `x-avatar-400.png`                | 400×400   | X (Twitter) profile picture: the blaze logo tile, its mark sized for the round crop                                                                                                |
 | `x-header-1500x500.png`           | 1500×500  | X (Twitter) header banner                                                                                                                        |
 | `wordmark-lockup.png`             | 960×240   | The `teamtrail` wordmark on near-black, for docs, decks and press                                                                               |
 | `wordmark-lockup-light.png`       | 960×240   | The same wordmark on white                                                                                                                       |
 | `teamtrail-social-loop.mp4`       | 1280×640  | The animated banner as a video, for posts on X, LinkedIn and the like                                                                            |
-| `linkedin-discord-avatar-512.png` | 512×512   | LinkedIn and Discord avatars: the blaze logo tile                                                                                                |
+| `linkedin-discord-avatar-512.png` | 512×512   | LinkedIn and Discord avatars: the blaze logo tile, its mark sized for the round crop                                                                                               |
 | `slack-icon-512.png`              | 512×512   | Slack app icon, Scout's avatar on the blaze ground filling the square, since Scout is who talks in Slack                                        |
 | `scout-badge-1000.png`            | 1000×1000 | Scout's avatar on ink, for docs, decks and press                                                                                                 |
 | `logo-light-512.png`              | 512×512   | The logo's light version, for light backgrounds                                                                                                  |

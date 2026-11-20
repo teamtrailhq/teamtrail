@@ -1,4 +1,5 @@
 import { LOGO_COLORS } from './logoColors';
+import { LOGO_IN_CIRCLE } from './logoInCircle';
 import { LOGO_ON_TILE } from './logoOnTile';
 import { logoShapes } from './logoShapes';
 import type { LogoColors, LogoTheme } from './types';
@@ -20,13 +21,13 @@ function paint(theme: LogoTheme): LogoColors {
 /**
  * The Teamtrail logo in a 200×200 box: a lowercase t whose stem curves into a path that runs to a block cursor,
  * on a square tile with no edge. `dark` (the default) is for dark backgrounds, `light` for light ones, `blaze` for
- * the favicon and app icons.
+ * the favicon and app icons. `round` places the mark for avatars cropped to a circle, clear of the crop.
  */
-export function logoMarkup(theme: LogoTheme = 'dark') {
+export function logoMarkup(theme: LogoTheme = 'dark', { round = false }: { round?: boolean } = {}) {
   const c = paint(theme);
   return [
     `<rect width="200" height="200" fill="${c.tile}"/>`,
-    `<g transform="${LOGO_ON_TILE}">`,
+    `<g transform="${round ? LOGO_IN_CIRCLE : LOGO_ON_TILE}">`,
     logoShapes({ mark: `fill="${c.mark}"`, cursor: `fill="${c.cursor}"` }),
     '</g>',
   ].join('');

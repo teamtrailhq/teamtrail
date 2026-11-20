@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { LOGO_COLORS } from '../src/logo/logoColors';
 import { logoFaviconSvg } from '../src/logo/logoFaviconSvg';
+import { LOGO_IN_CIRCLE } from '../src/logo/logoInCircle';
 import { logoBareMarkup, logoMarkup } from '../src/logo/logoMark';
 import { LOGO_ON_TILE } from '../src/logo/logoOnTile';
 
@@ -45,4 +46,17 @@ test('the cursor is white on the blaze tile, the favicon, and blaze on the other
   expect(LOGO_COLORS.light.cursor).toBe('#FF6B2C');
   expect(logoFaviconSvg()).toContain('width="42" height="86" fill="#FFFFFF"');
   expect(logoMarkup('auto')).toContain('var(--tt-logo-cursor, #FF6B2C)');
+});
+
+test('in a circle, the farthest corner of the mark stays 6% inside the radius, centred', () => {
+  const transform = logoMarkup('blaze', { round: true }).match(/<g transform="([^"]+)"/)![1];
+  expect(transform).toBe(LOGO_IN_CIRCLE);
+  const m = placed(transform);
+  expect(m.left).toBeCloseTo(m.right, 1);
+  expect(m.top).toBeCloseTo(m.bottom, 1);
+  const k = Number(transform.match(/scale\(([\d.]+)\)/)![1]);
+  const corner = Math.hypot(100 - m.right, 100 - m.bottom);
+  expect(corner).toBeLessThanOrEqual(94);
+  expect(corner).toBeGreaterThan(90);
+  expect(k).toBeLessThan(0.773);
 });
