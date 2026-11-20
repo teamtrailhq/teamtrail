@@ -7,8 +7,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout, lookoutLinks, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, lookoutLinks, shootThemes, signInWith } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
+import { stopProcess } from './stopProcess.mjs';
 
 /** A git repo with npm workspaces: apps/web tests with karma and runs with vite. */
 function scratchWorkspace() {
@@ -48,7 +49,14 @@ async function startLookout(cli, cwd) {
 }
 
 async function agent(cli, cwd) {
-  const transport = new StdioClientTransport({ command: process.execPath, args: [cli, 'mcp'], cwd, stderr: 'pipe' });
+  // the whole environment: the SDK's default would leave out this run's config dir and use the real one
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [cli, 'mcp'],
+    cwd,
+    stderr: 'pipe',
+    env: { ...process.env },
+  });
   const client = new Client({ name: 'claude-code', version: '2.1.0' });
   await client.connect(transport);
   const call = async (name, args = {}) => {
@@ -60,15 +68,16 @@ async function agent(cli, cwd) {
 }
 
 /** Records → Field guide, Suggest build and test notes, then Confirm on apps/web's note as shown. */
-async function confirmWebNote(page) {
+async function confirmWebNote(page, shots) {
   await page.getByRole('button', { name: /^Records/ }).click();
   await page.locator('.knowledge-btn').click();
   const view = page.locator('.knowledge-view');
   await view.getByRole('button', { name: 'Suggest build and test notes' }).click();
-  await view.locator('.kn-commands', { hasText: 'to review' }).waitFor({ timeout: 15_000 });
+  await view.locator('.kn-commands', { hasText: '2 notes to review' }).waitFor({ timeout: 15_000 });
   const row = view.locator('.kn-row', { hasText: 'How to build and test apps/web' });
   await row.waitFor({ timeout: 15_000 });
   await row.click();
+  await shootThemes(page, shots, 'command-notes');
   const body = await view.locator('.kn-detail, .knowledge-detail').first().innerText();
   await view.getByRole('button', { name: 'Confirm', exact: true }).click();
   await view.getByRole('button', { name: 'Confirmed' }).click();
@@ -76,7 +85,7 @@ async function confirmWebNote(page) {
   return body;
 }
 
-export async function verifyCommandNotes({ browser, cli, log }) {
+export async function verifyCommandNotes({ browser, cli, log, shots }) {
   const top = scratchWorkspace();
   const lookout = await startLookout(cli, top);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -100,7 +109,7 @@ export async function verifyCommandNotes({ browser, cli, log }) {
     const claim = () => one.call('claim_ticket', { ticket: key, trail: started.trail.id, touches: ['apps/web/**'] });
     const before = (await claim()).commands?.[0];
     const waited = before?.package === 'apps/web' && !before.notes && /^No confirmed notes/.test(before.waiting ?? '');
-    const shown = await confirmWebNote(page);
+    const shown = await confirmWebNote(page, shots);
     const after = (await claim()).commands?.[0];
     const body = after?.notes?.body ?? '';
     const carried =
@@ -118,7 +127,7 @@ export async function verifyCommandNotes({ browser, cli, log }) {
   } finally {
     await one.client.close();
     await page.close();
-    lookout.proc.kill('SIGTERM');
+    await stopProcess(lookout.proc);
     if (!process.env.KEEP) fs.rmSync(path.dirname(top), { recursive: true, force: true });
   }
 }

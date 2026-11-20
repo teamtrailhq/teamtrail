@@ -23,6 +23,7 @@ import {
 import { e2eTemp } from './e2eTemp.mjs';
 import { verifyCheckGuard } from './verifyCheckGuard.mjs';
 import { verifyCheckSuggestions } from './verifyCheckSuggestions.mjs';
+import { verifyCommandNotes } from './verifyCommandNotes.mjs';
 import { verifyEscapes } from './verifyEscapes.mjs';
 import { verifyFlaky } from './verifyFlaky.mjs';
 import { verifyGates } from './verifyGates.mjs';
@@ -708,6 +709,8 @@ const remoteOk = await verifyRemote({ browser, cli, log, shots });
 const screeningOk = await verifyScreening({ browser, cli, log, shots });
 // Suggested checks: what a monorepo runs, read from its files, added in one click with its folder and saved approved.
 const suggestionsOk = await verifyCheckSuggestions({ browser, cli, log, shots });
+// Agent notes: the Field guide suggests how to build and test each package; once confirmed, a claim carries them.
+const commandNotesOk = await verifyCommandNotes({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
 // Live views: an approval in a second browser and evidence alone changing reach an open page without a reload.
 const liveViewsOk = await verifyLiveViews({ browser, cli, log, shots });
@@ -851,6 +854,7 @@ if (
   !remoteOk ||
   !screeningOk ||
   !suggestionsOk ||
+  !commandNotesOk ||
   !waiverOk ||
   !liveViewsOk ||
   !proofGapsOk ||

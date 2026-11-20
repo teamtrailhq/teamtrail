@@ -60,6 +60,7 @@ export function KnowledgeView() {
         <header>
           <h2 className="t-heading caps">Field guide</h2>
           <InfoTip text="What agents need to know about this codebase and product. Agents propose entries; only confirmed ones and assumptions reach them, picked for each ticket with the reason. Entries about files are flagged here when those files change. Seed it from a document with: teamtrail knowledge import <file.md>" />
+          <SuggestCommandNotes />
         </header>
         <div className="kn-filters">
           {tabs.map(([f, label]) => (
@@ -78,7 +79,6 @@ export function KnowledgeView() {
             ]}
           />
           <input className="kn-search" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
-          <SuggestCommandNotes />
         </div>
         <div className="kn-body-grid">
           <ul className="kn-list">

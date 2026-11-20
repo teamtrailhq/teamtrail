@@ -13,7 +13,8 @@ import type { AgentContext } from './agentContext';
 /**
  * `commands` on a claim: per package the work touches (its `touches`, paths the ticket names), how to install, build,
  * test and run it from the note the trail lead confirmed, the setup and checks Teamtrail runs for it, and what its
- * tests need (claimCommands.ts in core). Read from this machine's checkout; nothing without one.
+ * tests need (claimCommands.ts in core). Read from this machine's checkout; nothing without one. A remote agent gets
+ * them too, without `passedToChecks`: its checks don't run with this machine's environment.
  */
 export async function projectCommands(ctx: AgentContext, t: Ticket, touches: string[] = []) {
   const files = localRepoFiles(repoRootOf(ctx.verifyEnv()));
@@ -27,7 +28,7 @@ export async function projectCommands(ctx: AgentContext, t: Ticket, touches: str
     notes: listKnowledge(ctx.root),
     config: trustedChecks(ctx.root).config.config,
     paths: [...touches, ...pathsIn(t.body)],
-    passed: (name) => env[name] !== undefined,
+    ...(ctx.remote ? {} : { passed: (name: string) => env[name] !== undefined }),
     staleOf: (e) => staleAnchors(e, (p) => blobHash(repo, p)),
   });
   return commands.length ? { commands } : {};

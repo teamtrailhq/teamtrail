@@ -1,5 +1,8 @@
 import { wildcardMatch } from '../model/wildcard';
 
+/** Agent notes, the project's commands, are knowledge entries too (commandNotes/): marked by these. */
+export { COMMANDS_TAG, PROFILE_SOURCE } from '../commandNotes/types';
+
 /**
  * Project knowledge: what agents need to know about this codebase and product, kept as reviewed entries.
  * Agents propose (always `suggested`); only the trail lead confirms, keeps as an assumption, edits or retires.

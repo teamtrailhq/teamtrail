@@ -17,7 +17,6 @@ import { handleFlakyChecks } from './flakyRoutes';
 import { handleGuides } from './guideRoutes';
 import { openEventStream, refuseEarly, requestUrl, sendJson } from './http';
 import { handleJournal } from './journalRoutes';
-import { handleCommandNotes } from './commandNotesRoute';
 import { handleKnowledge } from './knowledgeRoutes';
 import { lanPlaces } from './lanPlaces';
 import { handleLeases } from './leaseRoutes';
@@ -132,7 +131,6 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleJournal({ root: abs, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerification({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleRepoReads(ctx, req, res, url),
-    (req, res, url) => handleCommandNotes({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleWaivers({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleRules({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleVerificationSync({ ...ctx, watch: reconciler, access: routes.ciAccess }, req, res, url),
@@ -146,7 +144,7 @@ export function createTrackerBridge(root: string, options: BridgeOptions = {}): 
     (req, res, url) => handleBriefs(ctx, req, res, url),
     (req, res, url) => handlePlan(ctx, req, res, url),
     (req, res, url) => handleReroutes(ctx, req, res, url),
-    (req, res, url) => handleKnowledge(abs, req, res, url),
+    (req, res, url) => handleKnowledge({ ...ctx, local: fromThisMachine(req, peer) }, req, res, url),
     (req, res, url) => handleCriteriaProposals(abs, req, res, url),
     (req, res, url) => handleCriteria(ctx, req, res, url),
     (req, res, url) => handlePolicy(ctx, req, res, url),

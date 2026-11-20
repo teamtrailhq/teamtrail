@@ -124,4 +124,11 @@ describe('what a claim says about its packages', () => {
     expect(vars).toContainEqual(['STRIPE_SECRET_KEY', false]);
     expect(top.checks).toEqual([{ name: 'lint', run: 'npm run lint', cwd: '.' }]);
   });
+
+  it("without this machine's environment (a remote agent), variables are named without saying whether checks get them", async () => {
+    const [top] = claimCommands({ profile: await profileOf('node-npm-workspaces'), notes: [], config, paths: [] });
+    const vars = top.needs?.filter((n) => n.kind === 'variable') ?? [];
+    expect(vars.map((n) => n.name)).toContain('DATABASE_URL');
+    expect(vars.every((n) => !('passedToChecks' in n))).toBe(true);
+  });
 });

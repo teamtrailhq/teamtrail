@@ -86,7 +86,7 @@ describe("the project's commands on a claim", () => {
       discovery: false,
       title: 'Search',
       destination: 'Readers find a release',
-      tickets: [{ ref: 'a', title: 'Search box', type: 'execute' }],
+      tickets: [{ ref: 'a', title: 'Search box', type: 'execute', body: 'Add it to apps/web/src/search.ts.' }],
     });
     await call('next_ticket');
     chooseMain({ root, mapId: m.trail.id, choice: { kind: 'proceed' } });
@@ -103,7 +103,7 @@ describe("the project's commands on a claim", () => {
     const webNote = proposed.added.find((id) => readKnowledge(root, id)!.scope.includes('apps/web/**'))!;
     confirm(webNote);
     // claimed again (as an agent resuming does): the confirmed note now comes with it
-    const second = await call<{ commands?: PackageCommands[] }>('claim_ticket', {
+    const second = await call<{ commands?: PackageCommands[]; knowledge?: { id: string }[] }>('claim_ticket', {
       ticket: m.tickets[0].key,
       touches: ['apps/web/**'],
     });
@@ -112,6 +112,10 @@ describe("the project's commands on a claim", () => {
     expect(now.notes?.body).toContain('- Test: `npm test` in apps/web');
     expect(now.notes?.body).toContain('- Run: `npm run dev` in apps/web');
     expect(now.notes?.mayBeOutdated).toBeUndefined();
+    expect(
+      second.knowledge?.map((k) => k.id) ?? [],
+      'given once, under commands, not again as knowledge',
+    ).not.toContain(webNote);
     write('apps/web/package.json', JSON.stringify({ name: 'web', scripts: { test: 'vitest' } }));
     const again = await proposeCommandNotes({ root, files: localRepoFiles(top) });
     expect(again.updated).toContain(webNote);

@@ -48,13 +48,15 @@ export function claimCommands(o: {
   notes: KnowledgeEntry[];
   config: VerificationConfig | undefined;
   paths: string[];
-  passed: (name: string) => boolean;
+  /** Whether checks on this machine get a variable; absent for a remote agent, whose checks don't run here. */
+  passed?: (name: string) => boolean;
   staleOf?: (e: KnowledgeEntry) => string[];
 }): PackageCommands[] {
   const hasTop = o.profile.units.some((u) => !u.dir);
   return packagesFor(o.profile, o.paths).map((unit) => {
+    const passed = o.passed;
     const needs = uniqueNeeds([...unit.needs, ...(!unit.dir || !hasTop ? o.profile.needs : [])]).map((n) =>
-      n.kind === 'variable' ? { ...n, passedToChecks: o.passed(n.name) } : n,
+      n.kind === 'variable' && passed ? { ...n, passedToChecks: passed(n.name) } : n,
     );
     return {
       package: unit.dir || '.',

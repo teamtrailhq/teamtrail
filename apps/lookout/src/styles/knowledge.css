@@ -87,7 +87,6 @@
 }
 .kn-body {
   margin: 0;
-  white-space: pre-wrap;
   line-height: var(--lh-body);
 }
 .kn-preview {
