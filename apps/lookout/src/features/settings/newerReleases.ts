@@ -3,6 +3,20 @@ import type { Release } from './releases';
 /** Releases 0.61–0.66.5, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
   {
+    version: '0.66.11',
+    date: '2026-11-19',
+    items: [
+      "A ticket's pull request block has Link a different PR and Unlink; a PR you link stays linked",
+      'Closing or reopening a ticket updates its pull request and the review queue within seconds',
+      "Removing a ticket takes its proof's green status off its pull request",
+    ],
+  },
+  {
+    version: '0.66.10',
+    date: '2026-11-19',
+    items: ['Settings no longer has an About page'],
+  },
+  {
     version: '0.66.9',
     date: '2026-11-19',
     items: ['Settings → Gates and Diff rules say why their controls are off before the controls, not after'],

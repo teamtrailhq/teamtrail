@@ -23,6 +23,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.12',
+    date: '2026-11-20',
+    items: [
+      "A question answered in an agent's chat leaves Needs you, unless a HITL ticket or a high-risk call still needs your answer in the Lookout",
+    ],
+  },
+  {
     version: '0.67.11',
     date: '2026-11-20',
     items: ['The tracker line in Settings stops counting a refused write once you retry or discard it'],
@@ -185,20 +192,6 @@ export const RELEASES: Release[] = [
     items: [
       'GitHub and Linear: a write the tracker refuses for good (lost access, a deleted issue) waits for you in the queue, with Retry and Discard',
     ],
-  },
-  {
-    version: '0.66.11',
-    date: '2026-11-19',
-    items: [
-      "A ticket's pull request block has Link a different PR and Unlink; a PR you link stays linked",
-      'Closing or reopening a ticket updates its pull request and the review queue within seconds',
-      "Removing a ticket takes its proof's green status off its pull request",
-    ],
-  },
-  {
-    version: '0.66.10',
-    date: '2026-11-19',
-    items: ['Settings no longer has an About page'],
   },
   ...NEWER_RELEASES,
   ...LATER_RELEASES,
