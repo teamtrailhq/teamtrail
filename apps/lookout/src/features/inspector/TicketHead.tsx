@@ -7,9 +7,11 @@ import type { TicketView } from './useTicketView';
 /**
  * The top of a ticket, the same in its bubble and the full ticket: its title, its chips (key, type, state, agent and
  * model, proof, risk), and one quiet line for what it is to other tickets: whether a person takes it, what it reviews
- * and blocks. `titled: false` leaves the title out when the bubble's top already names the ticket.
+ * and blocks. `titled: false` leaves the title out when the bubble's top already names the ticket; `chipped: false`
+ * leaves the chips out where a label line already carries them (the bubble's bar).
  */
-export function TicketHead({ v, titled = true, small }: { v: TicketView; titled?: boolean; small?: boolean }) {
+export function TicketHead(props: { v: TicketView; titled?: boolean; small?: boolean; chipped?: boolean }) {
+  const { v, titled = true, small, chipped = true } = props;
   const { t, snap } = v;
   const keyOf = (id: string) => snap.tickets.find((x) => x.id === id)?.key ?? id;
   const blocks = snap.tickets.filter((x) => x.blockedBy.includes(t.id) && x.state === 'open').map((x) => x.key);
@@ -18,7 +20,7 @@ export function TicketHead({ v, titled = true, small }: { v: TicketView; titled?
   return (
     <header className="ticket-head">
       {titled && <h3 className={cx('t-title ticket-title', small && 'small')}>{t.title}</h3>}
-      <TicketChips chips={v.chips} />
+      {chipped && <TicketChips chips={v.chips} />}
       <MetaLine
         parts={[
           hitl && 'needs a person',

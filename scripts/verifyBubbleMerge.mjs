@@ -223,7 +223,7 @@ export async function verifyBubbleMerge({ browser, cli, log, shots }) {
     await item.waitFor({ timeout: 20_000 });
     await item.locator('.ds-row-main').click();
     const bubble = page.locator('.bubble');
-    await bubble.locator('.bubble-need', { hasText: 'Ready to merge' }).waitFor({ timeout: 15_000 });
+    await bubble.locator('.bubble-bar', { hasText: 'Ready to merge' }).waitFor({ timeout: 15_000 });
     const bar = bubble.locator('.action-bar');
     await bar.getByRole('button', { name: 'Merge anyway…' }).waitFor({ timeout: 15_000 });
     const bubblePrimary = await primaryOf(bar);
