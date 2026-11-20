@@ -1,5 +1,6 @@
 import { heldAsFlaky, type VerificationAttempt } from '@teamtrail/core';
 import type { MenuItem } from '../../components/ui';
+import { mergeAction } from './mergeAction';
 import type { TicketRunners } from './types';
 import type { TicketView } from './useTicketView';
 
@@ -12,6 +13,7 @@ type Item = MenuItem | false | undefined;
 export function ticketActionList(v: TicketView, run: TicketRunners): MenuItem[] {
   return [
     ...claimActions(v, run),
+    mergeAction(v.merge, run),
     ...checkActions(v, run),
     ...waiverActions(v, run),
     ...criteriaActions(v, run),

@@ -1,5 +1,6 @@
 import { heldAsFlaky, type WaivableCheck } from '@teamtrail/core';
 import type { LookoutApi } from '../../hooks';
+import { MergeForm } from '../proof';
 import { ReasonForm, WaiveForm } from '../verification';
 import { RemoveWorkspaceForm } from '../workspaces';
 import { ResolveForm } from './ResolveForm';
@@ -14,7 +15,7 @@ const guarded = (v: TicketView) => {
   return a?.result === 'pass' && a.guard?.mode === 'enforce';
 };
 
-/** The form an action in the bar opened: resolve, rule out, a reasoned override, or removing a worktree. */
+/** The form an action in the bar opened: resolve, rule out, a reasoned override, a merge, or removing a worktree. */
 export function TicketForms(props: {
   form: Form;
   setForm: (form: Form) => void;
@@ -73,6 +74,8 @@ export function TicketForms(props: {
           onCancel={close}
         />
       );
+    case 'merge':
+      return <MergeForm offer={v.merge} mapId={v.snap.map.id} ticketId={v.t.id} plan={v.proof?.plan} onClose={close} />;
     case 'workspace':
       return v.workspace ? (
         <RemoveWorkspaceForm workspace={v.workspace} onRemove={v.removeWorkspace} onCancel={close} />

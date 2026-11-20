@@ -5,6 +5,7 @@ import type { LookoutApi } from '../../hooks';
 import { TRAIL_LEAD } from '../../lib';
 import { type ActionRequest, verificationApi } from '../../lib/verification';
 import { useKnowledge } from '../knowledge';
+import { openSettingsAt } from '../settings';
 import { gapActionList } from './gapActionList';
 import { needPrimary } from './needPrimary';
 import { ticketActionList } from './ticketActionList';
@@ -105,6 +106,7 @@ export function useTicketActions(input: {
     confirm: () => void v.criteria.setConfirmed(true).then((e) => (e ? failed(e) : v.reloadVerification())),
     verifyAgain: () => void act({ action: 'verify-again' }),
     openMain: mainItem(v, input.onItem),
+    setChecks: () => openSettingsAt('verification'),
   });
   // what closes the proof's first gap that is the human's: criteria to confirm come before approving as it is
   const [firstGap] = gapActions.keys();
@@ -117,10 +119,12 @@ export function useTicketActions(input: {
   const fallback = all.find((a) => a.id === 'take-criteria') ?? all.find((a) => a.id === 'confirm-criteria');
   const need = named === 'need' ? needPrimary({ v, all, onItem: input.onItem, onDismiss: input.onDismiss }) : undefined;
   const byName = named && named !== 'need' ? all.find((a) => a.id === PRIMARY_ID[named]) : undefined;
-  const primary = answer ?? need ?? (criteriaFirst ? gap : undefined) ?? byName ?? gap ?? fallback;
+  // a done ticket's pull request to merge, where a server merges them: its next step, unless criteria come first
+  const merge = all.find((a) => a.id === 'merge');
+  const primary = answer ?? need ?? (criteriaFirst ? gap : undefined) ?? byName ?? merge ?? gap ?? fallback;
   const variant: ButtonVariant = primaryVariant({
     urgent: v.standing.edge === 'urgent',
-    named: (!!named && primary !== fallback) || (!!gap && primary === gap),
+    named: (!!named && primary !== fallback) || (!!gap && primary === gap) || (!!merge && primary === merge),
   });
   const menu = all.filter((a) => a !== primary);
   return { primary, variant, menu, error, note, act, waive, undoWaiver: runners.undoWaiver, gapActions };

@@ -4,6 +4,7 @@
  */
 export type ProofGapKind =
   | 'no-completion'
+  | 'finished-unchecked'
   | 'reopened'
   | 'verification-off'
   | 'remote-unchecked'
@@ -40,7 +41,8 @@ export type GapAction =
   | 'accept-pass'
   | 'rework'
   | 'undo-waiver'
-  | 'open-main-checks';
+  | 'open-main-checks'
+  | 'set-checks';
 
 /** A gap with who is on it, in words, and the human's action when it's theirs. */
 export interface GapStanding extends ProofGapItem {

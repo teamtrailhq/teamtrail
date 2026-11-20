@@ -18,6 +18,11 @@ export interface ProofInput {
   decisions: DecisionRecord[];
   /** The ticket was done and is open again: the proof isn't verified, whatever its last completion says. */
   reopened?: boolean;
+  /**
+   * A done implementation ticket: with no attempt, it finished with nothing checked (no checks set, or verification
+   * off for it), which its gap says instead of "no completion".
+   */
+  finished?: boolean;
 }
 
 const passed = (c: CheckResult) => c.exitCode === 0 && !c.timedOut && !c.error;
@@ -143,7 +148,7 @@ export function buildProofWithGaps(input: ProofInput): { proof: Proof; gaps: Pro
         .sort((x, y) => x.at - y.at)
         .map((v) => review(v, latest))
     : [];
-  const items = proofGapItems({ attempt: latest, reviews, reopened: input.reopened });
+  const items = proofGapItems({ attempt: latest, reviews, reopened: input.reopened, finished: input.finished });
   const gaps = items.map((g) => g.text);
   const guard = guardOf(latest, reviews);
   const body: Omit<Proof, 'digest'> = {

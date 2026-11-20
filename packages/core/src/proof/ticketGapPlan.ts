@@ -4,13 +4,14 @@ import type { GapStanding } from '../model/proofGap';
 import type { DecisionRecord, MapSnapshot, Ticket } from '../model/types';
 import { ticketPhase } from '../planning/lifecycle/phase';
 import { openReviews } from '../planning/lifecycle/reviewTicket';
+import { trustedChecks } from '../verification/checksApproval';
 import { gapPlan } from './gapPlan';
 import { proofWithGaps } from './proofForTicket';
 
 /**
  * A ticket's proof with who is on each of its gaps and what closes it (gapPlan.ts), judged from what this machine
  * recorded: where the ticket is, its criteria now, its open review, and who accepted it as it is (the trail lead's
- * PASS on the attempt, or `mergedAnywayBy`, their Merge anyway of exactly these gaps).
+ * PASS on the attempt, or `mergedAnywayBy`, their Merge anyway of exactly these gaps), and whether checks are set.
  */
 export function ticketGapPlan(input: {
   root: string;
@@ -31,6 +32,7 @@ export function ticketGapPlan(input: {
       open: openReviews(snap, t.id).length > 0,
       otherModel: proof.reviews.some((r) => r.sameModel === 'held'),
     },
+    checksSet: (trustedChecks(root).config.config?.run.length ?? 0) > 0,
     ...(lead || input.mergedAnywayBy ? { acceptedBy: lead?.by ?? input.mergedAnywayBy } : {}),
   });
   return { proof, plan };

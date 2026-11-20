@@ -8,8 +8,13 @@ import type { VerificationAttempt } from '../model/verification';
 const gap = (kind: ProofGapKind, text: string): ProofGapItem => ({ kind, text });
 const all = (kind: ProofGapKind, texts: string[]) => texts.map((t) => gap(kind, t));
 
-/** Why no completion of this ticket can be proven at all; undefined when its attempt is worth grading. */
-function cannotProve(attempt: VerificationAttempt | undefined): ProofGapItem[] | undefined {
+/**
+ * Why no completion of this ticket can be proven at all; undefined when its attempt is worth grading. With no attempt,
+ * `finished` tells a ticket an agent finished while no checks were set (or verification was off for it), which
+ * closes it with nothing to check, from one nobody completed yet.
+ */
+function cannotProve(attempt: VerificationAttempt | undefined, finished: boolean): ProofGapItem[] | undefined {
+  if (!attempt && finished) return [gap('finished-unchecked', 'Finished with no checks set: nothing was checked.')];
   if (!attempt) return [gap('no-completion', 'No completion was submitted for this ticket.')];
   if (attempt.level === 'off')
     return [gap('verification-off', 'Verification is off for this ticket, so nothing was checked.')];
@@ -87,18 +92,20 @@ function reviewGaps(attempt: VerificationAttempt, reviews: ProofReview[]): Proof
  * attempt and reviews always give the same gaps. What the level asks for: `checks` a passing run here, `+review` an
  * independent agent's PASS, `+human` the trail lead's PASS; any FAIL or NEEDS_HUMAN on the attempt stands until a new
  * attempt. `reopened`: the ticket was done and isn't any more (reopened, or ruled out), so its last completion proves nothing (a proof posted to its
- * pull request is withdrawn this way, publishProofs.ts).
+ * pull request is withdrawn this way, publishProofs.ts). `finished`: the ticket is a done implementation ticket, so
+ * no attempt means it closed with nothing checked, not that nobody completed it.
  */
 export function proofGapItems(input: {
   attempt?: VerificationAttempt;
   reviews: ProofReview[];
   reopened?: boolean;
+  finished?: boolean;
 }): ProofGapItem[] {
   const { attempt, reviews } = input;
   const first = input.reopened
     ? [gap('reopened', "The ticket isn't done any more, so this completion doesn't count.")]
     : [];
-  const unproven = cannotProve(attempt);
+  const unproven = cannotProve(attempt, input.finished === true && !input.reopened);
   if (unproven || !attempt) return [...first, ...(unproven ?? [])];
   return [...first, ...attemptGaps(attempt, reviews), ...reviewGaps(attempt, reviews)];
 }

@@ -79,4 +79,17 @@ describe('proofForTicket', () => {
     expect(p.status).toBe('not-verified');
     expect(p.gaps).toEqual(['No completion was submitted for this ticket.']);
   });
+
+  it('says a done implementation ticket with nothing recorded finished with nothing checked', () => {
+    const root = temp();
+    const done = { ...ticket, state: 'closed', closeReason: 'completed' } as Ticket;
+    const p = proofForTicket({ root, snap: { ...snap, tickets: [done] }, ticket: done, decisions: [] });
+    expect(p.gaps).toEqual(['Finished with no checks set: nothing was checked.']);
+    // a research ticket closed by a decision has no work to prove: its line stays as it was, and so does its digest
+    const research = { ...done, type: 'research' } as Ticket;
+    const r = proofForTicket({ root, snap: { ...snap, tickets: [research] }, ticket: research, decisions: [] });
+    expect(r.gaps).toEqual(['No completion was submitted for this ticket.']);
+    const before = proofForTicket({ root, snap: { ...snap, tickets: [research] }, ticket: research, decisions: [] });
+    expect(r.digest).toBe(before.digest);
+  });
 });

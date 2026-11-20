@@ -11,6 +11,8 @@ export interface GapContext {
   review?: { open: boolean; otherModel?: boolean };
   /** Who accepted the attempt as it is (the trail lead's PASS on it, or their Merge anyway of exactly these gaps). */
   acceptedBy?: string;
+  /** The project has checks the trail lead approved on this machine now (verification.json's `run`). */
+  checksSet?: boolean;
 }
 
 type Stand = Omit<GapStanding, 'kind' | 'text'>;
@@ -57,6 +59,13 @@ const unconfirmed: Judge = (c) => {
   return you('Needs you: confirm the criteria. It is checked again by itself once you do.', 'confirm-criteria');
 };
 
+/** Finished with nothing checked: with no checks set, setting them is the human's; else verification was off for it. */
+const unchecked: Judge = (c) => {
+  if (c.acceptedBy) return accepted(c, NEW_COMPLETION);
+  if (c.checksSet) return nobody(`Verification was off for it when it finished. ${NEW_COMPLETION}`);
+  return you('Needs you: set the checks finished work is held to. Work finished after that is checked.', 'set-checks');
+};
+
 const review: Judge = (c) => {
   if (c.phase === 'done' || c.phase === 'cancelled') return accepted(c, `Closed without one. ${NEW_COMPLETION}`);
   if (c.review?.otherModel) return agent('Waiting for an agent on another model to review it.');
@@ -77,6 +86,7 @@ const approval: Judge = (c) =>
 /** What each kind of gap waits on, and what the human can do when it's theirs. */
 const JUDGES: Record<ProofGapKind, Judge> = {
   'no-completion': () => nobody('Closed without a completion: there is nothing to check.'),
+  'finished-unchecked': unchecked,
   reopened: () => agent('Reopened: back with an agent, and a new completion proves it.'),
   'verification-off': () => nobody(`Verification was off for it. ${NEW_COMPLETION}`),
   'remote-unchecked': () => nobody(`No runner checked it. ${NEW_COMPLETION}`),
