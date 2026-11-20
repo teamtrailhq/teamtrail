@@ -1,0 +1,301 @@
+/* ---------- The scenes' language (components/ui: LabelLine, Cursor, StepTrack, StatusMark, SceneCard, DoneStrip,
+ * SavedNote, Row's label and action) ----------
+ * Mono label lines over one title, hairlines and square corners, one action on the right. Rose only for what needs
+ * you now, blaze for agents and work in progress, green for verified. Motion tokens are in design-system.css. */
+
+/* The label line: mono capitals, parts joined with " · ". */
+.ds-label {
+  display: block;
+  min-width: 0;
+  font: 400 var(--fs-scene-label) / var(--lh-snug) var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--faint);
+  overflow-wrap: anywhere;
+}
+.ds-label-sep {
+  color: var(--faint);
+}
+.ds-label.tone-urgent,
+.ds-label .tone-urgent {
+  color: var(--urgent-ink);
+}
+.ds-label.tone-agent,
+.ds-label .tone-agent {
+  color: var(--accent);
+}
+.ds-label.tone-ok,
+.ds-label .tone-ok {
+  color: rgb(var(--decided-rgb));
+}
+.ds-label.tone-dim,
+.ds-label .tone-dim {
+  color: var(--dim);
+}
+
+/* The blaze block cursor, sized to its text. */
+.ds-cursor {
+  display: inline-block;
+  flex: none;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 0.45em;
+  vertical-align: -0.18em;
+  background: var(--accent);
+}
+
+/* The thin step track. */
+.ds-steps {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  gap: 3px;
+  min-width: 0;
+}
+.ds-steps i {
+  position: relative;
+  height: 3px;
+  overflow: hidden;
+  background: var(--line2);
+}
+.ds-steps i::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.ds-steps i.done::after {
+  transform: none;
+}
+.ds-steps i.now::after {
+  transform: none;
+  opacity: 0.55;
+}
+.ds-steps.waiting i.now::after {
+  transform: scaleX(0.35);
+  opacity: 0.5;
+}
+
+/* The square status mark, 16px. */
+.ds-mark {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--line2);
+  font: 500 var(--fs-xs) / 1 var(--mono);
+  color: var(--dim);
+}
+.ds-mark.mark-done::after,
+.ds-mark.mark-verified::after,
+.ds-done-tick::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+.ds-mark.mark-verified {
+  border-color: rgba(var(--decided-rgb), 0.5);
+  background: rgba(var(--decided-rgb), 0.12);
+  color: rgb(var(--decided-rgb));
+}
+.ds-mark.mark-now {
+  border-color: rgba(var(--accent-rgb), 0.7);
+}
+.ds-mark.mark-now::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  background: var(--accent);
+}
+.ds-mark.mark-rework {
+  border-style: dashed;
+  border-color: var(--dim);
+}
+.ds-mark.mark-held {
+  border-color: rgba(var(--urgent-rgb), 0.6);
+}
+.ds-mark.mark-held::after {
+  content: '';
+  position: absolute;
+  inset: 6px 3px;
+  background: var(--urgent);
+}
+
+/* The scene card. */
+.ds-scard {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-left: var(--edge-w) solid var(--edge-neutral);
+  background: var(--panel);
+}
+.ds-scard.edge-urgent {
+  border-left-color: var(--edge-urgent);
+}
+.ds-scard.edge-attention {
+  border-left-color: var(--edge-attention);
+}
+.ds-scard-head {
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-14) var(--sp-14) var(--sp-12);
+}
+.ds-scard-headline {
+  margin: 0;
+  font: 600 var(--fs-title) / var(--lh-snug) var(--sans);
+  letter-spacing: -0.01em;
+  color: var(--text-hi);
+}
+.ds-scard-help {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--dim);
+}
+.ds-scard-body > .ds-row,
+.ds-scard-body > * > .ds-row {
+  border-width: 1px 0 0;
+}
+.ds-scard-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-12) var(--sp-14);
+  border-top: 1px solid var(--line);
+}
+.ds-scard-note {
+  margin-left: auto;
+}
+
+/* Row's scene shape: the label line above the title, one action always on the right. */
+.ds-row-label {
+  display: block;
+  min-width: 0;
+}
+.ds-row.has-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+.ds-row.has-action > .ds-row-main {
+  grid-column: 1;
+}
+.ds-row-action {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  gap: var(--sp-6);
+  padding-right: var(--sp-10);
+}
+.ds-row.has-action > .ds-row-actions,
+.ds-row.has-action > .ds-row-below {
+  grid-column: 1 / -1;
+}
+@media (max-width: 1023px) {
+  .ds-row-action :is(button, a) {
+    min-height: 44px;
+  }
+}
+
+/* The green strip that takes the place of what was just settled, and the inline Saved note. */
+.ds-done {
+  display: grid;
+  gap: var(--sp-6);
+  padding: var(--sp-14);
+  border-left: var(--edge-w) solid rgb(var(--decided-rgb));
+  background: rgba(var(--decided-rgb), 0.07);
+}
+.ds-done-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--sp-8);
+}
+.ds-done-label > .ds-done-tick {
+  order: -1;
+}
+.ds-done-tick {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  color: rgb(var(--decided-rgb));
+}
+.ds-done-text {
+  margin: 0;
+  font: 500 15px / 1.4 var(--sans);
+  color: var(--text-hi);
+}
+.ds-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  opacity: 0;
+  transform: translateY(4px);
+}
+.ds-saved.on {
+  opacity: 1;
+  transform: none;
+}
+
+/* Motion: arriving, collapsing, a tick drawing, a step filling. Only under no-preference. */
+.ds-collapsible {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+.ds-collapsible > * {
+  min-height: 0;
+  overflow: hidden;
+}
+.ds-collapsible.is-collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ds-cursor.blink {
+    animation: ds-cursor-blink 1.06s steps(1) infinite;
+  }
+  .ds-arrive {
+    animation: ds-arrive var(--dur-arrive) var(--ease-scene) both;
+  }
+  .ds-collapsible {
+    transition:
+      grid-template-rows var(--dur-collapse) var(--ease-scene),
+      opacity var(--dur-collapse) var(--ease-scene);
+  }
+  .ds-mark::after,
+  .ds-mark {
+    transition:
+      transform var(--dur-tick) var(--ease-scene),
+      background-color var(--dur-tick),
+      border-color var(--dur-tick);
+  }
+  .ds-steps i::after {
+    transition:
+      transform var(--dur-fill) var(--ease-scene),
+      opacity var(--dur-fill);
+  }
+  .ds-saved {
+    transition:
+      opacity var(--dur-arrive) var(--ease-scene),
+      transform var(--dur-arrive) var(--ease-scene);
+  }
+}
+@keyframes ds-cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes ds-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}

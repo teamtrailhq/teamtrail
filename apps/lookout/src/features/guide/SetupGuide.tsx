@@ -1,7 +1,7 @@
 import { ScoutAvatar } from '@teamtrail/scout-avatar';
 import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button } from '../../components/ui';
+import { Button, StatusMark } from '../../components/ui';
 import { PoweredBy } from './PoweredBy';
 import { useGuideRoom } from './useGuideRoom';
 import { useSetupSteps } from './useSetupSteps';
@@ -62,9 +62,7 @@ export function SetupGuide() {
             <ol>
               {view.steps.map((s, i) => (
                 <li key={s.href + s.title} className={[s.done && 'done', s.next && 'next'].filter(Boolean).join(' ')}>
-                  <span className="setup-mark" aria-hidden="true">
-                    {s.done ? '✓' : i + 1}
-                  </span>
+                  <StatusMark kind={s.done ? 'verified' : 'number'} n={i + 1} />
                   <a href={s.href}>{s.title}</a>
                   {s.optional && <span className="t-meta">optional</span>}
                 </li>

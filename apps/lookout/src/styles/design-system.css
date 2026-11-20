@@ -3,6 +3,7 @@
 :root {
   /* Type scale. Six UI steps plus one display step for the brand and hero numerals. */
   --fs-xs: 10px; /* micro: readout captions, step labels, pills, axis ticks */
+  --fs-scene-label: 12px; /* the scenes' mono label line (components/ui/LabelLine.tsx) */
   --fs-label: 11px; /* mono caps labels, chip labels, tabs, badges, meta lines, small buttons */
   --fs-sm: 13px; /* secondary text: list rows, log, facts, mono data, buttons */
   --fs-body: 14px; /* body copy, messages, inputs */
@@ -49,6 +50,15 @@
   --edge-good: rgb(var(--decided-rgb));
   --edge-neutral: var(--line2);
   --edge-w: 2px;
+
+  /* Motion, as in the scenes (styles/scene.css): one ease for everything; things arrive and leave quickly, a tick
+   * draws a little slower, a fill slower still. Only state changes move, never anything at rest, and nothing does
+   * under reduced motion. */
+  --ease-scene: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-arrive: 220ms;
+  --dur-collapse: 220ms;
+  --dur-tick: 260ms;
+  --dur-fill: 300ms;
 }
 
 /* ---------- Type roles ----------
