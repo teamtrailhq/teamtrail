@@ -348,7 +348,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 .activity-page {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
 }
 .page-col {
   display: flex;

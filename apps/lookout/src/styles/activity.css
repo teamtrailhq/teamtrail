@@ -1,101 +1,10 @@
-/* ---------- Current step + sessions ---------- */
-.step-zone {
-  grid-area: step;
-}
-.step-tracker {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-6);
-}
-.st-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--sp-8);
-}
-.st-meta .meta-line {
-  flex: 1;
-}
-.st-status {
-  flex: none;
-  color: var(--dim);
-}
-.st-status.urgent {
-  color: var(--urgent-ink);
-}
-.st-big {
-  font-family: var(--display);
-  font-weight: var(--display-weight);
-  letter-spacing: var(--ls-display);
-  font-size: clamp(var(--fs-heading), 1.6vw, var(--fs-display));
-  line-height: var(--lh-tight);
-  color: var(--text-hi);
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.step-tracker.waiting .st-big {
-  color: var(--urgent-ink);
-}
-.st-ticket {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.st-key {
-  color: var(--dim);
-}
-.pipeline {
-  list-style: none;
-  margin: var(--sp-4) 0 0;
-  padding: 0;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: var(--sp-4);
-}
-.pipeline li {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-  min-width: 0;
-}
-.pipeline i {
-  height: 3px;
-  background: var(--line);
-}
-/* Walked steps fade like the map's walked connectors; the current one is the map's working accent. */
-.pipeline li.done i {
-  background: rgba(var(--working-rgb), 0.55);
-}
-.pipeline li.cur i {
-  background: var(--st-claimed);
-}
-.pipeline span {
-  font-family: var(--label);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--ls-data);
-  text-transform: uppercase;
-  color: var(--faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 500;
-}
-.pipeline li.done span {
-  color: var(--dim);
-}
-.pipeline li.cur span {
-  color: var(--text-hi);
-}
-
+/* ---------- Activity: one lane per agent (features/activity/AgentLanes.tsx), milestones only ---------- */
 .sessions-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-6);
 }
 .usage {
   font-family: var(--data);
@@ -112,26 +21,136 @@
 .sessions-head .usage .mono-label {
   margin-right: var(--sp-4);
 }
-.sessions-list .segs {
+/* Lanes fill the column, hairlines between them; only a lane that needs you or is held up keeps its edge. */
+.lanes-col > .zone-b {
+  padding: 0;
+}
+.lanes-col > .zone-b > .empty-state {
+  margin: var(--gutter);
+}
+.lanes .ds-row {
+  border-width: 0 0 1px;
+  border-left: var(--edge-w) solid transparent;
+  border-bottom: 1px solid var(--line);
+  background: none;
+}
+.lanes .ds-row.edge-urgent {
+  border-left-color: var(--edge-urgent);
+}
+.lanes .ds-row.edge-attention {
+  border-left-color: var(--edge-attention);
+}
+.lanes .ds-row:last-child {
+  border-bottom: 0;
+}
+.lane-head {
   display: flex;
-  gap: var(--sp-2);
+  align-items: baseline;
+  gap: var(--sp-8);
+  min-width: 0;
 }
-.sessions-list .ds-row-below {
-  padding-top: var(--sp-2);
+.lane-head .ds-label {
+  flex: 1;
 }
-.sessions-list .meta-line .pill {
+.lane-since {
+  flex: none;
+  font: 400 var(--fs-sm) / 1 var(--mono);
+  color: var(--faint);
+  white-space: nowrap;
+}
+.lanes .ds-row-title {
+  font-weight: 500;
+}
+.lanes .ds-row-detail {
+  font-size: var(--fs-body);
+  color: var(--dim);
+  white-space: normal;
+}
+.lanes .ds-row-detail b {
+  font-weight: 500;
+  color: var(--text-hi);
+}
+.lanes .ds-row-detail .pill {
   margin-left: var(--sp-6);
 }
-.sessions-list .segs i {
-  flex: 1;
-  height: 3px;
-  background: var(--line);
+.lane.waiting {
+  background: rgba(var(--urgent-rgb), 0.04);
 }
-.sessions-list .segs i.done {
-  background: rgba(var(--working-rgb), 0.55);
+/* Milestones: a small square and a word with its time, joined by a short hairline. */
+.milestones {
+  list-style: none;
+  margin: var(--sp-2) 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4) 0;
 }
-.sessions-list .segs i.cur {
-  background: var(--st-claimed);
+.ms {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  font: 400 var(--fs-scene-label) / 1.2 var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.ms + .ms::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  margin-right: var(--sp-6);
+  background: var(--line2);
+}
+.ms i {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--line2);
+}
+.ms time {
+  color: var(--faint);
+}
+.ms-claimed i {
+  background: var(--faint);
+  border-color: var(--faint);
+}
+.ms-asked i {
+  background: var(--dim);
+  border-color: var(--dim);
+}
+/* Rose only while the agent still waits on your answer. */
+.ms-asked.open {
+  color: var(--urgent-ink);
+}
+.ms-asked.open i {
+  background: var(--urgent);
+  border-color: var(--urgent);
+}
+.ms-answered i {
+  border-color: rgb(var(--decided-rgb));
+}
+.ms-submitted {
+  color: var(--text-hi);
+}
+.ms-submitted i {
+  background: var(--text-hi);
+  border-color: var(--text-hi);
+}
+.ms-rework i {
+  border-style: dashed;
+  border-color: var(--dim);
+}
+.ms-verified {
+  color: rgb(var(--decided-rgb));
+}
+.ms-verified i {
+  background: rgb(var(--decided-rgb));
+  border-color: rgb(var(--decided-rgb));
+}
+.ms-now .ds-cursor {
+  margin-left: 0;
 }
 .urgent-text {
   color: var(--urgent-ink);
@@ -141,67 +160,4 @@
   text-transform: uppercase;
   white-space: nowrap;
   font-weight: 500;
-}
-
-/* ---------- Activity log ---------- */
-.log-zone {
-  grid-area: log;
-}
-.log {
-  display: flex;
-  flex-direction: column;
-  font-size: var(--fs-sm);
-}
-.log-row {
-  display: grid;
-  grid-template-columns: 60px 72px minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--sp-8);
-  padding: var(--sp-2) 0;
-  cursor: default;
-  border-bottom: 1px solid rgba(var(--accent-rgb), 0.04);
-}
-.log-row .t {
-  color: var(--faint);
-  font-variant-numeric: tabular-nums;
-}
-.log-row .src {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.log-row .msg {
-  max-width: none;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-/* One text style for every message (`.log` sets the size, the body face here). The tag, the step's "Chart 3/5",
-   reads as part of the line, not in a second style. */
-.log-row .msg,
-.log-row .tag {
-  font-family: var(--sans);
-  font-weight: 400;
-  letter-spacing: normal;
-  text-transform: none;
-  font-style: normal;
-}
-/* The left bar is the only mark of importance (feedEdge.ts): red needs you now, green went well, amber held up or at
-   risk. Rows without one keep their text in line with those that have one. */
-.log-row.edge-urgent,
-.log-row.edge-good,
-.log-row.edge-attention {
-  margin-left: calc(-1 * var(--sp-6));
-  padding-left: calc(var(--sp-6) - var(--edge-w));
-  border-left: var(--edge-w) solid var(--edge-attention);
-}
-.log-row.edge-urgent {
-  border-left-color: var(--edge-urgent);
-}
-.log-row.edge-good {
-  border-left-color: var(--edge-good);
-}
-.activity-stack .log-row {
-  grid-template-columns: 58px 74px minmax(0, 1fr);
 }
