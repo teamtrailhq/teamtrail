@@ -59,7 +59,7 @@ const needText = (n: Need) => {
 function needLines(needs: Need[]): string[] {
   if (!needs.length) return [];
   const variables = needs.some((n) => n.kind === 'variable')
-    ? `; checks get a variable only when the person names it in ${CHECK_ENV}`
+    ? `; checks get a variable only when the person names it in Settings → Project → Check variables or ${CHECK_ENV}`
     : '';
   return [`- Tests need: ${needs.map(needText).join(', ')}${variables}`];
 }

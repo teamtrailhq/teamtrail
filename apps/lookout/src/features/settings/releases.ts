@@ -23,6 +23,15 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.8',
+    date: '2026-11-20',
+    items: [
+      'Settings → Project → Check variables lists the variables checks can read, the ones your tests seem to need and which they would not get; add a name there instead of TEAMTRAIL_CHECK_ENV (names only: values still come from your shell)',
+      "A name that reads like a credential is added only after you confirm it: any code your checks run, agents' included, can read it",
+      'Checks also get Go, Gradle, Maven, Rust, uv, pip, Poetry, Composer, .NET, mise, asdf and Cypress cache and toolchain folders',
+    ],
+  },
+  {
     version: '0.67.7',
     date: '2026-11-20',
     items: [
@@ -186,15 +195,6 @@ export const RELEASES: Release[] = [
       "GitHub and Linear: a claim or status change no longer overwrites a teammate's edit, and two agents can't both win a claim",
       'GitHub and Linear: changes are never missed after a failed poll or a busy minute, and archived, renamed or deleted trails show',
       'Accepting tracker settings ends the wait for completions at once, and agents follow a new repo, team or token without a restart',
-    ],
-  },
-  {
-    version: '0.66.7',
-    date: '2026-11-18',
-    items: [
-      'Agents are only pointed to work they can take: closing a ticket or resuming a trail no longer suggests one that waits on you, and says what it waits for',
-      'An agent that closes the discovery ticket before writing the brief is told to submit the brief, so the trail no longer stalls',
-      "Agents asked about your other projects no longer report nothing waiting in a GitHub or Linear project whose tickets they can't read",
     ],
   },
   ...NEWER_RELEASES,

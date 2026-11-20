@@ -16,6 +16,7 @@ export type SettingsSectionId =
   | 'readiness'
   | 'tracker'
   | 'workspaces'
+  | 'check-variables'
   | 'proof'
   | 'remote-agents'
   | 'policy'

@@ -3,6 +3,7 @@ import type { SetupOutcome } from '../model/setup';
 import type { VerificationConfig } from '../model/verification';
 import { hasSetup, runSetup } from '../setup/runSetup';
 import { runChecks } from '../verification/runChecks';
+import { storedCheckEnvNames } from '../verification/storedCheckEnvNames';
 import { defaultHead } from './defaultHead';
 import { mainCheckResult } from './mainCheckResult';
 import type { MainRunOutcome } from './mainRunOutcome';
@@ -31,6 +32,7 @@ async function setupIn(wt: string, o: Job): Promise<SetupOutcome | undefined> {
     logDir: path.join(o.root, rel),
     logRel: rel,
     signal: o.signal,
+    envNames: storedCheckEnvNames(o.root),
   });
 }
 
@@ -43,6 +45,7 @@ async function checksIn(wt: string, o: Job): Promise<Omit<MainRunOutcome, 'commi
     logDir: path.join(o.root, o.rel),
     logRel: o.rel,
     signal: o.signal,
+    envNames: storedCheckEnvNames(o.root),
   });
   const checks = out.checks.map((c) => mainCheckResult(o.root, c, { folders: [wt], installed: !!setup }));
   if (!checks.length) return { ...ran, result: 'unavailable', checks, note: out.note ?? 'no check ran' };

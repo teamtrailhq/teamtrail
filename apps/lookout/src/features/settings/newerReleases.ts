@@ -3,6 +3,15 @@ import type { Release } from './releases';
 /** Releases 0.61–0.66.5, kept apart so `releases.ts` stays short (0.45–0.60 in `laterReleases.ts`). Newest first. */
 export const NEWER_RELEASES: Release[] = [
   {
+    version: '0.66.7',
+    date: '2026-11-18',
+    items: [
+      'Agents are only pointed to work they can take: closing a ticket or resuming a trail no longer suggests one that waits on you, and says what it waits for',
+      'An agent that closes the discovery ticket before writing the brief is told to submit the brief, so the trail no longer stalls',
+      "Agents asked about your other projects no longer report nothing waiting in a GitHub or Linear project whose tickets they can't read",
+    ],
+  },
+  {
     version: '0.66.6',
     date: '2026-11-18',
     items: [

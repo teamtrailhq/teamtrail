@@ -13,7 +13,7 @@ import {
   readKnowledge,
   writeKnowledge,
 } from '@teamtrail/core/agents';
-import { proposeCommandNotes, type PackageCommands } from '@teamtrail/core/node';
+import { checkEnvNames, proposeCommandNotes, type PackageCommands } from '@teamtrail/core/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TrailAgent } from '../src/mcp/agent';
 import { createMcpServer } from '../src/mcp/server';
@@ -58,7 +58,7 @@ beforeEach(() => {
   sh(top, 'init', '-q', '-b', 'main');
   write('package.json', JSON.stringify({ name: 'shop', private: true, workspaces: ['apps/*'] }));
   write('package-lock.json', JSON.stringify({ name: 'shop', lockfileVersion: 3, packages: {} }));
-  write('.env.example', 'DATABASE_URL=\n');
+  write('.env.example', 'DATABASE_URL=\nSHOP_API_URL=\n');
   write(
     'apps/web/package.json',
     JSON.stringify({ name: 'web', scripts: { test: 'node --test', dev: 'vite' }, devDependencies: { karma: '6' } }),
@@ -120,5 +120,35 @@ describe("the project's commands on a claim", () => {
     const again = await proposeCommandNotes({ root, files: localRepoFiles(top) });
     expect(again.updated).toContain(webNote);
     expect(readKnowledge(root, webNote)!.status, 'a changed manifest: confirm it again').toBe('suggested');
+  });
+
+  it('passedToChecks counts a name added in Check variables on this machine', async () => {
+    const before = process.env.SHOP_API_URL;
+    process.env.SHOP_API_URL = 'http://fake.invalid';
+    try {
+      const call = await connect();
+      const m = await call<{ trail: { id: string }; tickets: { key: string }[] }>('start_trail', {
+        discovery: false,
+        title: 'Shop API',
+        destination: 'The shop calls its API',
+        tickets: [{ ref: 'a', title: 'Client', type: 'execute', body: 'Read the API address.' }],
+      });
+      await call('next_ticket');
+      chooseMain({ root, mapId: m.trail.id, choice: { kind: 'proceed' } });
+      const passed = async () => {
+        const r = await call<{ commands?: PackageCommands[] }>('claim_ticket', {
+          ticket: m.tickets[0].key,
+          touches: ['package.json'],
+        });
+        const top = r.commands!.find((c) => c.package === '.')!;
+        return top.needs?.find((n) => n.name === 'SHOP_API_URL')?.passedToChecks;
+      };
+      expect(await passed(), 'set in the shell, but not a name checks may read').toBe(false);
+      checkEnvNames(root).add('SHOP_API_URL');
+      expect(await passed(), 'added in Settings → Project → Check variables').toBe(true);
+    } finally {
+      if (before === undefined) delete process.env.SHOP_API_URL;
+      else process.env.SHOP_API_URL = before;
+    }
   });
 });
