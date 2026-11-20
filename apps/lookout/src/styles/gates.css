@@ -22,14 +22,16 @@
   display: inline-flex;
   border: 1px solid var(--line2);
 }
+/* Off / Observe / Enforce: a mono segmented switch, the chosen mode filled. 44px tall on a phone. */
 .gate-mode {
-  height: var(--h-md);
+  height: 30px;
   padding: 0 var(--sp-10);
   border: 0;
   background: transparent;
   color: var(--dim);
-  font-family: var(--sans);
-  font-size: var(--fs-body);
+  font: 400 var(--fs-scene-label) / 1 var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 .gate-mode + .gate-mode {
@@ -39,9 +41,27 @@
   color: var(--text);
 }
 .gate-mode.on {
-  color: var(--accent);
-  background: var(--accent-bg);
-  font-weight: 600;
+  color: var(--bg);
+  background: var(--text-hi);
+}
+/* A phone: the switch goes under what the gate catches, full width, each mode a 44px target. */
+@media (max-width: 1023px) {
+  .gate-row.has-action {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gate-row > .ds-row-action {
+    grid-column: 1;
+    grid-row: auto;
+    padding: 0 var(--sp-10) var(--sp-10);
+  }
+  .gate-modes {
+    display: flex;
+    width: 100%;
+  }
+  .gate-mode {
+    flex: 1;
+    height: 44px;
+  }
 }
 .gate-mode:disabled {
   cursor: default;

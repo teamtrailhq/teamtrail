@@ -7,7 +7,7 @@ import { gateAbout, gateTitle, isKnownGate } from './gateText';
 import type { GateSummary } from './types';
 
 /**
- * One gate: what it catches, what it did lately, its mode and, on click, the tickets. A gate this version doesn't
+ * One gate: what it catches, what it did lately, its mode on the right (Off / Observe / Enforce) and the tickets. A gate this version doesn't
  * know (a newer one wrote the journal) shows by its raw name, with what it did and no control.
  */
 export function GateRow(props: {
@@ -30,20 +30,18 @@ export function GateRow(props: {
       title={known ? title : <span className="t-code">{title}</span>}
       context={<MetaLine parts={[gateAbout(s.gate)]} />}
       detail={props.days ? gateActivityLine(s, props.days) : undefined}
-      below={
-        <>
-          {known && (
-            <GateModeControl
-              gate={s.gate}
-              label={title}
-              value={props.mode}
-              disabled={props.locked}
-              onChange={props.onMode}
-            />
-          )}
-          <GateEntries entries={s.entries} onOpenTicket={props.onOpenTicket} />
-        </>
+      action={
+        known && (
+          <GateModeControl
+            gate={s.gate}
+            label={title}
+            value={props.mode}
+            disabled={props.locked}
+            onChange={props.onMode}
+          />
+        )
       }
+      below={<GateEntries entries={s.entries} onOpenTicket={props.onOpenTicket} />}
     />
   );
 }

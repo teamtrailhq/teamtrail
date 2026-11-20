@@ -12,6 +12,7 @@ import { ChecksAdd } from './ChecksAdd';
 import { ChecksSave, type SaveState } from './ChecksSave';
 import type { EditedCheck } from './editedCheck';
 import { useCheckSuggestions } from './useCheckSuggestions';
+import { useMarkSaved } from './useMarkSaved';
 import type { VerificationConfigView } from './useVerificationConfig';
 
 /** The checks as the file has them, in the order they run, each with its folder ('' for the top) and paths. */
@@ -41,6 +42,7 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
   const [added, setAdded] = useState(false);
   const [sure, setSure] = useState(false);
   const [state, setState] = useState<SaveState>({ kind: 'idle' });
+  const markSaved = useMarkSaved();
   const suggestions = openSuggestions(useCheckSuggestions(), rows);
   const add = (check: EditedCheck) => {
     setAdded(true);
@@ -72,7 +74,8 @@ export function ChecksEditor({ view }: { view: VerificationConfigView }) {
       body: JSON.stringify({ checks, base: view.approval?.base ?? 'none', acknowledged: true }),
     }).catch(() => undefined);
     const body = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
-    if (res?.ok) return setState({ kind: 'saved' });
+    // saved and approved in one step, journaled under _trust
+    if (res?.ok) return (markSaved(true), setState({ kind: 'saved' }));
     setState({ kind: 'error', text: body?.error ?? "The server didn't answer." });
   };
   return (

@@ -47,6 +47,14 @@ export async function verifyGates({ page, url, repo, mapId, ticket, title, shots
   const written = JSON.parse(fs.readFileSync(path.join(repo, '.teamtrail', 'verification.json'), 'utf8'));
   const trust = fs.readFileSync(path.join(repo, '.teamtrail', '.events', '_trust.jsonl'), 'utf8');
   const journaled = /verification gate independent-review: enforced/.test(trust);
+  // the card says it saved, and that the change was journaled
+  const savedNote = await page
+    .locator('#settings-gates .ds-saved.on', { hasText: /saved · journaled/i })
+    .waitFor({ timeout: 5000 })
+    .then(
+      () => true,
+      () => false,
+    );
   await shootThemes(page, shots, 'settings-gates');
   // back as it was, so the steps after this one run with the defaults
   const restored = await choose(page, 'independent-review', 'Observe');
@@ -67,9 +75,10 @@ export async function verifyGates({ page, url, repo, mapId, ticket, title, shots
     restored &&
     written.gates?.['independent-review'] === 'enforce' &&
     journaled &&
+    savedNote &&
     opened;
   log(
-    `gates ${ok ? 'ok' : 'WRONG'}: flaky would have held ${ticket.key}, an unknown gate shown by name (${unknown}), independent review Observe → Enforce in one click ${enforced && written.gates?.['independent-review'] === 'enforce' ? 'written and approved' : 'NOT WRITTEN'}${journaled ? ', journaled' : ', NOT journaled'}, the ticket ${opened ? 'opened on the map' : 'NOT opened'}`,
+    `gates ${ok ? 'ok' : 'WRONG'}: flaky would have held ${ticket.key}, an unknown gate shown by name (${unknown}), independent review Observe → Enforce in one click ${enforced && written.gates?.['independent-review'] === 'enforce' ? 'written and approved' : 'NOT WRITTEN'}${journaled ? ', journaled' : ', NOT journaled'}${savedNote ? ', the card says Saved · journaled' : ', NO saved note'}, the ticket ${opened ? 'opened on the map' : 'NOT opened'}`,
   );
   return ok;
 }

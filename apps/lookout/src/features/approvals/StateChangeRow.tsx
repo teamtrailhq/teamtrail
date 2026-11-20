@@ -2,6 +2,7 @@ import type { TrustItem } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button, MetaLine, Row } from '../../components/ui';
 import { standingText } from './approvalCopy';
+import { ApprovalLines } from './ApprovalLines';
 import { DeleteConfirm } from './DeleteConfirm';
 
 const filesOf = (item: TrustItem) => item.files ?? (item.file ? [item.file] : []);
@@ -34,7 +35,7 @@ export function StateChangeRow(props: {
       detailText={files.join(', ') || undefined}
       below={
         <div className="ap-below">
-          <pre className="ap-lines t-code">{item.lines.join('\n')}</pre>
+          <ApprovalLines lines={item.lines} whole={false} />
           {props.local && !confirming && (
             <div className="ap-below ap-actions">
               <Button size="sm" disabled={props.busy} onClick={props.onAccept}>

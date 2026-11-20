@@ -40,7 +40,10 @@ export interface SettingsGroup {
   label: string;
   /** The short intro line under the group heading. */
   intro: string;
-  sections: { id: SettingsSectionId; title: string }[];
+  /** Shorter still: the group's line in the phone's list of groups. */
+  blurb: string;
+  /** Each section, with what it decides (its card's headline). */
+  sections: { id: SettingsSectionId; title: string; decides: string }[];
 }
 
 /**

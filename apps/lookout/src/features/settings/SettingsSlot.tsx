@@ -1,23 +1,21 @@
-import type { ReactNode } from 'react';
-import { MetaLine } from '../../components/ui';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
+import { type SavedMark, SlotContext } from './slotContext';
 import type { SettingsSectionId, SettingsStorage } from './types';
 
-const WHERE: Record<SettingsStorage, string> = {
-  repo: 'Committed to the repo',
-  machine: 'Only on this machine',
-  browser: 'Only in this browser',
-};
-
 /**
- * One section on a Settings group page, unchanged, with an anchor for deep links and, where it matters, a quiet
- * note on where the setting lives. The note hides while the section has nothing to show (still loading).
+ * One section on a Settings group page, with an anchor for deep links. It tells the section inside which one it is
+ * and where its setting lives, both shown on the section card's label line, and keeps the section's last save.
  */
 export function SettingsSlot(props: { id: SettingsSectionId; storage?: SettingsStorage; children: ReactNode }) {
-  const note = props.storage && WHERE[props.storage];
+  const [saved, setSaved] = useState<SavedMark>();
+  const mark = useCallback((journaled: boolean) => setSaved({ at: Date.now(), journaled }), []);
+  const value = useMemo(
+    () => ({ id: props.id, storage: props.storage, saved, mark, nested: false }),
+    [props.id, props.storage, saved, mark],
+  );
   return (
     <div className="sp-slot" id={`settings-${props.id}`}>
-      {props.children}
-      {note && <MetaLine className="sp-where" parts={[note]} />}
+      <SlotContext.Provider value={value}>{props.children}</SlotContext.Provider>
     </div>
   );
 }

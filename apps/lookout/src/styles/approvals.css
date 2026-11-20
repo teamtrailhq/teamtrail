@@ -30,6 +30,52 @@
   line-height: var(--lh-snug);
   color: var(--text-hi);
 }
+/* The diff (features/approvals/ApprovalLines.tsx): mono, removed lines struck through, added ones marked with a bar,
+ * changed-in-place lines as they read (a → b). No red/green: what waits on you is the row, not a line. */
+.ap-diff {
+  padding: var(--sp-6) 0;
+  white-space: normal;
+  font-family: var(--mono);
+  line-height: 1.7;
+  color: var(--dim);
+}
+.ap-dl {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  padding-right: var(--sp-10);
+}
+.ap-t {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ap-g {
+  text-align: center;
+  color: var(--faint);
+}
+.ap-rm .ap-t {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+.ap-add,
+.ap-change {
+  color: var(--text-hi);
+}
+.ap-add {
+  background: rgba(127, 127, 127, 0.08);
+  box-shadow: inset 2px 0 0 var(--text-hi);
+}
+.ap-add .ap-g,
+.ap-change .ap-g {
+  color: var(--text-hi);
+}
+.ap-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .ap-warnings {
   margin: 0;
   padding-left: var(--sp-12);

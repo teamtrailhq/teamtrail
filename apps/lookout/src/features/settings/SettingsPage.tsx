@@ -45,7 +45,15 @@ export function SettingsPage(props: {
     return () => window.removeEventListener('keydown', k);
   }, [step, props]);
   const pick = (group: SettingsGroupId) => props.onShow({ group });
-  const nav = step !== 'group' && <SettingsNav current={shown?.id} onPick={pick} drill={phone} />;
+  const nav = step !== 'group' && (
+    <SettingsNav
+      current={shown?.id}
+      section={route.section}
+      onPick={pick}
+      onSection={(group, section) => props.onShow({ group, section })}
+      drill={phone}
+    />
+  );
 
   return (
     <Panel className={`zone decisions-view settings-page sp-${bp}`} aria-label="Settings">
