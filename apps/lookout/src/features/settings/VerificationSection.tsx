@@ -4,6 +4,7 @@ import { Choice } from '../../components/ui';
 import { TRAIL_LEAD } from '../../lib';
 import { LEVEL_HELP, LEVEL_TEXT, verificationApi } from '../../lib/verification';
 import { MainChecksSetting } from '../main-checks';
+import { CheckVariablesSetting } from './CheckVariablesSetting';
 import { settingsHref } from './settingsHref';
 import { SettingsSection } from './SettingsSection';
 import { useThisMachine } from './useThisMachine';
@@ -81,6 +82,7 @@ export function VerificationSection(props: { map?: MapDoc }) {
         </div>
       )}
       <VerificationChecks view={view} local={local} file={file} />
+      <CheckVariablesSetting local={local} />
       {map && <MainChecksSetting mapId={map.id} />}
       <span className="set-hint t-meta">
         Saved here, checks are approved as you save them. A change to {file} made in the repo, by an agent or a
@@ -88,10 +90,9 @@ export function VerificationSection(props: { map?: MapDoc }) {
       </span>
       <span className="set-hint t-meta">
         Checks run on this machine as you, with no sandbox. Teamtrail passes them only the environment variables they
-        need (more go in <code>TEAMTRAIL_CHECK_ENV</code>), but a check can still read your files (~/.aws, ~/.npmrc,
-        ~/.ssh, ~/.kube, ~/.docker, the GitHub CLI&apos;s login, Teamtrail&apos;s own credentials) and use your SSH
-        agent. That&apos;s why a changed check command needs your approval: you approve the command line, so read what
-        it runs.
+        need (more under Variables checks can read), but a check can still read your files (~/.aws, ~/.npmrc, ~/.ssh,
+        ~/.kube, ~/.docker, the GitHub CLI&apos;s login, Teamtrail&apos;s own credentials) and use your SSH agent.
+        That&apos;s why a changed check command needs your approval: you approve the command line, so read what it runs.
       </span>
     </SettingsSection>
   );

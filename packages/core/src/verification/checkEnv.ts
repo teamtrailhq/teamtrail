@@ -4,15 +4,22 @@ import { BRAND } from '../model/brand';
 /**
  * Where a person names the extra variables their checks need: `TEAMTRAIL_CHECK_ENV`, in the environment of the
  * `teamtrail` that runs the checks (`TEAMTRAIL_CHECK_ENV="DATABASE_URL, REDIS_URL, APP_*"`), separated by
- * commas or spaces. It lives on the person's machine on purpose: a list committed to the repo would let a
- * teammate's push, or an agent's edit, decide which of your secrets a check command gets.
+ * commas or spaces, or Settings → Verification on this machine (checkEnvNames.ts). Either way it lives on the
+ * person's machine on purpose: a list committed to the repo would let a teammate's push, or an agent's edit, decide
+ * which of your secrets a check command gets. Names only: values always come from that environment.
  */
 export const CHECK_ENV = `${BRAND.slug.toUpperCase()}_CHECK_ENV`;
 
-/** The environment a check command runs in: the allowlist of childEnv.ts plus the names in `TEAMTRAIL_CHECK_ENV`. */
-export function checkEnv(source: NodeJS.ProcessEnv): ChildEnv {
-  const extra = (source[CHECK_ENV] ?? '').split(/[\s,]+/).filter(Boolean);
-  return childEnv(source, extra);
+/** The names `TEAMTRAIL_CHECK_ENV` lists in `source`. */
+export const shellCheckEnvNames = (source: NodeJS.ProcessEnv) =>
+  (source[CHECK_ENV] ?? '').split(/[\s,]+/).filter(Boolean);
+
+/**
+ * The environment a check command runs in: the allowlist of childEnv.ts plus the names in `TEAMTRAIL_CHECK_ENV` and
+ * `names`, the ones this machine's person added in Settings (checkEnvNames.ts).
+ */
+export function checkEnv(source: NodeJS.ProcessEnv, names: string[] = []): ChildEnv {
+  return childEnv(source, [...shellCheckEnvNames(source), ...names]);
 }
 
 const SHOWN = 40;
@@ -24,6 +31,7 @@ export function withheldNote(withheld: string[]) {
   const more = names.length > SHOWN ? ` and ${names.length - SHOWN} more` : '';
   return (
     `\n[${BRAND.slug}: ${names.length} environment variables were not passed to this check: ` +
-    `${names.slice(0, SHOWN).join(', ')}${more}. If it needs one, name it in ${CHECK_ENV} where you start ${BRAND.slug}.]\n`
+    `${names.slice(0, SHOWN).join(', ')}${more}. If it needs one, add its name in Settings → Verification → ` +
+    `Variables checks can read (or ${CHECK_ENV} where you start ${BRAND.slug}); its value comes from that shell.]\n`
   );
 }

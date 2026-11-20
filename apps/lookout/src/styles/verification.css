@@ -390,3 +390,25 @@
   width: auto;
   height: auto;
 }
+
+/* Settings → Verification → Variables checks can read: names only. */
+.cv {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.cv-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cv-add {
+  max-width: 420px;
+}
+.cv-allowlist {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}

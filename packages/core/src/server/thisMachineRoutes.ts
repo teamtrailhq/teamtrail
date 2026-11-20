@@ -65,6 +65,8 @@ const ALWAYS: RegExp[] = [
   /^\/trackers\/.+/,
   // The pull requests a ticket could be linked to, read with this machine's GitHub token.
   /^\/verification\/sync\/candidates$/,
+  // The variables checks may read: this machine's list, and which of them its shell has set (names only).
+  /^\/verification\/variables$/,
   /^\/slack\/.+/,
   // Catalog searches and previews fetch the URLs in guides.json (agents can write it) from this machine.
   /^\/guides\/catalog(\/|$)/,

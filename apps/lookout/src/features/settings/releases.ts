@@ -23,6 +23,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.66.24',
+    date: '2026-11-19',
+    items: [
+      'Settings → Verification shows the variables checks can read, the ones your tests seem to need and which they would not get; add a name there instead of TEAMTRAIL_CHECK_ENV (names only: values still come from your shell)',
+      'Checks also get Go, Gradle, Maven, Rust, uv, pip, Poetry, Composer, .NET, mise, asdf and Cypress cache and toolchain folders',
+    ],
+  },
+  {
     version: '0.66.22',
     date: '2026-11-19',
     items: [

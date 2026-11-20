@@ -78,3 +78,31 @@ export interface CheckSuggestion {
   /** One of the known check shapes; otherwise saving it needs the person's acknowledgement. */
   known: boolean;
 }
+
+/** A variable name the repo's files suggest its tests read, and what checks on this machine would get of it. */
+export interface NeededVariable {
+  name: string;
+  /** Where the name was seen: `listed in .env.example`, `set in CI (.github/workflows/ci.yml)`. */
+  why: string;
+  /** Its name reads like a credential (`STRIPE_SECRET_KEY`): a check only gets it if the person names it exactly. */
+  secretShaped: boolean;
+  /** A check would be passed it: on the allowlist, or a name or pattern the person gave. */
+  passes: boolean;
+  /** The shell that started this Teamtrail has it set. Presence only: a value is never read for this. */
+  set: boolean;
+}
+
+/**
+ * Settings → Verification → Variables checks can read (`GET /verification/variables`, this machine only): names only,
+ * never a value, anywhere. Values come from the shell that started `teamtrail`.
+ */
+export interface CheckVariables {
+  /** Passed to every check when set (names, and prefixes ending in `_`), unless a name reads like a secret. */
+  allowlist: { names: string[]; prefixes: string[] };
+  /** Named in `TEAMTRAIL_CHECK_ENV` in the shell that started this Teamtrail. */
+  fromShell: string[];
+  /** Added in Settings on this machine (`<config dir>/projects/<id>/check-env.json`). */
+  added: string[];
+  /** Names the repo's files suggest its tests read (env examples, CI `env:`), from its profile; none without a checkout. */
+  needed: NeededVariable[];
+}
