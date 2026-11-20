@@ -24,13 +24,18 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
-    version: '0.67.16',
+    version: '0.67.18',
     date: '2026-11-20',
     items: [
       "Teamtrail Cloud: Scout's Get started keeps its own corner, so it never covers Send or a button again",
       "In Hands-off, the full ticket has Back, and Esc and your browser's Back return you where you were",
       'Starting a trail before any checks are set says so, with Set checks',
     ],
+  },
+  {
+    version: '0.67.15',
+    date: '2026-11-20',
+    items: ["A new logo: the t's path runs to a blaze cursor, the wordmark's own, in the browser tab too"],
   },
   {
     version: '0.67.14',
