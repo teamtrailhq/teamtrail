@@ -24,6 +24,13 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.67.18',
+    date: '2026-11-20',
+    items: [
+      "The map's destination is a finish square: it fills green when the trail is verified, rose when its checks fail",
+    ],
+  },
+  {
     version: '0.67.17',
     date: '2026-11-20',
     items: ["When Scout in Slack can't reach your Teamtrail, it tells you to start it with `npx teamtrail`"],

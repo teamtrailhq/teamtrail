@@ -658,7 +658,7 @@ const supervisionOk = await verifySupervision({
   discoveryKey,
 });
 
-// Research done is not the destination: a trail whose only ticket, its discovery research, is done plants no flag
+// Research done is not the destination: a trail whose only ticket, its discovery research, is done reaches no destination
 // and announces nothing; its plan isn't charted yet.
 const onlyBrief = await call('start_trail', { title: 'Only the brief', destination: 'Know what search would take' });
 const researchKey = onlyBrief.tickets[0].key;

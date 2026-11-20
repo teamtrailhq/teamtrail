@@ -3,7 +3,7 @@ import { destinationTrail } from './destination';
 import { DestinationMark } from './DestinationMark';
 import { DestinationTrail } from './DestinationTrail';
 
-/** The end of the trail: the last stretches and the mark, walked and flagged once the trail is done. */
+/** The end of the trail: the last stretches and the mark, walked and the square filled once the trail is done. */
 export function MapDestination(props: {
   laid: Parameters<typeof destinationTrail>[0];
   spot: { x: number; y: number };

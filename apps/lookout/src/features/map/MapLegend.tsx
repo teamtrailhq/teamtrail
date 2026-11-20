@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LegendDestination } from './LegendDestination';
 import type { NodeTone } from './nodeTone';
 import { StatusDot } from './StatusDot';
 
@@ -13,7 +14,7 @@ const ROWS: { tone: NodeTone; verified?: boolean; spin?: boolean; urgent?: boole
   { tone: 'cancelled', text: 'Ruled out' },
 ];
 
-/** What the cards' dots mean, one click away in the map's corner. */
+/** What the cards' dots and the destination's finish square mean, one click away in the map's corner. */
 export function MapLegend() {
   const [open, setOpen] = useState(false);
   return (
@@ -34,6 +35,8 @@ export function MapLegend() {
               {r.text}
             </li>
           ))}
+          <LegendDestination state="ahead" text="Destination, ahead" />
+          <LegendDestination state="verified" text="Destination reached and verified" />
         </ul>
       )}
       <button type="button" className="btn sm" aria-expanded={open} onClick={() => setOpen(!open)}>
