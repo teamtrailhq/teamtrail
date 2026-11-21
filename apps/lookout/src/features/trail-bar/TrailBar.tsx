@@ -1,14 +1,15 @@
-import { type ReactNode, useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { Button, LabelLine, Panel } from '../../components/ui';
 import { cx } from '../../lib';
 import { countWords, type TrailCounts, type TrailSegment } from './trailBarModel';
 import { TrailDrawer, type TrailTab } from './TrailDrawer';
 import { TrailSegments } from './TrailSegments';
+import { useDismiss } from './useDismiss';
 
 /**
  * Under the map, the whole trail in one line: its label, a segment per ticket and the counts in words, what needs you
  * as the one rose chip (it opens Needs you), and More. More opens the three lists as tabs in a drawer over the map
- * (TrailDrawer), a bottom sheet on a phone.
+ * (TrailDrawer), a bottom sheet on a phone: a popover, closed on every load (`more` is the app's state, never stored).
  */
 export function TrailBar(props: {
   trailKey?: string;
@@ -25,12 +26,14 @@ export function TrailBar(props: {
   const { onMore } = props;
   const [tab, setTab] = useState<TrailTab>('needs');
   const close = useCallback(() => onMore(false), [onMore]);
+  const zone = useRef<HTMLDivElement>(null);
+  useDismiss({ open: props.more, box: zone, onClose: close });
   const open = (to: TrailTab) => {
     setTab(to);
     onMore(true);
   };
   return (
-    <div className={cx('trail-bar-zone', props.more && 'extended')}>
+    <div ref={zone} className={cx('trail-bar-zone', props.more && 'extended')}>
       {props.more && (
         <TrailDrawer tab={tab} onTab={setTab} counts={props.listCounts} lists={props.lists} onClose={close} />
       )}

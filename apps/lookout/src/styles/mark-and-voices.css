@@ -11,10 +11,6 @@
 .urgent-text .scout-mark {
   margin-right: var(--sp-2);
 }
-.log-row.src-system .src .scout-mark {
-  margin-right: var(--sp-4);
-  color: var(--accent);
-}
 .onb-brand {
   display: flex;
   align-items: center;

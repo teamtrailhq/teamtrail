@@ -91,10 +91,13 @@
   padding: 0 var(--gutter) var(--sp-8);
   flex: 0 0 auto;
 }
+/* The chat's ticket: two lines at most, then cut. */
 .comms-ticket .t-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 /* While your answer is needed the answer gets the room: the queue gives a little back and Up next folds to its
  * header line. */
@@ -105,7 +108,7 @@
 .inbox:has(.comms.asking) .upnext .empty {
   display: none;
 }
-.comms-ticket .meta-line {
+.comms-ticket .ds-label {
   margin-top: var(--sp-4);
 }
 .comms-log {
@@ -120,34 +123,39 @@
 .msg {
   max-width: 92%;
 }
-.msg .meta-line {
+/* The scenes' chat: a mono label line over a square box; yours on the right on a darker ground. */
+.msg > .ds-label {
   margin-bottom: var(--sp-4);
 }
 .msg-text {
   white-space: pre-wrap;
-  padding: var(--sp-10) var(--sp-12);
+  padding: var(--sp-8) var(--sp-10);
   font-size: var(--fs-body);
   line-height: var(--lh-body);
-  background: rgba(var(--accent-rgb), 0.03);
-  border: 1px solid var(--line);
-  border-left: var(--edge-w) solid var(--edge-neutral);
+  color: var(--text);
+  background: var(--panel-solid);
+  border: 1px solid var(--line2);
 }
 .msg.from-human {
   align-self: flex-end;
 }
-.msg.from-human .meta-line {
+.msg.from-human > .ds-label {
   text-align: right;
 }
 .msg.from-human .msg-text {
-  background: rgba(var(--accent-rgb), 0.06);
-  border-left-width: 1px;
-  border-left-color: var(--line);
-  border-right: var(--edge-w) solid var(--accent);
+  background: var(--bg);
   color: var(--text-hi);
 }
+/* Under an answer that counts as yours: "Answered · in the Lookout", green, with a tick. */
+.msg .msg-counted {
+  margin-top: var(--sp-6);
+  text-align: right;
+}
+.msg .msg-counted::before {
+  content: '✓ ';
+}
 .msg.open-q .msg-text {
-  border-color: rgba(var(--urgent-rgb), 0.4);
-  border-left: var(--edge-w) solid var(--edge-urgent);
+  border-color: rgba(var(--urgent-rgb), 0.5);
   background: var(--urgent-bg);
   color: var(--text-hi);
 }

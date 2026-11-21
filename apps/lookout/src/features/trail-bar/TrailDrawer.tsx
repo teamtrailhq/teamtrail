@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { cx } from '../../lib';
 
 export type TrailTab = 'needs' | 'agents' | 'next';
@@ -11,7 +11,8 @@ const TABS: { id: TrailTab; label: string }[] = [
 
 /**
  * More, opened: a drawer over the map with the trail's three lists as tabs, Needs you · Agents · Up next, each with
- * its count. A bottom sheet on a phone (styles). × or Esc closes it.
+ * its count. A bottom sheet on a phone (styles). A popover: ×, Esc, a press outside it or the bar (TrailBar's
+ * useDismiss) and opening something from it close it, and it is never restored on load.
  */
 export function TrailDrawer(props: {
   tab: TrailTab;
@@ -20,12 +21,6 @@ export function TrailDrawer(props: {
   lists: Record<TrailTab, ReactNode>;
   onClose: () => void;
 }) {
-  const { onClose } = props;
-  useEffect(() => {
-    const key = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && onClose();
-    window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  }, [onClose]);
   return (
     <div className="trail-lists trail-drawer ds-arrive">
       <div className="trail-tabs" role="tablist" aria-label="The trail's lists">
@@ -47,7 +42,7 @@ export function TrailDrawer(props: {
             {t.label} <span className="n">{props.counts[t.id]}</span>
           </button>
         ))}
-        <button type="button" className="trail-drawer-close" aria-label="Close the lists" onClick={onClose}>
+        <button type="button" className="trail-drawer-close" aria-label="Close the lists" onClick={props.onClose}>
           ×
         </button>
       </div>

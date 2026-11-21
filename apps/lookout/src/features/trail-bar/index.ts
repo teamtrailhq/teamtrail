@@ -5,4 +5,4 @@ export { trailCounts, trailSegments, type TrailCounts, type TrailSegment } from 
 export { TrailSegments } from './TrailSegments';
 export { UpNextList } from './UpNextList';
 export { upNextRows } from './upNextRows';
-export { useTrailBarMore } from './useTrailBarMore';
+export { closing } from './closing';

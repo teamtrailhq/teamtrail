@@ -418,13 +418,9 @@ await stalledNode.waitFor({ timeout: 30_000 });
 await clickNode(stalledNode);
 await page.locator('.bubble .lease-stalled, .bubble .lease-expired').waitFor({ timeout: 10_000 });
 await shot('05-stalled-claim');
-await view('Activity');
-const returnedLog = page.locator('.log-row', {
-  hasText: `${crashed.claimed.key} returned to queue after claude-09 went silent`,
-});
-await returnedLog.first().waitFor({ timeout: 60_000 });
-log('Lookout returned the ticket to the queue: "ticket returned to queue after agent went silent" logged');
-await view('Map');
+// Its bubble, still open, follows: once the lease runs out the ticket is back in the queue for the next agent.
+await page.locator('.bubble .bubble-state', { hasText: 'the next agent takes it' }).waitFor({ timeout: 60_000 });
+log('Lookout returned the ticket to the queue: its bubble says the next agent takes it');
 const resumed = await call('claim_ticket', { ticket: added.ticket.key });
 const handoffOk =
   resumed.claimed.assignee !== 'claude-09' &&
@@ -438,17 +434,12 @@ log(
 await clickNode(page.locator('.node', { hasText: 'Which date format?' }));
 await page.locator('.bubble .bubble-state', { hasText: 'is working on it' }).waitFor({ timeout: 15_000 });
 await ticketAction(page, 'Release to queue');
-await view('Activity');
-const releasedLog = page.locator('.log-row', {
-  hasText: `${added.ticket.key} returned to queue · claim of ${resumed.claimed.assignee} released by trail lead`,
-});
-await releasedLog.first().waitFor({ timeout: 15_000 });
+await page.locator('.bubble .bubble-state', { hasText: 'the next agent takes it' }).waitFor({ timeout: 15_000 });
 const told = await call('status');
 const releaseOk =
   told.leaseLost?.tickets?.includes(added.ticket.key) && !told.trail.claimed.some((t) => t.key === added.ticket.key);
 log(`released in the Lookout; the agent ${releaseOk ? 'was told' : 'WAS NOT told'} its claim is gone`);
 await shot('06-released-to-queue');
-await view('Map');
 await crashClient.close().catch(() => {});
 
 // Signed state: an edit to the ticket's file instead of the tools doesn't count; the human reverts it in Approvals.
@@ -802,7 +793,7 @@ log(`a wide layer: ${cardSpots.length} cards in ${gridColumns} columns ${gridOk 
 
 await client.close();
 await view('Activity');
-await page.locator('.sessions-list, .activity-page .empty').first().waitFor({ timeout: 15_000 });
+await page.locator('.sessions-list, .activity-page .empty-state').first().waitFor({ timeout: 15_000 });
 await page.waitForTimeout(1500);
 const after = await page.locator('.sessions-list li:not(.claim)').count();
 log(
