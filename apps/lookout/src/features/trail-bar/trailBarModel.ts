@@ -65,10 +65,10 @@ export function trailCounts(segments: TrailSegment[], needs: AttentionItem[]): T
   };
 }
 
-/** The counts in words, empty ones left out: "5 of 13 done · 2 working · 3 need you · 1 waiting for an agent". */
+/** The counts in words, empty ones left out: "5 of 13 done · 2 at work · 3 need you · 1 waiting for an agent". */
 export function countWords(c: TrailCounts): { text: string; urgent?: boolean }[] {
   const parts = [
-    { n: c.working, text: `${c.working} working` },
+    { n: c.working, text: `${c.working} at work` },
     { n: c.needs, text: `${c.needs} need${c.needs === 1 ? 's' : ''} you`, urgent: true },
     { n: c.waiting, text: `${c.waiting} waiting for an agent` },
     { n: c.notStarted, text: `${c.notStarted} not started` },

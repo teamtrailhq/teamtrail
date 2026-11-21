@@ -28,7 +28,7 @@ describe('a held card on the map', () => {
   test('a ready card waits on the brief, amber, not "ready for an agent"', () => {
     const held = briefWait(node('frontier'), true, false);
     expect(held).toBe(true);
-    expect(statePart({ n: node('frontier'), waiting: false, brief: held, step: true })).toEqual({
+    expect(statePart({ n: node('frontier'), waiting: false, brief: held })).toEqual({
       text: 'waits on brief',
       tone: 'warn',
     });
@@ -38,6 +38,6 @@ describe('a held card on the map', () => {
   test('a card in the backlog stays there; an agent waiting on you still comes first', () => {
     expect(briefWait(node('blocked'), true, false)).toBe(false);
     expect(briefWait(node('frontier'), undefined, false)).toBe(false);
-    expect(statePart({ n: node('frontier'), waiting: true, brief: true, step: true }).text).toBe('waiting on you');
+    expect(statePart({ n: node('frontier'), waiting: true, brief: true }).text).toBe('asks you');
   });
 });

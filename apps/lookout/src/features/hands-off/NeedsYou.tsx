@@ -1,12 +1,12 @@
 import type { AttentionItem } from '@teamtrail/core';
 import { useState } from 'react';
-import { cx } from '../../lib';
+import { Button, LabelLine } from '../../components/ui';
 import type { NeedRowRender } from './types';
 
 /**
- * Needs you: the attention queue as a compact list, most urgent first, one row open at a time (the first, until the
- * person opens or closes one), `limit` shown and the rest behind "Show N more". The label is red only while
- * something waits; with nothing, Scout says agents keep going.
+ * Needs you: the attention queue as one panel, most urgent first, one row open at a time (the first, until the person
+ * opens or closes one), `limit` shown and the rest behind Show all. The count is rose only while something waits;
+ * with nothing, Scout says agents keep going.
  */
 export function NeedsYou(props: { items: AttentionItem[]; limit: number; row: NeedRowRender }) {
   const { items, limit } = props;
@@ -17,9 +17,17 @@ export function NeedsYou(props: { items: AttentionItem[]; limit: number; row: Ne
   const shown = all ? items : items.slice(0, limit);
   const hidden = items.length - limit;
   return (
-    <section className="home-section home-needs" aria-labelledby="home-needs">
-      <h2 id="home-needs" className={cx('t-label', items.length > 0 && 'urgent')}>
-        Needs you · {items.length}
+    <section className="home-section home-panel home-needs" aria-labelledby="home-needs">
+      <h2 id="home-needs" className="home-bar">
+        <LabelLine parts={['Needs you']} />
+        {items.length > 0 ? (
+          <span className="home-count urgent">
+            <span className="home-count-dot" aria-hidden="true" />
+            {items.length} need you
+          </span>
+        ) : (
+          <LabelLine parts={['0']} tone="dim" />
+        )}
       </h2>
       {items.length === 0 ? (
         <p className="home-clear t-body">
@@ -31,14 +39,15 @@ export function NeedsYou(props: { items: AttentionItem[]; limit: number; row: Ne
             const open = item.id === openId;
             return props.row(item, open, () => setOpened(open ? null : item.id));
           })}
-          {hidden > 0 && (
-            <li>
-              <button type="button" className="link home-more" onClick={() => setAll(!all)}>
-                {all ? 'Show fewer' : `Show ${hidden} more`}
-              </button>
-            </li>
-          )}
         </ul>
+      )}
+      {hidden > 0 && (
+        <div className="home-panel-foot">
+          <LabelLine parts={[all ? `All ${items.length} shown` : `${hidden} more, ranked lower`]} />
+          <Button variant="ghost" className="home-more" onClick={() => setAll(!all)}>
+            {all ? 'Show fewer' : 'Show all'}
+          </Button>
+        </div>
       )}
     </section>
   );

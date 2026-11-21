@@ -1,8 +1,8 @@
 import { type ActivityState, type MapSnapshot, trailUsage, trailUsageSources, USAGE_SOURCE } from '@teamtrail/core';
-import { SectionHeader } from '../../components/ui';
+import { LabelLine, SectionHeader } from '../../components/ui';
 import { isRunning, tokens, usd } from '../../lib';
 
-/** Header of the agent list. Trail spend shows here only where the app header doesn't carry it (phone, laptop tab). */
+/** Header of the agent lanes: how many are at work, and the trail's spend (every session's, on hover where from). */
 export function SessionsHead({
   activity,
   snap,
@@ -21,13 +21,8 @@ export function SessionsHead({
   const claims = snap?.tickets.filter((t) => t.state === 'open' && t.assignee && !live.has(t.id)).length ?? 0;
   return (
     <SectionHeader
-      sub
       className="sessions-head"
-      title={
-        <>
-          Agents on tickets <span className="n">{running + claims}</span>
-        </>
-      }
+      title={<LabelLine parts={['Agents', `${running + claims} at work`]} />}
       right={
         usage ? (
           <span

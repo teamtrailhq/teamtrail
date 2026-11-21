@@ -116,7 +116,7 @@ describe('the trail bar', () => {
     expect(counts).toEqual({ done: 2, total: 7, working: 1, needs: 2, waiting: 1, notStarted: 2 });
     expect(countWords(counts).map((p) => p.text)).toEqual([
       '2 of 7 done',
-      '1 working',
+      '1 at work',
       '2 need you',
       '1 waiting for an agent',
       '2 not started',
@@ -158,34 +158,26 @@ describe('the trail bar', () => {
 describe('cards', () => {
   const node = (t: Ticket, state: LaidOutNode['state']) => ({ ticket: t, state }) as unknown as LaidOutNode;
 
-  it('name the agent with its model and step', () => {
+  it("name the agent's model, else the agent", () => {
     const part = statePart({
       n: node(ticket('22'), 'claimed'),
       session: session('22'),
       waiting: false,
-      step: true,
       model: 'Sonnet 4.5',
     });
-    expect(part).toEqual({ text: 'codex-01 · Sonnet 4.5 · 3/5', tone: 'agent' });
-    const crowded = statePart({
-      n: node(ticket('22'), 'claimed'),
-      session: session('22'),
-      waiting: false,
-      step: false,
-    });
-    expect(crowded.text).toBe('codex-01');
+    expect(part).toEqual({ text: 'Sonnet 4.5', tone: 'agent' });
+    const unknown = statePart({ n: node(ticket('22'), 'claimed'), session: session('22'), waiting: false });
+    expect(unknown.text).toBe('codex-01');
   });
 
-  it('say waiting for an agent and for how long, what they wait on, and what needs you', () => {
+  it('say ready for an agent and for how long, what they wait on, and what needs you', () => {
     const n = node(ticket('10'), 'frontier');
-    expect(statePart({ n, waiting: false, step: true, readyFor: '2m' })).toEqual({
-      text: 'waiting for an agent · 2m',
+    expect(statePart({ n, waiting: false, readyFor: '2m' })).toEqual({
+      text: 'ready 2m',
       tone: 'wait',
     });
-    expect(
-      statePart({ n: node(ticket('13'), 'blocked'), waiting: false, step: true, waitsOn: 'waits on #22' }).tone,
-    ).toBe('waits');
-    expect(statePart({ n, waiting: false, step: true, need: cardNeedText(item('merge')) })).toEqual({
+    expect(statePart({ n: node(ticket('13'), 'blocked'), waiting: false, waitsOn: 'waits on #22' }).tone).toBe('waits');
+    expect(statePart({ n, waiting: false, need: cardNeedText(item('merge')) })).toEqual({
       text: 'ready to merge',
       tone: 'urgent',
     });

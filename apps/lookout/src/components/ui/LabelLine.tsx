@@ -25,7 +25,7 @@ export function LabelLine(props: {
       {shown.map((p, i) => (
         <span key={i}>
           {i > 0 && <span className="ds-label-sep"> · </span>}
-          <span className={p.tone === 'plain' ? undefined : `tone-${p.tone}`} title={p.tip}>
+          <span className={cx(p.tone !== 'plain' && `tone-${p.tone}`, p.className) || undefined} title={p.tip}>
             {p.text}
           </span>
         </span>

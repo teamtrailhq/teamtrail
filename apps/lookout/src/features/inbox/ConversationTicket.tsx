@@ -1,14 +1,14 @@
-import { MetaLine } from '../../components/ui';
+import { LabelLine } from '../../components/ui';
 
-/** The HITL line's title: the ticket on one line (full text on hover), then the trail and agent. */
-export function ConversationTicket(props: { ticket?: { key: string; title: string }; trail?: string; agent: string }) {
+/** The chat's ticket on one line (full text on hover), then its trail. */
+export function ConversationTicket(props: { ticket?: { key: string; title: string }; trail?: string }) {
   const { ticket } = props;
   return (
     <div className="comms-ticket">
       <div className="t-title" title={ticket && `${ticket.key} ${ticket.title}`}>
-        <span className="key">{ticket?.key}</span> {ticket?.title}
+        {ticket?.title}
       </div>
-      <MetaLine parts={[props.trail, props.agent]} />
+      <LabelLine parts={[props.trail]} />
     </div>
   );
 }

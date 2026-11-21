@@ -1,7 +1,6 @@
 import type { ActivityState, MapSnapshot } from '@teamtrail/core';
 import { Empty, Markdown, MetaLine, Row } from '../../components/ui';
 import type { Selection } from '../../lib';
-import { AssumptionList } from './AssumptionList';
 import { splitPlanItem } from './splitPlanItem';
 import { TrailReport } from './TrailReport';
 import type { Tab } from './types';
@@ -28,8 +27,6 @@ export function PlanTabBody({
     case 'report':
       if (!activity) return <Empty>No activity yet</Empty>;
       return <TrailReport snap={snap} activity={activity} onTicket={(id) => onSelect({ kind: 'ticket', id })} />;
-    case 'assumptions':
-      return <AssumptionList snap={snap} onSelect={onSelect} />;
     case 'decisions':
       if (!s.decisions.length) return <Empty>None</Empty>;
       return (

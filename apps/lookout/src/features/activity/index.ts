@@ -1,4 +1,3 @@
-export { ActivityLog } from './ActivityLog';
-export { Sessions } from './Sessions';
+export { ActivityAgents } from './ActivityAgents';
+export { agentMilestones } from './agentMilestones';
 export { SessionsHead } from './SessionsHead';
-export { StepTracker } from './StepTracker';

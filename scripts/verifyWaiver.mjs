@@ -130,14 +130,14 @@ export async function verifyWaiver({ browser, cli, log, shots }) {
     const item = (await openNeedsList(page)).locator('li.att-item.k-blocked', { hasText: 'accept it without test' });
     await item.waitFor({ timeout: 20_000 });
     await item.locator('.ds-row-main').click();
-    const standing = page.locator('.bubble .bubble-need', { hasText: 'Blocked' });
+    const standing = page.locator('.bubble .bubble-bar', { hasText: 'Blocked' });
     await standing.waitFor({ timeout: 15_000 });
     await ticketAction(page, 'Accept without test…');
     const form = page.locator('.waive-form');
     await form.getByLabel('Why it can go without test').fill(REASON);
     if (shots) await page.screenshot({ path: path.join(shots, 'waive-form.png') });
     await form.getByRole('button', { name: 'Accept without test' }).click();
-    await page.locator('.bubble .ticket-chips .tag-state', { hasText: 'done' }).waitFor({ timeout: 20_000 });
+    await page.locator('.bubble .bubble-bar', { hasText: 'done' }).waitFor({ timeout: 20_000 });
     await openFullTicket(page);
     const proofPanel = page.locator('.ticket-drawer .ticket-proof', { hasText: 'Not verified' });
     await proofPanel.waitFor({ timeout: 15_000 });

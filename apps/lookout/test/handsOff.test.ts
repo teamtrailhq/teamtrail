@@ -1,8 +1,8 @@
 import type { AttentionItem, MapSnapshot, Ticket, TrailBriefing } from '@teamtrail/core';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { footerText } from '../src/features/hands-off/footerText';
-import { needMeta, needsShown, needText, needWhy } from '../src/features/hands-off/needText';
-import { progressWords } from '../src/features/hands-off/progressWords';
+import { needDetail, needLabel, needsShown, needText, needWhy } from '../src/features/hands-off/needText';
+import { progressLabel } from '../src/features/hands-off/progressWords';
 import { sinceRows } from '../src/features/hands-off/sinceRows';
 import type { PrSyncSnapshot } from '../src/lib';
 
@@ -55,16 +55,24 @@ describe('Needs you rows', () => {
     expect(needText(criteria('m2')).quick).toBe('Confirm criteria');
   });
 
-  test('the dim context: another trail by name, the ticket unless the title names it, who asks and the wait', () => {
+  test('the label line: another trail by name, the ticket unless the title names it, who asks and the wait', () => {
     const s = snap([ticket('10')]);
-    expect(needMeta({ item: item({ ticketId: '10' }), snap: s, current: 'm1', now })).toEqual([
-      { text: '#10', code: true },
+    expect(needLabel({ item: item({ ticketId: '10' }), snap: s, current: 'm1', now })).toEqual([
+      '#10',
       'claude-03',
       '22m',
     ]);
-    expect(needMeta({ item: item({ ticketId: '10' }), snap: s, current: 'm2', now })[0]).toBe('Offline sync');
+    expect(needLabel({ item: item({ ticketId: '10' }), snap: s, current: 'm2', now })[0]).toBe('Offline sync');
     const named = item({ kind: 'approval', ticketId: '10', title: '#10 ready', agent: undefined });
-    expect(needMeta({ item: named, snap: s, current: 'm1', now })).toEqual(['22m']);
+    expect(needLabel({ item: named, snap: s, current: 'm1', now })).toEqual(['22m']);
+  });
+
+  test('one line more: the rest of a question its headline cuts, else why it ranks here, else nothing', () => {
+    const q = { text: 'Merge edits silently? Two people can edit one paragraph offline.' } as never;
+    expect(needDetail(item(), q)).toBe('Merge edits silently? Two people can edit one paragraph offline.');
+    expect(needDetail(item(), { text: 'Merge edits silently?' } as never)).toBeUndefined();
+    expect(needDetail(item({ kind: 'approval', reasons: ['blocks 2 tickets'] }))).toBe('blocks 2 tickets');
+    expect(needDetail(item({ kind: 'approval', reasons: [] }))).toBeUndefined();
   });
 
   test('an open row says why once: the ticket only when the title does not name it, then the reasons', () => {
@@ -77,27 +85,27 @@ describe('Needs you rows', () => {
   });
 });
 
-describe('Progress in one line', () => {
+describe("Progress's label line", () => {
   const counts = { done: 9, total: 15, working: 2, needs: 1, waiting: 0, notStarted: 3 };
   const segs = Array.from({ length: 9 }, (_, i) => ({ id: `t${i}`, key: `#${i}`, title: '', tone: 'done' as const }));
-  const text = (parts: ReturnType<typeof progressWords>) =>
-    parts.filter(Boolean).map((p) => (typeof p === 'string' ? p : p.text));
+  const text = (input: { proofs?: Record<string, 'verified' | 'not-verified'>; reached?: boolean }) =>
+    progressLabel({ counts, segments: segs, reached: false, ...input }).map((p) =>
+      typeof p === 'string' ? p : p.text,
+    );
 
-  test('all verified when every done ticket with a proof is', () => {
+  test('all verified when every done ticket with a proof is, in green', () => {
     const proofs = Object.fromEntries(segs.map((s) => [s.id, 'verified' as const]));
-    expect(text(progressWords(counts, segs, proofs))).toEqual([
-      '9 of 15 done',
-      'all verified',
-      '2 at work',
-      '1 needs you',
-      '3 not started',
-    ]);
+    expect(text({ proofs })).toEqual(['9 of 15 done', 'all verified']);
+    expect(progressLabel({ counts, segments: segs, proofs, reached: false })[1]).toEqual({
+      text: 'all verified',
+      tone: 'ok',
+    });
   });
 
-  test('how many when some are not; nothing about proofs when no done ticket has one', () => {
-    expect(text(progressWords(counts, segs, { t0: 'verified', t1: 'not-verified' }))[1]).toBe('1 verified');
-    expect(text(progressWords(counts, segs, {}))[1]).toBe('2 at work');
-    expect(text(progressWords({ ...counts, needs: 2 }, segs))).toContain('2 need you');
+  test('how many when some are not; nothing about proofs when no done ticket has one; the destination first', () => {
+    expect(text({ proofs: { t0: 'verified', t1: 'not-verified' } })).toEqual(['9 of 15 done', '1 verified']);
+    expect(text({ proofs: {} })).toEqual(['9 of 15 done']);
+    expect(text({ reached: true })[0]).toBe('Destination reached');
   });
 });
 
@@ -134,15 +142,17 @@ describe('the footer', () => {
     const s = snap([done('4'), done('21'), done('9', now - 3 * 86_400_000)]);
     const merged = { ...prs, tickets: { 'm1/4': { pr: { state: 'merged' } } } } as unknown as PrSyncSnapshot;
     const text = footerText({ snap: s, proofs: { '4': 'verified', '21': 'verified' }, prs: merged, now });
-    expect(text).toBe('Today: 2 verified, 1 merged.');
-    expect(footerText({ snap: snap([]), prs, now })).toBe('Nothing finished today yet.');
+    expect(text).toEqual(['Today', '2 verified', '1 merged']);
+    expect(footerText({ snap: snap([]), prs, now })).toEqual(['Today', 'nothing finished yet']);
   });
 
   test('behind a server that merges verified work itself: its count', () => {
-    expect(footerText({ snap: snap([]), prs, now, autoMerged: 4 })).toBe(
-      '4 verified PRs merged automatically today. Unverified work waits for you.',
-    );
-    expect(footerText({ snap: snap([]), prs, now, autoMerged: 1 })).toMatch(/^1 verified PR merged/);
+    expect(footerText({ snap: snap([]), prs, now, autoMerged: 4 })).toEqual([
+      'Today',
+      '4 verified PRs merged automatically',
+      'unverified work waits for you',
+    ]);
+    expect(footerText({ snap: snap([]), prs, now, autoMerged: 1 })[1]).toBe('1 verified PR merged automatically');
   });
 });
 

@@ -1,5 +1,5 @@
 import type { Assumption, MapSnapshot } from '@teamtrail/core';
-import { Button, MetaLine, Row } from '../../components/ui';
+import { Button, LabelLine, Row } from '../../components/ui';
 import type { Selection } from '../../lib';
 
 const STATUS: Record<Assumption['status'], string> = {
@@ -18,9 +18,9 @@ function settledBy(a: Assumption) {
 }
 
 /**
- * One assumption as a row: the assumption as the title; its id, status and who settled it, then the tickets that rely
- * on it, as context; the challenge evidence as detail. Amber while challenged. Confirm shows on hover or focus,
- * like every row action, so the row reads like the plan's other lists.
+ * One assumption as a status line: `S-2 · CHALLENGED · BY CODEX-01 · RELIED ON BY #5 #12` (each key opens its ticket),
+ * the assumption as the title, and a challenge's evidence under it. Confirm stays on the right while it's challenged,
+ * and shows on hover or focus while it holds. Challenged is amber, never rose: its Waits on you row does the asking.
  */
 export function AssumptionRow(props: {
   a: Assumption;
@@ -32,36 +32,43 @@ export function AssumptionRow(props: {
   const { a, snap } = props;
   const tickets = a.tickets.flatMap((id) => snap.tickets.filter((t) => t.id === id));
   const challenge = a.challenge && `${a.challenge.by}: ${a.challenge.evidence}`;
+  const confirm = props.onConfirm && (
+    <Button
+      size="sm"
+      variant={a.status === 'challenged' ? 'default' : 'ghost'}
+      disabled={props.busy}
+      onClick={props.onConfirm}
+    >
+      Confirm
+    </Button>
+  );
   return (
     <Row
       as="li"
       className={`assumption st-${a.status}`}
       edge={a.status === 'challenged' ? 'attention' : 'neutral'}
-      title={a.text}
-      titleText={a.text}
-      context={
-        <MetaLine parts={[{ text: a.id, code: true }, STATUS[a.status], settledBy(a)]}>
+      label={
+        <LabelLine
+          parts={[a.id, { text: STATUS[a.status], tone: a.status === 'confirmed' ? 'ok' : 'dim' }, settledBy(a)]}
+        >
           {tickets.length > 0 && (
             <span className="assumption-tickets">
-              <span className="sep"> · </span>relied on by
+              <span className="ds-label-sep"> · </span>relied on by
               {tickets.map((t) => (
-                <button key={t.id} className="link t-code" onClick={() => props.onSelect({ kind: 'ticket', id: t.id })}>
+                <button key={t.id} className="link" onClick={() => props.onSelect({ kind: 'ticket', id: t.id })}>
                   {t.key}
                 </button>
               ))}
             </span>
           )}
-        </MetaLine>
+        </LabelLine>
       }
+      title={a.text}
+      titleText={a.text}
       detail={challenge}
       detailText={challenge}
-      actions={
-        props.onConfirm && (
-          <Button size="sm" variant="ghost" disabled={props.busy} onClick={props.onConfirm}>
-            Confirm
-          </Button>
-        )
-      }
+      action={a.status === 'challenged' ? confirm : undefined}
+      actions={a.status === 'challenged' ? undefined : confirm}
     />
   );
 }

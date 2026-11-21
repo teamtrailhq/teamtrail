@@ -5,14 +5,16 @@
  */
 export type LabelTone = 'plain' | 'urgent' | 'agent' | 'ok' | 'dim';
 
-/** One part of a label line: plain text, or text with its own tone and a tooltip. */
-export type LabelPart = string | { text: string; tone?: LabelTone; tip?: string };
+/** One part of a label line: plain text, or text with its own tone, a tooltip and a class. */
+export type LabelPart = string | { text: string; tone?: LabelTone; tip?: string; className?: string };
 
 /** A label part as it's shown: text, its tone (the line's when it has none) and its tooltip. */
 export interface ShownLabelPart {
   text: string;
   tone: LabelTone;
   tip?: string;
+  /** A class of its own, for what finds the part by it (a row's kind). */
+  className?: string;
 }
 
 /** The parts a label line shows, in order: empty and missing parts skipped, plain strings in the line's own tone. */
@@ -25,7 +27,7 @@ export function labelParts(parts: (LabelPart | false | null | undefined | '')[])
       continue;
     }
     if (!part.text) continue;
-    shown.push({ text: part.text, tone: part.tone ?? 'plain', tip: part.tip });
+    shown.push({ text: part.text, tone: part.tone ?? 'plain', tip: part.tip, className: part.className });
   }
   return shown;
 }

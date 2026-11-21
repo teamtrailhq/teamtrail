@@ -11,8 +11,9 @@ import type { TicketView } from './useTicketView';
 
 /**
  * The end of a ticket, in its bubble and the full ticket alike: everything the human can do on it, the next action
- * first and the rest under "⋯", with the form an action opened just above. `trailing` ends the row (the bubble's
- * Full ticket). Nothing when there is nothing to do.
+ * first and the rest under "⋯", with the form an action opened just above, whose own submit is then the one action
+ * (the bar keeps only `trailing`). `trailing` ends the row (the bubble's Full ticket). Nothing when there is nothing
+ * to do.
  */
 export function TicketFooter(props: {
   v: TicketView;
@@ -41,7 +42,7 @@ export function TicketFooter(props: {
         waive={bar.waive}
       />
       {inline && <ItemAction item={inline} />}
-      <ActionBar v={v} bar={bar} onOpenChat={props.onOpenChat} trailing={props.trailing} />
+      <ActionBar v={v} bar={bar} onOpenChat={props.onOpenChat} trailing={props.trailing} formOpen={!!props.form} />
     </footer>
   );
 }

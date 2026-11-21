@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, closeNeedsList, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
 import { verifyReviewModels } from './verifyReviewModels.mjs';
 
@@ -118,16 +118,25 @@ async function waiting({ fast, strong, page, shot }) {
   // this ticket's item, not any model item: the junction charted with the trail waited the same way until the strong
   // agent's first call reported its model, and a queue that hasn't caught up yet can still show that one
   const title = new RegExp(`^${added.ticket.key} needs a strongest model`);
-  const item = (await openNeedsList(page)).locator('li.att-item.k-model', { hasText: title });
+  // the row's title, under its label line (the kind and the wait)
+  const item = (await openNeedsList(page)).locator('li.att-item.k-model', {
+    has: page.locator('.ds-row-title', { hasText: title }),
+  });
   await item.waitFor({ timeout: 20_000 });
-  const shown = ((await item.innerText()) ?? '').replace(/\s+/g, ' ');
+  const shown = ((await item.locator('.ds-row-title').innerText()) ?? '').replace(/\s+/g, ' ');
   await item.locator('.ds-row-main').click();
   await page.locator('.bubble .model-wait').waitFor({ timeout: 15_000 });
   await shot('19-needs-a-strongest-model');
   const next = await fast.call('next_ticket');
   const auto = await refused(fast.call('claim_ticket'));
   const explicit = await fast.call('claim_ticket', { ticket: added.ticket.key });
-  await item.waitFor({ state: 'detached', timeout: 20_000 });
+  // the claim settles it: gone from Needs you (opening the row closed the lists, so open them again to see)
+  await (
+    await openNeedsList(page)
+  )
+    .locator('li.att-item.k-model', { hasText: title })
+    .waitFor({ state: 'detached', timeout: 20_000 });
+  await closeNeedsList(page);
   return {
     ok:
       title.test(shown) &&

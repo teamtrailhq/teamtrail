@@ -4,6 +4,7 @@ import type { LookoutApi } from '../../hooks';
 import { HeldRules } from '../diff-rules';
 import { PullRequestBlock } from '../pr-sync';
 import { TicketProof } from '../proof';
+import { checkFolders } from './checkFolders';
 import { CriteriaSection } from './CriteriaSection';
 import { HistorySection } from './HistorySection';
 import { HowSection } from './HowSection';
@@ -67,7 +68,7 @@ export function TicketPanel(props: {
       <HowSection v={v} editing={editing} setEditing={setEditing} act={bar.act} />
       <ProgressSection v={v} onUndoWaiver={bar.undoWaiver} />
       <HeldRules mapId={snap.map.id} ticketId={t.id} />
-      <TicketProof ticket={t} view={v.proof} actions={bar.gapActions} />
+      <TicketProof ticket={t} view={v.proof} actions={bar.gapActions} primary={bar.primary} folders={checkFolders(v)} />
       <HistorySection t={t} decisions={v.decisions} onOpenDecision={props.onOpenDecision} />
       <TicketFooter
         v={v}

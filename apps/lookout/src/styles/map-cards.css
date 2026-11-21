@@ -1,6 +1,8 @@
 /* ---------- Map cards and connectors ----------
- * Each ticket is a flat card: a status dot and the title, then one quiet meta line. Borders and connectors stay 1px
- * at any zoom. Red only ever means "needs you now": an agent waiting on you, or a ticket held for your approval. */
+ * Each ticket is a scene card (features/map/GraphNode.tsx): a mono label line (TYPE · #n · its state), the title, and
+ * a thin step track while an agent works on it, the blaze cursor ending its label line. A finished ticket is one quiet
+ * line (DoneCard). Borders and connectors stay 1px at any zoom. Rose only ever means "needs you now". Nothing moves at
+ * rest but the cursor. */
 
 .node {
   cursor: pointer;
@@ -24,77 +26,76 @@
 .node .title {
   font-family: var(--sans);
   font-size: var(--fs-node-title);
-  font-weight: 600;
+  font-weight: 400;
   fill: var(--text-hi);
 }
-.node .meta {
-  font-family: var(--sans);
-  font-size: var(--fs-node-meta);
-  font-weight: 400;
-  letter-spacing: var(--ls-text);
-  text-transform: none;
+/* The label line: mono caps, quiet; each part in its tone. */
+.node .card-label {
+  font-family: var(--mono);
+  font-size: var(--fs-node-label);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   fill: var(--map-card-meta);
 }
-/* The meta row is label chips: a quiet flat fill, the text in the meta role. */
-.node .card-chip rect {
-  fill: var(--map-chip);
+.node .card-label .lt-sep {
+  fill: var(--map-card-quiet);
 }
-.node .card-chip.key {
-  font-family: var(--mono);
-  font-size: 0.9em;
-  letter-spacing: 0;
-}
-.node .card-chip.state.agent text,
-.node .card-chip.state.warn text {
-  fill: var(--text-hi);
-  font-weight: 500;
-}
-.node .card-chip.state.warn rect {
-  fill: var(--map-chip-warn);
-}
-.node .card-chip.state.urgent rect,
-.node .card-chip.needs rect {
-  fill: var(--map-chip-urgent);
-}
-.node .card-chip.state.urgent text,
-.node .card-chip.needs text {
+.node .card-label .lt-urgent {
   fill: var(--map-card-urgent);
-  font-weight: 500;
 }
-
-/* The status dot: the accent working, amber waiting on a person or held up, grey ready, a ring in the backlog,
- * a green check when done and verified, a muted one when done on someone's word, faint when cancelled. */
-.node .dot-working {
+.node .card-label .lt-agent {
   fill: rgb(var(--working-rgb));
 }
-.node .dot-attention {
+.node .card-label .lt-ok {
+  fill: var(--map-card-decided);
+}
+.node .card-label .lt-warn {
   fill: var(--amber);
 }
-.node .dot-ready {
-  fill: var(--dim);
+.node .card-label .lt-wait {
+  fill: var(--text);
 }
-.node .dot-backlog {
-  fill: none;
-  stroke: var(--faint);
-  stroke-width: 1.2;
+.node .card-label .lt-dim {
+  fill: var(--map-card-quiet);
 }
-.node .dot-done {
+/* An agent at work: the blaze block cursor at the label line's end, and a thin step track along the card's foot. */
+.node .card-cursor {
+  fill: rgb(var(--working-rgb));
+}
+.node .step-done,
+.node .step-now {
+  fill: rgb(var(--working-rgb));
+}
+.node .step-now {
+  opacity: 0.55;
+}
+.node .step-todo {
+  fill: rgba(var(--line-rgb), 0.18);
+}
+
+/* A finished ticket: one line on a recessed fill, a green tick when verified, a grey one on someone's word. */
+.node.compact .card {
+  fill: var(--map-done, transparent);
+  stroke: var(--line);
+}
+.node.compact .done-title {
+  fill: var(--map-card-meta);
+}
+.node.compact .done-key {
+  font-family: var(--mono);
+  font-size: var(--fs-node-label);
+  fill: var(--map-card-quiet);
+}
+.node .done-tick {
   fill: none;
   stroke: var(--faint);
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.node .dot-cancelled {
-  fill: var(--faint);
-}
-/* Done and verified: the check in the colour of passed checks. */
-.node .dot-done.dot-verified {
+.node .done-tick.verified {
   stroke: rgb(var(--decided-rgb));
   stroke-width: 2;
-}
-.node .card-chip.state.verified text {
-  fill: var(--map-card-decided);
 }
 
 /* Hover and selection: a stronger border, never a heavier font. */
@@ -108,7 +109,11 @@
   stroke: rgba(var(--accent-rgb), 0.35);
 }
 
-/* Held up: an amber border. Needs you now: a red one, with a faint halo. */
+/* An agent at work: a blaze border. Held up: amber. Needs you now: a single 1px rose edge, nothing more (the rose
+ * label part says the rest). Only the selected card gets the outer ring. */
+.node.live .card {
+  stroke: rgba(var(--working-rgb), 0.7);
+}
 .node.st-rework .card,
 .node.stalled .card {
   stroke: rgba(var(--amber-rgb), 0.75);
@@ -117,20 +122,16 @@
 .node.waiting .card {
   stroke: var(--urgent);
 }
-.node.waiting .ring {
-  stroke: rgba(var(--urgent-rgb), 0.45);
+/* Waiting for an agent to pick it up: a dashed border, still. */
+.node.pick-up .card {
+  stroke: var(--dim);
+  stroke-dasharray: 4 3;
 }
 
-/* Done, backlog and cancelled cards step back. */
+/* Backlog cards step back. */
 .node.st-blocked .title,
 .node.st-parked .title {
   fill: var(--text);
-}
-.node.st-decided .title {
-  fill: var(--map-card-meta);
-}
-.node.st-decided .meta {
-  fill: var(--map-card-quiet);
 }
 /* Ruled out: a dashed card with its title struck through, at full strength so it isn't missed. */
 .node.st-out-of-scope .card {
@@ -141,23 +142,26 @@
   text-decoration: line-through;
 }
 
-/* Connectors: thin elbows. Travelled ones (both ends done) solid in the accent, walked ones in the accent and quiet, the critical path
- * a shade stronger than the rest. */
+/* Connectors: thin elbows. Walked ones (the blocker is closed) go faint, the way still to walk is dashed (the critical
+ * path a shade stronger), and only the connector into a card at work is blaze: the eye goes forward, not back. */
 .graph .edge {
   fill: none;
   stroke: var(--line2);
   stroke-width: 1;
+  stroke-dasharray: 3 3;
   vector-effect: non-scaling-stroke;
 }
 .graph .edge-done {
-  stroke: rgba(var(--working-rgb), 0.55);
-}
-.graph .edge-travelled {
-  stroke: rgb(var(--working-rgb));
-  stroke-width: 1.75;
+  stroke: var(--line);
+  stroke-dasharray: none;
 }
 .graph .edge-critical {
   stroke: var(--dim);
+}
+.graph .edge-active {
+  stroke: rgb(var(--working-rgb));
+  stroke-dasharray: none;
+  stroke-width: 1.5;
 }
 /* A pending reroute: connectors it would add in amber, ones it would remove faded. */
 .graph .edge-added {
@@ -203,8 +207,7 @@
   stroke: var(--accent);
 }
 
-/* The legend and the status counts use the cards' dots. */
-.lg i,
+/* The status counts keep the dots. */
 .status-panel .sp-status li i {
   display: inline-block;
   width: 8px;
@@ -213,23 +216,15 @@
   background: var(--dim);
   justify-self: center;
 }
-.lg.st-claimed i,
-.lg.st-verifying i,
 .status-panel li.st-claimed i,
 .status-panel li.st-verifying i {
   background: rgb(var(--working-rgb));
 }
-.lg.st-rework i,
-.lg.st-held i,
-.lg.st-stalled i,
-.lg.st-waiting i,
 .status-panel li.st-rework i,
 .status-panel li.st-held i,
 .status-panel li.st-waiting i {
   background: var(--amber);
 }
-.lg.st-blocked i,
-.lg.st-parked i,
 .status-panel li.st-blocked i,
 .status-panel li.st-parked i {
   width: 7px;
@@ -237,11 +232,9 @@
   background: transparent;
   box-shadow: inset 0 0 0 1.2px var(--faint);
 }
-.lg.st-out-of-scope i,
 .status-panel li.st-out-of-scope i {
   background: var(--faint);
 }
-.lg.st-decided i,
 .status-panel li.st-decided i {
   width: 4px;
   height: 7px;
@@ -252,7 +245,7 @@
   transform: translateY(-1px) rotate(45deg);
 }
 
-/* The legend (features/map/MapLegend.tsx): bottom left of the map, the dots and what they mean. */
+/* The legend (features/map/MapLegend.tsx): bottom left of the map, the cards in miniature and what they mean. */
 .map-legend {
   position: absolute;
   left: var(--sp-12);
@@ -279,53 +272,6 @@
   gap: var(--sp-6);
 }
 
-/* ---------- Live states: what's moving now (none of it under reduced motion) ---------- */
-/* Needs you: the red dot, and the halo breathes. */
-.node.waiting .dot-attention {
-  fill: var(--urgent);
-}
-.node.waiting .ring {
-  animation: node-halo 2.4s ease-in-out infinite;
-}
-/* An agent at work: the dot pulses, and a thin bar along the top fills to its step. */
-.node .dot-pulse {
-  fill: none;
-  stroke: rgb(var(--working-rgb));
-  stroke-width: 1.5;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: node-pulse 1.8s ease-out infinite;
-}
-.node .step-track {
-  fill: rgba(var(--line-rgb), 0.14);
-}
-.node .step-fill {
-  fill: rgb(var(--working-rgb));
-  animation: node-breathe 1.8s ease-in-out infinite;
-}
-/* Waiting for an agent to pick it up: a dashed border that slowly moves, and a turning arc for its dot. */
-.node.pick-up .card {
-  stroke: var(--dim);
-  stroke-dasharray: 5 4;
-  animation: node-march 1.4s linear infinite;
-}
-.node .dot-spin {
-  fill: none;
-  stroke: var(--dim);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-dasharray: 9 30;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: node-spin 1.1s linear infinite;
-}
-.node .card-chip.state.wait text {
-  fill: var(--text-hi);
-  font-weight: 500;
-}
-.node .card-chip.state.waits text {
-  font-style: italic;
-}
 /* Checks on main: a small card the trail starts from. */
 .node.main-mark .main-label {
   font-family: var(--mono);
@@ -356,24 +302,9 @@
 .node.main-mark.main-needs .card {
   stroke: var(--urgent);
 }
-@keyframes node-pulse {
-  from {
-    opacity: 0.9;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(2.8);
-  }
-}
 @keyframes node-breathe {
   50% {
     opacity: 0.55;
-  }
-}
-@keyframes node-march {
-  to {
-    stroke-dashoffset: -18;
   }
 }
 @keyframes node-spin {
@@ -381,18 +312,50 @@
     transform: rotate(360deg);
   }
 }
-@keyframes node-halo {
-  50% {
-    opacity: 0.35;
+/* The cursor blinks only where motion is welcome (scene.css's ds-cursor-blink). */
+@media (prefers-reduced-motion: no-preference) {
+  .node .card-cursor {
+    animation: ds-cursor-blink 1.06s steps(1) infinite;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .node *,
-  .node.pick-up .card,
-  .node.waiting .ring {
+  .node * {
     animation: none !important;
   }
-  .node .dot-pulse {
-    display: none;
-  }
+}
+/* The legend's cards in miniature. */
+.lg-swatch {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 11px;
+  border: 1px solid var(--line2);
+  background: var(--map-card);
+}
+.lg-working {
+  border-color: rgba(var(--working-rgb), 0.7);
+}
+.lg-working i {
+  position: absolute;
+  left: 3px;
+  top: 2px;
+  width: 3px;
+  height: 5px;
+  background: rgb(var(--working-rgb));
+}
+.lg-needs {
+  border-color: var(--urgent);
+}
+.lg-held {
+  border-color: rgba(var(--amber-rgb), 0.75);
+}
+.lg-ready {
+  border: 1px dashed var(--dim);
+}
+.lg-backlog {
+  opacity: 0.7;
+}
+.lg-cancelled {
+  border-style: dashed;
+  opacity: 0.55;
 }

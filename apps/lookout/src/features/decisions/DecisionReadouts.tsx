@@ -1,24 +1,18 @@
-import { type decisionStats, DECISION_SOURCE_KINDS, DECISION_SOURCES } from '@teamtrail/core';
-import { MetaLine, Readout } from '../../components/ui';
+import type { decisionStats } from '@teamtrail/core';
+import { LabelLine } from '../../components/ui';
 
-/** `metrics.decisionStats` readouts, then where the decisions came from. */
+/** `metrics.decisionStats` as one mono line: 14 active · 2 superseded · 5 last 24h · 64% by people. */
 export function DecisionReadouts({ stats }: { stats: ReturnType<typeof decisionStats> }) {
+  const people = stats.total ? Math.round((stats.human / stats.total) * 100) : 0;
   return (
-    <span className="dv-readouts">
-      <Readout layout="start" label="Active" value={stats.active} />
-      <Readout layout="start" label="Superseded" value={stats.superseded} />
-      <Readout layout="start" label="Last 24h" value={stats.last24h} />
-      <Readout
-        layout="start"
-        label="Human"
-        value={`${stats.total ? Math.round((stats.human / stats.total) * 100) : 0}%`}
-      />
-      <MetaLine
-        className="dv-src-mix"
-        parts={DECISION_SOURCE_KINDS.filter((k) => stats.bySource[k]).map(
-          (k) => `${DECISION_SOURCES[k].label} ${stats.bySource[k]}`,
-        )}
-      />
-    </span>
+    <LabelLine
+      className="dv-readouts"
+      parts={[
+        `${stats.active} active`,
+        !!stats.superseded && `${stats.superseded} superseded`,
+        !!stats.last24h && `${stats.last24h} last 24h`,
+        !!stats.total && `${people}% by people`,
+      ]}
+    />
   );
 }

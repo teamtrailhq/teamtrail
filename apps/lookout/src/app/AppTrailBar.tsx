@@ -1,29 +1,42 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Panel } from '../components/ui';
 import { WaitingOnYou } from '../features/inbox';
-import { AgentsAtWork, OtherTrailsNeeds, TrailBar, UpNextList, useTrailBarMore } from '../features/trail-bar';
-import { type Breakpoint, type LookoutApi, useNow } from '../hooks';
+import { AgentsAtWork, closing, OtherTrailsNeeds, TrailBar, UpNextList, upNextRows } from '../features/trail-bar';
+import { type LookoutApi, useNow } from '../hooks';
 import type { useAppNavigation } from './useAppNavigation';
 import type { useAttentionUi } from './useAttentionUi';
 import type { useLiveTrail } from './useLiveTrail';
 
 /**
- * The trail bar under the map, wired to the app: segments and chips open their bubble, More (remembered in this
- * browser) opens the three lists: what needs you (the ranked queue, with snooze; other trails as their own group), the agents
- * at work and what's up next. On a phone the lists always show.
+ * The trail bar under the map, wired to the app: segments open their ticket's bubble, the "N need you" chip and More
+ * open the three lists as tabs, a popover that starts closed on every load: what needs you (the ranked queue, with
+ * snooze; other trails as their own group), the agents at work and what's up next. Opening anything from them closes them.
  */
 export function AppTrailBar(props: {
   api: LookoutApi;
   nav: ReturnType<typeof useAppNavigation>;
   attn: ReturnType<typeof useAttentionUi>;
   trail: ReturnType<typeof useLiveTrail>;
-  /** On a phone the lists always show; on a wide screen three chips fit beside the bar, else two. */
-  bp: Breakpoint;
   /** The trail's brief while it waits for review, for Needs you before the ranked queue loads. */
   brief?: ReactNode;
 }) {
   const { api, nav, attn, trail } = props;
-  const [more, setMore] = useTrailBarMore();
+  // a popover: closed on every load, and whatever opens something from it closes it
+  const [more, setMore] = useState(false);
+  const close = () => setMore(false);
+  const open = closing(
+    {
+      ticket: (id: string) => nav.select({ kind: 'ticket', id }),
+      fullTicket: nav.openTicket,
+      chat: (id: string) => nav.openChat(id),
+      question: (sessionId: string) => {
+        const q = api.activity.pending.find((p) => p.sessionId === sessionId);
+        if (q) nav.openQuestion(q.id);
+      },
+    },
+    close,
+  );
+  const handlers = closing(attn.handlers, close);
   const now = useNow(5000);
   const sel = api.selection;
   const live = [...trail.live.values()];
@@ -35,31 +48,25 @@ export function AppTrailBar(props: {
   if (!api.snap) return null;
   return (
     <TrailBar
+      trailKey={api.snap.map.key}
       segments={trail.segments}
       counts={trail.counts}
-      needs={trail.items}
-      keyOf={trail.keyOf}
       selected={sel?.kind === 'ticket' ? sel.id : undefined}
       more={more}
-      fixed={props.bp === 'mobile'}
-      chips={props.bp === 'wide' ? 3 : 2}
       onMore={setMore}
       onTicket={onTicket}
-      onNeed={attn.open}
-      lists={
-        <>
+      listCounts={{ needs: trail.items.length, agents: working.length, next: upNextRows(live, now).length }}
+      lists={{
+        needs: (
           <Panel className="trail-list needs-list">
             <WaitingOnYou
               activity={api.activity}
               snaps={api.allSnaps}
               currentMapId={api.mapId}
               attention={here}
-              handlers={attn.handlers}
-              onOpenQuestion={(sessionId) => {
-                const q = api.activity.pending.find((p) => p.sessionId === sessionId);
-                if (q) nav.openQuestion(q.id);
-              }}
-              onOpenTicket={nav.openTicket}
+              handlers={handlers}
+              onOpenQuestion={open.question}
+              onOpenTicket={open.fullTicket}
               brief={props.brief}
             />
             {view && (
@@ -69,16 +76,16 @@ export function AppTrailBar(props: {
                 snaps={api.allSnaps}
                 pending={api.activity.pending}
                 currentMapId={api.mapId}
-                handlers={attn.handlers}
+                handlers={handlers}
                 onSnooze={attn.attention.snooze}
                 onDismiss={attn.attention.dismiss}
               />
             )}
           </Panel>
-          <AgentsAtWork working={working} now={now} onTicket={onTicket} onOpenChat={(id) => nav.openChat(id)} />
-          <UpNextList live={live} now={now} onTicket={onTicket} />
-        </>
-      }
+        ),
+        agents: <AgentsAtWork working={working} now={now} onTicket={open.ticket} onOpenChat={open.chat} />,
+        next: <UpNextList live={live} now={now} onTicket={open.ticket} />,
+      }}
     />
   );
 }
