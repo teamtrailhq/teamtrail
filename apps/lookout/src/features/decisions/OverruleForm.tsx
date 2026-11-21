@@ -1,13 +1,14 @@
-import type { AuditDecision } from '@teamtrail/core';
+import type { DecisionRecord } from '@teamtrail/core';
 import { type FormEvent, useState } from 'react';
 import { Button, Card, Field } from '../../components/ui';
 
 /**
- * Overrule an agent's call from the Logbook: what it should be instead, and why. Recorded as your decision replacing
- * the agent's (both stay on record), as the Hands-off home's Overrule and the detail's Supersede do.
+ * Overrule an agent's call, from the Logbook or the Hands-off home: what it should be instead, and why. Recorded as
+ * your decision replacing the agent's (both stay on record), as the detail's Supersede does.
  */
 export function OverruleForm(props: {
-  d: AuditDecision;
+  d: Pick<DecisionRecord, 'summary' | 'answer' | 'alternatives'>;
+  className?: string;
   onOverrule: (input: { answer: string; rationale: string; alternatives: string[] }) => void;
   onCancel: () => void;
 }) {
@@ -19,8 +20,9 @@ export function OverruleForm(props: {
     if (!answer.trim()) return;
     props.onOverrule({ answer: answer.trim(), rationale: rationale.trim(), alternatives: [d.summary || d.answer] });
   };
+  const className = ['inline-form', props.className].filter(Boolean).join(' ');
   return (
-    <Card as="form" tone="inset" className="inline-form dv-overrule" onSubmit={submit}>
+    <Card as="form" tone="inset" className={className} onSubmit={submit}>
       {d.alternatives.length > 0 && <p className="t-meta">Alternatives it weighed: {d.alternatives.join(', ')}</p>}
       <Field label="What should it be instead?">
         <textarea rows={3} value={answer} onChange={(e) => setAnswer(e.target.value)} autoFocus />
