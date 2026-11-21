@@ -145,7 +145,7 @@ async function evidenceMovesCheckMark({ page, url, one, top }) {
   const closed = await one.call('close_ticket', { ticket: claimed.claimed.key, resolution: 'Added /feed.xml' });
   await page.goto(url);
   const card = page.locator('.node', { hasText: 'Add the RSS feed' });
-  const mark = card.locator('.dot-verified');
+  const mark = card.locator('.done-tick.verified');
   await mark.waitFor({ timeout: 20_000 });
   const ticketId = claimed.claimed.id ?? claimed.claimed.key.replace('#', '');
   const safe = (s) => s.replace(/[^\w.-]/g, '_');

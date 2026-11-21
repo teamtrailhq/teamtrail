@@ -261,9 +261,15 @@ export async function verifyGuides({ browser, cli, log, shots }) {
     const claimedGuides = given.map((g) => `${g.id}:${g.via}`).join(',');
     await page.goto(url);
     // the card's label line names only the guide added to the ticket: TASK · #1 · …, ACCESSIBILITY
-    const signGuide = page.locator('g.node .card-label [data-guide-id="a11y"]').first();
+    // its own text (not the hover title), once the guides have loaded and it reads by name, not by id
+    const signGuide = page.locator('g.node .card-label [data-guide-id="a11y"]', { hasText: /Access/ }).first();
     await signGuide.waitFor({ timeout: 15_000 });
-    const signText = await signGuide.evaluate((el) => el.textContent ?? '');
+    const signText = await signGuide.evaluate((el) =>
+      [...el.childNodes]
+        .filter((n) => n.nodeType === Node.TEXT_NODE)
+        .map((n) => n.textContent)
+        .join(''),
+    );
     await shot('22-guide-chip');
     const inspector = await addInInspector({ page, shot, title: 'Add the shortcut sheet' });
     // the guide added mid-work reaches the agent at its next report, with what it needs to work in it
