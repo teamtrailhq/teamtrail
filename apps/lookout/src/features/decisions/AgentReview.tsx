@@ -60,6 +60,7 @@ export function AgentReview(props: {
                 open && (
                   <OverruleForm
                     d={d}
+                    className="dv-overrule"
                     onCancel={() => setOverruling(undefined)}
                     onOverrule={(input) => {
                       props.onSupersede(d, input);
