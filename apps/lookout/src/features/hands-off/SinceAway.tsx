@@ -1,5 +1,6 @@
 import type { AuditDecision, TrailBriefing } from '@teamtrail/core';
 import { useState } from 'react';
+import { Button, LabelLine } from '../../components/ui';
 import { hm } from '../../lib';
 import type { ProofStatuses } from '../map';
 import { DecisionSince } from './DecisionSince';
@@ -18,7 +19,7 @@ function when(at: number, now: number) {
 }
 
 /**
- * Since you were away: on the trail on screen, the decisions agents made themselves (Review: keep it or overrule),
+ * Since you were away, as one card: on the trail on screen, the decisions agents made themselves (keep or overrule),
  * changes to the plan, and verified work with its pull request, since the person's last visit.
  */
 export function SinceAway(props: {
@@ -60,26 +61,27 @@ export function SinceAway(props: {
       }
     }
   };
+  const title =
+    props.since === undefined
+      ? ['Since the trail was charted', when(props.chartedAt, props.now)]
+      : ['Since you were away', `since ${when(props.since, props.now)}`];
   return (
-    <section className="home-section home-since" aria-labelledby="home-since">
-      <h2 id="home-since" className="t-label">
-        {props.since === undefined
-          ? `Since the trail was charted · ${when(props.chartedAt, props.now)}`
-          : `Since you were away · ${when(props.since, props.now)}`}
+    <section className="home-section home-panel home-since" aria-labelledby="home-since">
+      <h2 id="home-since" className="home-bar">
+        <LabelLine parts={title} />
       </h2>
       {rows.length === 0 ? (
-        <p className="t-meta">Nothing new on this trail since then.</p>
+        <p className="home-panel-empty t-meta">Nothing new on this trail since then.</p>
       ) : (
-        <ul className="home-rows">
-          {shown.map(row)}
-          {rows.length > SHOWN && (
-            <li>
-              <button type="button" className="link home-more" onClick={() => setAll(!all)}>
-                {all ? 'Show fewer' : `Show ${rows.length - SHOWN} more`}
-              </button>
-            </li>
-          )}
-        </ul>
+        <ul className="home-rows">{shown.map(row)}</ul>
+      )}
+      {rows.length > SHOWN && (
+        <div className="home-panel-foot">
+          <LabelLine parts={[all ? `All ${rows.length} shown` : `${rows.length - SHOWN} more`]} />
+          <Button variant="ghost" className="home-more" onClick={() => setAll(!all)}>
+            {all ? 'Show fewer' : 'Show all'}
+          </Button>
+        </div>
       )}
     </section>
   );

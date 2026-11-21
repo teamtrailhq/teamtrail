@@ -1,8 +1,6 @@
-import type { MetaPart } from '../../components/ui';
+import type { LabelPart } from '../../lib/labelParts';
 import type { ProofStatuses } from '../map';
 import type { TrailCounts, TrailSegment } from '../trail-bar';
-
-const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 
 /**
  * How many done tickets with a proof are verified, in words: "all verified", "7 verified"; nothing until the proofs
@@ -15,14 +13,20 @@ function verifiedWords(segments: TrailSegment[], proofs?: ProofStatuses): string
   return verified === done.length ? 'all verified' : `${verified} verified`;
 }
 
-/** The trail in one line: "9 of 15 done · all verified · 2 at work · 1 needs you · 3 not started". */
-export function progressWords(c: TrailCounts, segments: TrailSegment[], proofs?: ProofStatuses): MetaPart[] {
-  return [
-    { text: `${c.done} of ${c.total} done`, strong: true },
-    verifiedWords(segments, proofs) ?? '',
-    c.working > 0 ? `${c.working} at work` : '',
-    c.needs > 0 ? { text: `${c.needs} ${plural(c.needs, 'needs', 'need')} you`, urgent: true } : '',
-    c.waiting > 0 ? `${c.waiting} waiting for an agent` : '',
-    c.notStarted > 0 ? `${c.notStarted} not started` : '',
-  ];
+/**
+ * Progress's label line: the destination reached, how many are done and whether they are verified ("9 of 15 done ·
+ * all verified"). What is at work, and what needs you, are said once each: in the rows under it and in Needs you.
+ */
+export function progressLabel(input: {
+  counts: TrailCounts;
+  segments: TrailSegment[];
+  proofs?: ProofStatuses;
+  reached: boolean;
+}): LabelPart[] {
+  const verified = verifiedWords(input.segments, input.proofs);
+  const parts: LabelPart[] = [];
+  if (input.reached) parts.push({ text: 'Destination reached', tone: 'ok' });
+  parts.push(`${input.counts.done} of ${input.counts.total} done`);
+  if (verified) parts.push({ text: verified, tone: verified === 'all verified' ? 'ok' : 'plain' });
+  return parts;
 }

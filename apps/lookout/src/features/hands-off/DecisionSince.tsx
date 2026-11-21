@@ -1,12 +1,14 @@
 import type { AuditDecision, DecisionRecord } from '@teamtrail/core';
 import { useState } from 'react';
-import { Button, MetaLine, Row } from '../../components/ui';
+import { Button, LabelLine, Row } from '../../components/ui';
+import { hm } from '../../lib';
 import { isKept, markKept } from '../../lib/keptDecisions';
-import { DecisionReview } from './DecisionReview';
+import { OverruleForm } from './OverruleForm';
 
 /**
- * A decision an agent made itself, within the risk policy: what it decided, who and at what risk, and Review: the
- * agent's reasons and alternatives, then Keep it, or Overrule with a new decision of yours.
+ * A decision an agent made itself, within the risk policy: AGENT DECIDED, the ticket, who and at what risk, and when,
+ * over what it decided and one line of why, with Keep and Overrule… on the right. Overrule opens a form under it: what
+ * it should be instead, recorded as your decision replacing the agent's (both stay on record).
  */
 export function DecisionSince(props: {
   d: DecisionRecord;
@@ -15,51 +17,55 @@ export function DecisionSince(props: {
 }) {
   const { d } = props;
   const key = `${d.mapId}/${d.id}`;
-  const [open, setOpen] = useState(false);
+  const [overruling, setOverruling] = useState(false);
   const [kept, setKept] = useState(() => isKept(key));
   const replaced = !!props.audit?.supersededBy;
+  const canOverrule = !!props.audit && !props.audit.postedBy && !replaced;
+  const settled = kept || replaced;
+  const keep = () => {
+    markKept(key);
+    setKept(true);
+    setOverruling(false);
+  };
   return (
     <Row
       as="li"
       className="home-since-row"
-      title={
-        <>
-          <span className="since-icon decided" aria-hidden="true">
-            ◆
-          </span>{' '}
-          {d.summary || d.answer}
-        </>
-      }
-      titleText={d.question}
-      context={
-        <MetaLine
+      label={
+        <LabelLine
           parts={[
-            `${d.decidedBy} decided`,
+            { text: 'Agent decided', tone: 'agent' },
+            d.ticketKey,
+            d.decidedBy,
             d.risk && `${d.risk.level} risk`,
-            kept && 'you kept it',
-            replaced && 'overruled',
+            hm(d.decidedAt),
+            kept && !replaced && { text: 'kept by you', tone: 'ok' },
+            replaced && { text: 'overruled', tone: 'dim' },
           ]}
         />
       }
-      onOpen={() => setOpen(!open)}
-      actions={
-        <Button size="sm" aria-expanded={open} onClick={() => setOpen(!open)}>
-          {open ? 'Close' : 'Review'}
-        </Button>
+      title={d.summary || d.answer}
+      titleText={d.question}
+      detail={d.rationale || undefined}
+      detailText={d.rationale}
+      action={
+        !settled &&
+        !overruling && (
+          <>
+            <Button onClick={keep}>Keep</Button>
+            {canOverrule && <Button onClick={() => setOverruling(true)}>Overrule…</Button>}
+          </>
+        )
       }
       below={
-        open && (
-          <DecisionReview
+        overruling &&
+        props.audit && (
+          <OverruleForm
             d={d}
-            audit={replaced ? undefined : props.audit}
-            onKeep={() => {
-              markKept(key);
-              setKept(true);
-              setOpen(false);
-            }}
+            onCancel={() => setOverruling(false)}
             onOverrule={(input) => {
-              if (props.audit) props.onSupersede(props.audit, input);
-              setOpen(false);
+              props.onSupersede(props.audit!, input);
+              setOverruling(false);
             }}
           />
         )

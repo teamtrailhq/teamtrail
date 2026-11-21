@@ -1,36 +1,30 @@
-import { Button, MetaLine, Row } from '../../components/ui';
+import { LabelLine, Row } from '../../components/ui';
 import type { SinceRow } from './sinceRows';
 
-const plural = (n: number) => (n === 1 ? 'ticket' : 'tickets');
-
-/** The plan changed while you were away: tickets ruled out, or added after it was charted, and the first of them. */
+/**
+ * The plan changed while you were away: PLAN CHANGED with how many tickets were added or ruled out, the first of them
+ * as the title and the rest in one line; the row opens the first.
+ */
 export function PlanSince(props: {
   row: Extract<SinceRow, { kind: 'ruled-out' | 'added' }>;
   onTicket: (ticketId: string) => void;
 }) {
   const { tickets } = props.row;
-  const n = tickets.length;
-  const what = props.row.kind === 'ruled-out' ? `${n} ${plural(n)} ruled out` : `${n} ${plural(n)} added`;
-  const first = tickets[0];
+  const [first, ...rest] = tickets;
+  const added = props.row.kind === 'added';
+  const what =
+    tickets.length === 1
+      ? `${first.key} ${added ? 'added' : 'ruled out'}`
+      : `${tickets.length} ${added ? 'added' : 'ruled out'}`;
+  const more = rest.slice(0, 4).map((t) => `${t.key} ${t.title}`);
   return (
     <Row
       as="li"
       className="home-since-row"
-      title={
-        <>
-          <span className="since-icon" aria-hidden="true">
-            ↺
-          </span>{' '}
-          The plan changed: {what}
-        </>
-      }
-      context={<MetaLine parts={tickets.slice(0, 4).map((t) => `${t.key} ${t.title}`)} />}
+      label={<LabelLine parts={['Plan changed', what]} />}
+      title={`${added ? 'Added' : 'Ruled out'}: ${first.title}`}
+      detail={more.length > 0 && `Also ${more.join(' · ')}`}
       onOpen={() => props.onTicket(first.id)}
-      actions={
-        <Button size="sm" onClick={() => props.onTicket(first.id)}>
-          See change
-        </Button>
-      }
     />
   );
 }
