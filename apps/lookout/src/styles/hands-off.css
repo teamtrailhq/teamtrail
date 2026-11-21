@@ -114,6 +114,15 @@
   padding: var(--sp-8) var(--sp-14);
   border-top: 1px solid var(--line);
 }
+.home-panel-foot.end {
+  justify-content: flex-end;
+}
+/* Links on the home read as words, in the body font and sentence case: mono capitals are for label lines only. */
+.hands-off-home .link {
+  font: 500 var(--fs-body) / var(--lh-snug) var(--sans);
+  letter-spacing: normal;
+  text-transform: none;
+}
 .home-panel-empty,
 .home-panel > .home-clear {
   margin: 0;

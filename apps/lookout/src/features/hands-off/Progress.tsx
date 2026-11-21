@@ -10,7 +10,7 @@ import { WorkingRows } from './WorkingRows';
 /**
  * Progress on the trail on screen, as one card: how far it is in its label line, a segment per ticket in scope
  * coloured as on the trail bar, the map in short (the last ticket done, then what comes next, to the finish), one row
- * per agent at work, and the way to the full map, which is Hands-on's.
+ * per agent at work, and Open the map (the full map is Hands-on's).
  */
 export function Progress(props: {
   segments: TrailSegment[];
@@ -39,8 +39,7 @@ export function Progress(props: {
         <MapStrip segments={props.segments} reached={reached} onTicket={props.onTicket} />
       </div>
       <WorkingRows working={props.working} now={props.now} onTicket={props.onTicket} />
-      <div className="home-panel-foot">
-        <LabelLine parts={["The full map is Hands-on's"]} />
+      <div className="home-panel-foot end">
         <Button variant="ghost" onClick={props.onFullMap}>
           Open the map
         </Button>
