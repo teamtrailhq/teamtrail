@@ -2,8 +2,8 @@ import { Badge, Logo, type ScoutGround } from '../../src/scout';
 import { WORDMARK } from '../content';
 import { Wordmark } from './Wordmark';
 
-/** The wordmark's width in em (`teamtrail` and its cursor in Inter 600), to size it to a share of the square. */
-const WORDMARK_EM = 4.6;
+/** The wordmark's width in em (the mark, the gap and `teamtrail` in Inter 600), to size it to a share of the square. */
+const WORDMARK_EM = 5.04;
 
 /**
  * Brand exports: the logo on transparency, the wordmark on a dark square, or Scout's avatar filling the square for

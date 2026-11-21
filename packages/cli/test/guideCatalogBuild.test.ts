@@ -76,14 +76,18 @@ it('marks a guide verified only from verified.json, for the exact file that was 
   expect(build().verified).toBe(false);
 });
 
-it('builds the catalog page in the new look: the cursor wordmark, both themes, the guide escaped', () => {
+it('builds the catalog page in the new look: the mark before the name, both themes, the guide escaped', () => {
   fs.writeFileSync(path.join(checkout, 'guides', 'perf.md'), guideText({ id: 'perf' }));
   git('add', '.');
   git('commit', '-q', '-m', 'Add perf');
   build();
   const html = fs.readFileSync(path.join(checkout, 'index.html'), 'utf8');
-  expect(html).toContain('<div class="wm" role="img" aria-label="Teamtrail">teamtrail<i aria-hidden="true"></i></div>');
-  expect(html).not.toContain('teamtrail<b>.</b>');
+  expect(html).toMatch(
+    /<div class="wm" role="img" aria-label="Teamtrail"><svg viewBox="0 0 200 200" aria-hidden="true">.*<\/svg>teamtrail<\/div>/,
+  );
+  expect(html.match(/<rect x="88" y="10" width="24" height="56"/g)).toHaveLength(6);
+  expect(html).toContain('<rect x="88" y="10" width="24" height="56" fill="#8E8E96"/>');
+  expect(html).not.toContain('<i aria-hidden="true"></i>');
   expect(html).toContain('--accent:#bf3900');
   expect(html).toMatch(/prefers-color-scheme:dark\)\{:root\{[^}]*--accent:#ff6b2c/);
   expect(html).toContain('<code>npx teamtrail guides add perf</code>');

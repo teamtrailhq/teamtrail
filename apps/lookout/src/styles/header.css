@@ -6,13 +6,11 @@
   gap: 16px;
   padding: 0 var(--gutter);
 }
+/* The wordmark (the mark and the name) on a wide screen only; the trail's title needs the room below 1800px. */
 .wordmark {
-  font-family: var(--display);
-  font-weight: var(--display-weight);
-  letter-spacing: var(--ls-display);
+  flex: none;
   font-size: var(--fs-heading);
   line-height: 1;
-  color: var(--text-hi);
 }
 .h-title {
   min-width: 220px;
@@ -153,6 +151,7 @@
 }
 /* Laptop: the trail title gets the room; secondary readouts collapse to glyph + number. */
 .bp-laptop .wordmark,
+.bp-mobile .wordmark,
 .bp-laptop .repo,
 .bp-laptop .h-line1 .sep,
 .bp-laptop .tracker-chip .chip-label,

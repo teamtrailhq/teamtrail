@@ -2,14 +2,14 @@
 
 Two marks, one drawing style:
 
-- **The Teamtrail logo** (`src/logo/`): six block cursors, each the wordmark's own, set every 60° around an open centre. The arm pointing up is grey (`#8E8E96`), the other five blaze (`#FF6B2C`), on a transparent background, the same on light and dark pages (colours in `logoColors.ts`). `<Logo>` draws it filling its box; `round` places it smaller (`logoInCircle.ts`) for avatars shown in a circle (the GitHub, X and LinkedIn/Discord avatars); `tile` puts it on the near-black `#0A0A0B` square (`logoOnTile.ts`) for the rare place that must be opaque, never on blaze. `logoFaviconSvg()` is the mark as one SVG. The favicon, npm, GitHub and social avatars use it.
+- **The Teamtrail logo** (`src/logo/`): six block cursors set every 60° around an open centre. The arm pointing up is grey (`#8E8E96`), the other five blaze (`#FF6B2C`), on a transparent background, the same on light and dark pages (colours in `logoColors.ts`). `<Logo>` draws it filling its box; `round` places it smaller (`logoInCircle.ts`) for avatars shown in a circle (the GitHub, X and LinkedIn/Discord avatars); `tile` puts it on the near-black `#0A0A0B` square (`logoOnTile.ts`) for the rare place that must be opaque, never on blaze. `logoFaviconSvg()` is the mark as one SVG. The favicon, npm, GitHub and social avatars use it, and the wordmark puts it before the name.
 - **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. An AI scout companion looking to the side, drawn as a bust in graphite, white and blaze: a screen face, a cap, a headset with a mic, an antenna lamp and a neckerchief (`badgeArt.ts`; `shape`: a circle where avatars are round, a full square for tiles and Slack; `ground`: `ink`, the default, `blaze` for app icons and Slack, `paper` on light backgrounds). Guides are flat symbols alone on a transparent background, no tile or border (`guideArt.ts`): magnifier, check, shield, book, compass, and a plus with no accent for Community; `guideMarkup(role, theme)` draws `dark`, `light`, or `auto`, which reads the page's `--tt-guide-ink`, `-fill` and `-accent`.
 
 **Which mark where**
 
-- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the logo mark, on transparency (on the near-black tile only where a space must be opaque). Slack's app icon is Scout, on blaze.
-- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail` wordmark, lowercase in Inter 600 followed by a blaze block cursor, still everywhere (it blinks only on teamtrail.app, and never under reduced motion).
-- Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
+- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the logo mark alone, on transparency (on the near-black tile only where a space must be opaque). Slack's app icon is Scout, on blaze.
+- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's header, sign-in and onboarding): the `teamtrail` wordmark: the logo mark followed by the name, lowercase in Inter 600, with no cursor after it. The mark is 0.86em square, 0.24em before the name, its centre on the lowercase letters' optical middle, in its own colours on light and dark; the name is ink on light and near-white on dark.
+- The mark beside the name is the wordmark; never the name alone without the mark. "Teamtrail" stays the name in running text and accessibility labels.
 
 `ScoutAvatar` and `mountScout` draw the same badge from `badgeArt.ts`.
 
@@ -131,7 +131,7 @@ npm run capture              # needs Chrome (CHROME=...) and ffmpeg
 - `teamtrail-banner.gif` (960×480): the README banner, the `teamtrail` wordmark while the trail steps across a dot grid to its destination, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
 - `og-image-1200x630.png`
 - `x-header-1500x500.png`
-- `wordmark-lockup.png`, `wordmark-lockup-light.png`: the `teamtrail` wordmark alone, on dark and on light
+- `wordmark-lockup.png`, `wordmark-lockup-light.png`: the `teamtrail` wordmark (the mark, then the name) alone, on dark and on light
 - `x-avatar-400.png`
 - `slack-icon-512.png` (Scout on blaze) and `scout-badge-1000.png` (Scout on ink)
 - `linkedin-discord-avatar-512.png`

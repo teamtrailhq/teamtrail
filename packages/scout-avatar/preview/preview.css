@@ -318,6 +318,10 @@ body {
   gap: calc(var(--u) * 16);
 }
 .wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.24em;
+  white-space: nowrap;
   font-family: var(--display);
   font-weight: 600;
   font-size: calc(var(--u) * 130);
@@ -339,12 +343,14 @@ body {
 .lockup .wordmark {
   line-height: 1;
 }
-.wordmark-cursor {
-  display: inline-block;
-  width: 0.32em;
-  height: 0.66em;
-  margin-left: 0.07em;
-  background: #ff6b2c;
+.wordmark-mark {
+  flex: none;
+  width: 0.86em;
+  height: 0.86em;
+  transform: translateY(0.04em);
+}
+.wordmark-name {
+  line-height: 1;
 }
 .social-cat {
   font-family: var(--mono);
