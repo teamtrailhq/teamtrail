@@ -21,15 +21,24 @@ export function duration(ms: number): string {
   return `${Math.floor(s / 60)}m ${s % 60}s`;
 }
 
-/** A check's command as people read it: a program named by its path shows by its name (`/…/bin/node x` → `node x`). */
-export function command(argv: string[]): string {
+/**
+ * A check's command as approved, as people read it: its argv joined, and its folder when it isn't the repo's root
+ * (`npm test · in apps/web`). A program named by a path shows by its name only (`/…/bin/node x` → `node x`), so no
+ * absolute path ever reaches the screen.
+ */
+export function command(argv: string[], folder?: string): string {
   const [program = '', ...rest] = argv;
   const name = program.includes('/') ? (program.split('/').filter(Boolean).pop() ?? program) : program;
-  return [name, ...rest].join(' ');
+  const line = [name, ...rest].join(' ');
+  return inFolder(folder) ? `${line} · in ${folder}` : line;
 }
 
-function checkLine(c: ProofCheck): ProofLine {
-  const base = { key: `check:${c.name}`, name: c.name, what: command(c.argv) };
+/** A repo-relative folder worth naming: not the root, and never an absolute path. */
+const inFolder = (folder?: string): folder is string =>
+  !!folder && folder !== '.' && !folder.startsWith('/') && !/^[A-Za-z]:[\\/]/.test(folder);
+
+function checkLine(c: ProofCheck, folder?: string): ProofLine {
+  const base = { key: `check:${c.name}`, name: c.name, what: command(c.argv, folder) };
   if (c.passed) return { ...base, mark: 'done', meta: duration(c.durationMs) };
   if (c.knownFailure) return { ...base, mark: 'todo', meta: 'fails on main' };
   const how = c.exitCode === null ? "didn't start" : `failed, exit ${c.exitCode}`;
@@ -68,10 +77,11 @@ function reviewLine(r: ProofReview, i: number, author?: string): ProofLine {
 /**
  * A proof's checks as lines, in the order they count: each check with its command and how long it took (or how it
  * failed), checks it went without (skipped by the trail lead, outside their paths), the check guard when it found
- * something, then each review with the reviewer's model against the author's. Pure: the proof's recorded data only.
+ * something, then each review with the reviewer's model against the author's. `folders`: each check's repo-relative
+ * folder, from the attempt the proof is of. Pure: recorded data only.
  */
-export function proofLines(proof: Proof): ProofLine[] {
-  const lines = proof.checks.map(checkLine);
+export function proofLines(proof: Proof, folders?: ReadonlyMap<string, string>): ProofLine[] {
+  const lines = proof.checks.map((c) => checkLine(c, folders?.get(c.name)));
   for (const w of proof.waived ?? [])
     lines.push({
       key: `waived:${w.name}`,

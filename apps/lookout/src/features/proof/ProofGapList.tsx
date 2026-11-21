@@ -13,10 +13,15 @@ const OWNER: Record<GapOwner, LabelPart> = {
 
 /**
  * Why a proof isn't verified, one gap a line: what's missing, then its owner tag (you, agent, main, accepted, nobody)
- * and who is on it in words, with the one action that closes it when it's the human's. Without a plan (an older
- * server) the gaps' lines alone.
+ * and who is on it in words, with the one action that closes it when it's the human's, unless that action is the
+ * ticket's primary (`primary`): then the footer says it, once. Without a plan (an older server) the gaps' lines alone.
  */
-export function ProofGapList(props: { gaps: string[]; plan?: GapStanding[]; actions?: Map<GapAction, MenuItem> }) {
+export function ProofGapList(props: {
+  gaps: string[];
+  plan?: GapStanding[];
+  actions?: Map<GapAction, MenuItem>;
+  primary?: MenuItem;
+}) {
   const plan: (Partial<GapStanding> & { text: string })[] = props.plan ?? props.gaps.map((text) => ({ text }));
   if (!plan.length) return null;
   return (
@@ -24,7 +29,8 @@ export function ProofGapList(props: { gaps: string[]; plan?: GapStanding[]; acti
       <LabelLine parts={['Not verified because']} />
       <ul className="proof-gaps proof-gap-list">
         {plan.map((g) => {
-          const item = g.action && props.actions?.get(g.action);
+          const action = g.action && props.actions?.get(g.action);
+          const item = action && !sameAction(action, props.primary) ? action : undefined;
           return (
             <li key={g.text} className="proof-gap">
               <span className="t-body">{g.text}</span>
@@ -45,4 +51,9 @@ export function ProofGapList(props: { gaps: string[]; plan?: GapStanding[]; acti
       </ul>
     </div>
   );
+}
+
+/** The same action as the footer's primary: the same item, its id or its words. */
+function sameAction(item: MenuItem, primary?: MenuItem) {
+  return !!primary && (item === primary || item.id === primary.id || item.label === primary.label);
 }

@@ -82,6 +82,14 @@ describe('proofLines', () => {
     expect(command(['npm', 'test'])).toBe('npm test');
   });
 
+  it('names a check folder that is not the root, never an absolute one', () => {
+    expect(command(['npm', 'test'], 'apps/web')).toBe('npm test · in apps/web');
+    expect(command(['npm', 'test'], '.')).toBe('npm test');
+    expect(command(['npm', 'test'], '/Users/me/repo')).toBe('npm test');
+    const p = proof({ checks: [{ name: 'web', argv: ['npm', 'test'], exitCode: 0, durationMs: 5, passed: true }] });
+    expect(proofLines(p, new Map([['web', 'apps/web']]))[0].what).toBe('npm test · in apps/web');
+  });
+
   it('reads durations the way people say them', () => {
     expect([duration(450), duration(1234), duration(123_000)]).toEqual(['450ms', '1.2s', '2m 3s']);
   });

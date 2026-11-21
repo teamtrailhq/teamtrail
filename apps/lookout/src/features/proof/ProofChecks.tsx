@@ -7,8 +7,8 @@ import { proofLines } from './proofLines';
  * A proof's checks, one line each: a square mark, the check's name, the command in mono and how long it took (or
  * how it failed), then the check guard and each review with the reviewer's model against the author's.
  */
-export function ProofChecks({ proof }: { proof: Proof }) {
-  const lines = proofLines(proof);
+export function ProofChecks({ proof, folders }: { proof: Proof; folders?: ReadonlyMap<string, string> }) {
+  const lines = proofLines(proof, folders);
   if (!lines.length) return null;
   return (
     <ol className="proof-checks">

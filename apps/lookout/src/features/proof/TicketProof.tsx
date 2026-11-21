@@ -13,7 +13,15 @@ import { workToProve } from './workToProve';
  * commit. Copy for PR and Approve and merge are in the ticket's actions. Shown for tickets with a completion, and done
  * implementation tickets (where none is the point).
  */
-export function TicketProof(props: { ticket: Ticket; view?: TicketProofView; actions?: Map<GapAction, MenuItem> }) {
+export function TicketProof(props: {
+  ticket: Ticket;
+  view?: TicketProofView;
+  actions?: Map<GapAction, MenuItem>;
+  /** The ticket's primary action: a gap whose action it is shows no button of its own. */
+  primary?: MenuItem;
+  /** Each check's repo-relative folder, from the attempt the proof is of. */
+  folders?: ReadonlyMap<string, string>;
+}) {
   const { view } = props;
   if (!view) return null;
   const { proof, post } = view;
@@ -28,9 +36,9 @@ export function TicketProof(props: { ticket: Ticket; view?: TicketProofView; act
         <b>{verified ? 'Verified by Teamtrail' : 'Not verified'}</b>
         {head && <span className="t-meta t-code">at {head}</span>}
       </div>
-      <ProofChecks proof={proof} />
+      <ProofChecks proof={proof} folders={props.folders} />
       <MetaLine parts={proofParts(proof)} />
-      <ProofGapList gaps={proof.gaps} plan={view.plan} actions={props.actions} />
+      <ProofGapList gaps={proof.gaps} plan={view.plan} actions={props.actions} primary={props.primary} />
       <div className="proof-foot">
         <span className="proof-digest">
           {[`${proof.digest.slice(0, 19)}…`, view.keyFile && 'signed ed25519', view.keyFile]

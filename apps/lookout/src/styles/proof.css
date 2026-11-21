@@ -11,6 +11,12 @@
   gap: var(--sp-8);
   color: var(--dim);
 }
+.proof-verdict .ds-mark {
+  border-color: var(--dim);
+}
+.proof-verdict.verified .ds-mark {
+  border-color: rgba(var(--decided-rgb), 0.5);
+}
 .proof-verdict b {
   font: var(--type-row-title);
 }
