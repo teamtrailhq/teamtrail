@@ -2,61 +2,48 @@ import { expect, test } from 'vitest';
 import { LOGO_COLORS } from '../src/logo/logoColors';
 import { logoFaviconSvg } from '../src/logo/logoFaviconSvg';
 import { LOGO_IN_CIRCLE } from '../src/logo/logoInCircle';
-import { logoBareMarkup, logoMarkup } from '../src/logo/logoMark';
+import { logoMarkup } from '../src/logo/logoMark';
 import { LOGO_ON_TILE } from '../src/logo/logoOnTile';
 
-/** The box the logo's shapes fill in their own 200 box: x 14–196, y 0–196. */
-const SHAPES = { left: 14, top: 0, right: 196, bottom: 196 };
+/** The mark as it was chosen, exactly. */
+const CHOSEN =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><g fill="#FF6B2C"><rect x="88" y="10" width="24" height="56" transform="rotate(60 100 100)"/><rect x="88" y="10" width="24" height="56" transform="rotate(120 100 100)"/><rect x="88" y="10" width="24" height="56" transform="rotate(180 100 100)"/><rect x="88" y="10" width="24" height="56" transform="rotate(240 100 100)"/><rect x="88" y="10" width="24" height="56" transform="rotate(300 100 100)"/></g><rect x="88" y="10" width="24" height="56" fill="#8E8E96"/></svg>';
+
+/** An arm's outer corner, the mark's farthest point from the centre. */
+const REACH = Math.hypot(12, 90);
 
 function placed(transform: string) {
   const [, tx, ty, k] = transform.match(/translate\(([-\d.]+) ([-\d.]+)\) scale\(([\d.]+)\)/)!.map(Number);
-  return {
-    left: tx + SHAPES.left * k,
-    right: 200 - (tx + SHAPES.right * k),
-    top: ty + SHAPES.top * k,
-    bottom: 200 - (ty + SHAPES.bottom * k),
-  };
+  return { centre: [tx + 100 * k, ty + 100 * k], reach: REACH * k };
 }
 
-test('the t runs to a block cursor, not a dot', () => {
-  const svg = logoMarkup('dark');
-  expect(svg).toContain('<rect x="154" y="110" width="42" height="86" fill="#FF6B2C"/>');
-  expect(svg).toContain('<path d="M14 58H140V102H14Z"');
-  expect(svg).not.toContain('<circle');
+test('the favicon is the chosen mark, on transparency, the same on light and dark tabs', () => {
+  expect(logoFaviconSvg()).toBe(CHOSEN);
+  expect(logoFaviconSvg()).not.toContain('width="200"');
+  expect(logoFaviconSvg()).not.toContain('prefers-color-scheme');
 });
 
-test('the mark sits centred on its tile, with an even margin', () => {
-  const m = placed(LOGO_ON_TILE);
-  expect(m.left).toBeCloseTo(m.right, 1);
-  expect(m.top).toBeCloseTo(m.bottom, 1);
-  expect(m.top).toBeCloseTo(SHAPES.bottom * 0.16 * (200 / (SHAPES.bottom * 1.32)), 1);
+test('six block cursors around an open centre: the one pointing up grey, the other five blaze', () => {
+  const svg = logoMarkup();
+  expect(svg.match(/<rect /g)).toHaveLength(6);
+  expect(svg).toContain(`<rect x="88" y="10" width="24" height="56" fill="${LOGO_COLORS.lead}"/>`);
+  for (const deg of [60, 120, 180, 240, 300]) expect(svg).toContain(`transform="rotate(${deg} 100 100)"`);
+  expect(LOGO_COLORS).toMatchObject({ arm: '#FF6B2C', lead: '#8E8E96' });
 });
 
-test('the bare mark stays inside its box, centred', () => {
-  const transform = logoBareMarkup().match(/transform="([^"]+)"/)![1];
-  const m = placed(transform);
-  expect(Math.min(m.left, m.right, m.top, m.bottom)).toBeGreaterThan(0);
-  expect(m.left).toBeCloseTo(m.right, 0);
-  expect(m.top).toBeCloseTo(m.bottom, 0);
+test('in a circle, the mark is centred and its farthest corner well inside the radius', () => {
+  const svg = logoMarkup({ round: true });
+  expect(svg).toContain(`<g transform="${LOGO_IN_CIRCLE}">`);
+  expect(svg).not.toContain('width="200"');
+  const m = placed(LOGO_IN_CIRCLE);
+  expect(m.centre).toEqual([100, 100]);
+  expect(m.reach).toBeLessThan(80);
+  expect(m.reach).toBeGreaterThan(65);
 });
 
-test('the cursor is white on the blaze tile, the favicon, and blaze on the others', () => {
-  expect(LOGO_COLORS.blaze.cursor).toBe('#FFFFFF');
-  expect(LOGO_COLORS.dark.cursor).toBe('#FF6B2C');
-  expect(LOGO_COLORS.light.cursor).toBe('#FF6B2C');
-  expect(logoFaviconSvg()).toContain('width="42" height="86" fill="#FFFFFF"');
-  expect(logoMarkup('auto')).toContain('var(--tt-logo-cursor, #FF6B2C)');
-});
-
-test('in a circle, the farthest corner of the mark stays 6% inside the radius, centred', () => {
-  const transform = logoMarkup('blaze', { round: true }).match(/<g transform="([^"]+)"/)![1];
-  expect(transform).toBe(LOGO_IN_CIRCLE);
-  const m = placed(transform);
-  expect(m.left).toBeCloseTo(m.right, 1);
-  expect(m.top).toBeCloseTo(m.bottom, 1);
-  const k = Number(transform.match(/scale\(([\d.]+)\)/)![1]);
-  const corner = Math.hypot(100 - m.right, 100 - m.bottom);
-  expect(corner).toBeLessThanOrEqual(94);
-  expect(corner).toBeGreaterThan(90);
-  expect(k).toBeLessThan(0.773);
+test('on its opaque tile, the mark sits centred on near-black, never blaze', () => {
+  const svg = logoMarkup({ tile: true });
+  expect(svg.startsWith(`<rect width="200" height="200" fill="${LOGO_COLORS.tile}"/>`)).toBe(true);
+  expect(LOGO_COLORS.tile).toBe('#0A0A0B');
+  expect(placed(LOGO_ON_TILE).centre).toEqual([100, 100]);
 });

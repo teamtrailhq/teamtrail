@@ -280,8 +280,8 @@ body {
 .wordmark-square {
   --text-hi: #f4f4f6;
 }
-.brand-square.light {
-  background: #ffffff;
+.brand-square.logo-square {
+  background: transparent;
 }
 .favicon {
   display: flex;

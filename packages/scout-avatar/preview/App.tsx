@@ -22,8 +22,8 @@ export function App() {
       <BrandSquare
         n={Number(q.get('n') || 512)}
         who={(['scout', 'wordmark'] as const).find((w) => w === q.get('who')) ?? 'logo'}
-        theme={(['light', 'blaze'] as const).find((t) => t === q.get('theme')) ?? 'dark'}
         round={!!q.get('round')}
+        tile={!!q.get('tile')}
         ground={(['blaze', 'paper'] as const).find((g) => g === q.get('ground')) ?? 'ink'}
       />
     );

@@ -2,12 +2,12 @@
 
 Two marks, one drawing style:
 
-- **The Teamtrail logo** (`src/logo/`): a lowercase t whose stem curves into a path that runs to a block cursor, the wordmark's own, on a square tile with no edge. Three versions, with the colours in `logoColors.ts`: `dark` for dark backgrounds (`#F4F4F6` on `#0A0A0B`; the default), `light` for light ones (`#0E0F11` on `#FFFFFF`), the cursor `#FF6B2C` on both, and `blaze`, the favicon and app icon (`#0A0A0B` t and white cursor on `#FF6B2C`). `<Logo theme="auto">` follows the page's `color-scheme`; `bare` drops the tile for small inline use. `round` places the mark smaller (`logoInCircle.ts`) for avatars shown in a circle, so the crop clears the cursor: the X and LinkedIn/Discord avatars use it. `logoFaviconSvg()` is the blaze tile as one SVG. Nav, favicon, npm, GitHub and social images use it.
+- **The Teamtrail logo** (`src/logo/`): six block cursors, each the wordmark's own, set every 60° around an open centre. The arm pointing up is grey (`#8E8E96`), the other five blaze (`#FF6B2C`), on a transparent background, the same on light and dark pages (colours in `logoColors.ts`). `<Logo>` draws it filling its box; `round` places it smaller (`logoInCircle.ts`) for avatars shown in a circle (the GitHub, X and LinkedIn/Discord avatars); `tile` puts it on the near-black `#0A0A0B` square (`logoOnTile.ts`) for the rare place that must be opaque, never on blaze. `logoFaviconSvg()` is the mark as one SVG. The favicon, npm, GitHub and social avatars use it.
 - **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. An AI scout companion looking to the side, drawn as a bust in graphite, white and blaze: a screen face, a cap, a headset with a mic, an antenna lamp and a neckerchief (`badgeArt.ts`; `shape`: a circle where avatars are round, a full square for tiles and Slack; `ground`: `ink`, the default, `blaze` for app icons and Slack, `paper` on light backgrounds). Guides are flat symbols alone on a transparent background, no tile or border (`guideArt.ts`): magnifier, check, shield, book, compass, and a plus with no accent for Community; `guideMarkup(role, theme)` draws `dark`, `light`, or `auto`, which reads the page's `--tt-guide-ink`, `-fill` and `-accent`.
 
 **Which mark where**
 
-- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the `t` logo, as the tile or the bare mark. Slack's app icon is Scout, on blaze.
+- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the logo mark, on transparency (on the near-black tile only where a space must be opaque). Slack's app icon is Scout, on blaze.
 - **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail` wordmark, lowercase in Inter 600 followed by a blaze block cursor, still everywhere (it blinks only on teamtrail.app, and never under reduced motion).
 - Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
 
@@ -25,15 +25,13 @@ Two marks, one drawing style:
 
 ```
 src/logo/
-  logoShapes.ts    the mark's geometry
-  logoColors.ts    the light, dark and blaze versions' colours
-  logoOnTile.ts    where the mark sits on its square tile
-  logoInCircle.ts  where it sits on a tile cropped to a circle
-  logoMark.ts      the logo's SVG markup, with and without the tile, per theme
-  logoFaviconSvg.ts  the standalone favicon SVG: the blaze tile
-  logoAutoStyle.ts the light-dark() colours behind theme="auto"
-  types.ts         LogoTheme and LogoColors
-  Logo.tsx         React component (size, bare, theme)
+  logoShapes.ts    the mark's geometry: six arms, one grey, five blaze
+  logoColors.ts    its colours, and the near-black tile's
+  logoOnTile.ts    where the mark sits on its opaque tile
+  logoInCircle.ts  where it sits in an avatar cropped to a circle
+  logoMark.ts      the logo's SVG markup: alone, round, or on the tile
+  logoFaviconSvg.ts  the standalone favicon SVG: the mark on transparency
+  Logo.tsx         React component (size, round, tile)
 src/scout/
   badgeArt.ts      Scout's badge: colours, grounds, lamps and SVG markup
   portraitHead.ts  the head in three-quarter view: screen, headset, cap and antenna lamp
@@ -51,7 +49,7 @@ src/scout/
   scoutDom.ts      the DOM and SVG building behind mountScout
   ScoutAvatar.css  panel frame; all colors are --scout-* vars with lookout fallbacks
   index.ts         React exports, plus the logo's (import mountScout from './mountScout' directly)
-preview/           preview page (?view=options | states | demo | square | favicon | lockup | banner, &theme=light|dark|blaze and &ground=ink|blaze|paper for square); App.tsx
+preview/           preview page (?view=options | states | demo | square | favicon | lockup | banner, &round=1, &tile=1 and &ground=ink|blaze|paper for square); App.tsx
 tools/
   capture.mjs      writes the PNGs, the banner GIF, the MP4 loop, the social kit zip and brand/* (Playwright + system Chrome, headless)
 ```
@@ -115,7 +113,7 @@ scout.destroy();
 
 ## Colours and changing the art
 
-All colours and shapes are in `badgeArt.ts`, `guideArt.ts`, `logoShapes.ts` and `logoColors.ts`. After changing them, re-run the capture and copy the results where they are used: the Lookout's favicon (`apps/lookout/index.html`, pinned by `apps/lookout/test/favicon.test.ts`) and the landing site's `public/media/brand/` (see below).
+All colours and shapes are in `badgeArt.ts`, `guideArt.ts`, `logoShapes.ts` and `logoColors.ts`. After changing them, re-run the capture and copy the results where they are used: the Lookout's favicon (`apps/lookout/index.html`: the SVG and `brand/favicon-32.png` inline, pinned by `apps/lookout/test/favicon.test.ts`) and the landing site's `public/media/brand/` (see below).
 
 ## Preview, captures and brand kit
 
@@ -128,7 +126,7 @@ npm run capture              # needs Chrome (CHROME=...) and ffmpeg
 
 `capture` also renders `brand/` at exact sizes:
 
-- `github-org-avatar.png` (1000², the blaze logo tile) and `github-org-avatar-wordmark.png` (1000², the wordmark on a dark square)
+- `github-org-avatar.png` (1000², the logo on transparency, sized for a round crop) and `github-org-avatar-wordmark.png` (1000², the wordmark on a dark square)
 - `github-social-preview.png` (1280×640) and `github-social-preview.gif` (640×320, animated, under GitHub's 1 MB limit)
 - `teamtrail-banner.gif` (960×480): the README banner, the `teamtrail` wordmark while the trail steps across a dot grid to its destination, one `BANNER_LOOP` pass (preview/content.ts) rendered frame by frame with a frozen clock
 - `og-image-1200x630.png`
@@ -137,11 +135,12 @@ npm run capture              # needs Chrome (CHROME=...) and ffmpeg
 - `x-avatar-400.png`
 - `slack-icon-512.png` (Scout on blaze) and `scout-badge-1000.png` (Scout on ink)
 - `linkedin-discord-avatar-512.png`
-- `logo-light-512.png`: the light version on a light background
-- `favicon-64.png`, `favicon-32.png` (the blaze tile)
+- `logo-light-512.png`: the logo on transparency, filling the square
+- `app-icon-512.png`: the logo on the near-black tile, opaque
+- `favicon-64.png`, `favicon-32.png` (the logo on transparency)
 - `social-kit-overview.png`: a contact sheet with checks at 16 to 48px (not copied into `brand/`; it goes in the zip)
 - `teamtrail-social-kit.zip`: all of the above, prefixed `teamtrail-`
 
-The banner copy is agent-agnostic. The brand views are `?view=square&n=&who=logo|wordmark|scout&theme=dark|light|blaze&ground=ink|blaze|paper`, `?view=favicon&px=`, `?view=lockup&w=&h=&light=1` and `?view=banner&w=&h=&layout=card|header`.
+The banner copy is agent-agnostic. The brand views are `?view=square&n=&who=logo|wordmark|scout&round=1&tile=1&clear=1&ground=ink|blaze|paper`, `?view=favicon&px=`, `?view=lockup&w=&h=&light=1` and `?view=banner&w=&h=&layout=card|header`.
 
-The landing site (`teamtrailhq/teamtrail-landing`) copies from `brand/` into its `public/media/brand/`: `og-image-1200x630.png` (banner), `linkedin-discord-avatar-512.png` (square, also its apple-touch-icon), `slack-icon-512.png` (Scout) and `favicon-32.png`, `favicon-64.png` (favicon). Its `favicon.ico` and SVG favicon are the same blaze tile.
+The landing site (`teamtrailhq/teamtrail-landing`) copies from `brand/` into its `public/media/brand/`: `og-image-1200x630.png` (banner), `linkedin-discord-avatar-512.png` (square), `app-icon-512.png` (its apple-touch-icon), `slack-icon-512.png` (Scout) and `favicon-32.png`, `favicon-64.png` (favicon). Its `favicon.ico` and SVG favicon are the same mark on transparency.
