@@ -24,6 +24,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.68.0',
+    date: '2026-11-21',
+    items: [
+      'A new look across the Lookout: the map, Needs you, the ticket bubble and its proof, Plan, Activity, the Logbook and Settings now read the same way, what needs you first',
+      "Activity shows each agent's lane with its milestones instead of a raw log",
+      "The Logbook lets you keep an agent's own decision or overrule it in place",
+      'Settings says when a change was saved and journaled, and approvals show what changed line by line',
+    ],
+  },
+  {
     version: '0.67.22',
     date: '2026-11-20',
     items: [
@@ -177,22 +187,6 @@ export const RELEASES: Release[] = [
       'A new look: a dark-first Lookout with near-black surfaces, hairline borders, square corners and one blaze accent',
       'Inter and JetBrains Mono throughout; the map is a clean dot-grid canvas, and the path agents walked is drawn in blaze',
       'Colours keep one meaning each: blaze is work in progress and your selection, rose needs you, green is verified or done',
-    ],
-  },
-  {
-    version: '0.66.22',
-    date: '2026-11-19',
-    items: [
-      'Settings → Verification suggests the checks your repo actually runs, read from its files (Node, Python, Go, Rust, Java, Ruby, PHP, .NET), each with its folder, one click to add',
-      'Each check has a folder, so a monorepo can test apps/web in apps/web; saving still approves it',
-    ],
-  },
-  {
-    version: '0.66.21',
-    date: '2026-11-19',
-    items: [
-      'The check guard knows more stacks: Cargo, Gradle, Maven, .NET, Ruby, PHP, Swift, Elixir and Dart configs, and skipped tests in each (#[ignore], @Disabled, Skip =, markTestSkipped, xit, XCTSkip, @tag :skip…)',
-      'It follows turbo and Nx into the scripts and targets they run, and reads through bundle exec, poetry run, uv run and composer scripts',
     ],
   },
   ...RECENT_RELEASES,

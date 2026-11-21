@@ -1,7 +1,23 @@
 import type { Release } from './releases';
 
-/** Releases 0.66.13–0.66.20, kept apart so `releases.ts` stays short (0.61–0.66.12 in `newerReleases.ts`). Newest first. */
+/** Releases 0.66.13–0.66.22, kept apart so `releases.ts` stays short (0.61–0.66.12 in `newerReleases.ts`). Newest first. */
 export const RECENT_RELEASES: Release[] = [
+  {
+    version: '0.66.22',
+    date: '2026-11-19',
+    items: [
+      'Settings → Verification suggests the checks your repo actually runs, read from its files (Node, Python, Go, Rust, Java, Ruby, PHP, .NET), each with its folder, one click to add',
+      'Each check has a folder, so a monorepo can test apps/web in apps/web; saving still approves it',
+    ],
+  },
+  {
+    version: '0.66.21',
+    date: '2026-11-19',
+    items: [
+      'The check guard knows more stacks: Cargo, Gradle, Maven, .NET, Ruby, PHP, Swift, Elixir and Dart configs, and skipped tests in each (#[ignore], @Disabled, Skip =, markTestSkipped, xit, XCTSkip, @tag :skip…)',
+      'It follows turbo and Nx into the scripts and targets they run, and reads through bundle exec, poetry run, uv run and composer scripts',
+    ],
+  },
   {
     version: '0.66.20',
     date: '2026-11-19',
