@@ -41,7 +41,7 @@ export function RecordViews({
           selection={api.selection}
           onSelect={nav.select}
           onAudit={() => nav.openDecisions()}
-          glance={
+          glance={(o) =>
             api.snap && (
               <TrailGlance
                 snap={api.snap}
@@ -51,6 +51,8 @@ export function RecordViews({
                 now={now}
                 onTicket={onTicket}
                 onItem={attn.open}
+                onSelect={nav.select}
+                onDestination={o.onDestination}
               />
             )
           }

@@ -1,12 +1,13 @@
 import type { ActivityState, MapSnapshot, TicketLease, TrailDone } from '@teamtrail/core';
-import { Panel, SectionHeader } from '../../components/ui';
+import { Panel } from '../../components/ui';
 import { isRunning } from '../../lib';
-import { ActivityLog, Sessions, SessionsHead, StepTracker } from '../activity';
+import { ActivityAgents, SessionsHead } from '../activity';
 import { Conversation } from '../inbox';
 
 /**
- * Activity, a page of its own: what the agents are doing (the latest step, every agent and claim), everything that
- * happened on the trail, and the conversation with an agent, opened from its row, a question or a ticket.
+ * Activity, a page of its own: one lane per agent at work (its claims, questions, answers, submissions and how
+ * verification came back, and what it is on now), and the conversation with an agent, opened from its lane, a
+ * question or a ticket. Milestones only: no raw log of every step.
  */
 export function ActivityPage(props: {
   activity: ActivityState;
@@ -24,27 +25,17 @@ export function ActivityPage(props: {
   const { activity } = props;
   return (
     <Panel className="zone page activity-page">
-      <section className="page-col">
-        <SectionHeader title="Agents" />
+      <section className="page-col lanes-col">
+        <SessionsHead activity={activity} snap={props.snap} running={activity.sessions.filter(isRunning).length} />
         <div className="zone-b">
-          <StepTracker activity={activity} snap={props.snap} done={props.done} />
-          <SessionsHead activity={activity} snap={props.snap} running={activity.sessions.filter(isRunning).length} />
-          <Sessions
-            snap={props.snap}
+          <ActivityAgents
             activity={activity}
+            snap={props.snap}
             leases={props.leases}
+            done={props.done}
             onSelect={(s) => s?.kind === 'ticket' && props.onTicket(s.id)}
             onOpenChat={props.onOpenChat}
           />
-        </div>
-      </section>
-      <section className="page-col">
-        <SectionHeader
-          title="Activity log"
-          right={<span className="mono-label dim">{activity.feed.length} events</span>}
-        />
-        <div className="zone-b">
-          <ActivityLog activity={activity} onTicket={props.onTicket} />
         </div>
       </section>
       <section className="page-col conversation-col">

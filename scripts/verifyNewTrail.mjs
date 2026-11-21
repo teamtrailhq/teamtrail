@@ -1,7 +1,7 @@
 // New trail with whole documents, end to end (verify-mcp.mjs), on a scratch tracker folder: a multi-paragraph
 // markdown destination is typed, notes are loaded from a .md file (asked Replace or Append, since the field has text),
 // three assumptions show their count, Preview renders the destination as markdown, and Create trail writes it. The
-// header keeps the destination to its first sentence on one line, Plan → Destination and Notes render it as
+// header keeps the destination to its first sentence on one line, Plan leads with it and Destination and Notes render it as
 // markdown, and the map file keeps its own sections only. Waits on what the user sees, never on sleeps.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -67,10 +67,11 @@ async function shownTrail(page) {
   };
   await page.getByRole('navigation', { name: 'Views' }).getByRole('button', { name: 'Plan' }).click();
   const pick = async (label) => {
-    await page.locator('.sections-tabs .select').first().click();
-    await page.locator('.select-menu li', { hasText: label }).click();
+    await page.locator('.plan-tabs').getByRole('tab', { name: label }).click();
   };
-  await pick('Destination');
+  // The Plan page leads with the destination's first sentence; "read in full" opens it on the tab row.
+  const headline = (await page.locator('.plan-page .glance-head .ds-scard-headline').textContent())?.trim();
+  await page.locator('.plan-page .glance-head').getByRole('button', { name: 'read in full' }).click();
   const destination = await page.locator('.plan-doc .md-h2').first().textContent();
   await pick('Notes');
   const notes = {
@@ -78,7 +79,7 @@ async function shownTrail(page) {
     code: await page.locator('.plan-doc pre').count(),
     marker: await page.locator('.plan-doc', { hasText: '<!-- teamtrail:meta' }).count(),
   };
-  return { header, destination, notes };
+  return { header, headline, destination, notes };
 }
 
 export async function verifyNewTrail({ browser, cli, log, shots }) {
@@ -112,6 +113,7 @@ export async function verifyNewTrail({ browser, cli, log, shots }) {
       filled.preview.items === 2 &&
       shown.header.text === 'DestinationOffline edits sync when the connection returns, on every device.' &&
       shown.header.oneLine &&
+      shown.headline === 'Offline edits sync when the connection returns, on every device.' &&
       shown.destination === 'Done means' &&
       shown.notes.heading === 1 &&
       shown.notes.code === 1 &&
@@ -121,7 +123,7 @@ export async function verifyNewTrail({ browser, cli, log, shots }) {
       !/^verification: off/m.test(map.split('\n---\n')[0]) &&
       !errors.length;
     log(
-      `new trail: ${ok ? 'ok' : 'WRONG'}: a markdown destination and notes loaded from a file (${filled.count}), Preview showed "${filled.preview.heading}" with ${filled.preview.items} items; the header says "${shown.header.text}" (${shown.header.oneLine ? 'one line' : 'NOT ONE LINE'}), Plan renders the destination ("${shown.destination}") and the notes (${shown.notes.heading} heading, ${shown.notes.code} code block, the marker as text); map sections: ${sections.length}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
+      `new trail: ${ok ? 'ok' : 'WRONG'}: a markdown destination and notes loaded from a file (${filled.count}), Preview showed "${filled.preview.heading}" with ${filled.preview.items} items; the header says "${shown.header.text}" (${shown.header.oneLine ? 'one line' : 'NOT ONE LINE'}), Plan leads with "${shown.headline}" and renders the destination ("${shown.destination}") and the notes (${shown.notes.heading} heading, ${shown.notes.code} code block, the marker as text); map sections: ${sections.length}${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );
     return ok;
   } finally {

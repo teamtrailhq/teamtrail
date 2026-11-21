@@ -1,4 +1,5 @@
 import { type MapSnapshot, type NodeState } from '@teamtrail/core';
+import { Cursor } from '../../components/ui';
 import { cx } from '../../lib';
 import { TRAIL_PHASES, type TrailPhase } from './trailPhase';
 
@@ -22,7 +23,10 @@ function phaseText(phase: TrailPhase, counts: { done: number; total: number; rea
   }
 }
 
-/** The trail's phase as a row of steps, the current one marked, and what it means right now. */
+/**
+ * The trail's phase as squares on a line: past ones filled, the current one blaze with "You are here" and the cursor,
+ * then what it means right now.
+ */
 export function TrailPhaseLine(props: {
   phase: TrailPhase;
   snap: MapSnapshot;
@@ -33,7 +37,7 @@ export function TrailPhaseLine(props: {
   const inScope = props.snap.tickets.filter((t) => props.states.get(t.id) !== 'out-of-scope');
   const done = inScope.filter((t) => props.states.get(t.id) === 'decided').length;
   return (
-    <header className="glance-head">
+    <div className="glance-phase">
       <ol className="phase-steps" aria-label="Trail phase">
         {TRAIL_PHASES.map((p, i) => (
           <li
@@ -41,11 +45,20 @@ export function TrailPhaseLine(props: {
             className={cx(i < at && 'past', i === at && 'now')}
             aria-current={i === at ? 'step' : undefined}
           >
-            {p.label}
+            <span className="phase-sq" aria-hidden="true" />
+            <span className="phase-nm">{p.label}</span>
+            {i === at && (
+              <span className="phase-here">
+                <Cursor />
+                You are here
+              </span>
+            )}
           </li>
         ))}
       </ol>
-      <p className="t-body">{phaseText(props.phase, { done, total: inScope.length, reason: props.reason })}</p>
-    </header>
+      <p className="t-body phase-text">
+        {phaseText(props.phase, { done, total: inScope.length, reason: props.reason })}
+      </p>
+    </div>
   );
 }

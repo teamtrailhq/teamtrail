@@ -2,7 +2,7 @@ import type { ActivityState, LaidOutNode, MapSnapshot, Ticket, TicketSync, Trail
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { StepTracker } from '../src/features/activity/StepTracker';
+import { ActivityAgents } from '../src/features/activity/ActivityAgents';
 import { DestinationGlyph } from '../src/features/map/DestinationGlyph';
 import { DestinationMark } from '../src/features/map/DestinationMark';
 import { destinationState } from '../src/features/map/destinationState';
@@ -130,10 +130,11 @@ describe('the map once tickets are done', () => {
   });
 });
 
-describe('the step panel once the trail is done', () => {
-  const activity = { sessions: [], feed: [] } as unknown as ActivityState;
-  it('shows the outcome in place of the last step', () => {
-    const out = html(createElement(StepTracker, { activity, done: verified }));
+describe('the agents on Activity once the trail is done', () => {
+  const activity = { sessions: [], feed: [], pending: [] } as unknown as ActivityState;
+  const none = { onSelect: () => {}, onOpenChat: () => {} };
+  it('shows the outcome above the lanes', () => {
+    const out = html(createElement(ActivityAgents, { activity, done: verified, ...none }));
     expect(out).toContain('Destination reached');
     expect(out).toContain('verified together on main at abc1234');
     expect(out).toContain('destination reached verified');
@@ -141,7 +142,7 @@ describe('the step panel once the trail is done', () => {
   });
   it('shows the usual state while the trail isn’t done', () => {
     const out = html(
-      createElement(StepTracker, { activity, done: { kind: 'not-done', reason: '1 ticket still open' } }),
+      createElement(ActivityAgents, { activity, done: { kind: 'not-done', reason: '1 ticket still open' }, ...none }),
     );
     expect(out).not.toContain('Destination reached');
   });

@@ -1,6 +1,6 @@
 import type { PendingQuestion } from '@teamtrail/core';
-import { MetaLine } from '../../components/ui';
-import { clock } from '../../lib';
+import { LabelLine, MetaLine } from '../../components/ui';
+import { hm } from '../../lib';
 import { QuestionAvatar } from './QuestionAvatar';
 
 /**
@@ -14,7 +14,7 @@ export function OpenQuestion(props: { q: PendingQuestion; chatId?: string }) {
   const { q } = props;
   return (
     <div className="msg open-q">
-      <MetaLine parts={[q.agent, clock(q.at)]} />
+      <LabelLine tone="urgent" parts={[q.agent, hm(q.at), 'asks you']} />
       <QuestionAvatar id={props.chatId ?? q.id} text={q.text} />
       <div className="msg-text">{q.text}</div>
       {q.stakes && <MetaLine parts={[{ text: q.stakes, strong: true }]} />}

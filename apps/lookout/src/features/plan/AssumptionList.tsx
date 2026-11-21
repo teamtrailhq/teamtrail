@@ -1,19 +1,27 @@
 import type { MapSnapshot } from '@teamtrail/core';
-import { Empty } from '../../components/ui';
+import { LabelLine, SceneCard } from '../../components/ui';
 import type { Selection } from '../../lib';
 import { AssumptionRow } from './AssumptionRow';
 import { useConfirmAssumption } from './useConfirmAssumption';
 
 /**
- * The trail's assumptions: what the plan relies on, seeded from the accepted discovery brief or listed when the
- * trail started. Agents challenge them with evidence; holding and challenged ones the trail lead can confirm.
+ * The trail's assumptions, as a card of status lines: what the plan relies on, seeded from the accepted discovery
+ * brief or listed when the trail started. Agents challenge them with evidence; holding and challenged ones the trail
+ * lead can confirm. Nothing when the trail has none.
  */
 export function AssumptionList({ snap, onSelect }: { snap: MapSnapshot; onSelect: (s: Selection) => void }) {
   const { confirm, busy, error } = useConfirmAssumption(snap.map.id);
   const all = snap.map.sections.assumptions ?? [];
-  if (!all.length) return <Empty>None yet. They come from the accepted discovery brief or the trail's start.</Empty>;
+  if (!all.length) return null;
   return (
-    <>
+    <SceneCard
+      className="glance-card assumptions-card"
+      label={
+        <LabelLine parts={['Assumptions', String(all.length)]} tone="dim">
+          <span className="ds-label-note">The plan rests on these</span>
+        </LabelLine>
+      }
+    >
       {error && <p className="urgent-text">{error}</p>}
       <ul className="assumptions row-list">
         {all.map((a) => {
@@ -30,6 +38,6 @@ export function AssumptionList({ snap, onSelect }: { snap: MapSnapshot; onSelect
           );
         })}
       </ul>
-    </>
+    </SceneCard>
   );
 }

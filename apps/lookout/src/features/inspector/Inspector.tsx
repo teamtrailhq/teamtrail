@@ -47,6 +47,7 @@ export function Inspector(props: {
         now={now}
         onTicket={(id) => api.setSelection({ kind: 'ticket', id })}
         onItem={(item) => props.onItem?.(item)}
+        onSelect={api.setSelection}
       />
     );
   } else if (selection.kind === 'unspecified') {
