@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SettingsSection } from '../settings/SettingsSection';
+import { useMarkSaved } from '../settings/useMarkSaved';
 import { useThisMachine } from '../settings/useThisMachine';
 import { useVerificationConfig } from '../settings/useVerificationConfig';
 import { RulesEditor } from './RulesEditor';
@@ -22,6 +23,7 @@ export function RulesSection() {
   const local = useThisMachine();
   const lastMatched = useRulesLastMatched();
   const [saved, setSaved] = useState(false);
+  const markSaved = useMarkSaved();
   if (!view) return null;
   const rules = view.config?.rules ?? [];
   const blocked = blocker(view);
@@ -39,7 +41,7 @@ export function RulesSection() {
           view={view}
           lastMatched={lastMatched}
           saved={saved}
-          onSaved={() => setSaved(true)}
+          onSaved={() => (setSaved(true), markSaved(true))}
         />
       )}
       {(!local || blocked) && rules.length > 0 && <RulesList rules={rules} lastMatched={lastMatched} />}

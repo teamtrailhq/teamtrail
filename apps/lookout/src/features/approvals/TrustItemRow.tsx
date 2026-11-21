@@ -3,6 +3,7 @@ import { Button, MetaLine, Row } from '../../components/ui';
 import { settingsSectionLink } from '../../lib/settingsSectionLink';
 import { CheckFindingList } from '../check-screening';
 import { KIND_CAVEAT, KIND_EFFECT, standingText } from './approvalCopy';
+import { ApprovalLines } from './ApprovalLines';
 
 /**
  * One thing waiting for approval: what it is, why it waits, and exactly what approving it approves. Content nobody
@@ -25,7 +26,7 @@ export function TrustItemRow(props: { item: TrustItem; busy: boolean; local: boo
       detailText={KIND_EFFECT[item.kind]}
       below={
         <div className="ap-below">
-          <pre className="ap-lines t-code">{shown.join('\n')}</pre>
+          <ApprovalLines lines={shown} whole={whole} />
           {KIND_CAVEAT[item.kind] && <p className="ap-note t-meta">{KIND_CAVEAT[item.kind]}</p>}
           {item.warnings.length > 0 && (
             <ul className="ap-warnings t-meta">

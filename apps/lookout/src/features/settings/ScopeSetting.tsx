@@ -2,6 +2,7 @@ import type { VerificationConfig } from '@teamtrail/core';
 import { useState } from 'react';
 import { Choice } from '../../components/ui';
 import { apiBase } from '../../lib/apiBase';
+import { useMarkSaved } from './useMarkSaved';
 import type { VerificationConfigView } from './useVerificationConfig';
 
 type Scope = VerificationConfig['scope'];
@@ -18,6 +19,7 @@ const OPTIONS: { value: Scope; title: string; sub: string }[] = [
  */
 export function ScopeSetting({ view, local }: { view: VerificationConfigView; local?: boolean }) {
   const [error, setError] = useState<string>();
+  const markSaved = useMarkSaved();
   const current = view.config?.scope ?? 'flag';
   const blocked = view.approval?.waiting ? 'Approve the checks first.' : undefined;
   const save = async (scope: Scope) => {
@@ -27,7 +29,8 @@ export function ScopeSetting({ view, local }: { view: VerificationConfigView; lo
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scope, base: view.approval?.base ?? 'none' }),
     }).catch(() => undefined);
-    if (res?.ok) return;
+    // approved and journaled under _trust with the write
+    if (res?.ok) return markSaved(true);
     const body = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
     setError(body?.error ?? "The server didn't answer.");
   };

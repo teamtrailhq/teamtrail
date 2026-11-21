@@ -26,11 +26,77 @@
   margin: 0;
   padding: 0;
 }
-.sp-mobile .sp-nav-row {
-  border-bottom: 1px solid var(--line);
+/* The groups as quiet mono labels; the open one with the blaze cursor and its sections under it. */
+.sp-grp {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 var(--sp-14);
+  border: 0;
+  background: none;
+  text-align: left;
+  font: 400 var(--fs-scene-label) / 1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  cursor: pointer;
 }
-.sp-mobile .sp-nav-row .ds-row-trail {
-  font-size: var(--fs-title);
+.sp-grp:hover,
+.sp-grp.on {
+  color: var(--text-hi);
+}
+.sp-subs {
+  margin: 0 0 var(--sp-6);
+  padding: 0 0 0 var(--sp-14);
+}
+.sp-sub {
+  display: block;
+  width: 100%;
+  padding: 5px 0 5px var(--sp-12);
+  border: 0;
+  border-left: 1px solid var(--line2);
+  background: none;
+  text-align: left;
+  font: 400 var(--fs-body) / var(--lh-snug) var(--sans);
+  color: var(--dim);
+  cursor: pointer;
+}
+.sp-sub:hover {
+  color: var(--text);
+}
+.sp-sub.on {
+  color: var(--text-hi);
+  border-left-color: var(--text-hi);
+}
+/* A phone: one row per group that drills into it. */
+.sp-drill-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px var(--sp-10);
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: var(--sp-10) var(--gutter);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.sp-drill-label {
+  color: var(--text-hi);
+}
+.sp-drill-why {
+  grid-column: 1;
+  font-size: var(--fs-body);
+  color: var(--dim);
+}
+.sp-drill-chev {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  font: 400 16px var(--mono);
+  color: var(--faint);
 }
 .sp-pane {
   min-height: 0;
@@ -69,9 +135,50 @@
 .sp-slot:not(:has(.set-sec)) {
   display: none;
 }
-.sp-pane-in > .sp-slot:first-of-type .set-sec {
-  border-top: 0;
-  padding-top: 0;
+/* Each section in a Settings slot is a scene card (SettingsSection): its bar says what it is and where it lives,
+ * the headline what it decides, then the section. */
+.set-card {
+  padding: 0;
+  border-left-width: 1px;
+  border-top: 1px solid var(--line);
+}
+.sp-mobile .set-card .ds-scard-head {
+  padding: var(--sp-12) var(--sp-12) var(--sp-10);
+}
+.sp-mobile .set-card-body {
+  padding: 0 var(--sp-12) var(--sp-12);
+}
+.set-sec-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4) var(--sp-12);
+}
+.set-saved {
+  margin-left: auto;
+}
+.set-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  min-width: 0;
+  padding: 0 var(--sp-14) var(--sp-14);
+}
+/* Links in a section's help and hints read as the app's links, not the browser's: accent, underlined on hover. */
+.set-card a:not(.btn) {
+  color: var(--accent);
+  text-decoration: none;
+}
+.set-card a:not(.btn):hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.set-card a:not(.btn):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.set-card .set-sub {
+  padding-top: var(--sp-10);
 }
 .sp-elsewhere {
   margin: 0;
@@ -80,9 +187,6 @@
   border-left: var(--edge-w) solid var(--edge-attention);
   color: var(--text);
   line-height: var(--lh-body);
-}
-.sp-where {
-  color: var(--faint);
 }
 .set-sec {
   display: flex;

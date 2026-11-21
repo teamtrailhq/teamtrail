@@ -2,6 +2,7 @@ import { gateModeFor, type GateMode, type GateName } from '@teamtrail/core';
 import { useState } from 'react';
 import { apiBase } from '../../lib/apiBase';
 import { SettingsSection } from '../settings/SettingsSection';
+import { useMarkSaved } from '../settings/useMarkSaved';
 import { useThisMachine } from '../settings/useThisMachine';
 import { useVerificationConfig } from '../settings/useVerificationConfig';
 import { gateLock } from './gateLock';
@@ -39,6 +40,7 @@ export function GatesSection(props: { onOpenTicket: (mapId: string, ticketId: st
   const local = useThisMachine();
   const [pending, setPending] = useState<Pending>();
   const [error, setError] = useState<string>();
+  const markSaved = useMarkSaved();
   if (!view) return null;
   const base = view.approval?.base ?? 'none';
   const lock = gateLock({ local, exists: view.exists, valid: !!view.config, waiting: view.approval?.waiting });
@@ -56,7 +58,8 @@ export function GatesSection(props: { onOpenTicket: (mapId: string, ticketId: st
     setError(undefined);
     setPending(next);
     const failed = await putGate(next);
-    if (!failed) return reload();
+    // the route approves and journals the change under _trust in the same step
+    if (!failed) return (markSaved(true), reload());
     setPending(undefined);
     setError(failed);
   };
