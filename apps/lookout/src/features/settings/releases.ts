@@ -24,6 +24,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.68.1',
+    date: '2026-11-21',
+    items: [],
+  },
+  {
     version: '0.68.0',
     date: '2026-11-21',
     items: [
@@ -166,28 +171,6 @@ export const RELEASES: Release[] = [
     version: '0.67.3',
     date: '2026-11-20',
     items: ['The teamtrail wordmark ends in a blaze block cursor instead of a full stop'],
-  },
-  {
-    version: '0.67.2',
-    date: '2026-11-20',
-    items: ['Guide icons are the symbol alone, on the page itself, with no tile or border around them'],
-  },
-  {
-    version: '0.67.1',
-    date: '2026-11-20',
-    items: [
-      'Scout, the logo and the guide icons are redrawn for the new look: Scout in graphite, white and blaze, square tiles, flat guide icons',
-      'The favicon is the blaze t. tile, the same on light and dark browser tabs',
-    ],
-  },
-  {
-    version: '0.67.0',
-    date: '2026-11-20',
-    items: [
-      'A new look: a dark-first Lookout with near-black surfaces, hairline borders, square corners and one blaze accent',
-      'Inter and JetBrains Mono throughout; the map is a clean dot-grid canvas, and the path agents walked is drawn in blaze',
-      'Colours keep one meaning each: blaze is work in progress and your selection, rose needs you, green is verified or done',
-    ],
   },
   ...RECENT_RELEASES,
   ...NEWER_RELEASES,

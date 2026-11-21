@@ -5,7 +5,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { createRemoteToken, writeTicketCriteria } from '@teamtrail/core/agents';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMcpHttp } from '../src/mcp/http/createMcpHttp';
 import { remoteAgentOpener } from '../src/mcp/http/remoteAgentOpener';
 import { tokenFileAuth } from '../src/mcp/http/tokenFileAuth';
@@ -17,6 +17,10 @@ let repo: string;
 let root: string;
 const hub = agents(() => root);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Resolves once `ok` holds, read again every few milliseconds. */
+async function until(ok: () => boolean) {
+  while (!ok()) await sleep(10);
+}
 
 beforeEach(() => {
   repo = fs.mkdtempSync(path.join(os.tmpdir(), 'teamtrail-wait-'));
@@ -65,13 +69,24 @@ function confirm(t: { mapId: string; key: string; id: string }) {
   confirmCriteriaHereNow(root, t.mapId, t.id);
 }
 
-/** Starts a wait, confirms the criteria `after` ms later, and says how long the agent took to hear of it. */
-async function pickupAfterConfirm(call: Call, t: { mapId: string; key: string; id: string }, after = 400) {
-  const waiting = call<Next>('next_ticket', { wait: true, waitSeconds: 20 });
-  await sleep(after);
+/**
+ * Starts a wait and resolves once the call says it waits: its first progress comes after it looked and found nothing,
+ * with the change it waits for already being listened to.
+ */
+function startWaiting(call: Call, args: Record<string, unknown>) {
+  let began!: () => void;
+  const waiting = new Promise<void>((r) => (began = r));
+  const result = call<Next>('next_ticket', { wait: true, ...args }, { onprogress: () => began() });
+  return { result, waiting: Promise.race([waiting, result.then(() => undefined)]) };
+}
+
+/** Starts a wait, confirms the criteria once the agent waits, and says how long the agent took to hear of it. */
+async function pickupAfterConfirm(call: Call, t: { mapId: string; key: string; id: string }) {
+  const w = startWaiting(call, { waitSeconds: 20 });
+  await w.waiting;
   const confirmedAt = Date.now();
   confirm(t);
-  const r = await waiting;
+  const r = await w.result;
   return { r, latency: Date.now() - confirmedAt };
 }
 
@@ -113,10 +128,10 @@ describe('next_ticket wait: an agent picks up newly ready work at once', () => {
   it('a change that frees nothing keeps it waiting', async () => {
     const call = await hub.connect({ name: 'claude-01' });
     await chartHeld(call);
-    const waiting = call<Next>('next_ticket', { wait: true, waitSeconds: 2 });
-    await sleep(300);
+    const w = startWaiting(call, { waitSeconds: 2 });
+    await w.waiting;
     fs.writeFileSync(path.join(root, 'attention.json'), JSON.stringify({ v: 1 }));
-    expect((await waiting).waited?.woke).toBe('timeout');
+    expect((await w.result).waited?.woke).toBe('timeout');
   });
 
   it('does not wait on a trail with nothing open', async () => {
@@ -147,34 +162,52 @@ describe('next_ticket wait over HTTP', () => {
   let server: http.Server;
   let mcp: McpHttp;
   afterEach(async () => {
+    vi.restoreAllMocks();
     await mcp?.close();
     server?.closeAllConnections();
     await new Promise((r) => (server ? server.close(r) : r(undefined)));
   });
 
+  /** An HTTP agent of the `sandbox` token, connected. */
+  async function httpClient(port: number, token: string) {
+    const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`), {
+      requestInit: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const client = new Client({ name: 'claude-code', version: '1.0.0' });
+    await client.connect(transport);
+    return client;
+  }
+
   it('a waiting call keeps its session: it is not closed as idle, and returns the work', async () => {
+    const idleMs = 60_000;
     mcp = createMcpHttp({
       auth: tokenFileAuth(root),
       open: remoteAgentOpener({ root, version: '0.0.0-test', agent: { pollMs: 20 } }),
       sweepMs: 30,
-      idleMs: 300,
+      idleMs,
     });
     server = http.createServer((req, res) => void mcp.handle(req, res));
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
     const port = (server.address() as { port: number }).port;
     const t = await chartHeld(await hub.connect({ name: 'claude-01' }));
-    const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`), {
-      requestInit: { headers: { Authorization: `Bearer ${createRemoteToken(root, 'sandbox').token}` } },
-    });
-    const client = new Client({ name: 'claude-code', version: '1.0.0' });
-    await client.connect(transport);
-    const waiting = client.callTool({ name: 'next_ticket', arguments: { wait: true, waitSeconds: 20 } });
-    // three idle windows pass while it waits
-    await sleep(1000);
-    expect(mcp.sessionCount()).toBe(1);
+    const token = createRemoteToken(root, 'sandbox').token;
+    const client = await httpClient(port, token);
+    // a second session of the same token that makes no call: the one the sweep closes as idle
+    const idle = await httpClient(port, token);
+    let began!: () => void;
+    const waitBegan = new Promise<void>((r) => (began = r));
+    const args = { wait: true, waitSeconds: 600 };
+    const waiting = client.callTool({ name: 'next_ticket', arguments: args }, undefined, { onprogress: () => began() });
+    await waitBegan;
+    // two idle windows pass while it waits: the clock moves on, and the sweep closes the idle session only
+    const now = Date.now;
+    vi.spyOn(Date, 'now').mockImplementation(() => now() + 2 * idleMs);
+    await until(() => mcp.sessionCount() === 1);
+    vi.restoreAllMocks();
     confirm(t);
     const r = (await waiting) as { content: { text: string }[] };
     expect(JSON.parse(r.content[0].text)).toMatchObject({ ticket: { key: t.key }, waited: { woke: 'work' } });
     await client.close().catch(() => {});
+    await idle.close().catch(() => {});
   });
 });

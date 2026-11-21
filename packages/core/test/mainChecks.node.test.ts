@@ -190,6 +190,16 @@ test('main fixed: Run checks on main passes and nothing waits; the run is journa
   assert.equal(journalFile(root).readMainChecks(mapId).at(-1)?.action, 'run');
 });
 
+test('a run already going (the Lookout started it) is waited for by an agent asking, as one it started', async () => {
+  const start = requestMainRun(env(), { mapId, by: 'Teamtrail' });
+  assert.equal(start.kind, 'started');
+  const view = await read({ trigger: 'agent claude-01' });
+  assert.equal(view.run?.id, start.kind === 'started' ? start.run.id : undefined);
+  assert.equal(view.run?.result, 'pass', 'the agent hears how it ended, not that it is running');
+  assert.deepEqual(view.state, { kind: 'passed' });
+  if (start.kind === 'started') await start.done;
+});
+
 test('without approved checks nothing runs on main and nothing waits', async () => {
   const other = path.join(tempFolder('teamtrail-main-off-'), '.teamtrail');
   mkdirSync(other);
