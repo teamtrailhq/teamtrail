@@ -1,32 +1,26 @@
 import { useMemo } from 'react';
-import { logoAutoStyle } from './logoAutoStyle';
-import { logoBareMarkup, logoMarkup } from './logoMark';
-import type { LogoTheme } from './types';
+import { logoMarkup } from './logoMark';
 
 /**
- * The Teamtrail logo mark; `bare` drops the tile, for favicons and inline use; `round` sizes the mark for a tile
- * shown in a circle. `theme` picks the version for the
- * background: `dark` (the default), `light`, `blaze` (the app icon), or `auto`, which follows the page's `color-scheme`.
+ * The Teamtrail logo: six block cursors around an open centre, on transparency, the same colours on light and dark
+ * pages. `round` sizes it for an avatar shown in a circle; `tile` puts it on the near-black square, for places that
+ * must be opaque.
  */
 export function Logo({
   size = 40,
-  bare,
   round,
-  theme = 'dark',
+  tile,
   className,
 }: {
   size?: number;
-  bare?: boolean;
   round?: boolean;
-  theme?: LogoTheme;
+  tile?: boolean;
   className?: string;
 }) {
-  const html = useMemo(() => (bare ? logoBareMarkup(theme) : logoMarkup(theme, { round })), [bare, round, theme]);
-  const style = useMemo(() => (theme === 'auto' ? logoAutoStyle() : undefined), [theme]);
+  const html = useMemo(() => logoMarkup({ round, tile }), [round, tile]);
   return (
     <svg
       className={className}
-      style={style}
       width={size}
       height={size}
       viewBox="0 0 200 200"

@@ -1,6 +1,5 @@
 /**
- * The mark's place on a tile shown in a circle (X, LinkedIn, Discord and Slack crop avatars round): centred like
- * `LOGO_ON_TILE`, but smaller, so its farthest point, the cursor's outer corner (133.7 from the shapes' centre), sits
- * 6% inside the circle's radius.
+ * The mark's place in an avatar cropped to a circle (GitHub, npm, X, LinkedIn, Discord): centred and smaller, so its
+ * farthest point, an arm's outer corner (90.8 from the centre), sits at about 73% of the circle's radius.
  */
-export const LOGO_IN_CIRCLE = 'translate(26.5 31.4) scale(.7)';
+export const LOGO_IN_CIRCLE = 'translate(20 20) scale(.8)';

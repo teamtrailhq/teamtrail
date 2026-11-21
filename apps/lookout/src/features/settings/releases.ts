@@ -24,6 +24,11 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.69.0',
+    date: '2026-11-21',
+    items: ['A new logo: six block cursors around an open centre, on a transparent background, in the browser tab too'],
+  },
+  {
     version: '0.68.1',
     date: '2026-11-21',
     items: [],

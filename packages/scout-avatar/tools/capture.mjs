@@ -40,18 +40,19 @@ await still('states', 'scout-avatar-states.png');
 const BRAND = join(OUT, 'brand');
 mkdirSync(BRAND, { recursive: true });
 const KIT = [
-  ['github-org-avatar.png', 'GitHub org avatar', 1000, 1000, 'square', '&n=1000&theme=blaze'],
+  ['github-org-avatar.png', 'GitHub org avatar', 1000, 1000, 'square', '&n=1000&round=1&clear=1'],
   ['github-org-avatar-wordmark.png', 'GitHub org avatar, wordmark', 1000, 1000, 'square', '&n=1000&who=wordmark'],
   ['github-social-preview.png', 'GitHub repo social preview', 1280, 640, 'banner', '&w=1280&h=640'],
   ['og-image-1200x630.png', 'Open Graph · teamtrail.app', 1200, 630, 'banner', '&w=1200&h=630'],
   ['x-header-1500x500.png', 'X header', 1500, 500, 'banner', '&w=1500&h=500&layout=header'],
   ['wordmark-lockup.png', 'Logo lockup', 960, 240, 'lockup', '&w=960&h=240'],
   ['wordmark-lockup-light.png', 'Logo lockup, light', 960, 240, 'lockup', '&w=960&h=240&light=1'],
-  ['x-avatar-400.png', 'X avatar', 400, 400, 'square', '&n=400&theme=blaze&round=1'],
+  ['x-avatar-400.png', 'X avatar', 400, 400, 'square', '&n=400&round=1&clear=1'],
   ['slack-icon-512.png', 'Slack app icon (Scout)', 512, 512, 'square', '&n=512&who=scout&ground=blaze'],
   ['scout-badge-1000.png', 'Scout badge', 1000, 1000, 'square', '&n=1000&who=scout'],
-  ['linkedin-discord-avatar-512.png', 'LinkedIn / Discord avatar', 512, 512, 'square', '&n=512&theme=blaze&round=1'],
-  ['logo-light-512.png', 'Logo, light version', 512, 512, 'square', '&n=512&theme=light'],
+  ['linkedin-discord-avatar-512.png', 'LinkedIn / Discord avatar', 512, 512, 'square', '&n=512&round=1&clear=1'],
+  ['logo-light-512.png', 'Logo', 512, 512, 'square', '&n=512&clear=1'],
+  ['app-icon-512.png', 'App icon (opaque)', 512, 512, 'square', '&n=512&tile=1'],
   ['favicon-64.png', 'Favicon 64', 64, 64, 'favicon', '&px=64'],
   ['favicon-32.png', 'Favicon 32', 32, 32, 'favicon', '&px=32'],
 ];
@@ -60,11 +61,10 @@ for (const [file, , w, h, view, extra] of KIT) {
   await page.goto(`${base}?view=${view}${extra}${view === 'banner' || view === 'lockup' ? wm : ''}`);
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(200);
-  if (view === 'favicon')
-    await page.addStyleTag({ content: 'html, body, #root { background: transparent !important; }' });
-  await page
-    .locator(`[data-capture="${view}"]`)
-    .screenshot({ path: join(BRAND, file), omitBackground: view === 'favicon' });
+  // The logo is on transparency: the page's own background goes too.
+  const clear = view === 'favicon' || extra.includes('&clear=1');
+  if (clear) await page.addStyleTag({ content: 'html, body, #root { background: transparent !important; }' });
+  await page.locator(`[data-capture="${view}"]`).screenshot({ path: join(BRAND, file), omitBackground: clear });
   await page.close();
   console.log('wrote', join(BRAND, file));
 }

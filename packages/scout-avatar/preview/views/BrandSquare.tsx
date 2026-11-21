@@ -6,21 +6,21 @@ import { Wordmark } from './Wordmark';
 const WORDMARK_EM = 4.6;
 
 /**
- * Brand exports: the logo tile, the wordmark on a dark square, or Scout's avatar filling the square for places where
- * Scout is the one talking, like Slack (which rounds the corners itself). `theme` picks the logo's version (`blaze`
- * is the app icon); `round` sizes the logo for avatars cropped to a circle; `ground` is Scout's.
+ * Brand exports: the logo on transparency, the wordmark on a dark square, or Scout's avatar filling the square for
+ * places where Scout is the one talking, like Slack (which rounds the corners itself). `round` sizes the logo for
+ * avatars cropped to a circle; `tile` puts it on the near-black square (the opaque app icon); `ground` is Scout's.
  */
 export function BrandSquare({
   n,
   who,
-  theme,
   round,
+  tile,
   ground,
 }: {
   n: number;
   who: 'logo' | 'scout' | 'wordmark';
-  theme: 'light' | 'dark' | 'blaze';
   round: boolean;
+  tile: boolean;
   ground: ScoutGround;
 }) {
   if (who === 'wordmark')
@@ -34,11 +34,15 @@ export function BrandSquare({
       </div>
     );
   return (
-    <div className={`brand-square ${theme}`} data-capture="square" style={{ width: n, height: n }}>
+    <div
+      className={`brand-square${who === 'logo' ? ' logo-square' : ''}`}
+      data-capture="square"
+      style={{ width: n, height: n }}
+    >
       {who === 'scout' ? (
         <Badge size={n} shape="square" ground={ground} />
       ) : (
-        <Logo size={n} theme={theme} round={round} />
+        <Logo size={n} round={round} tile={tile} />
       )}
     </div>
   );

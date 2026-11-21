@@ -1,12 +1,6 @@
-import type { LogoColors } from './types';
-
 /**
- * The logo's versions: `dark` for dark backgrounds (near-black tile, white t), `light` for light ones (white tile,
- * near-black t), and `blaze`, the favicon and app icon (blaze tile, near-black t, white cursor). The cursor is blaze
- * on both.
+ * The logo's colours, the same on light and dark pages: five arms in blaze, the one pointing up (`lead`) in grey.
+ * `tile` is the near-black square for the rare place that must be opaque (an app icon); never blaze, where the
+ * blaze arms would vanish.
  */
-export const LOGO_COLORS: Record<'light' | 'dark' | 'blaze', LogoColors> = {
-  light: { tile: '#FFFFFF', mark: '#0E0F11', cursor: '#FF6B2C' },
-  dark: { tile: '#0A0A0B', mark: '#F4F4F6', cursor: '#FF6B2C' },
-  blaze: { tile: '#FF6B2C', mark: '#0A0A0B', cursor: '#FFFFFF' },
-};
+export const LOGO_COLORS = { arm: '#FF6B2C', lead: '#8E8E96', tile: '#0A0A0B' } as const;
