@@ -30,153 +30,140 @@
   gap: var(--sp-8);
 }
 .dv-readouts {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-18);
   min-width: 0;
   overflow: hidden;
-}
-.dv-src-mix {
-  padding-left: var(--gutter);
-  border-left: 1px solid var(--line);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .dv-search {
   flex: 0 0 auto;
   display: flex;
   gap: var(--sp-8);
-  padding: var(--sp-10) var(--gutter) var(--sp-6);
+  padding: var(--sp-10) var(--gutter) var(--sp-8);
   align-items: center;
 }
 .dv-search input {
   flex: 1;
 }
-.dv-search .chip {
-  white-space: nowrap;
-  height: var(--h-md);
+/* The filters behind the Filter button: one row of selects and By area, under the search. */
+.dv-filters {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: 0 var(--gutter) var(--sp-10);
+  border-bottom: 1px solid var(--line);
+}
+.dv-filters .select {
+  flex: 1 1 150px;
+  min-width: 0;
 }
 
 .dv-body {
   flex: 1;
   min-height: 0;
   display: grid;
+  border-top: 1px solid var(--line);
+}
+.dv-filters + .dv-body {
+  border-top: 0;
 }
 .dv-wide .dv-body {
-  grid-template-columns: 230px minmax(0, 1.3fr) minmax(380px, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(400px, 1fr);
 }
 .dv-laptop .dv-body {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
-}
-.dv-laptop .dv-filters {
-  grid-column: 1 / -1;
 }
 .dv-mobile .dv-body {
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
 }
-.dv-mobile .dv-body:not(:has(.dv-filters)) {
-  grid-template-rows: minmax(0, 1fr);
-}
-.dv-laptop .dv-body:not(:has(.dv-filters)) {
-  grid-template-rows: minmax(0, 1fr);
-}
-
-.dv-filters {
+.dv-scroll {
   overflow: auto;
-  padding: var(--sp-6) var(--sp-12) var(--gutter) var(--gutter);
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-}
-.dv-filters h3 {
-  margin: var(--sp-10) 0 var(--sp-2);
-}
-.dv-filters h3:first-child {
-  margin-top: var(--sp-2);
-}
-.dv-filters ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.dv-opt {
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--sp-8);
-  align-items: baseline;
-  padding: var(--sp-4) var(--sp-8);
-  border: 1px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  font-size: var(--fs-sm);
-  color: var(--text);
-}
-.dv-opt .ttl {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.dv-opt b {
-  font-family: var(--mono);
-  font-weight: 400;
-  font-size: var(--fs-label);
-  color: var(--dim);
-}
-.dv-opt:hover {
-  background: rgba(var(--accent-rgb), 0.04);
-}
-.dv-opt.on {
-  border-color: var(--line2);
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-.dv-filters.compact {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: var(--sp-6);
-  padding: 0 var(--gutter) var(--sp-8);
-  border-right: 0;
-  overflow: visible;
-}
-.dv-filters.compact .select {
-  flex: 1 1 140px;
-  min-width: 0;
+  min-height: 0;
 }
 
+/* The ledger (preview 2): sections under a mono label, rows edge to edge with a hairline between them. */
+.dv-review,
+.dv-ledger {
+  display: flex;
+  flex-direction: column;
+}
+.dv-review + .dv-ledger {
+  border-top: 1px solid var(--line);
+}
+.dv-sec-label {
+  display: block;
+  margin: 0;
+  padding: var(--sp-12) var(--gutter) var(--sp-6);
+}
 .dv-list {
   list-style: none;
   margin: 0;
-  padding: 0 var(--sp-10) var(--gutter);
-  overflow: auto;
-  min-height: 0;
+  padding: 0;
 }
 .dv-day {
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: var(--sp-8) var(--sp-4) var(--sp-4);
-  background: var(--panel);
+  padding: var(--sp-10) var(--gutter) var(--sp-4);
+  background: var(--panel-solid);
 }
-/* Decision rows are shared Rows; a list with a little air between them, superseded ones dimmed. */
-.dv-list > .ds-row + .ds-row {
-  margin-top: var(--sp-6);
+.dv-list > .dv-row {
+  border-width: 0 0 1px;
+  border-color: var(--line);
 }
-.dv-list > .dv-day + .ds-row {
-  margin-top: var(--sp-6);
+.dv-list > .dv-row:last-child {
+  border-bottom: 0;
 }
-.dv-row.superseded .ds-row-title,
-.dv-row.superseded .ds-row-detail {
-  color: var(--dim);
+.dv-row .ds-row-title {
+  font-weight: 500;
+  font-size: 15px;
 }
-.dv-row.superseded .ds-row-detail {
+/* An agent's call waiting for your review: a faint blaze ground, its actions on the right. */
+.dv-row.review {
+  background: linear-gradient(rgba(var(--accent-rgb), 0.03), rgba(var(--accent-rgb), 0.03)), var(--panel-solid);
+}
+.dv-review-acts {
+  display: flex;
+  gap: var(--sp-6);
+}
+.dv-more {
+  align-self: flex-start;
+  margin: var(--sp-6) var(--gutter) var(--sp-10);
+}
+.dv-overrule {
+  margin-top: var(--sp-8);
+}
+/* The decision open beside the list. */
+.dv-list > .dv-row.on {
+  background: var(--accent-bg);
+  box-shadow: inset 2px 0 var(--accent);
+}
+/* Superseded: the call struck through, the why stepped back; the row's action links the newer decision. */
+.dv-row.superseded .ds-row-title {
+  color: var(--faint);
   text-decoration: line-through;
-  text-decoration-color: rgba(var(--line-rgb), 0.5);
+  text-decoration-color: var(--faint);
+}
+.dv-row.superseded .ds-row-detail {
+  color: var(--faint);
+}
+.dv-row .ds-row-action .btn {
+  font-family: var(--mono);
+}
+.dv-row.review .ds-row-action .btn {
+  font-family: inherit;
+}
+@media (max-width: 1023px) {
+  .dv-review .dv-row.has-action {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dv-review .dv-row .ds-row-action {
+    grid-column: 1;
+    grid-row: auto;
+    padding: 0 var(--sp-10) var(--sp-10);
+  }
 }
 
 .dv-detail {
