@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button, LabelLine, Row } from '../../components/ui';
 import { hm } from '../../lib';
 import { isKept, markKept } from '../../lib/keptDecisions';
-import { OverruleForm } from './OverruleForm';
+import { OverruleForm } from '../decisions';
 
 /**
  * A decision an agent made itself, within the risk policy: AGENT DECIDED, the ticket, who and at what risk, and when,
@@ -60,14 +60,16 @@ export function DecisionSince(props: {
       below={
         overruling &&
         props.audit && (
-          <OverruleForm
-            d={d}
-            onCancel={() => setOverruling(false)}
-            onOverrule={(input) => {
-              props.onSupersede(props.audit!, input);
-              setOverruling(false);
-            }}
-          />
+          <div className="home-review">
+            <OverruleForm
+              d={d}
+              onCancel={() => setOverruling(false)}
+              onOverrule={(input) => {
+                props.onSupersede(props.audit!, input);
+                setOverruling(false);
+              }}
+            />
+          </div>
         )
       }
     />
