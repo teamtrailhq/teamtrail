@@ -3,16 +3,20 @@ import { useState, useEffect, useMemo } from 'react';
 import { Panel, Label, Button, Empty } from '../../components/ui';
 import { type LookoutApi, type Breakpoint } from '../../hooks';
 import { download, day } from '../../lib';
+import { isKept, markKept } from '../../lib/keptDecisions';
+import { AgentReview } from './AgentReview';
 import { DecisionDetail } from './DecisionDetail';
 import { DecisionFilters } from './DecisionFilters';
 import { DecisionList } from './DecisionList';
 import { DecisionReadouts } from './DecisionReadouts';
 import { DecisionSearch } from './DecisionSearch';
+import { keptKey } from './keptKey';
+import { splitForReview } from './reviewQueue';
 import { useDecisionMemory } from './useDecisionMemory';
 
 /**
- * Decisions audit: every decision across trails, newest first. Covers the
- * zones under the header without moving them; the header stays in place.
+ * The Logbook: every decision across trails as a ledger, newest first, led by the calls agents made themselves for
+ * you to keep or overrule. Covers the zones under the header without moving them; the header stays in place.
  */
 export function DecisionsView(props: {
   api: LookoutApi;
@@ -28,6 +32,8 @@ export function DecisionsView(props: {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [byArea, setByArea] = useState(false);
   const memory = useDecisionMemory();
+  /** Set on Keep, so the page renders again and reads this browser's kept list afresh. */
+  const [, setKeptAt] = useState(0);
   useEffect(() => setSel(props.focus), [props.focus]);
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -41,6 +47,11 @@ export function DecisionsView(props: {
   }, [bp, sel, props]);
 
   const rows = useMemo(() => filterDecisions(all, filter), [all, filter]);
+  const split = splitForReview(rows, isKept);
+  const keep = (d: (typeof rows)[number]) => {
+    markKept(keptKey(d));
+    setKeptAt(Date.now());
+  };
   const stats = useMemo(() => decisionStats(all), [all]);
   const current =
     all.find((d) => d.id === sel && (!filter.mapId || d.mapId === filter.mapId)) ??
@@ -65,25 +76,15 @@ export function DecisionsView(props: {
       <header className="dv-head">
         {detailOnly ? (
           <button className="back" onClick={() => setSel(undefined)}>
-            ‹ Decisions
+            ‹ Logbook
           </button>
         ) : (
           <Label as="h2">
-            Decisions {rows.length !== all.length && <span className="n">{`${rows.length}/${all.length}`}</span>}
+            Logbook {rows.length !== all.length && <span className="n">{`${rows.length}/${all.length}`}</span>}
           </Label>
         )}
-        {bp !== 'mobile' && <DecisionReadouts stats={stats} />}
+        {bp !== 'mobile' && !detailOnly && <DecisionReadouts stats={stats} />}
         <span className="dv-head-right">
-          {!detailOnly && memory && (
-            <Button
-              on={byArea}
-              aria-pressed={byArea}
-              onClick={() => setByArea((v) => !v)}
-              title="Group by the area each decision is about, the most cited first"
-            >
-              By area
-            </Button>
-          )}
           {!detailOnly && (
             <Button onClick={exportMd} disabled={!rows.length} title="Export the filtered list as markdown">
               Export .md
@@ -99,32 +100,49 @@ export function DecisionsView(props: {
         <DecisionSearch
           filter={filter}
           set={set}
-          showToggle={bp !== 'wide'}
           filtersOpen={filtersOpen}
+          byArea={byArea}
           onToggle={() => setFiltersOpen((o) => !o)}
         />
       )}
+      {filtersOpen && !detailOnly && (
+        <DecisionFilters filter={filter} set={set} trails={trails} people={people}>
+          {memory && (
+            <Button
+              on={byArea}
+              aria-pressed={byArea}
+              onClick={() => setByArea((v) => !v)}
+              title="Group by the area each decision is about, the most cited first"
+            >
+              By area
+            </Button>
+          )}
+        </DecisionFilters>
+      )}
 
       <div className="dv-body">
-        {(bp === 'wide' || (filtersOpen && !detailOnly)) && (
-          <DecisionFilters
-            filter={filter}
-            set={set}
-            all={all}
-            trails={trails}
-            people={people}
-            compact={bp !== 'wide'}
-          />
-        )}
         {!detailOnly && (
-          <DecisionList
-            rows={rows}
-            current={current}
-            snaps={api.allSnaps}
-            showTrail={bp === 'wide'}
-            onSelect={setSel}
-            memory={byArea && memory ? memory : undefined}
-          />
+          <div className="dv-scroll">
+            <AgentReview
+              rows={split.review}
+              current={current}
+              snaps={api.allSnaps}
+              showTrail={bp === 'wide'}
+              onSelect={setSel}
+              onKeep={keep}
+              onSupersede={api.actions.supersede}
+            />
+            <DecisionList
+              rows={split.ledger}
+              current={current}
+              snaps={api.allSnaps}
+              showTrail={bp === 'wide'}
+              onSelect={setSel}
+              kept={isKept}
+              titled={split.review.length > 0}
+              memory={byArea && memory ? memory : undefined}
+            />
+          </div>
         )}
         {(bp !== 'mobile' || current) && (
           <div className="dv-detail">
