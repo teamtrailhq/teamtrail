@@ -15,6 +15,7 @@ import {
   sessionHeaders,
   shootThemes,
   signInWith,
+  ticketAction,
 } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
 import { stopProcess } from './stopProcess.mjs';
@@ -106,13 +107,21 @@ export async function verifyNoChecksGap({ browser, cli, log, shots }) {
     await proof.getByText(GAP).waitFor({ timeout: 15_000 });
     await proof.scrollIntoViewIfNeeded();
     await shootThemes(page, shots, 'proof-no-checks');
-    await proof.getByRole('button', { name: 'Set checks' }).click();
+    // The gap's action is the footer's primary, so the proof says it once: no button of its own
+    const gapButtons = await proof.getByRole('button', { name: 'Set checks' }).count();
+    await ticketAction(page, 'Set checks');
     const settings = await page.waitForURL(/[?&]settings=verification/, { timeout: 15_000 }).then(
       () => true,
       () => false,
     );
     const ok =
-      closed.closed === key && lineOk && actionOk && bubblePrimary === 'Set checks' && settings && !errors.length;
+      closed.closed === key &&
+      lineOk &&
+      actionOk &&
+      bubblePrimary === 'Set checks' &&
+      gapButtons === 0 &&
+      settings &&
+      !errors.length;
     log(
       `finished with no checks set ${ok ? 'ok' : 'WRONG'}: ${key} closed (${closed.closed ?? JSON.stringify(closed)}), its proof says "${view.proof?.gaps?.[0]}" (${planned?.kind}, ${planned?.owner}, ${planned?.action}), the bubble leads with ${bubblePrimary}, Set checks opened Settings → Verification (${settings})${errors.length ? `; page errors: ${errors.join(' | ')}` : ''}`,
     );

@@ -9,20 +9,16 @@ function guardPart(proof: Proof): string | false {
   return g.mode === 'observe' && 'changed what its checks run (observed)';
 }
 
-/** The proof at a glance: checks passed, criteria, reviews, the guides it was done under, and its digest. */
+/**
+ * What the proof rests on besides its check lines (ProofChecks.tsx says each check, the guard and the reviews):
+ * checks that passed only on retry, the guard's acceptance, the criteria, and the guides it was done under.
+ */
 export function proofParts(proof: Proof): (MetaPart | false)[] {
-  const passed = proof.checks.filter((c) => c.passed).length;
-  const reviews = proof.reviews.length;
   return [
-    proof.checks.length > 0 && `${passed}/${proof.checks.length} checks passed`,
-    !!proof.outOfScope?.length && `${proof.outOfScope.map((c) => c.name).join(', ')} not run (outside their paths)`,
-    !!proof.waived?.length && `${proof.waived.map((w) => w.name).join(', ')} skipped`,
     !!proof.retried?.length && `${proof.retried.map((r) => r.name).join(', ')} passed on retry`,
     guardPart(proof),
     proof.criteria.lines.length > 0 &&
       `${proof.criteria.verified} criteria verified, ${proof.criteria.claimed} claimed`,
-    reviews > 0 && `${reviews} review${reviews > 1 ? 's' : ''}`,
     !!proof.guides?.length && `guides ${proof.guides.map((g) => g.id).join(', ')}`,
-    { text: proof.digest.slice(0, 19), code: true },
   ];
 }
