@@ -24,6 +24,16 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.68.0',
+    date: '2026-11-21',
+    items: [
+      'A new look across the Lookout: the map, Needs you, the ticket bubble and its proof, Plan, Activity, the Logbook and Settings now read the same way, what needs you first',
+      "Activity shows each agent's lane with its milestones instead of a raw log",
+      "The Logbook lets you keep an agent's own decision or overrule it in place",
+      'Settings says when a change was saved and journaled, and approvals show what changed line by line',
+    ],
+  },
+  {
     version: '0.67.22',
     date: '2026-11-20',
     items: [
