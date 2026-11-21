@@ -91,10 +91,13 @@
   padding: 0 var(--gutter) var(--sp-8);
   flex: 0 0 auto;
 }
+/* The chat's ticket: two lines at most, then cut. */
 .comms-ticket .t-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 /* While your answer is needed the answer gets the room: the queue gives a little back and Up next folds to its
  * header line. */

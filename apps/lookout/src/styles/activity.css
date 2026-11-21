@@ -43,17 +43,15 @@
 .lanes .ds-row:last-child {
   border-bottom: 0;
 }
+/* The label wraps on the left; the time keeps its own column on the right. */
 .lane-head {
-  display: flex;
-  align-items: baseline;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: var(--sp-8);
   min-width: 0;
 }
-.lane-head .ds-label {
-  flex: 1;
-}
 .lane-since {
-  flex: none;
   font: 400 var(--fs-sm) / 1 var(--mono);
   color: var(--faint);
   white-space: nowrap;
@@ -108,6 +106,9 @@
   width: 9px;
   height: 9px;
   border: 1px solid var(--line2);
+}
+.ms-count {
+  color: inherit;
 }
 .ms time {
   color: var(--faint);

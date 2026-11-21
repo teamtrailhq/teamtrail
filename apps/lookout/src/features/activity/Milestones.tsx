@@ -17,13 +17,15 @@ const WORDS = {
  * blaze cursor: the agent is at it now.
  */
 export function Milestones(props: { items: Milestone[]; working: boolean }) {
-  if (!props.items.length && !props.working) return null;
+  // With none yet, the cursor goes at the end of the Now line instead (AgentLane.tsx).
+  if (!props.items.length) return null;
   return (
     <ol className="milestones">
       {props.items.map((m, i) => (
         <li key={`${m.kind}-${m.at}-${i}`} className={`ms ms-${m.kind}${m.open ? ' open' : ''}`}>
           <i aria-hidden="true" />
-          {WORDS[m.kind]} <time>{hm(m.at)}</time>
+          {WORDS[m.kind]}
+          {m.count && <span className="ms-count"> ×{m.count}</span>} <time>{hm(m.at)}</time>
           {m.open && <span> · waits on you</span>}
         </li>
       ))}

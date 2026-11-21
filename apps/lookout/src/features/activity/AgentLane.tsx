@@ -1,5 +1,5 @@
 import { type ActivityState, type MapSnapshot, sessionTokens, type TicketLease } from '@teamtrail/core';
-import { LabelLine, Row } from '../../components/ui';
+import { Cursor, LabelLine, Row } from '../../components/ui';
 import { isRunning, shortModel, tokens, usd } from '../../lib';
 import { agentMilestones } from './agentMilestones';
 import { laneSince } from './laneSince';
@@ -30,6 +30,7 @@ export function AgentLane(props: {
   const model = shortModel(s.model);
   const waiting = !!s.waitingOn;
   const items = agentMilestones({ session: s, feed: props.activity.feed });
+  const working = isRunning(s) && !waiting;
   return (
     <Row
       as="li"
@@ -46,10 +47,11 @@ export function AgentLane(props: {
         </span>
       }
       title={ticket?.title ?? modeTitle(s)}
-      context={<Milestones items={items} working={isRunning(s) && !waiting} />}
+      context={<Milestones items={items} working={working} />}
       detail={
         <>
-          <b>Now:</b> {nowText(s, props.activity, now)} <LeasePill lease={props.lease} now={now} />
+          <b>Now:</b> {nowText(s, props.activity, now)}
+          {working && !items.length && <Cursor label="Working now" />} <LeasePill lease={props.lease} now={now} />
         </>
       }
       onOpen={props.onOpen}

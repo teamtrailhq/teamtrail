@@ -11,6 +11,8 @@ export interface Milestone {
   at: number;
   /** An `asked` the agent still waits on: the only one shown as needing you. */
   open?: boolean;
+  /** The same milestone back to back (two questions, two submissions): shown once, "×2". */
+  count?: number;
 }
 
 /** How many milestones a lane keeps, the latest ones: a lane is a glance, not a history. */
@@ -23,7 +25,7 @@ const SUBMITTED = / submitted · checks:/;
  * One agent session's milestones, oldest first, from the activity feed: claimed (the session started on a
  * ticket), asked and answered (its questions), submitted (a completion), and how verification came back
  * (verified, or rework when checks failed). Verification lines carry the ticket, not the session, so they count
- * from the session's start on, for its ticket only. Pure.
+ * from the session's start on, for its ticket only. The same milestone back to back shows once, counted. Pure.
  */
 export function agentMilestones(o: { session: Session; feed: Entry[] }): Milestone[] {
   const { session } = o;
@@ -39,7 +41,23 @@ export function agentMilestones(o: { session: Session; feed: Entry[] }): Milesto
   }
   const last = asked.at(-1);
   if (last && session.waitingOn) last.open = true;
-  return out.sort((a, b) => a.at - b.at).slice(-LANE_MILESTONES);
+  return collapseRepeats(out.sort((a, b) => a.at - b.at)).slice(-LANE_MILESTONES);
+}
+
+/** Back-to-back milestones of one kind become one, at the latest time, counted, and open if any of them is. */
+function collapseRepeats(list: Milestone[]): Milestone[] {
+  const out: Milestone[] = [];
+  for (const m of list) {
+    const prev = out.at(-1);
+    if (prev?.kind !== m.kind) {
+      out.push({ ...m });
+      continue;
+    }
+    prev.at = m.at;
+    prev.count = (prev.count ?? 1) + 1;
+    if (m.open) prev.open = true;
+  }
+  return out;
 }
 
 function kindOf(e: Entry, s: Session): MilestoneKind | undefined {

@@ -51,19 +51,42 @@ describe('an agent’s milestones', () => {
     const feed = Array.from({ length: 10 }, (_, i) =>
       entry({ at: 2000 + i, sessionId: 's1', level: 'step', text: `#24 submitted · checks: t${i}` }),
     );
-    const all = agentMilestones({ session: session(), feed });
-    expect(all).toHaveLength(LANE_MILESTONES);
+    const kinds = ['asks-you', 'answered'] as const;
+    const alternating = Array.from({ length: 10 }, (_, i) =>
+      entry({ at: 2000 + i, sessionId: 's1', kind: kinds[i % 2], signal: i % 2 === 0 }),
+    );
+    expect(agentMilestones({ session: session(), feed: alternating })).toHaveLength(LANE_MILESTONES);
+    expect(agentMilestones({ session: session(), feed })).toEqual([
+      { kind: 'claimed', at: 1000 },
+      { kind: 'submitted', at: 2009, count: 10 },
+    ]);
     expect(agentMilestones({ session: session(), feed: [] })).toEqual([{ kind: 'claimed', at: 1000 }]);
   });
 
-  test('only the question the agent still waits on is open', () => {
+  test('two questions back to back show once, counted, open while the agent waits on one', () => {
     const feed = [
       entry({ at: 1100, sessionId: 's1', kind: 'asks-you', signal: true }),
       entry({ at: 1200, sessionId: 's1', kind: 'asks-you', signal: true }),
     ];
-    const waiting = agentMilestones({ session: session({ waitingOn: 'q2' }), feed });
-    expect(waiting.filter((m) => m.open).map((m) => m.at)).toEqual([1200]);
+    expect(agentMilestones({ session: session({ waitingOn: 'q2' }), feed })).toEqual([
+      { kind: 'claimed', at: 1000 },
+      { kind: 'asked', at: 1200, count: 2, open: true },
+    ]);
     expect(agentMilestones({ session: session(), feed }).some((m) => m.open)).toBe(false);
+  });
+
+  test('the same kind apart is shown each time', () => {
+    const feed = [
+      entry({ at: 1100, sessionId: 's1', kind: 'asks-you', signal: true }),
+      entry({ at: 1200, sessionId: 's1', source: 'trail lead', kind: 'answered' }),
+      entry({ at: 1300, sessionId: 's1', kind: 'asks-you', signal: true }),
+    ];
+    expect(agentMilestones({ session: session(), feed }).map((m) => m.kind)).toEqual([
+      'claimed',
+      'asked',
+      'answered',
+      'asked',
+    ]);
   });
 
   test('leaves out other sessions, other tickets, notes and verification from before the claim', () => {
