@@ -164,6 +164,19 @@
   min-width: 0;
   padding: 0 var(--sp-14) var(--sp-14);
 }
+/* Links in a section's help and hints read as the app's links, not the browser's: accent, underlined on hover. */
+.set-card a:not(.btn) {
+  color: var(--accent);
+  text-decoration: none;
+}
+.set-card a:not(.btn):hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.set-card a:not(.btn):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .set-card .set-sub {
   padding-top: var(--sp-10);
 }

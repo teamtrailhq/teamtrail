@@ -40,9 +40,14 @@
 .gate-mode:hover:not(:disabled) {
   color: var(--text);
 }
-.gate-mode.on {
+/* The chosen mode stays filled and readable in every state: hover, focus, and disabled while a save is pending. */
+.gate-mode.on,
+.gate-mode.on:hover,
+.gate-mode.on:focus-visible,
+.gate-mode.on:disabled {
   color: var(--bg);
   background: var(--text-hi);
+  opacity: 1;
 }
 /* A phone: the switch goes under what the gate catches, full width, each mode a 44px target. */
 @media (max-width: 1023px) {
