@@ -83,7 +83,7 @@ Two faces, defined as CSS variables at the top of `src/styles/base.css` and load
 | `--display` | Inter at 600 (`--display-weight`), tight tracking (`--ls-display`) | the wordmark, titles and zone heroes; Scout's own lines (`--voice-scout`) |
 | `--mono` | JetBrains Mono | keys, ids, timers and code |
 
-The `teamtrail` wordmark (`src/components/ui/Wordmark.tsx`) is always Inter 600 followed by a still blaze block cursor (`--wordmark-ink`, `--wordmark-cursor`).
+The `teamtrail` wordmark (`src/components/ui/Wordmark.tsx`) is the logo mark followed by the name in Inter 600 (`--wordmark-ink`); the mark keeps its own colours in both themes.
 
 Voices: people and agents both read in Inter (`--voice-human`, `--voice-agent`; bubbles and colours tell them apart), tool and tracker data is mono (`--voice-data`), and Scout's briefing and onboarding lines use the title face (`--voice-scout`).
 

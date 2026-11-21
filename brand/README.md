@@ -1,27 +1,27 @@
 # Teamtrail brand pack
 
-The Teamtrail logo, the `teamtrail` wordmark and Scout's avatar, rendered at exact sizes. Source and re-rendering: [`packages/scout-avatar`](../packages/scout-avatar) (`npm run capture`).
+The Teamtrail logo, the `teamtrail` wordmark (the logo followed by the name) and Scout's avatar, rendered at exact sizes. Source and re-rendering: [`packages/scout-avatar`](../packages/scout-avatar) (`npm run capture`).
 
 The look: near-black (`#0A0A0B`) and white surfaces, square corners, Inter and JetBrains Mono, and one accent, blaze (`#FF6B2C`; `#BF3900` where it sits on a light page, as text or a mark, the Lookout's day `--accent` in `apps/lookout/src/styles/theme.css`).
 
 ## Which mark where
 
-- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the logo mark, six block cursors (each the wordmark's own) set every 60° around an open centre, an asterisk whose arms stop short of the middle. The arm pointing up is grey (`#8E8E96`), the other five blaze (`#FF6B2C`). It sits on a transparent background, in the same colours on light and dark pages: there is no light or dark version. Where a space must be opaque (an app icon), it goes on the near-black `#0A0A0B` tile (`app-icon-512.png`), never on blaze, where the blaze arms would vanish. The source is `logoShapes` in `packages/scout-avatar/src/logo/`.
+- **Square or squarish spaces** (avatars, favicons, app icons, the GitHub and X avatars): the logo mark alone, six block cursors set every 60° around an open centre, an asterisk whose arms stop short of the middle. The arm pointing up is grey (`#8E8E96`), the other five blaze (`#FF6B2C`). It sits on a transparent background, in the same colours on light and dark pages: there is no light or dark version. Where a space must be opaque (an app icon), it goes on the near-black `#0A0A0B` tile (`app-icon-512.png`), never on blaze, where the blaze arms would vanish. The source is `logoShapes` in `packages/scout-avatar/src/logo/`.
 - **Scout's Slack app icon** is Scout's avatar on the blaze ground, not the logo: Scout is who talks in Slack. It fills the square (Slack rounds the corners); its app card's background is `#141416`, ink (`background_color` in `apps/scout-service/slack-manifest.json`), so the blaze icon stands out on it.
-- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's sign-in and onboarding): the `teamtrail` wordmark, lowercase in Inter 600 followed by a blaze block cursor, still everywhere (it blinks only on teamtrail.app, and never under reduced motion).
-- Never both side by side. "Teamtrail" stays the name in running text and accessibility labels.
+- **Spaces wider than tall** (banners, social previews, headers, lockups, the Lookout's header, sign-in and onboarding): the `teamtrail` wordmark: the logo mark followed by the name, lowercase in Inter 600, with no cursor after it. The mark is 0.86em square, 0.24em before the name, its centre on the lowercase letters' optical middle, in its own colours on light and dark; the name is ink on light and near-white on dark.
+- The mark beside the name is the wordmark; never the name alone without the mark. "Teamtrail" stays the name in running text and accessibility labels.
 
 | File                              | Size      | Use it for                                                                                                                                       |
 | --------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `github-org-avatar.png`           | 1000×1000 | GitHub organization avatar (and npm's profile picture): the logo on transparency, sized for a round crop                                       |
-| `github-org-avatar-wordmark.png`  | 1000×1000 | Alternative org avatar: the `teamtrail` wordmark on a near-black square (the rule above prefers the tile for square spaces)                      |
+| `github-org-avatar-wordmark.png`  | 1000×1000 | Alternative org avatar: the `teamtrail` wordmark on a near-black square (the rule above prefers the mark alone for square spaces)          |
 | `github-social-preview.gif`       | 640×320   | Animated GitHub repository social preview, under GitHub's 1 MB limit (Settings → Social preview). Sites that don't play GIFs show its first frame |
 | `github-social-preview.png`       | 1280×640  | Still version of the GitHub social preview                                                                                                       |
 | `teamtrail-banner.gif`            | 960×480   | Animated README banner: the `teamtrail` wordmark while the trail steps across a dot grid, past its tickets, to its destination     |
 | `og-image-1200x630.png`           | 1200×630  | Open Graph / Twitter card image for teamtrail.app and link previews                                                                              |
 | `x-avatar-400.png`                | 400×400   | X (Twitter) profile picture: the logo on transparency, sized for the round crop                                                                  |
 | `x-header-1500x500.png`           | 1500×500  | X (Twitter) header banner                                                                                                                        |
-| `wordmark-lockup.png`             | 960×240   | The `teamtrail` wordmark on near-black, for docs, decks and press                                                                               |
+| `wordmark-lockup.png`             | 960×240   | The `teamtrail` wordmark (mark and name) on near-black, for docs, decks and press                                                                             |
 | `wordmark-lockup-light.png`       | 960×240   | The same wordmark on white                                                                                                                       |
 | `teamtrail-social-loop.mp4`       | 1280×640  | The animated banner as a video, for posts on X, LinkedIn and the like                                                                            |
 | `linkedin-discord-avatar-512.png` | 512×512   | LinkedIn and Discord avatars: the logo on transparency, sized for the round crop                                                                 |

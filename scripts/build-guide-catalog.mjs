@@ -29,6 +29,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// The logo mark (packages/scout-avatar/src/logo/logoShapes.ts), before the name in the wordmark: six block cursors
+// around an open centre, the one pointing up grey, the same on light and dark.
+const ARM = 'x="88" y="10" width="24" height="56"';
+const MARK = `<svg viewBox="0 0 200 200" aria-hidden="true"><g fill="#FF6B2C">${[60, 120, 180, 240, 300]
+  .map((deg) => `<rect ${ARM} transform="rotate(${deg} 100 100)"/>`)
+  .join('')}</g><rect ${ARM} fill="#8E8E96"/></svg>`;
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -150,8 +157,8 @@ function page(index) {
 @media (prefers-color-scheme:dark){:root{--bg:#0a0a0b;--text:#c9cbd0;--hi:#f4f4f6;--dim:#8d9199;--line:rgba(255,255,255,.1);--chip:#161618;--accent:#ff6b2c;--ok:#3ccf8e;--warn:#ff4d7a;--dot:rgba(255,255,255,.08)}}
 body{margin:0;font:15px/1.55 Inter,ui-sans-serif,system-ui,sans-serif;color:var(--text);background:var(--bg) radial-gradient(var(--dot) 1px,transparent 1.4px) 0 0/24px 24px}
 main{max-width:52rem;margin:0 auto;padding:3rem 1rem}
-.wm{font-weight:600;font-size:1.25rem;letter-spacing:-.035em;color:var(--hi);white-space:nowrap}
-.wm i{display:inline-block;width:.32em;height:.66em;margin-left:.07em;background:var(--accent)}
+.wm{display:inline-flex;align-items:center;gap:.24em;font-weight:600;font-size:1.25rem;line-height:1;letter-spacing:-.035em;color:var(--hi);white-space:nowrap}
+.wm svg{flex:none;width:.86em;height:.86em;transform:translateY(.04em)}
 h1{margin:1.5rem 0 .5rem;font-size:2.25rem;line-height:1.1;letter-spacing:-.03em;font-weight:600;color:var(--hi)}
 main>p{color:var(--dim);max-width:44rem}
 ul{list-style:none;padding:0;margin:2rem 0 0;border-top:1px solid var(--line)}li{border-bottom:1px solid var(--line);padding:1.1rem 0;background:var(--bg)}
@@ -162,7 +169,7 @@ code{font:.85em "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
 .m code{color:var(--hi);background:var(--chip);border:1px solid var(--line);padding:.1rem .4rem}
 .v,.u,.r{font:500 .7rem/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;padding:.3rem .45rem;border:1px solid var(--line)}
 .v{color:var(--ok)}.u{color:var(--dim)}.r{color:var(--warn)}
-</style></head><body><main><div class="wm" role="img" aria-label="Teamtrail">teamtrail<i aria-hidden="true"></i></div><h1>Bring a guide for the hard stretches.</h1>
+</style></head><body><main><div class="wm" role="img" aria-label="Teamtrail">${MARK}teamtrail</div><h1>Bring a guide for the hard stretches.</h1>
 <p>Guides your coding agents can take on. Each is a plain markdown file. The lint looks for common problems; it isn't a review. A guide is Verified when a maintainer reviewed this exact file (its hash is in verified.json). Read a guide before you approve it: installing one pins its hash, and any check command it proposes runs only after you approve that too.</p>
 <ul>${rows.join('\n')}</ul></main></body></html>\n`;
 }
