@@ -92,7 +92,7 @@ export async function verifyReviewModels({ page, top, url, agent, shot }) {
     });
 
     const card = page.locator('.node', { hasText: 'Write the release notes' });
-    await card.locator('.card-chip', { hasText: 'approve it' }).waitFor({ timeout: 20_000 });
+    await card.locator('.card-label', { hasText: 'approve it' }).waitFor({ timeout: 20_000 });
     await clickNode(page, card);
     const need = page.locator('.bubble .bubble-need', { hasText: `another model than ${OPUS}` });
     await need.waitFor({ timeout: 15_000 });

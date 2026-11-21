@@ -1,61 +1,60 @@
-import type { AttentionItem } from '@teamtrail/core';
-import type { ReactNode } from 'react';
-import { Button, Panel } from '../../components/ui';
+import { type ReactNode, useCallback, useState } from 'react';
+import { Button, LabelLine, Panel } from '../../components/ui';
 import { cx } from '../../lib';
-import { NeedChips } from './NeedChips';
 import { countWords, type TrailCounts, type TrailSegment } from './trailBarModel';
+import { TrailDrawer, type TrailTab } from './TrailDrawer';
 import { TrailSegments } from './TrailSegments';
 
 /**
- * Under the map, the whole trail in one line: a segment per ticket, the counts in words, a chip for each thing that
- * needs you, and More. Extended (More), the same bar over three lists side by side (`lists`).
+ * Under the map, the whole trail in one line: its label, a segment per ticket and the counts in words, what needs you
+ * as the one rose chip (it opens Needs you), and More. More opens the three lists as tabs in a drawer over the map
+ * (TrailDrawer), a bottom sheet on a phone.
  */
 export function TrailBar(props: {
+  trailKey?: string;
   segments: TrailSegment[];
   counts: TrailCounts;
-  needs: AttentionItem[];
-  keyOf: (ticketId: string) => string | undefined;
   selected?: string;
   more: boolean;
-  /** No More/Less: the lists always show (phone). */
-  fixed?: boolean;
-  /** How many chips of what needs you fit. */
-  chips: number;
   onMore: (more: boolean) => void;
   onTicket: (ticketId: string) => void;
-  onNeed: (item: AttentionItem) => void;
-  lists: ReactNode;
+  /** How many rows each list holds, for its tab. */
+  listCounts: Record<TrailTab, number>;
+  lists: Record<TrailTab, ReactNode>;
 }) {
-  const extended = props.more || props.fixed;
+  const { onMore } = props;
+  const [tab, setTab] = useState<TrailTab>('needs');
+  const close = useCallback(() => onMore(false), [onMore]);
+  const open = (to: TrailTab) => {
+    setTab(to);
+    onMore(true);
+  };
   return (
-    <div className={cx('trail-bar-zone', extended && 'extended')}>
+    <div className={cx('trail-bar-zone', props.more && 'extended')}>
+      {props.more && (
+        <TrailDrawer tab={tab} onTab={setTab} counts={props.listCounts} lists={props.lists} onClose={close} />
+      )}
       <Panel className="trail-bar">
-        <span className="t-label">Trail</span>
+        <LabelLine parts={['Trail', props.trailKey]} />
         <TrailSegments segments={props.segments} selected={props.selected} onSelect={props.onTicket} />
         <span className="trail-counts">
           {countWords(props.counts).map((p, i) => (
-            <span key={p.text} className={cx(i === 0 && 'strong', p.urgent && 'urgent')}>
+            <span key={p.text} className={cx(i === 0 && 'strong')}>
               {i > 0 && <span className="sep"> · </span>}
-              {p.text}
+              {p.urgent ? (
+                <button type="button" className="need-count" onClick={() => open('needs')}>
+                  {p.text}
+                </button>
+              ) : (
+                p.text
+              )}
             </span>
           ))}
         </span>
-        {!extended && (
-          <NeedChips
-            items={props.needs}
-            keyOf={props.keyOf}
-            onOpen={props.onNeed}
-            onMore={() => props.onMore(true)}
-            max={props.chips}
-          />
-        )}
-        {!props.fixed && (
-          <Button size="sm" aria-expanded={props.more} onClick={() => props.onMore(!props.more)}>
-            {props.more ? 'Less' : 'More'}
-          </Button>
-        )}
+        <Button size="sm" variant="ghost" aria-expanded={props.more} onClick={() => onMore(!props.more)}>
+          {props.more ? 'Less' : 'More'}
+        </Button>
       </Panel>
-      {extended && <div className="trail-lists">{props.lists}</div>}
     </div>
   );
 }

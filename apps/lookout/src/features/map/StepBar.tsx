@@ -1,15 +1,27 @@
 import { NODE_W } from '@teamtrail/core';
+import { stepStates } from '../../lib/stepStates';
+import { CARD_STEPS_Y, CARD_TEXT_X } from './cardLayout';
 
-const INSET = 8;
+const GAP = 2;
 
-/** An agent at work: a thin bar along the card's top edge, filled to the step it's on (step 3 of 5: half of the third). */
+/** An agent at work: a thin step track along the card's foot, a segment per step (passed, the one it's on, ahead). */
 export function StepBar({ step, total }: { step: number; total: number }) {
-  const width = NODE_W - INSET * 2;
-  const done = total > 0 ? Math.max(0, Math.min(1, (step - 0.5) / total)) : 0;
+  const states = stepStates({ step, total });
+  if (!states.length) return null;
+  const width = NODE_W - CARD_TEXT_X * 2;
+  const seg = (width - GAP * (states.length - 1)) / states.length;
   return (
     <g className="step-bar" aria-hidden="true">
-      <rect className="step-track" x={INSET} y={3} width={width} height={2.5} rx={1} />
-      <rect className="step-fill" x={INSET} y={3} width={width * done} height={2.5} rx={1} />
+      {states.map((s, i) => (
+        <rect
+          key={i}
+          className={`step-${s}`}
+          x={CARD_TEXT_X + i * (seg + GAP)}
+          y={CARD_STEPS_Y}
+          width={seg}
+          height={2}
+        />
+      ))}
     </g>
   );
 }

@@ -260,10 +260,10 @@ export async function verifyGuides({ browser, cli, log, shots }) {
     const given = claim.claimed.guides ?? [];
     const claimedGuides = given.map((g) => `${g.id}:${g.via}`).join(',');
     await page.goto(url);
-    // the card names only the guide added to the ticket: #1, Task, Accessibility, …
-    const signGuide = page.locator('g.node .meta .guide[data-guide-id="a11y"]').first();
+    // the card's label line names only the guide added to the ticket: TASK · #1 · …, ACCESSIBILITY
+    const signGuide = page.locator('g.node .card-label [data-guide-id="a11y"]').first();
     await signGuide.waitFor({ timeout: 15_000 });
-    const signText = await signGuide.evaluate((el) => el.querySelector('text')?.textContent ?? '');
+    const signText = await signGuide.evaluate((el) => el.textContent ?? '');
     await shot('22-guide-chip');
     const inspector = await addInInspector({ page, shot, title: 'Add the shortcut sheet' });
     // the guide added mid-work reaches the agent at its next report, with what it needs to work in it
