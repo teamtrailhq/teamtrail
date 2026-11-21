@@ -105,3 +105,72 @@
 .report-tickets .out-done .lead {
   color: var(--st-decided);
 }
+
+/* ---------- The Plan page (features/pages/PlanPage.tsx): one flow, top to bottom ---------- */
+.plan-flow {
+  display: grid;
+  gap: var(--sp-14);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--sp-18) var(--gutter);
+}
+.plan-flow > .sections.bare {
+  /* Not the shell's named area: in this flow it would open tracks of its own. */
+  grid-area: auto;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+/* The plan's parts on one row of tabs, mono labels with their counts; they wrap rather than scroll. */
+.plan-tabs.tabs {
+  flex-wrap: wrap;
+  overflow: visible;
+  padding: 0;
+  gap: 0 var(--sp-14);
+}
+.plan-tabs .tab {
+  height: 40px;
+  padding: 0;
+  font: 400 var(--fs-scene-label) / 1.4 var(--mono);
+  letter-spacing: 0.05em;
+}
+.plan-tabs .tab.on {
+  color: var(--text-hi);
+  border-bottom-color: var(--accent);
+}
+.plan-tabs .tab .n {
+  color: var(--dim);
+}
+.plan-flow .sections-tabs {
+  padding: 0 var(--sp-14);
+  border-bottom: 1px solid var(--line);
+}
+.plan-flow .sections .zone-b {
+  padding: 0;
+}
+/* The open part's rows as hairline lines in the card, as on the scenes. */
+.plan-flow .sections .row-list {
+  gap: 0;
+}
+.plan-flow .sections .ds-row {
+  border-width: 0 0 1px;
+  background: none;
+}
+.plan-flow .sections .ds-row:last-child {
+  border-bottom: 0;
+}
+.plan-flow .sections .plan-doc,
+.plan-flow .sections .report,
+.plan-flow .sections .empty {
+  padding: var(--sp-14);
+}
+.plan-question .ds-scard-body {
+  padding: 0 var(--sp-14) var(--sp-14);
+}
+.plan-status .ds-scard-body {
+  padding: var(--sp-14);
+}
+@media (max-width: 1023px) {
+  .plan-tabs .tab {
+    min-height: 44px;
+  }
+}

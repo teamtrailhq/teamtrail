@@ -278,44 +278,150 @@
   margin-left: var(--sp-8);
 }
 
-/* ---------- The trail at a glance (TrailGlance.tsx): no ticket selected ---------- */
-.glance-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-8);
+/* ---------- The trail at a glance (TrailGlance.tsx): the Plan page, and Trail step with none selected ----------
+ * Scene cards: the destination as the headline over the phase stepper, then what waits on you and the assumptions
+ * beside the agents and what's next, one column when narrow. */
+.trail-glance {
+  display: grid;
+  gap: var(--sp-14);
+  container-type: inline-size;
 }
-.glance-head .t-body {
-  margin: 0;
+.glance-head .ds-scard-headline {
+  font: 600 21px / 1.25 var(--sans);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.glance-head .ds-scard-help .link {
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-hi);
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+.glance-phase {
+  padding: var(--sp-14) var(--sp-14) var(--sp-18);
+  border-top: 1px solid var(--line);
 }
 .phase-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-4) var(--sp-6);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
-  font: var(--type-meta);
-  color: var(--faint);
 }
-.phase-steps li + li::before {
-  content: '›';
-  margin-right: var(--sp-6);
-  color: var(--faint);
+.phase-steps li {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  justify-items: start;
+  min-width: 0;
 }
-.phase-steps .past {
+.phase-steps li::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 4px;
+  top: 5px;
+  height: 1px;
+  background: var(--line2);
+}
+.phase-steps li:last-child::before {
+  display: none;
+}
+.phase-steps .past::before {
+  background: var(--faint);
+}
+.phase-sq {
+  position: relative;
+  width: 11px;
+  height: 11px;
+  border: 1px solid var(--line2);
+  background: var(--panel-solid);
+}
+.phase-steps .past .phase-sq {
+  border-color: var(--faint);
+  background: var(--faint);
+}
+.phase-steps .now .phase-sq {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.phase-nm,
+.phase-here {
+  font: 400 var(--fs-scene-label) / 1.2 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.phase-steps .past .phase-nm {
   color: var(--dim);
 }
-.phase-steps .now {
-  font: var(--type-row-title);
+.phase-steps .now .phase-nm {
   color: var(--text-hi);
 }
-.trail-glance .d-section .ds-row {
-  margin: 0 calc(-1 * var(--sp-4));
+.phase-here {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+}
+.phase-here .ds-cursor {
+  margin: 0 var(--sp-6) 0 0;
+}
+.phase-text {
+  margin: var(--sp-12) 0 0;
+  color: var(--dim);
+}
+.glance-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--sp-14);
+  align-items: start;
+}
+.glance-col {
+  display: grid;
+  gap: var(--sp-14);
+  align-content: start;
+  min-width: 0;
+}
+.glance-col:empty {
+  display: none;
+}
+.glance-card .ds-scard-head {
+  padding-block: var(--sp-10);
+}
+.glance-card .ds-scard-body > .row-list {
+  margin: 0;
 }
 .glance-hint {
   margin: 0;
-  padding-top: var(--sp-10);
-  border-top: 1px solid var(--line);
+}
+/* Narrow (Trail step, a phone): one column; the stepper keeps its names, the current one in blaze. */
+@container (max-width: 700px) {
+  .glance-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container (max-width: 480px) {
+  .phase-here {
+    display: none;
+  }
+  .phase-steps .now .phase-nm {
+    color: var(--accent);
+  }
+  .phase-nm {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+  .glance-phase {
+    padding-inline: var(--sp-12);
+  }
 }
 /* In a ticket, context lines wrap rather than cut: there is room below, and the cut part is often the point. */
 .ticket-panel .meta-line {
@@ -329,4 +435,9 @@
 }
 .how-editor .vf-level {
   margin-left: 0;
+}
+/* In the glance's cards a row keeps its status edge only when it says something: rose (needs you now) or amber. */
+.glance-card .ds-row.edge-urgent,
+.glance-card .ds-row.edge-attention {
+  border-left-width: var(--edge-w);
 }

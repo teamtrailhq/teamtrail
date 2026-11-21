@@ -66,6 +66,13 @@
 }
 .assumption-tickets .link {
   margin-left: var(--sp-4);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+.assumptions-card .ds-label-note {
+  float: right;
+  color: var(--faint);
 }
 
 @media (max-width: 1023px) {

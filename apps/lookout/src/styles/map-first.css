@@ -345,7 +345,8 @@
   background: var(--panel-solid);
 }
 .plan-page {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  display: block;
+  overflow: auto;
 }
 .activity-page {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);

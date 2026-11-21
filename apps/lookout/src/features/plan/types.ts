@@ -1,1 +1,1 @@
-export type Tab = 'unspecified' | 'assumptions' | 'decisions' | 'oos' | 'destination' | 'notes' | 'report';
+export type Tab = 'unspecified' | 'decisions' | 'oos' | 'destination' | 'notes' | 'report';
