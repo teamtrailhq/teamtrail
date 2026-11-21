@@ -30,47 +30,59 @@ const NOTHING_OPEN = 'Every ticket on this trail is closed: there is nothing to 
  * `next_ticket`, and with `wait`, until something on the trail becomes claimable for this agent or `waitSeconds`
  * pass. It wakes on the changes that can free work (a ticket unblocked or released, criteria confirmed, a brief
  * accepted, a reroute decided, the review limit freed, checks on main settled, a trail started anyway past repo
- * readiness: workSignal.ts) and re-checks on a
- * timer besides. Waiting claims nothing and holds nothing: the agent claims what it is offered, as after any
- * next_ticket. A waiting call is a call in progress, so an HTTP session isn't closed as idle meanwhile
- * (createMcpHttp.ts), and progress every 15 s keeps clients that reset their timeout on it waiting.
+ * readiness: workSignal.ts), heard from before its first look, and re-checks on a timer besides. Waiting claims
+ * nothing and holds nothing: the agent claims what it is offered, as after any next_ticket. A waiting call is a call
+ * in progress, so an HTTP session isn't closed as idle meanwhile (createMcpHttp.ts); progress as the wait begins
+ * says it waits, and progress every 15 s keeps clients that reset their timeout on it waiting.
  */
 export async function nextTicketWaiting(ctx: AgentContext, input: NextInput = {}, ctl: WaitControl = {}) {
   const { wait, waitSeconds, ...pick } = input;
-  const first = await nextTicket(ctx, pick);
-  if (!wait) return first;
-  if (first.ticket) return withWait(first, { woke: 'ready', seconds: 0 });
-  if (await nothingOpen(ctx, pick.trail)) return withWait(first, { woke: 'nothing-open', seconds: 0 });
-  const seconds = Math.min(
-    waitSeconds ?? Math.min(WORK_WAIT_DEFAULT_SECONDS, defaultWaitSeconds(ctx)),
-    WORK_WAIT_MAX_SECONDS,
-  );
-  return waitLoop(ctx, { pick, first, seconds, ctl });
+  if (!wait) return nextTicket(ctx, pick);
+  // Listening starts before the first look: a change that lands while it reads is kept for the wait, not lost.
+  const signal = workSignal(ctx);
+  try {
+    const first = await nextTicket(ctx, pick);
+    if (first.ticket) return withWait(first, { woke: 'ready', seconds: 0 });
+    if (await nothingOpen(ctx, pick.trail)) return withWait(first, { woke: 'nothing-open', seconds: 0 });
+    const seconds = Math.min(
+      waitSeconds ?? Math.min(WORK_WAIT_DEFAULT_SECONDS, defaultWaitSeconds(ctx)),
+      WORK_WAIT_MAX_SECONDS,
+    );
+    return await waitLoop(ctx, { pick, first, seconds, ctl, signal });
+  } finally {
+    signal.close();
+  }
 }
 
-async function waitLoop(ctx: AgentContext, w: { pick: PickInput; first: Next; seconds: number; ctl: WaitControl }) {
+type Signal = ReturnType<typeof workSignal>;
+
+async function waitLoop(
+  ctx: AgentContext,
+  w: { pick: PickInput; first: Next; seconds: number; ctl: WaitControl; signal: Signal },
+) {
   const started = Date.now();
   const deadline = started + w.seconds * 1000;
   const waited = () => Math.round((Date.now() - started) / 1000);
   const recheck = ctx.opts.tracker ? RECHECK_MS.tracker : RECHECK_MS.local;
-  const signal = workSignal(ctx);
-  const tick = setInterval(() => {
+  const progress = () => {
     ctx.heartbeat();
     w.ctl.onProgress?.(waited());
-  }, PROGRESS_MS);
+  };
+  // progress at once says the call now waits; then every 15 s keeps the client waiting
+  progress();
+  const tick = setInterval(progress, PROGRESS_MS);
   let last = w.first;
   try {
     for (;;) {
       const left = deadline - Date.now();
       if (left <= 0) return withWait(last, { woke: 'timeout', seconds: waited() });
-      const wake = await signal.next(Math.min(left, recheck), w.ctl.signal);
+      const wake = await w.signal.next(Math.min(left, recheck), w.ctl.signal);
       if (wake.kind === 'cancelled') return withWait(last, { woke: 'cancelled', seconds: waited() });
       last = await nextTicket(ctx, w.pick);
       if (last.ticket) return withWait(last, { woke: 'work', seconds: waited(), because: becauseOf(wake) });
     }
   } finally {
     clearInterval(tick);
-    signal.close();
   }
 }
 

@@ -1,7 +1,29 @@
 import type { Release } from './releases';
 
-/** Releases 0.66.13–0.66.22, kept apart so `releases.ts` stays short (0.61–0.66.12 in `newerReleases.ts`). Newest first. */
+/** Releases 0.66.13–0.67.2, kept apart so `releases.ts` stays short (0.61–0.66.12 in `newerReleases.ts`). Newest first. */
 export const RECENT_RELEASES: Release[] = [
+  {
+    version: '0.67.2',
+    date: '2026-11-20',
+    items: ['Guide icons are the symbol alone, on the page itself, with no tile or border around them'],
+  },
+  {
+    version: '0.67.1',
+    date: '2026-11-20',
+    items: [
+      'Scout, the logo and the guide icons are redrawn for the new look: Scout in graphite, white and blaze, square tiles, flat guide icons',
+      'The favicon is the blaze t. tile, the same on light and dark browser tabs',
+    ],
+  },
+  {
+    version: '0.67.0',
+    date: '2026-11-20',
+    items: [
+      'A new look: a dark-first Lookout with near-black surfaces, hairline borders, square corners and one blaze accent',
+      'Inter and JetBrains Mono throughout; the map is a clean dot-grid canvas, and the path agents walked is drawn in blaze',
+      'Colours keep one meaning each: blaze is work in progress and your selection, rose needs you, green is verified or done',
+    ],
+  },
   {
     version: '0.66.22',
     date: '2026-11-19',

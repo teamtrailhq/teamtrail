@@ -3,7 +3,7 @@ import { readMainChecks, repoRootOf } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { mainChecksReason } from './mainChecksReason';
 
-/** How long a call waits for a run on main it starts: a quick one answers the same call. */
+/** How long a call waits for a run on main it starts, or finds going: a quick one answers the same call. */
 const WAIT_MS = 20_000;
 
 /**

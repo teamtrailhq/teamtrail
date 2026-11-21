@@ -4,6 +4,7 @@ import { approveReroute, journalFile, readReroute, rerouteHash } from '@teamtrai
 import { nodeMarkdownFs } from '@teamtrail/core/node';
 
 type Args = Record<string, unknown>;
+type Progress = (p: { progress: number }) => void;
 type Result = { isError?: boolean; content: { text: string }[] };
 
 /**
@@ -21,13 +22,11 @@ export async function callTool(
   root: string,
   name: string,
   args: Args,
-  o: { timeout?: number; adapter?: TrackerAdapter; guides?: 'defaults' } = {},
+  o: { timeout?: number; onprogress?: Progress; adapter?: TrackerAdapter; guides?: 'defaults' } = {},
 ) {
-  const r = (await client.callTool(
-    { name, arguments: args },
-    undefined,
-    o.timeout ? { timeout: o.timeout } : undefined,
-  )) as Result;
+  const timeout = o.timeout ? { timeout: o.timeout } : {};
+  const progress = o.onprogress ? { onprogress: o.onprogress } : {};
+  const r = (await client.callTool({ name, arguments: args }, undefined, { ...timeout, ...progress })) as Result;
   if (name !== 'start_trail' || r.isError) return r;
   const out = JSON.parse(r.content[0].text) as { trail: { id: string }; skipDiscovery?: { request: string } };
   const adapter = o.adapter ?? new MarkdownAdapter({ ...nodeMarkdownFs(root), watch: undefined }, root);

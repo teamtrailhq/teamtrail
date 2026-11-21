@@ -8,6 +8,7 @@ import { mainChecksPlan, type MainChecksPlan } from './mainChecksPlan';
 import { mainChecksState } from './mainChecksState';
 import { carryMainChoices, readMainChoices } from './mainChoicesStore';
 import { latestMainRun, MAIN_DIR } from './mainRunStore';
+import { runSettledWithin } from './runSettledWithin';
 import { startMainRun, type MainRunEnv } from './startMainRun';
 
 /** Which run each trail first started from: a trail ready for work starts from main as it is then. */
@@ -43,10 +44,13 @@ async function due(env: MainRunEnv, o: { mapId: string; run?: MainRun; hash: str
 
 async function triggered(env: MainRunEnv, o: { mapId: string; plan: MainChecksPlan; by: string; waitMs: number }) {
   if (o.plan.kind === 'off') return undefined;
-  const run = latestMainRun(env.root, o.plan.budgetMs);
-  if (!(await due(env, { mapId: o.mapId, run, hash: o.plan.hash }))) return run;
+  const { budgetMs } = o.plan;
+  const run = latestMainRun(env.root, budgetMs);
+  // a run already going (the Lookout's loop or another agent started it) is waited for as one started here
+  const going = (r?: MainRun) => runSettledWithin(env.root, { run: r, budgetMs, ms: o.waitMs });
+  if (!(await due(env, { mapId: o.mapId, run, hash: o.plan.hash }))) return going(run);
   const start = startMainRun(env, o.by);
-  if (start.kind === 'running') return start.run ?? run;
+  if (start.kind === 'running') return going(start.run ?? run);
   if (start.kind === 'off') return run;
   if (run?.result === 'fail' && run.configHash === o.plan.hash) carryMainChoices(env.root, run.id, start.run.id);
   return settledWithin(start, o.waitMs);
@@ -69,7 +73,7 @@ async function settledWithin(start: { run: MainRun; done: Promise<MainRun> }, ms
 /**
  * Checks on main for one trail: the latest run, the trail lead's choices, and whether implementation claims wait.
  * With `trigger` (who asks), a trail ready for work that has no run to go by starts one, waiting up to `waitMs` for
- * it: a short wait lets a quick run, or one that can't happen, answer the same call.
+ * it, or for the one already running: a short wait lets a quick run, or one that can't happen, answer the same call.
  */
 export async function readMainChecks(
   env: MainRunEnv,

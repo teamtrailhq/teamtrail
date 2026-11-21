@@ -4,7 +4,13 @@ import { TrailAgent } from '../../src/mcp/agent';
 import { createMcpServer } from '../../src/mcp/server';
 import { callTool } from './callTool';
 
-export type Call = <T = Record<string, unknown>>(name: string, args?: Record<string, unknown>) => Promise<T>;
+/** `onprogress` hears the tool's progress notifications (a waiting next_ticket says at once that it waits). */
+export type CallOptions = { onprogress?: (p: { progress: number }) => void };
+export type Call = <T = Record<string, unknown>>(
+  name: string,
+  args?: Record<string, unknown>,
+  o?: CallOptions,
+) => Promise<T>;
 
 /**
  * One connected agent, the way the tests drive them: `local` is a `teamtrail mcp` process over stdio; with
@@ -21,11 +27,11 @@ export function agents(root: () => string) {
     const client = new Client({ name: 'claude-code', version: '1.0.0' });
     await Promise.all([server.connect(a), client.connect(b)]);
     open.push({ close: () => agent.close() }, client);
-    return async <T>(name: string, args: Record<string, unknown> = {}) => {
+    return async <T>(name: string, args: Record<string, unknown> = {}, opts: CallOptions = {}) => {
       // A remote session can't skip discovery at all: it gets the refusal, not a question.
       const r = (await (remote
-        ? client.callTool({ name, arguments: args })
-        : callTool(client, root(), name, args))) as {
+        ? client.callTool({ name, arguments: args }, undefined, opts)
+        : callTool(client, root(), name, args, opts))) as {
         isError?: boolean;
         content: { text: string }[];
       };

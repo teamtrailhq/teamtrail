@@ -17,14 +17,14 @@ import { chatNote, type AnswerVia } from '../src/model/answerVia';
  * which. A file planted by anything that can't sign blocks nothing.
  */
 
-// Forked below as a writer: answers its question at the given moment and prints what writeAgentAnswer returned.
+// Forked below as a writer: once every writer is ready, answers its question and prints what writeAgentAnswer returned.
 if (process.env.ANSWER_WRITER) {
-  const { root, sessionId, questionId, text, via, startAt } = JSON.parse(process.env.ANSWER_WRITER);
-  while (Date.now() < startAt) {
-    /* everyone starts writing at the same moment */
-  }
-  const written = writeAgentAnswer(root, { sessionId, questionId, text, author: `by-${text}`, via });
-  process.send!(written, () => process.exit(0));
+  const { root, sessionId, questionId, text, via } = JSON.parse(process.env.ANSWER_WRITER);
+  process.once('message', () => {
+    const written = writeAgentAnswer(root, { sessionId, questionId, text, author: `by-${text}`, via });
+    process.send!(written, () => process.exit(0));
+  });
+  process.send!('ready');
 }
 
 const roots: string[] = [];
@@ -40,11 +40,11 @@ const it: typeof test = process.env.ANSWER_WRITER ? ((() => {}) as unknown as ty
 if (!process.env.ANSWER_WRITER) test.after(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })));
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-function asking(root: string, questions = 1) {
+function asking(root: string, questions = 1, pollMs = 10) {
   const activity = new ActivityStream();
   const kept: string[] = [];
   const writer = new AgentDocWriter(root, activity, {
-    pollMs: 10,
+    pollMs,
     onNotUsed: (_q, answers) => kept.push(...answers.map((a) => a.text)),
   });
   const s = activity.startSession({ id: 's_1', agent: 'claude-01', mode: 'work', mapId: 'm1' });
@@ -56,31 +56,48 @@ function asking(root: string, questions = 1) {
   return { activity, writer, qs: activity.snapshot.pending.map((p) => p.id), got, kept };
 }
 
-/** A writer in its own process; resolves with what writeAgentAnswer returned there. */
-function answerFromProcess(env: { root: string; questionId: string; text: string; via: AnswerVia; startAt: number }) {
+/** A writer in its own process, started; `go` lets it answer, and `written` is what writeAgentAnswer returned there. */
+async function writerProcess(env: { root: string; questionId: string; text: string; via: AnswerVia }) {
   const child = fork(fileURLToPath(import.meta.url), [], {
     env: { ...process.env, ANSWER_WRITER: JSON.stringify({ ...env, sessionId: 's_1' }) },
     execArgv: [],
   });
-  return new Promise<WrittenAnswer>((resolve, reject) => {
-    child.once('message', (m) => resolve(m as WrittenAnswer));
+  const written = new Promise<WrittenAnswer>((resolve, reject) => {
+    child.on('message', (m) => m !== 'ready' && resolve(m as WrittenAnswer));
     child.once('error', reject);
     child.once('exit', (code) => code && reject(new Error(`writer exited with ${code}`)));
   });
+  await new Promise<void>((resolve, reject) => {
+    child.on('message', (m) => m === 'ready' && resolve());
+    void written.catch(reject);
+  });
+  return { go: () => child.send('go'), written };
+}
+
+/** Resolves once `ok` holds, read again every few milliseconds. */
+async function until(ok: () => boolean) {
+  while (!ok()) await wait(5);
 }
 
 it('two answers from two processes at once: one is first for everyone, the other is kept as not used', async () => {
   const root = tmpRoot();
-  const a = asking(root, 4);
-  const startAt = Date.now() + 400;
-  const runs = a.qs.map((questionId) =>
-    Promise.all([
-      answerFromProcess({ root, questionId, text: `lookout-${questionId}`, via: 'lookout', startAt }),
-      answerFromProcess({ root, questionId, text: `slack-${questionId}`, via: 'slack', startAt }),
+  // the asking process looks once both answers are in line, as it would between two of its looks
+  const a = asking(root, 4, 60_000);
+  const writers = await Promise.all(
+    a.qs.flatMap((questionId) => [
+      writerProcess({ root, questionId, text: `lookout-${questionId}`, via: 'lookout' }),
+      writerProcess({ root, questionId, text: `slack-${questionId}`, via: 'slack' }),
     ]),
   );
-  const results = await Promise.all(runs);
-  await wait(150);
+  // every writer is up before any answers, so the two answers to each question are written at once
+  for (const w of writers) w.go();
+  const written = await Promise.all(writers.map((w) => w.written));
+  const results = a.qs.map((_q, i) => written.slice(2 * i, 2 * i + 2));
+  // its first look delivers the answer first in line, the next keeps the other as not used
+  a.writer.pullAnswers();
+  await until(() => a.got.size === 4);
+  a.writer.pullAnswers();
+  await until(() => a.kept.length === 4);
   a.writer.close();
   for (const [i, pair] of results.entries()) {
     const q = a.qs[i];
