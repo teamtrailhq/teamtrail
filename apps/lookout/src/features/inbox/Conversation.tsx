@@ -1,6 +1,6 @@
 import type { ActivityState, MapSnapshot } from '@teamtrail/core';
 import { useState, useRef, useEffect } from 'react';
-import { SectionHeader, Empty } from '../../components/ui';
+import { Empty, LabelLine, SectionHeader } from '../../components/ui';
 import { isRunning, pickPending } from '../../lib';
 import { AnswerArea } from './AnswerArea';
 import { ChatMessage } from './ChatMessage';
@@ -8,7 +8,7 @@ import { ConversationTicket } from './ConversationTicket';
 import { OpenQuestion } from './OpenQuestion';
 
 /**
- * The HITL line: the ticket as the zone's title, the transcript (scrolls), the open question pinned under it, then
+ * The chat with an agent (the HITL line): its label line and the ticket, the transcript (scrolls), the open question pinned under it, then
  * the suggested replies and the answer row. Red only while your answer is needed.
  */
 export function Conversation(props: {
@@ -54,7 +54,7 @@ export function Conversation(props: {
   return (
     <div className={`comms ${pending ? 'asking' : ''}`}>
       <SectionHeader
-        title="HITL line"
+        title={<LabelLine parts={['Chat', session?.agent, ticket?.key]} />}
         right={session ? <span className={`status ${pending ? 'urgent' : ''}`}>{status}</span> : undefined}
       >
         {props.onBack && (
@@ -67,7 +67,7 @@ export function Conversation(props: {
         <Empty>No conversation</Empty>
       ) : (
         <>
-          <ConversationTicket ticket={ticket} trail={trail?.map.title} agent={session.agent} />
+          <ConversationTicket ticket={ticket} trail={trail?.map.title} />
           <div className="comms-log" ref={logRef}>
             {history.map((m) => (
               <ChatMessage
