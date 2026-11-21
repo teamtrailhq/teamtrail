@@ -136,7 +136,7 @@ export function App() {
       onProofSettings={() => settings.open('proof')}
     />
   );
-  const trailBar = <AppTrailBar api={api} nav={nav} attn={attn} trail={live} bp={bp} brief={trail.inboxCard} />;
+  const trailBar = <AppTrailBar api={api} nav={nav} attn={attn} trail={live} brief={trail.inboxCard} />;
   const briefing = (
     <AppBriefing
       brief={brief}

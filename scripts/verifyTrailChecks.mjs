@@ -9,7 +9,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { answeringChecklists, approveSkipInLookout, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
+import {
+  answeringChecklists,
+  approveSkipInLookout,
+  lookoutLinks,
+  closeNeedsList,
+  openNeedsList,
+  signInWith,
+} from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
 
 const ID = ['-c', 'user.email=e2e@teamtrail', '-c', 'user.name=e2e'];
@@ -161,10 +168,17 @@ export async function verifyTrailChecks({ browser, cli, log, shots }) {
     await item.waitFor({ timeout: 20_000 });
     const itemText = await item.innerText();
     const itemOk = itemText.includes(`Trail checks fail on main after merging ${a}, ${b}`);
+    await closeNeedsList(page);
     await page.locator('g.destination').click();
     if (shots) await page.screenshot({ path: path.join(shots, '19-trail-checks-failed.png') });
     await bubble.getByRole('button', { name: 'Add a fix ticket' }).click();
-    await item.waitFor({ state: 'detached', timeout: 20_000 });
+    // gone from Needs you: open the lists again to see, then close them
+    await (
+      await openNeedsList(page)
+    )
+      .locator('li.att-item.k-trail-checks')
+      .waitFor({ state: 'detached', timeout: 20_000 });
+    await closeNeedsList(page);
 
     // an agent picks the fix ticket up, and once it is merged the trail is verified together
     const next = await one.call('next_ticket', { trail: mapId, types: ['task'] });

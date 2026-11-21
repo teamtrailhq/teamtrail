@@ -5,9 +5,10 @@ import type { Rect } from './routeEdge';
 const completed = (n: LaidOutNode) => n.ticket.state === 'closed' && n.ticket.closeReason === 'completed';
 
 /**
- * A thin elbow connector between two tickets. Travelled stretches (both tickets done) are solid in the accent, walked
- * ones (the blocker is closed) in the accent and quiet, the ones ahead use the line colour, and the critical path is a
- * shade stronger. A pending reroute draws the connectors it would add and remove differently.
+ * A thin elbow connector between two tickets. Walked ones (the blocker is closed) go faint, the way still to walk is
+ * dashed (the critical path a shade stronger), and the one into a card an agent works on now is blaze (`edge-active`).
+ * Travelled stretches (both tickets done) keep their class. A pending reroute draws the connectors it would add and
+ * remove differently.
  */
 export function GraphEdge(props: {
   from: LaidOutNode;
@@ -23,6 +24,7 @@ export function GraphEdge(props: {
   const walked = from.ticket.state !== 'open';
   const classes = ['edge', walked ? 'edge-done' : 'edge-open'];
   if (completed(from) && completed(to)) classes.push('edge-travelled');
+  if (walked && (to.state === 'claimed' || to.state === 'verifying')) classes.push('edge-active');
   if (props.critical) classes.push('edge-critical');
   if (props.added) classes.push('edge-added');
   if (props.removed) classes.push('edge-removed');

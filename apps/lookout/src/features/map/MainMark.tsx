@@ -39,7 +39,7 @@ export function MainMark(props: {
         <rect className="ring" x={-3.5} y={-3.5} width={MAIN_W + 7} height={MAIN_H + 7} rx={8} />
         <rect className="card" x={0.5} y={0.5} width={MAIN_W - 1} height={MAIN_H - 1} rx={5} />
         {passed ? (
-          <path className="dot dot-done dot-verified" d="M8 13l2.5 2.5 4.5 -5" />
+          <path className="done-tick verified" d="M8 13l2.5 2.5 4.5 -5" />
         ) : (
           <circle className={cx('dot', `main-dot-${tone}`)} cx={11} cy={13} r={3.5} />
         )}

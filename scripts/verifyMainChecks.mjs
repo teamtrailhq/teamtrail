@@ -11,6 +11,7 @@ import {
   answeringChecklists,
   approveSkipInLookout,
   lookoutLinks,
+  closeNeedsList,
   openNeedsList,
   sessionHeaders,
   signInWith,
@@ -136,7 +137,13 @@ export async function verifyMainChecks({ browser, cli, log, shots }) {
     if (shots) await page.screenshot({ path: path.join(shots, '17-main-checks-failed.png') });
     await section.getByRole('button', { name: 'Start anyway' }).click();
     await section.getByText('Known failures on main: test').waitFor({ timeout: 15_000 });
-    await item.waitFor({ state: 'detached', timeout: 20_000 });
+    // gone from Needs you: opening the row closed the lists, so open them again to see
+    await (
+      await openNeedsList(page)
+    )
+      .locator('li.att-item.k-main-checks')
+      .waitFor({ state: 'detached', timeout: 20_000 });
+    await closeNeedsList(page);
     if (shots) await page.screenshot({ path: path.join(shots, '18-main-checks-known.png') });
 
     const done = await complete(one.call, top, first, 'header.txt');

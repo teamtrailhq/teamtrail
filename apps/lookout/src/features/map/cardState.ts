@@ -3,14 +3,28 @@ import { ago, shortModel, TYPE_TEXT } from '../../lib';
 import type { LiveTicket } from '../../lib/liveTickets';
 import { waitsOnText } from '../../lib/waitsOnText';
 import { cardNeedText } from '../attention/needLabel';
-import { type CardChip, layoutChips } from './layoutChips';
+import type { SignGuide } from '../guides/types';
+import { CARD_LABEL_ROOM } from './cardLayout';
+import { type CardLabelPart, type CardLabelTone, fitLabel } from './fitLabel';
 import { statePart } from './statePart';
 
+/** statePart's tones, as a label part's. */
+const TONE: Record<string, CardLabelTone> = {
+  urgent: 'urgent',
+  agent: 'agent',
+  warn: 'warn',
+  wait: 'wait',
+  waits: 'dim',
+  verified: 'ok',
+};
+
 /**
- * A card's meta row, laid out: its state in words (statePart) and the chips. The agent's model goes on the agent's
- * chip when the row has room for it without squeezing; else the agent's name alone. The type steps aside when the
- * state already says enough (waiting for an agent, what it waits on). The pull request (`PR #12 merged`, else
- * `PR merged`) gets a chip only when the row has room for it without squeezing.
+ * A card's label line, fitted to the card: TYPE · #n · its state in words (statePart), then a guide added to it,
+ * "needs you" and its pull request. Richest first: the agent's model and the PR (`PR #12 merged`), then either,
+ * then the PR without its number, then neither; at each, the type steps aside before the next is tried, and only
+ * then is the last part cut short. The type also steps
+ * aside when the state says enough (ready for an agent, what it waits on). `reserve` keeps room on the right for a
+ * reroute tag or the ❄.
  */
 export function cardState(input: {
   n: LaidOutNode;
@@ -22,17 +36,17 @@ export function cardState(input: {
   brief: boolean;
   wait?: ModelTier;
   verified?: boolean;
-  guide?: string;
+  guide?: SignGuide;
   needsYou: boolean;
   /** The ticket's pull request, e.g. `PR #12 merged`. */
   pr?: string;
   /** Room kept on the right for a reroute tag or the ❄. */
   reserve: number;
-}): { chips: CardChip[]; tone?: string } {
+}): { parts: CardLabelPart[]; tone?: string } {
   const { n, live, marked } = input;
   const t = n.ticket;
+  const g = input.guide;
   const need = live?.items[0];
-  // rework says so itself; a ready ticket says how long it has waited for an agent
   const since = n.state === 'frontier' ? live?.readySince : undefined;
   const readyFor = since === undefined ? undefined : ago(Math.max(0, input.now - since));
   const waitsOn = live && waitsOnText(live.waitsOn, live.waitsOnYours);
@@ -47,35 +61,28 @@ export function cardState(input: {
           stalled: input.stalled,
           brief: input.brief,
           wait: input.wait,
-          step: !input.guide,
           model,
           readyFor,
           waitsOn,
           verified: input.verified,
         });
-  const lay = (model?: string, pr?: string) => {
-    let scale = 1;
-    const state = part(model);
-    const chips = layoutChips({
-      key: t.key,
-      type: state?.tone === 'wait' || state?.tone === 'waits' ? undefined : TYPE_TEXT[t.type],
-      guide: input.guide,
-      state: state?.text,
-      needsYou: input.needsYou && !need,
-      pr,
-      reserve: input.reserve,
-      onScale: (s) => (scale = s),
-    });
-    return { chips, tone: state?.tone, scale };
+  const build = (o: { model?: string; pr?: string; type: boolean }) => {
+    const state = part(o.model);
+    const typed = o.type && state?.tone !== 'wait' && state?.tone !== 'waits';
+    const parts: CardLabelPart[] = [
+      ...(typed ? [{ text: TYPE_TEXT[t.type], tone: 'plain' as const }] : []),
+      { text: t.key, tone: 'plain' },
+      ...(state?.text ? [{ text: state.text, tone: TONE[state.tone] ?? 'plain' }] : []),
+      ...(g ? [{ text: g.name, tone: 'plain' as const, guide: { id: g.id, tip: g.tip, off: g.off } }] : []),
+      ...(input.needsYou && !need ? [{ text: 'needs you', tone: 'urgent' as const }] : []),
+      ...(o.pr ? [{ text: o.pr, tone: 'plain' as const }] : []),
+    ];
+    return parts;
   };
   const model = shortModel(live?.session?.model);
-  // richest first: the model and the pull request, then either (the PR without its number when that fits), then
-  // neither (squeezed if it must be)
   const short = input.pr?.replace(/ #\d+/, '');
-  const options = [...(model ? [{ model, pr: input.pr }, { model }] : []), { pr: input.pr }, { pr: short }];
-  for (const o of options) {
-    const laid = lay(o.model, o.pr);
-    if (laid.scale >= 1) return laid;
-  }
-  return lay();
+  const options = [...(model ? [{ model, pr: input.pr }, { model }] : []), { pr: input.pr }, { pr: short }, {}];
+  const candidates = options.flatMap((o) => [build({ ...o, type: true }), build({ ...o, type: false })]);
+  const tone = part(model)?.tone;
+  return { parts: fitLabel(candidates, CARD_LABEL_ROOM - input.reserve), tone };
 }

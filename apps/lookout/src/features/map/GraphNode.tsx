@@ -7,30 +7,31 @@ import {
   NODE_H,
   NODE_W,
 } from '@teamtrail/core';
+import type { MouseEvent } from 'react';
 import type { Selection } from '../../lib';
 import type { LiveTicket } from '../../lib/liveTickets';
 import { useSignGuide } from '../guides';
 import { briefWait } from './briefWait';
-import { CardChips } from './CardChips';
-import { CARD_TEXT_X } from './cardLayout';
+import { CardLabel } from './CardLabel';
+import { CARD_LINE_H, CARD_TEXT_X, CARD_TITLE_Y } from './cardLayout';
 import { cardState } from './cardState';
+import { DoneCard } from './DoneCard';
 import { modelWait } from './modelWait';
 import { nodeClasses } from './nodeClasses';
 import { NodeTip } from './NodeTip';
 import { nodeTone } from './nodeTone';
 import { RerouteMarks } from './RerouteMarks';
-import { StatusDot } from './StatusDot';
 import { StepBar } from './StepBar';
 import { wrap } from './wrap';
 
-/** About how many title characters fit on one line of a card, right of the status dot. */
-const TITLE_CHARS = 26;
+/** About how many title characters fit on one line of a card. */
+const TITLE_CHARS = 29;
 
 /**
- * One ticket on the graph, drawn as a flat card in the three levels of the presenting-data rules: a status dot and
- * the title (what it is, two lines at most), then one quiet row of label chips (key, type, guide, who or state). It
- * moves while something is live: an agent at work pulses and fills a step bar along the top, a ticket waiting for an
- * agent turns its dashed border, and one that needs you breathes its red halo (none of it under reduced motion).
+ * One ticket on the graph, drawn as a scene card: a mono label line (TYPE · #n · its state: the agent's model, asks
+ * you, ready 12m, waits on #6), the title (two lines at most) and, while an agent works on it, a thin step track
+ * along its foot, with the blaze cursor ending the label line. A finished ticket goes quiet as one line (DoneCard).
+ * Rose only for what needs you now; nothing moves at rest but the cursor, and nothing under reduced motion.
  */
 export function GraphNode({
   n,
@@ -84,34 +85,39 @@ export function GraphNode({
   const reserve = reserveFor(mark, frozen);
   const card = cardState({
     ...{ n, live, now, marked, waiting, stalled, brief, wait, verified, needsYou, reserve, pr },
-    guide: guide?.name,
+    guide,
   });
   const urgent = waiting || live?.tone === 'needs';
   const heldUp = [urgent, stalled, brief, wait, needsYou && n.state === 'frontier'].some(Boolean);
   const tone = nodeTone({ state: n.state, live: !!s, attention: heldUp });
   const pickUp = live?.tone === 'waiting-agent' && !marked && !frozen;
-  const top = lines.length > 1 ? 19 : 24;
+  const classes = nodeClasses({ n, tone, hitl, selected, live: !!s, waiting: urgent, stalled, mark, frozen, pickUp });
+  const select = (e: MouseEvent) => {
+    e.stopPropagation();
+    onSelect({ kind: 'ticket', id: t.id });
+  };
+  const place = { transform: `translate(${n.x}px, ${n.y}px)` };
+  if (n.state === 'decided' && !marked) {
+    return (
+      <g className={`${classes} compact`} style={place} data-ticket={t.key} onClick={select}>
+        <NodeTip wait={wait} session={s} />
+        <DoneCard keyText={t.key} title={t.title} verified={verified} />
+        {flag && <circle className={`pr-flag-dot ${flag}`} cx={NODE_W - 2} cy={16} r={4} />}
+      </g>
+    );
+  }
   return (
-    <g
-      className={nodeClasses({ n, tone, hitl, selected, live: !!s, waiting: urgent, stalled, mark, frozen, pickUp })}
-      style={{ transform: `translate(${n.x}px, ${n.y}px)` }}
-      data-ticket={t.key}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect({ kind: 'ticket', id: t.id });
-      }}
-    >
+    <g className={classes} style={place} data-ticket={t.key} onClick={select}>
       <NodeTip wait={wait} session={s} />
-      <rect className="ring" x={-3.5} y={-3.5} width={NODE_W + 7} height={NODE_H + 7} rx={9} />
-      <rect className="card" x={0.5} y={0.5} width={NODE_W - 1} height={NODE_H - 1} rx={6} />
-      {s && <StepBar step={s.step} total={s.total} />}
-      <StatusDot tone={tone} cy={top - 4} verified={verified} spin={pickUp} pulse={!!s && !waiting} />
+      <rect className="ring" x={-3.5} y={-3.5} width={NODE_W + 7} height={NODE_H + 7} />
+      <rect className="card" x={0.5} y={0.5} width={NODE_W - 1} height={NODE_H - 1} />
+      <CardLabel parts={card.parts} cursor={!!s && !waiting} />
       {lines.map((l, i) => (
-        <text key={i} className="title" x={CARD_TEXT_X} y={top + i * 14}>
+        <text key={i} className="title" x={CARD_TEXT_X} y={CARD_TITLE_Y + i * CARD_LINE_H}>
           {l}
         </text>
       ))}
-      <CardChips chips={card.chips} y={top + lines.length * 14 - 8} tone={card.tone} guide={guide} />
+      {s && <StepBar step={s.step} total={s.total} />}
       {flag && <circle className={`pr-flag-dot ${flag}`} cx={NODE_W - 2} cy={2} r={4} />}
       <RerouteMarks mark={mark} frozen={frozen} />
     </g>

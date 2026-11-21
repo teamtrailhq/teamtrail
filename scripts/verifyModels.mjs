@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { approveSkipInLookout, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
+import { approveSkipInLookout, closeNeedsList, lookoutLinks, openNeedsList, signInWith } from './e2eHelpers.mjs';
 import { e2eTemp } from './e2eTemp.mjs';
 import { verifyReviewModels } from './verifyReviewModels.mjs';
 
@@ -130,7 +130,13 @@ async function waiting({ fast, strong, page, shot }) {
   const next = await fast.call('next_ticket');
   const auto = await refused(fast.call('claim_ticket'));
   const explicit = await fast.call('claim_ticket', { ticket: added.ticket.key });
-  await item.waitFor({ state: 'detached', timeout: 20_000 });
+  // the claim settles it: gone from Needs you (opening the row closed the lists, so open them again to see)
+  await (
+    await openNeedsList(page)
+  )
+    .locator('li.att-item.k-model', { hasText: title })
+    .waitFor({ state: 'detached', timeout: 20_000 });
+  await closeNeedsList(page);
   return {
     ok:
       title.test(shown) &&

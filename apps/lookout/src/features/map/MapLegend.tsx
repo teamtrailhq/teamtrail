@@ -1,20 +1,19 @@
 import { useState } from 'react';
 import { LegendDestination } from './LegendDestination';
-import type { NodeTone } from './nodeTone';
-import { StatusDot } from './StatusDot';
+import { LegendSwatch, type Swatch } from './LegendSwatch';
 
-const ROWS: { tone: NodeTone; verified?: boolean; spin?: boolean; urgent?: boolean; text: string }[] = [
-  { tone: 'working', text: 'An agent is on it' },
-  { tone: 'attention', urgent: true, text: 'Needs you' },
-  { tone: 'attention', text: 'Held up' },
-  { tone: 'ready', spin: true, text: 'Waiting for an agent' },
-  { tone: 'backlog', text: 'Not started yet' },
-  { tone: 'done', verified: true, text: 'Done and verified' },
-  { tone: 'done', text: 'Done, not verified' },
-  { tone: 'cancelled', text: 'Ruled out' },
+const ROWS: { swatch: Swatch; text: string }[] = [
+  { swatch: 'working', text: 'An agent is on it' },
+  { swatch: 'needs', text: 'Needs you' },
+  { swatch: 'held', text: 'Held up' },
+  { swatch: 'ready', text: 'Waiting for an agent' },
+  { swatch: 'backlog', text: 'Not started yet' },
+  { swatch: 'verified', text: 'Done and verified' },
+  { swatch: 'done', text: 'Done, not verified' },
+  { swatch: 'cancelled', text: 'Ruled out' },
 ];
 
-/** What the cards' dots and the destination's finish square mean, one click away in the map's corner. */
+/** What the cards and the destination's finish square mean, one click away in the map's corner. */
 export function MapLegend() {
   const [open, setOpen] = useState(false);
   return (
@@ -23,15 +22,7 @@ export function MapLegend() {
         <ul className="map-legend-list">
           {ROWS.map((r) => (
             <li key={r.text}>
-              <svg
-                className={r.urgent ? 'node waiting' : 'node'}
-                width="22"
-                height="16"
-                viewBox="4 0 18 16"
-                aria-hidden="true"
-              >
-                <StatusDot tone={r.tone} cy={8} verified={r.verified} spin={r.spin} />
-              </svg>
+              <LegendSwatch swatch={r.swatch} />
               {r.text}
             </li>
           ))}

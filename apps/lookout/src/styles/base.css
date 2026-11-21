@@ -21,6 +21,7 @@
   /* Map graph text is in SVG units and scales with zoom; these sizes are tuned to NODE_W/NODE_H. */
   --fs-node-title: 11.5px;
   --fs-node-meta: 9.5px;
+  --fs-node-label: 8.55px; /* the label line, as metaTextWidth measures its mono */
   --fs-node-tag: 7.5px;
 }
 

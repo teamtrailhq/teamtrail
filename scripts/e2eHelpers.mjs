@@ -133,13 +133,22 @@ export async function openFullTicket(page) {
   await page.locator('.ticket-drawer').waitFor({ timeout: 15_000 });
 }
 
-/** Everything that needs you, ranked: the trail bar's More opens it under the map (once per browser it stays). */
+/**
+ * Everything that needs you, ranked: the trail bar's More opens it in a drawer over the map. A popover: opening an item
+ * from it, a press outside it or Esc closes it, and it starts closed on every load.
+ */
 export async function openNeedsList(page) {
   const list = page.locator('.trail-lists .needs-list');
   if (await list.isVisible()) return list;
   await page.locator('.trail-bar').getByRole('button', { name: 'More', exact: true }).click();
   await list.waitFor({ timeout: 15_000 });
   return list;
+}
+
+/** Closes the trail bar's lists if they are open, so they cover nothing a next step clicks. */
+export async function closeNeedsList(page) {
+  const close = page.getByRole('button', { name: 'Close the lists' });
+  if (await close.isVisible()) await close.click();
 }
 
 /** Opens the most urgent thing that needs you, as the header's "N need you" does, and waits for its bubble. */

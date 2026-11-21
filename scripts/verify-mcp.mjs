@@ -314,7 +314,7 @@ const hitl = call('ask_human', {
   question: 'Timeline, or grouped by version with the newest first?',
   suggestions: ['Grouped by version', 'Timeline'],
 });
-await page.locator('.node .card-chip', { hasText: 'waiting on you' }).waitFor({ timeout: 15_000 });
+await page.locator('.node .card-label', { hasText: 'asks you' }).waitFor({ timeout: 15_000 });
 await openQuestion();
 // On a junction, the question says what answering it decides.
 const stakesShown = await page
@@ -557,7 +557,7 @@ const reviewed = await reviewCall('submit_review', {
 });
 await reviewClient.close().catch(() => {});
 const footerCard = page.locator('.node', { hasText: 'Link the changelog' });
-const approval = footerCard.locator('.card-chip', { hasText: 'approve it' });
+const approval = footerCard.locator('.card-label', { hasText: 'approve it' });
 await approval.waitFor({ timeout: 15_000 });
 await shot('09-approval-waiting-on-you');
 await clickNode(footerCard);
