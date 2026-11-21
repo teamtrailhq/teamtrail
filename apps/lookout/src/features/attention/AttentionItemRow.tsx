@@ -1,17 +1,17 @@
 import { isDismissable, type AttentionItem, type MapSnapshot } from '@teamtrail/core';
-import { MetaLine, Row } from '../../components/ui';
-import { ago } from '../../lib';
+import { LabelLine, Row } from '../../components/ui';
 import { ItemAction } from './ItemAction';
 import { ReasonLine } from './ReasonLine';
-import { contextParts, detailReasons, edgeFor } from './rowText';
+import { detailReasons, edgeFor, itemLabel } from './rowText';
 import { SnoozeMenu } from './SnoozeMenu';
 
 /** How long a new item's edge pulses, so it's noticed without a tag. */
 const INCOMING_MS = 15_000;
 
 /**
- * One thing that needs the human, in the three levels: what (title), where and who (context), why it ranks here
- * (detail). The edge says how urgent it is; "Later" appears on hover or focus.
+ * One thing that needs the human, in the scenes' row: a label line (Blocking, its kind or who asks, the ticket, the
+ * trail, how long), what (title), and why it ranks here (detail). The edge says how urgent it is; "Later" appears on
+ * hover or focus.
  */
 export function AttentionItemRow(props: {
   item: AttentionItem;
@@ -35,12 +35,11 @@ export function AttentionItemRow(props: {
       className={`att-item k-${item.kind} u-${item.urgency} ${props.selected ? 'sel' : ''} ${incoming ? 'incoming' : ''}`}
       edge={edgeFor(item, props.interrupting)}
       selected={props.selected}
+      label={<LabelLine parts={itemLabel({ item, snap: props.snap, otherTrail: props.otherTrail, now: props.now })} />}
       title={title}
       titleText={item.title}
-      context={<MetaLine parts={contextParts({ item, snap: props.snap, otherTrail: props.otherTrail })} />}
       detail={reasons.length > 0 && <ReasonLine reasons={reasons} />}
       detailText={reasons.join('\n')}
-      trailing={ago(props.now - item.since)}
       onOpen={props.onOpen}
       actions={
         <SnoozeMenu

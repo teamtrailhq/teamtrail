@@ -1,10 +1,13 @@
 import { type Ticket, webUrl } from '@teamtrail/core';
-import { MetaLine, Row } from '../../components/ui';
+import { LabelLine, Row } from '../../components/ui';
 import { usePrSync } from '../../hooks';
 import { prSync } from '../../lib';
 import type { ProofStatuses } from '../map';
 
-/** Finished work: the ticket, whether its proof is verified and its pull request merged, and a link to the PR. */
+/**
+ * Finished work: VERIFIED in green (or done, not verified), the ticket and its pull request merged or not in the
+ * label line, the ticket's title, and Pull request on the right.
+ */
 export function DoneSince(props: {
   mapId: string;
   ticket: Ticket;
@@ -15,26 +18,23 @@ export function DoneSince(props: {
   const pr = prSync.ticket(usePrSync(), props.mapId, t.id)?.pr;
   const url = pr && webUrl(pr.url);
   const verified = props.proofs?.[t.id] === 'verified';
-  const merged = pr?.state === 'merged';
+  const prPart = pr && `PR #${pr.number}${pr.state === 'merged' ? ' merged' : ''}`;
   return (
     <Row
       as="li"
       className="home-since-row"
-      title={
-        <>
-          <span className={verified ? 'since-icon done' : 'since-icon'} aria-hidden="true">
-            ✓
-          </span>{' '}
-          {t.key} {t.title}
-        </>
+      label={
+        <LabelLine
+          className="home-done-label"
+          parts={[verified ? { text: 'Verified', tone: 'ok' } : 'Done, not verified', t.key, prPart]}
+        />
       }
-      context={<MetaLine parts={[verified ? 'verified' : 'done, not verified', merged && 'merged']} />}
+      title={t.title}
       onOpen={() => props.onTicket(t.id)}
-      actions={
-        pr &&
+      action={
         url && (
-          <a className="link" href={url} target="_blank" rel="noreferrer">
-            PR #{pr.number}
+          <a className="btn ghost" href={url} target="_blank" rel="noreferrer">
+            Pull request
           </a>
         )
       }

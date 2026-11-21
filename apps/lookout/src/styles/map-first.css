@@ -87,6 +87,23 @@
 .bubble-close:hover {
   color: var(--text-hi);
 }
+/* The bar: one label line across the bubble's top (what it needs from you, then the ticket's chips), the close
+ * button at its end. It stays in view while the bubble scrolls. */
+.bubble-bar {
+  position: sticky;
+  top: calc(-1 * var(--sp-14));
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: calc(-1 * var(--sp-14)) calc(-1 * var(--sp-14)) var(--sp-4);
+  padding: var(--sp-8) 48px var(--sp-8) var(--sp-14);
+  background: var(--panel-solid);
+  border-bottom: 1px solid var(--line);
+}
+.bubble-close {
+  z-index: 2;
+}
 .bubble .t-label {
   padding-right: 36px;
 }
@@ -113,11 +130,31 @@
   flex-direction: column;
   gap: var(--sp-6);
 }
+/* Suggested answers as the scenes' square option rows: one click sends that answer. */
 .bubble-need .suggest .chip {
+  width: 100%;
   text-align: left;
-  min-height: 34px;
-  padding: var(--sp-6) var(--sp-12);
+  min-height: 40px;
+  padding: var(--sp-8) var(--sp-12);
   font-size: var(--fs-body);
+  line-height: var(--lh-snug);
+  border: 1px solid var(--line2);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  white-space: normal;
+}
+.bubble-need .suggest .chip:hover,
+.bubble-need .suggest .chip:focus-visible {
+  border-color: var(--accent);
+  color: var(--text-hi);
+}
+.bubble-stakes {
+  margin: 0;
+  padding-left: var(--sp-10);
+  border-left: 2px solid var(--line2);
+  font: var(--type-body);
+  color: var(--text);
 }
 .bubble-ticket {
   display: flex;
@@ -143,6 +180,16 @@
   color: var(--dim);
   margin-right: var(--sp-6);
 }
+/* The state line leads with a square in the colour of what it means. */
+.bubble-state .state-title::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: var(--sp-8);
+  vertical-align: 0.15em;
+  background: currentColor;
+}
 .bubble-state.edge-urgent .state-title {
   color: var(--urgent-ink);
 }
@@ -153,6 +200,20 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-6);
+}
+.bubble .ds-done {
+  margin-bottom: var(--sp-4);
+}
+/* A phone: every target in the bubble 44px. */
+.bp-mobile .bubble-need .suggest .chip {
+  min-height: 44px;
+}
+.bp-mobile .bubble-close {
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  border-width: 0 0 0 1px;
 }
 .bubble .detail-section,
 .bubble .ticket-body {

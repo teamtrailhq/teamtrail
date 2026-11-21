@@ -118,9 +118,12 @@ async function waiting({ fast, strong, page, shot }) {
   // this ticket's item, not any model item: the junction charted with the trail waited the same way until the strong
   // agent's first call reported its model, and a queue that hasn't caught up yet can still show that one
   const title = new RegExp(`^${added.ticket.key} needs a strongest model`);
-  const item = (await openNeedsList(page)).locator('li.att-item.k-model', { hasText: title });
+  // the row's title, under its label line (the kind and the wait)
+  const item = (await openNeedsList(page)).locator('li.att-item.k-model', {
+    has: page.locator('.ds-row-title', { hasText: title }),
+  });
   await item.waitFor({ timeout: 20_000 });
-  const shown = ((await item.innerText()) ?? '').replace(/\s+/g, ' ');
+  const shown = ((await item.locator('.ds-row-title').innerText()) ?? '').replace(/\s+/g, ' ');
   await item.locator('.ds-row-main').click();
   await page.locator('.bubble .model-wait').waitFor({ timeout: 15_000 });
   await shot('19-needs-a-strongest-model');

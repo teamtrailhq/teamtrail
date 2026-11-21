@@ -61,4 +61,15 @@ describe('what closes a proof gap in the Lookout', () => {
     expect(html.match(/<button/g)).toHaveLength(1);
     expect(html).toContain('Confirm criteria and verify again');
   });
+
+  it("shows no button on a gap whose action is the ticket's primary: the footer says it once", () => {
+    const plan = [gap({})];
+    const actions = gapActionList(plan, [], run);
+    const primary = [...actions.values()][0];
+    const html = renderToStaticMarkup(
+      createElement(ProofGapList, { gaps: plan.map((g) => g.text), plan, actions, primary }),
+    );
+    expect(html).not.toContain('<button');
+    expect(html).toContain(plan[0].status);
+  });
 });

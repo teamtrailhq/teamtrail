@@ -7,18 +7,20 @@ import type { TicketView } from './useTicketView';
  * Every ticket action in one row, one size: the next action as the primary button (merging a done ticket's pull
  * request when a server merges them, mergeAction.ts), the agent's chat, `trailing` (the bubble's Full ticket), and "⋯"
  * for the rest, at the row's end.
- * What an action said back (an error, "Copied") reads under it.
+ * What an action said back (an error, "Copied") reads under it. While a form an action opened is open (`formOpen`),
+ * its own submit is the one action: the bar keeps only `trailing`, so nothing shows twice.
  */
 export function ActionBar(props: {
   v: TicketView;
   bar: ReturnType<typeof useTicketActions>;
   onOpenChat: (sessionId: string) => void;
   trailing?: ReactNode;
+  formOpen?: boolean;
 }) {
-  const { v, bar } = props;
-  const { primary } = bar;
+  const { v, bar, formOpen } = props;
+  const primary = formOpen ? undefined : bar.primary;
   const session = v.session;
-  const chat = session && primary?.id !== 'answer';
+  const chat = !formOpen && session && primary?.id !== 'answer';
   return (
     <>
       <div className="actions action-bar">
@@ -33,7 +35,7 @@ export function ActionBar(props: {
           </Button>
         )}
         {props.trailing && <span className="action-bar-end">{props.trailing}</span>}
-        <MoreMenu items={bar.menu} label="More ticket actions" />
+        {!formOpen && <MoreMenu items={bar.menu} label="More ticket actions" />}
       </div>
       {bar.error && <p className="vf-err">{bar.error}</p>}
       {bar.note && <p className="t-meta bar-note">{bar.note}</p>}

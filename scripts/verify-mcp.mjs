@@ -562,7 +562,7 @@ await approval.waitFor({ timeout: 15_000 });
 await shot('09-approval-waiting-on-you');
 await clickNode(footerCard);
 // the bubble leads with what it needs from you: approve it, with Approve in place
-await page.locator('.bubble .bubble-need', { hasText: 'Approve it' }).waitFor({ timeout: 15_000 });
+await page.locator('.bubble .bubble-bar', { hasText: 'Approve it' }).waitFor({ timeout: 15_000 });
 await ticketAction(page, 'Approve');
 await page.locator('.node.st-decided', { hasText: /Link the changelog/ }).waitFor({ timeout: 15_000 });
 await shot('10-approved');

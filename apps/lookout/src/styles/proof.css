@@ -1,32 +1,132 @@
-/* Verified by Teamtrail: a ticket's proof in the inspector. */
+/* Verified by Teamtrail: a ticket's proof in the inspector (features/proof/TicketProof.tsx). */
 .ticket-proof {
-  align-items: flex-start;
-  gap: var(--sp-6);
+  align-items: stretch;
+  gap: var(--sp-10);
 }
-.proof-head {
+/* The verdict: a square seal, green and ticked when verified, grey when not. */
+.proof-verdict {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--sp-6);
+  gap: var(--sp-8);
+  color: var(--dim);
+}
+.proof-verdict .ds-mark {
+  border-color: var(--dim);
+}
+.proof-verdict.verified .ds-mark {
+  border-color: rgba(var(--decided-rgb), 0.5);
+}
+.proof-verdict b {
+  font: var(--type-row-title);
+}
+.proof-verdict.verified b {
+  color: rgb(var(--decided-rgb));
+}
+/* Each check its own line: mark, name, the command in mono, how it went at the end. */
+.proof-checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+}
+.proof-check {
+  display: grid;
+  grid-template-columns: 16px minmax(0, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--sp-10);
+  min-height: 36px;
+  padding: var(--sp-6) var(--sp-10);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-body);
+}
+.proof-check:first-child {
+  border-top: 0;
+}
+.proof-check-name {
+  color: var(--text-hi);
+  white-space: nowrap;
+}
+.proof-check-what {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font: var(--fs-sm) / var(--lh-snug) var(--mono);
+  color: var(--dim);
+}
+.proof-check-meta {
+  font: var(--fs-sm) / var(--lh-snug) var(--mono);
+  color: var(--dim);
+  text-align: right;
+}
+.proof-check.pc-done .ds-mark {
+  color: rgb(var(--decided-rgb));
+}
+.proof-check.holds .proof-check-meta {
+  color: var(--urgent-ink);
+}
+/* A phone: the command goes under the name. */
+@media (max-width: 560px) {
+  .proof-check {
+    grid-template-columns: 16px minmax(0, 1fr) auto;
+  }
+  .proof-check-what {
+    grid-column: 2 / -1;
+    grid-row: 2;
+  }
 }
 .proof-gaps {
   margin: 0;
   padding-left: var(--sp-18);
 }
-/* Each gap with who is on it, and the human's action when it's theirs (features/proof/ProofGapList.tsx). */
+/* Each gap with its owner tag and who is on it, and the human's action when it's theirs (ProofGapList.tsx). */
+.proof-gaps-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
 .proof-gap-list {
   padding-left: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-8);
+  gap: 0;
   align-self: stretch;
+  border: 1px solid var(--line);
 }
 .proof-gap {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--sp-4);
+  padding: var(--sp-10);
+  border-top: 1px solid var(--line);
+}
+.proof-gap:first-child {
+  border-top: 0;
+}
+.proof-gap-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-8);
+}
+.proof-gap-owner {
+  display: inline-block;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--line2);
+}
+/* The digest, signature and key in one mono line at the foot. */
+.proof-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding-top: var(--sp-8);
+  border-top: 1px solid var(--line);
+}
+.proof-digest {
+  font: var(--fs-sm) / var(--lh-snug) var(--mono);
+  color: var(--faint);
+  overflow-wrap: anywhere;
 }
 .ticket-proof code {
   overflow-wrap: anywhere;

@@ -58,9 +58,6 @@
 .node .card-label .lt-dim {
   fill: var(--map-card-quiet);
 }
-.node .card-label .guide.off {
-  text-decoration: line-through;
-}
 /* An agent at work: the blaze block cursor at the label line's end, and a thin step track along the card's foot. */
 .node .card-cursor {
   fill: rgb(var(--working-rgb));

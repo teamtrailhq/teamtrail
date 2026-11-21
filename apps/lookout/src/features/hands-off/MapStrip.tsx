@@ -1,4 +1,4 @@
-import { Pill } from '../../components/ui';
+import { StatusMark, type StatusMarkKind } from '../../components/ui';
 import { cx } from '../../lib';
 import type { TrailSegment } from '../trail-bar';
 
@@ -10,30 +10,47 @@ const WORD: Record<TrailSegment['tone'], string> = {
   'not-started': 'waits',
 };
 
-/** How many tickets the short map shows: the last one done, then what comes next. */
-const SHOWN = 6;
+const MARK: Record<TrailSegment['tone'], StatusMarkKind> = {
+  done: 'verified',
+  working: 'now',
+  needs: 'held',
+  'waiting-agent': 'rework',
+  'not-started': 'todo',
+};
 
-/** The map in short: the last ticket done, then the next ones in trail order, each with where it is; the full map is Hands-on's. */
-export function MapStrip(props: { segments: TrailSegment[]; onTicket: (id: string) => void; onFullMap: () => void }) {
+/** How many tickets the short map shows: the last one done, then what comes next. */
+const SHOWN = 7;
+
+/**
+ * The map in short: the last ticket done, then the next ones in trail order, each a square with its key, joined by a
+ * line, ending at the finish square. The full map is Hands-on's.
+ */
+export function MapStrip(props: { segments: TrailSegment[]; reached: boolean; onTicket: (id: string) => void }) {
   const lastDone = props.segments.filter((s) => s.tone === 'done').at(-1);
   const ahead = props.segments.filter((s) => s.tone !== 'done');
   const shown = [...(lastDone ? [lastDone] : []), ...ahead].slice(0, SHOWN);
+  if (!shown.length) return null;
   return (
-    <div className="home-map-strip">
-      <ol>
-        {shown.map((s) => (
-          <li key={s.id}>
-            <button type="button" className="link" title={s.title} onClick={() => props.onTicket(s.id)}>
-              <Pill className={cx('map-strip-chip', `tone-${s.tone}`)}>
-                {s.key} {WORD[s.tone]}
-              </Pill>
-            </button>
-          </li>
-        ))}
-      </ol>
-      <button type="button" className="link" onClick={props.onFullMap}>
-        Full map
-      </button>
-    </div>
+    <ol className="home-map-strip" aria-label="The trail in short">
+      {shown.map((s) => (
+        <li key={s.id} className={cx('map-strip-stop', `tone-${s.tone}`)}>
+          <button
+            type="button"
+            className="map-strip-btn"
+            title={`${s.key} ${s.title}: ${WORD[s.tone]}`}
+            onClick={() => props.onTicket(s.id)}
+          >
+            <StatusMark kind={MARK[s.tone]} label={`${s.key} ${WORD[s.tone]}`} />
+            <span className="map-strip-key">{s.key}</span>
+          </button>
+        </li>
+      ))}
+      <li className={cx('map-strip-stop', 'finish', props.reached && 'reached')}>
+        <span className="map-strip-btn">
+          <span className="map-strip-finish" aria-hidden="true" />
+          <span className="map-strip-key">finish</span>
+        </span>
+      </li>
+    </ol>
   );
 }

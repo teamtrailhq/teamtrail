@@ -5,6 +5,7 @@ import {
   type MapSnapshot,
   type PendingQuestion,
   type Ticket,
+  oneLine,
 } from '@teamtrail/core';
 import type { MetaPart } from '../../components/ui';
 import { ago } from '../../lib';
@@ -36,18 +37,28 @@ export function needText(item: AttentionItem, q?: PendingQuestion): NeedText {
 }
 
 /**
- * The dim context after the title: the trail when it isn't the one on screen, the ticket (unless the title names
+ * The row's label line after its kind: the trail when it isn't the one on screen, the ticket (unless the title names
  * it), who asks, and how long it has waited.
  */
-export function needMeta(input: { item: AttentionItem; snap?: MapSnapshot; current?: string; now: number }) {
+export function needLabel(input: { item: AttentionItem; snap?: MapSnapshot; current?: string; now: number }): string[] {
   const { item, snap } = input;
   const ticket = snap?.tickets.find((t) => t.id === item.ticketId);
-  const parts: MetaPart[] = [];
+  const parts: string[] = [];
   if (item.mapId && item.mapId !== input.current) parts.push(snap?.map.title ?? item.mapId);
-  if (ticket && !item.title.includes(ticket.key)) parts.push({ text: ticket.key, code: true });
+  if (ticket && !item.title.includes(ticket.key)) parts.push(ticket.key);
   if (item.kind === 'question' && item.agent) parts.push(item.agent);
   parts.push(ago(input.now - item.since));
   return parts;
+}
+
+/**
+ * One line under the title, cut to fit: the rest of a question when its headline doesn't say it all, else why the
+ * item ranks here; nothing when there is nothing more to say.
+ */
+export function needDetail(item: AttentionItem, q?: PendingQuestion): string | undefined {
+  if (q) return questionHeadline(q).whole ? undefined : oneLine(q.text);
+  const reasons = detailReasons(item);
+  return reasons.length ? reasons.join(' · ') : undefined;
 }
 
 /**

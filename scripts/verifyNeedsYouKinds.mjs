@@ -79,9 +79,9 @@ async function askingAgent(cli, cwd, env) {
   return client;
 }
 
-/** Every row shown: "Show N more" pressed until nothing is behind it. */
+/** Every row shown: "Show all" pressed when some are behind it. */
 async function showAll(page) {
-  const more = page.locator('.home-needs .home-more', { hasText: /^Show \d+ more$/ });
+  const more = page.locator('.home-needs .home-more', { hasText: /^Show all$/ });
   if (await more.count()) await more.click();
 }
 
