@@ -1,0 +1,31 @@
+/* The site's footer (footer/siteFooter.ts): the wordmark, every page, the copyright. Tokens: tokens.css. */
+.site-footer {
+  padding: 56px 0 40px;
+  border-top: 1px solid var(--site-line);
+  font-family: var(--site-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: -0.006em;
+  color: var(--site-dim);
+}
+.site-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 32px;
+}
+.site-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+}
+.site-footer a:hover {
+  color: var(--site-text-hi);
+}
+.site-footer .site-brand__word {
+  font-size: 18px;
+}
+.site-footer__name {
+  color: var(--site-accent);
+  white-space: nowrap;
+}
