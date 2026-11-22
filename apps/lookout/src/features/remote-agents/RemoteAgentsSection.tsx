@@ -1,3 +1,4 @@
+import { SectionIntro } from '../settings/SectionIntro';
 import { SettingsSection } from '../settings/SettingsSection';
 import { START_COMMAND } from './connectCommands';
 import { EndpointLine } from './EndpointLine';
@@ -19,11 +20,10 @@ export function RemoteAgentsSection() {
   const endpoint = view.endpoints.find((e) => e.kind === 'standalone')?.url;
   return (
     <SettingsSection title="Remote agents">
-      <p className="vf-intro">
-        Agents on another machine or in a cloud sandbox can work this repo's trails too. They connect over HTTP with a
-        token and share the tickets, claims and inbox of the agents here. One token per agent; revoke it and that agent
-        is out within about a second.
-      </p>
+      <SectionIntro
+        lead="Agents on other machines or in cloud sandboxes can work these trails over HTTP, next to the agents here."
+        points={['One token per agent. Revoke it and that agent is out within about a second.']}
+      />
       <EndpointLine endpoints={view.endpoints} />
       {created && <TokenReveal created={created} endpoint={endpoint} onDone={dismissCreated} />}
       <RemoteTokenList tokens={view.tokens} onRevoke={revoke} />

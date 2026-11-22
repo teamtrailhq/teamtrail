@@ -11,6 +11,7 @@ import {
 import { Button } from '../../components/ui';
 import { useModels } from '../models';
 import { ModelsFileLine } from './ModelsFileLine';
+import { SectionIntro } from './SectionIntro';
 import { SettingsSection } from './SettingsSection';
 import { TierGrid } from './TierGrid';
 import { TierSuggestions } from './TierSuggestions';
@@ -39,11 +40,13 @@ export function ModelMatchingSection(props: {
   };
   return (
     <SettingsSection title="Model matching">
-      <p className="vf-intro">
-        Give each agent the tickets that fit the model it runs on: research to fast models, junctions, prototypes and
-        reviews to the strongest. Teamtrail reads the model from the agent&apos;s log and never switches it. An agent
-        can still claim any ticket by name, and tells you when it does.
-      </p>
+      <SectionIntro
+        lead="Give each agent the tickets that fit its model: research to fast models, junctions, prototypes and reviews to the strongest."
+        more={[
+          "Teamtrail reads the model from the agent's log and never switches it.",
+          'An agent can still claim any ticket by name, and tells you when it does.',
+        ]}
+      />
       <div className="att-settings-row set-field">
         <span className="set-field-label">Match work to models on trail {map.key}</span>
         <Button

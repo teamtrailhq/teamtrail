@@ -1,5 +1,6 @@
 import { BRAND } from '@teamtrail/core';
 import { Button, MetaLine } from '../../components/ui';
+import { SectionIntro } from '../settings/SectionIntro';
 import { SettingsSection } from '../settings/SettingsSection';
 import { FindingList } from './FindingList';
 import { summaryParts } from './readinessText';
@@ -21,11 +22,13 @@ export function ReadinessSection(props: { now: number }) {
   const trails = readiness.blocking > 0 || started ? view.trails : [];
   return (
     <SettingsSection title="Repo readiness">
-      <p className="vf-intro">
-        Whether {BRAND.name} can check agents' work in this repo on this machine. Until what blocks is fixed, agents
-        start no new implementation work; research and reviews go on. {BRAND.name} never installs or starts anything on
-        your machine: setup steps run only in the worktrees it prepares.
-      </p>
+      <SectionIntro
+        lead={`Whether ${BRAND.name} can check agents' work in this repo on this machine.`}
+        points={['While something blocks, agents start no new implementation work. Research and reviews go on.']}
+        more={[
+          `${BRAND.name} never installs or starts anything on your machine. Setup steps run only in the worktrees it prepares.`,
+        ]}
+      />
       <div className="rd-head">
         <MetaLine parts={readiness.read ? summaryParts(readiness) : ['No checkout of this repo to read here']} />
         <Button size="sm" disabled={r.busy} onClick={() => void r.checkAgain()}>

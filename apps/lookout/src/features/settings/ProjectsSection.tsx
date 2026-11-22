@@ -2,6 +2,7 @@ import { BRAND, type ProjectSummary } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button, MetaLine, Row } from '../../components/ui';
 import { AddProject, projectsApi, useProjects } from '../projects';
+import { SectionIntro } from './SectionIntro';
 import { SettingsSection } from './SettingsSection';
 
 const contextOf = (p: ProjectSummary) => [
@@ -21,11 +22,14 @@ export function ProjectsSection() {
   };
   return (
     <SettingsSection title="Projects">
-      <p className="vf-intro">
-        Supervise several repos from this Lookout: All projects shows what needs you in each of them. The list lives in
-        your config folder on this machine, never in a repo, and agents only ever work in their own repo. A project that
-        shares its decisions offers them to agents in your other projects as suggestions, never as answers.
-      </p>
+      <SectionIntro
+        lead="Supervise several repos from this Lookout. All projects shows what needs you in each."
+        more={[
+          'The list lives in your config folder on this machine, never in a repo.',
+          'Agents only ever work in their own repo.',
+          'A project that shares its decisions offers them to agents in your other projects as suggestions, never as answers.',
+        ]}
+      />
       <ul className="pj-list set-projects">
         {view.projects.map((p) => (
           <Row

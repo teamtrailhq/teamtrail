@@ -1,8 +1,9 @@
 import { setupProblem } from '../guides/setupArgv';
 import type { SetupSpec } from '../model/setup';
 import type { VerificationConfig } from '../model/verification';
+import { commandLine } from './commandLine';
 
-const shown = (s: SetupSpec) => `${JSON.stringify(s.run)}${s.cwd && s.cwd !== '.' ? ` in ${s.cwd}` : ''}`;
+const shown = (s: SetupSpec) => `${commandLine(s.run)}${s.cwd && s.cwd !== '.' ? ` in ${s.cwd}` : ''}`;
 
 /**
  * The setup steps approving would change, each as its exact argv (old → new), marked as setup so nobody takes one for a

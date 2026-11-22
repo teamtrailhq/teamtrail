@@ -1,6 +1,7 @@
 import { BRAND } from '@teamtrail/core';
 import { useEffect, useRef, useState } from 'react';
 import { Button, MetaLine } from '../../components/ui';
+import { SectionIntro } from '../settings/SectionIntro';
 import { SettingsSection } from '../settings/SettingsSection';
 import { CatalogDialog } from './CatalogDialog';
 import { isHandWritten } from './guideLabels';
@@ -38,10 +39,10 @@ export function GuidesSection(props: { focus?: boolean }) {
   return (
     <div className="guides-section" ref={ref}>
       <SettingsSection title="Guides">
-        <p className="vf-intro">
-          Guides give an agent instructions and a checklist for the tickets that ask for them. A guide can add checks,
-          never remove them, and its commands only run once you approve them.
-        </p>
+        <SectionIntro
+          lead="Guides give agents instructions and a checklist for the tickets that ask for them."
+          points={['A guide can add checks, never remove them, and its commands run only once you approve them.']}
+        />
         <ul className="guides-list">
           {view.guides
             .filter((r) => !isHandWritten(r))
