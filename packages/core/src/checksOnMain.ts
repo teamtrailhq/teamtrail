@@ -13,5 +13,6 @@ export { trailRunKey } from './trailChecks/trailRunKey';
 export { trailChecksItem } from './trailChecks/trailChecksItem';
 export { failuresOf, knownFailuresOf } from './mainChecks/knownFailures';
 export type * from './model/readiness';
+export * from './model/setupTicket';
 export { holdingFindings } from './readiness/holdingFindings';
 export { readinessReason } from './readiness/readinessReason';

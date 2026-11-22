@@ -52,7 +52,8 @@ export type EvidenceFlagKind =
   | 'stale'
   | 'outside-scope'
   | 'in-scope'
-  | 'check-guard';
+  | 'check-guard'
+  | 'setup';
 
 /** Something a human should know about a completion. `effect` is what it does to the attempt, if anything. */
 export interface EvidenceFlag {
@@ -77,6 +78,11 @@ export interface GitEvidence {
   changed: ChangedFile[];
   stats: { files: number; add: number; del: number };
   configHash?: string;
+  /**
+   * A new repo's setup ticket (model/setupTicket.ts) proposed the checks it ran: nothing was approved at its claim, so
+   * the config it changed and what the checks run are new, not weakened. The trail lead approved them before they ran.
+   */
+  setup?: true;
   flags: EvidenceFlag[];
 }
 

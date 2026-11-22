@@ -23,6 +23,7 @@ import {
 } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 import { sessionTier } from './models';
+import { assertSetupProposesChecks, SETUP_WAIT_NOTE } from './setupTicket';
 import type { WaitControl } from './types';
 import { checksOf, feedbackOf, gitView, settledView } from './verificationView';
 
@@ -102,7 +103,9 @@ export async function submitVerified(
   // Settings → Approvals). A remote completion with no runner runs nothing, so it doesn't wait.
   const runs = !sub.remote || !!ctx.opts.checkRunner;
   const approval = runs ? checksApproval(ctx.root) : undefined;
-  if (approval?.waiting) return waitingForApproval(ctx, t.key, checksWaitReason(approval));
+  if (approval?.waiting)
+    return waitingForApproval(ctx, t.key, checksWaitReason(approval) + (t.setup ? SETUP_WAIT_NOTE : ''));
+  await assertSetupProposesChecks(ctx, t, info);
   await transition(ctx.adapter, snap.map.id, t.id, {
     event: 'submit',
     actor: sub.agent,

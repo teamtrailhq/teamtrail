@@ -11,6 +11,7 @@ export function chipInput(v: LoadedTicket): ChipInput {
   return {
     key: v.t.key,
     type: v.t.type,
+    ...(v.t.setup ? { setup: true } : {}),
     state: v.state,
     need: needOf(v),
     agent: agentOf(v),

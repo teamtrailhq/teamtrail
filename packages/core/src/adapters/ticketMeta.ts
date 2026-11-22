@@ -7,6 +7,7 @@ export const META_FIELDS = [
   'verification',
   'checks',
   'reviewOf',
+  'setup',
   'guide',
   'guidesAdded',
   'guidesRemoved',

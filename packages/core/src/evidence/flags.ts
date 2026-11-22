@@ -22,6 +22,8 @@ export interface FlagInput {
   /** The agent says the ticket needed no code change; it still shows, as info. */
   noCodeReason?: string;
   configHash?: string;
+  /** A setup ticket's own proposal of the checks: nothing was approved at its claim (GitEvidence.setup). */
+  setup?: boolean;
   /** The globs the agent declared at its claim, and what changes outside them do (evidence/scopeFlag.ts). */
   touches?: string[];
   scope?: VerificationConfig['scope'];
@@ -81,7 +83,13 @@ function history(base: GitTreeState, now: GitTreeState, descends?: boolean): Evi
 /** What a human should know about a completion's git evidence; `effect` flags change the attempt's result. */
 export function evidenceFlags(i: FlagInput): EvidenceFlag[] {
   const out: EvidenceFlag[] = [];
-  if (i.base && (i.base.configHash ?? null) !== (i.configHash ?? null))
+  if (i.setup)
+    out.push({
+      kind: 'setup',
+      level: 'info',
+      message: 'the setup ticket proposed these checks; the trail lead approved them before they ran',
+    });
+  else if (i.base && (i.base.configHash ?? null) !== (i.configHash ?? null))
     out.push({
       kind: 'config-changed',
       level: 'alert',

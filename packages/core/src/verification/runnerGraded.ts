@@ -3,6 +3,7 @@ import { applyGuard } from '../checkGuard/applyGuard';
 import { runnerGuard } from '../checkGuard/runnerGuard';
 import type { CriteriaResult } from '../criteria/criteria';
 import { gateOutcome } from '../evidence/completionEvidence';
+import { markedSetup, setupProposal } from '../evidence/setupProposal';
 import { ensureLocalDir } from '../lib/ensureLocalDir';
 import { trailKnownFailures, withKnownFailures } from '../mainChecks/withKnownFailures';
 import type { AttemptGuard } from '../model/checkGuard';
@@ -115,16 +116,19 @@ export async function runnerGraded(
     outcome.knownFailures?.map((k) => k.name),
   );
   const unmet = criteria ? [...criteria.missing, ...criteria.failed] : [];
-  const graded = { ...outcome, git: read.git, ...(criteria ? { criteria } : {}) };
+  const setup = setupProposal({ root: env.root, mapId: job.mapId, ticket: job.ticket, configHash: run.config.hash });
+  const graded = { ...outcome, git: setup ? markedSetup(read.git) : read.git, ...(criteria ? { criteria } : {}) };
   // the check guard: did the work change what these checks run (checkGuard/)
   const repoRoot = env.repoRoot ?? path.dirname(env.root);
-  const guard = await runnerGuard({
-    config,
-    checks: job.info.checks,
-    git: read.git,
-    runner: env.checkRunner,
-    repoRoot,
-  });
+  const guard = setup
+    ? undefined
+    : await runnerGuard({
+        config,
+        checks: job.info.checks,
+        git: read.git,
+        runner: env.checkRunner,
+        repoRoot,
+      });
   const guarded = { guard, root: env.root, mapId: job.mapId, ticket: { id: job.ticket.id, key: job.ticket.key } };
   if (outcome.result !== 'pass' || !unmet.length) return applyGuard(graded, guarded);
   const { knownFailures: _known, ...rest } = graded;

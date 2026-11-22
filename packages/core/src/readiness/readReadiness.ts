@@ -38,6 +38,7 @@ async function compute(o: { root: string; files: RepoFiles; probe: Probe; now: n
   const { config: read, approval } = trustedChecks(o.root);
   const config = read.config;
   const profile = await detectRepoProfile(o.files);
+  const top = o.files.list ? await o.files.list('') : undefined;
   const screening = await screenConfig({ config, files: o.files, names: config?.run });
   const probe = probesOf({ root: o.root, files: o.files, probe: o.probe });
   const probes = probe ? await probe({ profile, config, files: o.files }) : undefined;
@@ -47,6 +48,7 @@ async function compute(o: { root: string; files: RepoFiles; probe: Probe; now: n
     config,
     screening,
     suggestions: suggestChecks(profile),
+    ...(top ? { top: top.map((e) => ({ name: e.name, kind: e.kind })) } : {}),
     probes,
     now: o.now,
   });

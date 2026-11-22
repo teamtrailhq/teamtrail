@@ -33,6 +33,7 @@ export function fingerprint(e: CacheEntry) {
         t.checks ?? null,
         !!t.settingsUnconfirmed,
         t.reviewOf ?? '',
+        !!t.setup,
         t.guide ?? '',
         t.guidesAdded ?? [],
         t.guidesRemoved ?? [],

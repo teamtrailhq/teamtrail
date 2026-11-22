@@ -101,7 +101,7 @@ export async function claimTicket(
     ...rulesAtClaim(ctx, input.touches),
     git: ctx.remote ? REMOTE_GIT_NOTE : baselineView(baseline),
     ...mainChecksField(main),
-    ...readinessField(readiness),
+    ...readinessField(readiness, fresh),
     lease: {
       expiresAt: new Date(lease.expiresAt).toISOString(),
       length: leaseSpan(lease.ttlMs),
