@@ -12,6 +12,14 @@
   font-size: var(--fs-heading);
   line-height: 1;
 }
+/* In Teamtrail Cloud the header shows the logo mark alone (Header.tsx), small enough to stay on every screen but a phone. */
+.wordmark.mark-only .tt-wordmark-name {
+  display: none;
+}
+.bp-laptop .wordmark.mark-only,
+.bp-wide .wordmark.mark-only {
+  display: inline-flex;
+}
 .h-title {
   min-width: 220px;
   flex: 1;
