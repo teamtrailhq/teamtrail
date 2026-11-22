@@ -266,3 +266,24 @@
     display: none;
   }
 }
+
+/* A page's own rules for links and buttons (Cloud colours every link and fills every button) never reach the nav:
+   these are more specific than a page's element rules, and change nothing where there are none. */
+.site-nav__links a,
+.site-footer a {
+  color: inherit;
+}
+.site-nav button,
+.site-nav button:hover {
+  background: none;
+  box-shadow: none;
+}
+.site-nav .site-nav__group-btn {
+  min-height: 0;
+}
+.site-nav .site-nav__burger {
+  align-items: stretch;
+}
+.site-nav .site-nav__burger:hover {
+  border-color: var(--site-line-2);
+}
