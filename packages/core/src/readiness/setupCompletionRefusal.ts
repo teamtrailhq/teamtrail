@@ -18,7 +18,7 @@ export function setupCompletionRefusal(o: {
   const hint = o.suggested.length ? ` Reading the repo now suggests: ${o.suggested.join('; ')}.` : '';
   return (
     `${o.t.key} sets the project up, so it proposes the checks the rest of the trail is verified with, and nothing ` +
-    'would check it without them. Write them in verification.json (each check a name and its argv, all listed in ' +
-    `"run"), then call close_ticket again: it waits for the trail lead's approval, then runs them on this work.${hint}`
+    'would check it without them. Propose them with propose_checks (each check a name and its argv), then call ' +
+    `close_ticket again: it waits for the trail lead's approval, then runs them on this work.${hint}`
   );
 }

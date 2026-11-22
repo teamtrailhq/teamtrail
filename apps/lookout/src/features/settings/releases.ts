@@ -24,6 +24,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.73.0',
+    date: '2026-11-22',
+    items: [
+      'A new repo works the same in Teamtrail Cloud: its setup ticket proposes the checks, and readiness says what Cloud can run',
+      'The setup ticket finishes by itself once you approve its checks, and the trail tells you to merge the setup work first',
+    ],
+  },
+  {
     version: '0.72.0',
     date: '2026-11-22',
     items: [

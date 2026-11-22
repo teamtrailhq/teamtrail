@@ -8,6 +8,9 @@ import { versionMatches } from './versionMatches';
 
 const ON_PATH = `install it, or put it on the PATH of the shell you start ${BRAND.slug} from`;
 
+/** Where the checks run, as the findings name it: this machine, or an embedding server's own place. */
+const placeOf = (p: LocalProbes) => p.where ?? 'on this machine';
+
 /** A program the approved checks (or setup steps) start that isn't on the checks' PATH: those checks can't run. */
 function missingPrograms(input: ReadinessInput, probes: LocalProbes): ReadinessFinding[] {
   const checks = approvedChecks(input.config);
@@ -23,7 +26,7 @@ function missingPrograms(input: ReadinessInput, probes: LocalProbes): ReadinessF
       id: `program:${program}`,
       kind: 'program',
       level: stopped.length ? 'blocks' : 'warns',
-      text: `${program} isn't installed on this machine, so ${who} can't run`,
+      text: `${program} isn't installed ${placeOf(probes)}, so ${who} can't run`,
       why: `no ${program} on the PATH checks run with`,
       ...(stopped.length ? { checks: stopped } : {}),
       howTo: [`${program}: ${ON_PATH}`],
@@ -54,7 +57,7 @@ function toolchainFinding(
     return {
       ...base,
       id: `version:${dir}`,
-      text: `${tool.label} isn't installed on this machine; ${folderLabel(dir)} asks for ${pin.version}`,
+      text: `${tool.label} isn't installed ${placeOf(probes)}; ${folderLabel(dir)} asks for ${pin.version}`,
       why: `${asked}; no ${tool.programs[0]} on the PATH checks run with`,
       howTo: [`${tool.programs[0]}: ${ON_PATH}`],
     };

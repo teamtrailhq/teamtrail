@@ -78,6 +78,6 @@ export async function assertSetupProposesChecks(ctx: AgentContext, t: Ticket, in
   throw new OperationError(setupCompletionRefusal({ ...base, suggested: await suggested(ctx) })!);
 }
 
-/** What a waiting setup completion adds to the usual note: call close_ticket again once the checks are approved. */
+/** What a setup completion that waited without an approval adds to the usual note: call close_ticket again after it. */
 export const SETUP_WAIT_NOTE =
-  ' This is the setup ticket: once the trail lead approves the checks you proposed, call close_ticket again and they run on this work.';
+  ' This is the setup ticket: this call waited for the trail lead to approve the checks you proposed. Once they do, call close_ticket again and they run on this work.';

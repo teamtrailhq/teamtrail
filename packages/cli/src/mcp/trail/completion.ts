@@ -22,6 +22,7 @@ import {
   type Submission,
 } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
+import { awaitChecksApproval } from './awaitChecksApproval';
 import { sessionTier } from './models';
 import { assertSetupProposesChecks, SETUP_WAIT_NOTE } from './setupTicket';
 import type { WaitControl } from './types';
@@ -97,14 +98,20 @@ export async function submitVerified(
   job: { snap: MapSnapshot; ticket: Ticket; info: LevelInfo; sub: Submission },
   wait: { seconds: number; ctl: WaitControl },
 ) {
-  const { snap, ticket: t, info, sub } = job;
+  const { snap, ticket: t, sub } = job;
+  let { info } = job;
   // Checks run only from the verification.json approved on this machine, here or on the server's runner. Until
   // then the completion waits: the ticket stays the agent's, nothing runs, and the human is asked (attention item,
   // Settings → Approvals). A remote completion with no runner runs nothing, so it doesn't wait.
   const runs = !sub.remote || !!ctx.opts.checkRunner;
   const approval = runs ? checksApproval(ctx.root) : undefined;
-  if (approval?.waiting)
-    return waitingForApproval(ctx, t.key, checksWaitReason(approval) + (t.setup ? SETUP_WAIT_NOTE : ''));
+  if (approval?.waiting) {
+    askApproval(ctx, t.key);
+    // the setup ticket proposed these checks: its completion goes on by itself once the trail lead approves them
+    const approved = t.setup && (await awaitChecksApproval(ctx, wait.seconds, wait.ctl));
+    if (!approved) return waitingForApproval(checksWaitReason(approval) + (t.setup ? SETUP_WAIT_NOTE : ''));
+    info = levelFor(ctx.root, snap, t).info;
+  }
   await assertSetupProposesChecks(ctx, t, info);
   await transition(ctx.adapter, snap.map.id, t.id, {
     event: 'submit',
@@ -131,16 +138,18 @@ export async function submitVerified(
   return awaitRun(ctx, run, wait.seconds, wait.ctl);
 }
 
-/** A completion held back because the check commands wait for the trail lead's approval on this machine. */
-function waitingForApproval(ctx: AgentContext, key: string, note: string) {
+/** Tells the human a completion waits for their approval of the check commands on this machine. */
+function askApproval(ctx: AgentContext, key: string) {
   ctx.activity.push({
     source: 'system',
     level: 'warn',
     kind: 'asks-you',
     text: `${key} waits: check commands need your approval`,
   });
-  return { status: 'waiting-approval' as const, pending: true as const, note };
 }
+
+/** A completion held back because the check commands wait for the trail lead's approval: nothing ran. */
+const waitingForApproval = (note: string) => ({ status: 'waiting-approval' as const, pending: true as const, note });
 
 /** `verification_status`: the attempts and verdicts of a ticket; with `wait`, until a running check finishes. */
 export async function verificationStatus(
