@@ -47,6 +47,8 @@ function scratchRepo() {
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   fs.mkdirSync(path.join(top, '.teamtrail'));
   fs.writeFileSync(path.join(top, 'README.md'), '# app\n');
+  // a site already, not a new repo (which would start with its setup ticket): a page at the top
+  fs.writeFileSync(path.join(top, 'index.html'), '<h1>app</h1>\n');
   git('init', '-q', '-b', 'main');
   git('remote', 'add', 'origin', 'git@github.com:octo-org/launchpad.git');
   git('add', '-A');

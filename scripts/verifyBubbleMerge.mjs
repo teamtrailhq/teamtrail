@@ -281,6 +281,8 @@ function bareRepo() {
   const top = e2eTemp('teamtrail-merge-at-head-e2e-');
   const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e', ...a], { cwd: top });
   fs.writeFileSync(path.join(top, 'README.md'), '# app\n');
+  // a site already, not a new repo (which would start with its setup ticket): a page at the top
+  fs.writeFileSync(path.join(top, 'index.html'), '<h1>app</h1>\n');
   git('init', '-q', '-b', 'main');
   git('add', '-A');
   git('commit', '-qm', 'init');
