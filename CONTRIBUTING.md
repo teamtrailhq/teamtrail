@@ -12,7 +12,7 @@ ESLint (`eslint.config.js`) and Prettier (`.prettierrc.json`) enforce most of th
 - **Layout.**
   - Lookout: `components/ui/` holds design-system primitives, `features/<feature>/` holds one folder per zone or dialog, and app-wide code goes in `hooks/` and `lib/`.
   - core: modules are grouped by topic under `src/`, with the entry points listed in `package.json` `exports`.
-  - Code used by more than one package belongs in `packages/core`, or in `packages/scout-avatar` for the avatar.
+  - Code used by more than one package belongs in `packages/core`, or in `packages/scout-avatar` for the avatar, or in `packages/site` for teamtrail.app's nav, footer, theme and trail field (shared with the site and Cloud).
 - **Imports.** Use inline type imports (`import { x, type Y } from '…'`) and one import statement per module. No unused imports and no import cycles.
 - **Barrels.** A folder that is imported from outside gets one `index.ts` with explicit named re-exports. Inside the folder, import siblings by path, never through its own `index.ts`. Use `export *` only in package entry points.
 - **Naming.** Components and classes use `PascalCase`, hooks `useCamelCase`, other modules `camelCase`, and folders `kebab-case`.

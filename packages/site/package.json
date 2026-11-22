@@ -1,0 +1,32 @@
+{
+  "name": "@teamtrail/site",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Teamtrail",
+  "homepage": "https://teamtrail.app",
+  "bugs": {
+    "url": "https://github.com/teamtrailhq/teamtrail/issues"
+  },
+  "description": "teamtrail.app's nav, footer, shared theme and hero trail field, framework-free: used by the site and by Teamtrail Cloud's welcome page.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/teamtrailhq/teamtrail.git",
+    "directory": "packages/site"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/browser/index.ts",
+    "./tokens.css": "./src/tokens.css",
+    "./nav.css": "./src/nav.css",
+    "./nav-phone.css": "./src/navPhone.css",
+    "./footer.css": "./src/footer.css"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p ."
+  }
+}
