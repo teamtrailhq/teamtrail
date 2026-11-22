@@ -15,6 +15,8 @@ export interface ReadinessInput {
   screening: CheckFinding[];
   /** The checks the profile suggests (repoProfile/suggestChecks.ts). */
   suggestions: CheckSuggestion[];
+  /** The repo's top folder as listed (readiness/newRepo.ts); missing when the files can't be listed. */
+  top?: TopEntry[];
   /** This machine's probes; missing where checks don't run here: nothing about the machine is said then. */
   probes?: LocalProbes;
   now: number;
@@ -25,4 +27,10 @@ export interface ApprovedCheck {
   name: string;
   run: string[];
   cwd: string;
+}
+
+/** One entry of the repo's top folder. */
+export interface TopEntry {
+  name: string;
+  kind: 'file' | 'dir';
 }

@@ -1,4 +1,4 @@
-import { OperationError, type MapSnapshot, type ReadinessHost, type Ticket } from '@teamtrail/core';
+import { NEW_REPO_FINDING, OperationError, type MapSnapshot, type ReadinessHost, type Ticket } from '@teamtrail/core';
 import { readinessHold, readinessHost, readReadiness, type ReadinessHold } from '@teamtrail/core/agents';
 import type { AgentContext } from './agentContext';
 
@@ -26,6 +26,17 @@ export function assertReady(gate: ReadinessHold, t: Ticket, agent: string) {
   if (gate.held.some((h) => h.id === t.id)) throw new OperationError(gate.reason);
 }
 
-/** `readiness` on next and claim results while it holds work back, so the agent can tell the human. */
-export const readinessField = (gate: ReadinessHold) =>
-  gate.reason ? { readiness: { waits: gate.reason, lookout: 'Settings → Project → Repo readiness' } } : {};
+const NEW_REPO =
+  'New repo: no project yet. Chart "Set up the project" as its first implementation ticket (add_ticket with setup: true); ' +
+  'it builds the project skeleton with a test and proposes the checks in verification.json. Every other task waits for it.';
+
+/**
+ * `readiness` on next and claim results while it holds work back, so the agent can tell the human; on a new repo
+ * whose trail has no setup ticket yet, `newRepo` says to chart one first (model/setupTicket.ts).
+ */
+export function readinessField(gate: ReadinessHold, snap?: MapSnapshot) {
+  const fresh = gate.findings.some((f) => f.id === NEW_REPO_FINDING) && !snap?.tickets.some((t) => t.setup);
+  if (!gate.reason && !fresh) return {};
+  const waits = gate.reason ? { waits: gate.reason, lookout: 'Settings → Project → Repo readiness' } : {};
+  return { readiness: { ...waits, ...(fresh ? { newRepo: NEW_REPO } : {}) } };
+}

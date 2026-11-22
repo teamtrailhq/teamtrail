@@ -150,6 +150,8 @@ export interface TicketRunners {
 export interface ChipInput {
   key: string;
   type: TicketType;
+  /** The setup ticket of a new repo (Ticket.setup): it proposes the project's checks. */
+  setup?: boolean;
   state: NodeState;
   /** What needs the human on it, as its map card says it ("needs you", "yours to decide"): the state chip, in red. */
   need?: string;
@@ -163,7 +165,7 @@ export interface ChipInput {
 
 /** One chip under a ticket's title. */
 export interface TicketChip {
-  kind: 'key' | 'type' | 'state' | 'agent' | 'model' | 'proof' | 'risk';
+  kind: 'key' | 'type' | 'setup' | 'state' | 'agent' | 'model' | 'proof' | 'risk';
   text: string;
   tone?: 'agent' | 'warn' | 'urgent' | 'verified';
   tip?: string;

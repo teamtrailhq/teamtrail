@@ -35,6 +35,8 @@ beforeEach(() => {
   fs.mkdirSync(root, { recursive: true });
   sh(top, 'init', '-q', '-b', 'main');
   fs.writeFileSync(path.join(top, 'readme.md'), 'hi\n');
+  // a project already (not a new repo, which would start with its setup ticket): some code at the top
+  fs.writeFileSync(path.join(top, 'app.js'), '// app\n');
   sh(top, 'add', '-A');
   sh(top, '-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'init');
   fs.writeFileSync(path.join(root, 'workspaces.json'), JSON.stringify({ v: 1, worktrees: true }));

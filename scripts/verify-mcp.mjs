@@ -40,6 +40,7 @@ import { verifyMainChecks } from './verifyMainChecks.mjs';
 import { verifyManaged } from './verifyManaged.mjs';
 import { verifyModels } from './verifyModels.mjs';
 import { verifyNeedsYouKinds } from './verifyNeedsYouKinds.mjs';
+import { verifyNewRepo } from './verifyNewRepo.mjs';
 import { verifyNewTrail } from './verifyNewTrail.mjs';
 import { verifyNoChecksGap } from './verifyNoChecksGap.mjs';
 import { verifyParallel } from './verifyParallel.mjs';
@@ -712,6 +713,8 @@ const variablesOk = await verifyCheckVariables({ browser, cli, log, shots });
 const commandNotesOk = await verifyCommandNotes({ browser, cli, log, shots });
 // Repo readiness: no checks hold a task; the queue item opens the screen; Start anyway, Undo, and the one-click fix.
 const readinessOk = await verifyReadiness({ browser, cli, log, shots });
+// A new repo: the setup ticket first, its proposed checks approved in Settings, run on its work; then the feature.
+const newRepoOk = await verifyNewRepo({ browser, cli, log, shots });
 const waiverOk = await verifyWaiver({ browser, cli, log, shots });
 // Live views: an approval in a second browser and evidence alone changing reach an open page without a reload.
 const liveViewsOk = await verifyLiveViews({ browser, cli, log, shots });
@@ -870,6 +873,7 @@ if (
   !variablesOk ||
   !commandNotesOk ||
   !readinessOk ||
+  !newRepoOk ||
   !waiverOk ||
   !liveViewsOk ||
   !proofGapsOk ||

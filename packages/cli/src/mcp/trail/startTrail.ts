@@ -1,5 +1,6 @@
 import {
   chartMap,
+  DEFAULT_CONFIG,
   DISCOVERY_TICKET,
   OperationError,
   setTicketGuides,
@@ -17,6 +18,7 @@ import { assertGuide } from './guides';
 import { knowledgeFor } from './knowledge';
 import { offerNext } from './offerNext';
 import { requestSetting } from './settings';
+import { repoIsNew } from './setupTicket';
 import { ticketInfo } from './ticketInfo';
 import type { TicketPlanInput } from './types';
 
@@ -79,7 +81,8 @@ async function chartTrail(ctx: AgentContext, input: StartInput) {
   assertGuides(ctx, input);
   s.step(3, input.title);
   const agent = await ctx.agentId();
-  const { map, tickets } = await chartMap(ctx.adapter, chartInput(ctx, input, agent), {
+  const newRepo = await repoIsNew(ctx);
+  const { map, tickets } = await chartMap(ctx.adapter, chartInput(ctx, input, { agent, newRepo }), {
     onMapCreated: (m) => {
       s.bindMap(m.id);
       s.log(`trail ${m.key} online`, 'ok');
@@ -129,6 +132,7 @@ async function chartTrail(ctx: AgentContext, input: StartInput) {
     discovery: briefView(ctx.root, snap),
     next: next ? ticketInfo(ctx.root, snap, next) : null,
     ...(next ? {} : { nextReason: offer.reason }),
+    ...offer.fields,
     knowledge: next ? knowledgeFor(ctx.root, snap, next) : undefined,
     lookout: ctx.lookout(),
   };
@@ -153,9 +157,11 @@ function assertKnownRefs(planned: TicketPlanInput[], assumptions: AssumptionPlan
 const statedBy = (agent: string) => (text: string) => `${text.trim()} (stated by ${agent} when charting)`;
 
 /** The map to chart: sections from the input, the repo's default verification level, discovery first. */
-function chartInput(ctx: AgentContext, input: StartInput, agent: string) {
-  // the approved config's default: an unapproved edit to verification.json can't pick a new trail's level
-  const level = trustedChecks(ctx.root).config.config?.default;
+function chartInput(ctx: AgentContext, input: StartInput, by: { agent: string; newRepo: boolean }) {
+  const { agent } = by;
+  // the approved config's default: an unapproved edit to verification.json can't pick a new trail's level. A new
+  // repo has no config yet: its trail is verified with checks, which its setup ticket proposes (model/setupTicket.ts).
+  const level = trustedChecks(ctx.root).config.config?.default ?? (by.newRepo ? DEFAULT_CONFIG.default : undefined);
   const verifies = level !== undefined && level !== 'off';
   const planned = (input.tickets ?? []).map((t) => ({ ...t, body: t.body ?? '' }));
   const discovery = [{ ref: '__discovery', ...DISCOVERY_TICKET }];

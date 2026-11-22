@@ -19,6 +19,7 @@ export const TICKET_KEYS = [
   'status',
   'blocked_by',
   'review_of',
+  'setup',
   'verification',
   'checks',
   'guide',
@@ -27,7 +28,16 @@ export const TICKET_KEYS = [
 ] as const;
 
 /** A ticket's fields that say what happened to it; a ticket nobody signed has none of them set (unsignedTicket). */
-export const PROGRESS_KEYS = ['state', 'close_reason', 'assignee', 'status', 'review_of', 'verification', 'checks'];
+export const PROGRESS_KEYS = [
+  'state',
+  'close_reason',
+  'assignee',
+  'status',
+  'review_of',
+  'setup',
+  'verification',
+  'checks',
+];
 
 /**
  * Trail fields (`destination` is a hash of its text); each assumption's status is a field of its own, `assumption:S-<n>`.
@@ -81,6 +91,7 @@ export function ticketFields(t: Ticket): Fields {
     status: opt(t.status),
     blocked_by: [...t.blockedBy].sort(),
     review_of: opt(t.reviewOf),
+    setup: t.setup ? true : null,
     verification: opt(t.verification),
     checks: list(t.checks),
     guide: opt(t.guide),

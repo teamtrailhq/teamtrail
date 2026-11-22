@@ -24,6 +24,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.72.0',
+    date: '2026-11-22',
+    items: [
+      'A new repo starts with a setup ticket: the agent sets the project up and proposes its checks, you approve them, and they check the setup work too',
+      'The rest of the trail waits until checks are approved, so nothing in a new repo finishes unchecked',
+    ],
+  },
+  {
     version: '0.71.1',
     date: '2026-11-22',
     items: ['In Teamtrail Cloud, the header shows the Teamtrail logo alone'],
@@ -176,26 +184,6 @@ export const RELEASES: Release[] = [
       'Settings → Project → Repo readiness says whether Teamtrail can check work in your repo on this machine: checks, programs, installs, a browser, services and variable names, with a fix in one click where it is an approval',
       'While something blocks, agents start no new implementation work until you fix it or start the trail anyway; research and reviews go on, and Undo is one click',
     ],
-  },
-  {
-    version: '0.67.5',
-    date: '2026-11-20',
-    items: [
-      'Monorepos: give a check the paths it is about (Settings → Verification, prefilled for a workspace package), and a change outside them doesn’t run it',
-      'Lockfiles, the top’s manifests and CI config still run every check, and so do checks on main; the proof says which checks were skipped and why',
-    ],
-  },
-  {
-    version: '0.67.4',
-    date: '2026-11-20',
-    items: [
-      'A check counts as a tool Teamtrail knows only when it is found on your PATH or in the repo’s own tool folders (node_modules/.bin, .venv/bin, vendor/bin, gradlew, mvnw); a program elsewhere named pytest or jest asks you first',
-    ],
-  },
-  {
-    version: '0.67.3',
-    date: '2026-11-20',
-    items: ['The teamtrail wordmark ends in a blaze block cursor instead of a full stop'],
   },
   ...RECENT_RELEASES,
   ...NEWER_RELEASES,

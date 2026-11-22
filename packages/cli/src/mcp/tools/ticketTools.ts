@@ -100,6 +100,12 @@ export function registerTicketTools(tool: DefineTool, agent: TrailAgent) {
       fromUnspecified: z.string().optional(),
       criteria: criteriaInput.optional().describe('Acceptance criteria: what must be true for this ticket to be done.'),
       guide: guideId.optional(),
+      setup: z
+        .boolean()
+        .optional()
+        .describe(
+          'Only on a new repo (no project yet): this ticket sets the project up and proposes the checks in verification.json. One per trail; every other task and execute ticket waits for it.',
+        ),
     },
     (a) => agent.addTicket(a),
   );

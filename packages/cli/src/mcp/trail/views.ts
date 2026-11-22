@@ -35,6 +35,7 @@ export function ticketView(snap: MapSnapshot, t: Ticket, records: DecisionRecord
     assignee: t.assignee,
     body: t.body,
     ...(t.reviewOf ? { reviews: byId.get(t.reviewOf)?.key ?? t.reviewOf } : {}),
+    ...(t.setup ? { setup: true } : {}),
     blockedBy: t.blockedBy.map((b) => ({
       key: byId.get(b)?.key ?? b,
       title: byId.get(b)?.title,

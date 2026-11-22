@@ -8,6 +8,7 @@ import { changesSince, statsOf } from './changes';
 import { evidenceFlags } from './flags';
 import { git } from './git';
 import { otherWork } from './otherWork';
+import { setupProposal } from './setupProposal';
 import { findWorktree, readTreeState } from './treeState';
 
 export interface EvidenceRequest {
@@ -38,7 +39,10 @@ export async function collectEvidence(r: EvidenceRequest): Promise<GitEvidence> 
   const wt = 'error' in found ? undefined : found;
   const now = wt && (await readTreeState(wt));
   const changed = wt && now && b ? await changesSince(wt, now, b) : [];
+  // a new repo's setup ticket, claimed with no checks approved: the checks it ran are the ones it proposed
+  const setup = setupProposal({ root: r.root, mapId: r.snap.map.id, ticket: r.ticket, configHash: r.configHash });
   const flags = evidenceFlags({
+    setup,
     base,
     now,
     ...('error' in found ? { noGit: found.error } : {}),
@@ -56,6 +60,7 @@ export async function collectEvidence(r: EvidenceRequest): Promise<GitEvidence> 
     v: 1,
     ...(base ? { baseline: base.id } : {}),
     ...(b ? { base: { head: b.head, branch: b.branch } } : {}),
+    ...(setup ? { setup: true as const } : {}),
     ...(now ? { tree: treeOf(now) } : {}),
     changed,
     stats: statsOf(changed),

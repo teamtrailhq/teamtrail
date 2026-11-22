@@ -20,6 +20,7 @@ import type { MergeAnywayEntry } from '../model/mergeAnyway';
 import type { PrLinkEntry } from '../model/prEvidence';
 import type { ProofPostEntry } from '../model/proofPost';
 import type { ReadinessEntry } from '../model/readiness';
+import type { SetupTicketEntry } from '../model/setupTicket';
 import type { TrailChecksEntry } from '../model/trailChecks';
 
 /*
@@ -56,7 +57,8 @@ type AnyEntry =
   | TrailChecksEntry
   | PrLinkEntry
   | CheckEnvEntry
-  | ReadinessEntry;
+  | ReadinessEntry
+  | SetupTicketEntry;
 export const JOURNAL_DIR = '.events';
 
 const MAX_REASON = 500;

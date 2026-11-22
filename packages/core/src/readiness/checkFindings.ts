@@ -1,6 +1,8 @@
 import type { ReadinessCheck, ReadinessFinding } from '../model/readiness';
+import { NEW_REPO_FINDING } from '../model/setupTicket';
 import { VERIFICATION_FILE } from '../verification/configFile';
 import { approvedChecks } from './approvedChecks';
+import { isNewRepo } from './newRepo';
 import type { ReadinessInput } from './types';
 
 /** At most this many checks in one file (verification/setChecks.ts). */
@@ -12,6 +14,21 @@ function knownSuggestions(input: ReadinessInput, room: number): ReadinessCheck[]
     .filter((s) => s.known)
     .slice(0, room)
     .map((s) => ({ name: s.name, run: s.run, cwd: s.cwd, known: true }));
+}
+
+/** A repo with no project yet: its first ticket sets it up and proposes the checks (model/setupTicket.ts). */
+function newRepoFinding(): ReadinessFinding {
+  return {
+    id: NEW_REPO_FINDING,
+    kind: 'checks',
+    level: 'blocks',
+    text: 'New repo: the first ticket sets it up',
+    why: 'reading the repo found no project to build or test yet',
+    howTo: [
+      'Start the trail: its agent charts "Set up the project" first and proposes the checks',
+      'Approve them in Settings → Approvals; the setup ticket is then checked with them, and the rest of the trail opens',
+    ],
+  };
 }
 
 /** No check runs: either none is approved here, or the approved file names none. */
@@ -26,6 +43,7 @@ function noChecks(input: ReadinessInput): ReadinessFinding | undefined {
       why: `${VERIFICATION_FILE} names check commands nobody approved here`,
       howTo: ['Approve them in Settings → Approvals, or run: teamtrail approve'],
     };
+  if (isNewRepo(input)) return newRepoFinding();
   const add = knownSuggestions(input, MAX_CHECKS);
   const n = input.suggestions.length;
   const seen = n ? `reading the repo suggests ${n} check${n === 1 ? '' : 's'}` : 'nothing in the repo suggests one';

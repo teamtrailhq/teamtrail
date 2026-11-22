@@ -35,6 +35,7 @@ export interface BodyMeta extends BodySettings {
   assignee?: string;
   status?: string;
   reviewOf?: string;
+  setup?: true;
 }
 
 type TrailSettings = Pick<MapDoc, 'verification' | 'modelMatching' | 'guides' | 'guidesByType'>;
@@ -75,13 +76,14 @@ export const ticketSettings = (t: Pick<Ticket, 'verification' | 'checks' | Ticke
 
 /** Everything Teamtrail keeps in a ticket's meta marker, so one write never drops another's field. */
 export const ticketMeta = (
-  t: Pick<Ticket, 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | TicketGuides>,
+  t: Pick<Ticket, 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | 'setup' | TicketGuides>,
 ): BodyMeta => ({
   assignee: t.assignee,
   status: t.status,
   verification: t.verification,
   checks: t.checks,
   reviewOf: t.reviewOf,
+  setup: t.setup,
   guide: t.guide,
   guidesAdded: t.guidesAdded?.length ? t.guidesAdded : undefined,
   guidesRemoved: t.guidesRemoved?.length ? t.guidesRemoved : undefined,
@@ -127,7 +129,7 @@ export function joinBody(text: string, meta: BodyMeta): string {
  * trail issue's text is the map body, which guards its own fields and carries real assumption markers.)
  */
 export const ticketBody = (
-  t: Pick<Ticket, 'body' | 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | TicketGuides>,
+  t: Pick<Ticket, 'body' | 'assignee' | 'status' | 'verification' | 'checks' | 'reviewOf' | 'setup' | TicketGuides>,
 ) => joinBody(guardMarkers(t.body), ticketMeta(t));
 
 const stripped = (s: string) => oneLine(s).replace(/-->/g, '');
@@ -247,6 +249,7 @@ export function ticketFromIssue(p: IssueParts): Ticket {
     ...(status ? { status } : {}),
     ...ticketSettingsIn(p, meta),
     ...(typeof meta.reviewOf === 'string' && meta.reviewOf ? { reviewOf: meta.reviewOf } : {}),
+    ...(meta.setup === true ? { setup: true as const } : {}),
     blockedBy: p.blockedBy,
     comments: p.comments,
     createdAt: Date.parse(p.createdAt) || 0,

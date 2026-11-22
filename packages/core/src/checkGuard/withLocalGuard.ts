@@ -11,6 +11,8 @@ export async function withLocalGuard<T extends { result: AttemptResult; note?: s
   o: { root: string; job: VerifyJob; run: { config: ConfigRead; checkout: string }; checks: string[] },
 ) {
   const { git } = graded;
+  // a setup ticket's checks are new, proposed by it and approved by the trail lead: nothing they ran before to weaken
+  if (git.setup) return graded;
   const guard = await localGuard({ config: o.run.config.config, checks: o.checks, git, checkout: o.run.checkout });
   const ticket = { id: o.job.ticket.id, key: o.job.ticket.key };
   return applyGuard(graded, { guard, root: o.root, mapId: o.job.mapId, ticket });

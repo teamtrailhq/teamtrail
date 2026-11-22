@@ -79,7 +79,7 @@ export async function offerNext(
   const fields = {
     ...reviewLimitField(gates.review),
     ...mainChecksField(gates.main),
-    ...readinessField(gates.readiness),
+    ...readinessField(gates.readiness, snap),
   };
   if (ticket) return { ticket, fields, gates };
   return { reason: whyNothing(ctx, snap, { ...gates, held }), fields, gates };

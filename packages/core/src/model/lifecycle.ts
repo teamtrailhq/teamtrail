@@ -76,6 +76,8 @@ export interface TicketMetaPatch {
   checks?: string[] | null;
   /** Set once, when Teamtrail creates a review ticket. */
   reviewOf?: string | null;
+  /** Set once, by `markSetupTicket`, on the setup ticket of a new repo. */
+  setup?: true | null;
   /** The ticket's guide from before guides came by type; only ever cleared now (`setTicketGuides`). */
   guide?: string | null;
   /** Guides added to this ticket beyond its type's (`setTicketGuides`). */

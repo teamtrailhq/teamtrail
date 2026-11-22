@@ -9,7 +9,15 @@
 /** `map.md` frontmatter keys (mapFile.ts, guidesByTypeFront.ts, modelMatchingFront.ts); `archived` keeps work from being taken. */
 export const MAP_TRUST_KEYS = ['verification', 'guides', 'guides-by-type', 'model-matching', 'model-tiers', 'archived'];
 /** `tickets/<n>.md` frontmatter keys (ticketFile.ts). */
-export const TICKET_TRUST_KEYS = ['verification', 'checks', 'guide', 'guides_added', 'guides_removed', 'review_of'];
+export const TICKET_TRUST_KEYS = [
+  'verification',
+  'checks',
+  'guide',
+  'guides_added',
+  'guides_removed',
+  'review_of',
+  'setup',
+];
 /**
  * The only gate fields of a ticket (signedState/stateFields.ts) a device on the network may change through the raw
  * file route: what the phone needs to move work along (its state, status and how it closed). Its type, the hitl

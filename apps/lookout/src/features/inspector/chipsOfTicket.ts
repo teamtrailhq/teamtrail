@@ -11,11 +11,22 @@ const RISK_TEXT: Record<Exclude<RiskLevel, 'low'>, string> = { medium: 'medium r
 
 /**
  * The chips under a ticket's title, in the bubble and the full ticket alike, in the map card's words: its key and
- * type, its state, the agent and model on it, whether its proof is verified, and its risk when the policy rates it
- * above low. Each says one thing; the sentences (who waits on whom, since when) are the state line's.
+ * type, whether it sets a new repo's project up, its state, the agent and model on it, whether its proof is
+ * verified, and its risk when the policy rates it above low. Each says one thing; the sentences (who waits on whom,
+ * since when) are the state line's.
  */
 export function chipsOfTicket(c: ChipInput): TicketChip[] {
-  const chips: TicketChip[] = [{ kind: 'key', text: c.key }, { kind: 'type', text: TYPE_TEXT[c.type] }, stateChip(c)];
+  const chips: TicketChip[] = [
+    { kind: 'key', text: c.key },
+    { kind: 'type', text: TYPE_TEXT[c.type] },
+  ];
+  if (c.setup)
+    chips.push({
+      kind: 'setup',
+      text: 'setup',
+      tip: 'Sets the project up and proposes the checks the trail is verified with',
+    });
+  chips.push(stateChip(c));
   if (c.agent) chips.push(...agentChips(c.agent));
   if (c.proof) chips.push(proofChip(c.proof));
   if (c.risk && c.risk.level !== 'low')

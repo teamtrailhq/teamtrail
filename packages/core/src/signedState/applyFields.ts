@@ -30,6 +30,7 @@ const TICKET: Record<string, Setter<Ticket>> = {
   status: (t, v) => ({ ...t, status: TICKET_STATUSES.find((s): s is TicketStatus => s === v) }),
   blocked_by: (t, v) => ({ ...t, blockedBy: strs(v) ?? [] }),
   review_of: (t, v) => ({ ...t, reviewOf: str(v) }),
+  setup: (t, v) => ({ ...t, setup: v === true || undefined }),
   verification: (t, v) => ({ ...t, verification: levelOf(str(v)) }),
   checks: (t, v) => ({ ...t, checks: strs(v) }),
   guide: (t, v) => ({ ...t, guide: str(v) }),

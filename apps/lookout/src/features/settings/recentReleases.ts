@@ -1,7 +1,27 @@
 import type { Release } from './releases';
 
-/** Releases 0.66.13–0.67.2, kept apart so `releases.ts` stays short (0.61–0.66.12 in `newerReleases.ts`). Newest first. */
+/** Releases 0.66.13–0.67.5, kept apart so `releases.ts` stays short (0.61–0.66.12 in `newerReleases.ts`). Newest first. */
 export const RECENT_RELEASES: Release[] = [
+  {
+    version: '0.67.5',
+    date: '2026-11-20',
+    items: [
+      'Monorepos: give a check the paths it is about (Settings → Verification, prefilled for a workspace package), and a change outside them doesn’t run it',
+      'Lockfiles, the top’s manifests and CI config still run every check, and so do checks on main; the proof says which checks were skipped and why',
+    ],
+  },
+  {
+    version: '0.67.4',
+    date: '2026-11-20',
+    items: [
+      'A check counts as a tool Teamtrail knows only when it is found on your PATH or in the repo’s own tool folders (node_modules/.bin, .venv/bin, vendor/bin, gradlew, mvnw); a program elsewhere named pytest or jest asks you first',
+    ],
+  },
+  {
+    version: '0.67.3',
+    date: '2026-11-20',
+    items: ['The teamtrail wordmark ends in a blaze block cursor instead of a full stop'],
+  },
   {
     version: '0.67.2',
     date: '2026-11-20',

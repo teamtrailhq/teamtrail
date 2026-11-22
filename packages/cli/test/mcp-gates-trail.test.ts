@@ -177,7 +177,9 @@ describe('paths in the agent’s own worktree', () => {
     highRiskInfra();
     git('init', '-q', '-b', 'main');
     fs.writeFileSync(path.join(repo, 'README.md'), 'x');
-    git('add', 'README.md');
+    // a project already (not a new repo, which would start with its setup ticket): some code at the top
+    fs.writeFileSync(path.join(repo, 'app.ts'), 'x');
+    git('add', 'README.md', 'app.ts');
     git('commit', '-qm', 'init');
     fs.writeFileSync(path.join(root, 'workspaces.json'), JSON.stringify({ v: 1, worktrees: true }));
     const call = await hub.connect({ name: 'claude-01' });

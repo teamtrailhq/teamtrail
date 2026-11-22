@@ -49,6 +49,11 @@ export interface Ticket {
   /** `review` tickets: id of the ticket under review. */
   reviewOf?: string;
   /**
+   * The project's setup ticket on a new repo (model/setupTicket.ts): readiness's checks findings don't hold it, and it
+   * proposes the checks the rest of the trail is verified with. Set only by `markSetupTicket`, signed like `status`.
+   */
+  setup?: true;
+  /**
    * The guide this ticket was given before guides came by type (format of 0.55 and older). Read as an added
    * override (guides/ticketGuideIds.ts); the trail lead's next change to the ticket's guides moves it to `guidesAdded`.
    */

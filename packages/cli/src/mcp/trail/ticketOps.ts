@@ -18,6 +18,7 @@ import { tierFields } from './models';
 import { offerNext } from './offerNext';
 import { assertOwnClaim } from './ownClaim';
 import { recoverStalled } from './recoverStalled';
+import { assertMaySetUp, markSetup, waitForSetup } from './setupTicket';
 import { ticketInfo } from './ticketInfo';
 
 export async function nextTicket(
@@ -79,10 +80,12 @@ export async function addTicket(
     fromUnspecified?: string;
     criteria?: CriterionInput[];
     guide?: string;
+    setup?: boolean;
   },
 ) {
   const snap = await ctx.resolveTrail(input.trail);
   assertNotArchived(snap.map);
+  if (input.setup) await assertMaySetUp(ctx, snap, input.type);
   if (input.guide) assertGuide(listGuides(ctx.root), input.guide, input.type);
   if (!allowedTypes(snap.map.mode).includes(input.type))
     throw new OperationError(`${input.type} tickets are disabled on plan-only trails`);
@@ -107,6 +110,8 @@ export async function addTicket(
     });
     for (const b of blockers) await ctx.adapter.addBlocking(snap.map.id, b, t.id);
   }
+  if (input.setup) await markSetup(ctx, snap, t);
+  else await waitForSetup(ctx, snap, t);
   recordCharted(ctx.root, snap.map.id, [t.id], { agent: await ctx.agentId(), origin: ctx.origin });
   // the type it was added as: its trail's level applies by it, whatever the file says before its first claim
   recordTypes(ctx.root, snap.map.id, [t]);
