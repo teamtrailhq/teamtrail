@@ -11,6 +11,7 @@ import type { ReactNode } from 'react';
 import { Panel, ScoutMark, Label, Readout, Button, Wordmark } from '../../components/ui';
 import { type BriefingStatus, useNow } from '../../hooks';
 import { hms, tokens, usd } from '../../lib';
+import { managedSignIn } from '../../lib/managedSignIn';
 import { summaryLine } from '../../lib/markdown';
 import { PrSyncIndicator } from '../pr-sync';
 import { HeaderTools } from './HeaderTools';
@@ -75,7 +76,8 @@ export function Header(props: {
   };
   return (
     <Panel as="header" className={props.handsOff ? 'header hands-off' : 'header'}>
-      <Wordmark className="wordmark" />
+      {/* Behind a server's own sign-in (Teamtrail Cloud) its page already names the product: the mark alone. */}
+      <Wordmark className={managedSignIn() ? 'wordmark mark-only' : 'wordmark'} />
       <div className="h-title">
         <div className="h-line1">
           {props.repo}
