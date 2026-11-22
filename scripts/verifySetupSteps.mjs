@@ -62,9 +62,10 @@ async function approveWithSetup(page, url) {
   await row.waitFor({ timeout: 15_000 });
   const again = page.getByRole('button', { name: 'Get started' });
   if (await again.isVisible()) await again.click();
-  // the file isn't committed here, so it is shown whole: the setup step with its exact argv
+  // not committed here, but check commands always show as their diff: the setup step by name, its exact argv as a
+  // command line, never the raw file
   const lines = await row.locator('.ap-lines').innerText();
-  const shown = /"setup"/.test(lines) && /"npm",\s*"ci"/.test(lines);
+  const shown = /setup \S+: npm ci\b/.test(lines) && !/"setup"/.test(lines);
   await row.getByRole('button', { name: 'Approve' }).click();
   await page.locator('.ap-none').waitFor({ timeout: 15_000 });
   await page.goto(url);

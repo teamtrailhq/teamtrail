@@ -41,7 +41,7 @@ describe('teamtrail approve', () => {
     const t = io();
     expect(await runApprove({ root, io: t.io, hashes: [] })).toBe(1);
     expect(t.text()).toMatch(/--hash/);
-    expect(t.text()).toContain('["npm","test"]');
+    expect(t.text()).toContain('npm test');
     expect(pendingTrust(root)).toHaveLength(2);
 
     const checks = pendingTrust(root).find((i) => i.kind === 'checks')!;

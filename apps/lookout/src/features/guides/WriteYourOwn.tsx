@@ -1,5 +1,6 @@
 import { BRAND, GUIDE_CATALOG_CONTRIBUTING, type InstalledGuide } from '@teamtrail/core';
 import { Empty } from '../../components/ui';
+import { SectionIntro } from '../settings/SectionIntro';
 import { SettingsSection } from '../settings/SettingsSection';
 import { GuideRow } from './GuideRow';
 
@@ -15,12 +16,20 @@ export function WriteYourOwn(props: {
 }) {
   return (
     <SettingsSection title="Write your own">
-      <p className="vf-intro">
-        Write a guide for your team in your repo with <code className="t-code">{BRAND.slug} guides new &lt;id&gt;</code>
-        . It starts from a template in <code className="t-code">{BRAND.dataDir}/guides/</code> that passes the lint.
-        Fill in the instructions and checklist, then approve it here: agents can only use it once you have, and again
-        after every edit.
-      </p>
+      <SectionIntro
+        lead={
+          <>
+            Write a guide for your team with <code className="t-code">{BRAND.slug} guides new &lt;id&gt;</code>, then
+            approve it here.
+          </>
+        }
+        points={['Agents can use it only once you approve it, and again after every edit.']}
+        more={[
+          <>
+            It starts from a template in <code className="t-code">{BRAND.dataDir}/guides/</code> that passes the lint.
+          </>,
+        ]}
+      />
       {props.guides.length > 0 ? (
         <ul className="guides-list own-guides">
           {props.guides.map((r) => (

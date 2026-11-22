@@ -36,7 +36,7 @@ describe("a check's paths in verification.json", () => {
     const before = JSON.stringify({ ...CONFIG, checks: { ...CONFIG.checks, 'web-test': { run: ['npm', 'test'] } } });
     const { lines } = checksDiff(before, JSON.stringify(CONFIG));
     expect(lines).toContain(
-      'web-test: ["npm","test"] → ["npm","test"] in apps/web, only for changes in apps/web/**, packages/ui/**',
+      'web-test: npm test → npm test in apps/web, only for changes in apps/web/**, packages/ui/**',
     );
   });
 });

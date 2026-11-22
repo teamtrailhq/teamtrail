@@ -46,7 +46,9 @@
 .bubble {
   position: absolute;
   z-index: 4;
-  width: 360px;
+  /* Grows with the map so long content (What, criteria, the pull request) reads in wider lines; bubblePlace.ts
+     places it by its measured size. */
+  width: clamp(360px, 40%, 560px);
   max-width: calc(100% - 16px);
   overflow: auto;
   padding: var(--sp-14) var(--sp-14) var(--sp-14) var(--sp-14);

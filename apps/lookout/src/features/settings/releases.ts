@@ -24,6 +24,14 @@ export const NEXT: { area: string; items: string[] }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: '0.71.0',
+    date: '2026-11-22',
+    items: [
+      'Settings read faster: each section opens with one line and the points you need, the rest under Learn more',
+      'The ticket bubble on the map grows with the map, so long tickets read in wider lines',
+    ],
+  },
+  {
     version: '0.70.0',
     date: '2026-11-21',
     items: [

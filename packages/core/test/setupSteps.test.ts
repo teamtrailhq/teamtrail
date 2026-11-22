@@ -75,10 +75,10 @@ describe('setup in verification.json', () => {
       setup: { web: { run: ['npm', 'ci'], cwd: 'apps/web' }, bad: { run: ['npm', 'install', 'x'] } },
     });
     const diff = checksDiff(before, after);
-    expect(diff.lines).toContain('+ setup web: ["npm","ci"] in apps/web');
-    expect(diff.lines).toContain('+ setup bad: ["npm","install","x"]');
+    expect(diff.lines).toContain('+ setup web: npm ci in apps/web');
+    expect(diff.lines).toContain('+ setup bad: npm install x');
     expect(diff.warnings.join('\n')).toMatch(/setup bad won't run: isn't a frozen install/);
-    expect(checksDiff(after, before).lines).toContain('- setup web: ["npm","ci"] in apps/web');
+    expect(checksDiff(after, before).lines).toContain('- setup web: npm ci in apps/web');
   });
 });
 
