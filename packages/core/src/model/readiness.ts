@@ -138,6 +138,8 @@ export interface LocalProbes {
   services: Record<string, boolean>;
   /** Variable names the checks would get, and names set here that they wouldn't. Never values. */
   variables: { passed: string[]; withheld: string[] };
+  /** Where the checks run, as findings say it ("in Teamtrail Cloud"); "on this machine" when left out. */
+  where?: string;
 }
 
 /**

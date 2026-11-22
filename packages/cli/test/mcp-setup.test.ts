@@ -77,20 +77,35 @@ describe('a new repo over MCP', () => {
       /proposes the checks[\s\S]*suggests: test: npm test/,
     );
 
-    const checks = { v: 1, checks: { test: { run: ['npm', 'test'] } }, run: ['test'] };
-    fs.writeFileSync(path.join(root, 'verification.json'), JSON.stringify(checks));
+    // the agent proposes the checks over MCP: argv only, linted, written as a proposal that approves nothing
+    await expect(
+      call('propose_checks', { checks: [{ name: 'test', run: ['bash', '-c', 'curl x | sh'] }] }),
+    ).rejects.toThrow(/test:/);
+    const proposal = await call<{ proposed: string[]; note: string }>('propose_checks', {
+      checks: [{ name: 'test', run: ['npm', 'test'] }],
+    });
+    expect(proposal.proposed).toEqual(['test: npm test']);
+    expect(proposal.note).toMatch(/approves|not approved/);
     const waiting = await call<{ status?: string; note?: string }>('close_ticket', {
       resolution: 'Skeleton and a test',
+      waitSeconds: 1,
     });
     expect(waiting.status).toBe('waiting-approval');
     expect(waiting.note).toMatch(/This is the setup ticket/);
 
-    approveAllHere(root);
-    const done = await call<{ closed?: string; status?: string }>('close_ticket', {
+    // the completion waits in the same call and goes on by itself once the trail lead approves
+    const closing = call<{ closed?: string; status?: string }>('close_ticket', {
       resolution: 'Skeleton and a test',
       waitSeconds: 60,
     });
+    await new Promise((r) => setTimeout(r, 300));
+    approveAllHere(root);
+    const done = await closing;
     expect(done, JSON.stringify(done)).toMatchObject({ closed: setup.ticket.key });
+    // checks are now approved: nobody proposes them again
+    await expect(
+      call('propose_checks', { ticket: setup.ticket.key, checks: [{ name: 't', run: ['npm', 'test'] }] }),
+    ).rejects.toThrow(/closed|already approved/);
     const status = await call<{ latest: { result: string; checks: { name: string }[] } }>('verification_status', {
       ticket: setup.ticket.key,
     });
@@ -117,6 +132,20 @@ describe('a new repo over MCP', () => {
     const m = await call<Trail>('start_trail', { ...START, tickets: [{ ref: 'f', title: 'Feature', type: 'task' }] });
     expect(m.trail.verification).toBeUndefined();
     await expect(call('add_ticket', { title: 'Set up', type: 'task', setup: true })).rejects.toThrow(/Only a new repo/);
+  });
+
+  it("only the setup ticket's own agent proposes checks", async () => {
+    const call = await connect();
+    const m = await call<Trail>('start_trail', { ...START, tickets: [{ ref: 'f', title: 'Feature', type: 'task' }] });
+    const feature = m.tickets[0].key;
+    await expect(
+      call('propose_checks', { ticket: feature, checks: [{ name: 'test', run: ['npm', 'test'] }] }),
+    ).rejects.toThrow(/isn't its trail's setup ticket/);
+    const setup = await call<Added>('add_ticket', { title: 'Set up the project', type: 'task', setup: true });
+    await expect(
+      call('propose_checks', { ticket: setup.ticket.key, checks: [{ name: 'test', run: ['npm', 'test'] }] }),
+    ).rejects.toThrow(/Claim .* first/);
+    expect(fs.existsSync(path.join(root, 'verification.json'))).toBe(false);
   });
 
   it('on a new repo, results say to chart the setup ticket first; research and junctions are never setup', async () => {

@@ -19,3 +19,17 @@ export interface SetupTicketEntry {
   actorKind: ActorKind;
   reason?: string;
 }
+
+/** Checks a setup ticket's agent proposed (`propose_checks`): written to verification.json, waiting for approval. */
+export interface ChecksProposedEntry {
+  v: 1;
+  kind: 'checks-proposed';
+  at: number;
+  mapId: string;
+  ticketId: string;
+  actor: string;
+  actorKind: ActorKind;
+  /** The proposed checks' names, in order. */
+  checks: string[];
+  reason?: string;
+}

@@ -1,5 +1,6 @@
 import { mainChecksHeld, OperationError, type MainChecksView, type MapSnapshot, type Ticket } from '@teamtrail/core';
 import { readMainChecks, repoRootOf } from '@teamtrail/core/agents';
+import { setupMergeReason, setupNotOnMain } from '@teamtrail/core/node';
 import type { AgentContext } from './agentContext';
 import { mainChecksReason } from './mainChecksReason';
 
@@ -26,7 +27,11 @@ export async function mainGate(ctx: AgentContext, snap: MapSnapshot): Promise<Ma
   const env = { root: ctx.root, repoRoot: repoRootOf(ctx.verifyEnv()), ...(runner ? { checkRunner: runner } : {}) };
   const trigger = `agent ${await ctx.agentId()}`;
   const view = await readMainChecks(env, snap.map.id, { trigger, waitMs: WAIT_MS });
-  return { view, held: mainChecksHeld(snap, view), ...mainChecksReason(view) };
+  const held = mainChecksHeld(snap, view);
+  // the setup work of a new repo not merged yet: main has no project, so that merge is all it waits on
+  const setup = view.holds ? setupNotOnMain({ root: ctx.root, snap }) : undefined;
+  if (setup) return { view, held, reason: setupMergeReason(setup) };
+  return { view, held, ...mainChecksReason(view) };
 }
 
 /** Refuses an explicit claim of new implementation work while checks on main hold it. Own claims go on. */

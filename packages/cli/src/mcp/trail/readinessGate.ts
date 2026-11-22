@@ -28,7 +28,7 @@ export function assertReady(gate: ReadinessHold, t: Ticket, agent: string) {
 
 const NEW_REPO =
   'New repo: no project yet. Chart "Set up the project" as its first implementation ticket (add_ticket with setup: true); ' +
-  'it builds the project skeleton with a test and proposes the checks in verification.json. Every other task waits for it.';
+  'it builds the project skeleton with a test and proposes the checks with propose_checks. Every other task waits for it.';
 
 /**
  * `readiness` on next and claim results while it holds work back, so the agent can tell the human; on a new repo

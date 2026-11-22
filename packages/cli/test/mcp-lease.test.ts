@@ -89,14 +89,16 @@ describe('claim leases', () => {
   });
 
   it('keeps the claim while the agent keeps calling tools', async () => {
-    const a = await connect('claude-01', 200);
+    const a = await connect('claude-01', 400);
     await trail(a);
+    // connected before, so the only time between A's last renewal and B's look is B's own call
+    const b = await connect('claude-02', 60_000);
     await a('claim_ticket');
-    for (let i = 0; i < 5; i++) {
-      await sleep(80);
+    // renewing for twice the lease: without renewals it would have run out
+    for (let i = 0; i < 8; i++) {
+      await sleep(100);
       await a('report_progress', { message: `step ${i}` });
     }
-    const b = await connect('claude-02', 60_000);
     const next = await b<{ ticket: null; recovered?: unknown }>('next_ticket');
     expect(next).toMatchObject({ ticket: null });
     expect(next.recovered).toBeUndefined();

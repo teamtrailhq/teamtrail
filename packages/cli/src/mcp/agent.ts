@@ -8,6 +8,7 @@ import { setCriteria } from './trail/criteria';
 import { getBrief, submitBrief } from './trail/discovery';
 import { ask, defaultWaitSeconds, inbox, waitForAnswer } from './trail/hitl';
 import { flagKnowledge, proposeKnowledge, searchKnowledgeOp } from './trail/knowledge';
+import { proposeChecks } from './trail/proposeChecks';
 import { RefusedNotices } from './trail/refusedNotices';
 import { recordDecision, report, sessionView } from './trail/reporting';
 import { submitReviewTool } from './trail/reviews';
@@ -116,6 +117,10 @@ export class TrailAgent {
 
   addTicket(input: Input<typeof addTicket>) {
     return addTicket(this.ctx, input);
+  }
+
+  proposeChecks(input: Input<typeof proposeChecks>) {
+    return proposeChecks(this.ctx, input);
   }
 
   closeTicket(input: CloseInput, ctl: WaitControl = {}) {

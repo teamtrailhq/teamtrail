@@ -15,6 +15,7 @@ import { registerMemoryTools } from './tools/memoryTools';
 import { registerProjectTools } from './tools/projectTools';
 import { registerProofTools } from './tools/proofTools';
 import { registerRerouteTools } from './tools/rerouteTools';
+import { registerSetupTools } from './tools/setupTools';
 import { registerTicketTools } from './tools/ticketTools';
 import { registerTrailTools } from './tools/trailTools';
 import { registerWorkTools } from './tools/workTools';
@@ -25,6 +26,7 @@ export function createMcpServer(agent: TrailAgent, version: string) {
   registerTrailTools(tool, agent);
   registerTicketTools(tool, agent);
   registerWorkTools(tool, agent);
+  registerSetupTools(tool, agent);
   registerHitlTools(tool, agent);
   registerKnowledgeTools(tool, agent);
   registerRerouteTools(tool, agent);
