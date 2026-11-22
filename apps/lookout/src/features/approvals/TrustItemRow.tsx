@@ -2,16 +2,18 @@ import type { TrustItem } from '@teamtrail/core';
 import { Button, MetaLine, Row } from '../../components/ui';
 import { settingsSectionLink } from '../../lib/settingsSectionLink';
 import { CheckFindingList } from '../check-screening';
-import { KIND_CAVEAT, KIND_EFFECT, standingText } from './approvalCopy';
+import { KIND_CAVEAT, KIND_EFFECT, shownWhole, standingText } from './approvalCopy';
 import { ApprovalLines } from './ApprovalLines';
 
 /**
- * One thing waiting for approval: what it is, why it waits, and exactly what approving it approves. Content nobody
- * committed is shown whole, since an agent may have written all of it.
+ * One thing waiting for approval: what it is, why it waits, and exactly what approving it approves. Free text nobody
+ * committed is shown whole, since an agent may have written all of it; check commands always show as their diff,
+ * which names every command and setup step approving would run (a Cloud workspace has no git, so nothing there is
+ * ever committed).
  */
 export function TrustItemRow(props: { item: TrustItem; busy: boolean; local: boolean; onApprove: () => void }) {
   const { item } = props;
-  const whole = item.committed === false;
+  const whole = shownWhole(item);
   // guide catalogs keep their summary (each catalog with its host) above the file shown whole
   const summary = item.kind === 'catalogs' ? [...item.lines, ''] : [];
   const shown = whole ? [...summary, ...item.content.split('\n')] : item.lines;

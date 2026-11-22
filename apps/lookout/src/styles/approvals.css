@@ -56,6 +56,9 @@
   color: var(--faint);
   text-decoration: line-through;
 }
+.ap-old {
+  color: var(--faint);
+}
 .ap-add,
 .ap-change {
   color: var(--text-hi);

@@ -4,6 +4,8 @@ import { Choice } from '../../components/ui';
 import { TRAIL_LEAD } from '../../lib';
 import { LEVEL_HELP, LEVEL_TEXT, verificationApi } from '../../lib/verification';
 import { MainChecksSetting } from '../main-checks';
+import { ChecksRunAsYou } from './ChecksRunAsYou';
+import { SectionIntro } from './SectionIntro';
 import { settingsHref } from './settingsHref';
 import { SettingsSection } from './SettingsSection';
 import { useThisMachine } from './useThisMachine';
@@ -26,10 +28,10 @@ export function VerificationSection(props: { map?: MapDoc }) {
   const types = (c ?? DEFAULT_CONFIG).appliesTo.join(' and ');
   return (
     <SettingsSection title="Verification">
-      <p className="vf-intro">
-        When an agent says a ticket is done, Teamtrail can check the work before the ticket closes. This applies to{' '}
-        {types} tickets. Research, junction and prototype tickets close as soon as they are answered.
-      </p>
+      <SectionIntro
+        lead={`Check an agent's work before its ticket closes.`}
+        points={[`This applies to ${types} tickets. Research, junction and prototype tickets close once answered.`]}
+      />
       {map && (
         <>
           <span className="set-field-label">How much checking for trail {map.key}</span>
@@ -82,18 +84,7 @@ export function VerificationSection(props: { map?: MapDoc }) {
       )}
       <VerificationChecks view={view} local={local} file={file} />
       {map && <MainChecksSetting mapId={map.id} />}
-      <span className="set-hint t-meta">
-        Saved here, checks are approved as you save them. A change to {file} made in the repo, by an agent or a
-        teammate, runs nothing until you approve it.
-      </span>
-      <span className="set-hint t-meta">
-        Checks run on this machine as you, with no sandbox. Teamtrail passes them only the environment variables they
-        need (more under{' '}
-        <a href={settingsHref(location.href, { group: 'project', section: 'check-variables' })}>Check variables</a>),
-        but a check can still read your files (~/.aws, ~/.npmrc, ~/.ssh, ~/.kube, ~/.docker, the GitHub CLI&apos;s
-        login, Teamtrail&apos;s own credentials) and use your SSH agent. That&apos;s why a changed check command needs
-        your approval: you approve the command line, so read what it runs.
-      </span>
+      <ChecksRunAsYou file={file} />
     </SettingsSection>
   );
 }

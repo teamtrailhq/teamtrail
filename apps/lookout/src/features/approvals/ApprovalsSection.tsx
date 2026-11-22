@@ -1,9 +1,10 @@
 import { BRAND, type TrustItem } from '@teamtrail/core';
 import { useState } from 'react';
-import { Button, MetaLine } from '../../components/ui';
+import { Button } from '../../components/ui';
+import { SectionIntro } from '../settings/SectionIntro';
 import { SettingsSection } from '../settings/SettingsSection';
 import { useThisMachine } from '../settings/useThisMachine';
-import { adoptLine, LIMITS, STATE_NOTE } from './approvalCopy';
+import { adoptLine, APPROVAL_POINTS, LIMITS, STATE_NOTE } from './approvalCopy';
 import { OldQueueRow } from './OldQueueRow';
 import { StateChangeRow } from './StateChangeRow';
 import { TrackerChangeRow } from './TrackerChangeRow';
@@ -39,14 +40,11 @@ export function ApprovalsSection() {
   const waiting = items.length + (tracker ? 1 : 0) + (oldQueue ? 1 : 0);
   return (
     <SettingsSection title="Approvals">
-      <p className="vf-intro">
-        Some files in the repo tell {BRAND.name} what to trust: the commands checks run, where trails are kept, what
-        needs you, how much each trail is checked, and briefs, criteria and knowledge marked accepted. Agents can edit
-        those files and teammates push them, so nothing in them takes effect on this machine until you approve it here,
-        exactly as it is. The same goes for a trail's state: a ticket closed, retyped, claimed or unblocked, a level or
-        mode changed, or a decision written by editing files instead of through {BRAND.name} shows here as changed
-        outside {BRAND.name}, and counts only once you accept it.
-      </p>
+      <SectionIntro
+        lead={`Files in the repo can tell ${BRAND.name} what to trust. Nothing in them counts on this machine until you approve it here.`}
+        points={APPROVAL_POINTS}
+        more={LIMITS}
+      />
       {changed && (
         <div className="sync-line alert ap-changed" role="status">
           <span className="dot" />
@@ -110,7 +108,6 @@ export function ApprovalsSection() {
       )}
       {!local && waiting > 0 && <p className="t-meta">Approve these on the machine {BRAND.name} runs on.</p>}
       {note && <span className="vf-err">{note}</span>}
-      <MetaLine className="set-hint" parts={LIMITS} />
     </SettingsSection>
   );
 }

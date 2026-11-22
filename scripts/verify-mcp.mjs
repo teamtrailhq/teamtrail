@@ -134,7 +134,7 @@ const again = page.getByRole('button', { name: 'Get started' });
 if (await again.isVisible()) await again.click();
 await page.locator('.dialog.onboarding').waitFor({ state: 'detached', timeout: 15_000 });
 const argvShown = await checksRow.locator('.ap-lines').innerText();
-if (!argvShown.includes('["npm","run","--silent","check"]')) throw new Error(`approvals show: ${argvShown}`);
+if (!argvShown.includes('npm run --silent check')) throw new Error(`approvals show: ${argvShown}`);
 await shot('approvals-first-run');
 // an agent plants a confirmed knowledge entry while the page is open: the list holds still and says files changed
 const planted = path.join(repo, '.teamtrail', 'knowledge', 'K-99.md');

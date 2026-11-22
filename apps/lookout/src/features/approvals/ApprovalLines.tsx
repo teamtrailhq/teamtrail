@@ -1,8 +1,10 @@
 import { cx } from '../../lib';
+import { ChangedLine } from './ChangedLine';
 import { diffLine } from './diffLine';
 
 /**
- * What approving covers, in mono: as a diff (removed lines struck through, added ones marked with a bar), or, for
+ * What approving covers, in mono: as a diff (removed lines struck through, added ones marked with a bar, a changed
+ * value's old one struck through before the new), or, for
  * content nobody committed, the text whole and as it is.
  */
 export function ApprovalLines(props: { lines: string[]; whole: boolean }) {
@@ -19,7 +21,7 @@ export function ApprovalLines(props: { lines: string[]; whole: boolean }) {
             <span className="ap-t">
               {d.kind === 'add' && <span className="ap-sr">Added: </span>}
               {d.kind === 'rm' && <span className="ap-sr">Removed: </span>}
-              {d.text}
+              {d.kind === 'change' ? <ChangedLine text={d.text} /> : d.text}
             </span>
           </div>
         );

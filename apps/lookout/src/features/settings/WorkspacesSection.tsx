@@ -2,6 +2,7 @@ import { BRAND } from '@teamtrail/core';
 import { useState } from 'react';
 import { Button, MetaLine } from '../../components/ui';
 import { useWorkspaces, WorkspaceList } from '../workspaces';
+import { SectionIntro } from './SectionIntro';
 import { SettingsSection } from './SettingsSection';
 
 /** Parallel work: a separate git worktree and branch for each claimed ticket. Teamtrail never merges or pushes. */
@@ -16,10 +17,10 @@ export function WorkspacesSection() {
   };
   return (
     <SettingsSection title="Workspaces">
-      <p className="vf-intro">
-        Give each agent its own copy of the repo for every ticket it claims, on its own branch, so agents working at the
-        same time don't step on each other. You review and merge the branches; {BRAND.name} never merges or pushes.
-      </p>
+      <SectionIntro
+        lead="Give each claimed ticket its own worktree and branch, so agents working at once don't collide."
+        points={[`You review and merge the branches; ${BRAND.name} never merges or pushes.`]}
+      />
       <div className="att-settings-row set-field">
         <span className="set-field-label">A worktree per ticket</span>
         <Button size="sm" on={on} aria-pressed={on} className="worktrees-toggle" onClick={toggle}>

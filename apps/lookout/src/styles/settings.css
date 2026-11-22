@@ -573,3 +573,26 @@
   align-items: flex-start;
   gap: var(--sp-4);
 }
+/* A section's opening (settings/SectionIntro.tsx): the lead, a few points to act on, and Learn more. */
+.sec-intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  max-width: 64ch;
+}
+.sec-points,
+.sec-more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin: 0;
+  padding-left: 1.1em;
+  list-style: square;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+.sec-points li::marker,
+.sec-more li::marker {
+  color: var(--dim);
+}

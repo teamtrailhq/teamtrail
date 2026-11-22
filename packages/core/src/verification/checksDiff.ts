@@ -1,11 +1,12 @@
 import { checkArgv, checkNotice } from '../guides/checkArgv';
 import { GATE_NAMES } from '../model/gateMode';
 import type { CheckSpec, VerificationConfig } from '../model/verification';
+import { commandLine } from './commandLine';
 import { parseVerificationConfig } from './config';
 import { rulesDiff } from './rulesDiff';
 import { setupLines, setupWarnings } from './setupDiff';
 
-const argv = (s: CheckSpec) => JSON.stringify(s.run);
+const argv = (s: CheckSpec) => commandLine(s.run);
 const where = (s: CheckSpec) => (s.cwd && s.cwd !== '.' ? ` in ${s.cwd}` : '');
 const guarded = (s: CheckSpec) => (s.guards?.length ? `, guarding ${s.guards.join(', ')}` : '');
 const scoped = (s: CheckSpec) => (s.paths?.length ? `, only for changes in ${s.paths.join(', ')}` : '');
@@ -49,7 +50,7 @@ function settingLines(before: VerificationConfig | undefined, after: Verificatio
 
 /**
  * What approving verification.json now would change, against the approved content: each setup step and command as
- * its exact argv (old → new), then the other settings that differ. With nothing approved yet, every command it would run.
+ * its exact argv, as a command line where that reads the same (`commandLine`) (old → new), then the other settings that differ. With nothing approved yet, every command it would run.
  * `warnings` are the guide lint's argv rules, as advice: the trail lead may still approve their own commands.
  */
 export function checksDiff(approved: string | undefined, current: string | undefined) {

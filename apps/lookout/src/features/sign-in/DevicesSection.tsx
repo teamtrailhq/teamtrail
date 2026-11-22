@@ -1,4 +1,5 @@
 import { Button } from '../../components/ui';
+import { SectionIntro } from '../settings/SectionIntro';
 import { SettingsSection } from '../settings/SettingsSection';
 import { PairDevicePanel } from './PairDevicePanel';
 import { SignInList } from './SignInList';
@@ -30,11 +31,13 @@ export function DevicesSection() {
     );
   return (
     <SettingsSection title="Browsers & devices">
-      <p className="vf-intro">
-        Every browser that opens this Lookout is paired, and stays signed in while it runs (up to 30 days after it was
-        last used). Revoke one and it’s signed out at once. When the Lookout restarts, browsers and devices pair again:
-        the link is in the terminal where it starts.
-      </p>
+      <SectionIntro
+        lead="Every browser that opens this Lookout is paired here. Revoke one and it's signed out at once."
+        more={[
+          'A browser stays signed in while the Lookout runs, up to 30 days after it was last used.',
+          'When the Lookout restarts, browsers and devices pair again with the link in its terminal.',
+        ]}
+      />
       <SignInList sessions={view.sessions} onRevoke={revoke} />
       <PairDevicePanel lan={view.lan} device={device} onPair={pairDevice} onDone={closeDevice} />
       {signOutButton}
