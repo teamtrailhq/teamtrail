@@ -3,7 +3,7 @@
 Two marks, one drawing style:
 
 - **The Teamtrail logo** (`src/logo/`): six block cursors set every 60° around an open centre. The arm pointing up is grey (`#8E8E96`), the other five blaze (`#FF6B2C`), on a transparent background, the same on light and dark pages (colours in `logoColors.ts`). `<Logo>` draws it filling its box; `round` places it smaller (`logoInCircle.ts`) for avatars shown in a circle (the GitHub, X and LinkedIn/Discord avatars); `tile` puts it on the near-black `#0A0A0B` square (`logoOnTile.ts`) for the rare place that must be opaque, never on blaze. `logoFaviconSvg()` is the mark as one SVG. The favicon, npm, GitHub and social avatars use it, and the wordmark puts it before the name.
-- **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. An AI scout companion looking to the side, drawn as a bust in graphite, white and blaze: a screen face, a cap, a headset with a mic, an antenna lamp and a neckerchief (`badgeArt.ts`; `shape`: a circle where avatars are round, a full square for tiles and Slack; `ground`: `ink`, the default, `blaze` for app icons and Slack, `paper` on light backgrounds). Guides are flat symbols alone on a transparent background, no tile or border (`guideArt.ts`): magnifier, check, shield, book, compass, and a plus with no accent for Community; `guideMarkup(role, theme)` draws `dark`, `light`, or `auto`, which reads the page's `--tt-guide-ink`, `-fill` and `-accent`.
+- **Scout** (`src/scout/`): the voice of Teamtrail wherever you meet it, in the Lookout, Slack, the site, docs and the product video. An AI scout companion looking to the side, drawn as a bust in graphite, white and blaze: a screen face, a cap, a headset with a mic, an antenna lamp and a neckerchief (`badgeArt.ts`; `shape`: a circle where avatars are round, a full square for tiles and Slack; `ground`: `ink`, the default, `blaze` for app icons and Slack, `paper` on light backgrounds). Guides are drawn like the site's scenes, alone on a transparent background (`guideArt.ts`): thin square ink lines, light panels, grey text bars and one blaze square that carries the meaning: a page under a lens (reviewer), a checklist (QA), a shield with a lock (security), two pages with a bookmark (docs), a system map (architect), and an outlined plus with no accent for Community. `guideMarkup(role, theme)` draws `dark`, `light`, or `auto`, which reads the page's `--tt-guide-ink`, `-fill`, `-mute` and `-accent`.
 
 **Which mark where**
 
@@ -37,7 +37,7 @@ src/scout/
   portraitHead.ts  the head in three-quarter view: screen, headset, cap and antenna lamp
   portraitFace.ts  the face on the screen (eyes and mouth)
   portraitBody.ts  the shoulders and neckerchief
-  guideArt.ts      guide icons: flat symbols alone, no tile, dark, light or auto
+  guideArt.ts      guide icons: line drawings like the site's scenes, dark, light or auto
   Badge.tsx        React component for a still badge at any size
   frames.ts        styles (day/night), expressions per state, status labels, timing, visemes, composeWave
   types.ts         shared types
@@ -70,7 +70,7 @@ The avatar reads the Lookout's tokens through its `--scout-*` variables (`ScoutA
 
 The landing page (`teamtrailhq/teamtrail-landing`, which installs this package from the product repo next to it) imports the framework-free renderer from `@teamtrail/scout-avatar/mount`. It does not use React. Every Scout there is unframed:
 
-- `src/main.ts`: Scout on Home's "The scout who keeps everyone on the path" card (`[data-scout]`, `sm`, day or night with the page's theme), and the guide symbol badges (`guideMarkup`) on the guide cards (`/guides`).
+- `src/main.ts`: Scout on Home's "The scout who keeps everyone on the path" card (`[data-scout]`, `sm`, day or night with the page's theme), and the guide icons (`guideMarkup`) on the guide cards (`/guides`).
 - `src/slackScene.ts`: Scout next to Slack on the Scout in Slack page (`[data-slack-scout]`).
 - `src/cloudScene.ts`: Scout in a square frame on the Cloud page, saying a short line every few seconds, and thinking midway along its journey, between line icons of a laptop and a phone (`[data-cloud-scout]`, `[data-cloud-mid-scout]`, `shape: 'square'`).
 
