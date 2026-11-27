@@ -19,6 +19,8 @@ export default tseslint.config(
       '**/.vercel/**',
       // Agent worktrees (Claude Code) live inside the repo folder.
       '.claude/**',
+      // The team demo's app repo (npm run demo), made and wiped by the script.
+      '.demo/**',
       '**/*.d.ts',
       // Pixel rows, kept on one line each by hand.
       '**/scout/art.ts',
