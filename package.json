@@ -19,6 +19,8 @@
     "dev:fresh": "node scripts/dev-fresh.mjs",
     "dev:agent": "node scripts/dev-agent.mjs",
     "dev:pair": "node scripts/dev-pair.mjs",
+    "demo": "esbuild scripts/demo/demo.ts --bundle --platform=node --format=esm --log-level=warning --external:@modelcontextprotocol/sdk --outfile=node_modules/.cache/demo.mjs && node node_modules/.cache/demo.mjs",
+    "demo:build": "esbuild scripts/demo/demoBuild.ts --bundle --platform=node --format=esm --log-level=warning --external:@modelcontextprotocol/sdk --outfile=node_modules/.cache/demo-build.mjs && node node_modules/.cache/demo-build.mjs",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "node scripts/test-temp.mjs vitest vitest run && npm run test --workspaces --if-present",
